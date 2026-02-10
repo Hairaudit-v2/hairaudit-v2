@@ -1,0 +1,1146 @@
+{
+  "rubric_id": "hairaudit_clinical",
+  "version": 1,
+  "status": "published",
+  "title": "HairAudit Clinical Rubric v1",
+  "effective_date": "2026-01-31",
+  "notes": "Versioned clinical rubric for medico-legal defensibility. Deterministic scoring and reproducible rollups.",
+  "scoring_model": {
+    "domain_weight_total": 100,
+    "section_weight_total_per_domain": 100,
+    "question_weight_total_per_section": 100,
+    "normalization": "to_100",
+    "missing_answer_policy": "exclude_from_section",
+    "rounding": {
+      "domain": 1,
+      "section": 1,
+      "overall": 1
+    }
+  },
+  "scale_library": {
+    "scale_0_5": {
+      "range": [
+        0,
+        5
+      ],
+      "anchors": {
+        "0": "Unsafe / failed / not performed",
+        "1": "Poor",
+        "2": "Below standard",
+        "3": "Acceptable",
+        "4": "Good",
+        "5": "Excellent / best practice"
+      }
+    }
+  },
+  "domains": [
+    {
+      "domain_id": "consultation_indication",
+      "title": "Consultation & Indication",
+      "weight": 15,
+      "sections": [
+        {
+          "section_id": "patient_minimum_inputs",
+          "title": "Patient Minimum Inputs (Required to run a Basic Audit)",
+          "weight": 0,
+          "questions": [
+            {
+              "question_id": "surgery_location",
+              "prompt": "Location of surgery (country + city)",
+              "type": "text",
+              "weight": 0,
+              "required": true
+            },
+            {
+              "question_id": "clinic_name",
+              "prompt": "Clinic name",
+              "type": "text",
+              "weight": 0,
+              "required": true
+            },
+            {
+              "question_id": "surgery_date",
+              "prompt": "Date of surgery (YYYY-MM-DD)",
+              "type": "text",
+              "weight": 0,
+              "required": true
+            },
+            {
+              "question_id": "procedure_cost",
+              "prompt": "Total cost paid (currency + amount)",
+              "type": "text",
+              "weight": 0,
+              "required": true
+            },
+            {
+              "question_id": "extraction_operator",
+              "prompt": "Who performed the extraction? (Doctor / Nurse / Technician / Unknown)",
+              "type": "select",
+              "weight": 0,
+              "required": true,
+              "options": [
+                {
+                  "value": "doctor",
+                  "label": "Doctor",
+                  "score": 100
+                },
+                {
+                  "value": "nurse",
+                  "label": "Nurse",
+                  "score": 85
+                },
+                {
+                  "value": "technician",
+                  "label": "Technician",
+                  "score": 60
+                },
+                {
+                  "value": "unknown",
+                  "label": "Unknown",
+                  "score": 40
+                }
+              ]
+            },
+            {
+              "question_id": "implantation_operator",
+              "prompt": "Who performed the implantation? (Doctor / Nurse / Technician / Unknown)",
+              "type": "select",
+              "weight": 0,
+              "required": true,
+              "options": [
+                {
+                  "value": "doctor",
+                  "label": "Doctor",
+                  "score": 100
+                },
+                {
+                  "value": "nurse",
+                  "label": "Nurse",
+                  "score": 85
+                },
+                {
+                  "value": "technician",
+                  "label": "Technician",
+                  "score": 60
+                },
+                {
+                  "value": "unknown",
+                  "label": "Unknown",
+                  "score": 40
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "section_id": "dx_suitability",
+          "title": "Diagnosis & Suitability",
+          "weight": 55,
+          "questions": [
+            {
+              "question_id": "dx_accuracy",
+              "prompt": "Diagnosis and pattern classification are appropriate (AGA vs TE vs scarring etc.)",
+              "type": "scale",
+              "scale_ref": "scale_0_5",
+              "weight": 25,
+              "required": true,
+              "evidence": {
+                "min_items": 0,
+                "types": [
+                  "consult_note",
+                  "trichoscopy",
+                  "photo"
+                ]
+              }
+            },
+            {
+              "question_id": "stability_assessment",
+              "prompt": "Hair loss stability and progression risk assessed (incl. future loss planning)",
+              "type": "scale",
+              "scale_ref": "scale_0_5",
+              "weight": 20,
+              "required": true,
+              "evidence": {
+                "min_items": 0,
+                "types": [
+                  "consult_note",
+                  "history"
+                ]
+              }
+            },
+            {
+              "question_id": "donor_vs_goal_alignment",
+              "prompt": "Plan aligns patient goals with donor reality (density, calibre, hair characteristics)",
+              "type": "scale",
+              "scale_ref": "scale_0_5",
+              "weight": 35,
+              "required": true,
+              "evidence": {
+                "min_items": 0,
+                "types": [
+                  "plan_map",
+                  "donor_photo",
+                  "measurement"
+                ]
+              }
+            },
+            {
+              "question_id": "contraindications_screen",
+              "prompt": "Contraindications screened and addressed (infection, autoimmune activity, bleeding risk, etc.)",
+              "type": "scale",
+              "scale_ref": "scale_0_5",
+              "weight": 20,
+              "required": true,
+              "evidence": {
+                "min_items": 0,
+                "types": [
+                  "intake_form",
+                  "med_list",
+                  "labs"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "section_id": "consent_expectations",
+          "title": "Consent & Expectations",
+          "weight": 45,
+          "questions": [
+            {
+              "question_id": "consent_quality",
+              "prompt": "Consent covers limitations, timelines, shock loss, complications, and aftercare",
+              "type": "scale",
+              "scale_ref": "scale_0_5",
+              "weight": 30,
+              "required": true,
+              "evidence": {
+                "min_items": 0,
+                "types": [
+                  "consent_form"
+                ]
+              }
+            },
+            {
+              "question_id": "expectations_realistic",
+              "prompt": "Expectations set realistically (coverage vs density, staged planning if needed)",
+              "type": "scale",
+              "scale_ref": "scale_0_5",
+              "weight": 30,
+              "required": true,
+              "evidence": {
+                "min_items": 0,
+                "types": [
+                  "consult_note"
+                ]
+              }
+            },
+            {
+              "question_id": "medical_management_plan",
+              "prompt": "Medical management plan discussed (fin/dut/saw palmetto/minoxidil/adjuncts) appropriate to case",
+              "type": "scale",
+              "scale_ref": "scale_0_5",
+              "weight": 20,
+              "required": false,
+              "evidence": {
+                "min_items": 0,
+                "types": [
+                  "consult_note"
+                ]
+              }
+            },
+            {
+              "question_id": "patient_day0_donor_images",
+              "prompt": "Patient provided day-of-surgery donor images (immediate post-extraction)",
+              "type": "text",
+              "weight": 0,
+              "required": true,
+              "evidence": {
+                "min_items": 1,
+                "types": [
+                  "photo"
+                ]
+              }
+            },
+            {
+              "question_id": "patient_day0_recipient_images",
+              "prompt": "Patient provided day-of-surgery recipient images (immediate post-implantation)",
+              "type": "text",
+              "weight": 0,
+              "required": true,
+              "evidence": {
+                "min_items": 1,
+                "types": [
+                  "photo"
+                ]
+              }
+            },
+            {
+              "question_id": "patient_preop_photo_set",
+              "prompt": "Patient provided complete pre-op photo set (front, sides, top/mid, crown, donor rear)",
+              "type": "text",
+              "weight": 0,
+              "required": true,
+              "evidence": {
+                "min_items": 6,
+                "types": [
+                  "photo"
+                ]
+              }
+            },
+            {
+              "question_id": "photo_documentation_preop",
+              "prompt": "Pre-op photography and mapping sufficient for baseline comparisons",
+              "type": "scale",
+              "scale_ref": "scale_0_5",
+              "weight": 20,
+              "required": true,
+              "evidence": {
+                "min_items": 0,
+                "types": [
+                  "photo"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "domain_id": "donor_management",
+      "title": "Donor Management",
+      "weight": 15,
+      "sections": [
+        {
+          "section_id": "donor_planning",
+          "title": "Donor Assessment & Planning",
+          "weight": 60,
+          "questions": [
+            {
+              "question_id": "safe_zone_respected",
+              "prompt": "Safe donor zone identified and respected (incl. future loss risk)",
+              "type": "scale",
+              "scale_ref": "scale_0_5",
+              "weight": 30,
+              "required": true,
+              "evidence": {
+                "min_items": 0,
+                "types": [
+                  "donor_photo",
+                  "plan_map"
+                ]
+              }
+            },
+            {
+              "question_id": "donor_density_calibre",
+              "prompt": "Donor density and calibre assessed and used for planning",
+              "type": "scale",
+              "scale_ref": "scale_0_5",
+              "weight": 25,
+              "required": true,
+              "evidence": {
+                "min_items": 0,
+                "types": [
+                  "trichoscopy",
+                  "measurement"
+                ]
+              }
+            },
+            {
+              "question_id": "extraction_limit_logic",
+              "prompt": "Extraction limit logic is appropriate (overharvest avoided, staged logic if needed)",
+              "type": "scale",
+              "scale_ref": "scale_0_5",
+              "weight": 25,
+              "required": true,
+              "evidence": {
+                "min_items": 0,
+                "types": [
+                  "plan_map",
+                  "op_note"
+                ]
+              }
+            },
+            {
+              "question_id": "donor_risk_factors",
+              "prompt": "Donor risk factors considered (curl/afro, scarring, prior surgery, low density)",
+              "type": "scale",
+              "scale_ref": "scale_0_5",
+              "weight": 20,
+              "required": false,
+              "evidence": {
+                "min_items": 0,
+                "types": [
+                  "history",
+                  "photo"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "section_id": "donor_outcome",
+          "title": "Donor Outcome Quality",
+          "weight": 40,
+          "questions": [
+            {
+              "question_id": "patient_day0_donor_images",
+              "prompt": "Patient provided day-of-surgery donor images (immediate post-extraction)",
+              "type": "text",
+              "weight": 0,
+              "required": true,
+              "evidence": {
+                "min_items": 1,
+                "types": [
+                  "photo"
+                ]
+              }
+            },
+            {
+              "question_id": "donor_uniformity",
+              "prompt": "Extraction pattern uniformity (no patchiness / moth-eaten appearance in sampled zones)",
+              "type": "scale",
+              "scale_ref": "scale_0_5",
+              "weight": 35,
+              "required": true,
+              "evidence": {
+                "min_items": 0,
+                "types": [
+                  "donor_photo_post"
+                ]
+              }
+            },
+            {
+              "question_id": "donor_scar_visibility",
+              "prompt": "Donor wound/scar visibility minimized for hairstyle goals (punch sizing / spacing appropriate)",
+              "type": "scale",
+              "scale_ref": "scale_0_5",
+              "weight": 35,
+              "required": false,
+              "evidence": {
+                "min_items": 0,
+                "types": [
+                  "donor_photo_post"
+                ]
+              }
+            },
+            {
+              "question_id": "donor_hemostasis_trauma",
+              "prompt": "Hemostasis/handling minimizes trauma (minimal tearing, minimal crush, controlled bleeding)",
+              "type": "scale",
+              "scale_ref": "scale_0_5",
+              "weight": 30,
+              "required": true,
+              "evidence": {
+                "min_items": 0,
+                "types": [
+                  "op_note",
+                  "photo"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "domain_id": "extraction_quality",
+      "title": "Extraction Quality",
+      "weight": 20,
+      "sections": [
+        {
+          "section_id": "punch_depth_angle",
+          "title": "Punch Choice, Depth & Angle Control",
+          "weight": 45,
+          "questions": [
+            {
+              "question_id": "punch_match_hair",
+              "prompt": "Punch diameter/type appropriate for hair/skin type (incl. curl/afro considerations)",
+              "type": "scale",
+              "scale_ref": "scale_0_5",
+              "weight": 30,
+              "required": true,
+              "evidence": {
+                "min_items": 0,
+                "types": [
+                  "op_note"
+                ]
+              }
+            },
+            {
+              "question_id": "depth_control",
+              "prompt": "Depth control consistent (minimizes transection and buried grafts)",
+              "type": "scale",
+              "scale_ref": "scale_0_5",
+              "weight": 35,
+              "required": true,
+              "evidence": {
+                "min_items": 0,
+                "types": [
+                  "op_note",
+                  "video"
+                ]
+              }
+            },
+            {
+              "question_id": "angle_tracking",
+              "prompt": "Angle tracking matches exit angle; adapts across zones",
+              "type": "scale",
+              "scale_ref": "scale_0_5",
+              "weight": 35,
+              "required": true,
+              "evidence": {
+                "min_items": 0,
+                "types": [
+                  "video",
+                  "photo"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "section_id": "transection_integrity",
+          "title": "Transection & Graft Integrity",
+          "weight": 55,
+          "questions": [
+            {
+              "question_id": "transection_rate",
+              "prompt": "Observed transection rate is acceptable for hair/skin type (lower is better)",
+              "type": "percent_banded",
+              "weight": 40,
+              "required": true,
+              "scoring": {
+                "bands": [
+                  {
+                    "max": 5,
+                    "score": 100
+                  },
+                  {
+                    "max": 8,
+                    "score": 85
+                  },
+                  {
+                    "max": 12,
+                    "score": 70
+                  },
+                  {
+                    "max": 18,
+                    "score": 50
+                  },
+                  {
+                    "max": 100,
+                    "score": 0
+                  }
+                ]
+              },
+              "evidence": {
+                "min_items": 0,
+                "types": [
+                  "graft_count",
+                  "microscope_photo"
+                ]
+              }
+            },
+            {
+              "question_id": "graft_crush_damage",
+              "prompt": "Minimal crush/traction damage during extraction and handling",
+              "type": "scale",
+              "scale_ref": "scale_0_5",
+              "weight": 30,
+              "required": true,
+              "evidence": {
+                "min_items": 0,
+                "types": [
+                  "microscope_photo",
+                  "op_note"
+                ]
+              }
+            },
+            {
+              "question_id": "buried_grafts",
+              "prompt": "Buried grafts minimized and managed appropriately",
+              "type": "scale",
+              "scale_ref": "scale_0_5",
+              "weight": 15,
+              "required": false,
+              "evidence": {
+                "min_items": 0,
+                "types": [
+                  "op_note"
+                ]
+              }
+            },
+            {
+              "question_id": "overpunching_double_punch",
+              "prompt": "Overpunching / double punching avoided",
+              "type": "scale",
+              "scale_ref": "scale_0_5",
+              "weight": 15,
+              "required": true,
+              "evidence": {
+                "min_items": 0,
+                "types": [
+                  "donor_photo_post"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "domain_id": "graft_handling",
+      "title": "Graft Handling & Preservation",
+      "weight": 15,
+      "sections": [
+        {
+          "section_id": "preservation_conditions",
+          "title": "Preservation Conditions",
+          "weight": 55,
+          "questions": [
+            {
+              "question_id": "out_of_body_time",
+              "prompt": "Out-of-body time minimized and batching strategy appropriate",
+              "type": "scale",
+              "scale_ref": "scale_0_5",
+              "weight": 30,
+              "required": true,
+              "evidence": {
+                "min_items": 0,
+                "types": [
+                  "time_log"
+                ]
+              }
+            },
+            {
+              "question_id": "temperature_control",
+              "prompt": "Temperature control appropriate (no prolonged warm ischemia)",
+              "type": "scale",
+              "scale_ref": "scale_0_5",
+              "weight": 25,
+              "required": true,
+              "evidence": {
+                "min_items": 0,
+                "types": [
+                  "photo",
+                  "op_note"
+                ]
+              }
+            },
+            {
+              "question_id": "solution_quality",
+              "prompt": "Holding solution appropriate and managed (hydration/desiccation avoided)",
+              "type": "scale",
+              "scale_ref": "scale_0_5",
+              "weight": 25,
+              "required": true,
+              "evidence": {
+                "min_items": 0,
+                "types": [
+                  "photo",
+                  "op_note"
+                ]
+              }
+            },
+            {
+              "question_id": "handling_protocol",
+              "prompt": "Handling protocol minimizes manipulation and trauma (trained tech workflow)",
+              "type": "scale",
+              "scale_ref": "scale_0_5",
+              "weight": 20,
+              "required": true,
+              "evidence": {
+                "min_items": 0,
+                "types": [
+                  "op_note"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "section_id": "sorting_distribution",
+          "title": "Sorting & Distribution",
+          "weight": 45,
+          "questions": [
+            {
+              "question_id": "sorting_accuracy",
+              "prompt": "Grafts sorted accurately (singles for hairline, multis behind) as planned",
+              "type": "scale",
+              "scale_ref": "scale_0_5",
+              "weight": 35,
+              "required": true,
+              "evidence": {
+                "min_items": 0,
+                "types": [
+                  "count_sheet",
+                  "photo"
+                ]
+              }
+            },
+            {
+              "question_id": "hydration_on_field",
+              "prompt": "Hydration maintained on field during implantation (no drying)",
+              "type": "scale",
+              "scale_ref": "scale_0_5",
+              "weight": 35,
+              "required": true,
+              "evidence": {
+                "min_items": 0,
+                "types": [
+                  "op_note"
+                ]
+              }
+            },
+            {
+              "question_id": "counts_consistency",
+              "prompt": "Counts are consistent and traceable (extracted vs implanted, wastage documented)",
+              "type": "scale",
+              "scale_ref": "scale_0_5",
+              "weight": 30,
+              "required": false,
+              "evidence": {
+                "min_items": 0,
+                "types": [
+                  "count_sheet"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "domain_id": "recipient_implantation",
+      "title": "Recipient Site Creation & Implantation",
+      "weight": 25,
+      "sections": [
+        {
+          "section_id": "design_planning",
+          "title": "Design & Planning Quality",
+          "weight": 35,
+          "questions": [
+            {
+              "question_id": "hairline_design_natural",
+              "prompt": "Hairline design is natural for age/sex/ethnicity (macro + micro irregularity present)",
+              "type": "scale",
+              "scale_ref": "scale_0_5",
+              "weight": 40,
+              "required": true,
+              "evidence": {
+                "min_items": 0,
+                "types": [
+                  "design_photo",
+                  "preop_photo"
+                ]
+              }
+            },
+            {
+              "question_id": "temple_logic",
+              "prompt": "Temple and transition zone planning appropriate (if applicable)",
+              "type": "scale",
+              "scale_ref": "scale_0_5",
+              "weight": 25,
+              "required": false,
+              "evidence": {
+                "min_items": 0,
+                "types": [
+                  "design_photo"
+                ]
+              }
+            },
+            {
+              "question_id": "density_strategy",
+              "prompt": "Density strategy matches donor limitations and visual priorities",
+              "type": "scale",
+              "scale_ref": "scale_0_5",
+              "weight": 35,
+              "required": true,
+              "evidence": {
+                "min_items": 0,
+                "types": [
+                  "plan_map",
+                  "count_sheet"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "section_id": "site_creation",
+          "title": "Recipient Site Creation",
+          "weight": 35,
+          "questions": [
+            {
+              "question_id": "angle_direction_match",
+              "prompt": "Angle and direction match native pattern across zones (incl. crown swirl logic)",
+              "type": "scale",
+              "scale_ref": "scale_0_5",
+              "weight": 35,
+              "required": true,
+              "evidence": {
+                "min_items": 0,
+                "types": [
+                  "intraop_photo",
+                  "video"
+                ]
+              }
+            },
+            {
+              "question_id": "site_size_appropriate",
+              "prompt": "Site size/spacing appropriate (minimizes trauma and popping)",
+              "type": "scale",
+              "scale_ref": "scale_0_5",
+              "weight": 35,
+              "required": true,
+              "evidence": {
+                "min_items": 0,
+                "types": [
+                  "op_note",
+                  "video"
+                ]
+              }
+            },
+            {
+              "question_id": "bleeding_control_recipient",
+              "prompt": "Recipient bleeding controlled appropriately (visibility + tissue safety)",
+              "type": "scale",
+              "scale_ref": "scale_0_5",
+              "weight": 30,
+              "required": false,
+              "evidence": {
+                "min_items": 0,
+                "types": [
+                  "op_note"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "section_id": "implantation_execution",
+          "title": "Implantation Execution",
+          "weight": 30,
+          "questions": [
+            {
+              "question_id": "patient_day0_recipient_images",
+              "prompt": "Patient provided day-of-surgery recipient images (immediate post-implantation)",
+              "type": "text",
+              "weight": 0,
+              "required": true,
+              "evidence": {
+                "min_items": 1,
+                "types": [
+                  "photo"
+                ]
+              }
+            },
+            {
+              "question_id": "single_multi_placement",
+              "prompt": "Singles placed in leading edge; multis behind; transitions respected",
+              "type": "scale",
+              "scale_ref": "scale_0_5",
+              "weight": 30,
+              "required": true,
+              "evidence": {
+                "min_items": 0,
+                "types": [
+                  "photo",
+                  "count_sheet"
+                ]
+              }
+            },
+            {
+              "question_id": "handling_during_implant",
+              "prompt": "Graft handling during implantation minimizes trauma (no crushing, correct depth)",
+              "type": "scale",
+              "scale_ref": "scale_0_5",
+              "weight": 35,
+              "required": true,
+              "evidence": {
+                "min_items": 0,
+                "types": [
+                  "video",
+                  "op_note"
+                ]
+              }
+            },
+            {
+              "question_id": "popping_control",
+              "prompt": "Popping minimized and managed effectively (workflow / density / technique)",
+              "type": "scale",
+              "scale_ref": "scale_0_5",
+              "weight": 20,
+              "required": true,
+              "evidence": {
+                "min_items": 0,
+                "types": [
+                  "op_note"
+                ]
+              }
+            },
+            {
+              "question_id": "aesthetic_consistency",
+              "prompt": "Aesthetic consistency across zones (no pluggy clustering, natural flow)",
+              "type": "scale",
+              "scale_ref": "scale_0_5",
+              "weight": 15,
+              "required": true,
+              "evidence": {
+                "min_items": 0,
+                "types": [
+                  "photo"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "domain_id": "safety_documentation_aftercare",
+      "title": "Sterility, Safety, Documentation & Aftercare",
+      "weight": 10,
+      "sections": [
+        {
+          "section_id": "sterility_safety",
+          "title": "Sterility & Patient Safety",
+          "weight": 60,
+          "questions": [
+            {
+              "question_id": "aseptic_technique",
+              "prompt": "Aseptic technique and sterile field maintained consistently",
+              "type": "scale",
+              "scale_ref": "scale_0_5",
+              "weight": 35,
+              "required": true,
+              "evidence": {
+                "min_items": 0,
+                "types": [
+                  "op_note",
+                  "photo"
+                ]
+              }
+            },
+            {
+              "question_id": "time_out_checklist",
+              "prompt": "Time-out and safety checklist completed and documented",
+              "type": "scale",
+              "scale_ref": "scale_0_5",
+              "weight": 25,
+              "required": true,
+              "evidence": {
+                "min_items": 0,
+                "types": [
+                  "checklist"
+                ]
+              }
+            },
+            {
+              "question_id": "vitals_monitoring",
+              "prompt": "Vitals/comfort monitored appropriately and documented",
+              "type": "scale",
+              "scale_ref": "scale_0_5",
+              "weight": 20,
+              "required": false,
+              "evidence": {
+                "min_items": 0,
+                "types": [
+                  "obs_chart"
+                ]
+              }
+            },
+            {
+              "question_id": "medication_safety",
+              "prompt": "Medication safety appropriate (local anesthetic limits, allergy checks, post-op meds)",
+              "type": "scale",
+              "scale_ref": "scale_0_5",
+              "weight": 20,
+              "required": true,
+              "evidence": {
+                "min_items": 0,
+                "types": [
+                  "op_note",
+                  "med_list"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "section_id": "documentation_aftercare",
+          "title": "Documentation & Aftercare Quality",
+          "weight": 40,
+          "questions": [
+            {
+              "question_id": "op_note_quality",
+              "prompt": "Operative notes and counts are sufficient and traceable (medico-legal quality)",
+              "type": "scale",
+              "scale_ref": "scale_0_5",
+              "weight": 35,
+              "required": true,
+              "evidence": {
+                "min_items": 0,
+                "types": [
+                  "op_note",
+                  "count_sheet"
+                ]
+              }
+            },
+            {
+              "question_id": "aftercare_instructions",
+              "prompt": "Aftercare instructions clear (washing, sleeping, meds, activity, warning signs)",
+              "type": "scale",
+              "scale_ref": "scale_0_5",
+              "weight": 35,
+              "required": true,
+              "evidence": {
+                "min_items": 0,
+                "types": [
+                  "aftercare_doc"
+                ]
+              }
+            },
+            {
+              "question_id": "follow_up_plan",
+              "prompt": "Follow-up plan documented (timelines, review points, escalation pathway)",
+              "type": "scale",
+              "scale_ref": "scale_0_5",
+              "weight": 30,
+              "required": false,
+              "evidence": {
+                "min_items": 0,
+                "types": [
+                  "aftercare_doc",
+                  "booking_note"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "grade_schemes": {
+    "active_scheme": "pass_review",
+    "pass_review": {
+      "bands": [
+        {
+          "min": 85,
+          "label": "Pass"
+        },
+        {
+          "min": 70,
+          "label": "Review"
+        },
+        {
+          "min": 0,
+          "label": "High Risk"
+        }
+      ]
+    },
+    "a_f": {
+      "bands": [
+        {
+          "min": 90,
+          "label": "A"
+        },
+        {
+          "min": 80,
+          "label": "B"
+        },
+        {
+          "min": 70,
+          "label": "C"
+        },
+        {
+          "min": 60,
+          "label": "D"
+        },
+        {
+          "min": 50,
+          "label": "E"
+        },
+        {
+          "min": 0,
+          "label": "F"
+        }
+      ]
+    }
+  },
+  "confidence_model": {
+    "inputs": [
+      {
+        "id": "answer_completeness",
+        "weight": 0.45,
+        "description": "Required questions answered / required questions total"
+      },
+      {
+        "id": "evidence_coverage",
+        "weight": 0.45,
+        "description": "Evidence items present across required questions"
+      },
+      {
+        "id": "source_mix",
+        "weight": 0.10,
+        "description": "Manual vs AI-assisted mix (manual-reviewed scores rate higher)"
+      }
+    ],
+    "bands": [
+      {
+        "min": 0.8,
+        "label": "high"
+      },
+      {
+        "min": 0.55,
+        "label": "medium"
+      },
+      {
+        "min": 0.0,
+        "label": "low"
+      }
+    ]
+  },
+  "audit_modes": [
+    "manual",
+    "ai_assisted"
+  ],
+  "rubric_to_summary_contract": {
+    "summary_fields": {
+      "rubric": {
+        "rubric_id": "string",
+        "version": "number",
+        "title": "string"
+      },
+      "answers": "object",
+      "computed": {
+        "component_scores": {
+          "domains": "object",
+          "sections": "object"
+        },
+        "overall_score": "number",
+        "grade": "string",
+        "confidence": "string",
+        "confidence_factors": "object"
+      }
+    },
+    "recommended_storage": {
+      "reports.summary.rubric": "Store rubric id/version used for scoring",
+      "reports.summary.answers": "Store raw answers (manual or ai-assisted)",
+      "reports.summary.computed": "Store computed rollups (domain/section/overall)"
+    }
+  },
+  "future_proofing": {
+    "versioning": "Rubrics are immutable once published. New changes require version increment and change_log entry.",
+    "ai_assist": "Answers may include ai metadata; final audits can be locked with human sign-off.",
+    "medico_legal": "Store rubric_id + version + optional rubric hash in report summary; never recompute old reports with new rubric unless explicitly re-scored."
+  },
+  "change_log": [
+    {
+      "version": 1,
+      "date": "2026-01-31",
+      "notes": "Initial published rubric v1"
+    }
+  ]
+}

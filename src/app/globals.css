@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+:root {
+  /* Gold palette (matches logo) */
+  --color-gold: 245 158 11; /* amber-500 */
+  --color-gold-dark: 217 119 6; /* amber-600 */
+  --color-gold-darker: 180 83 9; /* amber-700 */
+}
+
+body {
+  @apply antialiased bg-slate-100 text-slate-900;
+}

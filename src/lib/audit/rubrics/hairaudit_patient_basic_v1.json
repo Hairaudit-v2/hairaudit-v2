@@ -1,0 +1,429 @@
+{
+  "rubric_id": "hairaudit_patient_basic",
+  "version": 1,
+  "title": "HairAudit Patient Basic Audit (Minimum Viable Inputs)",
+  "scoring_model": {
+    "domain_weight_total": 100,
+    "section_weight_total_per_domain": 100,
+    "question_weight_total_per_section": 100,
+    "normalization": "to_100",
+    "missing_answer_policy": "exclude_from_section",
+    "rounding": { "domain": 1, "section": 1, "overall": 1 }
+  },
+  "scale_library": {
+    "s0_5": {
+      "range": [0, 5],
+      "anchors": {
+        "0": "Poor / unacceptable",
+        "1": "Very concerning",
+        "2": "Below standard",
+        "3": "Acceptable",
+        "4": "Good",
+        "5": "Excellent"
+      }
+    }
+  },
+  "grade_schemes": {
+    "active_scheme": "risk",
+    "risk": {
+      "bands": [
+        { "min": 90, "label": "Low Risk" },
+        { "min": 75, "label": "Moderate Risk" },
+        { "min": 55, "label": "Elevated Risk" },
+        { "min": 0,  "label": "High Risk" }
+      ]
+    },
+    "letter": {
+      "bands": [
+        { "min": 90, "label": "A" },
+        { "min": 80, "label": "B" },
+        { "min": 70, "label": "C" },
+        { "min": 60, "label": "D" },
+        { "min": 0,  "label": "F" }
+      ]
+    }
+  },
+  "confidence_model": {
+    "inputs": [
+      { "id": "answer_completeness", "weight": 0.5, "description": "Required fields answered" },
+      { "id": "evidence_coverage", "weight": 0.4, "description": "Minimum image evidence supplied" },
+      { "id": "source_mix", "weight": 0.1, "description": "Manual vs AI (future)" }
+    ],
+    "bands": [
+      { "min": 0.8, "label": "high" },
+      { "min": 0.55, "label": "medium" },
+      { "min": 0.0, "label": "low" }
+    ]
+  },
+  "domains": [
+    {
+      "domain_id": "case_context",
+      "title": "Case Context & Accountability",
+      "weight": 10,
+      "sections": [
+        {
+          "section_id": "case_context.core_metadata",
+          "title": "Required Metadata",
+          "weight": 60,
+          "questions": [
+            {
+              "question_id": "location_country_city",
+              "prompt": "Location of surgery (country + city)",
+              "type": "text",
+              "weight": 0,
+              "required": true
+            },
+            {
+              "question_id": "clinic_name",
+              "prompt": "Clinic name",
+              "type": "text",
+              "weight": 0,
+              "required": true
+            },
+            {
+              "question_id": "surgery_date",
+              "prompt": "Date of surgery (YYYY-MM-DD)",
+              "type": "text",
+              "weight": 0,
+              "required": true
+            },
+            {
+              "question_id": "procedure_cost",
+              "prompt": "Total cost paid (currency + amount)",
+              "type": "text",
+              "weight": 0,
+              "required": true
+            }
+          ]
+        },
+        {
+          "section_id": "case_context.operator_roles",
+          "title": "Operator Roles",
+          "weight": 40,
+          "questions": [
+            {
+              "question_id": "extraction_operator",
+              "prompt": "Who performed the extraction?",
+              "type": "select",
+              "weight": 50,
+              "required": true,
+              "options": [
+                { "value": "doctor", "label": "Doctor", "score": 100 },
+                { "value": "nurse", "label": "Nurse", "score": 85 },
+                { "value": "technician", "label": "Technician", "score": 60 },
+                { "value": "unknown", "label": "Unknown", "score": 40 }
+              ]
+            },
+            {
+              "question_id": "implantation_operator",
+              "prompt": "Who performed the implantation?",
+              "type": "select",
+              "weight": 50,
+              "required": true,
+              "options": [
+                { "value": "doctor", "label": "Doctor", "score": 100 },
+                { "value": "nurse", "label": "Nurse", "score": 85 },
+                { "value": "technician", "label": "Technician", "score": 60 },
+                { "value": "unknown", "label": "Unknown", "score": 40 }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+
+    {
+      "domain_id": "donor_management",
+      "title": "Donor Management",
+      "weight": 20,
+      "sections": [
+        {
+          "section_id": "donor.preop_imaging",
+          "title": "Donor Baseline Evidence",
+          "weight": 50,
+          "questions": [
+            {
+              "question_id": "donor_preop_rear_image_set",
+              "prompt": "Pre-op donor rear image provided (clear, assessable)",
+              "type": "text",
+              "weight": 0,
+              "required": true,
+              "evidence": { "min_items": 1, "types": ["photo"] }
+            },
+            {
+              "question_id": "donor_visibility_quality",
+              "prompt": "Donor visibility/clarity is sufficient to assess (lighting, parting, focus)",
+              "type": "scale",
+              "weight": 100,
+              "required": false,
+              "scale_ref": "s0_5"
+            }
+          ]
+        },
+        {
+          "section_id": "donor.safe_zone_planning",
+          "title": "Safe Zone & Donor Protection (Image-based)",
+          "weight": 50,
+          "questions": [
+            {
+              "question_id": "donor_safe_zone_respected",
+              "prompt": "Harvesting appears within safe donor zone for pattern (based on available images)",
+              "type": "scale",
+              "weight": 60,
+              "required": false,
+              "scale_ref": "s0_5"
+            },
+            {
+              "question_id": "donor_extraction_spread_intent",
+              "prompt": "Distribution suggests a controlled strategy (not clustered/patchy)",
+              "type": "scale",
+              "weight": 40,
+              "required": false,
+              "scale_ref": "s0_5"
+            }
+          ]
+        }
+      ]
+    },
+
+    {
+      "domain_id": "extraction_quality",
+      "title": "Extraction Quality",
+      "weight": 25,
+      "sections": [
+        {
+          "section_id": "extraction.day_of_surgery_evidence",
+          "title": "Day-of-Surgery Donor Evidence",
+          "weight": 35,
+          "questions": [
+            {
+              "question_id": "donor_postop_image_set",
+              "prompt": "Immediate post-extraction donor images provided (same-day)",
+              "type": "text",
+              "weight": 0,
+              "required": true,
+              "evidence": { "min_items": 1, "types": ["photo"] }
+            },
+            {
+              "question_id": "donor_postop_visibility_quality",
+              "prompt": "Post-op donor imagery clarity sufficient to assess extraction pattern/trauma",
+              "type": "scale",
+              "weight": 100,
+              "required": false,
+              "scale_ref": "s0_5"
+            }
+          ]
+        },
+        {
+          "section_id": "extraction.pattern_and_trauma",
+          "title": "Pattern Consistency & Trauma",
+          "weight": 65,
+          "questions": [
+            {
+              "question_id": "extraction_pattern_consistency",
+              "prompt": "Extraction pattern appears even and systematic across sampled zones",
+              "type": "scale",
+              "weight": 40,
+              "required": false,
+              "scale_ref": "s0_5"
+            },
+            {
+              "question_id": "signs_of_overharvesting",
+              "prompt": "Signs of overharvesting/patchiness are absent",
+              "type": "scale",
+              "weight": 35,
+              "required": false,
+              "scale_ref": "s0_5"
+            },
+            {
+              "question_id": "extraction_trauma",
+              "prompt": "Low visible trauma (minimal tearing, excessive bleeding, crushed tissue indicators)",
+              "type": "scale",
+              "weight": 25,
+              "required": false,
+              "scale_ref": "s0_5"
+            }
+          ]
+        }
+      ]
+    },
+
+    {
+      "domain_id": "recipient_implantation",
+      "title": "Recipient Design & Implantation",
+      "weight": 30,
+      "sections": [
+        {
+          "section_id": "recipient.preop_image_set",
+          "title": "Pre-op Recipient Evidence",
+          "weight": 35,
+          "questions": [
+            {
+              "question_id": "preop_front_image",
+              "prompt": "Pre-op front image provided",
+              "type": "text",
+              "weight": 0,
+              "required": true,
+              "evidence": { "min_items": 1, "types": ["photo"] }
+            },
+            {
+              "question_id": "preop_left_image",
+              "prompt": "Pre-op left profile image provided",
+              "type": "text",
+              "weight": 0,
+              "required": true,
+              "evidence": { "min_items": 1, "types": ["photo"] }
+            },
+            {
+              "question_id": "preop_right_image",
+              "prompt": "Pre-op right profile image provided",
+              "type": "text",
+              "weight": 0,
+              "required": true,
+              "evidence": { "min_items": 1, "types": ["photo"] }
+            },
+            {
+              "question_id": "preop_top_image",
+              "prompt": "Pre-op top/mid-scalp image provided",
+              "type": "text",
+              "weight": 0,
+              "required": true,
+              "evidence": { "min_items": 1, "types": ["photo"] }
+            },
+            {
+              "question_id": "preop_crown_image",
+              "prompt": "Pre-op crown image provided",
+              "type": "text",
+              "weight": 0,
+              "required": true,
+              "evidence": { "min_items": 1, "types": ["photo"] }
+            }
+          ]
+        },
+        {
+          "section_id": "recipient.day_of_surgery_evidence",
+          "title": "Day-of-Surgery Recipient Evidence",
+          "weight": 25,
+          "questions": [
+            {
+              "question_id": "recipient_postop_image_set",
+              "prompt": "Immediate post-implantation recipient images provided (same-day)",
+              "type": "text",
+              "weight": 0,
+              "required": true,
+              "evidence": { "min_items": 1, "types": ["photo"] }
+            },
+            {
+              "question_id": "recipient_postop_visibility_quality",
+              "prompt": "Post-op recipient imagery clarity sufficient to assess angles/density",
+              "type": "scale",
+              "weight": 100,
+              "required": false,
+              "scale_ref": "s0_5"
+            }
+          ]
+        },
+        {
+          "section_id": "recipient.design_execution",
+          "title": "Design, Angles & Density (Image-based)",
+          "weight": 40,
+          "questions": [
+            {
+              "question_id": "hairline_design_naturalness",
+              "prompt": "Hairline/recipient design appears natural for age and pattern",
+              "type": "scale",
+              "weight": 35,
+              "required": false,
+              "scale_ref": "s0_5"
+            },
+            {
+              "question_id": "implant_angle_direction",
+              "prompt": "Implant angles/direction appear appropriate (frontal third especially)",
+              "type": "scale",
+              "weight": 35,
+              "required": false,
+              "scale_ref": "s0_5"
+            },
+            {
+              "question_id": "implant_density_strategy",
+              "prompt": "Density strategy appears reasonable for available donor and target areas",
+              "type": "scale",
+              "weight": 30,
+              "required": false,
+              "scale_ref": "s0_5"
+            }
+          ]
+        }
+      ]
+    },
+
+    {
+      "domain_id": "documentation_transparency",
+      "title": "Documentation & Transparency",
+      "weight": 15,
+      "sections": [
+        {
+          "section_id": "docs.minimum_completeness_gate",
+          "title": "Minimum Completeness Gate",
+          "weight": 60,
+          "questions": [
+            {
+              "question_id": "patient_uploaded_required_sets_confirmed",
+              "prompt": "Minimum required image sets have been uploaded (pre-op set + day-of-surgery donor+recipient)",
+              "type": "text",
+              "weight": 0,
+              "required": true,
+              "evidence": { "min_items": 7, "types": ["photo"] }
+            },
+            {
+              "question_id": "audit_notes",
+              "prompt": "Optional notes from patient (symptoms, concerns, goals)",
+              "type": "text",
+              "weight": 0,
+              "required": false
+            }
+          ]
+        },
+        {
+          "section_id": "docs.followup_optional",
+          "title": "Optional Follow-up Evidence (Boosts Confidence)",
+          "weight": 40,
+          "questions": [
+            {
+              "question_id": "followup_day7_images",
+              "prompt": "7-day post-op images provided (optional)",
+              "type": "text",
+              "weight": 0,
+              "required": false,
+              "evidence": { "min_items": 1, "types": ["photo"] }
+            },
+            {
+              "question_id": "followup_month1_images",
+              "prompt": "1-month post-op images provided (optional)",
+              "type": "text",
+              "weight": 0,
+              "required": false,
+              "evidence": { "min_items": 1, "types": ["photo"] }
+            },
+            {
+              "question_id": "followup_month3_images",
+              "prompt": "3-month post-op images provided (optional)",
+              "type": "text",
+              "weight": 0,
+              "required": false,
+              "evidence": { "min_items": 1, "types": ["photo"] }
+            },
+            {
+              "question_id": "followup_month6_images",
+              "prompt": "6-month post-op images provided (optional)",
+              "type": "text",
+              "weight": 0,
+              "required": false,
+              "evidence": { "min_items": 1, "types": ["photo"] }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
