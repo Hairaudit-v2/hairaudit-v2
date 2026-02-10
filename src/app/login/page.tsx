@@ -7,7 +7,9 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import SiteHeader from "@/components/SiteHeader";
 import { B12_SITE_URL } from "@/lib/constants";
 
-export default function LoginPage() {
+export default function LoginPage(_props?: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const supabase = createSupabaseBrowserClient();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
