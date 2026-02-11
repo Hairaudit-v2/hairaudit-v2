@@ -1,6 +1,5 @@
 import Link from "next/link";
 import Image from "next/image";
-import { B12_SITE_URL } from "@/lib/constants";
 
 type SiteHeaderProps = {
   variant?: "default" | "minimal";
@@ -8,8 +7,7 @@ type SiteHeaderProps = {
 };
 
 export default function SiteHeader({ variant = "default", showLogo = true }: SiteHeaderProps) {
-  // On auth pages (minimal), logo links back to main HairAudit B12 site
-  const logoHref = variant === "minimal" ? B12_SITE_URL : "/";
+  const logoHref = "/";
 
   return (
     <header className="border-b border-slate-800 bg-slate-900">
@@ -27,7 +25,52 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
           )}
         </Link>
 
-        {variant === "default" && (
+        {variant === "default" ? (
+          <nav className="flex items-center gap-1 sm:gap-4">
+            <Link
+              href="/"
+              className="text-sm font-medium text-slate-300 hover:text-amber-400 transition-colors hidden sm:block"
+            >
+              Home
+            </Link>
+            <Link
+              href="/about"
+              className="text-sm font-medium text-slate-300 hover:text-amber-400 transition-colors hidden sm:block"
+            >
+              About
+            </Link>
+            <Link
+              href="/services"
+              className="text-sm font-medium text-slate-300 hover:text-amber-400 transition-colors hidden sm:block"
+            >
+              Services
+            </Link>
+            <Link
+              href="/how-it-works"
+              className="text-sm font-medium text-slate-300 hover:text-amber-400 transition-colors hidden sm:block"
+            >
+              How It Works
+            </Link>
+            <Link
+              href="/signup"
+              className="text-sm font-medium text-slate-300 hover:text-amber-400 transition-colors hidden sm:block"
+            >
+              Request an Audit
+            </Link>
+            <Link
+              href="/login"
+              className="text-sm font-medium text-slate-300 hover:text-amber-400 transition-colors px-2"
+            >
+              Sign in
+            </Link>
+            <Link
+              href="/signup"
+              className="text-sm font-medium px-4 py-2 rounded-lg bg-amber-500 text-slate-900 hover:bg-amber-400 transition-colors"
+            >
+              Create account
+            </Link>
+          </nav>
+        ) : (
           <nav className="flex items-center gap-4">
             <Link
               href="/login"

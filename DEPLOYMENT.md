@@ -90,12 +90,14 @@ In Supabase → **Authentication** → **URL Configuration**:
 
 ---
 
-## Step 6: B12 Site Buttons
+## Step 6: B12 Site Buttons (link to hairaudit.com)
 
-In the B12 editor, set the Submit / Login buttons to:
+In the B12 editor, set the Submit / Login buttons to point to the HairAudit app:
 
-- **Submit your case:** `https://hairaudit-git-main-hairaudits-projects.vercel.app/signup`
-- **Login:** `https://hairaudit-git-main-hairaudits-projects.vercel.app/login`
+- **Submit your case:** `https://hairaudit.com/signup`
+- **Login:** `https://hairaudit.com/login`
+
+Any "Get started" or "Sign up" CTA buttons should also link to `https://hairaudit.com/signup`.
 
 ---
 

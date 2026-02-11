@@ -1,2 +1,2 @@
-// Main HairAudit website (B12) - marketing site where users start
-export const B12_SITE_URL = "https://hairaudit-1fi1.b12sites.com";
+// App constants (B12 site has been migrated to this app)
+export const SITE_URL = "https://hairaudit.com";

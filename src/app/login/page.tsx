@@ -5,7 +5,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import SiteHeader from "@/components/SiteHeader";
-import { B12_SITE_URL } from "@/lib/constants";
 
 export default function LoginPage(_props?: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
@@ -35,7 +34,7 @@ export default function LoginPage(_props?: {
       <main className="flex-1 flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
           <a
-            href={B12_SITE_URL}
+            href="/"
             className="inline-flex items-center text-sm text-slate-500 hover:text-amber-400 mb-4 transition-colors"
           >
             ← Back to HairAudit

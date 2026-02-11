@@ -7,7 +7,6 @@ import Image from "next/image";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { ROLE_LABELS, USER_ROLES, type UserRole } from "@/lib/roles";
 import SiteHeader from "@/components/SiteHeader";
-import { B12_SITE_URL } from "@/lib/constants";
 
 export default function SignUpPage() {
   const supabase = createSupabaseBrowserClient();
@@ -55,7 +54,7 @@ export default function SignUpPage() {
       <main className="flex-1 flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
           <a
-            href={B12_SITE_URL}
+            href="/"
             className="inline-flex items-center text-sm text-slate-500 hover:text-amber-400 mb-4 transition-colors"
           >
             ← Back to HairAudit
