@@ -1,3 +1,4 @@
+// HairAudit marketing site (B12 migrated)
 import Link from "next/link";
 import Image from "next/image";
 import SiteHeader from "@/components/SiteHeader";
