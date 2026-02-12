@@ -18,7 +18,7 @@ export async function GET(req: Request) {
   res.cookies.set("dev_role", role, {
     path: "/",
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: false, // dev route only runs in development
     sameSite: "lax",
     maxAge: 60 * 60 * 24, // 24 hours
   });
