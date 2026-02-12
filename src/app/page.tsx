@@ -11,8 +11,19 @@ export default function HomePage() {
 
       <main className="flex-1">
         {/* Hero */}
-        <section className="bg-slate-900 text-white px-4 py-16 sm:py-24">
-          <div className="max-w-4xl mx-auto text-center">
+        <section className="bg-slate-900 text-white px-4 py-16 sm:py-24 relative overflow-hidden">
+          <div className="absolute inset-0">
+            <Image
+              src="/Images/hero.jpg"
+              alt=""
+              fill
+              className="object-cover opacity-30"
+              priority
+              sizes="100vw"
+            />
+            <div className="absolute inset-0 bg-slate-900/80" />
+          </div>
+          <div className="relative max-w-4xl mx-auto text-center">
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
               Independent Hair Transplant Audits
             </h1>
@@ -38,6 +49,27 @@ export default function HomePage() {
               >
                 How it works
               </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* Sample Report Preview */}
+        <section className="px-4 py-16 sm:py-20 bg-white">
+          <div className="max-w-5xl mx-auto">
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 text-center">
+              What you&apos;ll receive
+            </h2>
+            <p className="mt-4 text-slate-600 text-center max-w-2xl mx-auto">
+              Each audit delivers a comprehensive report with structured findings, scores, and expert analysis.
+            </p>
+            <div className="mt-10 rounded-xl overflow-hidden border border-slate-200 shadow-lg">
+              <Image
+                src="/Images/patient-report-sample.jpg"
+                alt="Sample patient audit report"
+                width={1200}
+                height={800}
+                className="w-full h-auto"
+              />
             </div>
           </div>
         </section>
@@ -93,12 +125,35 @@ export default function HomePage() {
                 {
                   title: "Clinic & Surgeon Benchmark Audits",
                   desc: "Structured audits for clinics and surgeons seeking objective quality benchmarking.",
+                  image: "clinic",
                 },
               ].map((s) => (
                 <div
                   key={s.title}
-                  className="p-6 rounded-xl bg-white border border-slate-200 shadow-sm hover:border-amber-200 transition-colors"
+                  className="p-6 rounded-xl bg-white border border-slate-200 shadow-sm hover:border-amber-200 transition-colors overflow-hidden"
                 >
+                  {s.image === "clinic" && (
+                    <div className="grid grid-cols-2 gap-2 -mx-6 -mt-6 mb-4">
+                      <div className="aspect-video">
+                        <Image
+                          src="/Images/clinic-feedback.jpg"
+                          alt="Clinic audit sample"
+                          width={400}
+                          height={225}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="aspect-video">
+                        <Image
+                          src="/Images/doctors-feedback.jpg"
+                          alt="Surgeon audit sample"
+                          width={400}
+                          height={225}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    </div>
+                  )}
                   <h3 className="font-semibold text-slate-900">{s.title}</h3>
                   <p className="mt-2 text-sm text-slate-600">{s.desc}</p>
                   <Link

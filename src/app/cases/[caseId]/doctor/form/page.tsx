@@ -41,15 +41,12 @@ export default async function DoctorFormPage({ params }: { params: Promise<{ cas
         title="Doctor Audit Form"
         description="Complete as the treating physician. This form gathers procedure specifics and medical information."
         backHref={`/cases/${caseId}`}
-        visualRecordsSection={
-          <section className="rounded-xl border border-gray-200 bg-gray-50 p-6">
-            <h2 className="text-lg font-semibold mb-2">Visual Records (Optional)</h2>
-            <p className="text-sm text-gray-600 mb-3">Pre-procedure, surgery, and post-procedure images.</p>
-            <Link href={`/cases/${caseId}/doctor/photos`} className="text-amber-600 hover:underline font-medium">
-              → Upload or view doctor images
-            </Link>
-          </section>
-        }
+        photosNav={{
+          href: `/cases/${caseId}/doctor/photos`,
+          label: "→ Upload or view doctor images",
+          title: "Visual Records (Optional)",
+          description: "Pre-procedure, surgery, and post-procedure images.",
+        }}
       />
     </div>
   );

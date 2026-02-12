@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 
@@ -44,6 +45,18 @@ export default function ServicesPage() {
           <p className="mt-2 text-slate-600">
             HairAudit does not perform hair transplants and does not promote clinics or practitioners.
           </p>
+          <div className="mt-10 rounded-xl overflow-hidden border border-slate-200 shadow-lg mb-12">
+            <Image
+              src="/Images/patient-report-sample.jpg"
+              alt="Sample patient audit report"
+              width={1200}
+              height={800}
+              className="w-full h-auto"
+            />
+            <p className="p-4 text-sm text-slate-500 bg-slate-50">
+              Sample patient audit report
+            </p>
+          </div>
           <div className="mt-12 space-y-8">
             {services.map((s) => (
               <div
@@ -54,6 +67,28 @@ export default function ServicesPage() {
                 <p className="mt-2 text-slate-600">{s.desc}</p>
               </div>
             ))}
+          </div>
+          <div className="mt-10 grid sm:grid-cols-2 gap-6">
+            <div className="rounded-xl overflow-hidden border border-slate-200">
+              <Image
+                src="/Images/clinic-feedback.jpg"
+                alt="Clinic audit sample"
+                width={600}
+                height={400}
+                className="w-full h-auto"
+              />
+              <p className="p-3 text-sm text-slate-500 bg-slate-50">Clinic benchmark audit sample</p>
+            </div>
+            <div className="rounded-xl overflow-hidden border border-slate-200">
+              <Image
+                src="/Images/doctors-feedback.jpg"
+                alt="Surgeon audit sample"
+                width={600}
+                height={400}
+                className="w-full h-auto"
+              />
+              <p className="p-3 text-sm text-slate-500 bg-slate-50">Surgeon benchmark audit sample</p>
+            </div>
           </div>
           <div className="mt-12">
             <Link

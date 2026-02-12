@@ -137,6 +137,14 @@ export async function POST(req: Request) {
     if (profile?.role) role = profile.role as string;
   } catch { /* profiles may not exist */ }
 
+  // In development, allow dev_role cookie to override
+  if (process.env.NODE_ENV === "development") {
+    const devRole = cookieMap.dev_role;
+    if (devRole && ["patient", "doctor", "clinic", "auditor"].includes(devRole)) {
+      role = devRole;
+    }
+  }
+
   const insertData: Record<string, unknown> = {
     user_id: userData.user.id,
     title: role === "doctor" ? "Doctor audit" : role === "clinic" ? "Clinic audit" : "Patient Audit",

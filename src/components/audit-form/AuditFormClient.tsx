@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import QuestionField from "./QuestionField";
 
 type FormQuestion = {
@@ -33,6 +34,7 @@ export default function AuditFormClient({
   backHref,
   backLabel = "Back to case",
   visualRecordsSection,
+  photosNav,
 }: {
   caseId: string;
   caseStatus: string;
@@ -47,12 +49,16 @@ export default function AuditFormClient({
   backHref: string;
   backLabel?: string;
   visualRecordsSection?: React.ReactNode;
+  /** When provided, renders a save-then-navigate button instead of a link for the photos section */
+  photosNav?: { href: string; label: string; title?: string; description?: string };
 }) {
   const [answers, setAnswers] = useState<Record<string, unknown>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null);
+  const hasEditedRef = useRef(false);
   const locked = caseStatus === "submitted" || !!submittedAt;
+  const router = useRouter();
 
   const load = useCallback(async () => {
     const res = await fetch(loadUrl);
@@ -67,17 +73,19 @@ export default function AuditFormClient({
   }, [load]);
 
   const update = (id: string, value: string | number | string[] | boolean | null) => {
+    hasEditedRef.current = true;
     setAnswers((prev) => ({ ...prev, [id]: value }));
   };
 
-  const save = async () => {
+  const save = async (answersToSave?: Record<string, unknown>) => {
+    const payload = answersToSave ?? answers;
     setMessage(null);
     setSaving(true);
     try {
       const res = await fetch(saveUrl, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ [payloadKey]: answers }),
+        body: JSON.stringify({ [payloadKey]: payload }),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json?.error ?? "Save failed");
@@ -88,6 +96,32 @@ export default function AuditFormClient({
       setSaving(false);
     }
   };
+
+  const goToPhotos = async (href: string) => {
+    setMessage(null);
+    setSaving(true);
+    try {
+      const res = await fetch(saveUrl, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ [payloadKey]: answers }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json?.error ?? "Save failed");
+      router.push(href);
+    } catch (e: unknown) {
+      setMessage({ type: "err", text: (e as Error)?.message ?? "Save failed" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Auto-save 2 seconds after last change
+  useEffect(() => {
+    if (!hasEditedRef.current || locked) return;
+    const t = setTimeout(() => save(undefined), 2000);
+    return () => clearTimeout(t);
+  }, [answers, locked]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) {
     return (
@@ -125,7 +159,26 @@ export default function AuditFormClient({
         </section>
       ))}
 
-      {visualRecordsSection}
+      {photosNav ? (
+        <section className="rounded-xl border border-gray-200 bg-gray-50 p-6">
+          <h2 className="text-lg font-semibold text-slate-900 mb-2">
+            {photosNav.title ?? "Visual Records"}
+          </h2>
+          <p className="text-sm text-gray-600 mb-3">
+            {photosNav.description ?? "Upload images in the next step."}
+          </p>
+          <button
+            type="button"
+            onClick={() => goToPhotos(photosNav.href)}
+            disabled={saving || locked}
+            className="text-amber-600 hover:text-amber-500 font-medium disabled:opacity-60"
+          >
+            {saving ? "Saving…" : photosNav.label}
+          </button>
+        </section>
+      ) : (
+        visualRecordsSection
+      )}
 
       <footer className="flex items-center justify-between pt-4 border-t">
         <div className="text-sm text-gray-600">

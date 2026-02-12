@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 
 import SubmitButton from "./submit-button";
 import DownloadReport from "./download-report";
@@ -8,7 +9,7 @@ import AuditScoreBadge from "@/components/reports/AuditScoreBadge";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { canAccessCase } from "@/lib/case-access";
-import { parseRole } from "@/lib/roles";
+import { parseRole, USER_ROLES } from "@/lib/roles";
 
 export default async function Page({ params }: { params: Promise<{ caseId: string }> }) {
   const { caseId } = await params;
@@ -45,6 +46,15 @@ export default async function Page({ params }: { params: Promise<{ caseId: strin
     /* profiles may not exist */
   }
 
+  // In development, allow dev_role cookie to override
+  if (process.env.NODE_ENV === "development") {
+    const cookieStore = await cookies();
+    const devRole = cookieStore.get("dev_role")?.value;
+    if (devRole && USER_ROLES.includes(devRole as any)) {
+      role = devRole as typeof role;
+    }
+  }
+
   const dashboardPath = role === "doctor" ? "/dashboard/doctor" : role === "clinic" ? "/dashboard/clinic" : role === "auditor" ? "/dashboard/auditor" : "/dashboard/patient";
 
   const { data: uploads, error: upErr } = await admin
@@ -55,7 +65,7 @@ export default async function Page({ params }: { params: Promise<{ caseId: strin
 
   const { data: reports, error: repErr } = await admin
     .from("reports")
-    .select("id, version, pdf_path, summary, created_at, status")
+    .select("id, version, pdf_path, summary, created_at")
     .eq("case_id", c.id)
     .order("version", { ascending: false });
 

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 
@@ -9,6 +10,15 @@ export default function AboutPage() {
 
       <main className="flex-1 px-4 py-16 sm:py-20">
         <div className="max-w-3xl mx-auto">
+          <div className="rounded-xl overflow-hidden border border-slate-200 shadow-lg mb-10">
+            <Image
+              src="/Images/hero.jpg"
+              alt="Hair transplant audit"
+              width={1200}
+              height={600}
+              className="w-full h-auto"
+            />
+          </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-slate-900">
             About HairAudit
           </h1>

@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { PATIENT_AUDIT_SECTIONS } from "@/lib/patientAuditForm";
 import type { PatientAuditAnswers, PatientFormQuestion } from "@/lib/patientAuditForm";
 
@@ -18,7 +19,9 @@ export default function PatientAuditFormClient({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null);
+  const hasEditedRef = useRef(false);
   const locked = caseStatus === "submitted" || !!submittedAt;
+  const router = useRouter();
 
   const load = useCallback(async () => {
     const res = await fetch(`/api/patient-answers?caseId=${caseId}`);
@@ -32,17 +35,19 @@ export default function PatientAuditFormClient({
   }, [load]);
 
   const update = (id: string, value: string | number | string[] | boolean | null) => {
+    hasEditedRef.current = true;
     setAnswers((prev) => ({ ...prev, [id]: value }));
   };
 
-  const save = async () => {
+  const save = async (answersToSave?: PatientAuditAnswers) => {
+    const payload = answersToSave ?? answers;
     setMessage(null);
     setSaving(true);
     try {
       const res = await fetch(`/api/patient-answers?caseId=${caseId}`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ patientAnswers: answers }),
+        body: JSON.stringify({ patientAnswers: payload }),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json?.error ?? "Save failed");
@@ -54,6 +59,33 @@ export default function PatientAuditFormClient({
     }
   };
 
+  // Auto-save 2 seconds after last change (so answers persist when navigating away)
+  useEffect(() => {
+    if (!hasEditedRef.current || locked) return;
+    const t = setTimeout(() => {
+      save(undefined);
+    }, 2000);
+    return () => clearTimeout(t);
+  }, [answers, locked]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const goToPhotos = async () => {
+    setMessage(null);
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/patient-answers?caseId=${caseId}`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ patientAnswers: answers }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json?.error ?? "Save failed");
+      router.push(`/cases/${caseId}/patient/photos`);
+    } catch (e: unknown) {
+      setMessage({ type: "err", text: (e as Error)?.message ?? "Save failed" });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -99,14 +131,16 @@ export default function PatientAuditFormClient({
       <section className="rounded-xl border border-gray-200 bg-gray-50 p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-2">Visual Records</h2>
         <p className="text-sm text-gray-600 mb-3">
-          Pre-procedure, surgery, and post-procedure images are uploaded in the previous step.
+          Pre-procedure, surgery, and post-procedure images are uploaded in the next step.
         </p>
-        <Link
-          href={`/cases/${caseId}/patient/photos`}
-          className="text-amber-600 hover:underline font-medium"
+        <button
+          type="button"
+          onClick={goToPhotos}
+          disabled={saving || locked}
+          className="text-amber-600 hover:text-amber-500 font-medium disabled:opacity-60"
         >
-          → Upload or view photos
-        </Link>
+          {saving ? "Saving…" : "→ Upload or view photos"}
+        </button>
       </section>
 
       <footer className="flex items-center justify-between pt-4 border-t">
