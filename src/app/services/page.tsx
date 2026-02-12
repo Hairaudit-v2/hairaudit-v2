@@ -47,7 +47,7 @@ export default function ServicesPage() {
           </p>
           <div className="mt-10 rounded-xl overflow-hidden border border-slate-200 shadow-lg mb-12">
             <Image
-              src="/Images/patient-report-sample.jpg"
+              src="/images/patient-report-sample.jpg"
               alt="Sample patient audit report"
               width={1200}
               height={800}
@@ -71,7 +71,7 @@ export default function ServicesPage() {
           <div className="mt-10 grid sm:grid-cols-2 gap-6">
             <div className="rounded-xl overflow-hidden border border-slate-200">
               <Image
-                src="/Images/clinic-feedback.jpg"
+                src="/images/clinic-feedback.jpg"
                 alt="Clinic audit sample"
                 width={600}
                 height={400}
@@ -81,7 +81,7 @@ export default function ServicesPage() {
             </div>
             <div className="rounded-xl overflow-hidden border border-slate-200">
               <Image
-                src="/Images/doctors-feedback.jpg"
+                src="/images/doctors-feedback.jpg"
                 alt="Surgeon audit sample"
                 width={600}
                 height={400}

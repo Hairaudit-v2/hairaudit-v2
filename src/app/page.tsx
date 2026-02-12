@@ -14,7 +14,7 @@ export default function HomePage() {
         <section className="bg-slate-900 text-white px-4 py-16 sm:py-24 relative overflow-hidden">
           <div className="absolute inset-0">
             <Image
-              src="/Images/hero.jpg"
+              src="/images/hero.jpg"
               alt=""
               fill
               className="object-cover opacity-30"
@@ -64,7 +64,7 @@ export default function HomePage() {
             </p>
             <div className="mt-10 rounded-xl overflow-hidden border border-slate-200 shadow-lg">
               <Image
-                src="/Images/patient-report-sample.jpg"
+                src="/images/patient-report-sample.jpg"
                 alt="Sample patient audit report"
                 width={1200}
                 height={800}
@@ -136,7 +136,7 @@ export default function HomePage() {
                     <div className="grid grid-cols-2 gap-2 -mx-6 -mt-6 mb-4">
                       <div className="aspect-video">
                         <Image
-                          src="/Images/clinic-feedback.jpg"
+                          src="/images/clinic-feedback.jpg"
                           alt="Clinic audit sample"
                           width={400}
                           height={225}
@@ -145,7 +145,7 @@ export default function HomePage() {
                       </div>
                       <div className="aspect-video">
                         <Image
-                          src="/Images/doctors-feedback.jpg"
+                          src="/images/doctors-feedback.jpg"
                           alt="Surgeon audit sample"
                           width={400}
                           height={225}

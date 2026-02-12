@@ -37,7 +37,7 @@ export default function HowItWorksPage() {
                   {hasImage && (
                     <div className="mt-4 rounded-xl overflow-hidden border border-slate-200">
                       <Image
-                        src="/Images/patient-report-sample.jpg"
+                        src="/images/patient-report-sample.jpg"
                         alt="Sample audit report"
                         width={800}
                         height={500}

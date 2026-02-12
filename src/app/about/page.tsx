@@ -12,7 +12,7 @@ export default function AboutPage() {
         <div className="max-w-3xl mx-auto">
           <div className="rounded-xl overflow-hidden border border-slate-200 shadow-lg mb-10">
             <Image
-              src="/Images/hero.jpg"
+              src="/images/hero.jpg"
               alt="Hair transplant audit"
               width={1200}
               height={600}
