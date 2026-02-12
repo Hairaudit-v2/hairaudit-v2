@@ -161,7 +161,7 @@ export default function PatientAuditFormClient({
           {!locked && (
             <>
               <button
-                onClick={save}
+                onClick={() => save()}
                 disabled={saving}
                 className="rounded-lg px-4 py-2 text-sm font-medium border border-amber-500 text-amber-700 hover:bg-amber-50"
               >

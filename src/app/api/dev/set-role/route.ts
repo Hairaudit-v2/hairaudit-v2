@@ -15,12 +15,14 @@ export async function GET(req: Request) {
   }
 
   const res = NextResponse.redirect(new URL(`/dashboard/${role}`, req.url));
-  res.cookies.set("dev_role", role, {
+  // Cookie options: dev route only runs in development, so secure is always false
+  const cookieOpts = {
     path: "/",
     httpOnly: true,
-    secure: false, // dev route only runs in development
-    sameSite: "lax",
-    maxAge: 60 * 60 * 24, // 24 hours
-  });
+    secure: false,
+    sameSite: "lax" as const,
+    maxAge: 60 * 60 * 24,
+  };
+  res.cookies.set("dev_role", role, cookieOpts);
   return res;
 }

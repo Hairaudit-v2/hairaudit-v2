@@ -153,7 +153,7 @@ export default async function Page({ params }: { params: Promise<{ caseId: strin
           <ul className="space-y-4">
             {reports.map((r) => {
               const summary = (r.summary ?? {}) as { score?: number };
-              const isProcessing = r.status === "processing";
+              const isProcessing = !r.pdf_path;
               return (
                 <li key={r.id} className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
                   <div className="flex flex-wrap items-center gap-2">
@@ -165,7 +165,7 @@ export default async function Page({ params }: { params: Promise<{ caseId: strin
                     )}
                     <span className="text-xs text-slate-500">{new Date(r.created_at).toLocaleString()}</span>
                   </div>
-                  {r.pdf_path && !isProcessing && (
+                  {r.pdf_path && (
                     <div className="mt-2">
                       <DownloadReport pdfPath={r.pdf_path} />
                     </div>
