@@ -3,6 +3,8 @@ import Link from "next/link";
 import Image from "next/image";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
+import ScrollReveal from "@/components/ui/ScrollReveal";
+import ServiceCard from "@/components/ui/ServiceCard";
 
 export default function HomePage() {
   return (
@@ -11,7 +13,7 @@ export default function HomePage() {
 
       <main className="flex-1">
         {/* Hero */}
-        <section className="bg-slate-900 text-white px-4 py-16 sm:py-24 relative overflow-hidden">
+        <section className="bg-slate-900 text-white px-4 sm:px-6 py-12 sm:py-20 lg:py-24 relative overflow-hidden">
           <div className="absolute inset-0">
             <Image
               src="/images/hero.jpg"
@@ -54,187 +56,206 @@ export default function HomePage() {
         </section>
 
         {/* Sample Report Preview */}
-        <section className="px-4 py-16 sm:py-20 bg-white">
+        <section className="px-4 sm:px-6 py-12 sm:py-20 bg-white">
           <div className="max-w-5xl mx-auto">
-            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 text-center">
-              What you&apos;ll receive
-            </h2>
-            <p className="mt-4 text-slate-600 text-center max-w-2xl mx-auto">
-              Each audit delivers a comprehensive report with structured findings, scores, and expert analysis.
-            </p>
-            <div className="mt-10 rounded-xl overflow-hidden border border-slate-200 shadow-lg">
-              <Image
-                src="/images/patient-report-sample.jpg"
-                alt="Sample patient audit report"
-                width={1200}
-                height={800}
-                className="w-full h-auto"
-              />
-            </div>
+            <ScrollReveal>
+              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 text-center">
+                What you&apos;ll receive
+              </h2>
+              <p className="mt-3 sm:mt-4 text-slate-600 text-center max-w-2xl mx-auto text-sm sm:text-base">
+                Each audit delivers a comprehensive report with structured findings, scores, and expert analysis.
+              </p>
+            </ScrollReveal>
+            <ScrollReveal delay={0.1}>
+              <div className="mt-8 sm:mt-10 rounded-2xl overflow-hidden border border-slate-200 shadow-lg">
+                <Image
+                  src="/images/patient-report-sample.jpg"
+                  alt="Sample patient audit report"
+                  width={1200}
+                  height={800}
+                  className="w-full h-auto"
+                />
+              </div>
+            </ScrollReveal>
           </div>
         </section>
 
         {/* Intro */}
-        <section className="px-4 py-16 sm:py-20 bg-white">
+        <section className="px-4 sm:px-6 py-12 sm:py-20 bg-white">
           <div className="max-w-4xl mx-auto">
-            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 text-center">
-              Objective, evidence-based clinical assessment
-            </h2>
-            <p className="mt-6 text-slate-600 text-center">
-              HairAudit was created to bring transparency, accountability, and clinical clarity to the
-              hair restoration industry. We provide independent audits of hair transplant procedures
-              by analysing surgical technique, donor area integrity, graft handling, implantation
-              accuracy, and post-operative standards using structured medical review methods.
-            </p>
-            <p className="mt-4 text-slate-600 text-center">
-              HairAudit does not perform hair transplants and does not promote clinics or surgeons.
-              Our role is to deliver unbiased, evidence-based reporting that supports informed patient
-              decisions, corrective planning, and continuous improvement across the industry.
-            </p>
+            <ScrollReveal>
+              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 text-center">
+                Objective, evidence-based clinical assessment
+              </h2>
+            </ScrollReveal>
+            <ScrollReveal delay={0.1}>
+              <p className="mt-6 text-slate-600 text-center text-sm sm:text-base">
+                HairAudit was created to bring transparency, accountability, and clinical clarity to the
+                hair restoration industry. We provide independent audits of hair transplant procedures
+                by analysing surgical technique, donor area integrity, graft handling, implantation
+                accuracy, and post-operative standards using structured medical review methods.
+              </p>
+            </ScrollReveal>
+            <ScrollReveal delay={0.15}>
+              <p className="mt-4 text-slate-600 text-center text-sm sm:text-base">
+                HairAudit does not perform hair transplants and does not promote clinics or surgeons.
+                Our role is to deliver unbiased, evidence-based reporting that supports informed patient
+                decisions, corrective planning, and continuous improvement across the industry.
+              </p>
+            </ScrollReveal>
           </div>
         </section>
 
         {/* Services */}
-        <section id="services" className="px-4 py-16 sm:py-20 bg-slate-50">
-          <div className="max-w-5xl mx-auto">
-            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 text-center">
-              Our services
-            </h2>
-            <p className="mt-4 text-slate-600 text-center max-w-2xl mx-auto">
-              Each audit focuses on surgical quality, donor area management, graft handling,
-              implantation accuracy, and expected growth outcomes.
-            </p>
-            <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[
-                {
-                  title: "Patient Hair Transplant Audit",
-                  desc: "In-depth analysis of hair restoration procedures. Independent review of a patient's hair transplant procedure, including donor area integrity, graft placement, hairline design, and likely growth performance.",
-                },
-                {
-                  title: "Post-Procedure Outcome Analysis",
-                  desc: "Assessment of surgical outcomes following a hair transplant, identifying strengths, risks, and factors that may influence final growth and density.",
-                },
-                {
-                  title: "Donor Area & Extraction Review",
-                  desc: "Detailed analysis of donor area management, extraction patterns, spacing, and potential over-harvesting or trauma.",
-                },
-                {
-                  title: "Implantation & Hairline Design Review",
-                  desc: "Comprehensive evaluation of hair transplant techniques, graft angles, density distribution, and direction.",
-                },
-                {
-                  title: "Clinic & Surgeon Benchmark Audits",
-                  desc: "Structured audits for clinics and surgeons seeking objective quality benchmarking.",
-                  image: "clinic",
-                },
-              ].map((s) => (
-                <div
-                  key={s.title}
-                  className="p-6 rounded-xl bg-white border border-slate-200 shadow-sm hover:border-amber-200 transition-colors overflow-hidden"
-                >
-                  {s.image === "clinic" && (
-                    <div className="grid grid-cols-2 gap-2 -mx-6 -mt-6 mb-4">
-                      <div className="aspect-video">
-                        <Image
-                          src="/images/clinic-feedback.jpg"
-                          alt="Clinic audit sample"
-                          width={400}
-                          height={225}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <div className="aspect-video">
-                        <Image
-                          src="/images/doctors-feedback.jpg"
-                          alt="Surgeon audit sample"
-                          width={400}
-                          height={225}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    </div>
-                  )}
-                  <h3 className="font-semibold text-slate-900">{s.title}</h3>
-                  <p className="mt-2 text-sm text-slate-600">{s.desc}</p>
-                  <Link
-                    href="/signup"
-                    className="inline-block mt-3 text-sm font-medium text-amber-600 hover:text-amber-500"
-                  >
-                    Learn more →
-                  </Link>
-                </div>
-              ))}
+        <section id="services" className="px-4 sm:px-6 py-12 sm:py-20 bg-slate-50">
+          <div className="max-w-6xl mx-auto">
+            <ScrollReveal>
+              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 text-center">
+                Our services
+              </h2>
+              <p className="mt-3 sm:mt-4 text-slate-600 text-center max-w-2xl mx-auto text-sm sm:text-base">
+                Each audit focuses on surgical quality, donor area management, graft handling,
+                implantation accuracy, and expected growth outcomes.
+              </p>
+            </ScrollReveal>
+            <div className="mt-10 sm:mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              <ScrollReveal delay={0}>
+                <ServiceCard
+                  title="Patient Hair Transplant Audit"
+                  shortDesc="Independent review of your procedure with donor area, graft placement, and growth analysis."
+                  fullDesc="Our most comprehensive audit for patients. We analyse your submitted case against clinical standards and deliver a structured report with scores and guidance."
+                  bullets={["Donor area integrity", "Graft placement quality", "Hairline design", "Growth expectations"]}
+                  image={{ src: "/images/patient-report-sample.jpg", alt: "Patient audit report sample" }}
+                />
+              </ScrollReveal>
+              <ScrollReveal delay={0.05}>
+                <ServiceCard
+                  title="Post-Procedure Outcome Analysis"
+                  shortDesc="Assessment of surgical outcomes and growth factors."
+                  fullDesc="Focused on outcomes — healing, graft survival indicators, and factors influencing final density."
+                  bullets={["Healing assessment", "Graft survival", "Density potential", "Follow-up planning"]}
+                  image={{ src: "/images/patient-feedback.jpg", alt: "Post-procedure outcome analysis" }}
+                />
+              </ScrollReveal>
+              <ScrollReveal delay={0.1}>
+                <ServiceCard
+                  title="Donor Area & Extraction Review"
+                  shortDesc="Analysis of extraction patterns and donor sustainability."
+                  fullDesc="Specialised audit of the donor zone — extraction spacing, punch impact, and long-term sustainability."
+                  bullets={["Extraction patterns", "Over-harvesting risk", "Graft quality", "Future capacity"]}
+                  image={{ src: "/images/donor-area.jpg", alt: "Donor area assessment" }}
+                />
+              </ScrollReveal>
+              <ScrollReveal delay={0.15}>
+                <ServiceCard
+                  title="Implantation & Hairline Design Review"
+                  shortDesc="Evaluation of graft angles, density, and hairline design."
+                  fullDesc="Recipient-side quality review — incision angles, density distribution, and aesthetic potential."
+                  bullets={["Incision angles", "Density distribution", "Hairline design", "Aesthetic outcome"]}
+                  image={{ src: "/images/hairline-implantation.jpg", alt: "Hairline and implantation review" }}
+                />
+              </ScrollReveal>
+              <ScrollReveal delay={0.2}>
+                <ServiceCard
+                  title="Clinic & Surgeon Benchmark Audits"
+                  shortDesc="Structured audits for clinics and surgeons seeking benchmarking."
+                  fullDesc="For practices wanting independent benchmarking. We provide structured audits to support quality improvement."
+                  bullets={["Benchmark scores", "Improvement areas", "Case consistency", "Ongoing programs"]}
+                  images={[
+                    { src: "/images/clinic-feedback.jpg", alt: "Clinic audit" },
+                    { src: "/images/doctors-feedback.jpg", alt: "Surgeon audit" },
+                  ]}
+                />
+              </ScrollReveal>
             </div>
+            <ScrollReveal delay={0.25}>
+              <div className="mt-8 sm:mt-10 text-center">
+                <Link
+                  href="/services"
+                  className="inline-flex items-center px-6 py-3 rounded-xl border-2 border-amber-500 text-amber-600 font-semibold hover:bg-amber-50 transition-colors"
+                >
+                  View all services →
+                </Link>
+              </div>
+            </ScrollReveal>
           </div>
         </section>
 
         {/* Audit Process */}
-        <section id="how-it-works" className="px-4 py-16 sm:py-20 bg-white">
+        <section id="how-it-works" className="px-4 sm:px-6 py-12 sm:py-20 bg-white">
           <div className="max-w-5xl mx-auto">
-            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 text-center">
-              Our audit process
-            </h2>
-            <p className="mt-4 text-slate-600 text-center max-w-2xl mx-auto">
-              A structured, evidence-based review from submission to report
-            </p>
-            <p className="mt-2 text-slate-600 text-center max-w-2xl mx-auto">
-              HairAudit follows a clear, step-by-step audit process designed to objectively assess hair
-              transplant quality using clinical evidence and structured review criteria.
-            </p>
-            <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-5 gap-6">
+            <ScrollReveal>
+              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 text-center">
+                Our audit process
+              </h2>
+              <p className="mt-3 sm:mt-4 text-slate-600 text-center max-w-2xl mx-auto text-sm sm:text-base">
+                A structured, evidence-based review from submission to report
+              </p>
+              <p className="mt-2 text-slate-600 text-center max-w-2xl mx-auto text-sm sm:text-base">
+                HairAudit follows a clear, step-by-step audit process designed to objectively assess hair
+                transplant quality using clinical evidence and structured review criteria.
+              </p>
+            </ScrollReveal>
+            <div className="mt-10 sm:mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 sm:gap-4">
               {[
                 { step: 1, title: "Submit Case", desc: "Upload photos and case details" },
                 { step: 2, title: "Review & Analysis", desc: "Structured clinical assessment" },
                 { step: 3, title: "Structured Scoring", desc: "Defined criteria and consistency" },
                 { step: 4, title: "Audit Report", desc: "Comprehensive findings" },
                 { step: 5, title: "Guidance & Next Steps", desc: "Expert guidance for successful outcomes" },
-              ].map(({ step, title, desc }) => (
-                <div key={step} className="text-center">
-                  <div className="w-12 h-12 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-bold mx-auto">
-                    {step}
+              ].map(({ step, title, desc }, i) => (
+                <ScrollReveal key={step} delay={i * 0.05}>
+                  <div className="text-center p-4 sm:p-0">
+                    <div className="w-12 h-12 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-bold mx-auto">
+                      {step}
+                    </div>
+                    <h3 className="mt-3 font-semibold text-slate-900 text-base sm:text-sm">{title}</h3>
+                    <p className="mt-1 text-sm text-slate-600">{desc}</p>
+                    <Link href="/signup" className="mt-2 inline-block text-sm font-medium text-amber-600 hover:text-amber-500">
+                      Learn more →
+                    </Link>
                   </div>
-                  <h3 className="mt-3 font-semibold text-slate-900">{title}</h3>
-                  <p className="mt-1 text-sm text-slate-600">{desc}</p>
-                  <Link href="/signup" className="mt-2 inline-block text-sm font-medium text-amber-600 hover:text-amber-500">
-                    Learn more →
-                  </Link>
-                </div>
+                </ScrollReveal>
               ))}
             </div>
           </div>
         </section>
 
         {/* CTA */}
-        <section className="px-4 py-16 sm:py-20 bg-slate-900 text-white">
+        <section className="px-4 sm:px-6 py-12 sm:py-20 bg-slate-900 text-white">
           <div className="max-w-2xl mx-auto text-center">
-            <h2 className="text-2xl sm:text-3xl font-bold">
-              Request an Audit Review
-            </h2>
-            <p className="mt-4 text-slate-300">
-              Independent, evidence-based review with no clinic promotion or affiliations. Whether you
-              are a patient seeking clarity, or a clinic or surgeon looking to benchmark quality,
-              HairAudit provides an independent pathway to objective clinical insight.
-            </p>
-            <Link
-              href="/signup"
-              className="mt-8 inline-flex items-center justify-center px-8 py-3 rounded-xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors"
-            >
-              Submit your case
-            </Link>
+            <ScrollReveal>
+              <h2 className="text-2xl sm:text-3xl font-bold">
+                Request an Audit Review
+              </h2>
+              <p className="mt-4 text-slate-300 text-sm sm:text-base">
+                Independent, evidence-based review with no clinic promotion or affiliations. Whether you
+                are a patient seeking clarity, or a clinic or surgeon looking to benchmark quality,
+                HairAudit provides an independent pathway to objective clinical insight.
+              </p>
+              <Link
+                href="/signup"
+                className="mt-6 sm:mt-8 inline-flex items-center justify-center px-6 py-3.5 sm:px-8 sm:py-4 rounded-xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors text-base min-h-[44px]"
+              >
+                Submit your case
+              </Link>
+            </ScrollReveal>
           </div>
         </section>
 
         {/* Why Choose HairAudit */}
-        <section className="px-4 py-16 sm:py-20 bg-slate-50">
+        <section className="px-4 sm:px-6 py-12 sm:py-20 bg-slate-50">
           <div className="max-w-5xl mx-auto">
-            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 text-center">
-              Why Choose HairAudit
-            </h2>
-            <p className="mt-4 text-slate-600 text-center max-w-2xl mx-auto">
-              Independent. Evidence-based. Clinically focused. All submissions are handled
-              confidentially and never shared without consent.
-            </p>
-            <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <ScrollReveal>
+              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 text-center">
+                Why Choose HairAudit
+              </h2>
+              <p className="mt-3 sm:mt-4 text-slate-600 text-center max-w-2xl mx-auto text-sm sm:text-base">
+                Independent. Evidence-based. Clinically focused. All submissions are handled
+                confidentially and never shared without consent.
+              </p>
+            </ScrollReveal>
+            <div className="mt-10 sm:mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {[
                 {
                   title: "Truly Independent",
@@ -256,31 +277,30 @@ export default function HomePage() {
                   title: "Global and Procedure-Focused",
                   desc: "HairAudit operates independently of location and clinic size, focusing solely on the quality of the procedure and its likely outcome.",
                 },
-              ].map((item) => (
-                <div
-                  key={item.title}
-                  className="p-6 rounded-xl bg-white border border-slate-200 shadow-sm"
-                >
-                  <h3 className="font-semibold text-slate-900">{item.title}</h3>
-                  <p className="mt-2 text-sm text-slate-600">{item.desc}</p>
-                </div>
+              ].map((item, i) => (
+                <ScrollReveal key={item.title} delay={i * 0.05}>
+                  <div className="p-5 sm:p-6 rounded-xl bg-white border border-slate-200 shadow-sm">
+                    <h3 className="font-semibold text-slate-900 text-base sm:text-lg">{item.title}</h3>
+                    <p className="mt-2 text-sm text-slate-600">{item.desc}</p>
+                  </div>
+                </ScrollReveal>
               ))}
             </div>
           </div>
         </section>
 
         {/* Final CTA */}
-        <section className="px-4 py-12 bg-white border-t border-slate-200">
-          <div className="max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-4">
+        <section className="px-4 sm:px-6 py-10 sm:py-12 bg-white border-t border-slate-200">
+          <div className="max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
             <Link
               href="/signup"
-              className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors"
+              className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3.5 sm:py-3 rounded-xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors min-h-[44px]"
             >
               Create account
             </Link>
             <Link
               href="/login"
-              className="inline-flex items-center justify-center px-6 py-3 rounded-xl border-2 border-slate-300 text-slate-700 font-semibold hover:border-amber-400 hover:bg-amber-50/50 transition-colors"
+              className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3.5 sm:py-3 rounded-xl border-2 border-slate-300 text-slate-700 font-semibold hover:border-amber-400 hover:bg-amber-50/50 transition-colors min-h-[44px]"
             >
               Sign in
             </Link>

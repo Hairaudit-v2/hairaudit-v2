@@ -7,6 +7,10 @@
   --color-gold-darker: 180 83 9; /* amber-700 */
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   @apply antialiased bg-slate-100 text-slate-900;
 }
