@@ -67,12 +67,12 @@ export default function HomePage() {
               </p>
             </ScrollReveal>
             <ScrollReveal delay={0.1}>
-              <div className="mt-8 sm:mt-10 rounded-2xl overflow-hidden border border-slate-200 shadow-lg">
+              <div className="mt-8 sm:mt-10 max-w-2xl mx-auto rounded-2xl overflow-hidden border border-slate-200 shadow-lg">
                 <Image
                   src="/images/patient-report-sample.jpg"
                   alt="Sample patient audit report"
-                  width={1200}
-                  height={800}
+                  width={600}
+                  height={400}
                   className="w-full h-auto"
                 />
               </div>
@@ -211,7 +211,7 @@ export default function HomePage() {
                     </div>
                     <h3 className="mt-3 font-semibold text-slate-900 text-base sm:text-sm">{title}</h3>
                     <p className="mt-1 text-sm text-slate-600">{desc}</p>
-                    <Link href="/signup" className="mt-2 inline-block text-sm font-medium text-amber-600 hover:text-amber-500">
+                    <Link href="/how-it-works" className="mt-2 inline-block text-sm font-medium text-amber-600 hover:text-amber-500">
                       Learn more →
                     </Link>
                   </div>

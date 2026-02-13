@@ -15,11 +15,11 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
         <Link href={logoHref} className="flex items-center gap-3 group">
           {showLogo && (
             <Image
-              src="/hair-audit-logo-white.svg"
+              src="/hair-audit-logo-white.png"
               alt="Hair Audit"
-              width={200}
-              height={60}
-              className="h-12 sm:h-14 w-auto object-contain"
+              width={260}
+              height={80}
+              className="h-16 sm:h-20 w-auto object-contain"
               priority
             />
           )}

@@ -111,12 +111,12 @@ export default function ServicesPage() {
               </p>
             </ScrollReveal>
             <ScrollReveal delay={0.1}>
-              <div className="mt-8 sm:mt-10 rounded-2xl overflow-hidden border border-slate-200 shadow-xl">
+              <div className="mt-8 sm:mt-10 max-w-2xl mx-auto rounded-2xl overflow-hidden border border-slate-200 shadow-xl">
                 <Image
                   src="/images/patient-report-sample.jpg"
                   alt="Sample patient audit report"
-                  width={1200}
-                  height={800}
+                  width={600}
+                  height={400}
                   className="w-full h-auto"
                 />
                 <p className="p-4 sm:p-6 text-sm text-slate-500 bg-slate-50">
@@ -151,46 +151,6 @@ export default function ServicesPage() {
                   />
                 </ScrollReveal>
               ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Clinic & surgeon samples */}
-        <section className="px-4 sm:px-6 py-12 sm:py-16 bg-white">
-          <div className="max-w-5xl mx-auto">
-            <ScrollReveal>
-              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 text-center">
-                Clinic & surgeon reports
-              </h2>
-              <p className="mt-3 sm:mt-4 text-slate-600 text-center max-w-2xl mx-auto text-sm sm:text-base">
-                Benchmark audits for practices seeking independent quality assessment.
-              </p>
-            </ScrollReveal>
-            <div className="mt-8 sm:mt-10 grid sm:grid-cols-2 gap-4 sm:gap-6">
-              <ScrollReveal delay={0.1}>
-                <div className="rounded-2xl overflow-hidden border border-slate-200 shadow-lg">
-                  <Image
-                    src="/images/clinic-feedback.jpg"
-                    alt="Clinic audit sample"
-                    width={600}
-                    height={400}
-                    className="w-full h-auto"
-                  />
-                  <p className="p-4 sm:p-5 text-sm text-slate-500 bg-slate-50">Clinic benchmark audit sample</p>
-                </div>
-              </ScrollReveal>
-              <ScrollReveal delay={0.15}>
-                <div className="rounded-2xl overflow-hidden border border-slate-200 shadow-lg">
-                  <Image
-                    src="/images/doctors-feedback.jpg"
-                    alt="Surgeon audit sample"
-                    width={600}
-                    height={400}
-                    className="w-full h-auto"
-                  />
-                  <p className="p-4 sm:p-5 text-sm text-slate-500 bg-slate-50">Surgeon benchmark audit sample</p>
-                </div>
-              </ScrollReveal>
             </div>
           </div>
         </section>

@@ -62,9 +62,9 @@ export default function SignUpPage() {
           <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
             <div className="mb-6 flex justify-center rounded-xl bg-slate-900 px-4 py-3">
               <Image
-                src="/hair-audit-logo-white.svg"
+                src="/hair-audit-logo-white.png"
                 alt="Hair Audit"
-                width={160}
+                width={220}
                 height={48}
                 className="h-10 w-auto object-contain"
               />

@@ -11,9 +11,9 @@ export default function DashboardHeader() {
         <div className="flex items-center justify-between h-14 sm:h-16">
           <Link href="/" className="flex items-center gap-3 group">
             <Image
-              src="/hair-audit-logo-white.svg"
+              src="/hair-audit-logo-white.png"
               alt="Hair Audit"
-              width={160}
+              width={220}
               height={48}
               className="h-9 sm:h-10 w-auto object-contain"
               priority
