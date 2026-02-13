@@ -44,12 +44,34 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    if (c.submitted_at || c.status === "submitted") {
+    if ((c.submitted_at || c.status === "submitted") && c.status !== "audit_failed") {
       return NextResponse.json({ error: "Case already submitted" }, { status: 409 });
+    }
+
+    // Validate required patient photos before submit (same check as Inngest run-audit)
+    const REQUIRED_CATS = ["preop_front", "preop_sides", "donor_rear"];
+    const { data: uploads } = await admin
+      .from("uploads")
+      .select("type")
+      .eq("case_id", caseId);
+    const catCounts: Record<string, number> = {};
+    for (const u of uploads ?? []) {
+      const prefix = "patient_photo:";
+      if (!u.type?.startsWith(prefix)) continue;
+      const cat = u.type.slice(prefix.length);
+      catCounts[cat] = (catCounts[cat] ?? 0) + 1;
+    }
+    const missing = REQUIRED_CATS.filter((cat) => (catCounts[cat] ?? 0) === 0);
+    if (missing.length) {
+      return NextResponse.json(
+        { error: `Upload required photos first: ${missing.join(", ")}. Go to Step 2: Add your photos.` },
+        { status: 400 }
+      );
     }
 
     const now = new Date().toISOString();
 
+    // Allow resubmit when audit_failed (user fixed and wants to retry)
     const { error: updErr } = await admin
       .from("cases")
       .update({
@@ -58,7 +80,7 @@ export async function POST(req: Request) {
       })
       .eq("id", caseId)
       .eq("user_id", user.id)
-      .eq("status", "draft");
+      .in("status", ["draft", "audit_failed"]);
 
     if (updErr) {
       return NextResponse.json({ error: updErr.message }, { status: 500 });

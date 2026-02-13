@@ -16,7 +16,8 @@ export default function SubmitButton({
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  const locked = caseStatus === "submitted" || !!submittedAt;
+  const locked = caseStatus === "submitted" || (!!submittedAt && caseStatus !== "audit_failed");
+  const isResubmit = caseStatus === "audit_failed";
 
   async function submit() {
     setErr(null);
@@ -50,7 +51,7 @@ export default function SubmitButton({
         disabled={busy || locked}
         className="rounded-lg px-4 py-2.5 font-medium transition-opacity disabled:opacity-60 disabled:cursor-not-allowed bg-amber-500 text-slate-900 hover:bg-amber-400"
       >
-        {locked ? "Already submitted" : busy ? "Submitting…" : "Submit for audit"}
+        {locked ? "Already submitted" : busy ? "Submitting…" : isResubmit ? "Resubmit for audit" : "Submit for audit"}
       </button>
 
       {submittedAt && (
