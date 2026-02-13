@@ -67,12 +67,12 @@ export default function HomePage() {
               </p>
             </ScrollReveal>
             <ScrollReveal delay={0.1}>
-              <div className="mt-8 sm:mt-10 max-w-2xl mx-auto rounded-2xl overflow-hidden border border-slate-200 shadow-lg">
+              <div className="mt-8 sm:mt-10 max-w-[410px] mx-auto rounded-2xl overflow-hidden border border-slate-200 shadow-lg">
                 <Image
                   src="/images/patient-report-sample.jpg"
                   alt="Sample patient audit report"
-                  width={600}
-                  height={400}
+                  width={410}
+                  height={273}
                   className="w-full h-auto"
                 />
               </div>

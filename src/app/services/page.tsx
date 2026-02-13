@@ -111,12 +111,12 @@ export default function ServicesPage() {
               </p>
             </ScrollReveal>
             <ScrollReveal delay={0.1}>
-              <div className="mt-8 sm:mt-10 max-w-2xl mx-auto rounded-2xl overflow-hidden border border-slate-200 shadow-xl">
+              <div className="mt-8 sm:mt-10 max-w-[410px] mx-auto rounded-2xl overflow-hidden border border-slate-200 shadow-xl">
                 <Image
                   src="/images/patient-report-sample.jpg"
                   alt="Sample patient audit report"
-                  width={600}
-                  height={400}
+                  width={410}
+                  height={273}
                   className="w-full h-auto"
                 />
                 <p className="p-4 sm:p-6 text-sm text-slate-500 bg-slate-50">

@@ -92,8 +92,8 @@ export default function PrivacyPage() {
             <p>
               Depending on your location, you may have the right to access, correct, delete, or
               export your personal data. Contact us at{" "}
-              <a href="mailto:tlbpmg@gmail.com" className="text-amber-600 hover:text-amber-500">
-                tlbpmg@gmail.com
+              <a href="mailto:auditor@hairaudit.com" className="text-amber-600 hover:text-amber-500">
+                auditor@hairaudit.com
               </a>{" "}
               to exercise these rights.
             </p>
@@ -112,8 +112,8 @@ export default function PrivacyPage() {
             <h2 className="text-xl font-semibold text-slate-900 mt-8">10. Contact</h2>
             <p>
               For privacy-related questions, contact us at{" "}
-              <a href="mailto:tlbpmg@gmail.com" className="text-amber-600 hover:text-amber-500">
-                tlbpmg@gmail.com
+              <a href="mailto:auditor@hairaudit.com" className="text-amber-600 hover:text-amber-500">
+                auditor@hairaudit.com
               </a>
               .
             </p>

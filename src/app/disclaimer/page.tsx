@@ -68,8 +68,8 @@ export default function DisclaimerPage() {
             <h2 className="text-xl font-semibold text-slate-900 mt-8">Contact</h2>
             <p>
               For questions about this disclaimer, contact us at{" "}
-              <a href="mailto:tlbpmg@gmail.com" className="text-amber-600 hover:text-amber-500">
-                tlbpmg@gmail.com
+              <a href="mailto:auditor@hairaudit.com" className="text-amber-600 hover:text-amber-500">
+                auditor@hairaudit.com
               </a>
               .
             </p>
