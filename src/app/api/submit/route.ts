@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { inngest } from "@/lib/inngest/client";
 import { createClient } from "@supabase/supabase-js";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
+import { getMissingRequiredPatientPhotoCategories } from "@/lib/photoCategories";
 
 function supabaseAdmin() {
   return createClient(
@@ -49,19 +50,11 @@ export async function POST(req: Request) {
     }
 
     // Validate required patient photos before submit (same check as Inngest run-audit)
-    const REQUIRED_CATS = ["preop_front", "preop_sides", "donor_rear"];
     const { data: uploads } = await admin
       .from("uploads")
       .select("type")
       .eq("case_id", caseId);
-    const catCounts: Record<string, number> = {};
-    for (const u of uploads ?? []) {
-      const prefix = "patient_photo:";
-      if (!u.type?.startsWith(prefix)) continue;
-      const cat = u.type.slice(prefix.length);
-      catCounts[cat] = (catCounts[cat] ?? 0) + 1;
-    }
-    const missing = REQUIRED_CATS.filter((cat) => (catCounts[cat] ?? 0) === 0);
+    const missing = getMissingRequiredPatientPhotoCategories(uploads ?? []);
     if (missing.length) {
       return NextResponse.json(
         { error: `Upload required photos first: ${missing.join(", ")}. Go to Step 2: Add your photos.` },

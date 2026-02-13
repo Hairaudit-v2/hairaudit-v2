@@ -20,8 +20,8 @@ const CATEGORY_LABELS: Record<string, string> = {
   preop_top: "Pre-op: Top",
   preop_crown: "Pre-op: Crown",
   preop_donor_rear: "Pre-op: Donor (rear)",
-  day0_recipient: "Day-of surgery: Recipient (immediate post-op)",
-  day0_donor: "Day-of surgery: Donor (immediate post-op)",
+  day0_recipient: "Day-of surgery: Recipient",
+  day0_donor: "Day-of surgery: Donor",
 };
 
 type UploadRow = {

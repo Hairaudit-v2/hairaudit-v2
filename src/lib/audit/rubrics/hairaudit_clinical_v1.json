@@ -251,7 +251,7 @@
             },
             {
               "question_id": "patient_day0_donor_images",
-              "prompt": "Patient provided day-of-surgery donor images (immediate post-extraction)",
+              "prompt": "Patient provided day-of-surgery donor images (day of or day after procedure)",
               "type": "text",
               "weight": 0,
               "required": true,
@@ -264,7 +264,7 @@
             },
             {
               "question_id": "patient_day0_recipient_images",
-              "prompt": "Patient provided day-of-surgery recipient images (immediate post-implantation)",
+              "prompt": "Patient provided day-of-surgery recipient images (day of or day after procedure)",
               "type": "text",
               "weight": 0,
               "required": true,
@@ -385,7 +385,7 @@
           "questions": [
             {
               "question_id": "patient_day0_donor_images",
-              "prompt": "Patient provided day-of-surgery donor images (immediate post-extraction)",
+              "prompt": "Patient provided day-of-surgery donor images (day of or day after procedure)",
               "type": "text",
               "weight": 0,
               "required": true,
@@ -825,7 +825,7 @@
           "questions": [
             {
               "question_id": "patient_day0_recipient_images",
-              "prompt": "Patient provided day-of-surgery recipient images (immediate post-implantation)",
+              "prompt": "Patient provided day-of-surgery recipient images (day of or day after procedure)",
               "type": "text",
               "weight": 0,
               "required": true,

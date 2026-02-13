@@ -2,6 +2,7 @@ import { inngest } from "./client";
 import { createClient } from "@supabase/supabase-js";
 import { runAIAudit } from "@/lib/ai/audit";
 import { notifyPatientAuditFailed, notifyAuditorAuditFailed } from "@/lib/email";
+import { getMissingRequiredPatientPhotoCategories } from "@/lib/photoCategories";
 
 function supabaseAdmin() {
   return createClient(
@@ -14,14 +15,6 @@ function supabaseAdmin() {
 const BUCKET = process.env.CASE_FILES_BUCKET || "case-files";
 
 // Minimal required categories for “submit”
-const REQUIRED_CATS = ["preop_front", "preop_sides", "donor_rear"] as const;
-
-function parseUploadCategory(type: string): string | null {
-  const prefix = "patient_photo:";
-  if (!type?.startsWith(prefix)) return null;
-  return type.slice(prefix.length);
-}
-
 function isImageUpload(type: string): boolean {
   const t = String(type ?? "").toLowerCase();
   return t.includes("image") || t.includes("photo") || t.includes("jpg") || t.includes("png") || t.includes("jpeg") || t.includes("webp");
@@ -129,14 +122,9 @@ export const runAudit = inngest.createFunction(
       return data ?? [];
     });
 
-    const catCounts: Record<string, number> = {};
-    for (const u of uploads) {
-      const cat = parseUploadCategory(u.type);
-      if (!cat) continue;
-      catCounts[cat] = (catCounts[cat] ?? 0) + 1;
-    }
-
-    const missing = REQUIRED_CATS.filter((cat) => (catCounts[cat] ?? 0) === 0);
+    const missing = getMissingRequiredPatientPhotoCategories(
+      uploads.map((u) => ({ type: u.type }))
+    );
     if (missing.length) {
       // Mark case “needs_more_info” or revert to draft
       await step.run("mark-missing", async () => {

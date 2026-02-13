@@ -1,23 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import {
+  PATIENT_PHOTO_CATEGORIES,
+  resolveCategoryForValidation,
+} from "@/lib/photoCategories";
 
-const CATEGORIES: { key: string; label: string; required?: boolean }[] = [
-  { key: "preop_front", label: "Pre-op – Front", required: true },
-  { key: "preop_left", label: "Pre-op – Left", required: true },
-  { key: "preop_right", label: "Pre-op – Right", required: true },
-  { key: "preop_top", label: "Pre-op – Top", required: true },
-  { key: "preop_crown", label: "Pre-op – Crown", required: true },
-  { key: "preop_donor_rear", label: "Pre-op – Donor (rear)", required: true },
-
-  { key: "day0_donor", label: "Day-of-surgery – Donor" },
-  { key: "day0_recipient", label: "Day-of-surgery – Recipient" },
-
-  { key: "day7", label: "Post-op – Day 7" },
-  { key: "month1", label: "Post-op – 1 month" },
-  { key: "month3", label: "Post-op – 3 months" },
-  { key: "month6", label: "Post-op – 6 months" },
-];
+const CATEGORIES = PATIENT_PHOTO_CATEGORIES.map((c) => ({
+  key: c.key,
+  label: c.title,
+  required: c.required,
+}));
 
 type UploadRow = {
   id: string;
@@ -83,13 +76,15 @@ export default function PatientPhotosClient({ caseId }: { caseId: string }) {
   }
 
   function requiredCoverage() {
-    const keysPresent = new Set(
-      uploads
-        .map((u) => u.type || "")
-        .filter((t) => t.startsWith("patient_photo:"))
-        .map((t) => t.replace("patient_photo:", ""))
-    );
-
+    const keysPresent = new Set<string>();
+    for (const u of uploads) {
+      const t = u.type || "";
+      if (!t.startsWith("patient_photo:")) continue;
+      const raw = t.replace("patient_photo:", "");
+      for (const resolved of resolveCategoryForValidation(raw)) {
+        keysPresent.add(resolved);
+      }
+    }
     const required = CATEGORIES.filter((c) => c.required).map((c) => c.key);
     const missing = required.filter((k) => !keysPresent.has(k));
     return { missing, keysPresent };
@@ -101,7 +96,7 @@ export default function PatientPhotosClient({ caseId }: { caseId: string }) {
     <div style={{ marginTop: 22 }}>
       <h2 style={{ fontSize: 18, fontWeight: 800 }}>Patient Photos</h2>
       <p style={{ color: "#555", marginTop: 6 }}>
-        Upload your baseline photos first (front/left/right/top/crown + donor rear). The audit score gets more accurate with better photos.
+        Upload all required Basic Audit photos: pre-op (front, left, right, top, crown, donor rear) and day-of surgery (recipient + donor). The audit score gets more accurate with better photos.
       </p>
 
       {missing.length ? (
