@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   PATIENT_PHOTO_CATEGORIES,
+  PatientPhotoCategory,
   resolveCategoryForValidation,
 } from "@/lib/photoCategories";
 
@@ -113,7 +114,7 @@ export default function PatientPhotosClient({ caseId }: { caseId: string }) {
         <label style={{ fontWeight: 700 }}>Category</label>
         <select
           value={category}
-          onChange={(e) => setCategory(e.target.value)}
+          onChange={(e) => setCategory(e.target.value as PatientPhotoCategory)}
           style={{ padding: 10, borderRadius: 10, border: "1px solid #ddd", maxWidth: 420 }}
         >
           {CATEGORIES.map((c) => (
