@@ -1,6 +1,7 @@
 import { inngest } from "./client";
 import { createClient } from "@supabase/supabase-js";
 import { runAIAudit } from "@/lib/ai/audit";
+import { notifyPatientAuditFailed, notifyAuditorAuditFailed } from "@/lib/email";
 
 function supabaseAdmin() {
   return createClient(
@@ -27,7 +28,65 @@ function isImageUpload(type: string): boolean {
 }
 
 export const runAudit = inngest.createFunction(
-  { id: "run-audit" },
+  {
+    id: "run-audit",
+    retries: 3,
+    onFailure: async ({ error, event: failureEvent, step }) => {
+      const originalEvent = (failureEvent as any).data?.event;
+      const { caseId, userId } = (originalEvent?.data ?? {}) as { caseId?: string; userId?: string };
+      if (!caseId || !userId) {
+        console.error("[runAudit onFailure] Missing caseId/userId in event", failureEvent);
+        return;
+      }
+
+      const supabase = supabaseAdmin();
+      const errMsg = error?.message ?? String(error);
+
+      await step.run("mark-audit-failed", async () => {
+        await supabase
+          .from("cases")
+          .update({ status: "audit_failed" })
+          .eq("id", caseId);
+      });
+
+      await step.run("upsert-failed-report", async () => {
+        const { data: existing } = await supabase
+          .from("reports")
+          .select("id, version")
+          .eq("case_id", caseId)
+          .order("version", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        const nextVersion = (existing?.version ?? 0) + 1;
+        if (existing) {
+          await supabase
+            .from("reports")
+            .update({ status: "failed", error: errMsg })
+            .eq("id", existing.id);
+        } else {
+          await supabase.from("reports").insert({
+            case_id: caseId,
+            version: nextVersion,
+            status: "failed",
+            error: errMsg,
+            pdf_path: null,
+            summary: {},
+          });
+        }
+      });
+
+      await step.run("notify-patient", async () => {
+        const { data: user } = await supabase.auth.admin.getUserById(userId);
+        const email = user?.user?.email;
+        if (email) await notifyPatientAuditFailed(caseId, email, errMsg);
+      });
+
+      await step.run("notify-auditor", async () => {
+        await notifyAuditorAuditFailed(caseId, errMsg);
+      });
+    },
+  },
   { event: "case/submitted" },
   async ({ event, step, logger }) => {
     const { caseId, userId } = event.data as { caseId: string; userId: string };
@@ -216,6 +275,7 @@ export const runAudit = inngest.createFunction(
         version: nextVersion,
         pdf_path: pdfPath,
         summary,
+        status: "complete",
       });
 
       if (error) throw new Error(`reports insert failed: ${error.message}`);

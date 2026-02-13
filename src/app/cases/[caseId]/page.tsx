@@ -65,7 +65,7 @@ export default async function Page({ params }: { params: Promise<{ caseId: strin
 
   const { data: reports, error: repErr } = await admin
     .from("reports")
-    .select("id, version, pdf_path, summary, created_at")
+    .select("id, version, pdf_path, summary, created_at, status, error")
     .eq("case_id", c.id)
     .order("version", { ascending: false });
 
@@ -85,6 +85,21 @@ export default async function Page({ params }: { params: Promise<{ caseId: strin
 
       <h1 className="text-2xl font-bold text-slate-900 mt-4">{c.title ?? "Untitled case"}</h1>
       <p className="text-slate-600 text-sm mt-1">Status: {c.status}</p>
+
+      {role === "auditor" && c.status === "audit_failed" && (
+        <div className="mt-6 p-5 rounded-xl border-2 border-amber-300 bg-amber-50">
+          <h2 className="font-semibold text-slate-900 mb-2">Manual audit required</h2>
+          <p className="text-sm text-slate-600 mb-3">
+            The automated audit failed. Complete a manual audit to finalize this case.
+          </p>
+          <Link
+            href={`/cases/${c.id}/audit`}
+            className="inline-flex items-center rounded-lg px-5 py-3 text-sm font-medium bg-amber-500 text-slate-900 hover:bg-amber-400"
+          >
+            Complete manual audit →
+          </Link>
+        </div>
+      )}
 
       {/* 3-step flow: 1. Information → 2. Photos → 3. Submit */}
       {showPatientFlow && (
@@ -163,18 +178,24 @@ export default async function Page({ params }: { params: Promise<{ caseId: strin
           <ul className="space-y-4">
             {reports.map((r) => {
               const summary = (r.summary ?? {}) as { score?: number };
-              const isProcessing = !r.pdf_path;
+              const isProcessing = !r.pdf_path && (r as any).status !== "failed";
+              const isFailed = (r as any).status === "failed";
               return (
                 <li key={r.id} className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
                   <div className="flex flex-wrap items-center gap-2">
                     <b className="text-slate-900">Report v{r.version}</b>
-                    {isProcessing ? (
+                    {isFailed ? (
+                      <span className="rounded-md bg-red-100 px-2 py-1 text-xs text-red-800">Failed</span>
+                    ) : isProcessing ? (
                       <span className="rounded-md bg-amber-100 px-2 py-1 text-xs text-amber-800">Processing…</span>
                     ) : (
                       <AuditScoreBadge score={summary?.score} />
                     )}
                     <span className="text-xs text-slate-500">{new Date(r.created_at).toLocaleString()}</span>
                   </div>
+                  {isFailed && (r as any).error && (
+                    <p className="mt-2 text-xs text-red-600">{(r as any).error}</p>
+                  )}
                   {r.pdf_path && (
                     <div className="mt-2">
                       <DownloadReport pdfPath={r.pdf_path} />

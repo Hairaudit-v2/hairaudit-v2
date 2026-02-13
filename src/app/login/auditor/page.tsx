@@ -6,9 +6,9 @@ import Image from "next/image";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import SiteHeader from "@/components/SiteHeader";
 
-export default function LoginPage(_props?: {
-  searchParams?: Promise<Record<string, string | string[] | undefined>>;
-}) {
+const AUDITOR_EMAIL = "auditor@hairaudit.com";
+
+export default function AuditorLoginPage() {
   const supabase = createSupabaseBrowserClient();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -18,13 +18,38 @@ export default function LoginPage(_props?: {
     e.preventDefault();
     setMsg(null);
 
+    const normalizedEmail = email.trim().toLowerCase();
+    if (normalizedEmail !== AUDITOR_EMAIL) {
+      setMsg(`Only ${AUDITOR_EMAIL} can sign in here. Use the regular login for other accounts.`);
+      return;
+    }
+
     const { error } = await supabase.auth.signInWithPassword({
-      email,
+      email: normalizedEmail,
       password,
     });
 
-    if (error) setMsg(`❌ ${error.message}`);
-    else window.location.href = "/dashboard";
+    if (error) {
+      setMsg(`❌ ${error.message}`);
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/profiles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: "auditor" }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        console.warn("Profile update failed:", j);
+        // Continue anyway - email check is primary
+      }
+    } catch {
+      // Non-blocking
+    }
+
+    window.location.href = "/dashboard/auditor";
   }
 
   return (
@@ -49,9 +74,9 @@ export default function LoginPage(_props?: {
                 className="h-10 w-auto object-contain"
               />
             </div>
-            <h1 className="text-2xl font-bold text-slate-900">Sign in</h1>
+            <h1 className="text-2xl font-bold text-slate-900">Auditor sign in</h1>
             <p className="mt-2 text-sm text-slate-600">
-              Patients, doctors, and clinics sign in with their own account. You&apos;ll be taken to your dashboard after login.
+              Restricted to authorized auditors only. Use <strong>{AUDITOR_EMAIL}</strong>.
             </p>
 
             <form onSubmit={signIn} className="mt-6 space-y-4">
@@ -66,7 +91,7 @@ export default function LoginPage(_props?: {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-slate-900 placeholder-slate-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-colors"
-                  placeholder="you@example.com"
+                  placeholder={AUDITOR_EMAIL}
                 />
               </div>
               <div>
@@ -85,9 +110,9 @@ export default function LoginPage(_props?: {
               </div>
               <button
                 type="submit"
-                className="w-full rounded-lg bg-amber-500 text-slate-900 py-2.5 font-semibold hover:bg-amber-400 transition-colors focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
+                className="w-full rounded-lg bg-slate-900 text-white py-2.5 font-semibold hover:bg-slate-800 transition-colors focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
               >
-                Sign in
+                Sign in as auditor
               </button>
             </form>
 
@@ -98,13 +123,9 @@ export default function LoginPage(_props?: {
             )}
 
             <p className="mt-6 text-center text-sm text-slate-600">
-              Don&apos;t have an account?{" "}
-              <Link href="/signup" className="font-medium text-amber-600 hover:text-amber-500">
-                Create account
-              </Link>
-              {" · "}
-              <Link href="/login/auditor" className="font-medium text-slate-600 hover:text-slate-800">
-                Auditor login
+              Not an auditor?{" "}
+              <Link href="/login" className="font-medium text-amber-600 hover:text-amber-500">
+                Standard sign in
               </Link>
             </p>
           </div>
