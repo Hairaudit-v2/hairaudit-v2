@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { getReportDownloadUrl } from "./actions";
 
 export default function DownloadReport({ pdfPath }: { pdfPath: string }) {
   const [busy, setBusy] = useState(false);
@@ -11,10 +10,13 @@ export default function DownloadReport({ pdfPath }: { pdfPath: string }) {
     setErr(null);
     setBusy(true);
     try {
-      const url = await getReportDownloadUrl(pdfPath);
-      window.open(url, "_blank", "noopener,noreferrer");
-    } catch (e: any) {
-      setErr(e?.message ?? "Failed to generate download link");
+      const res = await fetch(`/api/reports/signed-url?path=${encodeURIComponent(pdfPath)}`);
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json?.error ?? "Failed to generate download link");
+      if (json.url) window.open(json.url, "_blank", "noopener,noreferrer");
+      else throw new Error("No URL returned");
+    } catch (e: unknown) {
+      setErr((e as Error)?.message ?? "Failed to generate download link");
     } finally {
       setBusy(false);
     }
