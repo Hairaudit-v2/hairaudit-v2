@@ -1,9 +1,20 @@
 import type { NextConfig } from "next";
 import path from "path";
+import fs from "fs";
 
-// Use config file location as project root (avoids wrong cwd when workspace is g:\)
-const projectRoot = path.resolve(path.dirname(require.resolve("./package.json")));
-const tailwindcssPath = path.join(projectRoot, "node_modules", "tailwindcss");
+// Resolve tailwindcss from project (avoids wrong cwd when workspace root is g:\)
+function getTailwindPath(): string {
+  const candidates = [
+    path.join(process.cwd(), "node_modules", "tailwindcss"),
+    path.resolve(path.dirname(require.resolve("./package.json")), "node_modules", "tailwindcss"),
+    path.resolve((process.env.SYSTEMDRIVE || "G") + ":/hairaudit-v2/node_modules/tailwindcss"),
+  ];
+  for (const p of candidates) {
+    if (fs.existsSync(p)) return p;
+  }
+  return candidates[0];
+}
+const tailwindcssPath = getTailwindPath();
 
 const nextConfig: NextConfig = {
   turbopack: {

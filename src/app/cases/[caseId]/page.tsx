@@ -63,11 +63,26 @@ export default async function Page({ params }: { params: Promise<{ caseId: strin
     .eq("case_id", c.id)
     .order("created_at", { ascending: false });
 
-  const { data: reports, error: repErr } = await admin
+  // Try with status/error (requires migration 20250210000004); fallback if columns don't exist
+  let reports: { id: string; version: number; pdf_path: string | null; summary: unknown; created_at: string; status?: string; error?: string | null }[] | null = null;
+  let repErr: { message: string } | null = null;
+  const withStatus = await admin
     .from("reports")
     .select("id, version, pdf_path, summary, created_at, status, error")
     .eq("case_id", c.id)
     .order("version", { ascending: false });
+  if (withStatus.error && (String(withStatus.error.message).includes("status") || String(withStatus.error.message).includes("does not exist"))) {
+    const fallback = await admin
+      .from("reports")
+      .select("id, version, pdf_path, summary, created_at")
+      .eq("case_id", c.id)
+      .order("version", { ascending: false });
+    reports = fallback.data;
+    repErr = fallback.error;
+  } else {
+    reports = withStatus.data;
+    repErr = withStatus.error;
+  }
 
   // Role-specific action links
   const showPatientFlow = role === "patient" || role === "auditor";
