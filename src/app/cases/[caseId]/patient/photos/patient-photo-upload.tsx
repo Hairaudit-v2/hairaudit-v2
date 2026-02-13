@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
+import Link from "next/link";
 import {
   PATIENT_PHOTO_CATEGORIES,
   PatientPhotoCategory,
@@ -147,16 +148,24 @@ export default function PatientPhotoUpload({
             : "Upload required categories to continue"}
         </span>
 
-        <a
-          href={`/cases/${caseId}/patient/questions`}
-          className={`rounded-md px-4 py-2 font-medium ${
-            requiredOk && !isLocked
-              ? "bg-black text-white"
-              : "bg-gray-200 text-gray-500 pointer-events-none"
-          }`}
-        >
-          Continue
-        </a>
+        <div className="flex items-center gap-3">
+          <Link
+            href={`/cases/${caseId}/patient/questions`}
+            className="text-gray-600 hover:text-gray-900"
+          >
+            ← Back to questions
+          </Link>
+          <Link
+            href={`/cases/${caseId}`}
+            className={`rounded-md px-4 py-2 font-medium ${
+              requiredOk && !isLocked
+                ? "bg-amber-500 text-slate-900 hover:bg-amber-400"
+                : "bg-gray-200 text-gray-500 pointer-events-none"
+            }`}
+          >
+            3. Submit for audit
+          </Link>
+        </div>
       </footer>
     </div>
   );

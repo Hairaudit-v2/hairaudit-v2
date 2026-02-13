@@ -127,19 +127,19 @@ export default function PatientAuditFormClient({
         </section>
       ))}
 
-      {/* Visual Records: link to photo upload */}
-      <section className="rounded-xl border border-gray-200 bg-gray-50 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-2">Visual Records</h2>
-        <p className="text-sm text-gray-600 mb-3">
-          Pre-procedure, surgery, and post-procedure images are uploaded in the next step.
+      {/* Visual Records: next step CTA */}
+      <section className="rounded-xl border border-gray-200 bg-amber-50/80 p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-2">2. Add your photos</h2>
+        <p className="text-sm text-gray-600 mb-4">
+          Pre-procedure, surgery, and post-procedure images go in the next step.
         </p>
         <button
           type="button"
           onClick={goToPhotos}
           disabled={saving || locked}
-          className="text-amber-600 hover:text-amber-500 font-medium disabled:opacity-60"
+          className="rounded-lg px-5 py-3 text-sm font-medium bg-amber-500 text-slate-900 hover:bg-amber-400 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
         >
-          {saving ? "Saving…" : "→ Upload or view photos"}
+          {saving ? "Saving…" : "Add your photos →"}
         </button>
       </section>
 
@@ -159,21 +159,13 @@ export default function PatientAuditFormClient({
             Back to case
           </Link>
           {!locked && (
-            <>
-              <button
-                onClick={() => save()}
-                disabled={saving}
-                className="rounded-lg px-4 py-2 text-sm font-medium border border-amber-500 text-amber-700 hover:bg-amber-50"
-              >
-                {saving ? "Saving…" : "Save answers"}
-              </button>
-              <Link
-                href={`/cases/${caseId}`}
-                className="rounded-lg px-4 py-2 text-sm font-medium bg-amber-500 text-slate-900 hover:bg-amber-400"
-              >
-                Continue to submit →
-              </Link>
-            </>
+            <button
+              onClick={() => save()}
+              disabled={saving}
+              className="rounded-lg px-4 py-2 text-sm font-medium border border-amber-500 text-amber-700 hover:bg-amber-50"
+            >
+              {saving ? "Saving…" : "Save answers"}
+            </button>
           )}
         </div>
       </footer>

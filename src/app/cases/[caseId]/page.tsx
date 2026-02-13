@@ -86,60 +86,70 @@ export default async function Page({ params }: { params: Promise<{ caseId: strin
       <h1 className="text-2xl font-bold text-slate-900 mt-4">{c.title ?? "Untitled case"}</h1>
       <p className="text-slate-600 text-sm mt-1">Status: {c.status}</p>
 
-      <div className="mt-6 flex flex-wrap gap-3">
-        {showPatientFlow && (
-          <>
-            <Link
-              href={`/cases/${c.id}/patient/photos`}
-              className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 hover:border-amber-300 hover:bg-amber-50/50 transition-colors"
-            >
-              Patient Photos →
-            </Link>
+      {/* 3-step flow: 1. Information → 2. Photos → 3. Submit */}
+      {showPatientFlow && (
+        <div className="mt-6 p-5 rounded-xl border border-slate-200 bg-white">
+          <h2 className="font-semibold text-slate-900 mb-4">Patient contribution</h2>
+          <div className="flex flex-col sm:flex-row gap-3">
             <Link
               href={`/cases/${c.id}/patient/questions`}
-              className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 hover:border-amber-300 hover:bg-amber-50/50 transition-colors"
+              className="inline-flex items-center justify-center rounded-lg px-5 py-3 text-sm font-medium bg-amber-500 text-slate-900 hover:bg-amber-400 transition-colors"
             >
-              Patient Questions →
+              1. Complete your information
             </Link>
-          </>
-        )}
-        {showDoctorFlow && (
-          <>
+            <Link
+              href={`/cases/${c.id}/patient/photos`}
+              className="inline-flex items-center justify-center rounded-lg px-5 py-3 text-sm font-medium border border-slate-300 text-slate-700 hover:bg-slate-50 transition-colors"
+            >
+              2. Add your photos
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {showDoctorFlow && (
+        <div className="mt-6 p-5 rounded-xl border border-slate-200 bg-white">
+          <h2 className="font-semibold text-slate-900 mb-4">Doctor contribution</h2>
+          <div className="flex flex-col sm:flex-row gap-3">
             <Link
               href={`/cases/${c.id}/doctor/form`}
-              className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 hover:border-blue-300 hover:bg-blue-50/50 transition-colors"
+              className="inline-flex items-center justify-center rounded-lg px-5 py-3 text-sm font-medium bg-blue-500 text-white hover:bg-blue-600 transition-colors"
             >
-              Doctor Form →
+              1. Complete your information
             </Link>
             <Link
               href={`/cases/${c.id}/doctor/photos`}
-              className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 hover:border-blue-300 hover:bg-blue-50/50 transition-colors"
+              className="inline-flex items-center justify-center rounded-lg px-5 py-3 text-sm font-medium border border-slate-300 text-slate-700 hover:bg-slate-50 transition-colors"
             >
-              Doctor Photos →
+              2. Add your photos
             </Link>
-          </>
-        )}
-        {showClinicFlow && (
-          <>
+          </div>
+        </div>
+      )}
+
+      {showClinicFlow && (
+        <div className="mt-6 p-5 rounded-xl border border-slate-200 bg-white">
+          <h2 className="font-semibold text-slate-900 mb-4">Clinic contribution</h2>
+          <div className="flex flex-col sm:flex-row gap-3">
             <Link
               href={`/cases/${c.id}/clinic/form`}
-              className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 hover:border-amber-300 hover:bg-amber-50/50 transition-colors"
+              className="inline-flex items-center justify-center rounded-lg px-5 py-3 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
             >
-              Clinic Form →
+              1. Complete your information
             </Link>
             <Link
               href={`/cases/${c.id}/clinic/photos`}
-              className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 hover:border-amber-300 hover:bg-amber-50/50 transition-colors"
+              className="inline-flex items-center justify-center rounded-lg px-5 py-3 text-sm font-medium border border-slate-300 text-slate-700 hover:bg-slate-50 transition-colors"
             >
-              Clinic Photos →
+              2. Add your photos
             </Link>
-          </>
-        )}
-      </div>
+          </div>
+        </div>
+      )}
 
       {(showPatientFlow || showDoctorFlow || showClinicFlow) && (
-        <div className="mt-6 p-4 rounded-xl border border-slate-200 bg-white">
-          <h2 className="font-semibold text-slate-900 mb-2">Submit</h2>
+        <div className="mt-6 p-5 rounded-xl border border-slate-200 bg-white">
+          <h2 className="font-semibold text-slate-900 mb-2">3. Submit for audit</h2>
           <SubmitButton caseId={c.id} caseStatus={c.status ?? "draft"} submittedAt={c.submitted_at} />
         </div>
       )}

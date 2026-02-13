@@ -47,6 +47,8 @@ export default async function DoctorFormPage({ params }: { params: Promise<{ cas
           title: "Visual Records (Optional)",
           description: "Pre-procedure, surgery, and post-procedure images.",
         }}
+        primaryCtaHref={`/cases/${caseId}/doctor/photos`}
+        primaryCtaLabel="Add your photos →"
       />
     </div>
   );

@@ -24,18 +24,12 @@ export default async function Page({
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
-      <div className="mb-6 flex items-center justify-between">
-        <Link
-          href={`/cases/${caseId}/patient/photos`}
-          className="text-sm text-gray-600 hover:underline"
-        >
-          ← Back to photos
-        </Link>
+      <div className="mb-6">
         <Link
           href={`/cases/${caseId}`}
           className="text-sm text-gray-600 hover:underline"
         >
-          Case overview
+          ← Back to case
         </Link>
       </div>
 

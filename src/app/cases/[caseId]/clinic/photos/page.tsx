@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import CategoryPhotoUpload from "@/components/uploads/CategoryPhotoUpload";
+import SubmitButton from "../../submit-button";
 import { CLINIC_PHOTO_CATEGORIES } from "@/lib/clinicPhotoCategories";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { canAccessCase } from "@/lib/case-access";
@@ -48,6 +49,11 @@ export default async function ClinicPhotosPage({ params }: { params: Promise<{ c
         categories={CLINIC_PHOTO_CATEGORIES}
         uploadApiUrl="/api/uploads/clinic-photos"
       />
+
+      <div className="mt-8 p-5 rounded-xl border border-slate-200 bg-white">
+        <h2 className="font-semibold text-slate-900 mb-2">3. Submit for audit</h2>
+        <SubmitButton caseId={c.id} caseStatus={c.status ?? "draft"} submittedAt={c.submitted_at} />
+      </div>
     </div>
   );
 }

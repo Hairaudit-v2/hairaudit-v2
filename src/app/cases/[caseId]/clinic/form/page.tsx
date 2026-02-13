@@ -47,6 +47,8 @@ export default async function ClinicFormPage({ params }: { params: Promise<{ cas
           title: "Visual Documentation (Optional)",
           description: "Clinic facilities, equipment, and procedure images.",
         }}
+        primaryCtaHref={`/cases/${caseId}/clinic/photos`}
+        primaryCtaLabel="Add your photos →"
       />
     </div>
   );

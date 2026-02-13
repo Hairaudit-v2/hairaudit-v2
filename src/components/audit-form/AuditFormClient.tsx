@@ -35,6 +35,8 @@ export default function AuditFormClient({
   backLabel = "Back to case",
   visualRecordsSection,
   photosNav,
+  primaryCtaHref,
+  primaryCtaLabel,
 }: {
   caseId: string;
   caseStatus: string;
@@ -51,6 +53,9 @@ export default function AuditFormClient({
   visualRecordsSection?: React.ReactNode;
   /** When provided, renders a save-then-navigate button instead of a link for the photos section */
   photosNav?: { href: string; label: string; title?: string; description?: string };
+  /** When provided (e.g. photos page), the main footer CTA saves and navigates here instead of backHref */
+  primaryCtaHref?: string;
+  primaryCtaLabel?: string;
 }) {
   const [answers, setAnswers] = useState<Record<string, unknown>>({});
   const [loading, setLoading] = useState(true);
@@ -162,19 +167,11 @@ export default function AuditFormClient({
       {photosNav ? (
         <section className="rounded-xl border border-gray-200 bg-gray-50 p-6">
           <h2 className="text-lg font-semibold text-slate-900 mb-2">
-            {photosNav.title ?? "Visual Records"}
+            2. Add your photos
           </h2>
           <p className="text-sm text-gray-600 mb-3">
             {photosNav.description ?? "Upload images in the next step."}
           </p>
-          <button
-            type="button"
-            onClick={() => goToPhotos(photosNav.href)}
-            disabled={saving || locked}
-            className="text-amber-600 hover:text-amber-500 font-medium disabled:opacity-60"
-          >
-            {saving ? "Saving…" : photosNav.label}
-          </button>
         </section>
       ) : (
         visualRecordsSection
@@ -199,12 +196,23 @@ export default function AuditFormClient({
               >
                 {saving ? "Saving…" : "Save answers"}
               </button>
-              <Link
-                href={backHref}
-                className="rounded-lg px-4 py-2 text-sm font-medium bg-amber-500 text-slate-900 hover:bg-amber-400"
-              >
-                Continue →
-              </Link>
+              {primaryCtaHref && primaryCtaLabel ? (
+                <button
+                  type="button"
+                  onClick={() => goToPhotos(primaryCtaHref)}
+                  disabled={saving}
+                  className="rounded-lg px-4 py-2 text-sm font-medium bg-amber-500 text-slate-900 hover:bg-amber-400"
+                >
+                  {saving ? "Saving…" : primaryCtaLabel}
+                </button>
+              ) : (
+                <Link
+                  href={backHref}
+                  className="rounded-lg px-4 py-2 text-sm font-medium bg-amber-500 text-slate-900 hover:bg-amber-400"
+                >
+                  Continue →
+                </Link>
+              )}
             </>
           )}
         </div>
