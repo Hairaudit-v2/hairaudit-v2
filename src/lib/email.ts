@@ -6,7 +6,7 @@
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const FROM_EMAIL = process.env.NOTIFICATION_FROM_EMAIL ?? "noreply@hairaudit.com";
-const AUDITOR_EMAIL = process.env.AUDITOR_NOTIFICATION_EMAIL ?? "auditor@hairaudit.com";
+const AUDITOR_EMAIL = process.env.AUDITOR_NOTIFICATION_EMAIL ?? "manager@evolvedhair.com.au";
 
 type SendEmailParams = {
   to: string | string[];

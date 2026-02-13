@@ -4,7 +4,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getUserRole } from "@/lib/case-access";
 import PDFDocument from "pdfkit";
 
-const AUDITOR_EMAIL = "auditor@hairaudit.com";
+const AUDITOR_EMAIL = "manager@evolvedhair.com.au";
 const BUCKET = process.env.CASE_FILES_BUCKET || "case-files";
 
 export async function POST(req: Request) {

@@ -6,7 +6,7 @@ import Image from "next/image";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import SiteHeader from "@/components/SiteHeader";
 
-const AUDITOR_EMAIL = "auditor@hairaudit.com";
+const AUDITOR_EMAIL = "manager@evolvedhair.com.au";
 
 export default function AuditorLoginPage() {
   const supabase = createSupabaseBrowserClient();
@@ -76,7 +76,7 @@ export default function AuditorLoginPage() {
             </div>
             <h1 className="text-2xl font-bold text-slate-900">Auditor sign in</h1>
             <p className="mt-2 text-sm text-slate-600">
-              Restricted to authorized auditors only. Use <strong>{AUDITOR_EMAIL}</strong>.
+              Restricted to authorized auditors only. Use <strong>manager@evolvedhair.com.au</strong>.
             </p>
 
             <form onSubmit={signIn} className="mt-6 space-y-4">

@@ -61,10 +61,10 @@ export default function SiteFooter() {
             <p className="text-sm">1 Main Street</p>
             <p className="text-sm">New York, NY 11111</p>
             <a
-              href="mailto:auditor@hairaudit.com"
+              href="mailto:manager@evolvedhair.com.au"
               className="text-sm hover:text-amber-400 transition-colors block mt-2"
             >
-              auditor@hairaudit.com
+              manager@evolvedhair.com.au
             </a>
           </div>
         </div>

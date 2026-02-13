@@ -78,7 +78,7 @@ In Vercel → Project → **Settings** → **Environment Variables**, add:
 | `REPORT_RENDER_TOKEN` | A random secret string | Production |
 | `RESEND_API_KEY` | Resend API key (for audit failure emails) | Production |
 | `NOTIFICATION_FROM_EMAIL` | Verified sender email (e.g. `noreply@hairaudit.com`) | Production |
-| `AUDITOR_NOTIFICATION_EMAIL` | Email for auditor alerts (default: `auditor@hairaudit.com`) | Production |
+| `AUDITOR_NOTIFICATION_EMAIL` | Email for auditor alerts (default: `manager@evolvedhair.com.au`) | Production |
 | `NEXT_PUBLIC_APP_URL` | App URL for email links (e.g. `https://hairaudit.com`) | Production |
 
 ---
