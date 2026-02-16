@@ -81,10 +81,12 @@ export default function SignUpPage() {
                 </label>
                 <input
                   id="email"
+                  name="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  autoComplete="email"
                   className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-slate-900 placeholder-slate-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-colors"
                 />
               </div>
@@ -94,22 +96,25 @@ export default function SignUpPage() {
                 </label>
                 <input
                   id="password"
+                  name="password"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   minLength={6}
+                  autoComplete="new-password"
                   className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-slate-900 placeholder-slate-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-colors"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+              <div role="group" aria-labelledby="signup-role-label">
+                <label id="signup-role-label" htmlFor="signup-role-patient" className="block text-sm font-medium text-slate-700 mb-2">
                   I am a
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {USER_ROLES.map((r) => (
                     <label
                       key={r}
+                      htmlFor={`signup-role-${r}`}
                       className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border cursor-pointer transition-colors ${
                         role === r
                           ? "border-amber-500 bg-amber-50 text-amber-900"
@@ -118,6 +123,7 @@ export default function SignUpPage() {
                     >
                       <input
                         type="radio"
+                        id={`signup-role-${r}`}
                         name="role"
                         value={r}
                         checked={role === r}

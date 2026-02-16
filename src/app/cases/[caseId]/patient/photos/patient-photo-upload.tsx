@@ -124,6 +124,7 @@ export default function PatientPhotoUpload({
         {PATIENT_PHOTO_CATEGORIES.map((cat) => (
           <PhotoCategoryCard
             key={cat.key}
+            category={cat.key}
             title={cat.title}
             required={cat.required}
             help={cat.help}
@@ -174,6 +175,7 @@ export default function PatientPhotoUpload({
 /* ---------------- Category Card ---------------- */
 
 function PhotoCategoryCard(props: {
+  category: string;
   title: string;
   required: boolean;
   help: string;
@@ -227,6 +229,7 @@ function PhotoCategoryCard(props: {
           <span>{props.existing.length} uploaded</span>
 
           <label
+            htmlFor={`patient-photo-upload-${props.category}`}
             className={`px-3 py-2 rounded-md ${
               props.locked || props.busy
                 ? "bg-gray-200 text-gray-500"
@@ -235,6 +238,8 @@ function PhotoCategoryCard(props: {
           >
             {props.locked ? "Locked" : props.busy ? "Uploading…" : "Choose files"}
             <input
+              id={`patient-photo-upload-${props.category}`}
+              name="patientPhotos"
               type="file"
               className="hidden"
               accept={props.accept}

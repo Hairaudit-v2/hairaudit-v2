@@ -36,24 +36,32 @@ export default function QuestionField({
 
   if (!show) return null;
 
+  const fieldId = `audit-${question.id}`;
   const baseClass = "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 disabled:opacity-60 disabled:bg-gray-100";
+  const opts = question.options ?? [];
+  const primaryControlId = question.type === "checkbox" ? `${fieldId}-${opts[0]?.value ?? "0"}` : fieldId;
 
   const render = () => {
     switch (question.type) {
       case "text":
         return (
           <input
+            id={fieldId}
+            name={question.id}
             type="text"
             className={baseClass}
             placeholder={question.placeholder}
             value={(value as string) ?? ""}
             onChange={(e) => onChange(e.target.value || null)}
             disabled={locked}
+            autoComplete="off"
           />
         );
       case "textarea":
         return (
           <textarea
+            id={fieldId}
+            name={question.id}
             className={`${baseClass} min-h-[80px]`}
             placeholder={question.placeholder}
             value={(value as string) ?? ""}
@@ -64,6 +72,8 @@ export default function QuestionField({
       case "number":
         return (
           <input
+            id={fieldId}
+            name={question.id}
             type="number"
             className={baseClass}
             value={(value as number) ?? ""}
@@ -78,6 +88,8 @@ export default function QuestionField({
       case "date":
         return (
           <input
+            id={fieldId}
+            name={question.id}
             type="date"
             className={baseClass}
             value={(value as string) ?? ""}
@@ -90,11 +102,13 @@ export default function QuestionField({
         const max = question.max ?? 5;
         const num = typeof value === "number" ? value : value ? Number(value) : null;
         return (
-          <div className="flex items-center gap-2 flex-wrap">
+          <div role="group" aria-labelledby={`${fieldId}-label`} className="flex items-center gap-2 flex-wrap">
             {Array.from({ length: max - min + 1 }, (_, i) => min + i).map((n) => (
               <button
                 key={n}
                 type="button"
+                id={n === min ? fieldId : undefined}
+                name={question.id}
                 disabled={locked}
                 onClick={() => onChange(n)}
                 className={`w-10 h-10 rounded-lg border text-sm font-medium transition-colors ${
@@ -110,25 +124,29 @@ export default function QuestionField({
       case "select":
         return (
           <select
+            id={fieldId}
+            name={question.id}
             className={baseClass}
             value={(value as string) ?? ""}
             onChange={(e) => onChange(e.target.value || null)}
             disabled={locked}
           >
             <option value="">— Select —</option>
-            {(question.options ?? []).map((o) => (
+            {opts.map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
             ))}
           </select>
         );
       case "yesno":
         return (
-          <div className="flex gap-4">
+          <div role="radiogroup" aria-labelledby={`${fieldId}-label`} className="flex gap-4">
             {(["yes", "no"] as const).map((v) => (
-              <label key={v} className="flex items-center gap-2 cursor-pointer">
+              <label key={v} htmlFor={v === "yes" ? fieldId : `${fieldId}-${v}`} className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="radio"
+                  id={v === "yes" ? fieldId : `${fieldId}-${v}`}
                   name={question.id}
+                  value={v}
                   checked={(value as string) === v}
                   onChange={() => onChange(v)}
                   disabled={locked}
@@ -142,11 +160,14 @@ export default function QuestionField({
       case "checkbox": {
         const selected = Array.isArray(value) ? value : value ? [String(value)] : [];
         return (
-          <div className="space-y-2">
-            {(question.options ?? []).map((o) => (
-              <label key={o.value} className="flex items-center gap-2 cursor-pointer">
+          <div role="group" aria-labelledby={`${fieldId}-label`} className="space-y-2">
+            {opts.map((o) => (
+              <label key={o.value} htmlFor={`${fieldId}-${o.value}`} className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
+                  id={`${fieldId}-${o.value}`}
+                  name={question.id}
+                  value={o.value}
                   checked={selected.includes(o.value)}
                   onChange={(e) => {
                     const next = e.target.checked ? [...selected, o.value] : selected.filter((x) => x !== o.value);
@@ -168,7 +189,7 @@ export default function QuestionField({
 
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">
+      <label id={`${fieldId}-label`} htmlFor={primaryControlId} className="block text-sm font-medium text-gray-700 mb-1">
         {question.prompt}
         {question.required && <span className="text-amber-600 ml-1">*</span>}
       </label>

@@ -111,8 +111,10 @@ export default function PatientPhotosClient({ caseId }: { caseId: string }) {
       )}
 
       <div style={{ display: "grid", gap: 10, marginTop: 14 }}>
-        <label style={{ fontWeight: 700 }}>Category</label>
+        <label htmlFor="patient-photo-category" style={{ fontWeight: 700 }}>Category</label>
         <select
+          id="patient-photo-category"
+          name="category"
           value={category}
           onChange={(e) => setCategory(e.target.value as PatientPhotoCategory)}
           style={{ padding: 10, borderRadius: 10, border: "1px solid #ddd", maxWidth: 420 }}
@@ -124,8 +126,10 @@ export default function PatientPhotosClient({ caseId }: { caseId: string }) {
           ))}
         </select>
 
-        <label style={{ fontWeight: 700, marginTop: 8 }}>Choose photo(s)</label>
+        <label htmlFor="patient-photo-files" style={{ fontWeight: 700, marginTop: 8 }}>Choose photo(s)</label>
         <input
+          id="patient-photo-files"
+          name="patient-photos"
           type="file"
           accept="image/*"
           multiple

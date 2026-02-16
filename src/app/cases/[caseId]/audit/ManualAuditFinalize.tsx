@@ -73,8 +73,10 @@ export default function ManualAuditFinalize({ caseId }: { caseId: string }) {
       </p>
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Score (0–100)</label>
+          <label htmlFor="manual-audit-score" className="block text-sm font-medium text-slate-700 mb-1">Score (0–100)</label>
           <input
+            id="manual-audit-score"
+            name="score"
             type="number"
             min={0}
             max={100}
@@ -84,8 +86,10 @@ export default function ManualAuditFinalize({ caseId }: { caseId: string }) {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Notes</label>
+          <label htmlFor="manual-audit-notes" className="block text-sm font-medium text-slate-700 mb-1">Notes</label>
           <textarea
+            id="manual-audit-notes"
+            name="notes"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={4}
@@ -93,8 +97,10 @@ export default function ManualAuditFinalize({ caseId }: { caseId: string }) {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Key findings (one per line)</label>
+          <label htmlFor="manual-audit-findings" className="block text-sm font-medium text-slate-700 mb-1">Key findings (one per line)</label>
           <textarea
+            id="manual-audit-findings"
+            name="findings"
             value={findings}
             onChange={(e) => setFindings(e.target.value)}
             rows={4}

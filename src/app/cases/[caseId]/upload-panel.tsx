@@ -79,7 +79,10 @@ export default function UploadPanel({ caseId }: { caseId: string }) {
   return (
     <form onSubmit={onUpload} style={{ marginTop: 12 }}>
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+        <label htmlFor="upload-type" className="sr-only">Upload type</label>
         <select
+          id="upload-type"
+          name="uploadType"
           value={type}
           onChange={(e) => setType(e.target.value as UploadType)}
           style={{ padding: 10, borderRadius: 8, border: "1px solid #ccc" }}
@@ -90,7 +93,10 @@ export default function UploadPanel({ caseId }: { caseId: string }) {
           <option value="other">Other</option>
         </select>
 
+        <label htmlFor="upload-file" className="sr-only">Choose file</label>
         <input
+          id="upload-file"
+          name="file"
           type="file"
           onChange={(e) => setFile(e.target.files?.[0] ?? null)}
         />

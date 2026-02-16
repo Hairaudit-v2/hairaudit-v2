@@ -241,6 +241,7 @@ function Section({
 
             <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
               <label
+                htmlFor={`photos-upload-${x.id}`}
                 style={{
                   padding: "8px 12px",
                   borderRadius: 12,
@@ -252,6 +253,8 @@ function Section({
               >
                 {busy[x.id] ? "Uploading…" : "Upload"}
                 <input
+                  id={`photos-upload-${x.id}`}
+                  name={`photos-${x.id}`}
                   type="file"
                   accept="image/*"
                   multiple

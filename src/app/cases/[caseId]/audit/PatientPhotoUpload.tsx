@@ -129,7 +129,10 @@ function CategoryUploader({
       </div>
 
       <div style={{ marginTop: 10, display: "grid", gap: 10 }}>
+        <label htmlFor="audit-patient-photo-upload" style={{ fontWeight: 700 }}>Choose photo(s)</label>
         <input
+          id="audit-patient-photo-upload"
+          name="auditPatientPhotos"
           type="file"
           accept="image/*"
           multiple

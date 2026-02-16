@@ -70,11 +70,13 @@ export default function PatientPhotoUpload({ caseId }: Props) {
       <div style={{ display: "grid", gap: 12 }}>
         {categories.map((c) => (
           <div key={c.id} style={{ display: "grid", gap: 6 }}>
-            <label style={{ fontWeight: 800 }}>
+            <label htmlFor={`audit-patient-photo-${c.id}`} style={{ fontWeight: 800 }}>
               {c.label} {c.required ? <span style={{ color: "crimson" }}>*</span> : null}
             </label>
 
             <input
+              id={`audit-patient-photo-${c.id}`}
+              name={`audit-patient-photos-${c.id}`}
               type="file"
               accept="image/*"
               multiple={Boolean(c.multiple)}

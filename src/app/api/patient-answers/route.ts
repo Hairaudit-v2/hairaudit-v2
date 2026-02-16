@@ -1,14 +1,6 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
-
-function supabaseAdmin() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { persistSession: false, autoRefreshToken: false } }
-  );
-}
 
 // GET ?caseId=... — load patient answers
 export async function GET(req: Request) {
@@ -21,7 +13,7 @@ export async function GET(req: Request) {
     const { data: { user } } = await auth.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const supabase = supabaseAdmin();
+    const supabase = createSupabaseAdminClient();
     const { data: c } = await supabase
       .from("cases")
       .select("id, user_id")
@@ -43,8 +35,9 @@ export async function GET(req: Request) {
     const patientAnswers = (report?.summary as any)?.patient_answers ?? null;
     return NextResponse.json({ patientAnswers });
   } catch (e: any) {
-    console.error("patient-answers GET:", e);
-    return NextResponse.json({ error: e?.message ?? "Server error" }, { status: 500 });
+    const errMsg = e?.message ?? "Server error";
+    console.error("patient-answers GET:", errMsg, e);
+    return NextResponse.json({ error: errMsg }, { status: 500 });
   }
 }
 
@@ -59,7 +52,7 @@ export async function POST(req: Request) {
     const { data: { user } } = await auth.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const supabase = supabaseAdmin();
+    const supabase = createSupabaseAdminClient();
 
     const { data: c } = await supabase
       .from("cases")
@@ -120,7 +113,8 @@ export async function POST(req: Request) {
     }
     return NextResponse.json({ ok: true, reportId: created.id });
   } catch (e: any) {
-    console.error("patient-answers POST:", e);
-    return NextResponse.json({ error: e?.message ?? "Server error" }, { status: 500 });
+    const errMsg = e?.message ?? "Server error";
+    console.error("patient-answers POST:", errMsg, e);
+    return NextResponse.json({ error: errMsg }, { status: 500 });
   }
 }

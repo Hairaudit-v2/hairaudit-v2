@@ -92,9 +92,11 @@ export default function CategoryPhotoUpload({
           >
             <div className="flex justify-between items-center">
               <span>{uploadsByCategory[cat.key]?.length ?? 0} uploaded</span>
-              <label className={`px-3 py-2 rounded-md ${isLocked || busyCats[cat.key] ? "bg-gray-200 text-gray-500" : "bg-black text-white cursor-pointer"}`}>
+              <label htmlFor={`category-upload-${cat.key}`} className={`px-3 py-2 rounded-md ${isLocked || busyCats[cat.key] ? "bg-gray-200 text-gray-500" : "bg-black text-white cursor-pointer"}`}>
                 {isLocked ? "Locked" : busyCats[cat.key] ? "Uploading…" : "Choose files"}
                 <input
+                  id={`category-upload-${cat.key}`}
+                  name={`uploads-${cat.key}`}
                   type="file"
                   className="hidden"
                   accept={cat.accept}

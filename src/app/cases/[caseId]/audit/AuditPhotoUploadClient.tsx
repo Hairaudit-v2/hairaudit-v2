@@ -87,6 +87,7 @@ export default function AuditPhotoUploadClient({ caseId }: Props) {
               </div>
 
               <label
+                htmlFor={`audit-photo-upload-${c.id}`}
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
@@ -101,6 +102,8 @@ export default function AuditPhotoUploadClient({ caseId }: Props) {
               >
                 {busyCat === c.id ? "Uploading…" : "Choose files"}
                 <input
+                  id={`audit-photo-upload-${c.id}`}
+                  name={`audit-photos-${c.id}`}
                   type="file"
                   accept="image/*"
                   multiple

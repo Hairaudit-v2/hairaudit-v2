@@ -17,6 +17,7 @@ export default function PatientAuditFormClient({
 }) {
   const [answers, setAnswers] = useState<PatientAuditAnswers>({});
   const [loading, setLoading] = useState(true);
+  const [loadingError, setLoadingError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null);
   const hasEditedRef = useRef(false);
@@ -24,9 +25,15 @@ export default function PatientAuditFormClient({
   const router = useRouter();
 
   const load = useCallback(async () => {
+    setLoadingError(null);
     const res = await fetch(`/api/patient-answers?caseId=${caseId}`);
     const json = await res.json().catch(() => ({}));
-    if (json.patientAnswers) setAnswers(json.patientAnswers);
+    if (!res.ok) {
+      setLoadingError(json?.error ?? "Failed to load answers");
+      setAnswers({});
+    } else if (json.patientAnswers) {
+      setAnswers(json.patientAnswers);
+    }
     setLoading(false);
   }, [caseId]);
 
@@ -92,6 +99,21 @@ export default function PatientAuditFormClient({
       <div className="animate-pulse rounded-xl border p-6">
         <div className="h-6 w-48 bg-gray-200 rounded" />
         <div className="h-4 w-full mt-4 bg-gray-100 rounded" />
+      </div>
+    );
+  }
+
+  if (loadingError) {
+    return (
+      <div className="rounded-xl border border-red-200 bg-red-50 p-6">
+        <p className="text-sm font-medium text-red-800">Could not load form</p>
+        <p className="mt-2 text-sm text-red-600">{loadingError}</p>
+        <Link
+          href={`/cases/${caseId}`}
+          className="mt-4 inline-block text-sm font-medium text-red-700 hover:underline"
+        >
+          Back to case
+        </Link>
       </div>
     );
   }
@@ -196,6 +218,7 @@ function QuestionField({
 
   if (!show) return null;
 
+  const fieldId = `patient-${question.id}`;
   const baseClass = "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 disabled:opacity-60 disabled:bg-gray-100";
   const labelClass = "block text-sm font-medium text-gray-700 mb-1";
 
@@ -204,17 +227,22 @@ function QuestionField({
       case "text":
         return (
           <input
+            id={fieldId}
+            name={question.id}
             type="text"
             className={baseClass}
             placeholder={question.placeholder}
             value={(value as string) ?? ""}
             onChange={(e) => onChange(e.target.value || null)}
             disabled={locked}
+            autoComplete="off"
           />
         );
       case "textarea":
         return (
           <textarea
+            id={fieldId}
+            name={question.id}
             className={`${baseClass} min-h-[80px]`}
             placeholder={question.placeholder}
             value={(value as string) ?? ""}
@@ -225,6 +253,8 @@ function QuestionField({
       case "date":
         return (
           <input
+            id={fieldId}
+            name={question.id}
             type="date"
             className={baseClass}
             value={(value as string) ?? ""}
@@ -237,11 +267,13 @@ function QuestionField({
         const max = question.max ?? 5;
         const num = typeof value === "number" ? value : value ? Number(value) : null;
         return (
-          <div className="flex items-center gap-2 flex-wrap">
+          <div role="group" aria-labelledby={`${fieldId}-label`} className="flex items-center gap-2 flex-wrap">
             {Array.from({ length: max - min + 1 }, (_, i) => min + i).map((n) => (
               <button
                 key={n}
                 type="button"
+                id={n === min ? fieldId : undefined}
+                name={question.id}
                 disabled={locked}
                 onClick={() => onChange(n)}
                 className={`w-10 h-10 rounded-lg border text-sm font-medium transition-colors ${
@@ -257,6 +289,8 @@ function QuestionField({
       case "select":
         return (
           <select
+            id={fieldId}
+            name={question.id}
             className={baseClass}
             value={(value as string) ?? ""}
             onChange={(e) => onChange(e.target.value || null)}
@@ -270,12 +304,14 @@ function QuestionField({
         );
       case "yesno":
         return (
-          <div className="flex gap-4">
+          <div role="radiogroup" aria-labelledby={`${fieldId}-label`} className="flex gap-4">
             {(["yes", "no"] as const).map((v) => (
-              <label key={v} className="flex items-center gap-2 cursor-pointer">
+              <label key={v} htmlFor={v === "yes" ? fieldId : `${fieldId}-${v}`} className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="radio"
+                  id={v === "yes" ? fieldId : `${fieldId}-${v}`}
                   name={question.id}
+                  value={v}
                   checked={(value as string) === v}
                   onChange={() => onChange(v)}
                   disabled={locked}
@@ -290,11 +326,14 @@ function QuestionField({
         const selected = Array.isArray(value) ? value : value ? [String(value)] : [];
         const opts = question.options ?? [];
         return (
-          <div className="space-y-2">
+          <div role="group" aria-labelledby={`${fieldId}-label`} className="space-y-2">
             {opts.map((o) => (
-              <label key={o.value} className="flex items-center gap-2 cursor-pointer">
+              <label key={o.value} htmlFor={`${fieldId}-${o.value}`} className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
+                  id={`${fieldId}-${o.value}`}
+                  name={question.id}
+                  value={o.value}
                   checked={selected.includes(o.value)}
                   onChange={(e) => {
                     const next = e.target.checked
@@ -316,9 +355,10 @@ function QuestionField({
     }
   };
 
+  const primaryControlId = question.type === "checkbox" ? `${fieldId}-${question.options?.[0]?.value ?? "0"}` : fieldId;
   return (
     <div>
-      <label className={labelClass}>
+      <label id={`${fieldId}-label`} htmlFor={primaryControlId} className={labelClass}>
         {question.prompt}
         {question.required && <span className="text-amber-600 ml-1">*</span>}
       </label>

@@ -118,7 +118,10 @@ export default function PatientPhotoUpload({ caseId }: { caseId: string }) {
               </div>
 
               <div style={{ marginTop: 10, display: "flex", gap: 10, alignItems: "center" }}>
+                <label htmlFor={`audit-form-upload-${cat}`} className="sr-only">Choose photos for {CATEGORY_LABELS[cat] ?? cat}</label>
                 <input
+                  id={`audit-form-upload-${cat}`}
+                  name={`audit-photos-${cat}`}
                   type="file"
                   accept="image/*"
                   multiple
