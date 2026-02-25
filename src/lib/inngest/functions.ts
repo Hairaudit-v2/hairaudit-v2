@@ -203,6 +203,12 @@ export const runAudit = inngest.createFunction(
         findings: aiResult.findings,
         model: aiResult.model,
         uploadCount: uploads.length,
+        forensic: {
+          summary: aiResult.summary,
+          key_findings: aiResult.key_findings as any,
+          red_flags: aiResult.red_flags as any,
+          non_medical_disclaimer: aiResult.non_medical_disclaimer,
+        },
         confidencePanel: {
           photoCount: uploads.length,
           missingCategories: aiResult.data_quality?.missing_photos ?? [],

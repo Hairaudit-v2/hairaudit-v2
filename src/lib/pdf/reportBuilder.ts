@@ -126,8 +126,175 @@ export type AuditReportContent = {
     domains?: Record<string, number>;
     sections?: Record<string, number>;
   };
+  forensic?: {
+    summary?: string;
+    key_findings?: Array<{
+      title: string;
+      severity: "low" | "medium" | "high" | "critical";
+      impact: string;
+      recommended_next_step: string;
+      evidence: Array<{ source_type: string; source_key: string; observation: string; confidence: number }>;
+    }>;
+    red_flags?: Array<{
+      flag: string;
+      why_it_matters: string;
+      evidence: Array<{ source_type: string; source_key: string; observation: string; confidence: number }>;
+    }>;
+    non_medical_disclaimer?: string;
+  };
   images?: ReportImage[];
 };
+
+function addScoreBadge(doc: PDFKit.PDFDocument, score: number) {
+  const x = MARGIN;
+  const w = CONTENT_WIDTH;
+  const h = 64;
+  const y0 = doc.y;
+
+  const g = doc.linearGradient(x, y0, x + w, y0 + h);
+  g.stop(0, "#0b1226").stop(1, "#111827");
+
+  doc.save();
+  doc.roundedRect(x, y0, w, h, 16).fillColor(g).fill();
+  doc.roundedRect(x, y0, w, h, 16).strokeColor("rgba(245, 158, 11, 0.55)").lineWidth(1).stroke();
+
+  doc.fillColor("#f8fafc").font("Helvetica-Bold").fontSize(12);
+  doc.text("AI Score", x + 18, y0 + 14);
+
+  doc.fillColor("#ffffff").font("Helvetica-Bold").fontSize(34);
+  doc.text(String(Math.round(score)), x + 18, y0 + 26, { continued: true });
+  doc.fillColor("rgba(226,232,240,0.90)").font("Helvetica").fontSize(14);
+  doc.text("/100");
+
+  doc.fillColor("rgba(45, 212, 191, 0.9)").font("Helvetica-Bold").fontSize(10);
+  doc.text("Elite Clinical Intelligence Report", x, y0 + 18, { width: w - 18, align: "right" });
+
+  doc.restore();
+  doc.y = y0 + h + 14;
+}
+
+function severityStyle(sev: string) {
+  const s = String(sev || "").toLowerCase();
+  if (s === "critical") return { fill: "#7f1d1d", text: "#fee2e2", stroke: "#ef4444" };
+  if (s === "high") return { fill: "#991b1b", text: "#fee2e2", stroke: "#f87171" };
+  if (s === "medium") return { fill: "#78350f", text: "#fffbeb", stroke: "#f59e0b" };
+  return { fill: "#0f172a", text: "#e2e8f0", stroke: "#38bdf8" }; // low/default
+}
+
+function addClinicalNarrative(doc: PDFKit.PDFDocument, content: AuditReportContent) {
+  const f = content.forensic;
+  if (!f) return;
+
+  // Start narrative on a fresh page for authority + whitespace.
+  doc.addPage();
+  doc.x = MARGIN;
+  doc.y = MARGIN;
+
+  addSectionHeading(doc, "Clinical Narrative");
+  doc.fillColor(SLATE_900).font("Helvetica").fontSize(BODY_SIZE);
+  const summary = String(f.summary ?? content.notes ?? "").trim();
+  doc.text(summary || "—", { width: CONTENT_WIDTH });
+  doc.moveDown(1.0);
+
+  const keyFindings = Array.isArray(f.key_findings) ? f.key_findings : [];
+  if (keyFindings.length) {
+    addSectionHeading(doc, "Key Findings (Clinical Rationale)");
+
+    const pageH = (doc.page as any).height as number;
+    const bottomLimit = pageH - MARGIN - 40;
+
+    for (const kf of keyFindings.slice(0, 10)) {
+      const title = String(kf.title ?? "").trim();
+      const impact = String(kf.impact ?? "").trim();
+      const next = String(kf.recommended_next_step ?? "").trim();
+      const ev = Array.isArray(kf.evidence) ? kf.evidence : [];
+
+      // Estimate block height and break before if needed
+      const hTitle = doc.heightOfString(title || "Finding", { width: CONTENT_WIDTH - 90 });
+      const hImpact = doc.heightOfString(impact || "—", { width: CONTENT_WIDTH });
+      const hNext = doc.heightOfString(next || "—", { width: CONTENT_WIDTH });
+      const evText = ev.slice(0, 3).map((e) => `• ${String(e.observation ?? "").trim()}`).join("\n");
+      const hEv = evText ? doc.heightOfString(evText, { width: CONTENT_WIDTH - 10 }) : 0;
+      const needed = 14 + hTitle + 8 + hImpact + 8 + hNext + (hEv ? 10 + hEv : 0) + 18;
+
+      if (doc.y + needed > bottomLimit && doc.y > MARGIN + 30) {
+        doc.addPage();
+        doc.x = MARGIN;
+        doc.y = MARGIN;
+        addSectionHeading(doc, "Key Findings (continued)");
+      }
+
+      // Card
+      const x = MARGIN;
+      const w = CONTENT_WIDTH;
+      const y0 = doc.y;
+
+      const bg = doc.linearGradient(x, y0, x, y0 + needed);
+      bg.stop(0, "#ffffff").stop(1, "#f8fafc");
+      doc.roundedRect(x, y0, w, needed, 14).fillColor(bg).fill();
+      doc.roundedRect(x, y0, w, needed, 14).strokeColor("#e2e8f0").lineWidth(1).stroke();
+
+      // Severity pill (right)
+      const sev = severityStyle(kf.severity);
+      const pillW = 78;
+      const pillH = 18;
+      const pillX = x + w - pillW - 14;
+      const pillY = y0 + 14;
+      doc.roundedRect(pillX, pillY, pillW, pillH, 9).fillColor(sev.fill).fill();
+      doc.roundedRect(pillX, pillY, pillW, pillH, 9).strokeColor(sev.stroke).lineWidth(0.8).stroke();
+      doc.fillColor(sev.text).font("Helvetica-Bold").fontSize(9);
+      doc.text(String(kf.severity ?? "low").toUpperCase(), pillX, pillY + 4, { width: pillW, align: "center" });
+
+      // Title
+      doc.fillColor(SLATE_900).font("Helvetica-Bold").fontSize(12);
+      doc.text(title || "Key finding", x + 14, y0 + 14, { width: w - 14 - pillW - 18 });
+
+      let y = y0 + 14 + Math.max(16, hTitle) + 6;
+
+      // Impact (clinical-grade explanation)
+      doc.fillColor(SLATE_600).font("Helvetica").fontSize(11);
+      doc.text(impact || "—", x + 14, y, { width: w - 28 });
+      y += hImpact + 8;
+
+      // Next step
+      doc.fillColor(SLATE_900).font("Helvetica-Bold").fontSize(10);
+      doc.text("Next step:", x + 14, y, { continued: false });
+      doc.fillColor(SLATE_600).font("Helvetica").fontSize(10);
+      doc.text(next || "—", x + 14 + 58, y, { width: w - 28 - 58 });
+      y += Math.max(12, hNext) + 6;
+
+      // Evidence snippets (1–3)
+      if (evText) {
+        doc.fillColor(SLATE_400).font("Helvetica-Bold").fontSize(9);
+        doc.text("Support:", x + 14, y);
+        y += 12;
+        doc.fillColor(SLATE_600).font("Helvetica").fontSize(9);
+        doc.text(evText, x + 22, y, { width: w - 36 });
+      }
+
+      doc.y = y0 + needed + 12;
+    }
+  }
+
+  const redFlags = Array.isArray(f.red_flags) ? f.red_flags : [];
+  if (redFlags.length) {
+    addSectionHeading(doc, "Red Flags");
+    doc.fillColor(SLATE_600).font("Helvetica").fontSize(11);
+    for (const rf of redFlags.slice(0, 8)) {
+      doc.fillColor("#991b1b").font("Helvetica-Bold").fontSize(11);
+      doc.text(`• ${String(rf.flag ?? "").trim()}`);
+      doc.fillColor(SLATE_600).font("Helvetica").fontSize(10);
+      doc.text(String(rf.why_it_matters ?? "").trim(), { indent: 12 });
+      doc.moveDown(0.6);
+    }
+  }
+
+  if (f.non_medical_disclaimer) {
+    doc.moveDown(0.6);
+    doc.fillColor(SLATE_400).font("Helvetica").fontSize(META_SIZE);
+    doc.text(String(f.non_medical_disclaimer).trim(), { width: CONTENT_WIDTH });
+  }
+}
 
 /**
  * Add branded header. Pass logoBuffer (PNG/JPEG) to embed a logo.
@@ -292,9 +459,7 @@ function addAuditSummary(
   doc.fontSize(BODY_SIZE).font("Helvetica");
 
   if (content.score != null) {
-    doc.font("Helvetica-Bold").fillColor(SLATE_900);
-    doc.text(`Overall Score: ${content.score}/100`, { continued: false });
-    doc.font("Helvetica").fillColor(SLATE_600);
+    addScoreBadge(doc, content.score);
   }
 
   if (radarPng?.buffer) {
@@ -322,13 +487,12 @@ function addAuditSummary(
     doc.text(`Graft Survival Estimate: ${content.graftSurvival}`);
   doc.moveDown(0.8);
 
-  doc.text("Notes:", { continued: false });
-  doc.text(content.notes || "—", { indent: 10, align: "left" });
-
-  if (content.findings?.length) {
-    doc.moveDown(0.8);
-    doc.text("Key Findings:", { continued: false });
-    content.findings.forEach((f) => doc.text(`• ${f}`, { indent: 10, align: "left" }));
+  // Keep page 1 clean. Detailed narrative is rendered in later sections/pages.
+  const microSummary = String(content.forensic?.summary ?? content.notes ?? "").trim();
+  if (microSummary) {
+    doc.fillColor(SLATE_600).font("Helvetica").fontSize(11);
+    doc.text(microSummary, { width: CONTENT_WIDTH });
+    doc.moveDown(0.6);
   }
 
   // AI signature footer (premium)
@@ -353,8 +517,10 @@ function addAuditSummary(
     doc.font("Helvetica").fillColor(SLATE_400);
     doc.text("Multi-Layer Visual Pattern Recognition Engine");
 
-    const modelLabel = content.model?.toLowerCase().includes("gpt-4o") ? "Vision Model" : "Model";
-    if (content.model) doc.text(`${modelLabel}: ${content.model.toUpperCase()}`);
+    const isVision = Boolean(content.model?.toLowerCase().includes("gpt-4o"));
+    const modelLabel = isVision ? "Vision Model" : "Model";
+    const modelName = isVision ? "GPT-4o" : (content.model ?? "");
+    if (modelName) doc.text(`${modelLabel}: ${modelName}`);
     if (confStr) doc.text(`Confidence Score: ${confStr}`);
 
     doc.fontSize(BODY_SIZE).fillColor(SLATE_600);
@@ -550,6 +716,7 @@ export async function buildAuditReportPdf(
   }
 
   addAuditSummary(doc, content, radarImg);
+  addClinicalNarrative(doc, content);
   addScoreByArea(doc, content);
 
   // Add images if provided (with buffers already fetched)
