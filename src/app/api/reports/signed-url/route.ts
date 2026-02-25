@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { canAccessCase } from "@/lib/case-access";
+import { tryCreateSupabaseAdminClient } from "@/lib/supabase/admin";
+import { parseRole } from "@/lib/roles";
+
+function extractCaseIdFromPath(p: string): string {
+  const parts = p.split("/").filter(Boolean);
+  if (parts[0] === "cases" && parts[1]) return parts[1];
+  return parts[0] ?? "";
+}
 
 export async function GET(req: Request) {
   try {
@@ -11,24 +17,45 @@ export async function GET(req: Request) {
     if (!pdfPath) return NextResponse.json({ error: "Missing path" }, { status: 400 });
 
     const supabaseAuth = await createSupabaseAuthServerClient();
-  const { data: { user }, error: authErr } = await supabaseAuth.auth.getUser();
-  if (authErr || !user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+    const {
+      data: { user },
+      error: authErr,
+    } = await supabaseAuth.auth.getUser();
+    if (authErr || !user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-  const caseId = pdfPath.split("/")[0];
-  const admin = createSupabaseAdminClient();
-  const { data: c } = await admin.from("cases").select("id, user_id, patient_id, doctor_id, clinic_id").eq("id", caseId).maybeSingle();
-  const allowed = await canAccessCase(user.id, c ?? null);
-  if (!c || !allowed) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+    const caseId = extractCaseIdFromPath(pdfPath);
+    if (!caseId) return NextResponse.json({ error: "Invalid path" }, { status: 400 });
+
+    const admin = tryCreateSupabaseAdminClient();
+    const db = admin ?? supabaseAuth;
+
+    const { data: c } = await db
+      .from("cases")
+      .select("id, user_id, patient_id, doctor_id, clinic_id")
+      .eq("id", caseId)
+      .maybeSingle();
+
+    const role = parseRole((user.user_metadata as Record<string, unknown>)?.role);
+    const allowed =
+      Boolean(c) &&
+      (c!.user_id === user.id ||
+        c!.patient_id === user.id ||
+        c!.doctor_id === user.id ||
+        c!.clinic_id === user.id ||
+        role === "auditor");
+
+    if (!c || !allowed) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
 
     const bucket = process.env.CASE_FILES_BUCKET || "case-files";
     let data: { signedUrl: string } | null = null;
     let storageError: Error | null = null;
 
-    const { data: d1, error: e1 } = await admin.storage.from(bucket).createSignedUrl(pdfPath, 60);
+    const storage = (admin ?? supabaseAuth).storage;
+    const { data: d1, error: e1 } = await storage.from(bucket).createSignedUrl(pdfPath, 60);
     if (!e1 && d1?.signedUrl) {
       data = d1;
     } else {
@@ -37,7 +64,7 @@ export async function GET(req: Request) {
       const parts = pdfPath.split("/");
       if (parts.length === 2 && parts[1]?.startsWith("v") && parts[1]?.endsWith(".pdf")) {
         const altPath = `cases/${parts[0]}/reports/${parts[1]}`;
-        const { data: d2, error: e2 } = await admin.storage.from(bucket).createSignedUrl(altPath, 60);
+        const { data: d2, error: e2 } = await storage.from(bucket).createSignedUrl(altPath, 60);
         if (!e2 && d2?.signedUrl) data = d2;
         else if (e2) storageError = e2 as unknown as Error;
       }

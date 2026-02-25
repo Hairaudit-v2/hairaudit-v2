@@ -15,18 +15,27 @@ export default function SignUpPage() {
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<UserRole>("patient");
   const [msg, setMsg] = useState<string | null>(null);
+  const [msgKind, setMsgKind] = useState<"error" | "success">("error");
   const [busy, setBusy] = useState(false);
 
   async function signUp(e: React.FormEvent) {
     e.preventDefault();
     setMsg(null);
+    setMsgKind("error");
     setBusy(true);
 
-    const { error } = await supabase.auth.signUp({
+    // IMPORTANT: Prevent localhost leaking into Supabase confirmation emails.
+    // If NEXT_PUBLIC_APP_URL is not set, default to production domain.
+    const appUrl =
+      (process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "") || "").trim() ||
+      "https://hairaudit.com";
+    const emailRedirectTo = `${appUrl}/auth/callback`;
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: { role },
+        emailRedirectTo,
       },
     });
 
@@ -36,11 +45,20 @@ export default function SignUpPage() {
       return;
     }
 
+    // If email confirmations are enabled in Supabase, signUp() succeeds but returns no session.
+    // In that case, the user must click the email link (which hits /auth/callback) before they can be signed in.
+    if (!data.session) {
+      setMsg("✅ Check your email to confirm your address, then come back and sign in.");
+      setMsgKind("success");
+      setBusy(false);
+      return;
+    }
+
     await fetch("/api/profiles", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ role }),
-    });
+    }).catch(() => {});
 
     router.push("/dashboard");
     router.refresh();
@@ -53,12 +71,12 @@ export default function SignUpPage() {
 
       <main className="flex-1 flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
-          <a
+          <Link
             href="/"
             className="inline-flex items-center text-sm text-slate-500 hover:text-amber-400 mb-4 transition-colors"
           >
             ← Back to HairAudit
-          </a>
+          </Link>
           <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
             <div className="mb-6 flex justify-center rounded-xl bg-slate-900 px-4 py-3">
               <Image
@@ -145,7 +163,13 @@ export default function SignUpPage() {
             </form>
 
             {msg && (
-              <p className="mt-4 text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">
+              <p
+                className={`mt-4 text-sm rounded-lg px-3 py-2 ${
+                  msgKind === "success"
+                    ? "text-emerald-700 bg-emerald-50"
+                    : "text-red-600 bg-red-50"
+                }`}
+              >
                 {msg}
               </p>
             )}

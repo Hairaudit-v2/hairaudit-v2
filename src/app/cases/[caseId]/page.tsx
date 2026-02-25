@@ -13,8 +13,7 @@ import rubric from "@/lib/audit/rubrics/hairaudit_clinical_v1.json";
 import { mapLegacyDoctorAnswers } from "@/lib/doctorAuditSchema";
 
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { canAccessCase } from "@/lib/case-access";
+import { tryCreateSupabaseAdminClient } from "@/lib/supabase/admin";
 import { parseRole, USER_ROLES } from "@/lib/roles";
 
 export default async function Page({ params }: { params: Promise<{ caseId: string }> }) {
@@ -23,21 +22,37 @@ export default async function Page({ params }: { params: Promise<{ caseId: strin
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const admin = createSupabaseAdminClient();
+  const admin = tryCreateSupabaseAdminClient();
+  const db = admin ?? supabase;
+
+  let role = parseRole((user.user_metadata as Record<string, unknown>)?.role);
+  try {
+    const { data: profile } = await db.from("profiles").select("role").eq("id", user.id).maybeSingle();
+    if (profile?.role) role = parseRole(profile.role);
+  } catch {
+    /* profiles may not exist / RLS may block */
+  }
+
   let c: { id: string; title?: string; status?: string; created_at?: string; user_id?: string; submitted_at?: string | null; patient_id?: string | null; doctor_id?: string | null; clinic_id?: string | null; evidence_score_patient?: string | null; confidence_label_patient?: string | null; evidence_score_doctor?: string | null; confidence_label_doctor?: string | null; evidence_details?: Record<string, unknown> | null } | null;
-  const caseRes = await admin
+  const caseRes = await db
     .from("cases")
     .select("id, title, status, created_at, user_id, submitted_at, patient_id, doctor_id, clinic_id, evidence_score_patient, confidence_label_patient, evidence_score_doctor, confidence_label_doctor, evidence_details")
     .eq("id", caseId)
     .maybeSingle();
   if (caseRes.error && String(caseRes.error.message || "").includes("evidence")) {
-    const fallback = await admin.from("cases").select("id, title, status, created_at, user_id, submitted_at, patient_id, doctor_id, clinic_id").eq("id", caseId).maybeSingle();
+    const fallback = await db.from("cases").select("id, title, status, created_at, user_id, submitted_at, patient_id, doctor_id, clinic_id").eq("id", caseId).maybeSingle();
     c = fallback.data;
   } else {
     c = caseRes.data;
   }
 
-  const allowed = await canAccessCase(user.id, c);
+  const allowed =
+    Boolean(c) &&
+    (c!.user_id === user.id ||
+      c!.patient_id === user.id ||
+      c!.doctor_id === user.id ||
+      c!.clinic_id === user.id ||
+      role === "auditor");
   if (!c || !allowed) {
     return (
       <div className="max-w-3xl mx-auto px-4 sm:px-6">
@@ -51,14 +66,6 @@ export default async function Page({ params }: { params: Promise<{ caseId: strin
     );
   }
 
-  let role = parseRole((user.user_metadata as Record<string, unknown>)?.role);
-  try {
-    const { data: profile } = await admin.from("profiles").select("role").eq("id", user.id).maybeSingle();
-    if (profile?.role) role = parseRole(profile.role);
-  } catch {
-    /* profiles may not exist */
-  }
-
   // In development, allow dev_role cookie to override
   if (process.env.NODE_ENV === "development") {
     const cookieStore = await cookies();
@@ -70,7 +77,7 @@ export default async function Page({ params }: { params: Promise<{ caseId: strin
 
   const dashboardPath = role === "doctor" ? "/dashboard/doctor" : role === "clinic" ? "/dashboard/clinic" : role === "auditor" ? "/dashboard/auditor" : "/dashboard/patient";
 
-  const { data: uploads, error: upErr } = await admin
+  const { data: uploads, error: upErr } = await db
     .from("uploads")
     .select("id, type, storage_path, created_at")
     .eq("case_id", c.id)
@@ -79,13 +86,13 @@ export default async function Page({ params }: { params: Promise<{ caseId: strin
   // Try with status/error (requires migration 20250210000004); fallback if columns don't exist
   let reports: { id: string; version: number; pdf_path: string | null; summary: unknown; created_at: string; status?: string; error?: string | null; patient_audit_version?: number; patient_audit_v2?: Record<string, unknown> | null }[] | null = null;
   let repErr: { message: string } | null = null;
-  const withStatus = await admin
+  const withStatus = await db
     .from("reports")
     .select("id, version, pdf_path, summary, created_at, status, error, patient_audit_version, patient_audit_v2")
     .eq("case_id", c.id)
     .order("version", { ascending: false });
   if (withStatus.error && (String(withStatus.error.message).includes("status") || String(withStatus.error.message).includes("patient_audit") || String(withStatus.error.message).includes("does not exist"))) {
-    const fallback = await admin
+    const fallback = await db
       .from("reports")
       .select("id, version, pdf_path, summary, created_at")
       .eq("case_id", c.id)

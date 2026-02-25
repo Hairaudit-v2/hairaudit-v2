@@ -1,11 +1,13 @@
 import type { User } from "@supabase/supabase-js";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { tryCreateSupabaseAdminClient } from "@/lib/supabase/admin";
 import { parseRole } from "./roles";
 
 export async function getUserRole(userId: string): Promise<"patient" | "doctor" | "clinic" | "auditor"> {
-  const admin = createSupabaseAdminClient();
-  const { data } = await admin.from("profiles").select("role").eq("id", userId).maybeSingle();
-  if (data?.role) return parseRole(data.role);
+  const admin = tryCreateSupabaseAdminClient();
+  if (admin) {
+    const { data } = await admin.from("profiles").select("role").eq("id", userId).maybeSingle();
+    if (data?.role) return parseRole(data.role);
+  }
   return "patient";
 }
 
