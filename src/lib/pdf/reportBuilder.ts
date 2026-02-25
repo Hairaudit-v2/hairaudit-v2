@@ -16,6 +16,85 @@ const MARGIN = 50;
 const PAGE_WIDTH = 595.28; // A4
 const CONTENT_WIDTH = PAGE_WIDTH - MARGIN * 2;
 
+// Typography hierarchy (premium)
+const H1_SIZE = 28; // bold
+const H2_SIZE = 18; // "semi" (Helvetica-Bold is closest available)
+const BODY_SIZE = 12;
+const META_SIZE = 9;
+
+const PAGE_TOP_CONTENT_Y = 95;
+
+function drawNeuralWatermark(doc: PDFKit.PDFDocument) {
+  const pageW = (doc.page as any).width as number;
+  const pageH = (doc.page as any).height as number;
+
+  // Very subtle "Follicle Intelligence" neural-style pattern.
+  // Draw behind content; do not change doc.x/doc.y.
+  doc.save();
+  try {
+    // Keep it extremely light
+    (doc as any).opacity?.(0.06);
+  } catch {
+    /* opacity may not exist in older pdfkit; safe to ignore */
+  }
+
+  const dot = "#38bdf8"; // sky-ish
+  const line = "#2dd4bf"; // teal-ish
+
+  // Confine pattern mostly to body area (avoid header block)
+  const top = 86;
+  const bottom = pageH - 60;
+  const left = 26;
+  const right = pageW - 26;
+
+  const stepX = 84;
+  const stepY = 70;
+
+  const nodes: Array<{ x: number; y: number }> = [];
+  let row = 0;
+  for (let y = top; y <= bottom; y += stepY) {
+    let col = 0;
+    for (let x = left; x <= right; x += stepX) {
+      // deterministic "jitter"
+      const jx = ((row * 17 + col * 23) % 11) - 5;
+      const jy = ((row * 29 + col * 13) % 9) - 4;
+      nodes.push({ x: x + jx, y: y + jy });
+      col += 1;
+    }
+    row += 1;
+  }
+
+  // Connect sparse edges
+  doc.strokeColor(line).lineWidth(0.6);
+  for (let i = 0; i < nodes.length; i++) {
+    const a = nodes[i]!;
+    // connect to next few nodes to create a neural network feel
+    for (let j = 1; j <= 2; j++) {
+      const b = nodes[i + j];
+      if (!b) continue;
+      // only connect if close-ish vertically
+      if (Math.abs(b.y - a.y) <= stepY + 10) {
+        doc.moveTo(a.x, a.y).lineTo(b.x, b.y).stroke();
+      }
+    }
+  }
+
+  // Draw nodes
+  doc.fillColor(dot);
+  for (const n of nodes) {
+    doc.circle(n.x, n.y, 1.3).fill();
+  }
+
+  // A faint brand wordmark watermark
+  doc.fillColor("#f59e0b");
+  doc.font("Helvetica-Bold").fontSize(26);
+  try {
+    (doc as any).opacity?.(0.035);
+  } catch {}
+  doc.text("Follicle Intelligence", 0, pageH * 0.56, { width: pageW, align: "center" });
+  doc.restore();
+}
+
 export type ReportImage = { buffer: Buffer; label: string; type?: string };
 
 export type AuditReportContent = {
@@ -66,13 +145,13 @@ function addHeader(doc: PDFKit.PDFDocument, logoBuffer?: Buffer) {
     }
   }
   doc.fillColor("#ffffff");
-  doc.fontSize(28).font("Helvetica-Bold");
+  doc.fontSize(H1_SIZE).font("Helvetica-Bold");
   doc.text("HairAudit", x, 28, { width: 300 });
   doc.fontSize(11).font("Helvetica");
   doc.fillColor(SLATE_400);
   doc.text("Professional Hair Transplant Audit Report", x, 55);
   doc.restore();
-  doc.moveDown(3);
+  doc.moveDown(3.6);
 }
 
 /**
@@ -80,11 +159,11 @@ function addHeader(doc: PDFKit.PDFDocument, logoBuffer?: Buffer) {
  */
 function addMeta(doc: PDFKit.PDFDocument, content: AuditReportContent) {
   doc.fillColor(SLATE_600);
-  doc.fontSize(10);
+  doc.fontSize(META_SIZE);
   doc.text(`Case ID: ${content.caseId}`, { continued: false });
   doc.text(`Version: v${content.version}`);
   doc.text(`Generated: ${content.generatedAt}${content.isManual ? " (manual audit)" : ""}`);
-  doc.moveDown(1.5);
+  doc.moveDown(2.1);
 }
 
 /**
@@ -92,13 +171,22 @@ function addMeta(doc: PDFKit.PDFDocument, content: AuditReportContent) {
  */
 function addSectionHeading(doc: PDFKit.PDFDocument, title: string) {
   doc.save();
-  doc.moveDown(0.5);
+  doc.moveDown(0.9);
   doc.fillColor(AMBER_600);
   doc.rect(MARGIN, doc.y, 4, 16).fill();
   doc.fillColor(SLATE_900);
-  doc.fontSize(14).font("Helvetica-Bold");
-  doc.text(title, MARGIN + 10, doc.y + 2, { width: CONTENT_WIDTH - 14 });
-  doc.y += 22;
+  doc.fontSize(H2_SIZE).font("Helvetica-Bold");
+  const y0 = doc.y;
+  doc.text(title, MARGIN + 10, y0 - 1, { width: CONTENT_WIDTH - 14 });
+  // Gold accent line under header (premium)
+  const lineY = y0 + 20;
+  doc
+    .moveTo(MARGIN + 10, lineY)
+    .lineTo(MARGIN + 10 + CONTENT_WIDTH - 14, lineY)
+    .lineWidth(1)
+    .strokeColor(AMBER_500)
+    .stroke();
+  doc.y = lineY + 10;
   doc.restore();
 }
 
@@ -201,7 +289,7 @@ function addAuditSummary(
 ) {
   addSectionHeading(doc, content.isManual ? "Audit Summary" : "AI Audit Summary");
   doc.fillColor(SLATE_600);
-  doc.fontSize(11).font("Helvetica");
+  doc.fontSize(BODY_SIZE).font("Helvetica");
 
   if (content.score != null) {
     doc.font("Helvetica-Bold").fillColor(SLATE_900);
@@ -212,46 +300,47 @@ function addAuditSummary(
   if (radarPng?.buffer) {
     const w = CONTENT_WIDTH;
     const h = Math.round(w * (radarPng.height / radarPng.width));
-    doc.moveDown(0.6);
+    doc.moveDown(0.9);
     const x = MARGIN;
     const y = doc.y;
     try {
       doc.image(radarPng.buffer, x, y, { width: w, height: h });
-      doc.y = y + h + 10;
+      doc.y = y + h + 14;
     } catch {
       // If image embedding fails for any reason, continue with text-only report.
-      doc.moveDown(0.2);
+      doc.moveDown(0.4);
     }
   }
 
   // Data Integrity & Confidence panel (page 1)
   addConfidencePanel(doc, content);
+  doc.moveDown(0.2);
 
   if (content.donorQuality)
     doc.text(`Donor Quality: ${content.donorQuality}`);
   if (content.graftSurvival)
     doc.text(`Graft Survival Estimate: ${content.graftSurvival}`);
-  doc.moveDown(0.5);
+  doc.moveDown(0.8);
 
   doc.text("Notes:", { continued: false });
   doc.text(content.notes || "—", { indent: 10, align: "left" });
 
   if (content.findings?.length) {
-    doc.moveDown(0.5);
+    doc.moveDown(0.8);
     doc.text("Key Findings:", { continued: false });
     content.findings.forEach((f) => doc.text(`• ${f}`, { indent: 10, align: "left" }));
   }
 
   if (content.model || content.uploadCount != null) {
-    doc.moveDown(0.5);
-    doc.fontSize(9).fillColor(SLATE_400);
+    doc.moveDown(0.8);
+    doc.fontSize(META_SIZE).fillColor(SLATE_400);
     const parts: string[] = [];
     if (content.uploadCount != null) parts.push(`${content.uploadCount} uploads`);
     if (content.model) parts.push(`Model: ${content.model}`);
     doc.text(parts.join(" | ") || "");
-    doc.fontSize(11).fillColor(SLATE_600);
+    doc.fontSize(BODY_SIZE).fillColor(SLATE_600);
   }
-  doc.moveDown(1);
+  doc.moveDown(1.2);
 }
 
 function addScoreByArea(doc: PDFKit.PDFDocument, content: AuditReportContent) {
@@ -326,6 +415,14 @@ function addScoreByArea(doc: PDFKit.PDFDocument, content: AuditReportContent) {
   const x0 = MARGIN;
   const w0 = CONTENT_WIDTH;
 
+  // Premium whitespace: if we're deep on page 1, start on a fresh page.
+  if (doc.y > pageH * 0.62) {
+    doc.addPage();
+    doc.x = MARGIN;
+    doc.y = MARGIN;
+    renderHeading("Score by Area");
+  }
+
   for (const it of items) {
     const score = Math.max(0, Math.min(100, Number(it.score)));
 
@@ -391,6 +488,17 @@ export async function buildAuditReportPdf(
     doc.on("error", reject);
   });
 
+  // Background watermark pattern on every page (behind content)
+  const drawBg = () => {
+    const x = doc.x;
+    const y = doc.y;
+    drawNeuralWatermark(doc);
+    doc.x = x;
+    doc.y = y;
+  };
+  drawBg();
+  doc.on("pageAdded", drawBg);
+
   let logoBuffer: Buffer | undefined;
   if (opts?.logoPath) {
     try {
@@ -406,7 +514,7 @@ export async function buildAuditReportPdf(
   doc.x = MARGIN;
   doc.y = 0;
   addHeader(doc, logoBuffer);
-  doc.y = 95;
+  doc.y = PAGE_TOP_CONTENT_Y;
   addMeta(doc, content);
   let radarImg: { buffer: Buffer; width: number; height: number } | null = null;
   if (content.radar?.section_scores && typeof content.radar.overall_score === "number") {
