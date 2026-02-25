@@ -2,7 +2,7 @@ import { inngest } from "./client";
 import { createClient } from "@supabase/supabase-js";
 import { runAIAudit } from "@/lib/ai/audit";
 import { notifyPatientAuditFailed, notifyAuditorAuditFailed } from "@/lib/email";
-import { getMissingRequiredPatientPhotoCategories } from "@/lib/photoCategories";
+import { canSubmit } from "@/lib/auditPhotoSchemas";
 
 function supabaseAdmin() {
   return createClient(
@@ -122,10 +122,8 @@ export const runAudit = inngest.createFunction(
       return data ?? [];
     });
 
-    const missing = getMissingRequiredPatientPhotoCategories(
-      uploads.map((u) => ({ type: u.type }))
-    );
-    if (missing.length) {
+    const patientPhotos = uploads.filter((u) => String(u.type ?? "").startsWith("patient_photo:"));
+    if (!canSubmit("patient", patientPhotos.map((u) => ({ type: u.type })))) {
       // Mark case “needs_more_info” or revert to draft
       await step.run("mark-missing", async () => {
         await supabase
@@ -133,7 +131,7 @@ export const runAudit = inngest.createFunction(
           .update({ status: "draft" })
           .eq("id", caseId);
       });
-      throw new Error(`Missing required photo categories: ${missing.join(", ")}`);
+      throw new Error("Missing required patient photos (Current Front, Top, Donor rear)");
     }
 
     // 4) Load existing report summary (patient/doctor/clinic answers)

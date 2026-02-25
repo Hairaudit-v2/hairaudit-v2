@@ -15,7 +15,10 @@ type FormQuestion = {
   options?: { value: string; label: string }[];
   min?: number;
   max?: number;
-  dependsOn?: { questionId: string; value?: string; hasValue?: string };
+  dependsOn?:
+    | { questionId: string; value?: string; hasValue?: string }
+    | { questionId: string; oneOf: string[] }
+    | { or: Array<{ questionId: string; value: string }> };
 };
 
 type Section = { id: string; title: string; questions: FormQuestion[] };

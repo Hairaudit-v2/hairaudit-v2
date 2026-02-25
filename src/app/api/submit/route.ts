@@ -2,7 +2,12 @@ import { NextResponse } from "next/server";
 import { inngest } from "@/lib/inngest/client";
 import { createClient } from "@supabase/supabase-js";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
-import { getMissingRequiredPatientPhotoCategories } from "@/lib/photoCategories";
+import {
+  canSubmit,
+  computeEvidenceScore,
+  computeConfidenceLabel,
+  computeEvidenceDetails,
+} from "@/lib/auditPhotoSchemas";
 
 function supabaseAdmin() {
   return createClient(
@@ -49,34 +54,70 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Case already submitted" }, { status: 409 });
     }
 
-    // Validate required patient photos before submit (same check as Inngest run-audit)
     const { data: uploads } = await admin
       .from("uploads")
       .select("type")
       .eq("case_id", caseId);
-    const missing = getMissingRequiredPatientPhotoCategories(uploads ?? []);
-    if (missing.length) {
+
+    const photos = (uploads ?? []).map((u) => ({ type: u.type }));
+
+    if (!canSubmit("patient", photos)) {
       return NextResponse.json(
-        { error: `Upload required photos first: ${missing.join(", ")}. Go to Step 2: Add your photos.` },
+        { error: "Upload required patient photos first (Current Front, Top, Donor rear). Go to Step 2: Add your photos." },
         { status: 400 }
       );
     }
 
+    const patientScore = computeEvidenceScore("patient", photos);
+    const patientConfidence = computeConfidenceLabel(patientScore);
+    const patientDetails = computeEvidenceDetails("patient", photos);
+
+    let doctorScore: string | null = null;
+    let doctorConfidence: string | null = null;
+    const doctorPhotos = photos.filter((p) => String(p.type ?? "").startsWith("doctor_photo:"));
+    if (doctorPhotos.length > 0) {
+      doctorScore = computeEvidenceScore("doctor", doctorPhotos);
+      doctorConfidence = computeConfidenceLabel(doctorScore);
+    }
+
+    const evidenceDetails: Record<string, unknown> = {
+      patient: patientDetails,
+      ...(doctorScore && {
+        doctor: computeEvidenceDetails("doctor", doctorPhotos),
+      }),
+    };
+
     const now = new Date().toISOString();
 
-    // Allow resubmit when audit_failed (user fixed and wants to retry)
+    const updatePayload = {
+      status: "submitted",
+      submitted_at: now,
+      evidence_score_patient: patientScore,
+      confidence_label_patient: patientConfidence,
+      evidence_score_doctor: doctorScore,
+      confidence_label_doctor: doctorConfidence,
+      evidence_details: evidenceDetails,
+    };
+
     const { error: updErr } = await admin
       .from("cases")
-      .update({
-        status: "submitted",
-        submitted_at: new Date().toISOString(),
-      })
+      .update(updatePayload)
       .eq("id", caseId)
       .eq("user_id", user.id)
       .in("status", ["draft", "audit_failed"]);
 
     if (updErr) {
-      return NextResponse.json({ error: updErr.message }, { status: 500 });
+      if (String(updErr.message || "").includes("evidence") || String(updErr.message || "").includes("does not exist")) {
+        const { error: fallbackErr } = await admin
+          .from("cases")
+          .update({ status: "submitted", submitted_at: now })
+          .eq("id", caseId)
+          .eq("user_id", user.id)
+          .in("status", ["draft", "audit_failed"]);
+        if (fallbackErr) return NextResponse.json({ error: fallbackErr.message }, { status: 500 });
+      } else {
+        return NextResponse.json({ error: updErr.message }, { status: 500 });
+      }
     }
 
     await inngest.send({

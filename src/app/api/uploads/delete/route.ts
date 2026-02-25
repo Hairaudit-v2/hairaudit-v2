@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
+import { canAccessCase } from "@/lib/case-access";
 
 function supabaseAdmin() {
   return createClient(
@@ -46,17 +47,17 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: "Upload not found" }, { status: 404 });
     }
 
-    // 3) Ownership check (case must belong to logged-in user)
     const { data: c, error: caseErr } = await admin
       .from("cases")
-      .select("id, user_id, status, submitted_at")
+      .select("id, user_id, patient_id, doctor_id, clinic_id, status, submitted_at")
       .eq("id", upload.case_id)
       .maybeSingle();
 
     if (caseErr) {
       return NextResponse.json({ error: caseErr.message }, { status: 500 });
     }
-    if (!c || c.user_id !== user.id) {
+    const allowed = await canAccessCase(user.id, c);
+    if (!c || !allowed) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -80,11 +81,16 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: storageErr.message }, { status: 500 });
     }
 
-    // 5) Delete DB row
     const { error: delErr } = await admin.from("uploads").delete().eq("id", upload.id);
 
     if (delErr) {
       return NextResponse.json({ error: delErr.message }, { status: 500 });
+    }
+
+    try {
+      await admin.from("audit_photos").delete().eq("storage_path", upload.storage_path);
+    } catch {
+      /* audit_photos may not exist */
     }
 
     return NextResponse.json({ ok: true });

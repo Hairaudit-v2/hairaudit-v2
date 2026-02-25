@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import PatientPhotoUpload from "./patient-photo-upload";
+import PhotoUploader from "@/components/photos/PhotoUploader";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 
 type PageProps = { params: Promise<{ caseId: string }> };
@@ -15,7 +15,6 @@ export default async function Page({ params }: PageProps) {
 
   if (!user) redirect("/login");
 
-  // Case (enforce ownership)
   const { data: c } = await supabase
     .from("cases")
     .select("id, status, submitted_at")
@@ -25,32 +24,36 @@ export default async function Page({ params }: PageProps) {
 
   if (!c) redirect("/dashboard");
 
-  // Initial uploads
   const { data: uploads } = await supabase
     .from("uploads")
     .select("id, type, storage_path, metadata, created_at")
     .eq("case_id", caseId)
     .order("created_at", { ascending: false });
 
+  const patientUploads = (uploads ?? []).filter((u) =>
+    String(u.type ?? "").startsWith("patient_photo:")
+  );
+
   return (
-    <div style={{ padding: 24, maxWidth: 980, margin: "0 auto" }}>
-      <div style={{ marginBottom: 12 }}>
-        <Link href={`/cases/${caseId}`}>← Back to case</Link>
+    <div className="max-w-4xl mx-auto px-4 py-6">
+      <div className="mb-4">
+        <Link
+          href={`/cases/${caseId}/patient/questions`}
+          className="text-sm font-medium text-slate-600 hover:text-slate-900"
+        >
+          ← Back to questions
+        </Link>
       </div>
 
-      <h1 style={{ fontSize: 28, fontWeight: 900, marginBottom: 6 }}>
-        Patient Photo Uploads
-      </h1>
-
-      <div style={{ color: "#555", marginBottom: 18 }}>
-        Case: <code>{caseId}</code>
-      </div>
-
-      <PatientPhotoUpload
+      <PhotoUploader
         caseId={caseId}
-        initialUploads={uploads ?? []}
+        submitterType="patient"
+        initialUploads={patientUploads}
         caseStatus={c.status ?? "draft"}
         submittedAt={c.submitted_at}
+        backHref={`/cases/${caseId}/patient/questions`}
+        nextHref={`/cases/${caseId}`}
+        nextLabel="3. Submit for audit"
       />
     </div>
   );

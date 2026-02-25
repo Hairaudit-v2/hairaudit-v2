@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import AuditFormClient from "@/components/audit-form/AuditFormClient";
-import { DOCTOR_AUDIT_SECTIONS } from "@/lib/doctorAuditForm";
+import DoctorAuditFormClient from "@/components/audit-form/DoctorAuditFormClient";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { canAccessCase } from "@/lib/case-access";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -27,24 +26,19 @@ export default async function DoctorFormPage({ params }: { params: Promise<{ cas
       <div className="mb-6">
         <Link href={`/cases/${caseId}`} className="text-sm text-gray-600 hover:underline">← Back to case</Link>
       </div>
-      <h1 className="text-2xl font-bold mb-2">Doctor Audit Form</h1>
-      <p className="text-gray-600 mb-8">About 10–15 minutes. Complete as the treating physician.</p>
+      <h1 className="text-2xl font-bold mb-2">Surgery Submission / Case Audit</h1>
+      <p className="text-gray-600 mb-8">Target 6–8 minutes. Complete as the treating physician.</p>
 
-      <AuditFormClient
+      <DoctorAuditFormClient
         caseId={caseId}
         caseStatus={c.status ?? "draft"}
         submittedAt={c.submitted_at}
-        sections={DOCTOR_AUDIT_SECTIONS}
         loadUrl={`/api/doctor-answers?caseId=${caseId}`}
         saveUrl={`/api/doctor-answers?caseId=${caseId}`}
-        payloadKey="doctorAnswers"
-        title="Doctor Audit Form"
-        description="Complete as the treating physician. This form gathers procedure specifics and medical information."
         backHref={`/cases/${caseId}`}
         photosNav={{
           href: `/cases/${caseId}/doctor/photos`,
           label: "→ Upload or view doctor images",
-          title: "Visual Records (Optional)",
           description: "Pre-procedure, surgery, and post-procedure images.",
         }}
         primaryCtaHref={`/cases/${caseId}/doctor/photos`}

@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import CategoryPhotoUpload from "@/components/uploads/CategoryPhotoUpload";
+import PhotoUploader from "@/components/photos/PhotoUploader";
 import SubmitButton from "../../submit-button";
-import { DOCTOR_PHOTO_CATEGORIES } from "@/lib/doctorPhotoCategories";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { canAccessCase } from "@/lib/case-access";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -32,25 +31,23 @@ export default async function DoctorPhotosPage({ params }: { params: Promise<{ c
   const doctorUploads = (uploads ?? []).filter((u) => String(u.type ?? "").startsWith("doctor_photo:"));
 
   return (
-    <div className="max-w-3xl mx-auto p-6">
+    <div className="max-w-4xl mx-auto p-6">
       <div className="mb-6 flex items-center justify-between">
         <Link href={`/cases/${caseId}/doctor/form`} className="text-sm text-gray-600 hover:underline">← Back to Doctor Form</Link>
         <Link href={`/cases/${caseId}`} className="text-sm text-gray-600 hover:underline">Case overview</Link>
       </div>
-      <h1 className="text-2xl font-bold mb-2">Doctor — Visual Records</h1>
-      <p className="text-gray-600 mb-8">Pre-procedure, surgery, and post-procedure images (optional).</p>
 
-      <CategoryPhotoUpload
+      <PhotoUploader
         caseId={caseId}
+        submitterType="doctor"
         initialUploads={doctorUploads}
         caseStatus={c.status ?? "draft"}
         submittedAt={c.submitted_at}
-        typePrefix="doctor_photo"
-        categories={DOCTOR_PHOTO_CATEGORIES}
-        uploadApiUrl="/api/uploads/doctor-photos"
+        backHref={`/cases/${caseId}/doctor/form`}
+        hideFooter
       />
 
-      <div className="mt-8 p-5 rounded-xl border border-slate-200 bg-white">
+      <div className="mt-6 p-5 rounded-xl border border-slate-200 bg-white">
         <h2 className="font-semibold text-slate-900 mb-2">3. Submit for audit</h2>
         <SubmitButton caseId={c.id} caseStatus={c.status ?? "draft"} submittedAt={c.submitted_at} />
       </div>

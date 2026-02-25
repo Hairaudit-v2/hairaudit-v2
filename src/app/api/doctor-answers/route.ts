@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { canAccessCase } from "@/lib/case-access";
+import { mapLegacyDoctorAnswers } from "@/lib/doctorAuditSchema";
 
-// GET ?caseId=...
+// GET ?caseId=... — applies backward compat mapping for legacy field names
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const caseId = url.searchParams.get("caseId");
@@ -26,8 +27,9 @@ export async function GET(req: Request) {
     .limit(1)
     .maybeSingle();
 
-  const doctorAnswers = (report?.summary as Record<string, unknown>)?.doctor_answers ?? null;
-  return NextResponse.json({ doctorAnswers });
+  const raw = (report?.summary as Record<string, unknown>)?.doctor_answers ?? null;
+  const doctorAnswers = raw ? mapLegacyDoctorAnswers(raw as Record<string, unknown>) : null;
+  return NextResponse.json({ doctorAnswers: doctorAnswers || raw });
 }
 
 // POST ?caseId=...
@@ -54,8 +56,8 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json().catch(() => ({}));
-  const doctorAnswers = body?.doctorAnswers;
-  if (!doctorAnswers || typeof doctorAnswers !== "object") {
+  const incoming = body?.doctorAnswers;
+  if (!incoming || typeof incoming !== "object") {
     return NextResponse.json({ error: "Missing doctorAnswers" }, { status: 400 });
   }
 
@@ -68,6 +70,8 @@ export async function POST(req: Request) {
     .maybeSingle();
 
   const currentSummary = (existing?.summary ?? {}) as Record<string, unknown>;
+  const currentDoctor = (currentSummary.doctor_answers ?? {}) as Record<string, unknown>;
+  const doctorAnswers = { ...currentDoctor, ...incoming } as Record<string, unknown>;
   const nextSummary = { ...currentSummary, doctor_answers: doctorAnswers };
 
   if (existing) {

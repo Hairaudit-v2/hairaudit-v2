@@ -5,6 +5,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PATIENT_AUDIT_SECTIONS } from "@/lib/patientAuditForm";
 import type { PatientAuditAnswers, PatientFormQuestion } from "@/lib/patientAuditForm";
+import { validatePatientAuditV2, normalizePatientV2ForValidation } from "@/lib/patientAuditSchema";
+
+const STEPS = [
+  ...PATIENT_AUDIT_SECTIONS.map((s) => ({ id: s.id, title: s.title })),
+  { id: "review", title: "Review & Submit" },
+];
 
 export default function PatientAuditFormClient({
   caseId,
@@ -20,6 +26,7 @@ export default function PatientAuditFormClient({
   const [loadingError, setLoadingError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null);
+  const [activeStep, setActiveStep] = useState(0);
   const hasEditedRef = useRef(false);
   const locked = caseStatus === "submitted" || !!submittedAt;
   const router = useRouter();
@@ -46,8 +53,62 @@ export default function PatientAuditFormClient({
     setAnswers((prev) => ({ ...prev, [id]: value }));
   };
 
+  const sanitizePayload = (raw: PatientAuditAnswers): PatientAuditAnswers => {
+    const payload: PatientAuditAnswers = {};
+    for (const [k, v] of Object.entries(raw)) {
+      if (v === undefined) continue;
+      if (typeof v === "string" || typeof v === "number" || typeof v === "boolean" || v === null) {
+        payload[k] = v;
+      } else if (Array.isArray(v)) {
+        payload[k] = v.map((x) => (typeof x === "string" ? x : String(x)));
+      } else {
+        payload[k] = v;
+      }
+    }
+    return payload;
+  };
+
   const save = async (answersToSave?: PatientAuditAnswers) => {
-    const payload = answersToSave ?? answers;
+    const raw = answersToSave ?? answers;
+    const payload = sanitizePayload(raw);
+    setMessage(null);
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/patient-answers?caseId=${caseId}`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ patientAnswers: payload }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json?.error ?? `Save failed (${res.status})`);
+      setMessage({ type: "ok", text: "Saved" });
+    } catch (e: unknown) {
+      const msg = (e as Error)?.message ?? "Save failed";
+      setMessage({ type: "err", text: msg });
+      console.error("[patient-answers save]", msg);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!hasEditedRef.current || locked) return;
+    const t = setTimeout(() => save(undefined), 2000);
+    return () => clearTimeout(t);
+  }, [answers, locked]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const goToPhotos = async () => {
+    let payload = sanitizePayload(answers) as Record<string, unknown>;
+    const normalized = normalizePatientV2ForValidation(payload);
+    if (normalized.pain_level === undefined || normalized.pain_level === null) {
+      normalized.pain_level = 1;
+      payload = { ...payload, pain_level: 1 };
+    }
+    const err = validatePatientAuditV2(normalized);
+    if (err) {
+      setMessage({ type: "err", text: err });
+      return;
+    }
     setMessage(null);
     setSaving(true);
     try {
@@ -58,40 +119,20 @@ export default function PatientAuditFormClient({
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json?.error ?? "Save failed");
-      setMessage({ type: "ok", text: "Saved" });
-    } catch (e: any) {
-      setMessage({ type: "err", text: e?.message ?? "Save failed" });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // Auto-save 2 seconds after last change (so answers persist when navigating away)
-  useEffect(() => {
-    if (!hasEditedRef.current || locked) return;
-    const t = setTimeout(() => {
-      save(undefined);
-    }, 2000);
-    return () => clearTimeout(t);
-  }, [answers, locked]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const goToPhotos = async () => {
-    setMessage(null);
-    setSaving(true);
-    try {
-      const res = await fetch(`/api/patient-answers?caseId=${caseId}`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ patientAnswers: answers }),
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json?.error ?? "Save failed");
       router.push(`/cases/${caseId}/patient/photos`);
     } catch (e: unknown) {
       setMessage({ type: "err", text: (e as Error)?.message ?? "Save failed" });
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleStepNext = () => {
+    if (activeStep < STEPS.length - 1) setActiveStep((s) => s + 1);
+  };
+
+  const handleStepPrev = () => {
+    if (activeStep > 0) setActiveStep((s) => s - 1);
   };
 
   if (loading) {
@@ -118,11 +159,13 @@ export default function PatientAuditFormClient({
     );
   }
 
+  const isReviewStep = STEPS[activeStep]?.id === "review";
+
   return (
-    <div className="max-w-2xl space-y-8">
+    <div className="max-w-2xl space-y-6">
       <header>
         <p className="text-sm text-gray-600">
-          About 5–10 minutes. This form collects your hair transplant experience for the audit.
+          About 5–6 minutes. Share your hair transplant experience for the audit.
         </p>
         {locked && (
           <div className="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm">
@@ -131,46 +174,118 @@ export default function PatientAuditFormClient({
         )}
       </header>
 
-      {PATIENT_AUDIT_SECTIONS.map((section) => (
-        <section key={section.id} className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">{section.title}</h2>
-          <div className="space-y-5">
-            {section.questions.map((q) => (
-              <QuestionField
-                key={q.id}
-                question={q}
-                value={answers[q.id]}
-                onChange={(v) => update(q.id, v)}
-                allAnswers={answers}
-                locked={locked}
-              />
-            ))}
-          </div>
-        </section>
-      ))}
+      {/* Stepper */}
+      <nav
+        className="flex items-center gap-1 overflow-x-auto pb-2"
+        aria-label="Form progress"
+      >
+        {STEPS.map((step, i) => (
+          <button
+            key={step.id}
+            type="button"
+            onClick={() => setActiveStep(i)}
+            disabled={locked}
+            className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+              i === activeStep
+                ? "bg-amber-500 text-slate-900"
+                : i < activeStep
+                  ? "bg-amber-100 text-amber-800"
+                  : "bg-gray-100 text-gray-600"
+            }`}
+          >
+            {i + 1}
+          </button>
+        ))}
+      </nav>
 
-      {/* Visual Records: next step CTA */}
-      <section className="rounded-xl border border-gray-200 bg-amber-50/80 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-2">2. Add your photos</h2>
-        <p className="text-sm text-gray-600 mb-4">
-          Pre-procedure, surgery, and post-procedure images go in the next step.
-        </p>
-        <button
-          type="button"
-          onClick={goToPhotos}
-          disabled={saving || locked}
-          className="rounded-lg px-5 py-3 text-sm font-medium bg-amber-500 text-slate-900 hover:bg-amber-400 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
-        >
-          {saving ? "Saving…" : "Add your photos →"}
-        </button>
-      </section>
+      {/* Content */}
+      {isReviewStep ? (
+        <PatientReviewSummary
+          answers={answers}
+          sections={PATIENT_AUDIT_SECTIONS}
+          onEdit={() => setActiveStep(0)}
+        />
+      ) : (
+        (() => {
+          const section = PATIENT_AUDIT_SECTIONS[activeStep];
+          if (!section) return null;
+          return (
+            <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">{section.title}</h2>
+              <div className="space-y-5">
+                {section.questions.map((q) => (
+                  <QuestionField
+                    key={q.id}
+                    question={q}
+                    value={answers[q.id]}
+                    onChange={(v) => update(q.id, v)}
+                    allAnswers={answers}
+                    locked={locked}
+                  />
+                ))}
+              </div>
+            </section>
+          );
+        })()
+      )}
+
+      {/* Step nav (except review uses different CTA) */}
+      {!isReviewStep && (
+        <div className="flex justify-between">
+          <button
+            type="button"
+            onClick={handleStepPrev}
+            disabled={activeStep === 0 || locked}
+            className="rounded-lg px-4 py-2 text-sm font-medium border border-gray-300 hover:bg-gray-50 disabled:opacity-50"
+          >
+            Previous
+          </button>
+          <button
+            type="button"
+            onClick={handleStepNext}
+            disabled={locked}
+            className="rounded-lg px-4 py-2 text-sm font-medium bg-amber-500 text-slate-900 hover:bg-amber-400"
+          >
+            {activeStep === STEPS.length - 2 ? "Review" : "Next"}
+          </button>
+        </div>
+      )}
+
+      {/* Review step CTA — Add photos */}
+      {isReviewStep && (
+        <section className="rounded-xl border border-gray-200 bg-amber-50/80 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">2. Add your photos</h2>
+          <p className="text-sm text-gray-600 mb-4">
+            Pre-procedure, surgery, and post-procedure images go in the next step.
+          </p>
+          <button
+            type="button"
+            onClick={goToPhotos}
+            disabled={saving || locked}
+            className="rounded-lg px-5 py-3 text-sm font-medium bg-amber-500 text-slate-900 hover:bg-amber-400 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+          >
+            {saving ? "Saving…" : "Add your photos →"}
+          </button>
+        </section>
+      )}
 
       <footer className="flex items-center justify-between pt-4 border-t">
-        <div className="text-sm text-gray-600">
+        <div className="text-sm text-gray-600 flex items-center gap-3">
           {message && (
-            <span className={message.type === "ok" ? "text-amber-600" : "text-red-600"}>
-              {message.text}
-            </span>
+            <>
+              <span className={message.type === "ok" ? "text-amber-600" : "text-red-600"}>
+                {message.text}
+              </span>
+              {message.type === "err" && (
+                <button
+                  type="button"
+                  onClick={() => save()}
+                  className="text-sm font-medium text-amber-600 hover:text-amber-700 underline"
+                >
+                  Retry
+                </button>
+              )}
+            </>
           )}
         </div>
         <div className="flex gap-3">
@@ -180,7 +295,7 @@ export default function PatientAuditFormClient({
           >
             Back to case
           </Link>
-          {!locked && (
+          {!locked && !isReviewStep && (
             <button
               onClick={() => save()}
               disabled={saving}
@@ -192,6 +307,69 @@ export default function PatientAuditFormClient({
         </div>
       </footer>
     </div>
+  );
+}
+
+function PatientReviewSummary({
+  answers,
+  sections,
+  onEdit,
+}: {
+  answers: PatientAuditAnswers;
+  sections: { id: string; title: string; questions: PatientFormQuestion[] }[];
+  onEdit: () => void;
+}) {
+  const labels: Record<string, Record<string, string>> = {
+    clinic_country: { turkey: "Turkey", spain: "Spain", india: "India", thailand: "Thailand", mexico: "Mexico", brazil: "Brazil", argentina: "Argentina", colombia: "Colombia", australia: "Australia", uk: "UK", usa: "USA", canada: "Canada", uae: "UAE", belgium: "Belgium", germany: "Germany", poland: "Poland", greece: "Greece", other: "Other" },
+    procedure_type: { fue: "FUE", fut: "FUT", dhi: "DHI", robotic: "Robotic", not_sure: "Not Sure", other: "Other" },
+    donor_shaving: { full_shave: "Full shave", partial_shave: "Partial shave", no: "No" },
+    surgery_duration: { under_4h: "<4h", "4_6h": "4–6h", "6_8h": "6–8h", "8_plus": "8+ hrs" },
+    post_op_swelling: { none: "None", mild: "Mild", moderate: "Moderate", severe: "Severe" },
+    bleeding_issue: { yes: "Yes", no: "No", not_sure: "Not Sure" },
+    recovery_time: { under_1_week: "<1 wk", "1_2_weeks": "1–2 wks", "2_4_weeks": "2–4 wks", "4_plus_weeks": "4+ wks" },
+    shock_loss: { yes: "Yes", no: "No", not_sure: "Not Sure" },
+    months_since: { under_3: "<3 mo", "3_6": "3–6 mo", "6_9": "6–9 mo", "9_12": "9–12 mo", "12_plus": "12+ mo" },
+    would_repeat: { yes: "Yes", no: "No", not_sure: "Not Sure" },
+  };
+  const fmt = (qId: string, v: unknown) => {
+    if (v === null || v === undefined || v === "") return "—";
+    if (Array.isArray(v)) return v.join(", ");
+    const m = labels[qId];
+    if (m && typeof v === "string") return m[v] ?? v;
+    return String(v);
+  };
+
+  return (
+    <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+      <h2 className="text-lg font-semibold text-gray-900 mb-4">Review Summary</h2>
+      <p className="text-sm text-gray-600 mb-4">Review your answers below. Use the step dots above to edit.</p>
+      <div className="space-y-4">
+        {sections.map((sec) => (
+          <div key={sec.id}>
+            <h3 className="text-sm font-medium text-gray-700 mb-2">{sec.title}</h3>
+            <dl className="space-y-1 text-sm">
+              {sec.questions.map((q) => {
+                const v = answers[q.id];
+                if (q.dependsOn && v === undefined) return null;
+                return (
+                  <div key={q.id} className="flex justify-between gap-2">
+                    <dt className="text-gray-600">{q.prompt}</dt>
+                    <dd className="font-medium">{fmt(q.id, v)}</dd>
+                  </div>
+                );
+              })}
+            </dl>
+          </div>
+        ))}
+      </div>
+      <button
+        type="button"
+        onClick={onEdit}
+        className="mt-4 text-sm font-medium text-amber-600 hover:text-amber-700"
+      >
+        Edit answers
+      </button>
+    </section>
   );
 }
 
@@ -262,6 +440,46 @@ function QuestionField({
             disabled={locked}
           />
         );
+      case "number":
+        return (
+          <input
+            id={fieldId}
+            name={question.id}
+            type="number"
+            className={baseClass}
+            min={question.min}
+            max={question.max}
+            placeholder={question.placeholder}
+            value={(value as number) ?? ""}
+            onChange={(e) => {
+              const v = e.target.value;
+              if (v === "") onChange(null);
+              else onChange(Number(v));
+            }}
+            disabled={locked}
+          />
+        );
+      case "slider": {
+        const min = question.min ?? 1;
+        const max = question.max ?? 10;
+        const num = typeof value === "number" ? value : value ? Number(value) : min;
+        return (
+          <div role="group" aria-labelledby={`${fieldId}-label`} className="space-y-2">
+            <input
+              id={fieldId}
+              name={question.id}
+              type="range"
+              min={min}
+              max={max}
+              value={num}
+              onChange={(e) => onChange(Number(e.target.value))}
+              disabled={locked}
+              className="w-full h-2 rounded-full appearance-none bg-gray-200 accent-amber-500"
+            />
+            <p className="text-xs text-gray-600">{num} / {max}</p>
+          </div>
+        );
+      }
       case "rating": {
         const min = question.min ?? 1;
         const max = question.max ?? 5;

@@ -24,7 +24,7 @@
 |---|----------|------|----------|---------------|
 | 1 | Patient Age | number | ✓ | |
 | 2 | Patient Gender | select | ✓ | Male / Female / Other |
-| 3 | Hair Loss Pattern | select | ✓ | Norwood Scale 1–6 / Ludwig Scale 1–3 / Diffuse Thinning / Other |
+| 3 | Hair Loss Pattern | select | ✓ | Norwood Scale 1–6 (individual), Ludwig Scale 1–3 (individual), Diffuse Thinning, Other |
 | 4 | Relevant Medical History | textarea | | Placeholder: No known allergies, history of hypertension |
 
 ---
@@ -97,7 +97,7 @@
 7. Certifications/Memberships
 8. Patient Age *
 9. Patient Gender * (Male / Female / Other)
-10. Hair Loss Pattern * (Norwood 1–6 / Ludwig 1–3 / Diffuse / Other)
+10. Hair Loss Pattern * (Norwood 1, 2, 3, 4, 5, 6 / Ludwig 1, 2, 3 / Diffuse / Other)
 11. Relevant Medical History
 12. Type of Hair Transplant Technique * (FUE / FUT / DHI / Robotic / Other)
 13. Number of Grafts Extracted *
@@ -112,6 +112,7 @@
 22. Other cost (please specify)
 23. Graft Preservation Technique
 24. Time Grafts Were Out of Body (hours)
+
 25. Anesthesia Technique (Local / General / Needle free / Other)
 26. Sterilization Procedures (Autoclave / Chemical / Single-use / Other)
 27. Use of Advanced Technologies (Robotic / Motorized / Advanced Implant / None / Other)

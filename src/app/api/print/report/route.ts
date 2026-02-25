@@ -176,6 +176,26 @@ export async function GET(req: Request) {
 
   const risks = Array.isArray(summary.risks) ? summary.risks : [];
 
+  const doctorAnswers = summary?.doctor_answers as Record<string, unknown> | undefined;
+  const procLabels: Record<string, string> = {
+    fue_manual: "FUE (Manual)", fue_motorized: "FUE (Motorized)", fue_robotic: "FUE (Robotic)",
+    fut: "FUT", combined: "Combined FUT + FUE",
+  };
+  const doctorBlock =
+    doctorAnswers && typeof doctorAnswers === "object"
+      ? `
+    <div class="section">
+      <h2>Doctor / Clinic Submission</h2>
+      <div class="metricList">
+        <div><span>Procedure</span><b>${esc(String(procLabels[String(doctorAnswers.procedureType ?? "")] ?? doctorAnswers.procedureType ?? "—"))}</b></div>
+        <div><span>Grafts extracted</span><b>${esc(String(doctorAnswers.totalGraftsExtracted ?? doctorAnswers.grafts_extracted ?? "—"))}</b></div>
+        <div><span>Grafts implanted</span><b>${esc(String(doctorAnswers.totalGraftsImplanted ?? doctorAnswers.grafts_implanted ?? "—"))}</b></div>
+        <div><span>Extraction by</span><b>${esc(String(doctorAnswers.extractionPerformedBy ?? doctorAnswers.extraction_performed_by ?? "—"))}</b></div>
+        <div><span>Implantation by</span><b>${esc(String(doctorAnswers.implantationPerformedBy ?? doctorAnswers.implantation_performed_by ?? "—"))}</b></div>
+      </div>
+    </div>`
+      : "";
+
   const created = new Date(c.created_at).toLocaleString();
   const generated = new Date().toLocaleString();
 
@@ -373,6 +393,8 @@ export async function GET(req: Request) {
         </div>
       </div>
     </div>
+
+    ${doctorBlock}
 
     <div class="footer">
       HairAudit is an audit/reporting platform. This report is informational and not a medical diagnosis.

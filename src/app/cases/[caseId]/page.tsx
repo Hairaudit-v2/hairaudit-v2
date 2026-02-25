@@ -5,6 +5,10 @@ import { cookies } from "next/headers";
 import SubmitButton from "./submit-button";
 import DownloadReport from "./download-report";
 import AuditScoreBadge from "@/components/reports/AuditScoreBadge";
+import DoctorAnswersSummary from "@/components/reports/DoctorAnswersSummary";
+import PatientAnswersSummary from "@/components/reports/PatientAnswersSummary";
+import EvidenceSummary from "@/components/reports/EvidenceSummary";
+import { mapLegacyDoctorAnswers } from "@/lib/doctorAuditSchema";
 
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -18,11 +22,18 @@ export default async function Page({ params }: { params: Promise<{ caseId: strin
   if (!user) redirect("/login");
 
   const admin = createSupabaseAdminClient();
-  const { data: c } = await admin
+  let c: { id: string; title?: string; status?: string; created_at?: string; user_id?: string; submitted_at?: string | null; patient_id?: string | null; doctor_id?: string | null; clinic_id?: string | null; evidence_score_patient?: string | null; confidence_label_patient?: string | null; evidence_score_doctor?: string | null; confidence_label_doctor?: string | null; evidence_details?: Record<string, unknown> | null } | null;
+  const caseRes = await admin
     .from("cases")
-    .select("id, title, status, created_at, user_id, submitted_at, patient_id, doctor_id, clinic_id")
+    .select("id, title, status, created_at, user_id, submitted_at, patient_id, doctor_id, clinic_id, evidence_score_patient, confidence_label_patient, evidence_score_doctor, confidence_label_doctor, evidence_details")
     .eq("id", caseId)
     .maybeSingle();
+  if (caseRes.error && String(caseRes.error.message || "").includes("evidence")) {
+    const fallback = await admin.from("cases").select("id, title, status, created_at, user_id, submitted_at, patient_id, doctor_id, clinic_id").eq("id", caseId).maybeSingle();
+    c = fallback.data;
+  } else {
+    c = caseRes.data;
+  }
 
   const allowed = await canAccessCase(user.id, c);
   if (!c || !allowed) {
@@ -64,14 +75,14 @@ export default async function Page({ params }: { params: Promise<{ caseId: strin
     .order("created_at", { ascending: false });
 
   // Try with status/error (requires migration 20250210000004); fallback if columns don't exist
-  let reports: { id: string; version: number; pdf_path: string | null; summary: unknown; created_at: string; status?: string; error?: string | null }[] | null = null;
+  let reports: { id: string; version: number; pdf_path: string | null; summary: unknown; created_at: string; status?: string; error?: string | null; patient_audit_version?: number; patient_audit_v2?: Record<string, unknown> | null }[] | null = null;
   let repErr: { message: string } | null = null;
   const withStatus = await admin
     .from("reports")
-    .select("id, version, pdf_path, summary, created_at, status, error")
+    .select("id, version, pdf_path, summary, created_at, status, error, patient_audit_version, patient_audit_v2")
     .eq("case_id", c.id)
     .order("version", { ascending: false });
-  if (withStatus.error && (String(withStatus.error.message).includes("status") || String(withStatus.error.message).includes("does not exist"))) {
+  if (withStatus.error && (String(withStatus.error.message).includes("status") || String(withStatus.error.message).includes("patient_audit") || String(withStatus.error.message).includes("does not exist"))) {
     const fallback = await admin
       .from("reports")
       .select("id, version, pdf_path, summary, created_at")
@@ -183,6 +194,39 @@ export default async function Page({ params }: { params: Promise<{ caseId: strin
           <SubmitButton caseId={c.id} caseStatus={c.status ?? "draft"} submittedAt={c.submitted_at} />
         </div>
       )}
+
+      <div className="mt-6">
+        <EvidenceSummary caseRow={c} uploads={uploads ?? []} />
+      </div>
+
+      {reports && reports.length > 0 && (() => {
+        const latest = reports[0];
+        const summary = latest?.summary as Record<string, unknown> | undefined;
+        const raw = summary?.doctor_answers as Record<string, unknown> | undefined;
+        const doctorAnswers = raw ? mapLegacyDoctorAnswers(raw) : null;
+        const r = latest as { patient_audit_version?: number; patient_audit_v2?: Record<string, unknown> | null };
+        const patientAnswers =
+          r?.patient_audit_version === 2 && r?.patient_audit_v2 && Object.keys(r.patient_audit_v2).length > 0
+            ? r.patient_audit_v2
+            : (summary?.patient_answers as Record<string, unknown> | undefined) ?? null;
+        const hasDoctor = doctorAnswers && Object.keys(doctorAnswers).length > 0;
+        const hasPatient = patientAnswers && Object.keys(patientAnswers).length > 0;
+        if (!hasDoctor && !hasPatient) return null;
+        return (
+          <>
+            {hasDoctor && (
+              <div className="mt-6">
+                <DoctorAnswersSummary answers={doctorAnswers!} />
+              </div>
+            )}
+            {hasPatient && (
+              <div className="mt-6">
+                <PatientAnswersSummary answers={patientAnswers!} />
+              </div>
+            )}
+          </>
+        );
+      })()}
 
       <div className="mt-6 p-4 rounded-xl border border-slate-200 bg-white">
         <h2 className="font-semibold text-slate-900 mb-2">Reports</h2>

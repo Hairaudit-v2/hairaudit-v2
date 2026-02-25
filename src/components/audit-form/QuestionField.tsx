@@ -10,7 +10,10 @@ type FormQuestion = {
   options?: { value: string; label: string }[];
   min?: number;
   max?: number;
-  dependsOn?: { questionId: string; value?: string; hasValue?: string };
+  dependsOn?:
+    | { questionId: string; value?: string; hasValue?: string }
+    | { questionId: string; oneOf: string[] }
+    | { or: Array<{ questionId: string; value: string }> };
 };
 
 export default function QuestionField({
@@ -27,13 +30,21 @@ export default function QuestionField({
   locked: boolean;
 }) {
   const dep = question.dependsOn;
-  const show =
-    !dep ||
-    (dep.value !== undefined && allAnswers[dep.questionId] === dep.value) ||
-    (dep.hasValue !== undefined &&
-      Array.isArray(allAnswers[dep.questionId]) &&
-      (allAnswers[dep.questionId] as string[]).includes(dep.hasValue));
-
+  let show = true;
+  if (dep) {
+    if ("oneOf" in dep) {
+      const val = allAnswers[dep.questionId];
+      show = dep.oneOf.includes(String(val ?? ""));
+    } else if ("or" in dep) {
+      show = dep.or.some((o) => allAnswers[o.questionId] === o.value);
+    } else {
+      show =
+        (dep.value !== undefined && allAnswers[dep.questionId] === dep.value) ||
+        (dep.hasValue !== undefined &&
+          Array.isArray(allAnswers[dep.questionId]) &&
+          (allAnswers[dep.questionId] as string[]).includes(dep.hasValue));
+    }
+  }
   if (!show) return null;
 
   const fieldId = `audit-${question.id}`;
