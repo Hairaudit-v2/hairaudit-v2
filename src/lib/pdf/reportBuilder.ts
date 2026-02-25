@@ -24,6 +24,14 @@ const META_SIZE = 9;
 
 const PAGE_TOP_CONTENT_Y = 95;
 
+function setOpacity(doc: PDFKit.PDFDocument, value: number) {
+  try {
+    (doc as any).opacity?.(value);
+  } catch {
+    /* ignore */
+  }
+}
+
 function drawNeuralWatermark(doc: PDFKit.PDFDocument) {
   const pageW = (doc.page as any).width as number;
   const pageH = (doc.page as any).height as number;
@@ -168,7 +176,9 @@ function addScoreBadge(doc: PDFKit.PDFDocument, score: number) {
 
   doc.save();
   doc.roundedRect(x, y0, w, h, 18).fillColor(card).fill();
-  doc.roundedRect(x, y0, w, h, 18).strokeColor("rgba(245, 158, 11, 0.35)").lineWidth(1).stroke();
+  setOpacity(doc, 0.35);
+  doc.roundedRect(x, y0, w, h, 18).strokeColor(AMBER_500).lineWidth(1).stroke();
+  setOpacity(doc, 1);
 
   // Circular badge
   const r = 44;
@@ -177,43 +187,52 @@ function addScoreBadge(doc: PDFKit.PDFDocument, score: number) {
 
   // Radial gradient (fallback to linear if radial not available)
   const radial = (doc as any).radialGradient?.(cx - 10, cy - 12, 6, cx, cy, r) ?? doc.linearGradient(cx - r, cy - r, cx + r, cy + r);
-  radial.stop(0, "rgba(45, 212, 191, 0.35)").stop(0.55, "rgba(15, 23, 42, 0.95)").stop(1, "rgba(2, 6, 23, 1)");
+  // PDFKit gradients do not accept CSS rgba() strings. Use hex + explicit opacity.
+  radial.stop(0, "#2dd4bf", 0.35).stop(0.55, SLATE_900, 0.95).stop(1, "#020617", 1);
 
   // Outer glow ring
-  try {
-    (doc as any).opacity?.(0.65);
-  } catch {}
-  doc.circle(cx, cy, r + 2).strokeColor("rgba(45, 212, 191, 0.35)").lineWidth(2).stroke();
-  try {
-    (doc as any).opacity?.(1);
-  } catch {}
+  setOpacity(doc, 0.35);
+  doc.circle(cx, cy, r + 2).strokeColor("#2dd4bf").lineWidth(2).stroke();
+  setOpacity(doc, 1);
 
   doc.circle(cx, cy, r).fillColor(radial).fill();
-  doc.circle(cx, cy, r).strokeColor("rgba(245, 158, 11, 0.35)").lineWidth(1).stroke();
+  setOpacity(doc, 0.35);
+  doc.circle(cx, cy, r).strokeColor(AMBER_500).lineWidth(1).stroke();
+  setOpacity(doc, 1);
 
   // Score text (dominant)
   doc.fillColor("#ffffff").font("Helvetica-Bold").fontSize(54);
   doc.text(String(s), cx - r, cy - 22, { width: r * 2, align: "center" });
-  doc.fillColor("rgba(226,232,240,0.88)").font("Helvetica").fontSize(12);
+  setOpacity(doc, 0.88);
+  doc.fillColor("#e2e8f0").font("Helvetica").fontSize(12);
   doc.text("/100", cx - r, cy + 20, { width: r * 2, align: "center" });
+  setOpacity(doc, 1);
 
   // Right-side label stack
   const rx = cx + r + 22;
   const rw = x + w - rx - 18;
 
-  doc.fillColor("rgba(226,232,240,0.90)").font("Helvetica-Bold").fontSize(12);
+  setOpacity(doc, 0.9);
+  doc.fillColor("#e2e8f0").font("Helvetica-Bold").fontSize(12);
   doc.text("AI Score", rx, y0 + 26, { width: rw });
+  setOpacity(doc, 1);
 
-  doc.fillColor("rgba(45, 212, 191, 0.9)").font("Helvetica-Bold").fontSize(10);
+  setOpacity(doc, 0.9);
+  doc.fillColor("#2dd4bf").font("Helvetica-Bold").fontSize(10);
   doc.text("Executive Intelligence Layer", rx, y0 + 44, { width: rw });
+  setOpacity(doc, 1);
 
-  doc.fillColor("rgba(226,232,240,0.92)").font("Helvetica").fontSize(11);
+  setOpacity(doc, 0.92);
+  doc.fillColor("#e2e8f0").font("Helvetica").fontSize(11);
   doc.text("Audit Classification:", rx, y0 + 70, { width: rw, continued: true });
   doc.fillColor(tier.color).font("Helvetica-Bold").text(` ${tier.label}`);
+  setOpacity(doc, 1);
 
   // Tier hint (small)
-  doc.fillColor("rgba(148,163,184,0.9)").font("Helvetica").fontSize(9);
+  setOpacity(doc, 0.9);
+  doc.fillColor(SLATE_400).font("Helvetica").fontSize(9);
   doc.text("Tier bands: 0–49 / 50–69 / 70–84 / 85+", rx, y0 + 92, { width: rw });
+  setOpacity(doc, 1);
 
   doc.restore();
   doc.y = y0 + h + 16;
