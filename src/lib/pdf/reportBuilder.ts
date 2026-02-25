@@ -274,13 +274,56 @@ function addClinicalNarrative(doc: PDFKit.PDFDocument, content: AuditReportConte
       const next = String(kf.recommended_next_step ?? "").trim();
       const ev = Array.isArray(kf.evidence) ? kf.evidence : [];
 
-      // Estimate block height and break before if needed
-      const hTitle = doc.heightOfString(title || "Finding", { width: CONTENT_WIDTH - 90 });
-      const hImpact = doc.heightOfString(impact || "—", { width: CONTENT_WIDTH });
-      const hNext = doc.heightOfString(next || "—", { width: CONTENT_WIDTH });
       const evText = ev.slice(0, 3).map((e) => `• ${String(e.observation ?? "").trim()}`).join("\n");
-      const hEv = evText ? doc.heightOfString(evText, { width: CONTENT_WIDTH - 10 }) : 0;
-      const needed = 14 + hTitle + 8 + hImpact + 8 + hNext + (hEv ? 10 + hEv : 0) + 18;
+
+      // Measure using the exact fonts + widths we render with.
+      // This prevents overlap when PDFKit wraps differently than our estimate.
+      const measureCardHeight = () => {
+        const w = CONTENT_WIDTH;
+        const pillW = 78;
+        const pillH = 18;
+        const innerW = w - 28; // x+14 padding both sides
+        const titleW = w - 14 - pillW - 18; // matches render width for title
+        const nextLabelW = 58;
+        const nextW = Math.max(40, innerW - nextLabelW);
+        const evW = w - 36; // matches render width at x+22
+
+        doc.save();
+
+        doc.font("Helvetica-Bold").fontSize(12);
+        const hTitle = doc.heightOfString(title || "Key finding", { width: titleW });
+
+        doc.font("Helvetica").fontSize(11);
+        const hImpact = doc.heightOfString(impact || "—", { width: innerW });
+
+        doc.font("Helvetica-Bold").fontSize(10);
+        const hNextLabel = doc.heightOfString("Next step:", { width: nextLabelW });
+        doc.font("Helvetica").fontSize(10);
+        const hNext = doc.heightOfString(next || "—", { width: nextW });
+        const hNextRow = Math.max(hNextLabel, hNext);
+
+        let hEvidence = 0;
+        if (evText) {
+          doc.font("Helvetica-Bold").fontSize(9);
+          const hSupport = doc.heightOfString("Support:", { width: innerW });
+          doc.font("Helvetica").fontSize(9);
+          const hEv = doc.heightOfString(evText, { width: evW });
+          hEvidence = hSupport + 4 + hEv;
+        }
+
+        doc.restore();
+
+        const topPad = 14;
+        const headerBlock = Math.max(pillH, Math.max(16, hTitle));
+        const gapAfterHeader = 6;
+        const gapAfterImpact = 8;
+        const gapAfterNext = 6;
+        const bottomPad = 14;
+
+        return topPad + headerBlock + gapAfterHeader + hImpact + gapAfterImpact + hNextRow + gapAfterNext + hEvidence + bottomPad;
+      };
+
+      const needed = measureCardHeight();
 
       if (doc.y + needed > bottomLimit && doc.y > MARGIN + 30) {
         doc.addPage();
@@ -314,6 +357,24 @@ function addClinicalNarrative(doc: PDFKit.PDFDocument, content: AuditReportConte
       doc.fillColor(SLATE_900).font("Helvetica-Bold").fontSize(12);
       doc.text(title || "Key finding", x + 14, y0 + 14, { width: w - 14 - pillW - 18 });
 
+      // Use measured heights/widths (no guessing) to avoid overlap.
+      const innerW = w - 28;
+      const nextLabelW = 58;
+      const nextW = Math.max(40, innerW - nextLabelW);
+      const evW = w - 36;
+
+      doc.save();
+      doc.font("Helvetica-Bold").fontSize(12);
+      const hTitle = doc.heightOfString(title || "Key finding", { width: w - 14 - pillW - 18 });
+      doc.font("Helvetica").fontSize(11);
+      const hImpact = doc.heightOfString(impact || "—", { width: innerW });
+      doc.font("Helvetica-Bold").fontSize(10);
+      const hNextLabel = doc.heightOfString("Next step:", { width: nextLabelW });
+      doc.font("Helvetica").fontSize(10);
+      const hNext = doc.heightOfString(next || "—", { width: nextW });
+      const hNextRow = Math.max(hNextLabel, hNext);
+      doc.restore();
+
       let y = y0 + 14 + Math.max(16, hTitle) + 6;
 
       // Impact (clinical-grade explanation)
@@ -325,16 +386,21 @@ function addClinicalNarrative(doc: PDFKit.PDFDocument, content: AuditReportConte
       doc.fillColor(SLATE_900).font("Helvetica-Bold").fontSize(10);
       doc.text("Next step:", x + 14, y, { continued: false });
       doc.fillColor(SLATE_600).font("Helvetica").fontSize(10);
-      doc.text(next || "—", x + 14 + 58, y, { width: w - 28 - 58 });
-      y += Math.max(12, hNext) + 6;
+      doc.text(next || "—", x + 14 + nextLabelW, y, { width: nextW });
+      y += hNextRow + 6;
 
       // Evidence snippets (1–3)
       if (evText) {
         doc.fillColor(SLATE_400).font("Helvetica-Bold").fontSize(9);
         doc.text("Support:", x + 14, y);
-        y += 12;
+        // Advance by actual support label height (prevents overlap on font fallback)
+        doc.save();
+        doc.font("Helvetica-Bold").fontSize(9);
+        const hSupport = doc.heightOfString("Support:", { width: innerW });
+        doc.restore();
+        y += hSupport + 4;
         doc.fillColor(SLATE_600).font("Helvetica").fontSize(9);
-        doc.text(evText, x + 22, y, { width: w - 36 });
+        doc.text(evText, x + 22, y, { width: evW });
       }
 
       doc.y = y0 + needed + 12;
@@ -440,7 +506,7 @@ function addConfidencePanel(doc: PDFKit.PDFDocument, content: AuditReportContent
   const x = MARGIN;
   const w = CONTENT_WIDTH;
   const pad = 12;
-  const labelW = 130;
+  const labelW = 148;
   const valueW = w - pad * 2 - labelW;
 
   const photoCount = Number.isFinite(cp.photoCount) ? Math.max(0, Math.round(cp.photoCount)) : 0;
@@ -465,7 +531,8 @@ function addConfidencePanel(doc: PDFKit.PDFDocument, content: AuditReportContent
     (conf01 < 0.55 ? "low" : conf01 < 0.8 ? "medium" : "high");
 
   const missingText = missing.length ? compactJoin(missing, 120) : "None";
-  const limitationsText = compactJoin(cp.limitations ?? [], 200);
+  // Keep this compact so the confidence panel can fit on page 1.
+  const limitationsText = compactJoin(cp.limitations ?? [], 140);
 
   const rows: Array<{ k: string; v: string }> = [
     { k: "Photos", v: String(photoCount) },
@@ -503,6 +570,15 @@ function addConfidencePanel(doc: PDFKit.PDFDocument, content: AuditReportContent
   doc.restore();
 
   const cardH = pad + headerH + bodyH + pad - rowGap;
+
+  // Never let the panel split across pages (PDFKit will paginate text mid-line).
+  const pageH = (doc.page as any).height as number;
+  const bottomLimit = pageH - MARGIN - 24;
+  if (doc.y + cardH > bottomLimit && doc.y > MARGIN + 20) {
+    doc.addPage();
+    doc.x = MARGIN;
+    doc.y = MARGIN;
+  }
 
   // Draw card background (subtle gradient) + border
   const g = doc.linearGradient(x, doc.y, x, doc.y + cardH);
