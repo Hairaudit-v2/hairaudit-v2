@@ -17,7 +17,7 @@ function getTailwindPath(): string {
 const tailwindcssPath = getTailwindPath();
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ["pdfkit", "@supabase/supabase-js", "@supabase/ssr"],
+  serverExternalPackages: ["pdfkit", "@supabase/supabase-js", "@supabase/ssr", "@napi-rs/canvas", "chart.js"],
   turbopack: {
     resolveAlias: {
       tailwindcss: tailwindcssPath,

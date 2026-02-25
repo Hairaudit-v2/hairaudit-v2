@@ -30,6 +30,19 @@ export type AuditReportContent = {
   findings?: string[];
   model?: string;
   uploadCount?: number;
+  confidencePanel?: {
+    photoCount: number;
+    missingCategories?: string[];
+    confidenceScore: number; // 0–1
+    confidenceLabel: string;
+    limitations?: string[];
+  };
+  /** Radar chart inputs (rendered server-side to PNG, embedded under Overall Score). */
+  radar?: {
+    section_scores: Record<string, number>;
+    overall_score: number;
+    confidence: number;
+  };
   areaScores?: {
     domains?: Record<string, number>;
     sections?: Record<string, number>;
@@ -89,10 +102,103 @@ function addSectionHeading(doc: PDFKit.PDFDocument, title: string) {
   doc.restore();
 }
 
+function clamp(n: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, n));
+}
+
+function compactJoin(lines: string[] | undefined, maxLen: number) {
+  const s = (lines ?? []).filter(Boolean).join(" • ").replace(/\s+/g, " ").trim();
+  if (!s) return "None";
+  if (s.length <= maxLen) return s;
+  return s.slice(0, Math.max(0, maxLen - 1)).trimEnd() + "…";
+}
+
+function addConfidencePanel(doc: PDFKit.PDFDocument, content: AuditReportContent) {
+  const cp = content.confidencePanel;
+  if (!cp) return;
+
+  const x = MARGIN;
+  const w = CONTENT_WIDTH;
+  const pad = 12;
+  const labelW = 130;
+  const valueW = w - pad * 2 - labelW;
+
+  const photoCount = Number.isFinite(cp.photoCount) ? Math.max(0, Math.round(cp.photoCount)) : 0;
+  const confidencePct = Math.round(clamp(Number(cp.confidenceScore) || 0, 0, 1) * 100);
+  const confidenceLabel = String(cp.confidenceLabel || "").trim() || "—";
+
+  const missing = (cp.missingCategories ?? []).filter(Boolean);
+  const missingText = missing.length ? compactJoin(missing, 120) : "None";
+  const limitationsText = compactJoin(cp.limitations ?? [], 200);
+
+  const rows: Array<{ k: string; v: string }> = [
+    { k: "Photos", v: String(photoCount) },
+    { k: "Missing categories", v: missingText },
+    { k: "Model confidence", v: `${confidencePct}%` },
+    { k: "Confidence label", v: confidenceLabel },
+    { k: "Limitations", v: limitationsText },
+  ];
+
+  // Measure height
+  const headerH = 22;
+  const rowGap = 6;
+  const rowFont = 9;
+
+  let bodyH = 0;
+  doc.save();
+  doc.fontSize(rowFont).font("Helvetica");
+  for (const r of rows) {
+    const hV = doc.heightOfString(r.v, { width: valueW });
+    bodyH += Math.max(12, hV) + rowGap;
+  }
+  doc.restore();
+
+  const cardH = pad + headerH + bodyH + pad - rowGap;
+
+  // Draw card background (subtle gradient) + border
+  const g = doc.linearGradient(x, doc.y, x, doc.y + cardH);
+  g.stop(0, "#f8fafc").stop(1, "#ffffff");
+  doc.save();
+  doc.roundedRect(x, doc.y, w, cardH, 12).fillColor(g).fill();
+  doc.roundedRect(x, doc.y, w, cardH, 12).strokeColor("#e2e8f0").lineWidth(1).stroke();
+
+  // Header with AI icon
+  const y0 = doc.y;
+  const iconR = 8;
+  const iconCx = x + pad + iconR;
+  const iconCy = y0 + pad + iconR;
+  doc.circle(iconCx, iconCy, iconR).fillColor(AMBER_500).fill();
+  doc.fillColor(SLATE_900).font("Helvetica-Bold").fontSize(8);
+  doc.text("AI", iconCx - 6, iconCy - 4, { width: 12, align: "center" });
+
+  doc.fillColor(SLATE_900).font("Helvetica-Bold").fontSize(11);
+  doc.text("Data Integrity & Confidence", x + pad + iconR * 2 + 8, y0 + pad - 1, {
+    width: w - pad * 2 - iconR * 2 - 8,
+  });
+
+  // Body rows
+  let y = y0 + pad + headerH;
+  for (const r of rows) {
+    doc.fillColor(SLATE_600).font("Helvetica-Bold").fontSize(rowFont);
+    doc.text(r.k, x + pad, y, { width: labelW });
+    doc.fillColor(SLATE_900).font("Helvetica").fontSize(rowFont);
+    doc.text(r.v, x + pad + labelW, y, { width: valueW });
+    const hV = doc.heightOfString(r.v, { width: valueW });
+    y += Math.max(12, hV) + rowGap;
+  }
+
+  doc.restore();
+  doc.y = y0 + cardH + 10;
+}
+
 /**
  * Add audit summary section.
  */
-function addAuditSummary(doc: PDFKit.PDFDocument, content: AuditReportContent) {
+function addAuditSummary(
+  doc: PDFKit.PDFDocument,
+  content: AuditReportContent,
+  radarPng?: { buffer: Buffer; width: number; height: number } | null
+) {
   addSectionHeading(doc, content.isManual ? "Audit Summary" : "AI Audit Summary");
   doc.fillColor(SLATE_600);
   doc.fontSize(11).font("Helvetica");
@@ -102,6 +208,25 @@ function addAuditSummary(doc: PDFKit.PDFDocument, content: AuditReportContent) {
     doc.text(`Overall Score: ${content.score}/100`, { continued: false });
     doc.font("Helvetica").fillColor(SLATE_600);
   }
+
+  if (radarPng?.buffer) {
+    const w = CONTENT_WIDTH;
+    const h = Math.round(w * (radarPng.height / radarPng.width));
+    doc.moveDown(0.6);
+    const x = MARGIN;
+    const y = doc.y;
+    try {
+      doc.image(radarPng.buffer, x, y, { width: w, height: h });
+      doc.y = y + h + 10;
+    } catch {
+      // If image embedding fails for any reason, continue with text-only report.
+      doc.moveDown(0.2);
+    }
+  }
+
+  // Data Integrity & Confidence panel (page 1)
+  addConfidencePanel(doc, content);
+
   if (content.donorQuality)
     doc.text(`Donor Quality: ${content.donorQuality}`);
   if (content.graftSurvival)
@@ -127,13 +252,6 @@ function addAuditSummary(doc: PDFKit.PDFDocument, content: AuditReportContent) {
     doc.fontSize(11).fillColor(SLATE_600);
   }
   doc.moveDown(1);
-}
-
-function scoreLevel(s: number): { outOf5: number; level: "High" | "Medium" | "Low"; color: string } {
-  const outOf5 = Math.max(0, Math.min(5, Math.round((s / 100) * 5)));
-  const level: "High" | "Medium" | "Low" = s >= 80 ? "High" : s >= 50 ? "Medium" : "Low";
-  const color = level === "High" ? "#059669" : level === "Medium" ? AMBER_600 : "#dc2626";
-  return { outOf5, level, color };
 }
 
 function addScoreByArea(doc: PDFKit.PDFDocument, content: AuditReportContent) {
@@ -169,14 +287,8 @@ function addScoreByArea(doc: PDFKit.PDFDocument, content: AuditReportContent) {
 
   addSectionHeading(doc, "Score by Area");
   doc.fillColor(SLATE_600).fontSize(10).font("Helvetica");
-  doc.text("Where your score sits for each capture point (out of 5).");
-  doc.moveDown(0.8);
-
-  const gap = 14;
-  const cardW = (CONTENT_WIDTH - gap) / 2;
-  const cardH = 64;
-  const barH = 8;
-  const pad = 10;
+  doc.text("Area performance (0–100). Higher is better.");
+  doc.moveDown(0.6);
 
   const items = order
     .filter((k) => domains[k] != null)
@@ -189,82 +301,68 @@ function addScoreByArea(doc: PDFKit.PDFDocument, content: AuditReportContent) {
   const renderHeading = (title: string) => {
     addSectionHeading(doc, title);
     doc.fillColor(SLATE_600).fontSize(10).font("Helvetica");
-    doc.text("Where your score sits for each capture point (out of 5).");
-    doc.moveDown(0.8);
+    doc.text("Area performance (0–100). Higher is better.");
+    doc.moveDown(0.6);
   };
 
-  // If the grid doesn't fit in the remaining space at all, start it on a new page.
-  const rowsNeeded = Math.ceil(items.length / 2);
-  const gridNeededH = rowsNeeded * (cardH + gap);
-  if (doc.y + gridNeededH > bottomLimit && doc.y > MARGIN + 40) {
-    doc.addPage();
-    doc.x = MARGIN;
-    doc.y = MARGIN;
-    renderHeading("Score by Area");
-  }
+  const band = (s0: number) => {
+    const s = Math.max(0, Math.min(100, s0));
+    if (s < 40) {
+      return { solid: "#dc2626", gradA: "#7f1d1d", gradB: "#dc2626" }; // red
+    }
+    if (s < 70) {
+      return { solid: AMBER_600, gradA: "#92400e", gradB: "#f59e0b" }; // amber
+    }
+    if (s < 85) {
+      return { solid: "#16a34a", gradA: "#166534", gradB: "#22c55e" }; // green
+    }
+    return { solid: "#059669", gradA: "#065f46", gradB: "#10b981" }; // emerald
+  };
 
-  let yBase = doc.y;
-  let row = 0;
-  let col = 0;
+  const track = "#e5e7eb";
+  const rowH = 34; // label + bar + spacing
+  const barH = 10;
+  const barR = 5;
+  const x0 = MARGIN;
+  const w0 = CONTENT_WIDTH;
 
   for (const it of items) {
-    // Start a new page only on row boundaries (never mid-card).
-    if (col === 0) {
-      const rowY = yBase + row * (cardH + gap);
-      if (rowY + cardH > bottomLimit) {
-        doc.addPage();
-        doc.x = MARGIN;
-        doc.y = MARGIN;
-        renderHeading("Score by Area (continued)");
-        yBase = doc.y;
-        row = 0;
-        col = 0;
-      }
+    const score = Math.max(0, Math.min(100, Number(it.score)));
+
+    // Page break (never mid-row)
+    if (doc.y + rowH > bottomLimit && doc.y > MARGIN + 40) {
+      doc.addPage();
+      doc.x = MARGIN;
+      doc.y = MARGIN;
+      renderHeading("Score by Area (continued)");
     }
 
-    const x = MARGIN + col * (cardW + gap);
-    const y = yBase + row * (cardH + gap);
+    const yLabel = doc.y;
 
-    doc.save();
-    doc.roundedRect(x, y, cardW, cardH, 10).strokeColor("#e5e7eb").lineWidth(1).stroke();
-
-    // Title
+    // Label (left)
     doc.fillColor(SLATE_900).font("Helvetica-Bold").fontSize(10);
-    doc.text(it.title, x + pad, y + pad, { width: cardW - pad * 2, height: 14, ellipsis: true });
+    doc.text(it.title, x0, yLabel, { width: w0 - 52, ellipsis: true });
 
-    // Bar
-    const barY = y + pad + 20;
-    doc.roundedRect(x + pad, barY, cardW - pad * 2, barH, 4).fillColor("#e5e7eb").fill();
-    const { outOf5, level, color } = scoreLevel(it.score);
-    const fillW = ((cardW - pad * 2) * outOf5) / 5;
-    doc.roundedRect(
-      x + pad,
-      barY,
-      fillW,
-      barH,
-      4
-    )
-      .fillColor(color)
-      .fill();
+    // Percentage (right)
+    const pct = `${Math.round(score)}%`;
+    const c = band(score);
+    doc.fillColor(c.solid).font("Helvetica-Bold").fontSize(10);
+    doc.text(pct, x0, yLabel, { width: w0, align: "right" });
 
-    // Meta row
-    doc.fillColor(SLATE_600).font("Helvetica").fontSize(9);
-    doc.text(`${outOf5}/5`, x + pad, barY + 14, { width: 40 });
-    doc.fillColor(color).font("Helvetica-Bold").text(`${level} level`, x + pad + 40, barY + 14, {
-      width: cardW - pad * 2 - 40,
-    });
+    // Bar (track + fill)
+    const yBar = yLabel + 14;
+    doc.roundedRect(x0, yBar, w0, barH, barR).fillColor(track).fill();
 
-    doc.restore();
-
-    col += 1;
-    if (col >= 2) {
-      col = 0;
-      row += 1;
+    const fillW = (w0 * score) / 100;
+    if (fillW > 0.5) {
+      const g = doc.linearGradient(x0, yBar, x0 + Math.max(1, fillW), yBar);
+      g.stop(0, c.gradA).stop(1, c.gradB);
+      doc.roundedRect(x0, yBar, fillW, barH, barR).fillColor(g).fill();
     }
-  }
 
-  const rowsUsed = row + (col > 0 ? 1 : 0);
-  doc.y = yBase + rowsUsed * (cardH + gap);
+    // Next row
+    doc.y = yLabel + rowH;
+  }
 
   if (hasSections) {
     doc.moveDown(0.5);
@@ -310,7 +408,21 @@ export async function buildAuditReportPdf(
   addHeader(doc, logoBuffer);
   doc.y = 95;
   addMeta(doc, content);
-  addAuditSummary(doc, content);
+  let radarImg: { buffer: Buffer; width: number; height: number } | null = null;
+  if (content.radar?.section_scores && typeof content.radar.overall_score === "number") {
+    try {
+      const { renderRadarChartPng } = await import("./renderRadarChart");
+      radarImg = renderRadarChartPng({
+        section_scores: content.radar.section_scores,
+        overall_score: content.radar.overall_score,
+        confidence: content.radar.confidence,
+      });
+    } catch {
+      radarImg = null;
+    }
+  }
+
+  addAuditSummary(doc, content, radarImg);
   addScoreByArea(doc, content);
 
   // Add images if provided (with buffers already fetched)

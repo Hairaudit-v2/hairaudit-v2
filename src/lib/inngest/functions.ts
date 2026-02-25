@@ -203,6 +203,18 @@ export const runAudit = inngest.createFunction(
         findings: aiResult.findings,
         model: aiResult.model,
         uploadCount: uploads.length,
+        confidencePanel: {
+          photoCount: uploads.length,
+          missingCategories: aiResult.data_quality?.missing_photos ?? [],
+          confidenceScore: aiResult.confidence,
+          confidenceLabel: aiResult.confidence_label,
+          limitations: aiResult.data_quality?.limitations ?? [],
+        },
+        radar: {
+          section_scores: aiResult.section_scores as unknown as Record<string, number>,
+          overall_score: aiResult.overall_score,
+          confidence: aiResult.confidence,
+        },
         areaScores: {
           domains: {
             donor_management: aiResult.section_scores.donor_management,
