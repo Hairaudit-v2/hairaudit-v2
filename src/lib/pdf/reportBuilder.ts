@@ -183,35 +183,57 @@ function addScoreByArea(doc: PDFKit.PDFDocument, content: AuditReportContent) {
     .map((k) => ({ key: k, title: domainTitles[k] ?? k.replace(/[._]/g, " "), score: Number(domains[k]) }))
     .filter((x) => Number.isFinite(x.score));
 
-  const bottomLimit = (doc.page as any).height - MARGIN - 40;
-  const startY = doc.y;
-  let i = 0;
+  const pageH = (doc.page as any).height as number;
+  const bottomLimit = pageH - MARGIN - 40;
+
+  const renderHeading = (title: string) => {
+    addSectionHeading(doc, title);
+    doc.fillColor(SLATE_600).fontSize(10).font("Helvetica");
+    doc.text("Where your score sits for each capture point (out of 5).");
+    doc.moveDown(0.8);
+  };
+
+  // If the grid doesn't fit in the remaining space at all, start it on a new page.
+  const rowsNeeded = Math.ceil(items.length / 2);
+  const gridNeededH = rowsNeeded * (cardH + gap);
+  if (doc.y + gridNeededH > bottomLimit && doc.y > MARGIN + 40) {
+    doc.addPage();
+    doc.x = MARGIN;
+    doc.y = MARGIN;
+    renderHeading("Score by Area");
+  }
+
+  let yBase = doc.y;
+  let row = 0;
+  let col = 0;
+
   for (const it of items) {
-    // If we're about to start a new row and it won't fit, break page and restart grid on new page.
-    const isRowStart = i % 2 === 0;
-    const rowIndex = Math.floor(i / 2);
-    const y = startY + rowIndex * (cardH + gap);
-    if (isRowStart && y + cardH > bottomLimit) {
-      doc.addPage();
-      doc.x = MARGIN;
-      doc.y = MARGIN;
-      // restart layout on the new page
-      i = 0;
+    // Start a new page only on row boundaries (never mid-card).
+    if (col === 0) {
+      const rowY = yBase + row * (cardH + gap);
+      if (rowY + cardH > bottomLimit) {
+        doc.addPage();
+        doc.x = MARGIN;
+        doc.y = MARGIN;
+        renderHeading("Score by Area (continued)");
+        yBase = doc.y;
+        row = 0;
+        col = 0;
+      }
     }
 
-    const col = i % 2;
     const x = MARGIN + col * (cardW + gap);
-    const y2 = doc.y + Math.floor(i / 2) * (cardH + gap);
+    const y = yBase + row * (cardH + gap);
 
     doc.save();
-    doc.roundedRect(x, y2, cardW, cardH, 10).strokeColor("#e5e7eb").lineWidth(1).stroke();
+    doc.roundedRect(x, y, cardW, cardH, 10).strokeColor("#e5e7eb").lineWidth(1).stroke();
 
     // Title
     doc.fillColor(SLATE_900).font("Helvetica-Bold").fontSize(10);
-    doc.text(it.title, x + pad, y2 + pad, { width: cardW - pad * 2 });
+    doc.text(it.title, x + pad, y + pad, { width: cardW - pad * 2, height: 14, ellipsis: true });
 
     // Bar
-    const barY = y2 + pad + 20;
+    const barY = y + pad + 20;
     doc.roundedRect(x + pad, barY, cardW - pad * 2, barH, 4).fillColor("#e5e7eb").fill();
     const { outOf5, level, color } = scoreLevel(it.score);
     doc.roundedRect(
@@ -226,16 +248,22 @@ function addScoreByArea(doc: PDFKit.PDFDocument, content: AuditReportContent) {
 
     // Meta row
     doc.fillColor(SLATE_600).font("Helvetica").fontSize(9);
-    doc.text(`${outOf5}/5`, x + pad, barY + 14);
-    doc.fillColor(color).font("Helvetica-Bold").text(`${level} level`, x + pad + 40, barY + 14);
+    doc.text(`${outOf5}/5`, x + pad, barY + 14, { width: 40 });
+    doc.fillColor(color).font("Helvetica-Bold").text(`${level} level`, x + pad + 40, barY + 14, {
+      width: cardW - pad * 2 - 40,
+    });
 
     doc.restore();
-    i += 1;
+
+    col += 1;
+    if (col >= 2) {
+      col = 0;
+      row += 1;
+    }
   }
 
-  // Move cursor below the grid on the current page
-  const rowsOnPage = Math.ceil((i || items.length) / 2);
-  doc.y = doc.y + rowsOnPage * (cardH + gap);
+  const rowsUsed = row + (col > 0 ? 1 : 0);
+  doc.y = yBase + rowsUsed * (cardH + gap);
 
   if (hasSections) {
     doc.moveDown(0.5);
