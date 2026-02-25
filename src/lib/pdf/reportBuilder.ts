@@ -183,34 +183,44 @@ function addScoreByArea(doc: PDFKit.PDFDocument, content: AuditReportContent) {
     .map((k) => ({ key: k, title: domainTitles[k] ?? k.replace(/[._]/g, " "), score: Number(domains[k]) }))
     .filter((x) => Number.isFinite(x.score));
 
+  const bottomLimit = (doc.page as any).height - MARGIN - 40;
+  const startY = doc.y;
   let i = 0;
   for (const it of items) {
-    const col = i % 2;
-    const x = MARGIN + col * (cardW + gap);
-    const y = doc.y + Math.floor(i / 2) * (cardH + gap);
-
-    // Page break if needed
-    const bottomLimit = (doc.page as any).height - MARGIN - 40;
-    if (y + cardH > bottomLimit) {
+    // If we're about to start a new row and it won't fit, break page and restart grid on new page.
+    const isRowStart = i % 2 === 0;
+    const rowIndex = Math.floor(i / 2);
+    const y = startY + rowIndex * (cardH + gap);
+    if (isRowStart && y + cardH > bottomLimit) {
       doc.addPage();
       doc.x = MARGIN;
       doc.y = MARGIN;
+      // restart layout on the new page
       i = 0;
-      continue;
     }
 
+    const col = i % 2;
+    const x = MARGIN + col * (cardW + gap);
+    const y2 = doc.y + Math.floor(i / 2) * (cardH + gap);
+
     doc.save();
-    doc.roundedRect(x, y, cardW, cardH, 10).strokeColor("#e5e7eb").lineWidth(1).stroke();
+    doc.roundedRect(x, y2, cardW, cardH, 10).strokeColor("#e5e7eb").lineWidth(1).stroke();
 
     // Title
     doc.fillColor(SLATE_900).font("Helvetica-Bold").fontSize(10);
-    doc.text(it.title, x + pad, y + pad, { width: cardW - pad * 2 });
+    doc.text(it.title, x + pad, y2 + pad, { width: cardW - pad * 2 });
 
     // Bar
-    const barY = y + pad + 20;
+    const barY = y2 + pad + 20;
     doc.roundedRect(x + pad, barY, cardW - pad * 2, barH, 4).fillColor("#e5e7eb").fill();
     const { outOf5, level, color } = scoreLevel(it.score);
-    doc.roundedRect(x + pad, barY, ((cardW - pad * 2) * Math.max(0, Math.min(100, it.score))) / 100, barH, 4)
+    doc.roundedRect(
+      x + pad,
+      barY,
+      ((cardW - pad * 2) * Math.max(0, Math.min(100, it.score))) / 100,
+      barH,
+      4
+    )
       .fillColor(color)
       .fill();
 
@@ -223,9 +233,9 @@ function addScoreByArea(doc: PDFKit.PDFDocument, content: AuditReportContent) {
     i += 1;
   }
 
-  // Move cursor below grid
-  const rows = Math.ceil(items.length / 2);
-  doc.y = doc.y + rows * (cardH + gap);
+  // Move cursor below the grid on the current page
+  const rowsOnPage = Math.ceil((i || items.length) / 2);
+  doc.y = doc.y + rowsOnPage * (cardH + gap);
 
   if (hasSections) {
     doc.moveDown(0.5);
@@ -276,34 +286,69 @@ export async function buildAuditReportPdf(
 
   // Add images if provided (with buffers already fetched)
   if (content.images?.length) {
-    addSectionHeading(doc, "Case Photos");
-    const IMG_SIZE = 140;
-    const GAP = 16;
-    const COLS = 2;
-    let col = 0;
-    let rowStartY = doc.y;
+    // Always start photos on a clean page so the grid isn't squeezed into whatever space remains.
+    doc.addPage();
+    doc.x = MARGIN;
+    doc.y = MARGIN;
 
-    for (let i = 0; i < content.images.length; i++) {
-      const img = content.images[i]!;
-      const x = MARGIN + col * (IMG_SIZE + GAP);
-      doc.y = rowStartY + Math.floor(i / COLS) * (IMG_SIZE + GAP + 28);
+    addSectionHeading(doc, "Case Photos");
+
+    const COLS = 3;
+    const IMG_SIZE = 120;
+    const GAP_X = 12;
+    const GAP_Y = 14;
+    const LABEL_H = 18;
+    const cellW = IMG_SIZE;
+    const rowH = IMG_SIZE + LABEL_H + GAP_Y;
+    const usableW = CONTENT_WIDTH;
+    const totalGridW = COLS * cellW + (COLS - 1) * GAP_X;
+    const left = MARGIN + Math.max(0, (usableW - totalGridW) / 2);
+    const bottomLimit = (doc.page as any).height - MARGIN - 24;
+
+    let col = 0;
+    let y = doc.y;
+
+    for (let idx = 0; idx < content.images.length; idx++) {
+      const img = content.images[idx]!;
+
+      // Page break before starting a new row if it won't fit.
+      if (col === 0 && y + IMG_SIZE + LABEL_H > bottomLimit) {
+        doc.addPage();
+        doc.x = MARGIN;
+        doc.y = MARGIN;
+        addSectionHeading(doc, "Case Photos (continued)");
+        y = doc.y;
+      }
+
+      const x = left + col * (cellW + GAP_X);
+      const drawY = y;
 
       try {
         const buf = Buffer.isBuffer(img.buffer) ? img.buffer : Buffer.from(img.buffer as ArrayBuffer);
-        doc.image(buf, x, doc.y, { width: IMG_SIZE, height: IMG_SIZE });
-        doc.fillColor(SLATE_600).fontSize(8);
-        const label = (img.label || img.type || `Photo ${i + 1}`).replace(/^patient_photo:|doctor_photo:/, "");
-        doc.text(label, x, doc.y + IMG_SIZE + 4, { width: IMG_SIZE });
+        doc.image(buf, x, drawY, { width: IMG_SIZE, height: IMG_SIZE });
       } catch {
+        doc.save();
+        doc.roundedRect(x, drawY, IMG_SIZE, IMG_SIZE, 8).strokeColor("#e5e7eb").lineWidth(1).stroke();
         doc.fillColor(SLATE_400).fontSize(9);
-        doc.text(`[${img.label || "Image"}]`, x, doc.y);
+        doc.text("Image unavailable", x + 10, drawY + IMG_SIZE / 2 - 6, { width: IMG_SIZE - 20, align: "center" });
+        doc.restore();
       }
 
-      col++;
-      if (col >= COLS) col = 0;
+      doc.fillColor(SLATE_600).fontSize(8).font("Helvetica");
+      const label = (img.label || img.type || `Photo ${idx + 1}`)
+        .replace(/^patient_photo:|doctor_photo:/, "")
+        .replace(/_/g, " ");
+      doc.text(label, x, drawY + IMG_SIZE + 4, { width: IMG_SIZE, height: LABEL_H, ellipsis: true });
+
+      col += 1;
+      if (col >= COLS) {
+        col = 0;
+        y += rowH;
+      }
     }
-    doc.y = rowStartY + Math.ceil(content.images.length / COLS) * (IMG_SIZE + GAP + 28);
-    doc.moveDown(1);
+
+    doc.y = y + (col === 0 ? 0 : rowH);
+    doc.moveDown(0.5);
   }
 
   // Footer
