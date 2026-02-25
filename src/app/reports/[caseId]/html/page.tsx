@@ -113,7 +113,8 @@ export default async function ReportHtmlPage({
   const answers = summary?.answers ?? summary?.audit_answers ?? summary?.scorecard_answers ?? null;
   if (answers) {
     try {
-      computed = scoreAudit(rubric as Parameters<typeof scoreAudit>[0], answers);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      computed = scoreAudit(rubric as any, answers);
     } catch (e) {
       console.error("scoreAudit failed:", e);
     }
