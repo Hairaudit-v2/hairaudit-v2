@@ -145,32 +145,78 @@ export type AuditReportContent = {
   images?: ReportImage[];
 };
 
+function scoreTier(score: number) {
+  const s = Math.max(0, Math.min(100, Math.round(score)));
+  if (s <= 49) return { label: "High Concern", color: "#ef4444" };
+  if (s <= 69) return { label: "Moderate Risk", color: "#f59e0b" };
+  if (s <= 84) return { label: "Clinically Acceptable", color: "#22c55e" };
+  return { label: "High Standard Execution", color: "#10b981" };
+}
+
 function addScoreBadge(doc: PDFKit.PDFDocument, score: number) {
   const x = MARGIN;
   const w = CONTENT_WIDTH;
-  const h = 64;
+  const h = 128;
   const y0 = doc.y;
 
-  const g = doc.linearGradient(x, y0, x + w, y0 + h);
-  g.stop(0, "#0b1226").stop(1, "#111827");
+  const s = Math.max(0, Math.min(100, Math.round(score)));
+  const tier = scoreTier(s);
+
+  // Premium backing card (dark, subtle)
+  const card = doc.linearGradient(x, y0, x + w, y0 + h);
+  card.stop(0, "#0b1226").stop(1, "#111827");
 
   doc.save();
-  doc.roundedRect(x, y0, w, h, 16).fillColor(g).fill();
-  doc.roundedRect(x, y0, w, h, 16).strokeColor("rgba(245, 158, 11, 0.55)").lineWidth(1).stroke();
+  doc.roundedRect(x, y0, w, h, 18).fillColor(card).fill();
+  doc.roundedRect(x, y0, w, h, 18).strokeColor("rgba(245, 158, 11, 0.35)").lineWidth(1).stroke();
 
-  doc.fillColor("#f8fafc").font("Helvetica-Bold").fontSize(12);
-  doc.text("AI Score", x + 18, y0 + 14);
+  // Circular badge
+  const r = 44;
+  const cx = x + 22 + r;
+  const cy = y0 + 20 + r;
 
-  doc.fillColor("#ffffff").font("Helvetica-Bold").fontSize(34);
-  doc.text(String(Math.round(score)), x + 18, y0 + 26, { continued: true });
-  doc.fillColor("rgba(226,232,240,0.90)").font("Helvetica").fontSize(14);
-  doc.text("/100");
+  // Radial gradient (fallback to linear if radial not available)
+  const radial = (doc as any).radialGradient?.(cx - 10, cy - 12, 6, cx, cy, r) ?? doc.linearGradient(cx - r, cy - r, cx + r, cy + r);
+  radial.stop(0, "rgba(45, 212, 191, 0.35)").stop(0.55, "rgba(15, 23, 42, 0.95)").stop(1, "rgba(2, 6, 23, 1)");
+
+  // Outer glow ring
+  try {
+    (doc as any).opacity?.(0.65);
+  } catch {}
+  doc.circle(cx, cy, r + 2).strokeColor("rgba(45, 212, 191, 0.35)").lineWidth(2).stroke();
+  try {
+    (doc as any).opacity?.(1);
+  } catch {}
+
+  doc.circle(cx, cy, r).fillColor(radial).fill();
+  doc.circle(cx, cy, r).strokeColor("rgba(245, 158, 11, 0.35)").lineWidth(1).stroke();
+
+  // Score text (dominant)
+  doc.fillColor("#ffffff").font("Helvetica-Bold").fontSize(54);
+  doc.text(String(s), cx - r, cy - 22, { width: r * 2, align: "center" });
+  doc.fillColor("rgba(226,232,240,0.88)").font("Helvetica").fontSize(12);
+  doc.text("/100", cx - r, cy + 20, { width: r * 2, align: "center" });
+
+  // Right-side label stack
+  const rx = cx + r + 22;
+  const rw = x + w - rx - 18;
+
+  doc.fillColor("rgba(226,232,240,0.90)").font("Helvetica-Bold").fontSize(12);
+  doc.text("AI Score", rx, y0 + 26, { width: rw });
 
   doc.fillColor("rgba(45, 212, 191, 0.9)").font("Helvetica-Bold").fontSize(10);
-  doc.text("Elite Clinical Intelligence Report", x, y0 + 18, { width: w - 18, align: "right" });
+  doc.text("Executive Intelligence Layer", rx, y0 + 44, { width: rw });
+
+  doc.fillColor("rgba(226,232,240,0.92)").font("Helvetica").fontSize(11);
+  doc.text("Audit Classification:", rx, y0 + 70, { width: rw, continued: true });
+  doc.fillColor(tier.color).font("Helvetica-Bold").text(` ${tier.label}`);
+
+  // Tier hint (small)
+  doc.fillColor("rgba(148,163,184,0.9)").font("Helvetica").fontSize(9);
+  doc.text("Tier bands: 0–49 / 50–69 / 70–84 / 85+", rx, y0 + 92, { width: rw });
 
   doc.restore();
-  doc.y = y0 + h + 14;
+  doc.y = y0 + h + 16;
 }
 
 function severityStyle(sev: string) {
