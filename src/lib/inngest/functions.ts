@@ -203,6 +203,10 @@ export const runAudit = inngest.createFunction(
         findings: aiResult.findings,
         model: aiResult.model,
         uploadCount: uploads.length,
+        areaScores: {
+          domains: aiResult.area_scores ?? {},
+          sections: aiResult.section_scores ?? {},
+        },
         images,
       });
     });
@@ -229,6 +233,8 @@ export const runAudit = inngest.createFunction(
         graft_survival_estimate: aiResult.graft_survival_estimate,
         notes: aiResult.notes,
         findings: aiResult.findings,
+        area_scores: aiResult.area_scores ?? null,
+        section_scores: aiResult.section_scores ?? null,
         ai_audit: {
           model: aiResult.model,
           generated_at: new Date().toISOString(),

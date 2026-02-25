@@ -20,6 +20,13 @@ export type AIAuditResult = {
   findings: string[];
   /** Model used for audit (for transparency) */
   model: string;
+  /**
+   * Optional per-area scoring (0–100). Keys should match rubric domain ids where possible,
+   * e.g. donor_management, extraction_quality, recipient_implantation, etc.
+   */
+  area_scores?: Record<string, number>;
+  /** Optional per-section scoring (0–100). Keys can match rubric section ids. */
+  section_scores?: Record<string, number>;
 };
 
 function formatAnswersForPrompt(answers: Record<string, unknown> | null | undefined): string {
@@ -61,6 +68,14 @@ Output a JSON object with exactly these keys:
 - graft_survival_estimate: string (e.g. "85-95%", "70-85%", "Unknown")
 - notes: string (2-4 sentences summarizing the case)
 - findings: string[] (3-8 bullet points of key observations, risks, or recommendations)
+- area_scores: object mapping each area to a number 0-100 (or null if not assessable). Use these keys:
+  - consultation_indication
+  - donor_management
+  - extraction_quality
+  - graft_handling
+  - recipient_implantation
+  - safety_documentation_aftercare
+- section_scores: object mapping optional section ids to numbers 0-100 (or null). If unsure, omit.
 
 Be objective and evidence-based. If data is insufficient, say so. Never provide medical advice; this is an audit, not a diagnosis.`;
 
@@ -113,6 +128,36 @@ Be objective and evidence-based. If data is insufficient, say so. Never provide 
       ? (parsed.findings as string[]).map((f) => String(f).slice(0, 300))
       : [];
 
+    const clampScore = (n: unknown) => {
+      const v = Number(n);
+      return Number.isFinite(v) ? Math.min(100, Math.max(0, v)) : null;
+    };
+
+    const area_scores: Record<string, number> = {};
+    const rawAreas = parsed.area_scores;
+    if (rawAreas && typeof rawAreas === "object") {
+      for (const k of [
+        "consultation_indication",
+        "donor_management",
+        "extraction_quality",
+        "graft_handling",
+        "recipient_implantation",
+        "safety_documentation_aftercare",
+      ]) {
+        const v = clampScore((rawAreas as Record<string, unknown>)[k]);
+        if (v !== null) area_scores[k] = v;
+      }
+    }
+
+    const section_scores: Record<string, number> = {};
+    const rawSections = parsed.section_scores;
+    if (rawSections && typeof rawSections === "object") {
+      for (const [k, v0] of Object.entries(rawSections as Record<string, unknown>)) {
+        const v = clampScore(v0);
+        if (v !== null) section_scores[k] = v;
+      }
+    }
+
     return {
       score,
       donor_quality,
@@ -120,6 +165,8 @@ Be objective and evidence-based. If data is insufficient, say so. Never provide 
       notes,
       findings,
       model,
+      ...(Object.keys(area_scores).length ? { area_scores } : {}),
+      ...(Object.keys(section_scores).length ? { section_scores } : {}),
     };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

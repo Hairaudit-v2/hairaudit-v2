@@ -30,6 +30,10 @@ export type AuditReportContent = {
   findings?: string[];
   model?: string;
   uploadCount?: number;
+  areaScores?: {
+    domains?: Record<string, number>;
+    sections?: Record<string, number>;
+  };
   images?: ReportImage[];
 };
 
@@ -125,6 +129,107 @@ function addAuditSummary(doc: PDFKit.PDFDocument, content: AuditReportContent) {
   doc.moveDown(1);
 }
 
+function scoreLevel(s: number): { outOf5: number; level: "High" | "Medium" | "Low"; color: string } {
+  const outOf5 = Math.max(0, Math.min(5, Math.round((s / 100) * 5)));
+  const level: "High" | "Medium" | "Low" = s >= 80 ? "High" : s >= 50 ? "Medium" : "Low";
+  const color = level === "High" ? "#059669" : level === "Medium" ? AMBER_600 : "#dc2626";
+  return { outOf5, level, color };
+}
+
+function addScoreByArea(doc: PDFKit.PDFDocument, content: AuditReportContent) {
+  const domains = content.areaScores?.domains ?? {};
+  const sections = content.areaScores?.sections ?? {};
+  const hasDomains = Object.keys(domains).length > 0;
+  const hasSections = Object.keys(sections).length > 0;
+  if (!hasDomains && !hasSections) return;
+
+  const domainTitles: Record<string, string> = {
+    consultation_indication: "Consultation & Indication",
+    donor_management: "Donor Management",
+    extraction_quality: "Extraction Quality (Donor Extraction)",
+    graft_handling: "Graft Handling & Preservation",
+    recipient_implantation: "Recipient Implantation",
+    safety_documentation_aftercare: "Safety, Documentation & Aftercare",
+  };
+
+  const order = [
+    "consultation_indication",
+    "donor_management",
+    "extraction_quality",
+    "graft_handling",
+    "recipient_implantation",
+    "safety_documentation_aftercare",
+  ];
+
+  addSectionHeading(doc, "Score by Area");
+  doc.fillColor(SLATE_600).fontSize(10).font("Helvetica");
+  doc.text("Where your score sits for each capture point (out of 5).");
+  doc.moveDown(0.8);
+
+  const gap = 14;
+  const cardW = (CONTENT_WIDTH - gap) / 2;
+  const cardH = 64;
+  const barH = 8;
+  const pad = 10;
+
+  const items = order
+    .filter((k) => domains[k] != null)
+    .map((k) => ({ key: k, title: domainTitles[k] ?? k.replace(/[._]/g, " "), score: Number(domains[k]) }))
+    .filter((x) => Number.isFinite(x.score));
+
+  let i = 0;
+  for (const it of items) {
+    const col = i % 2;
+    const x = MARGIN + col * (cardW + gap);
+    const y = doc.y + Math.floor(i / 2) * (cardH + gap);
+
+    // Page break if needed
+    const bottomLimit = (doc.page as any).height - MARGIN - 40;
+    if (y + cardH > bottomLimit) {
+      doc.addPage();
+      doc.x = MARGIN;
+      doc.y = MARGIN;
+      i = 0;
+      continue;
+    }
+
+    doc.save();
+    doc.roundedRect(x, y, cardW, cardH, 10).strokeColor("#e5e7eb").lineWidth(1).stroke();
+
+    // Title
+    doc.fillColor(SLATE_900).font("Helvetica-Bold").fontSize(10);
+    doc.text(it.title, x + pad, y + pad, { width: cardW - pad * 2 });
+
+    // Bar
+    const barY = y + pad + 20;
+    doc.roundedRect(x + pad, barY, cardW - pad * 2, barH, 4).fillColor("#e5e7eb").fill();
+    const { outOf5, level, color } = scoreLevel(it.score);
+    doc.roundedRect(x + pad, barY, ((cardW - pad * 2) * Math.max(0, Math.min(100, it.score))) / 100, barH, 4)
+      .fillColor(color)
+      .fill();
+
+    // Meta row
+    doc.fillColor(SLATE_600).font("Helvetica").fontSize(9);
+    doc.text(`${outOf5}/5`, x + pad, barY + 14);
+    doc.fillColor(color).font("Helvetica-Bold").text(`${level} level`, x + pad + 40, barY + 14);
+
+    doc.restore();
+    i += 1;
+  }
+
+  // Move cursor below grid
+  const rows = Math.ceil(items.length / 2);
+  doc.y = doc.y + rows * (cardH + gap);
+
+  if (hasSections) {
+    doc.moveDown(0.5);
+    doc.fillColor(SLATE_400).fontSize(9).font("Helvetica");
+    doc.text("Detailed section scores are available in the web report view.");
+  }
+
+  doc.moveDown(0.8);
+}
+
 /**
  * Build PDF buffer from content. For images, pass pre-fetched buffers in content.images.
  * (The previous addImageGallery expected supabase - we'll simplify to just use buffers.)
@@ -161,6 +266,7 @@ export async function buildAuditReportPdf(
   doc.y = 95;
   addMeta(doc, content);
   addAuditSummary(doc, content);
+  addScoreByArea(doc, content);
 
   // Add images if provided (with buffers already fetched)
   if (content.images?.length) {

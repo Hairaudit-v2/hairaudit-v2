@@ -231,19 +231,24 @@ export default async function Page({ params }: { params: Promise<{ caseId: strin
 
       {reports && reports.length > 0 && (() => {
         const latest = reports[0];
-        const computed = (latest?.summary as Record<string, unknown>)?.computed as
+        const summary = (latest?.summary as Record<string, unknown>) ?? {};
+        const computed = summary?.computed as
           | { component_scores?: { domains?: Record<string, number>; sections?: Record<string, number> } }
           | undefined;
         const comp = computed?.component_scores;
-        if (!comp?.domains && !comp?.sections) return null;
+        const fallbackDomains = (summary?.area_scores as Record<string, number> | null | undefined) ?? undefined;
+        const fallbackSections = (summary?.section_scores as Record<string, number> | null | undefined) ?? undefined;
+        const domains = comp?.domains ?? fallbackDomains;
+        const sections = comp?.sections ?? fallbackSections;
+        if (!domains && !sections) return null;
         const { domainTitles, sectionTitles } = buildRubricTitles(
           rubric as { domains?: { domain_id: string; title: string; sections?: { section_id: string; title: string }[] }[] }
         );
         return (
           <div className="mt-6">
             <ScoreAreaGraph
-              domains={comp.domains}
-              sections={comp.sections}
+              domains={domains}
+              sections={sections}
               domainTitles={domainTitles}
               sectionTitles={sectionTitles}
             />

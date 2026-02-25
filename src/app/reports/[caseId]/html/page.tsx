@@ -105,6 +105,8 @@ export default async function ReportHtmlPage({
     audit_answers?: Record<string, Record<string, { value?: number | boolean | string }>>;
     scorecard_answers?: Record<string, Record<string, { value?: number | boolean | string }>>;
     computed?: { component_scores?: { domains?: Record<string, number>; sections?: Record<string, number> } };
+    area_scores?: Record<string, number> | null;
+    section_scores?: Record<string, number> | null;
   };
   const findings = Array.isArray(summary.findings) ? summary.findings : (summary.highlights ?? []);
 
@@ -120,6 +122,10 @@ export default async function ReportHtmlPage({
     }
   }
   const comp = computed?.component_scores ?? {};
+  const fallbackDomains = summary?.area_scores ?? undefined;
+  const fallbackSections = summary?.section_scores ?? undefined;
+  const domains = comp.domains ?? fallbackDomains;
+  const sections = comp.sections ?? fallbackSections;
   const { domainTitles, sectionTitles } = buildRubricTitles(
     rubric as { domains?: { domain_id: string; title: string; sections?: { section_id: string; title: string }[] }[] }
   );
@@ -256,11 +262,12 @@ export default async function ReportHtmlPage({
                 </ul>
               </div>
             )}
-            {(comp.domains || comp.sections) && (Object.keys(comp.domains ?? {}).length > 0 || Object.keys(comp.sections ?? {}).length > 0) && (
+            {(domains || sections) &&
+              (Object.keys(domains ?? {}).length > 0 || Object.keys(sections ?? {}).length > 0) && (
               <div style={{ marginTop: 16 }}>
                 <ScoreAreaGraph
-                  domains={comp.domains}
-                  sections={comp.sections}
+                  domains={domains as any}
+                  sections={sections as any}
                   domainTitles={domainTitles}
                   sectionTitles={sectionTitles}
                   compact
