@@ -62,20 +62,24 @@ export async function runAIAudit(input: AIAuditInput): Promise<AIAuditResult> {
 
   const systemPrompt = `You are an expert hair transplant auditor. Analyze the patient, doctor, and clinic survey answers, and when images are provided, also analyze the pre-op, donor, intra-op, and post-op photos to produce a structured audit.
 
-Output a JSON object with exactly these keys:
+Output a JSON object with EXACTLY these keys (always include them, even if some values are null):
 - score: number 0-100 (overall quality)
 - donor_quality: string (e.g. "Excellent", "Good", "Fair", "Poor", "Cannot assess")
 - graft_survival_estimate: string (e.g. "85-95%", "70-85%", "Unknown")
 - notes: string (2-4 sentences summarizing the case)
 - findings: string[] (3-8 bullet points of key observations, risks, or recommendations)
-- area_scores: object mapping each area to a number 0-100 (or null if not assessable). Use these keys:
+- area_scores: object mapping each area to a number 0-100, or null if not assessable. Include ALL keys below:
   - consultation_indication
   - donor_management
   - extraction_quality
   - graft_handling
   - recipient_implantation
   - safety_documentation_aftercare
-- section_scores: object mapping optional section ids to numbers 0-100 (or null). If unsure, omit.
+- section_scores: object mapping OPTIONAL section ids to numbers 0-100 (or null). If you cannot score sections, return an empty object {}.
+
+Guidance for area scoring:
+- Use the same evidence you used to derive the overall score, but assign it to the appropriate area(s).
+- If evidence is thin for an area, set that area to null (do not guess).
 
 Be objective and evidence-based. If data is insufficient, say so. Never provide medical advice; this is an audit, not a diagnosis.`;
 

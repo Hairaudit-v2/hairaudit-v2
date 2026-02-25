@@ -141,7 +141,13 @@ function addScoreByArea(doc: PDFKit.PDFDocument, content: AuditReportContent) {
   const sections = content.areaScores?.sections ?? {};
   const hasDomains = Object.keys(domains).length > 0;
   const hasSections = Object.keys(sections).length > 0;
-  if (!hasDomains && !hasSections) return;
+  if (!hasDomains && !hasSections) {
+    addSectionHeading(doc, "Score by Area");
+    doc.fillColor(SLATE_600).fontSize(10).font("Helvetica");
+    doc.text("Area breakdown unavailable for this report version.");
+    doc.moveDown(0.8);
+    return;
+  }
 
   const domainTitles: Record<string, string> = {
     consultation_indication: "Consultation & Indication",
