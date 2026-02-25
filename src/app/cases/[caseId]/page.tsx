@@ -8,8 +8,9 @@ import AuditScoreBadge from "@/components/reports/AuditScoreBadge";
 import DoctorAnswersSummary from "@/components/reports/DoctorAnswersSummary";
 import PatientAnswersSummary from "@/components/reports/PatientAnswersSummary";
 import EvidenceSummary from "@/components/reports/EvidenceSummary";
-import ScoreAreaGraph, { buildRubricTitles } from "@/components/reports/ScoreAreaGraph";
+import ScoreAreaGraph from "@/components/reports/ScoreAreaGraph";
 import rubric from "@/lib/audit/rubrics/hairaudit_clinical_v1.json";
+import { buildRubricTitles } from "@/lib/audit/rubricTitles";
 import { mapLegacyDoctorAnswers } from "@/lib/doctorAuditSchema";
 
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";

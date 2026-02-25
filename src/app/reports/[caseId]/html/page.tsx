@@ -2,7 +2,8 @@ import { createClient } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
 import rubric from "@/lib/audit/rubrics/hairaudit_clinical_v1.json";
 import { scoreAudit } from "@/lib/audit/score";
-import ScoreAreaGraph, { buildRubricTitles } from "@/components/reports/ScoreAreaGraph";
+import ScoreAreaGraph from "@/components/reports/ScoreAreaGraph";
+import { buildRubricTitles } from "@/lib/audit/rubricTitles";
 
 function createSupabaseAdmin() {
   return createClient(
