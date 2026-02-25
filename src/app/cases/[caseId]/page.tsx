@@ -8,6 +8,8 @@ import AuditScoreBadge from "@/components/reports/AuditScoreBadge";
 import DoctorAnswersSummary from "@/components/reports/DoctorAnswersSummary";
 import PatientAnswersSummary from "@/components/reports/PatientAnswersSummary";
 import EvidenceSummary from "@/components/reports/EvidenceSummary";
+import ScoreAreaGraph, { buildRubricTitles } from "@/components/reports/ScoreAreaGraph";
+import rubric from "@/lib/audit/rubrics/hairaudit_clinical_v1.json";
 import { mapLegacyDoctorAnswers } from "@/lib/doctorAuditSchema";
 
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
@@ -211,7 +213,6 @@ export default async function Page({ params }: { params: Promise<{ caseId: strin
             : (summary?.patient_answers as Record<string, unknown> | undefined) ?? null;
         const hasDoctor = doctorAnswers && Object.keys(doctorAnswers).length > 0;
         const hasPatient = patientAnswers && Object.keys(patientAnswers).length > 0;
-        if (!hasDoctor && !hasPatient) return null;
         return (
           <>
             {hasDoctor && (
@@ -225,6 +226,28 @@ export default async function Page({ params }: { params: Promise<{ caseId: strin
               </div>
             )}
           </>
+        );
+      })()}
+
+      {reports && reports.length > 0 && (() => {
+        const latest = reports[0];
+        const computed = (latest?.summary as Record<string, unknown>)?.computed as
+          | { component_scores?: { domains?: Record<string, number>; sections?: Record<string, number> } }
+          | undefined;
+        const comp = computed?.component_scores;
+        if (!comp?.domains && !comp?.sections) return null;
+        const { domainTitles, sectionTitles } = buildRubricTitles(
+          rubric as { domains?: { domain_id: string; title: string; sections?: { section_id: string; title: string }[] }[] }
+        );
+        return (
+          <div className="mt-6">
+            <ScoreAreaGraph
+              domains={comp.domains}
+              sections={comp.sections}
+              domainTitles={domainTitles}
+              sectionTitles={sectionTitles}
+            />
+          </div>
         );
       })()}
 

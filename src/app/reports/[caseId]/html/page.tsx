@@ -1,5 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
+import rubric from "@/lib/audit/rubrics/hairaudit_clinical_v1.json";
+import { scoreAudit } from "@/lib/audit/score";
+import ScoreAreaGraph, { buildRubricTitles } from "@/components/reports/ScoreAreaGraph";
 
 function createSupabaseAdmin() {
   return createClient(
@@ -97,8 +100,28 @@ export default async function ReportHtmlPage({
     .limit(1)
     .maybeSingle();
 
-  const summary = (latestReport?.summary ?? {}) as Summary;
+  const summary = (latestReport?.summary ?? {}) as Summary & {
+    answers?: Record<string, Record<string, { value?: number | boolean | string }>>;
+    audit_answers?: Record<string, Record<string, { value?: number | boolean | string }>>;
+    scorecard_answers?: Record<string, Record<string, { value?: number | boolean | string }>>;
+    computed?: { component_scores?: { domains?: Record<string, number>; sections?: Record<string, number> } };
+  };
   const findings = Array.isArray(summary.findings) ? summary.findings : (summary.highlights ?? []);
+
+  // Compute rubric score if answers exist (same as print route)
+  let computed = summary?.computed ?? null;
+  const answers = summary?.answers ?? summary?.audit_answers ?? summary?.scorecard_answers ?? null;
+  if (answers) {
+    try {
+      computed = scoreAudit(rubric as Parameters<typeof scoreAudit>[0], answers);
+    } catch (e) {
+      console.error("scoreAudit failed:", e);
+    }
+  }
+  const comp = computed?.component_scores ?? {};
+  const { domainTitles, sectionTitles } = buildRubricTitles(
+    rubric as { domains?: { domain_id: string; title: string; sections?: { section_id: string; title: string }[] }[] }
+  );
 
   return (
     <html>
@@ -230,6 +253,17 @@ export default async function ReportHtmlPage({
                     <li key={i}>{f}</li>
                   ))}
                 </ul>
+              </div>
+            )}
+            {(comp.domains || comp.sections) && (Object.keys(comp.domains ?? {}).length > 0 || Object.keys(comp.sections ?? {}).length > 0) && (
+              <div style={{ marginTop: 16 }}>
+                <ScoreAreaGraph
+                  domains={comp.domains}
+                  sections={comp.sections}
+                  domainTitles={domainTitles}
+                  sectionTitles={sectionTitles}
+                  compact
+                />
               </div>
             )}
           </div>

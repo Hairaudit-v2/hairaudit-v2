@@ -163,9 +163,40 @@ export async function GET(req: Request) {
     donor_scar_visibility: summary?.key_metrics?.donor_scar_visibility ?? "—",
   };
 
-  // Component scores (for later UI usage)
+  // Component scores for area graphs (domain + section level)
   const compDomains = computed?.component_scores?.domains ?? {};
   const compSections = computed?.component_scores?.sections ?? {};
+
+  // Build area score items: score 0-100 → display as X/5, with High/Medium/Low level
+  const scoreToDisplay = (s: number) => {
+    const outOf5 = Math.round((s / 100) * 5);
+    const clamped = Math.max(0, Math.min(5, outOf5));
+    const level = s >= 80 ? "High" : s >= 50 ? "Medium" : "Low";
+    return { outOf5: clamped, level };
+  };
+
+  const domainOrder = (rubric as { domains?: { domain_id: string; title: string }[] })?.domains ?? [];
+  const areaScores = domainOrder
+    .filter((d) => compDomains[d.domain_id] != null)
+    .map((d) => {
+      const s = Number(compDomains[d.domain_id]);
+      const { outOf5, level } = scoreToDisplay(s);
+      return { title: d.title, score: s, outOf5: outOf5, level };
+    });
+
+  const sectionTitles: Record<string, string> = {};
+  for (const d of domainOrder) {
+    for (const sec of (d as { sections?: { section_id: string; title: string }[] }).sections ?? []) {
+      sectionTitles[sec.section_id] = sec.title;
+    }
+  }
+  const sectionScoresList = Object.entries(compSections)
+    .filter(([, v]) => v != null)
+    .map(([id, v]) => ({
+      title: sectionTitles[id] ?? id.replace(/[._]/g, " "),
+      score: Number(v),
+      ...scoreToDisplay(Number(v)),
+    }));
 
   // Highlights/Risks
   const highlights = Array.isArray(summary.findings)
@@ -310,6 +341,20 @@ export async function GET(req: Request) {
     .listCard ul { margin: 0; padding-left: 18px; }
     .listCard li { font-size: 11px; color: var(--ink); margin: 6px 0; }
 
+    .areaScoreGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; margin-top: 14px; }
+    .areaScoreCard {
+      border: 1px solid var(--line); border-radius: 14px; padding: 12px; background: #fff;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .areaScoreTitle { font-size: 12px; font-weight: 700; color: var(--ink); }
+    .areaScoreBar { height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; }
+    .areaScoreFill { height: 100%; border-radius: 4px; }
+    .areaScoreFill.high { background: #059669; }
+    .areaScoreFill.medium { background: #d97706; }
+    .areaScoreFill.low { background: #dc2626; }
+    .areaScoreMeta { font-size: 11px; color: var(--muted); display: flex; justify-content: space-between; }
+    .areaScoreMeta b { color: var(--ink); }
+
     .footer {
       margin-top: 18px;
       font-size: 10px;
@@ -374,6 +419,56 @@ export async function GET(req: Request) {
           </div>
         </div>
       </div>
+
+      ${areaScores.length > 0
+    ? `
+      <div class="section">
+        <h2>Score by Area</h2>
+        <p class="subtitle" style="margin-top: 4px;">Your score for each capture point (out of 5, with level)</p>
+        <div class="areaScoreGrid">
+          ${areaScores
+    .map(
+      (a) => `
+            <div class="areaScoreCard">
+              <div class="areaScoreTitle">${esc(a.title)}</div>
+              <div class="areaScoreBar">
+                <div class="areaScoreFill ${a.level.toLowerCase()}" style="width: ${a.score}%;"></div>
+              </div>
+              <div class="areaScoreMeta">
+                <span>${a.outOf5}/5</span>
+                <b>${esc(a.level)} level</b>
+              </div>
+            </div>`
+    )
+    .join("")}
+        </div>
+        ${sectionScoresList.length > 0
+    ? `
+        <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line);">
+          <div style="font-size: 11px; font-weight: 700; color: var(--muted); margin-bottom: 8px;">Detailed section scores</div>
+          <div class="areaScoreGrid" style="grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));">
+            ${sectionScoresList
+    .map(
+      (a) => `
+              <div class="areaScoreCard">
+                <div class="areaScoreTitle" style="font-size: 11px;">${esc(a.title)}</div>
+                <div class="areaScoreBar">
+                  <div class="areaScoreFill ${a.level.toLowerCase()}" style="width: ${a.score}%;"></div>
+                </div>
+                <div class="areaScoreMeta">
+                  <span>${a.outOf5}/5</span>
+                  <b>${esc(a.level)}</b>
+                </div>
+              </div>`
+    )
+    .join("")}
+          </div>
+        </div>
+        `
+    : ""}
+      </div>
+      `
+    : ""}
 
       <div class="twoCol">
         <div class="listCard">
