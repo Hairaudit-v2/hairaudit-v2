@@ -3,6 +3,7 @@ import { inngest } from "@/lib/inngest/client";
 import { createClient } from "@supabase/supabase-js";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import {
+  type EvidenceScore,
   canSubmit,
   computeEvidenceScore,
   computeConfidenceLabel,
@@ -72,7 +73,7 @@ export async function POST(req: Request) {
     const patientConfidence = computeConfidenceLabel(patientScore);
     const patientDetails = computeEvidenceDetails("patient", photos);
 
-    let doctorScore: string | null = null;
+    let doctorScore: EvidenceScore | null = null;
     let doctorConfidence: string | null = null;
     const doctorPhotos = photos.filter((p) => String(p.type ?? "").startsWith("doctor_photo:"));
     if (doctorPhotos.length > 0) {
