@@ -13,21 +13,538 @@ export type AIAuditInput = {
 };
 
 export type AIAuditResult = {
-  score: number;
-  donor_quality: string;
-  graft_survival_estimate: string;
-  notes: string;
-  findings: string[];
+  overall_score: number; // 0–100 (computed from weighted section scores)
+  confidence: number; // 0–1
+  confidence_label: "low" | "medium" | "high";
+  data_quality: {
+    missing_inputs: string[];
+    missing_photos: string[];
+    limitations: string[];
+  };
+  section_scores: {
+    donor_management: number;
+    extraction_quality: number;
+    recipient_placement: number;
+    hairline_design: number;
+    density_distribution: number;
+    /** From answers only */
+    graft_handling_and_viability: number;
+    /** From answers only */
+    post_op_course_and_aftercare: number;
+    complications_and_risks: number;
+    naturalness_and_aesthetics: number;
+  };
+  /**
+   * Evidence supporting each section score.
+   * Acceptance: every score must have 1–3 evidence items OR explicitly state "insufficient evidence".
+   */
+  section_score_evidence: {
+    donor_management: string[];
+    extraction_quality: string[];
+    recipient_placement: string[];
+    hairline_design: string[];
+    density_distribution: string[];
+    graft_handling_and_viability: string[];
+    post_op_course_and_aftercare: string[];
+    complications_and_risks: string[];
+    naturalness_and_aesthetics: string[];
+  };
+  evidence_catalog?: never;
+  key_findings: {
+    title: string;
+    severity: "low" | "medium" | "high" | "critical";
+    evidence: EvidenceItem[];
+    impact: string;
+    recommended_next_step: string;
+  }[];
+  red_flags: {
+    flag: string;
+    why_it_matters: string;
+    evidence: EvidenceItem[];
+  }[];
+  photo_observations: {
+    image_url: string;
+    suspected_view:
+      | "preop_front"
+      | "preop_left"
+      | "preop_right"
+      | "preop_top"
+      | "preop_crown"
+      | "donor_rear"
+      | "donor_sides"
+      | "intraop_recipient"
+      | "intraop_donor"
+      | "postop_day0"
+      | "postop_healed"
+      | "unknown";
+    what_can_be_assessed: string[];
+    what_cannot: string[];
+    observations: string[];
+    confidence: number; // 0–1
+  }[];
+  summary: string; // 3–6 sentences
+  non_medical_disclaimer: string;
   /** Model used for audit (for transparency) */
   model: string;
+
   /**
-   * Optional per-area scoring (0–100). Keys should match rubric domain ids where possible,
-   * e.g. donor_management, extraction_quality, recipient_implantation, etc.
+   * @deprecated Use `overall_score`.
    */
-  area_scores?: Record<string, number>;
-  /** Optional per-section scoring (0–100). Keys can match rubric section ids. */
-  section_scores?: Record<string, number>;
+  score: number;
+  /**
+   * @deprecated Prefer `section_scores` + `key_findings`.
+   */
+  donor_quality: string;
+  /**
+   * @deprecated Prefer `section_scores.graft_handling_and_viability` + `data_quality`.
+   */
+  graft_survival_estimate: string;
+  /**
+   * @deprecated Use `summary`.
+   */
+  notes: string;
+  /**
+   * @deprecated Use `key_findings`.
+   */
+  findings: string[];
 };
+
+export type EvidenceItem = {
+  source_type: "photo" | "patient_answer" | "doctor_answer" | "clinic_answer";
+  /** Image URL/index OR answer key name */
+  source_key: string;
+  /** Short, objective statement (no diagnosis) */
+  observation: string;
+  confidence: number; // 0–1
+};
+
+type RequiredEvidenceType = "images" | "answers" | "both";
+
+type RubricBand = {
+  label: "excellent" | "good" | "fair" | "poor";
+  score_range: [number, number];
+  meaning: string;
+};
+
+type RubricSectionDef = {
+  id: string;
+  title: string;
+  weight: number; // must sum to 1.0 across sections
+  definition: string;
+  required_evidence_types: RequiredEvidenceType[];
+  bands: readonly RubricBand[];
+  common_failure_patterns: readonly string[];
+};
+
+/**
+ * Explainable scoring rubric for HairAudit + Follicle Intelligence.
+ * The model is instructed to reference these IDs/criteria in its evidence.
+ */
+export const AUDIT_RUBRIC: Record<keyof AIAuditResult["section_scores"], RubricSectionDef> = {
+  donor_management: {
+    id: "DM",
+    title: "Donor management",
+    weight: 0.12,
+    definition:
+      "Assessment of donor-area planning and preservation: distribution/spread of extractions, avoidance of overharvesting, respect of safe donor zone, and minimizing visible scarring risk.",
+    required_evidence_types: ["images"],
+    bands: [
+      { label: "excellent", score_range: [85, 100], meaning: "Even spread, safe-zone respected, no patchiness/moth-eaten patterns, low scarring risk." },
+      { label: "good", score_range: [70, 84], meaning: "Mostly even distribution with minor clustering; low-to-moderate risk signals." },
+      { label: "fair", score_range: [50, 69], meaning: "Noticeable clustering/unevenness, early patchiness, or density drop suggesting overharvest risk." },
+      { label: "poor", score_range: [0, 49], meaning: "Clear overharvesting, patchy donor, unsafe-zone harvesting, or high scarring risk pattern." },
+    ],
+    common_failure_patterns: [
+      "Clustered extractions / localized density depletion",
+      "Moth-eaten/patchy appearance",
+      "Harvesting too low/high (unsafe zone) when visible",
+      "Overly tight spacing between punches",
+    ],
+  },
+  extraction_quality: {
+    id: "EQ",
+    title: "Extraction quality",
+    weight: 0.14,
+    definition:
+      "Technical quality of extraction sites: punch control (angle/centering), signs of large punch, doubles/multiples, transection risk signals, and donor trauma consistency.",
+    required_evidence_types: ["images"],
+    bands: [
+      { label: "excellent", score_range: [85, 100], meaning: "Clean, consistent sites; minimal trauma; no clear doubles/multiples; punch size appears appropriate." },
+      { label: "good", score_range: [70, 84], meaning: "Minor inconsistencies; limited suspected doubles; overall controlled extraction." },
+      { label: "fair", score_range: [50, 69], meaning: "Frequent large-looking sites, repeated close hits, or multiple suspected doubles increasing scarring risk." },
+      { label: "poor", score_range: [0, 49], meaning: "Widespread trauma pattern, clear doubles/multiples, very large punch appearance, or high-risk technique signals." },
+    ],
+    common_failure_patterns: [
+      "Large-appearing punch sites relative to spacing",
+      "Double punches/multiples visible",
+      "Jagged/irregular wounds suggesting trauma",
+      "Repeated extractions too close together",
+    ],
+  },
+  recipient_placement: {
+    id: "RP",
+    title: "Recipient placement",
+    weight: 0.14,
+    definition:
+      "Recipient-area placement pattern and technical consistency: spacing, directionality/angulation cues (as visible), clustering, and avoidance of visible cobblestoning/trauma in available photos.",
+    required_evidence_types: ["images"],
+    bands: [
+      { label: "excellent", score_range: [85, 100], meaning: "Consistent placement pattern; appropriate spacing; low trauma appearance." },
+      { label: "good", score_range: [70, 84], meaning: "Mostly consistent; minor spacing variability; limited trauma." },
+      { label: "fair", score_range: [50, 69], meaning: "Noticeable uneven density, clustering, or higher trauma pattern raising growth/cosmesis risk." },
+      { label: "poor", score_range: [0, 49], meaning: "Highly inconsistent placement, significant trauma pattern, or clear design/technical issues in recipient area." },
+    ],
+    common_failure_patterns: [
+      "Clustering / patchy placement",
+      "Inconsistent spacing across zones",
+      "High trauma / crusting pattern beyond expected (view-dependent)",
+    ],
+  },
+  hairline_design: {
+    id: "HD",
+    title: "Hairline design",
+    weight: 0.12,
+    definition:
+      "Macro hairline planning and naturalness: appropriate position, symmetry, temporal points integration, and softness/irregularity (when visible).",
+    required_evidence_types: ["images"],
+    bands: [
+      { label: "excellent", score_range: [85, 100], meaning: "Natural macro design; appropriate height/shape; good symmetry and framing." },
+      { label: "good", score_range: [70, 84], meaning: "Generally natural; small design compromises or limited photo proof." },
+      { label: "fair", score_range: [50, 69], meaning: "Design appears aggressive/flat/symmetric; limited irregularity; moderate aesthetic risk." },
+      { label: "poor", score_range: [0, 49], meaning: "Clearly unnatural macro design (overly straight/low) or major asymmetry concerns." },
+    ],
+    common_failure_patterns: [
+      "Overly straight/flat hairline",
+      "Too low/aggressive design for age/context",
+      "Asymmetry / poor temporal transition",
+    ],
+  },
+  density_distribution: {
+    id: "DD",
+    title: "Density distribution",
+    weight: 0.1,
+    definition:
+      "Planned/observed density distribution across zones: balanced allocation, gradient (hairline vs midscalp), and avoidance of abrupt transitions (as visible).",
+    required_evidence_types: ["images", "answers"],
+    bands: [
+      { label: "excellent", score_range: [85, 100], meaning: "Balanced, zone-appropriate density planning with natural gradients." },
+      { label: "good", score_range: [70, 84], meaning: "Mostly balanced; minor transition risks or limited evidence." },
+      { label: "fair", score_range: [50, 69], meaning: "Uneven allocation; abrupt transitions likely; higher aesthetic risk." },
+      { label: "poor", score_range: [0, 49], meaning: "Clearly mismatched allocation likely to look unnatural or fail to meet goals." },
+    ],
+    common_failure_patterns: [
+      "Abrupt density transitions",
+      "Over-densifying one zone at expense of others",
+      "Sparse hairline with dense midscalp (or vice versa) without rationale",
+    ],
+  },
+  graft_handling_and_viability: {
+    id: "GH",
+    title: "Graft handling & viability (answers-based)",
+    weight: 0.1,
+    definition:
+      "Protocol quality for graft handling: out-of-body time, hydration/storage solution, chilling, counting/quality control, and team workflow—based on survey answers/documentation.",
+    required_evidence_types: ["answers"],
+    bands: [
+      { label: "excellent", score_range: [85, 100], meaning: "Clear, consistent protocols and documentation; low viability risk." },
+      { label: "good", score_range: [70, 84], meaning: "Reasonable protocols but some missing details." },
+      { label: "fair", score_range: [50, 69], meaning: "Key protocol details missing or inconsistent; moderate viability risk." },
+      { label: "poor", score_range: [0, 49], meaning: "No clear protocols; high viability risk due to unknown handling conditions." },
+    ],
+    common_failure_patterns: [
+      "No mention of storage solution / temperature control",
+      "Unclear out-of-body time",
+      "Inconsistent answers between clinic/doctor",
+    ],
+  },
+  post_op_course_and_aftercare: {
+    id: "PO",
+    title: "Post-op course & aftercare (answers-based)",
+    weight: 0.08,
+    definition:
+      "Aftercare instructions quality, adherence plan, follow-up schedule, and expected course education—based on answers/documentation.",
+    required_evidence_types: ["answers"],
+    bands: [
+      { label: "excellent", score_range: [85, 100], meaning: "Clear, comprehensive instructions and follow-up plan; good safety coverage." },
+      { label: "good", score_range: [70, 84], meaning: "Adequate instructions with minor gaps." },
+      { label: "fair", score_range: [50, 69], meaning: "Incomplete instructions; moderate risk of avoidable issues." },
+      { label: "poor", score_range: [0, 49], meaning: "Minimal/unclear aftercare; high risk due to missing guidance." },
+    ],
+    common_failure_patterns: [
+      "No clear wash/med schedule guidance",
+      "No follow-up plan stated",
+      "Inconsistent instructions across sources",
+    ],
+  },
+  complications_and_risks: {
+    id: "CR",
+    title: "Complications & risks",
+    weight: 0.1,
+    definition:
+      "Risk profile and complication signals: infection/necrosis risk cues, overharvest scarring risk, shock loss risk, and documentation/response to adverse events (as available).",
+    required_evidence_types: ["images", "answers"],
+    bands: [
+      { label: "excellent", score_range: [85, 100], meaning: "Low complication signals; risks acknowledged/managed; no red flags." },
+      { label: "good", score_range: [70, 84], meaning: "Some risk factors but mitigations present; limited red flags." },
+      { label: "fair", score_range: [50, 69], meaning: "Multiple risk signals or missing mitigations/documentation." },
+      { label: "poor", score_range: [0, 49], meaning: "Strong complication/red-flag signals or major safety/documentation gaps." },
+    ],
+    common_failure_patterns: [
+      "Signs suggestive of high trauma or overharvest risk",
+      "Missing adverse-event plan / unclear safety steps",
+      "Inconsistent documentation of complications",
+    ],
+  },
+  naturalness_and_aesthetics: {
+    id: "NA",
+    title: "Naturalness & aesthetics",
+    weight: 0.1,
+    definition:
+      "Overall expected aesthetic naturalness based on placement patterns and design: softness, irregularity, zone transitions, and macro symmetry (view-dependent).",
+    required_evidence_types: ["images"],
+    bands: [
+      { label: "excellent", score_range: [85, 100], meaning: "High likelihood of natural appearance based on visible planning/patterns." },
+      { label: "good", score_range: [70, 84], meaning: "Likely natural with minor concerns or limited evidence." },
+      { label: "fair", score_range: [50, 69], meaning: "Moderate risk of unnatural look due to design/placement cues." },
+      { label: "poor", score_range: [0, 49], meaning: "High risk of unnatural appearance based on strong design/placement red flags." },
+    ],
+    common_failure_patterns: [
+      "Overly uniform, symmetric patterns",
+      "Abrupt transitions / unnatural hairline macro cues",
+      "Placement clustering that may appear pluggy",
+    ],
+  },
+};
+
+const SECTION_WEIGHTS = {
+  donor_management: AUDIT_RUBRIC.donor_management.weight,
+  extraction_quality: AUDIT_RUBRIC.extraction_quality.weight,
+  recipient_placement: AUDIT_RUBRIC.recipient_placement.weight,
+  hairline_design: AUDIT_RUBRIC.hairline_design.weight,
+  density_distribution: AUDIT_RUBRIC.density_distribution.weight,
+  graft_handling_and_viability: AUDIT_RUBRIC.graft_handling_and_viability.weight,
+  post_op_course_and_aftercare: AUDIT_RUBRIC.post_op_course_and_aftercare.weight,
+  complications_and_risks: AUDIT_RUBRIC.complications_and_risks.weight,
+  naturalness_and_aesthetics: AUDIT_RUBRIC.naturalness_and_aesthetics.weight,
+} as const;
+
+function rubricToPrompt(): string {
+  const lines: string[] = [];
+  for (const [k, def] of Object.entries(AUDIT_RUBRIC) as Array<[keyof typeof AUDIT_RUBRIC, RubricSectionDef]>) {
+    lines.push(
+      `- ${String(k)} [${def.id}] weight=${def.weight} evidence=${def.required_evidence_types.join("+")}\n` +
+        `  definition: ${def.definition}\n` +
+        `  bands: ${def.bands.map((b) => `${b.label} ${b.score_range[0]}–${b.score_range[1]} (${b.meaning})`).join(" | ")}\n` +
+        `  common failures: ${def.common_failure_patterns.join("; ")}`
+    );
+  }
+  return lines.join("\n");
+}
+
+const FORENSIC_AUDIT_JSON_SCHEMA = {
+  name: "hairaudit_forensic_audit_v3",
+  strict: true,
+  schema: {
+    type: "object",
+    additionalProperties: false,
+    required: [
+      "overall_score",
+      "confidence",
+      "confidence_label",
+      "data_quality",
+      "section_scores",
+      "section_score_evidence",
+      "key_findings",
+      "red_flags",
+      "photo_observations",
+      "summary",
+      "non_medical_disclaimer",
+      "model",
+      "score",
+      "donor_quality",
+      "graft_survival_estimate",
+      "notes",
+      "findings",
+    ],
+    properties: {
+      overall_score: { type: "integer", minimum: 0, maximum: 100 },
+      confidence: { type: "number", minimum: 0, maximum: 1 },
+      confidence_label: { type: "string", enum: ["low", "medium", "high"] },
+      data_quality: {
+        type: "object",
+        additionalProperties: false,
+        required: ["missing_inputs", "missing_photos", "limitations"],
+        properties: {
+          missing_inputs: { type: "array", items: { type: "string" }, maxItems: 20 },
+          missing_photos: { type: "array", items: { type: "string" }, maxItems: 30 },
+          limitations: { type: "array", items: { type: "string" }, maxItems: 30 },
+        },
+      },
+      section_scores: {
+        type: "object",
+        additionalProperties: false,
+        required: [
+          "donor_management",
+          "extraction_quality",
+          "recipient_placement",
+          "hairline_design",
+          "density_distribution",
+          "graft_handling_and_viability",
+          "post_op_course_and_aftercare",
+          "complications_and_risks",
+          "naturalness_and_aesthetics",
+        ],
+        properties: {
+          donor_management: { type: "integer", minimum: 0, maximum: 100 },
+          extraction_quality: { type: "integer", minimum: 0, maximum: 100 },
+          recipient_placement: { type: "integer", minimum: 0, maximum: 100 },
+          hairline_design: { type: "integer", minimum: 0, maximum: 100 },
+          density_distribution: { type: "integer", minimum: 0, maximum: 100 },
+          graft_handling_and_viability: { type: "integer", minimum: 0, maximum: 100 },
+          post_op_course_and_aftercare: { type: "integer", minimum: 0, maximum: 100 },
+          complications_and_risks: { type: "integer", minimum: 0, maximum: 100 },
+          naturalness_and_aesthetics: { type: "integer", minimum: 0, maximum: 100 },
+        },
+      },
+      section_score_evidence: {
+        type: "object",
+        additionalProperties: false,
+        required: [
+          "donor_management",
+          "extraction_quality",
+          "recipient_placement",
+          "hairline_design",
+          "density_distribution",
+          "graft_handling_and_viability",
+          "post_op_course_and_aftercare",
+          "complications_and_risks",
+          "naturalness_and_aesthetics",
+        ],
+        properties: {
+          donor_management: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 3 },
+          extraction_quality: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 3 },
+          recipient_placement: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 3 },
+          hairline_design: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 3 },
+          density_distribution: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 3 },
+          graft_handling_and_viability: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 3 },
+          post_op_course_and_aftercare: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 3 },
+          complications_and_risks: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 3 },
+          naturalness_and_aesthetics: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 3 },
+        },
+      },
+      key_findings: {
+        type: "array",
+        maxItems: 20,
+        items: {
+          type: "object",
+          additionalProperties: false,
+          required: ["title", "severity", "evidence", "impact", "recommended_next_step"],
+          properties: {
+            title: { type: "string", minLength: 1, maxLength: 120 },
+            severity: { type: "string", enum: ["low", "medium", "high", "critical"] },
+            evidence: {
+              type: "array",
+              minItems: 1,
+              maxItems: 8,
+              items: {
+                type: "object",
+                additionalProperties: false,
+                required: ["source_type", "source_key", "observation", "confidence"],
+                properties: {
+                  source_type: { type: "string", enum: ["photo", "patient_answer", "doctor_answer", "clinic_answer"] },
+                  source_key: { type: "string", minLength: 1, maxLength: 500 },
+                  observation: { type: "string", minLength: 1, maxLength: 260 },
+                  confidence: { type: "number", minimum: 0, maximum: 1 },
+                },
+              },
+            },
+            impact: { type: "string", minLength: 1, maxLength: 400 },
+            recommended_next_step: { type: "string", minLength: 1, maxLength: 240 },
+          },
+        },
+      },
+      red_flags: {
+        type: "array",
+        maxItems: 20,
+        items: {
+          type: "object",
+          additionalProperties: false,
+          required: ["flag", "why_it_matters", "evidence"],
+          properties: {
+            flag: { type: "string", minLength: 1, maxLength: 140 },
+            why_it_matters: { type: "string", minLength: 1, maxLength: 300 },
+            evidence: {
+              type: "array",
+              minItems: 1,
+              maxItems: 8,
+              items: {
+                type: "object",
+                additionalProperties: false,
+                required: ["source_type", "source_key", "observation", "confidence"],
+                properties: {
+                  source_type: { type: "string", enum: ["photo", "patient_answer", "doctor_answer", "clinic_answer"] },
+                  source_key: { type: "string", minLength: 1, maxLength: 500 },
+                  observation: { type: "string", minLength: 1, maxLength: 260 },
+                  confidence: { type: "number", minimum: 0, maximum: 1 },
+                },
+              },
+            },
+          },
+        },
+      },
+      photo_observations: {
+        type: "array",
+        maxItems: 10,
+        items: {
+          type: "object",
+          additionalProperties: false,
+          required: [
+            "image_url",
+            "suspected_view",
+            "what_can_be_assessed",
+            "what_cannot",
+            "observations",
+            "confidence",
+          ],
+          properties: {
+            image_url: { type: "string", minLength: 1, maxLength: 500 },
+            suspected_view: {
+              type: "string",
+              enum: [
+                "preop_front",
+                "preop_left",
+                "preop_right",
+                "preop_top",
+                "preop_crown",
+                "donor_rear",
+                "donor_sides",
+                "intraop_recipient",
+                "intraop_donor",
+                "postop_day0",
+                "postop_healed",
+                "unknown",
+              ],
+            },
+            what_can_be_assessed: { type: "array", items: { type: "string" }, maxItems: 12 },
+            what_cannot: { type: "array", items: { type: "string" }, maxItems: 12 },
+            observations: { type: "array", items: { type: "string" }, maxItems: 25 },
+            confidence: { type: "number", minimum: 0, maximum: 1 },
+          },
+        },
+      },
+      summary: { type: "string", minLength: 1, maxLength: 1400 },
+      non_medical_disclaimer: { type: "string", minLength: 1, maxLength: 400 },
+      model: { type: "string", minLength: 1, maxLength: 80 },
+
+      // Backward-compatible legacy keys
+      score: { type: "integer", minimum: 0, maximum: 100 },
+      donor_quality: { type: "string", minLength: 1, maxLength: 40 },
+      graft_survival_estimate: { type: "string", minLength: 1, maxLength: 40 },
+      notes: { type: "string", minLength: 1, maxLength: 1400 },
+      findings: { type: "array", items: { type: "string" }, maxItems: 20 },
+    },
+  },
+} as const;
 
 function formatAnswersForPrompt(answers: Record<string, unknown> | null | undefined): string {
   if (!answers || typeof answers !== "object") return "(none provided)";
@@ -43,14 +560,60 @@ function formatAnswersForPrompt(answers: Record<string, unknown> | null | undefi
 /** Run AI audit on answers + optionally images. Returns structured audit result. */
 export async function runAIAudit(input: AIAuditInput): Promise<AIAuditResult> {
   const apiKey = process.env.OPENAI_API_KEY;
+  const imageUrls = (input.imageUrls ?? []).filter(Boolean).slice(0, 10);
+  const autoMissingInputs: string[] = [];
+  if (!input.patient_answers || Object.keys(input.patient_answers).length === 0) autoMissingInputs.push("patient_answers");
+  if (!input.doctor_answers || Object.keys(input.doctor_answers).length === 0) autoMissingInputs.push("doctor_answers");
+  if (!input.clinic_answers || Object.keys(input.clinic_answers).length === 0) autoMissingInputs.push("clinic_answers");
+  const autoMissingPhotos: string[] = imageUrls.length > 0 ? [] : ["photos"];
+
   if (!apiKey) {
+    const section_scores = {
+      donor_management: 0,
+      extraction_quality: 0,
+      recipient_placement: 0,
+      hairline_design: 0,
+      density_distribution: 0,
+      graft_handling_and_viability: 0,
+      post_op_course_and_aftercare: 0,
+      complications_and_risks: 0,
+      naturalness_and_aesthetics: 0,
+    };
+    const section_score_evidence = {
+      donor_management: ["insufficient evidence: no images provided (and AI disabled)"],
+      extraction_quality: ["insufficient evidence: no images provided (and AI disabled)"],
+      recipient_placement: ["insufficient evidence: no images provided (and AI disabled)"],
+      hairline_design: ["insufficient evidence: no images provided (and AI disabled)"],
+      density_distribution: ["insufficient evidence: no images provided (and AI disabled)"],
+      graft_handling_and_viability: ["insufficient evidence: answers not evaluated (and AI disabled)"],
+      post_op_course_and_aftercare: ["insufficient evidence: answers not evaluated (and AI disabled)"],
+      complications_and_risks: ["insufficient evidence: AI disabled"],
+      naturalness_and_aesthetics: ["insufficient evidence: no images provided (and AI disabled)"],
+    };
     return {
+      overall_score: 0,
+      confidence: 0,
+      confidence_label: "low",
+      data_quality: {
+        missing_inputs: autoMissingInputs,
+        missing_photos: autoMissingPhotos,
+        limitations: ["AI audit skipped: OPENAI_API_KEY not configured."],
+      },
+      section_scores,
+      section_score_evidence,
+      key_findings: [],
+      red_flags: [],
+      photo_observations: [],
+      summary: "AI audit skipped because the OpenAI key is not configured.",
+      non_medical_disclaimer:
+        "HairAudit is an informational audit/reporting tool and not a medical diagnosis or medical advice.",
+      model: "none",
+      // Deprecated fields (back-compat)
       score: 0,
-      donor_quality: "—",
-      graft_survival_estimate: "—",
+      donor_quality: "Cannot assess",
+      graft_survival_estimate: "Unknown",
       notes: "AI audit skipped: OPENAI_API_KEY not configured.",
       findings: [],
-      model: "none",
     };
   }
 
@@ -60,42 +623,107 @@ export async function runAIAudit(input: AIAuditInput): Promise<AIAuditResult> {
   const doctorBlock = formatAnswersForPrompt(input.doctor_answers);
   const clinicBlock = formatAnswersForPrompt(input.clinic_answers);
 
-  const systemPrompt = `You are an expert hair transplant auditor. Analyze the patient, doctor, and clinic survey answers, and when images are provided, also analyze the pre-op, donor, intra-op, and post-op photos to produce a structured audit.
+  const systemPrompt = `You are an expert hair transplant auditor producing a forensic audit for HairAudit + Follicle Intelligence.
 
-Output a JSON object with EXACTLY these keys (always include them, even if some values are null):
-- score: number 0-100 (overall quality)
-- donor_quality: string (e.g. "Excellent", "Good", "Fair", "Poor", "Cannot assess")
-- graft_survival_estimate: string (e.g. "85-95%", "70-85%", "Unknown")
-- notes: string (2-4 sentences summarizing the case)
-- findings: string[] (3-8 bullet points of key observations, risks, or recommendations)
-- area_scores: object mapping each area to a number 0-100, or null if not assessable. Include ALL keys below:
-  - consultation_indication
-  - donor_management
-  - extraction_quality
-  - graft_handling
-  - recipient_implantation
-  - safety_documentation_aftercare
-- section_scores: object mapping OPTIONAL section ids to numbers 0-100 (or null). If you cannot score sections, return an empty object {}.
+## Safety + legal guardrails (STRICT)
+- No diagnosis. No treatment plan. No medication directives. No dosing, prescribing, or "you should take/do X medically".
+- Do not use inflammatory or legal-judgment language, including: "negligence", "negligent", "malpractice", "botched", "fraud", "scam", "criminal", "lawsuit".
+- Do not accuse or attribute intent. Do not state causation as fact when it cannot be confirmed from inputs.
+- Use neutral audit phrasing with uncertainty where appropriate:
+  - "pattern is consistent with…", "may indicate…", "could be associated with…", "cannot confirm without…", "insufficient evidence…"
+- Avoid identifying individuals or clinics in a negative way. Do not name or single out people/organizations for blame. Focus on technical observations only.
+- Always include the non_medical_disclaimer field and keep it neutral.
 
-Guidance for area scoring:
-- Use the same evidence you used to derive the overall score, but assign it to the appropriate area(s).
-- If evidence is thin for an area, set that area to null (do not guess).
+You MUST be objective and evidence-based. Use audit language only: quality indicators, risk flags, and data insufficiency.
 
-Be objective and evidence-based. If data is insufficient, say so. Never provide medical advice; this is an audit, not a diagnosis.`;
+## Scoring rubric (MUST FOLLOW)
+${rubricToPrompt()}
+
+## Comprehensive checklist (MUST EXPLICITLY CONSIDER WHEN EVIDENCE ALLOWS)
+When evidence is missing or unclear, you MUST mark it explicitly as "insufficient evidence:" in the relevant section_score_evidence entries and add a corresponding item to data_quality.limitations. Missing/unclear items should LOWER confidence rather than forcing assumptions.
+
+### DONOR / EXTRACTION (primarily photos: donor_rear, donor_sides, intraop_donor, postop_healed)
+- Uniform extraction distribution (avoid clustered harvesting)
+- Signs of overharvesting / moth-eaten pattern
+- Punch trauma indicators (view-dependent):
+  - Perifollicular erythema patterns (acute), cobblestoning, pitting/ridging
+  - Hypopigmented dots (healed) / visible dot scarring pattern
+- Donor area management and “safe zone” consistency (only if safe-zone boundaries are inferable from views)
+- Shock-loss risk indicators (diffuse donor thinning, aggressive extraction density)
+
+### RECIPIENT / PLACEMENT (photos: intraop_recipient, postop_day0, postop_healed; preop views for context)
+- Angle + direction consistency (especially hairline + temples) if visible
+- Spacing / row patterns (pluggy rows vs randomized/feathered)
+- Graft size appropriateness (single-hair zone vs multi-hair creeping forward)
+- Density gradients (hairline transition → midscalp)
+- Crown whirl alignment (only if preop_crown / crown region exists)
+
+### HAIRLINE DESIGN (macro-aesthetics) (photos: preop_front/left/right, postop views)
+- Age-appropriate height and shape (use only evidence available; if patient age not provided, note uncertainty)
+- Temporal recession logic and transition into temples
+- Micro-irregularity / broken line (avoid overly straight edge)
+- Symmetry vs natural asymmetry
+- Temple point strategy (if applicable / visible)
+
+### GRAFT SURVIVAL & VIABILITY (inferred; DO NOT overclaim)
+- Pattern consistency suggesting survival vs patchy take (only if healed photos exist; otherwise insufficient evidence)
+- Mismatch between claimed grafts and visible density: flag as UNCERTAINTY, not an accusation
+- Reliance on answers for storage/holding time, hydration, handling, implanter usage, etc.
+
+### POST-OP COURSE / AFTERCARE (answers-based; and optionally postop photos for stage consistency)
+- Cleaning protocol, scab management
+- Infection risk behaviours (if provided)
+- Medication adherence (if provided)
+- Realistic timelines and whether current stage matches expected growth window (only if timing is provided; otherwise insufficient evidence)
+
+## Output rules (STRICT)
+- You must produce:
+  1) section_scores (0–100 integers) for all sections
+  2) section_score_evidence with 1–3 evidence items per section.
+     - Each evidence item must include:
+       - Rubric ID in brackets, e.g. "[EQ]"
+       - Evidence source prefix: "photo:<suspected_view>" or "answers:<field>"
+       - A short criterion statement tied to the checklist (not generic).
+     - If insufficient: start with "insufficient evidence:" and say what is missing (e.g., "insufficient evidence: no donor_rear/donor_sides close-ups to assess extraction distribution").
+  3) photo_observations: one entry per image URL, even if suspected_view is "unknown".
+  4) key_findings and red_flags MUST be evidence-anchored:
+     - key_findings[].evidence and red_flags[].evidence MUST be arrays of structured evidence objects:
+       { source_type: "photo" | "patient_answer" | "doctor_answer" | "clinic_answer",
+         source_key: image_url OR answer key,
+         observation: short objective statement (no diagnosis),
+         confidence: 0–1 }
+     - Each key_findings[] and red_flags[] must include at least 1 evidence object.
+     - If no evidence exists, include a single evidence object with observation starting "insufficient evidence:" and confidence <= 0.2,
+       and lower overall confidence + add a data_quality limitation.
+- Unknown/unclear photos MUST NOT drive section_scores; they should reduce confidence and add data_quality limitations instead.
+- If photos/angles are missing, explicitly say so and lower confidence + label (low/medium/high).
+
+Safety:
+- No medical advice. Use audit language: risk flags, quality indicators, and requests for clearer documentation/photos.`;
 
   const userContent: (OpenAI.Chat.Completions.ChatCompletionContentPart)[] = [
     {
       type: "text",
-      text: `## Patient answers\n${patientBlock}\n\n## Doctor answers\n${doctorBlock}\n\n## Clinic answers\n${clinicBlock}\n\nProvide a structured audit as JSON.`,
+      text:
+        `## Inputs\n` +
+        `Auto-detected missing inputs: ${autoMissingInputs.length ? autoMissingInputs.join(", ") : "(none)"}\n` +
+        `Auto-detected missing photos: ${autoMissingPhotos.length ? autoMissingPhotos.join(", ") : "(none)"}\n\n` +
+        `## Patient answers\n${patientBlock}\n\n## Doctor answers\n${doctorBlock}\n\n## Clinic answers\n${clinicBlock}\n\n` +
+        `Return a forensic audit that strictly conforms to the provided JSON Schema (no extra keys).`,
     },
   ];
 
-  // Add images if available (use vision model)
-  const imageUrls = (input.imageUrls ?? []).filter(Boolean).slice(0, 10);
   if (imageUrls.length > 0) {
     userContent.push({
       type: "text",
-      text: "\n## Photos to analyze\nBelow are images of the patient's scalp (pre-op, donor area, intra-op, post-op as available). Analyze them for donor density, hairline design, graft placement, and overall quality. Incorporate your image analysis into the audit.",
+      text:
+        "\n## Photos to analyze (VIEW-AWARE)\n" +
+        "You MUST create one photo_observations[] entry per image URL, even if you're unsure.\n" +
+        "For each photo, classify suspected_view as one of:\n" +
+        '["preop_front","preop_left","preop_right","preop_top","preop_crown","donor_rear","donor_sides","intraop_recipient","intraop_donor","postop_day0","postop_healed","unknown"]\n' +
+        "Then list what_can_be_assessed, what_cannot (angle/lighting/blur/occlusion/distance), 2–6 short observations, and a confidence 0–1.\n" +
+        "Unknown/unclear photos should LOWER confidence and add limitations, not change section scores.\n" +
+        "When donor/extraction sites are visible, explicitly address: extraction distribution/spread, qualitative punch size, doubles/multiples, overharvesting/patchiness.",
     });
     for (const url of imageUrls) {
       userContent.push({
@@ -107,6 +735,55 @@ Be objective and evidence-based. If data is insufficient, say so. Never provide 
 
   const model = imageUrls.length > 0 ? "gpt-4o" : "gpt-4o-mini";
 
+  const clampIntScore = (n: unknown) => {
+    const v = Number(n);
+    if (!Number.isFinite(v)) return 0;
+    return Math.max(0, Math.min(100, Math.round(v)));
+  };
+  const clamp01 = (n: unknown) => {
+    const v = Number(n);
+    if (!Number.isFinite(v)) return 0;
+    return Math.max(0, Math.min(1, v));
+  };
+  const uniq = (xs: string[]) => Array.from(new Set(xs.map((x) => x.trim()).filter(Boolean)));
+  const confidenceLabelFrom = (c: number): "low" | "medium" | "high" => (c < 0.45 ? "low" : c < 0.75 ? "medium" : "high");
+  const computeOverall = (sections: AIAuditResult["section_scores"]) => {
+    let sum = 0;
+    for (const [k, w] of Object.entries(SECTION_WEIGHTS) as Array<[keyof typeof SECTION_WEIGHTS, number]>) {
+      sum += Number(sections[k] ?? 0) * w;
+    }
+    return clampIntScore(sum);
+  };
+  const evidenceIsWeak = (items: string[] | undefined) => {
+    const xs = (items ?? []).map((x) => String(x).trim()).filter(Boolean);
+    if (xs.length === 0) return true;
+    return xs.every((x) => x.toLowerCase().startsWith("insufficient evidence:"));
+  };
+
+  const donorQualityFrom = (donorManagement: number, extractionQuality: number, donorEvidenceWeak: boolean): string => {
+    if (donorEvidenceWeak) return "Cannot assess";
+    const s = Math.round((donorManagement + extractionQuality) / 2);
+    if (s >= 85) return "Excellent";
+    if (s >= 70) return "Good";
+    if (s >= 50) return "Fair";
+    return "Poor";
+  };
+
+  const graftSurvivalFrom = (
+    recipientPlacement: number,
+    densityDistribution: number,
+    complicationsAndRisks: number,
+    evidenceWeak: boolean
+  ): string => {
+    if (evidenceWeak) return "Unknown";
+    // Conservative composite: technique signals (placement + distribution) moderated by risk profile.
+    const composite = Math.round(recipientPlacement * 0.4 + densityDistribution * 0.4 + complicationsAndRisks * 0.2);
+    if (composite >= 85) return "85-95%";
+    if (composite >= 70) return "75-90%";
+    if (composite >= 55) return "65-80%";
+    return "50-70%";
+  };
+
   try {
     const completion = await client.chat.completions.create({
       model,
@@ -114,7 +791,9 @@ Be objective and evidence-based. If data is insufficient, say so. Never provide 
         { role: "system", content: systemPrompt },
         { role: "user", content: userContent },
       ],
-      response_format: { type: "json_object" },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      response_format: { type: "json_schema", json_schema: FORENSIC_AUDIT_JSON_SCHEMA } as any,
+      temperature: 0.2,
       max_tokens: 1500,
     });
 
@@ -123,64 +802,184 @@ Be objective and evidence-based. If data is insufficient, say so. Never provide 
       throw new Error("Empty AI response");
     }
 
-    const parsed = JSON.parse(raw) as Record<string, unknown>;
-    const score = Math.min(100, Math.max(0, Number(parsed.score) ?? 0));
-    const donor_quality = String(parsed.donor_quality ?? "—").slice(0, 80);
-    const graft_survival_estimate = String(parsed.graft_survival_estimate ?? "—").slice(0, 80);
-    const notes = String(parsed.notes ?? "").slice(0, 1000);
-    const findings = Array.isArray(parsed.findings)
-      ? (parsed.findings as string[]).map((f) => String(f).slice(0, 300))
-      : [];
+    const parsed = JSON.parse(raw) as AIAuditResult;
 
-    const clampScore = (n: unknown) => {
-      const v = Number(n);
-      return Number.isFinite(v) ? Math.min(100, Math.max(0, v)) : null;
+    // Enforce invariants (and the acceptance criteria) server-side.
+    const section_scores: AIAuditResult["section_scores"] = {
+      donor_management: clampIntScore(parsed.section_scores?.donor_management),
+      extraction_quality: clampIntScore(parsed.section_scores?.extraction_quality),
+      recipient_placement: clampIntScore(parsed.section_scores?.recipient_placement),
+      hairline_design: clampIntScore(parsed.section_scores?.hairline_design),
+      density_distribution: clampIntScore(parsed.section_scores?.density_distribution),
+      graft_handling_and_viability: clampIntScore(parsed.section_scores?.graft_handling_and_viability),
+      post_op_course_and_aftercare: clampIntScore(parsed.section_scores?.post_op_course_and_aftercare),
+      complications_and_risks: clampIntScore(parsed.section_scores?.complications_and_risks),
+      naturalness_and_aesthetics: clampIntScore(parsed.section_scores?.naturalness_and_aesthetics),
     };
 
-    const area_scores: Record<string, number> = {};
-    const rawAreas = parsed.area_scores;
-    if (rawAreas && typeof rawAreas === "object") {
-      for (const k of [
-        "consultation_indication",
-        "donor_management",
-        "extraction_quality",
-        "graft_handling",
-        "recipient_implantation",
-        "safety_documentation_aftercare",
-      ]) {
-        const v = clampScore((rawAreas as Record<string, unknown>)[k]);
-        if (v !== null) area_scores[k] = v;
-      }
-    }
+    const ensureEvidence = (xs: unknown, fallback: string): string[] => {
+      const arr = Array.isArray(xs) ? xs.map((x) => String(x).slice(0, 220)).filter(Boolean) : [];
+      if (arr.length === 0) return [fallback];
+      return arr.slice(0, 3);
+    };
 
-    const section_scores: Record<string, number> = {};
-    const rawSections = parsed.section_scores;
-    if (rawSections && typeof rawSections === "object") {
-      for (const [k, v0] of Object.entries(rawSections as Record<string, unknown>)) {
-        const v = clampScore(v0);
-        if (v !== null) section_scores[k] = v;
+    const section_score_evidence: AIAuditResult["section_score_evidence"] = {
+      donor_management: ensureEvidence(parsed.section_score_evidence?.donor_management, "insufficient evidence: donor photos not assessable"),
+      extraction_quality: ensureEvidence(parsed.section_score_evidence?.extraction_quality, "insufficient evidence: extraction sites not visible"),
+      recipient_placement: ensureEvidence(parsed.section_score_evidence?.recipient_placement, "insufficient evidence: recipient placement not visible"),
+      hairline_design: ensureEvidence(parsed.section_score_evidence?.hairline_design, "insufficient evidence: hairline view not available"),
+      density_distribution: ensureEvidence(parsed.section_score_evidence?.density_distribution, "insufficient evidence: zone distribution cannot be confirmed"),
+      graft_handling_and_viability: ensureEvidence(parsed.section_score_evidence?.graft_handling_and_viability, "insufficient evidence: answers missing for graft handling"),
+      post_op_course_and_aftercare: ensureEvidence(parsed.section_score_evidence?.post_op_course_and_aftercare, "insufficient evidence: answers missing for aftercare"),
+      complications_and_risks: ensureEvidence(parsed.section_score_evidence?.complications_and_risks, "insufficient evidence: insufficient complication evidence"),
+      naturalness_and_aesthetics: ensureEvidence(parsed.section_score_evidence?.naturalness_and_aesthetics, "insufficient evidence: limited aesthetic views"),
+    };
+
+    const normalizedPhotos: AIAuditResult["photo_observations"] = (() => {
+      const src = Array.isArray(parsed.photo_observations) ? parsed.photo_observations : [];
+      const byUrl = new Map<string, AIAuditResult["photo_observations"][number]>();
+      for (const p of src) {
+        if (!p || typeof p !== "object") continue;
+        const rec = p as Record<string, unknown>;
+        const u0 = rec.image_url;
+        if (typeof u0 !== "string" || !u0.trim()) continue;
+        const u = u0;
+        if (!byUrl.has(u)) byUrl.set(u, p as AIAuditResult["photo_observations"][number]);
       }
-    }
+      const out: AIAuditResult["photo_observations"] = [];
+      for (const u of imageUrls) {
+        const p = byUrl.get(u);
+        if (p) out.push(p);
+        else {
+          out.push({
+            image_url: u,
+            suspected_view: "unknown",
+            what_can_be_assessed: [],
+            what_cannot: ["insufficient evidence: missing per-photo record"],
+            observations: ["insufficient evidence: model did not return an entry for this image URL"],
+            confidence: 0,
+          });
+        }
+      }
+      return out;
+    })();
+
+    const confidenceFromModel = clamp01(parsed.confidence);
+    const knownViews = normalizedPhotos.filter((p) => p.suspected_view !== "unknown").length;
+    const viewCoverage = imageUrls.length > 0 ? knownViews / imageUrls.length : 1;
+    const confidence = imageUrls.length > 0 ? Math.min(confidenceFromModel, viewCoverage) : confidenceFromModel;
+    const overall_score = computeOverall(section_scores);
+    const confidence_label = confidenceLabelFrom(confidence);
+
+    const data_quality: AIAuditResult["data_quality"] = {
+      missing_inputs: uniq([...(parsed.data_quality?.missing_inputs ?? []), ...autoMissingInputs]).slice(0, 20),
+      missing_photos: uniq([...(parsed.data_quality?.missing_photos ?? []), ...autoMissingPhotos]).slice(0, 30),
+      limitations: uniq([
+        ...(parsed.data_quality?.limitations ?? []),
+        ...(imageUrls.length > 0 && viewCoverage < 1 ? [`View coverage incomplete: ${(viewCoverage * 100).toFixed(0)}% of photos confidently classified.`] : []),
+      ]).slice(0, 30),
+    };
+
+    const non_medical_disclaimer =
+      "HairAudit is an informational audit/reporting tool and not a medical diagnosis or medical advice.";
+
+    const donorEvidenceWeak =
+      evidenceIsWeak(section_score_evidence.donor_management) || evidenceIsWeak(section_score_evidence.extraction_quality);
+    const donor_quality = donorQualityFrom(
+      section_scores.donor_management,
+      section_scores.extraction_quality,
+      donorEvidenceWeak
+    );
+
+    const survivalEvidenceWeak =
+      evidenceIsWeak(section_score_evidence.recipient_placement) ||
+      evidenceIsWeak(section_score_evidence.density_distribution) ||
+      evidenceIsWeak(section_score_evidence.complications_and_risks);
+    const graft_survival_estimate = graftSurvivalFrom(
+      section_scores.recipient_placement,
+      section_scores.density_distribution,
+      section_scores.complications_and_risks,
+      survivalEvidenceWeak
+    );
+    const notes = String(parsed.summary ?? "").slice(0, 1400);
+    const findings = (Array.isArray(parsed.key_findings) ? parsed.key_findings : [])
+      .slice(0, 10)
+      .map((f) => String(f.title ?? "").slice(0, 160))
+      .filter((s) => s.trim().length > 0);
 
     return {
-      score,
+      ...parsed,
+      model,
+      overall_score,
+      confidence,
+      confidence_label,
+      data_quality,
+      section_scores,
+      section_score_evidence,
+      photo_observations: normalizedPhotos,
+      non_medical_disclaimer,
+      // Deprecated fields (mapped)
+      score: overall_score,
       donor_quality,
       graft_survival_estimate,
       notes,
       findings,
-      model,
-      ...(Object.keys(area_scores).length ? { area_scores } : {}),
-      ...(Object.keys(section_scores).length ? { section_scores } : {}),
     };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
+    const section_scores = {
+      donor_management: 0,
+      extraction_quality: 0,
+      recipient_placement: 0,
+      hairline_design: 0,
+      density_distribution: 0,
+      graft_handling_and_viability: 0,
+      post_op_course_and_aftercare: 0,
+      complications_and_risks: 0,
+      naturalness_and_aesthetics: 0,
+    };
+    const section_score_evidence = {
+      donor_management: ["insufficient evidence: AI audit failed"],
+      extraction_quality: ["insufficient evidence: AI audit failed"],
+      recipient_placement: ["insufficient evidence: AI audit failed"],
+      hairline_design: ["insufficient evidence: AI audit failed"],
+      density_distribution: ["insufficient evidence: AI audit failed"],
+      graft_handling_and_viability: ["insufficient evidence: AI audit failed"],
+      post_op_course_and_aftercare: ["insufficient evidence: AI audit failed"],
+      complications_and_risks: ["insufficient evidence: AI audit failed"],
+      naturalness_and_aesthetics: ["insufficient evidence: AI audit failed"],
+    };
     return {
+      overall_score: 0,
+      confidence: 0,
+      confidence_label: "low",
+      data_quality: {
+        missing_inputs: autoMissingInputs,
+        missing_photos: autoMissingPhotos,
+        limitations: [`AI audit failed: ${msg}`],
+      },
+      section_scores,
+      section_score_evidence,
+      key_findings: [],
+      red_flags: [],
+      photo_observations: imageUrls.map((u) => ({
+        image_url: u,
+        suspected_view: "unknown",
+        what_can_be_assessed: [],
+        what_cannot: ["AI audit failed"],
+        observations: [`AI audit failed: ${msg}`],
+        confidence: 0,
+      })),
+      summary: `AI audit failed: ${msg}`,
+      non_medical_disclaimer:
+        "HairAudit is an informational audit/reporting tool and not a medical diagnosis or medical advice.",
+      model: "error",
+      // Deprecated fields (back-compat)
       score: 0,
-      donor_quality: "—",
-      graft_survival_estimate: "—",
+      donor_quality: "Cannot assess",
+      graft_survival_estimate: "Unknown",
       notes: `AI audit failed: ${msg}`,
       findings: [],
-      model: "error",
     };
   }
 }

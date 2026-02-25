@@ -25,7 +25,7 @@ export const runAudit = inngest.createFunction(
     id: "run-audit",
     retries: 3,
     onFailure: async ({ error, event: failureEvent, step }) => {
-      const originalEvent = (failureEvent as any).data?.event;
+      const originalEvent = (failureEvent as { data?: { event?: { data?: unknown } } }).data?.event;
       const { caseId, userId } = (originalEvent?.data ?? {}) as { caseId?: string; userId?: string };
       if (!caseId || !userId) {
         console.error("[runAudit onFailure] Missing caseId/userId in event", failureEvent);
@@ -204,8 +204,14 @@ export const runAudit = inngest.createFunction(
         model: aiResult.model,
         uploadCount: uploads.length,
         areaScores: {
-          domains: aiResult.area_scores ?? {},
-          sections: aiResult.section_scores ?? {},
+          domains: {
+            donor_management: aiResult.section_scores.donor_management,
+            extraction_quality: aiResult.section_scores.extraction_quality,
+            graft_handling: aiResult.section_scores.graft_handling_and_viability,
+            recipient_implantation: aiResult.section_scores.recipient_placement,
+            safety_documentation_aftercare: aiResult.section_scores.post_op_course_and_aftercare,
+          },
+          sections: aiResult.section_scores,
         },
         images,
       });
@@ -233,8 +239,22 @@ export const runAudit = inngest.createFunction(
         graft_survival_estimate: aiResult.graft_survival_estimate,
         notes: aiResult.notes,
         findings: aiResult.findings,
-        area_scores: aiResult.area_scores ?? null,
-        section_scores: aiResult.section_scores ?? null,
+        // Store the full forensic audit payload for downstream UI + analytics
+        forensic_audit: {
+          overall_score: aiResult.overall_score,
+          confidence: aiResult.confidence,
+          confidence_label: aiResult.confidence_label,
+          data_quality: aiResult.data_quality,
+          section_scores: aiResult.section_scores,
+          key_findings: aiResult.key_findings,
+          red_flags: aiResult.red_flags,
+          photo_observations: aiResult.photo_observations,
+          summary: aiResult.summary,
+          non_medical_disclaimer: aiResult.non_medical_disclaimer,
+          model: aiResult.model,
+        },
+        area_scores: null,
+        section_scores: aiResult.section_scores,
         ai_audit: {
           model: aiResult.model,
           generated_at: new Date().toISOString(),

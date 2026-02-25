@@ -22,6 +22,26 @@ type Summary = {
   notes?: string;
   findings?: string[];
   highlights?: string[];
+  forensic_audit?: {
+    overall_score?: number;
+    confidence?: number;
+    confidence_label?: "low" | "medium" | "high";
+    data_quality?: { missing_inputs?: string[]; missing_photos?: string[]; limitations?: string[] };
+    section_scores?: Record<string, number>;
+    key_findings?: { title?: string; severity?: string; evidence?: string[]; impact?: string; recommended_next_step?: string }[];
+    red_flags?: { flag?: string; why_it_matters?: string; evidence?: string[] }[];
+    photo_observations?: {
+      image_url?: string;
+      suspected_view?: string;
+      what_can_be_assessed?: string[];
+      what_cannot?: string[];
+      observations?: string[];
+      confidence?: number;
+    }[];
+    summary?: string;
+    non_medical_disclaimer?: string;
+    model?: string;
+  };
 };
 
 export default async function ReportHtmlPage({
@@ -110,6 +130,7 @@ export default async function ReportHtmlPage({
     section_scores?: Record<string, number> | null;
   };
   const findings = Array.isArray(summary.findings) ? summary.findings : (summary.highlights ?? []);
+  const forensic = summary.forensic_audit;
 
   // Compute rubric score if answers exist (same as print route)
   let computed = summary?.computed ?? null;
@@ -127,6 +148,8 @@ export default async function ReportHtmlPage({
   const fallbackSections = summary?.section_scores ?? undefined;
   const domains = comp.domains ?? fallbackDomains;
   const sections = comp.sections ?? fallbackSections;
+  const domainsSafe = domains ?? undefined;
+  const sectionsSafe = sections ?? undefined;
   const { domainTitles, sectionTitles } = buildRubricTitles(
     rubric as { domains?: { domain_id: string; title: string; sections?: { section_id: string; title: string }[] }[] }
   );
@@ -263,12 +286,106 @@ export default async function ReportHtmlPage({
                 </ul>
               </div>
             )}
+
+            {forensic && (
+              <div style={{ marginTop: 12 }}>
+                <div style={{ fontSize: 11, color: "#555" }}>Forensic audit (AI)</div>
+                <table style={{ marginTop: 6 }}>
+                  <thead>
+                    <tr>
+                      <th>Item</th>
+                      <th>Assessment</th>
+                      <th>Evidence / notes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Overall</td>
+                      <td>
+                        Score: {forensic.overall_score ?? summary.score ?? "—"}{" "}
+                        {forensic.confidence_label ? `• Confidence: ${forensic.confidence_label}` : ""}
+                      </td>
+                      <td>
+                        {forensic.summary ? forensic.summary : <span className="muted">—</span>}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>Key findings</td>
+                      <td>{Array.isArray(forensic.key_findings) ? `${forensic.key_findings.length} items` : "—"}</td>
+                      <td>
+                        {Array.isArray(forensic.key_findings) && forensic.key_findings.length > 0 ? (
+                          <ul style={{ margin: 0, paddingLeft: 18 }}>
+                            {forensic.key_findings.slice(0, 6).map((f, i) => (
+                              <li key={i}>
+                                <strong>{f.title ?? "Finding"}</strong>
+                                {f.severity ? ` (${f.severity})` : ""}
+                                {f.impact ? ` — ${f.impact}` : ""}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <span className="muted">—</span>
+                        )}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>Red flags</td>
+                      <td>{Array.isArray(forensic.red_flags) ? `${forensic.red_flags.length} items` : "—"}</td>
+                      <td>
+                        {Array.isArray(forensic.red_flags) && forensic.red_flags.length > 0 ? (
+                          <ul style={{ margin: 0, paddingLeft: 18 }}>
+                            {forensic.red_flags.slice(0, 6).map((f, i) => (
+                              <li key={i}>
+                                <strong>{f.flag ?? "Flag"}</strong>
+                                {f.why_it_matters ? ` — ${f.why_it_matters}` : ""}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <span className="muted">—</span>
+                        )}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>Per-photo observations</td>
+                      <td>{Array.isArray(forensic.photo_observations) ? `${forensic.photo_observations.length} photos` : "—"}</td>
+                      <td>
+                        {Array.isArray(forensic.photo_observations) && forensic.photo_observations.length > 0 ? (
+                          <ul style={{ margin: 0, paddingLeft: 18 }}>
+                            {forensic.photo_observations.slice(0, 6).map((p, i) => (
+                              <li key={i}>
+                                {p.suspected_view ? `${p.suspected_view}: ` : ""}
+                                {Array.isArray(p.observations) && p.observations.length > 0 ? p.observations[0] : "—"}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <span className="muted">—</span>
+                        )}
+                      </td>
+                    </tr>
+                    {Array.isArray(forensic.data_quality?.limitations) && forensic.data_quality!.limitations!.length > 0 && (
+                      <tr>
+                        <td>Limitations</td>
+                        <td colSpan={2}>
+                          <ul style={{ margin: 0, paddingLeft: 18 }}>
+                            {forensic.data_quality!.limitations!.slice(0, 12).map((t, i) => (
+                              <li key={i}>{t}</li>
+                            ))}
+                          </ul>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
             {(domains || sections) &&
               (Object.keys(domains ?? {}).length > 0 || Object.keys(sections ?? {}).length > 0) && (
               <div style={{ marginTop: 16 }}>
                 <ScoreAreaGraph
-                  domains={domains as any}
-                  sections={sections as any}
+                  domains={domainsSafe}
+                  sections={sectionsSafe}
                   domainTitles={domainTitles}
                   sectionTitles={sectionTitles}
                   compact
