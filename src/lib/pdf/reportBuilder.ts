@@ -311,6 +311,10 @@ export async function buildAuditReportPdf(
   doc.fillColor(SLATE_400).fontSize(9);
   doc.text("— HairAudit. Professional hair transplant audit and feedback.", MARGIN, doc.y);
   doc.text("https://hairaudit.com", MARGIN, doc.y + 14);
+  const sha = process.env.VERCEL_GIT_COMMIT_SHA ? String(process.env.VERCEL_GIT_COMMIT_SHA).slice(0, 7) : "";
+  if (sha) {
+    doc.text(`Build: ${sha}`, MARGIN, doc.y + 28);
+  }
 
   doc.end();
   return done;
