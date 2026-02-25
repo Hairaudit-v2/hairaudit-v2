@@ -63,7 +63,7 @@ export const runAudit = inngest.createFunction(
             version: nextVersion,
             status: "failed",
             error: errMsg,
-            pdf_path: null,
+            pdf_path: "",
             summary: {},
           });
         }
@@ -188,44 +188,23 @@ export const runAudit = inngest.createFunction(
       return Number(latest) + 1;
     });
 
-    // 8) Create PDF (includes AI audit results)
+    // 8) Create PDF (includes AI audit results + case photos)
     const pdfBuffer = await step.run("build-pdf", async () => {
-      const PDFDocument = (await import("pdfkit")).default;
-      const doc = new PDFDocument({ size: "A4", margin: 50 });
-
-      const chunks: Buffer[] = [];
-      doc.on("data", (d: any) => chunks.push(Buffer.from(d)));
-      const done = new Promise<Buffer>((resolve, reject) => {
-        doc.on("end", () => resolve(Buffer.concat(chunks)));
-        doc.on("error", reject);
+      const { buildAuditReportPdf, fetchReportImages } = await import("@/lib/pdf/reportBuilder");
+      const images = await fetchReportImages(supabase, BUCKET, uploads);
+      return buildAuditReportPdf({
+        caseId,
+        version: nextVersion,
+        generatedAt: new Date().toLocaleString(),
+        score: aiResult.score,
+        donorQuality: aiResult.donor_quality,
+        graftSurvival: aiResult.graft_survival_estimate,
+        notes: aiResult.notes || undefined,
+        findings: aiResult.findings,
+        model: aiResult.model,
+        uploadCount: uploads.length,
+        images,
       });
-
-      doc.fontSize(20).text("HairAudit Report", { align: "left" });
-      doc.moveDown();
-      doc.fontSize(12).text(`Case ID: ${caseId}`);
-      doc.text(`Version: v${nextVersion}`);
-      doc.text(`Generated: ${new Date().toLocaleString()}`);
-      doc.moveDown();
-
-      doc.fontSize(14).text("AI Audit Summary", { underline: true });
-      doc.moveDown(0.5);
-      doc.fontSize(12).text(`Overall Score: ${aiResult.score}/100`);
-      doc.text(`Donor Quality: ${aiResult.donor_quality}`);
-      doc.text(`Graft Survival Estimate: ${aiResult.graft_survival_estimate}`);
-      doc.moveDown();
-      doc.text("Notes:", { continued: false });
-      doc.text(aiResult.notes || "—", { align: "left" });
-      if (aiResult.findings?.length) {
-        doc.moveDown();
-        doc.text("Key Findings:");
-        aiResult.findings.forEach((f) => doc.text(`  • ${f}`, { indent: 20 }));
-      }
-      doc.moveDown();
-
-      doc.fontSize(12).text(`Uploads: ${uploads.length} | Model: ${aiResult.model}`);
-      doc.end();
-
-      return await done;
     });
 
     // 9) Upload PDF

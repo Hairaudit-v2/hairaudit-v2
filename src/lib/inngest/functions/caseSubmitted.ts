@@ -102,7 +102,7 @@ export const caseSubmitted = inngest.createFunction(
           case_id: caseId,
           version: nextVersion,
           status: "processing",
-          pdf_path: null,
+          pdf_path: "",
           error: null,
         })
         .select("id, version")

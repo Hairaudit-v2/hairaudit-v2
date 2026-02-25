@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getUserRole } from "@/lib/case-access";
-import PDFDocument from "pdfkit";
+import { buildAuditReportPdf, fetchReportImages } from "@/lib/pdf/reportBuilder";
 
 const AUDITOR_EMAIL = "manager@evolvedhair.com.au";
 const BUCKET = process.env.CASE_FILES_BUCKET || "case-files";
@@ -62,31 +62,22 @@ export async function POST(req: Request) {
           ? summary.findings
           : [];
 
-    const pdfBuffer = await new Promise<Buffer>((resolve, reject) => {
-      const doc = new PDFDocument({ size: "A4", margin: 50 });
-      const chunks: Buffer[] = [];
-      doc.on("data", (c: Buffer) => chunks.push(c));
-      doc.on("end", () => resolve(Buffer.concat(chunks)));
-      doc.on("error", reject);
+    const { data: uploads = [] } = await admin
+      .from("uploads")
+      .select("type, storage_path")
+      .eq("case_id", caseId);
 
-      doc.fontSize(20).text("HairAudit Report (Manual)", { align: "left" });
-      doc.moveDown();
-      doc.fontSize(12).text(`Case ID: ${caseId}`);
-      doc.text(`Version: v${latestReport.version}`);
-      doc.text(`Generated: ${new Date().toLocaleString()} (manual audit)`);
-      doc.moveDown();
+    const images = await fetchReportImages(admin, BUCKET, uploads ?? []);
 
-      doc.fontSize(14).text("Audit Summary", { underline: true });
-      doc.moveDown(0.5);
-      if (score !== null) doc.fontSize(12).text(`Overall Score: ${score}/100`);
-      doc.text("Notes:", { continued: false });
-      doc.text(notes || "—", { align: "left" });
-      if (findings.length) {
-        doc.moveDown();
-        doc.text("Key Findings:");
-        findings.forEach((f) => doc.text(`  • ${f}`, { indent: 20 }));
-      }
-      doc.end();
+    const pdfBuffer = await buildAuditReportPdf({
+      caseId,
+      version: latestReport.version,
+      generatedAt: new Date().toLocaleString(),
+      isManual: true,
+      score,
+      notes,
+      findings,
+      images,
     });
 
     const pdfPath = `${caseId}/v${latestReport.version}.pdf`;

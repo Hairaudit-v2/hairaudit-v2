@@ -54,6 +54,7 @@ export async function POST(req: Request) {
       .insert({
         case_id: caseId,
         version: 1,
+        pdf_path: "",
         summary: {
           notes: "Seeded answers template",
           rubric: { rubric_id: rubric.rubric_id, version: rubric.version, title: rubric.title }

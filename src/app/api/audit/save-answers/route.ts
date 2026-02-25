@@ -64,6 +64,7 @@ if (!caseId || caseId === "undefined" || caseId === "null") {
         .insert({
           case_id: caseId,
           version: 1,
+          pdf_path: "",
           summary: { answers },
         })
         .select("id, version")

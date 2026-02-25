@@ -69,6 +69,14 @@ export async function POST(req: Request) {
       );
     }
 
+    if (!process.env.INNGEST_EVENT_KEY) {
+      console.error("[submit] INNGEST_EVENT_KEY is not set; audit will not run.");
+      return NextResponse.json(
+        { error: "Audit pipeline not configured (missing INNGEST_EVENT_KEY). Contact support." },
+        { status: 503 }
+      );
+    }
+
     const patientScore = computeEvidenceScore("patient", photos);
     const patientConfidence = computeConfidenceLabel(patientScore);
     const patientDetails = computeEvidenceDetails("patient", photos);
@@ -122,10 +130,18 @@ export async function POST(req: Request) {
       }
     }
 
-    await inngest.send({
-      name: "case/submitted",
-      data: { caseId, userId: user.id },
-    });
+    try {
+      await inngest.send({
+        name: "case/submitted",
+        data: { caseId, userId: user.id },
+      });
+    } catch (sendErr: unknown) {
+      console.error("[submit] inngest.send failed:", sendErr);
+      return NextResponse.json(
+        { error: "Case submitted but audit could not be started. Please try again or contact support." },
+        { status: 503 }
+      );
+    }
 
     return NextResponse.json({ ok: true, submitted_at: now });
   } catch (e: any) {

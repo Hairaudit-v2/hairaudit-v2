@@ -85,7 +85,7 @@ export async function POST(req: Request) {
 
   const { data: created } = await admin
     .from("reports")
-    .insert({ case_id: caseId, version: 1, summary: nextSummary })
+    .insert({ case_id: caseId, version: 1, pdf_path: "", summary: nextSummary })
     .select("id")
     .maybeSingle();
 
