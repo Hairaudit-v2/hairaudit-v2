@@ -18,11 +18,31 @@ import { parseRole, USER_ROLES } from "@/lib/roles";
 
 export default async function Page({ params }: { params: Promise<{ caseId: string }> }) {
   const { caseId } = await params;
-  const supabase = await createSupabaseAuthServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  let supabase: Awaited<ReturnType<typeof createSupabaseAuthServerClient>>;
+  try {
+    supabase = await createSupabaseAuthServerClient();
+  } catch (e) {
+    console.error("[cases/page] createSupabaseAuthServerClient failed", { caseId, error: e });
+    throw e;
+  }
+
+  let user: any | null = null;
+  try {
+    const res = await supabase.auth.getUser();
+    user = (res?.data?.user ?? null) as typeof user;
+  } catch (e) {
+    console.error("[cases/page] auth.getUser failed", { caseId, error: e });
+    throw e;
+  }
   if (!user) redirect("/login");
 
-  const admin = tryCreateSupabaseAdminClient();
+  let admin: ReturnType<typeof tryCreateSupabaseAdminClient>;
+  try {
+    admin = tryCreateSupabaseAdminClient();
+  } catch (e) {
+    console.error("[cases/page] tryCreateSupabaseAdminClient threw", { caseId, error: e });
+    throw e;
+  }
   const db = admin ?? supabase;
 
   let role = parseRole((user.user_metadata as Record<string, unknown>)?.role);
@@ -34,11 +54,17 @@ export default async function Page({ params }: { params: Promise<{ caseId: strin
   }
 
   let c: { id: string; title?: string; status?: string; created_at?: string; user_id?: string; submitted_at?: string | null; patient_id?: string | null; doctor_id?: string | null; clinic_id?: string | null; evidence_score_patient?: string | null; confidence_label_patient?: string | null; evidence_score_doctor?: string | null; confidence_label_doctor?: string | null; evidence_details?: Record<string, unknown> | null } | null;
-  const caseRes = await db
-    .from("cases")
-    .select("id, title, status, created_at, user_id, submitted_at, patient_id, doctor_id, clinic_id, evidence_score_patient, confidence_label_patient, evidence_score_doctor, confidence_label_doctor, evidence_details")
-    .eq("id", caseId)
-    .maybeSingle();
+  let caseRes: any;
+  try {
+    caseRes = await db
+      .from("cases")
+      .select("id, title, status, created_at, user_id, submitted_at, patient_id, doctor_id, clinic_id, evidence_score_patient, confidence_label_patient, evidence_score_doctor, confidence_label_doctor, evidence_details")
+      .eq("id", caseId)
+      .maybeSingle();
+  } catch (e) {
+    console.error("[cases/page] cases select threw", { caseId, error: e });
+    throw e;
+  }
   if (caseRes.error && String(caseRes.error.message || "").includes("evidence")) {
     const fallback = await db.from("cases").select("id, title, status, created_at, user_id, submitted_at, patient_id, doctor_id, clinic_id").eq("id", caseId).maybeSingle();
     c = fallback.data;
