@@ -77,8 +77,9 @@ export async function POST(req: Request) {
     let doctorConfidence: string | null = null;
     const doctorPhotos = photos.filter((p) => String(p.type ?? "").startsWith("doctor_photo:"));
     if (doctorPhotos.length > 0) {
-      doctorScore = computeEvidenceScore("doctor", doctorPhotos);
-      doctorConfidence = computeConfidenceLabel(doctorScore);
+      const score: EvidenceScore = computeEvidenceScore("doctor", doctorPhotos);
+      doctorScore = score;
+      doctorConfidence = computeConfidenceLabel(score);
     }
 
     const evidenceDetails: Record<string, unknown> = {
