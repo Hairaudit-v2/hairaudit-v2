@@ -9,7 +9,8 @@ const BUCKET = process.env.CASE_FILES_BUCKET || "case-files";
 
 export async function POST(req: Request) {
   try {
-    const { caseId } = await req.json().catch(() => ({}));
+    const body = await req.json().catch(() => ({}));
+    const { caseId, score: bodyScore, notes: bodyNotes, findings: bodyFindings } = body;
     if (!caseId) return NextResponse.json({ error: "Missing caseId" }, { status: 400 });
 
     const supabaseAuth = await createSupabaseAuthServerClient();
@@ -40,9 +41,26 @@ export async function POST(req: Request) {
     if (repErr || !latestReport) return NextResponse.json({ error: "No report found" }, { status: 404 });
 
     const summary = (latestReport.summary ?? {}) as Record<string, unknown>;
-    const score = typeof summary.score === "number" ? summary.score : null;
-    const notes = typeof summary.notes === "string" ? summary.notes : "";
-    const findings = Array.isArray(summary.findings) ? summary.findings : [];
+    // Prefer request body so PDF always reflects what the user just submitted (no race with DB)
+    const score =
+      typeof bodyScore === "number"
+        ? bodyScore
+        : bodyScore != null
+          ? Number(bodyScore)
+          : typeof summary.score === "number"
+            ? summary.score
+            : null;
+    const notes =
+      typeof bodyNotes === "string"
+        ? bodyNotes
+        : (typeof summary.notes === "string" ? summary.notes : "") || "";
+    const findings = Array.isArray(bodyFindings)
+      ? bodyFindings
+      : typeof bodyFindings === "string"
+        ? [bodyFindings]
+        : Array.isArray(summary.findings)
+          ? summary.findings
+          : [];
 
     const pdfBuffer = await new Promise<Buffer>((resolve, reject) => {
       const doc = new PDFDocument({ size: "A4", margin: 50 });
@@ -80,6 +98,9 @@ export async function POST(req: Request) {
 
     const nextSummary = {
       ...summary,
+      score,
+      notes,
+      findings,
       manual_audit: true,
       manual_audit_completed_at: new Date().toISOString(),
     };

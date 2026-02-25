@@ -50,10 +50,16 @@ export default function ManualAuditFinalize({ caseId }: { caseId: string }) {
         const j = await saveRes.json().catch(() => ({}));
         throw new Error(j?.error ?? "Save failed");
       }
+      const payload = {
+        caseId,
+        score: score ? Number(score) : null,
+        notes,
+        findings: findings.split("\n").filter(Boolean),
+      };
       const res = await fetch("/api/audit/finalize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ caseId }),
+        body: JSON.stringify(payload),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json?.error ?? "Finalize failed");
@@ -69,7 +75,7 @@ export default function ManualAuditFinalize({ caseId }: { caseId: string }) {
     <div className="mt-8 rounded-xl border border-slate-200 bg-white p-6">
       <h2 className="text-lg font-semibold text-slate-900 mb-4">Manual audit</h2>
       <p className="text-sm text-slate-600 mb-4">
-        Complete your audit below and finalize to generate the report PDF.
+        Complete your audit below and finalize to generate the report PDF. No photos are required—score, notes, and findings are enough.
       </p>
       <div className="space-y-4">
         <div>

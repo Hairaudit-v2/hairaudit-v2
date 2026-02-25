@@ -58,17 +58,25 @@ export default async function AuditPage({ params }: PageProps) {
       <h1 className="text-2xl font-bold text-slate-900">Manual audit</h1>
       <p className="text-slate-600 mt-1">Case: {caseId}</p>
 
-      <div className="mt-6 space-y-8">
+      {isAuditor && (c.status === "audit_failed" || c.status === "processing" || c.status === "submitted") && (
+        <>
+          <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
+            <p className="text-sm text-amber-900">
+              <strong>You can complete the manual audit without uploading any photos.</strong> Enter a score (0–100), notes, and key findings below, then click &quot;Finalize report&quot;. The photo sections further down are optional (for adding or reviewing evidence).
+            </p>
+          </div>
+          <ManualAuditFinalize caseId={caseId} />
+        </>
+      )}
+
+      <div className="mt-8 space-y-8">
+        <h2 className="text-lg font-semibold text-slate-800">Optional: review or add photos</h2>
         <AuditFormClient caseId={caseId} />
         <PatientPhotoUpload caseId={caseId} />
         <PatientPhotoUploadClient caseId={caseId} />
         <PatientPhotosClient caseId={caseId} />
         <AuditPhotoUploadClient caseId={caseId} />
       </div>
-
-      {isAuditor && (c.status === "audit_failed" || c.status === "processing" || c.status === "submitted") && (
-        <ManualAuditFinalize caseId={caseId} />
-      )}
     </div>
   );
 }
