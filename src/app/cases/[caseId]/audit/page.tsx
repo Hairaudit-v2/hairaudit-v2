@@ -14,7 +14,7 @@ import { canAccessCase, getUserRole } from "@/lib/case-access";
 type PageProps = { params: Promise<{ caseId: string }> };
 
 const SECTION_ID = "patient_minimum_inputs";
-const AUDITOR_EMAIL = "manager@evolvedhair.com.au";
+const AUDITOR_EMAIL = "auditor@hairaudit.com";
 
 export default async function AuditPage({ params }: PageProps) {
   const { caseId } = await params;

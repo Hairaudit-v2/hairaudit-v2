@@ -52,6 +52,12 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
               How It Works
             </Link>
             <Link
+              href="/follicle-intelligence"
+              className="text-sm font-medium text-slate-300 hover:text-amber-400 transition-colors hidden sm:block"
+            >
+              Follicle Intelligence
+            </Link>
+            <Link
               href="/signup"
               className="text-sm font-medium text-slate-300 hover:text-amber-400 transition-colors hidden sm:block"
             >

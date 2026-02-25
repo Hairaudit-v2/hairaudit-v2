@@ -36,7 +36,11 @@ export default function HomePage() {
               HairAudit provides independent clinical audits of hair transplant and hair restoration
               procedures worldwide. We assess donor extraction quality, graft handling, implantation
               technique, hairline design, and likely growth outcomes using structured analysis and
-              medical evidence.
+              medical evidence. Our audits are powered by{" "}
+              <Link href="/follicle-intelligence" className="text-amber-400 hover:text-amber-300 transition-colors font-medium">
+                Follicle Intelligence
+              </Link>
+              .
             </p>
             <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
               <Link
@@ -193,7 +197,12 @@ export default function HomePage() {
               </p>
               <p className="mt-2 text-slate-600 text-center max-w-2xl mx-auto text-sm sm:text-base">
                 HairAudit follows a clear, step-by-step audit process designed to objectively assess hair
-                transplant quality using clinical evidence and structured review criteria.
+                transplant quality using clinical evidence and structured review criteria. Our analysis
+                is powered by{" "}
+                <Link href="/follicle-intelligence" className="text-amber-600 hover:text-amber-500 font-medium">
+                  Follicle Intelligence
+                </Link>
+                .
               </p>
             </ScrollReveal>
             <div className="mt-10 sm:mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 sm:gap-4">

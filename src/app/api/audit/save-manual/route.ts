@@ -3,7 +3,7 @@ import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getUserRole } from "@/lib/case-access";
 
-const AUDITOR_EMAIL = "manager@evolvedhair.com.au";
+const AUDITOR_EMAIL = "auditor@hairaudit.com";
 
 export async function POST(req: Request) {
   try {

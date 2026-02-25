@@ -10,9 +10,9 @@ export default async function AuditorDashboardPage() {
 
   const admin = createSupabaseAdminClient();
 
-  // Restrict to manager@evolvedhair.com.au or profile role auditor
+  // Restrict to auditor@hairaudit.com or profile role auditor
   const { data: profile } = await admin.from("profiles").select("role").eq("id", user.id).maybeSingle();
-  const isAuditor = profile?.role === "auditor" || user.email === "manager@evolvedhair.com.au";
+  const isAuditor = profile?.role === "auditor" || user.email === "auditor@hairaudit.com";
   if (!isAuditor) redirect("/login/auditor");
 
   const { data: cases } = await admin

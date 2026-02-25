@@ -94,6 +94,11 @@ export default function ServicesPage() {
             <ScrollReveal delay={0.2}>
               <p className="mt-2 text-slate-400 text-sm sm:text-base">
                 HairAudit does not perform hair transplants and does not promote clinics or practitioners.
+                Audits powered by{" "}
+                <Link href="/follicle-intelligence" className="text-amber-400 hover:text-amber-300 font-medium">
+                  Follicle Intelligence
+                </Link>
+                .
               </p>
             </ScrollReveal>
           </div>

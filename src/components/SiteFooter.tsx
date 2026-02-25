@@ -34,6 +34,11 @@ export default function SiteFooter() {
                   Services
                 </Link>
               </li>
+              <li>
+                <Link href="/follicle-intelligence" className="hover:text-amber-400 transition-colors">
+                  Follicle Intelligence
+                </Link>
+              </li>
             </ul>
           </div>
           <div>
@@ -61,15 +66,21 @@ export default function SiteFooter() {
             <p className="text-sm">1 Main Street</p>
             <p className="text-sm">New York, NY 11111</p>
             <a
-              href="mailto:manager@evolvedhair.com.au"
+              href="mailto:auditor@hairaudit.com"
               className="text-sm hover:text-amber-400 transition-colors block mt-2"
             >
-              manager@evolvedhair.com.au
+              auditor@hairaudit.com
             </a>
           </div>
         </div>
-        <div className="mt-8 pt-8 border-t border-slate-700 text-center text-sm">
-          HairAudit — Audit and feedback for hair transplant procedures
+        <div className="mt-8 pt-8 border-t border-slate-700 text-center text-sm space-y-1">
+          <p>HairAudit — Audit and feedback for hair transplant procedures</p>
+          <p className="text-slate-500">
+            Audits powered by{" "}
+            <Link href="/follicle-intelligence" className="text-amber-400 hover:text-amber-300 transition-colors font-medium">
+              Follicle Intelligence
+            </Link>
+          </p>
         </div>
       </div>
     </footer>
