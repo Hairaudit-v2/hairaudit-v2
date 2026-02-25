@@ -458,8 +458,9 @@ const FORENSIC_AUDIT_JSON_SCHEMA = {
                 },
               },
             },
-            impact: { type: "string", minLength: 1, maxLength: 400 },
-            recommended_next_step: { type: "string", minLength: 1, maxLength: 240 },
+            // Narrative depth: impact is the clinical-grade explanation (2–4 sentences).
+            impact: { type: "string", minLength: 1, maxLength: 900 },
+            recommended_next_step: { type: "string", minLength: 1, maxLength: 350 },
           },
         },
       },
@@ -695,6 +696,13 @@ When evidence is missing or unclear, you MUST mark it explicitly as "insufficien
      - Each key_findings[] and red_flags[] must include at least 1 evidence object.
      - If no evidence exists, include a single evidence object with observation starting "insufficient evidence:" and confidence <= 0.2,
        and lower overall confidence + add a data_quality limitation.
+  5) Narrative depth requirement (STRICT):
+     - Provide detailed clinical-grade explanations under each key finding.
+     - key_findings[].impact MUST be 2–4 sentences for each major finding and MUST explicitly include:
+       (a) why it matters clinically,
+       (b) what supports the observation (tie to evidence objects / section_score_evidence),
+       (c) a potential long-term implication (stated conditionally; no overclaiming).
+     - Use structured reasoning summaries (what/why/implication) but DO NOT provide chain-of-thought or step-by-step internal reasoning.
 - Unknown/unclear photos MUST NOT drive section_scores; they should reduce confidence and add data_quality limitations instead.
 - If photos/angles are missing, explicitly say so and lower confidence + label (low/medium/high).
 
@@ -794,7 +802,7 @@ Safety:
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       response_format: { type: "json_schema", json_schema: FORENSIC_AUDIT_JSON_SCHEMA } as any,
       temperature: 0.2,
-      max_tokens: 1500,
+      max_tokens: imageUrls.length > 0 ? 3000 : 1500,
     });
 
     const raw = completion.choices[0]?.message?.content;
