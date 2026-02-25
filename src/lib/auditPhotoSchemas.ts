@@ -58,7 +58,7 @@ export function parsePhotoKey(typeOrRow: string | { type?: string } | { photo_ke
       const st = typeOrRow.submitter_type as SubmitterType | undefined;
       return st ? { submitterType: st, key: typeOrRow.photo_key } : null;
     }
-    const t = typeOrRow.type ?? "";
+    const t = "type" in typeOrRow ? (typeOrRow.type ?? "") : "";
     if (t.startsWith("patient_photo:"))
       return { submitterType: "patient", key: t.slice("patient_photo:".length) };
     if (t.startsWith("doctor_photo:"))
