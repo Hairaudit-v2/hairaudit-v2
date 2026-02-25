@@ -5,8 +5,67 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import ServiceCard from "@/components/ui/ServiceCard";
+import Sparkline from "@/components/ui/Sparkline";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
-export default function HomePage() {
+export const revalidate = 600;
+
+async function getPublicAuditMetrics() {
+  try {
+    const admin = createSupabaseAdminClient();
+
+    const { count: completedTotal } = await admin
+      .from("cases")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "complete");
+
+    const days = 30;
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    start.setDate(start.getDate() - (days - 1));
+    const startIso = start.toISOString();
+
+    const { data: reports } = await admin
+      .from("reports")
+      .select("case_id, created_at")
+      .eq("status", "complete")
+      .gte("created_at", startIso)
+      .order("created_at", { ascending: true })
+      // Safety cap: keeps marketing page fast even if volume grows.
+      .limit(5000);
+
+    const dailyCounts = Array.from({ length: days }, () => 0);
+
+    const latestByCase = new Map<string, Date>();
+    for (const r of reports ?? []) {
+      const caseId = String((r as { case_id?: unknown }).case_id ?? "");
+      const d = (r as { created_at?: string | null }).created_at ? new Date((r as { created_at: string }).created_at) : null;
+      if (!caseId || !d || Number.isNaN(d.getTime())) continue;
+      const prev = latestByCase.get(caseId);
+      if (!prev || d > prev) latestByCase.set(caseId, d);
+    }
+
+    for (const [, d] of latestByCase) {
+      const day = new Date(d);
+      day.setHours(0, 0, 0, 0);
+      const idx = Math.floor((day.getTime() - start.getTime()) / (24 * 60 * 60 * 1000));
+      if (idx >= 0 && idx < days) dailyCounts[idx] += 1;
+    }
+
+    const completedLast30 = dailyCounts.reduce((a, b) => a + b, 0);
+
+    return {
+      completedTotal: completedTotal ?? 0,
+      completedLast30,
+      dailyCounts,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export default async function HomePage() {
+  const metrics = await getPublicAuditMetrics();
   return (
     <div className="min-h-screen flex flex-col">
       <SiteHeader />
@@ -56,6 +115,37 @@ export default function HomePage() {
                 How it works
               </Link>
             </div>
+
+            {metrics && (
+              <div className="mt-10 flex justify-center">
+                <div className="w-full max-w-md rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-4">
+                  <div className="flex items-start justify-between gap-6">
+                    <div className="text-left">
+                      <div className="text-xs font-semibold text-slate-200/80">Audits completed</div>
+                      <div className="mt-1 flex items-baseline gap-2">
+                        <div className="text-3xl font-bold text-white">{metrics.completedTotal}</div>
+                        <div className="text-xs text-slate-200/70">total</div>
+                      </div>
+                      <div className="mt-1 text-xs text-slate-200/70">
+                        Last 30 days: <span className="font-medium text-slate-100">{metrics.completedLast30}</span>
+                      </div>
+                    </div>
+
+                    <div className="shrink-0 text-right">
+                      <div className="rounded-lg border border-white/10 bg-slate-950/30 p-1">
+                        <Sparkline
+                          values={metrics.dailyCounts}
+                          className="block"
+                          strokeClassName="text-amber-300"
+                          fillClassName="text-amber-200/20"
+                        />
+                      </div>
+                      <div className="mt-1 text-[10px] text-slate-200/60">Last 30 days</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </section>
 

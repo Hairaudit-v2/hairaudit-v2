@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import CreateCaseButton from "../create-case-button";
+import Sparkline from "@/components/ui/Sparkline";
 
 export default async function ClinicDashboardPage() {
   const supabase = await createSupabaseAuthServerClient();
@@ -10,11 +11,64 @@ export default async function ClinicDashboardPage() {
   if (!user) redirect("/login");
 
   const admin = createSupabaseAdminClient();
-  const { data: cases } = await admin
+
+  const [{ data: cases }, { count: completedTotal }] = await Promise.all([
+    admin
+      .from("cases")
+      .select("id, title, status, created_at")
+      .eq("clinic_id", user.id)
+      .order("created_at", { ascending: false }),
+    admin
+      .from("cases")
+      .select("id", { count: "exact", head: true })
+      .eq("clinic_id", user.id)
+      .eq("status", "complete"),
+  ]);
+
+  // Trend: last 30 days of completions (deduped per case by latest completed report timestamp).
+  const days = 30;
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  start.setDate(start.getDate() - (days - 1));
+  const startIso = start.toISOString();
+
+  const { data: completedCaseIds } = await admin
     .from("cases")
-    .select("id, title, status, created_at")
+    .select("id")
     .eq("clinic_id", user.id)
-    .order("created_at", { ascending: false });
+    .eq("status", "complete")
+    .order("created_at", { ascending: false })
+    .limit(1000);
+
+  const idList = (completedCaseIds ?? []).map((r) => r.id).filter(Boolean);
+
+  const dailyCounts = Array.from({ length: days }, () => 0);
+  if (idList.length > 0) {
+    const { data: reports } = await admin
+      .from("reports")
+      .select("case_id, created_at, status")
+      .eq("status", "complete")
+      .gte("created_at", startIso)
+      .in("case_id", idList);
+
+    const latestByCase = new Map<string, Date>();
+    for (const r of reports ?? []) {
+      const caseId = String(r.case_id ?? "");
+      const d = r.created_at ? new Date(r.created_at) : null;
+      if (!caseId || !d || Number.isNaN(d.getTime())) continue;
+      const prev = latestByCase.get(caseId);
+      if (!prev || d > prev) latestByCase.set(caseId, d);
+    }
+
+    for (const [, d] of latestByCase) {
+      const day = new Date(d);
+      day.setHours(0, 0, 0, 0);
+      const idx = Math.floor((day.getTime() - start.getTime()) / (24 * 60 * 60 * 1000));
+      if (idx >= 0 && idx < days) dailyCounts[idx] += 1;
+    }
+  }
+
+  const completedLast30 = dailyCounts.reduce((a, b) => a + b, 0);
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6">
@@ -29,6 +83,33 @@ export default async function ClinicDashboardPage() {
         <p className="text-sm text-amber-900">
           Upload patient cases to get feedback on your doctors, nurses, and technicians. Compare outcomes and improve your clinic&apos;s standards.
         </p>
+      </div>
+
+      <div className="rounded-xl border border-slate-200 bg-white p-4 mb-6">
+        <div className="flex items-start justify-between gap-6">
+          <div>
+            <div className="text-xs font-semibold text-slate-500">Live audits completed</div>
+            <div className="mt-1 flex items-baseline gap-2">
+              <div className="text-3xl font-bold text-slate-900">{completedTotal ?? 0}</div>
+              <div className="text-xs text-slate-500">total</div>
+            </div>
+            <div className="mt-1 text-xs text-slate-500">
+              Last 30 days: <span className="font-medium text-slate-700">{completedLast30}</span>
+            </div>
+          </div>
+
+          <div className="shrink-0 text-right">
+            <div className="rounded-lg border border-slate-100 bg-slate-50 p-1">
+              <Sparkline
+                values={dailyCounts}
+                className="block"
+                strokeClassName="text-amber-600"
+                fillClassName="text-amber-200/40"
+              />
+            </div>
+            <div className="mt-1 text-[10px] text-slate-400">Last 30 days</div>
+          </div>
+        </div>
       </div>
 
       <div className="mb-8">

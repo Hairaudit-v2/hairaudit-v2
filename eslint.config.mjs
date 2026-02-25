@@ -9,9 +9,17 @@ const eslintConfig = defineConfig([
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",
+    "**/.next/**",
     "out/**",
+    "**/out/**",
     "build/**",
+    "**/build/**",
     "next-env.d.ts",
+    "**/next-env.d.ts",
+    "node_modules/**",
+    "**/node_modules/**",
+    // Avoid linting nested copies of the repo (can exist in some dev setups):
+    "hairaudit-v2/**",
   ]),
 ]);
 
