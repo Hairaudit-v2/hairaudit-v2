@@ -331,13 +331,32 @@ function addAuditSummary(
     content.findings.forEach((f) => doc.text(`• ${f}`, { indent: 10, align: "left" }));
   }
 
-  if (content.model || content.uploadCount != null) {
-    doc.moveDown(0.8);
+  // AI signature footer (premium)
+  if (content.model || content.uploadCount != null || content.confidencePanel || content.radar) {
+    const conf01 =
+      typeof content.confidencePanel?.confidenceScore === "number"
+        ? content.confidencePanel.confidenceScore
+        : typeof content.radar?.confidence === "number"
+          ? content.radar.confidence
+          : null;
+    const confStr =
+      conf01 != null && Number.isFinite(conf01)
+        ? clamp(conf01, 0, 1).toFixed(2)
+        : null;
+
+    doc.moveDown(1.0);
     doc.fontSize(META_SIZE).fillColor(SLATE_400);
-    const parts: string[] = [];
-    if (content.uploadCount != null) parts.push(`${content.uploadCount} uploads`);
-    if (content.model) parts.push(`Model: ${content.model}`);
-    doc.text(parts.join(" | ") || "");
+
+    // Use (TM) to avoid font glyph issues in PDFKit built-in fonts.
+    doc.font("Helvetica-Bold").fillColor(SLATE_600);
+    doc.text("Powered by Follicle Intelligence (TM)");
+    doc.font("Helvetica").fillColor(SLATE_400);
+    doc.text("Multi-Layer Visual Pattern Recognition Engine");
+
+    const modelLabel = content.model?.toLowerCase().includes("gpt-4o") ? "Vision Model" : "Model";
+    if (content.model) doc.text(`${modelLabel}: ${content.model.toUpperCase()}`);
+    if (confStr) doc.text(`Confidence Score: ${confStr}`);
+
     doc.fontSize(BODY_SIZE).fillColor(SLATE_600);
   }
   doc.moveDown(1.2);
