@@ -95,7 +95,8 @@ export default function ScoreAreaGraph({
               <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
                 <div
                   className={`h-full rounded-full ${levelColor(a.level)} transition-all`}
-                  style={{ width: `${a.score}%` }}
+                  // Use the 0–5 rating for width so 4/5 vs 5/5 is visually distinct.
+                  style={{ width: `${(a.outOf5 / 5) * 100}%` }}
                 />
               </div>
               <div className="flex justify-between text-xs text-slate-600">
@@ -126,7 +127,7 @@ export default function ScoreAreaGraph({
                 <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
                   <div
                     className={`h-full rounded-full ${levelColor(a.level)}`}
-                    style={{ width: `${a.score}%` }}
+                    style={{ width: `${(a.outOf5 / 5) * 100}%` }}
                   />
                 </div>
                 <div className="flex justify-between text-[10px] text-slate-500">

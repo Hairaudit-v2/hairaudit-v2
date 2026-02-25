@@ -236,10 +236,11 @@ function addScoreByArea(doc: PDFKit.PDFDocument, content: AuditReportContent) {
     const barY = y + pad + 20;
     doc.roundedRect(x + pad, barY, cardW - pad * 2, barH, 4).fillColor("#e5e7eb").fill();
     const { outOf5, level, color } = scoreLevel(it.score);
+    const fillW = ((cardW - pad * 2) * outOf5) / 5;
     doc.roundedRect(
       x + pad,
       barY,
-      ((cardW - pad * 2) * Math.max(0, Math.min(100, it.score))) / 100,
+      fillW,
       barH,
       4
     )
