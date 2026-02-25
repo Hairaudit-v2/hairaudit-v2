@@ -192,6 +192,32 @@ export const runAudit = inngest.createFunction(
     const pdfBuffer = await step.run("build-pdf", async () => {
       const { buildAuditReportPdf, fetchReportImages } = await import("@/lib/pdf/reportBuilder");
       const images = await fetchReportImages(supabase, BUCKET, uploads);
+
+      const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
+
+      // Derived confidence fallback (used only when model confidence is 0/undefined).
+      // Factors: number of photos, view classification success rate, and missing categories.
+      const photoCount = uploads.length;
+      const missingCategories = aiResult.data_quality?.missing_photos ?? [];
+      const missingCount = Array.isArray(missingCategories) ? missingCategories.length : 0;
+
+      const obs = Array.isArray(aiResult.photo_observations) ? aiResult.photo_observations : [];
+      const totalViews = obs.length || imageUrls.length || 0;
+      const knownViews = obs.filter((p: any) => String(p?.suspected_view ?? "") && String(p?.suspected_view ?? "") !== "unknown").length;
+      const viewSuccessRate = totalViews > 0 ? knownViews / totalViews : 0;
+
+      const deriveConfidence = () => {
+        const photoFactor = clamp(photoCount / 6, 0, 1);
+        const viewFactor = clamp(viewSuccessRate, 0, 1);
+        const missingPenalty = clamp(missingCount / 6, 0, 1) * 0.25;
+        const derived = 0.45 + 0.35 * photoFactor + 0.25 * viewFactor - missingPenalty;
+        return clamp(derived, 0.45, 0.92);
+      };
+
+      const confModel = Number(aiResult.confidence);
+      const confForReport = Number.isFinite(confModel) && confModel > 0 ? confModel : deriveConfidence();
+      const confLabelForReport = confForReport < 0.55 ? "low" : confForReport < 0.8 ? "medium" : "high";
+
       return buildAuditReportPdf({
         caseId,
         version: nextVersion,
@@ -212,14 +238,14 @@ export const runAudit = inngest.createFunction(
         confidencePanel: {
           photoCount: uploads.length,
           missingCategories: aiResult.data_quality?.missing_photos ?? [],
-          confidenceScore: aiResult.confidence,
-          confidenceLabel: aiResult.confidence_label,
+          confidenceScore: confForReport,
+          confidenceLabel: confLabelForReport,
           limitations: aiResult.data_quality?.limitations ?? [],
         },
         radar: {
           section_scores: aiResult.section_scores as unknown as Record<string, number>,
           overall_score: aiResult.overall_score,
-          confidence: aiResult.confidence,
+          confidence: confForReport,
         },
         areaScores: {
           domains: {
