@@ -74,10 +74,11 @@ export function renderRadarChartPng(input: RadarChartRenderInput): RadarChartRen
   const ctx = canvas.getContext("2d");
 
   const scores = input.section_scores ?? {};
-  const ordered = KEY_LABELS.filter(({ key }) => scores[key] != null && Number.isFinite(Number(scores[key])));
+  // Always render all domains/axes (8+ visible) for a stable "signature" chart.
+  const ordered = KEY_LABELS;
 
   const labels = ordered.map((x) => x.label);
-  const values = ordered.map((x) => clamp100(Number(scores[x.key])));
+  const values = ordered.map((x) => clamp100(Number(scores[x.key] ?? 0)));
 
   const overall = clamp100(Number(input.overall_score));
   const conf01 = clamp01(Number(input.confidence));
@@ -155,8 +156,8 @@ export function renderRadarChartPng(input: RadarChartRenderInput): RadarChartRen
     },
   };
 
-  // If no usable section scores, render an empty but styled card.
-  if (!labels.length) {
+  // If no section scores provided at all, render an empty but styled card.
+  if (!scores || typeof scores !== "object" || Object.keys(scores).length === 0) {
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, width, height);
     ctx.fillStyle = label;

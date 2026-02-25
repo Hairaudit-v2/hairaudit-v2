@@ -511,12 +511,27 @@ function addAuditSummary(
   if (radarPng?.buffer) {
     const w = CONTENT_WIDTH;
     const h = Math.round(w * (radarPng.height / radarPng.width));
-    doc.moveDown(0.9);
+    // Radar chart section header + caption
+    doc.fillColor(SLATE_900).font("Helvetica-Bold").fontSize(12);
+    doc.text("Audit Performance Signature", MARGIN, doc.y, { width: CONTENT_WIDTH });
+    doc.moveDown(0.25);
+
+    doc.moveDown(0.7);
     const x = MARGIN;
     const y = doc.y;
     try {
       doc.image(radarPng.buffer, x, y, { width: w, height: h });
-      doc.y = y + h + 14;
+      doc.y = y + h + 8;
+
+      doc.fillColor(SLATE_600).font("Helvetica").fontSize(META_SIZE);
+      doc.text(
+        "This visual signature represents structural balance across core transplant domains.",
+        MARGIN,
+        doc.y,
+        { width: CONTENT_WIDTH }
+      );
+      doc.fontSize(BODY_SIZE).fillColor(SLATE_600);
+      doc.y += 14;
     } catch {
       // If image embedding fails for any reason, continue with text-only report.
       doc.moveDown(0.4);
