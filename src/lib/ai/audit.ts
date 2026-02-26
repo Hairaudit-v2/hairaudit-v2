@@ -4,10 +4,103 @@
 
 import OpenAI from "openai";
 
+export interface PatientBaseline {
+  patient_age: number;
+  patient_sex: "Male" | "Female" | "Intersex" | "Prefer not to say";
+  smoking_status: "No" | "Occasionally" | "Daily";
+  alcohol_frequency?: "Rare" | "Weekly" | "Daily";
+  diabetes?: "No" | "Type1" | "Type2" | "Not sure";
+  autoimmune_conditions?: string;
+  thyroid_issues?: "No" | "Yes" | "Not sure";
+  clotting_disorders?: "No" | "Yes" | "Not sure";
+  blood_thinners?: string;
+  steroid_use?: string;
+  previous_scalp_surgeries?: string;
+}
+
+export interface HairBiologyProfile {
+  hair_loss_duration_years: number;
+  hair_loss_progression_speed: "Slow" | "Moderate" | "Rapid";
+  family_history_strength: "None" | "Mild" | "Strong" | "Unknown";
+  current_medications_for_hair?: string;
+  stopped_medications_recently?: boolean;
+  scalp_condition_history?: string;
+  previous_prp_or_exosomes?: boolean;
+}
+
+export interface DonorRiskProfile {
+  pre_existing_donor_thinning: "None" | "Mild" | "Moderate" | "Severe" | "Not sure";
+  donor_density_measured: "Numeric" | "Visual only" | "No" | "Not sure";
+  donor_area_marked_preop: "Yes" | "No" | "Not sure";
+  donor_extraction_pattern_observed?: "Uniform" | "Clustered" | "Not sure";
+  multiple_days_of_extraction?: boolean;
+}
+
+export interface ProcedureExecutionDetails {
+  technician_role_extraction: "Doctor" | "Technician" | "Mixed" | "Not sure";
+  technician_role_implantation: "Doctor" | "Technician" | "Mixed" | "Not sure";
+  grafts_claimed_total?: number;
+  graft_ratio?: number;
+  hairline_drawn_by_doctor?: "Yes" | "Technician" | "Not sure";
+  single_hair_grafts_front?: "Yes" | "No" | "Not sure";
+  crown_pattern_discussed?: "Yes" | "No" | "Not sure";
+}
+
+export interface GraftHandlingDetails {
+  out_of_body_time_estimate?: "Less than 1h" | "1-2h" | "2-4h" | "4h+" | "Not sure";
+  storage_solution?: "Saline" | "HypoThermosol" | "PRP" | "Other" | "Not sure";
+  temperature_control?: "Chilled" | "Room temp" | "Not sure";
+  grafts_kept_hydrated?: "Yes" | "No" | "Not sure";
+  exposed_to_air?: "Never" | "Occasionally" | "Frequently" | "Not sure";
+  long_breaks_during_surgery?: "No" | "Under 30min" | "Over 1h" | "Not sure";
+}
+
+export interface HealingCourse {
+  shedding_start_week?: number;
+  shedding_severity?: "None" | "Mild" | "Moderate" | "Heavy";
+  regrowth_start_month?: number;
+  current_month_postop?: number;
+  visible_density_improvement?: "None" | "Mild" | "Moderate" | "Significant";
+  uneven_growth_present?: boolean;
+  persistent_redness?: boolean;
+  recipient_irregularities?: "Cobblestoning" | "Pitting" | "Ridges" | "None" | "Not sure";
+}
+
+export interface AestheticInputs {
+  hairline_height_changed_cm?: number;
+  temple_points_reconstructed?: boolean;
+  direction_matches_native?: "Yes" | "Slight mismatch" | "No" | "Not sure";
+  crown_swirl_matches?: "Yes" | "No" | "Not applicable";
+}
+
+export interface PatientExperience {
+  communication_rating: 1 | 2 | 3 | 4 | 5;
+  transparency_rating: 1 | 2 | 3 | 4 | 5;
+  felt_rushed?: boolean;
+  felt_informed?: "Yes" | "Somewhat" | "No";
+  legal_or_refund_dispute?: "No" | "Ongoing" | "Resolved";
+  current_satisfaction: number; // 0–10
+  biggest_concern_now?: string;
+  considering_revision?: "Yes" | "No" | "Unsure";
+}
+
+export interface EnhancedPatientAnswers {
+  baseline?: PatientBaseline;
+  hair_biology?: HairBiologyProfile;
+  donor_profile?: DonorRiskProfile;
+  procedure_execution?: ProcedureExecutionDetails;
+  graft_handling?: GraftHandlingDetails;
+  healing_course?: HealingCourse;
+  aesthetics?: AestheticInputs;
+  experience?: PatientExperience;
+}
+
 export type AIAuditInput = {
   patient_answers?: Record<string, unknown> | null;
   doctor_answers?: Record<string, unknown> | null;
   clinic_answers?: Record<string, unknown> | null;
+  patient_baseline?: PatientBaseline | null;
+  enhanced_patient_answers?: EnhancedPatientAnswers | null;
   /** Publicly fetchable image URLs (e.g. Supabase signed URLs) for vision analysis */
   imageUrls?: string[];
 };
@@ -558,8 +651,44 @@ function formatAnswersForPrompt(answers: Record<string, unknown> | null | undefi
   return lines.length ? lines.join("\n") : "(none provided)";
 }
 
+function formatPatientBaselineForPrompt(baseline: PatientBaseline | null | undefined): string {
+  if (!baseline) return "(none provided)";
+  const lines: string[] = [];
+  for (const [key, val] of Object.entries(baseline)) {
+    if (val === null || val === undefined) continue;
+    const v = Array.isArray(val) ? val.join(", ") : String(val);
+    if (v.trim()) lines.push(`  - ${key}: ${v}`);
+  }
+  return lines.length ? lines.join("\n") : "(none provided)";
+}
+
+function formatEnhancedPatientAnswersForPrompt(enhanced: EnhancedPatientAnswers | null | undefined): string {
+  if (!enhanced) return "(none provided)";
+  const lines: string[] = [];
+  const pushSection = (title: string, obj: Record<string, unknown> | null | undefined) => {
+    if (!obj || typeof obj !== "object") return;
+    const entries = Object.entries(obj).filter(([, v]) => v !== null && v !== undefined && String(v).trim().length > 0);
+    if (entries.length === 0) return;
+    lines.push(`- ${title}:`);
+    for (const [k, v] of entries) lines.push(`  - ${k}: ${Array.isArray(v) ? v.join(", ") : String(v)}`);
+  };
+  pushSection("baseline", enhanced.baseline as unknown as Record<string, unknown> | undefined);
+  pushSection("hair_biology", enhanced.hair_biology as unknown as Record<string, unknown> | undefined);
+  pushSection("donor_profile", enhanced.donor_profile as unknown as Record<string, unknown> | undefined);
+  pushSection("procedure_execution", enhanced.procedure_execution as unknown as Record<string, unknown> | undefined);
+  pushSection("graft_handling", enhanced.graft_handling as unknown as Record<string, unknown> | undefined);
+  pushSection("healing_course", enhanced.healing_course as unknown as Record<string, unknown> | undefined);
+  pushSection("aesthetics", enhanced.aesthetics as unknown as Record<string, unknown> | undefined);
+  pushSection("experience", enhanced.experience as unknown as Record<string, unknown> | undefined);
+  return lines.length ? lines.join("\n") : "(none provided)";
+}
+
 /** Run AI audit on answers + optionally images. Returns structured audit result. */
 export async function runAIAudit(input: AIAuditInput): Promise<AIAuditResult> {
+  const CONFIDENCE_FLOOR = 0.45;
+  const CONFIDENCE_CAP = 0.92;
+  const NEUTRAL_SCORE_IF_INSUFFICIENT_EVIDENCE = 60;
+
   const apiKey = process.env.OPENAI_API_KEY;
   const imageUrls = (input.imageUrls ?? []).filter(Boolean).slice(0, 10);
   const autoMissingInputs: string[] = [];
@@ -593,7 +722,7 @@ export async function runAIAudit(input: AIAuditInput): Promise<AIAuditResult> {
     };
     return {
       overall_score: 0,
-      confidence: 0,
+      confidence: CONFIDENCE_FLOOR,
       confidence_label: "low",
       data_quality: {
         missing_inputs: autoMissingInputs,
@@ -623,6 +752,8 @@ export async function runAIAudit(input: AIAuditInput): Promise<AIAuditResult> {
   const patientBlock = formatAnswersForPrompt(input.patient_answers);
   const doctorBlock = formatAnswersForPrompt(input.doctor_answers);
   const clinicBlock = formatAnswersForPrompt(input.clinic_answers);
+  const baselineBlock = formatPatientBaselineForPrompt(input.patient_baseline);
+  const enhancedPatientBlock = formatEnhancedPatientAnswersForPrompt(input.enhanced_patient_answers);
 
   const systemPrompt = `You are an expert hair transplant auditor producing a forensic audit for HairAudit + Follicle Intelligence.
 
@@ -637,11 +768,22 @@ export async function runAIAudit(input: AIAuditInput): Promise<AIAuditResult> {
 
 You MUST be objective and evidence-based. Use audit language only: quality indicators, risk flags, and data insufficiency.
 
+## Forensic inference objectives (answers-driven; MUST APPLY WHEN POSSIBLE)
+Using patient-provided answers (and any structured enhanced inputs), you must infer and discuss (without diagnosing):
+- Donor risk (safe-donor preservation + long-term limitations)
+- Graft survival likelihood (conditional, not a promise)
+- Desiccation risk (graft out-of-body / hydration / storage / temperature workflow)
+- Overharvesting risk (pattern + count + donor baseline, when available)
+- Aesthetic consistency risk (hairline/temple/crown logic + directionality, conditional on evidence)
+- Healing trajectory stage (based on stated postop timing + symptoms; if timing absent, say insufficient evidence)
+- Confidence adjustments based on data completeness (missing data lowers confidence, not section scores)
+
 ## Scoring rubric (MUST FOLLOW)
 ${rubricToPrompt()}
 
 ## Comprehensive checklist (MUST EXPLICITLY CONSIDER WHEN EVIDENCE ALLOWS)
-When evidence is missing or unclear, you MUST mark it explicitly as "insufficient evidence:" in the relevant section_score_evidence entries and add a corresponding item to data_quality.limitations. Missing/unclear items should LOWER confidence rather than forcing assumptions.
+When evidence is missing or unclear, you MUST mark it explicitly as "insufficient evidence:" in the relevant section_score_evidence entries and add a corresponding item to data_quality.limitations.
+Critical: missing/unclear evidence should LOWER confidence rather than forcing assumptions or punishing section_scores. If you lack evidence for a section, keep section_scores near a neutral default (around 55–65) and clearly mark the evidence as insufficient.
 
 ### DONOR / EXTRACTION (primarily photos: donor_rear, donor_sides, intraop_donor, postop_healed)
 - Uniform extraction distribution (avoid clustered harvesting)
@@ -697,12 +839,18 @@ When evidence is missing or unclear, you MUST mark it explicitly as "insufficien
      - If no evidence exists, include a single evidence object with observation starting "insufficient evidence:" and confidence <= 0.2,
        and lower overall confidence + add a data_quality limitation.
   5) Narrative depth requirement (STRICT):
+     - Minimum narrative depth: at least 350 words total across "summary" + all "key_findings[].impact".
      - Provide detailed clinical-grade explanations under each key finding.
      - key_findings[].impact MUST be 2–4 sentences for each major finding and MUST explicitly include:
        (a) why it matters clinically,
        (b) what supports the observation (tie to evidence objects / section_score_evidence),
        (c) a potential long-term implication (stated conditionally; no overclaiming).
      - Use structured reasoning summaries (what/why/implication) but DO NOT provide chain-of-thought or step-by-step internal reasoning.
+- Strict output integrity:
+  - Follow the JSON Schema exactly (no extra keys).
+  - Do not output nulls unless the schema explicitly allows it.
+  - confidence must be > 0 and never 0.
+  - Overall confidence must never be below 0.45.
 - Unknown/unclear photos MUST NOT drive section_scores; they should reduce confidence and add data_quality limitations instead.
 - If photos/angles are missing, explicitly say so and lower confidence + label (low/medium/high).
 
@@ -716,6 +864,8 @@ Safety:
         `## Inputs\n` +
         `Auto-detected missing inputs: ${autoMissingInputs.length ? autoMissingInputs.join(", ") : "(none)"}\n` +
         `Auto-detected missing photos: ${autoMissingPhotos.length ? autoMissingPhotos.join(", ") : "(none)"}\n\n` +
+        `## Patient baseline\n${baselineBlock}\n\n` +
+        `## Enhanced patient answers (structured)\n${enhancedPatientBlock}\n\n` +
         `## Patient answers\n${patientBlock}\n\n## Doctor answers\n${doctorBlock}\n\n## Clinic answers\n${clinicBlock}\n\n` +
         `Return a forensic audit that strictly conforms to the provided JSON Schema (no extra keys).`,
     },
@@ -741,7 +891,8 @@ Safety:
     }
   }
 
-  const model = imageUrls.length > 0 ? "gpt-4o" : "gpt-4o-mini";
+  // GPT-5.2: deeper forensic reasoning and stronger structured compliance.
+  const model = "gpt-5.2";
 
   const clampIntScore = (n: unknown) => {
     const v = Number(n);
@@ -753,8 +904,20 @@ Safety:
     if (!Number.isFinite(v)) return 0;
     return Math.max(0, Math.min(1, v));
   };
+  const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
+  const countNonEmpty = (obj: Record<string, unknown> | null | undefined): number => {
+    if (!obj || typeof obj !== "object") return 0;
+    let c = 0;
+    for (const v of Object.values(obj)) {
+      if (v === null || v === undefined) continue;
+      if (typeof v === "string" && v.trim().length === 0) continue;
+      if (Array.isArray(v) && v.length === 0) continue;
+      c += 1;
+    }
+    return c;
+  };
   const uniq = (xs: string[]) => Array.from(new Set(xs.map((x) => x.trim()).filter(Boolean)));
-  const confidenceLabelFrom = (c: number): "low" | "medium" | "high" => (c < 0.45 ? "low" : c < 0.75 ? "medium" : "high");
+  const confidenceLabelFrom = (c: number): "low" | "medium" | "high" => (c < 0.55 ? "low" : c < 0.8 ? "medium" : "high");
   const computeOverall = (sections: AIAuditResult["section_scores"]) => {
     let sum = 0;
     for (const [k, w] of Object.entries(SECTION_WEIGHTS) as Array<[keyof typeof SECTION_WEIGHTS, number]>) {
@@ -843,6 +1006,14 @@ Safety:
       naturalness_and_aesthetics: ensureEvidence(parsed.section_score_evidence?.naturalness_and_aesthetics, "insufficient evidence: limited aesthetic views"),
     };
 
+    // If evidence is insufficient, keep a neutral (non-zero) score to avoid distorting the radar signature.
+    // Confidence (not scores) should absorb the data completeness penalty.
+    for (const k of Object.keys(section_scores) as Array<keyof AIAuditResult["section_scores"]>) {
+      if (section_scores[k] === 0 && evidenceIsWeak(section_score_evidence[k])) {
+        section_scores[k] = NEUTRAL_SCORE_IF_INSUFFICIENT_EVIDENCE;
+      }
+    }
+
     const normalizedPhotos: AIAuditResult["photo_observations"] = (() => {
       const src = Array.isArray(parsed.photo_observations) ? parsed.photo_observations : [];
       const byUrl = new Map<string, AIAuditResult["photo_observations"][number]>();
@@ -875,7 +1046,40 @@ Safety:
     const confidenceFromModel = clamp01(parsed.confidence);
     const knownViews = normalizedPhotos.filter((p) => p.suspected_view !== "unknown").length;
     const viewCoverage = imageUrls.length > 0 ? knownViews / imageUrls.length : 1;
-    const confidence = imageUrls.length > 0 ? Math.min(confidenceFromModel, viewCoverage) : confidenceFromModel;
+    const photoFactor = clamp(imageUrls.length / 6, 0, 1);
+    const viewFactor = clamp(viewCoverage, 0, 1);
+    const patientCount = countNonEmpty(input.patient_answers ?? undefined);
+    const doctorCount = countNonEmpty(input.doctor_answers ?? undefined);
+    const clinicCount = countNonEmpty(input.clinic_answers ?? undefined);
+    const enhancedCount =
+      input.enhanced_patient_answers && typeof input.enhanced_patient_answers === "object"
+        ? countNonEmpty(input.enhanced_patient_answers as unknown as Record<string, unknown>)
+        : 0;
+    const baselineCount =
+      input.patient_baseline && typeof input.patient_baseline === "object"
+        ? countNonEmpty(input.patient_baseline as unknown as Record<string, unknown>)
+        : 0;
+
+    const answerFactor = clamp(
+      0.55 * clamp(patientCount / 14, 0, 1) +
+        0.2 * clamp(doctorCount / 10, 0, 1) +
+        0.15 * clamp(clinicCount / 10, 0, 1) +
+        0.05 * clamp(enhancedCount / 6, 0, 1) +
+        0.05 * clamp(baselineCount / 6, 0, 1),
+      0,
+      1
+    );
+    const missingPenalty = clamp(autoMissingInputs.length / 3, 0, 1) * 0.12;
+
+    const derivedCoverageConfidence = clamp(
+      CONFIDENCE_FLOOR + 0.3 * photoFactor + 0.2 * viewFactor + 0.3 * answerFactor - missingPenalty,
+      CONFIDENCE_FLOOR,
+      CONFIDENCE_CAP
+    );
+
+    // Final confidence is bounded by both model self-report and data coverage.
+    const modelBounded = clamp(confidenceFromModel || 1, CONFIDENCE_FLOOR, 1);
+    const confidence = clamp(Math.min(modelBounded, derivedCoverageConfidence), CONFIDENCE_FLOOR, 1);
     const overall_score = computeOverall(section_scores);
     const confidence_label = confidenceLabelFrom(confidence);
 
@@ -885,6 +1089,8 @@ Safety:
       limitations: uniq([
         ...(parsed.data_quality?.limitations ?? []),
         ...(imageUrls.length > 0 && viewCoverage < 1 ? [`View coverage incomplete: ${(viewCoverage * 100).toFixed(0)}% of photos confidently classified.`] : []),
+        ...(!input.patient_baseline ? ["Baseline missing: age/sex/smoking not provided; risk inference limited."] : []),
+        ...(!input.enhanced_patient_answers ? ["Structured enhanced answers missing; predictive modeling is limited."] : []),
       ]).slice(0, 30),
     };
 
@@ -959,8 +1165,8 @@ Safety:
     };
     return {
       overall_score: 0,
-      confidence: 0,
-      confidence_label: "low",
+      confidence: CONFIDENCE_FLOOR,
+      confidence_label: confidenceLabelFrom(CONFIDENCE_FLOOR),
       data_quality: {
         missing_inputs: autoMissingInputs,
         missing_photos: autoMissingPhotos,

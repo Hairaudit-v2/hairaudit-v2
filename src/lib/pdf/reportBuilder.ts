@@ -660,7 +660,7 @@ function addAuditSummary(
 
       doc.fillColor(SLATE_600).font("Helvetica").fontSize(META_SIZE);
       doc.text(
-        "This visual signature represents structural balance across core transplant domains.",
+        "A balanced radar signature indicates consistent execution across transplant domains. Asymmetry highlights structural variance.",
         MARGIN,
         doc.y,
         { width: CONTENT_WIDTH }
@@ -713,10 +713,8 @@ function addAuditSummary(
     doc.font("Helvetica").fillColor(SLATE_400);
     doc.text("Multi-Layer Visual Pattern Recognition Engine");
 
-    const isVision = Boolean(content.model?.toLowerCase().includes("gpt-4o"));
-    const modelLabel = isVision ? "Vision Model" : "Model";
-    const modelName = isVision ? "GPT-4o" : (content.model ?? "");
-    if (modelName) doc.text(`${modelLabel}: ${modelName}`);
+    const modelName = String(content.model ?? "").trim();
+    if (modelName) doc.text(`Model: ${modelName}`);
     if (confStr) doc.text(`Confidence Score: ${confStr}`);
 
     doc.fontSize(BODY_SIZE).fillColor(SLATE_600);
