@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import GraftIntegrityReviewPanel from "./GraftIntegrityReviewPanel";
 
 export default async function AuditorDashboardPage() {
   const supabase = await createSupabaseAuthServerClient();
@@ -20,6 +21,22 @@ export default async function AuditorDashboardPage() {
     .select("id, title, status, created_at")
     .order("created_at", { ascending: false });
 
+  const { data: giiRows } = await admin
+    .from("graft_integrity_estimates")
+    .select(
+      "id, case_id, claimed_grafts, estimated_extracted_min, estimated_extracted_max, estimated_implanted_min, estimated_implanted_max, variance_claimed_vs_implanted_min_pct, variance_claimed_vs_implanted_max_pct, variance_claimed_vs_extracted_min_pct, variance_claimed_vs_extracted_max_pct, confidence, confidence_label, evidence_sufficiency_score, inputs_used, limitations, flags, ai_notes, auditor_status, auditor_notes, auditor_adjustments, audited_by, audited_at, created_at, updated_at"
+    )
+    .order("created_at", { ascending: false })
+    .limit(200);
+
+  // Keep the latest estimate row per case
+  const giiLatestByCase = new Map<string, any>();
+  for (const r of (giiRows ?? []) as any[]) {
+    const cid = String(r.case_id);
+    if (!giiLatestByCase.has(cid)) giiLatestByCase.set(cid, r);
+  }
+  const giiLatest = Array.from(giiLatestByCase.values());
+
   const failedCases = (cases ?? []).filter((c) => c.status === "audit_failed");
   const otherCases = (cases ?? []).filter((c) => c.status !== "audit_failed");
 
@@ -36,6 +53,13 @@ export default async function AuditorDashboardPage() {
         <p className="text-sm text-slate-800">
           View and review all patient, doctor, and clinic submissions. Access reports and audit details.
         </p>
+      </div>
+
+      <div className="mb-8">
+        <GraftIntegrityReviewPanel
+          cases={(cases ?? []) as any}
+          initialEstimates={giiLatest as any}
+        />
       </div>
 
       {failedCases.length > 0 && (

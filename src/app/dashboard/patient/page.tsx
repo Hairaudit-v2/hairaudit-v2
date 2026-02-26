@@ -6,6 +6,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import CreateCaseButton from "../create-case-button";
 import { PATIENT_AUDIT_SECTIONS, type PatientAuditAnswers } from "@/lib/patientAuditForm";
 import DeleteDraftCaseButton from "./DeleteDraftCaseButton";
+import GraftIntegrityCard from "./GraftIntegrityCard";
 
 function isAnswered(v: unknown): boolean {
   if (v === null || v === undefined) return false;
@@ -78,6 +79,9 @@ export default async function PatientDashboardPage() {
     .order("created_at", { ascending: false });
 
   const nextCase = (cases ?? []).find((c) => (c.status ?? "draft") !== "submitted" && !c.submitted_at) ?? (cases?.[0] ?? null);
+  const latestSubmittedCase =
+    (cases ?? []).find((c) => Boolean(c.submitted_at) || ["submitted", "processing", "complete", "audit_failed"].includes(String(c.status ?? ""))) ??
+    null;
 
   let patientAnswers: PatientAuditAnswers = {};
   let patientPhotoCount = 0;
@@ -121,6 +125,18 @@ export default async function PatientDashboardPage() {
 
     hasAnyCaseData = patientPhotoCount > 0 || Object.keys(patientAnswers).length > 0;
   }
+
+  const { data: graftIntegrityInitial } = latestSubmittedCase?.id
+    ? await admin
+        .from("graft_integrity_estimates")
+        .select(
+          "id, case_id, claimed_grafts, estimated_extracted_min, estimated_extracted_max, estimated_implanted_min, estimated_implanted_max, variance_claimed_vs_implanted_min_pct, variance_claimed_vs_implanted_max_pct, variance_claimed_vs_extracted_min_pct, variance_claimed_vs_extracted_max_pct, confidence, confidence_label, limitations, flags, ai_notes, auditor_status, auditor_notes, auditor_adjustments, evidence_sufficiency_score, inputs_used, created_at, updated_at"
+        )
+        .eq("case_id", latestSubmittedCase.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+    : { data: null as any };
 
   const PHOTOS_TARGET = 8;
   const photosPct = clamp01(patientPhotoCount / PHOTOS_TARGET);
@@ -266,107 +282,114 @@ export default async function PatientDashboardPage() {
 
         <div className="relative grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Completion module */}
-          <section className="lg:col-span-5 rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-6 shadow-[0_0_0_1px_rgba(255,255,255,0.04)]">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h2 className="text-sm font-semibold text-white">Case Completion</h2>
-              <p className="mt-1 text-xs text-slate-300/80">
-                Based on photos + procedure + handling + healing inputs.
-              </p>
-            </div>
-            <div className="text-right">
-              <div className="text-2xl font-semibold text-white tabular-nums">{nextCase?.id ? `${completionPct}%` : "—"}</div>
-              <div className="text-xs text-slate-300/70">{nextCase?.id ? (hasAnyCaseData ? "Live" : "Not started") : "No case yet"}</div>
-            </div>
-          </div>
-
-          <div className="mt-4">
-            <div className="h-2 w-full rounded-full bg-white/10 overflow-hidden">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-cyan-300 to-emerald-300"
-                style={{ width: `${nextCase?.id ? clamp01(completionPct / 100) * 100 : 0}%` }}
-              />
-            </div>
-          </div>
-
-          <div className="mt-5 space-y-3">
-            {([
-              {
-                label: "Photos",
-                done: patientPhotoCount >= 6,
-                detail: nextCase?.id ? `${patientPhotoCount}/${PHOTOS_TARGET}` : "—",
-              },
-              {
-                label: "Procedure",
-                done: required.pct >= 0.95,
-                detail: nextCase?.id ? `${required.answered}/${required.total}` : "—",
-              },
-              {
-                label: "Graft Handling",
-                done: modules.graftHandling.pct >= 0.6,
-                detail: nextCase?.id ? `${modules.graftHandling.answered}/${modules.graftHandling.total}` : "—",
-              },
-              {
-                label: "Healing Course",
-                done: modules.healingCourse.pct >= 0.6,
-                detail: nextCase?.id ? `${modules.healingCourse.answered}/${modules.healingCourse.total}` : "—",
-              },
-              {
-                label: "Current Status",
-                done: modules.currentStatus.pct >= 0.6,
-                detail: nextCase?.id ? `${modules.currentStatus.answered}/${modules.currentStatus.total}` : "—",
-              },
-            ] as const).map((item) => (
-              <div key={item.label} className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <span
-                    className={`inline-flex h-6 w-6 items-center justify-center rounded-lg border ${
-                      nextCase?.id && item.done
-                        ? "border-emerald-300/30 bg-emerald-300/10 text-emerald-200"
-                        : "border-white/10 bg-white/5 text-slate-300/70"
-                    }`}
-                    aria-hidden="true"
-                  >
-                    {nextCase?.id && item.done ? (
-                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    ) : (
-                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M12 6v6l4 2" strokeLinecap="round" strokeLinejoin="round" />
-                        <path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    )}
-                  </span>
-                  <div>
-                    <div className="text-sm font-medium text-white">{item.label}</div>
-                    <div className="text-xs text-slate-300/70">{item.detail}</div>
-                  </div>
+          <div className="lg:col-span-5 flex flex-col gap-6">
+            <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-6 shadow-[0_0_0_1px_rgba(255,255,255,0.04)]">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-sm font-semibold text-white">Case Completion</h2>
+                  <p className="mt-1 text-xs text-slate-300/80">
+                    Based on photos + procedure + handling + healing inputs.
+                  </p>
                 </div>
-                {nextCase?.id && !item.done && (
-                  <span className="text-xs font-medium text-cyan-200/80">In progress</span>
-                )}
+                <div className="text-right">
+                  <div className="text-2xl font-semibold text-white tabular-nums">{nextCase?.id ? `${completionPct}%` : "—"}</div>
+                  <div className="text-xs text-slate-300/70">{nextCase?.id ? (hasAnyCaseData ? "Live" : "Not started") : "No case yet"}</div>
+                </div>
               </div>
-            ))}
-          </div>
 
-          {nextCase?.id && (
-            <div className="mt-6 flex flex-col sm:flex-row gap-3">
-              <Link
-                href={`/cases/${nextCase.id}/patient/questions`}
-                className="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-950 bg-gradient-to-r from-cyan-300 to-emerald-300 hover:from-cyan-200 hover:to-emerald-200 transition-colors"
-              >
-                Complete Intelligence Questions
-              </Link>
-              <Link
-                href={`/cases/${nextCase.id}/patient/photos`}
-                className="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-200 border border-white/15 bg-white/5 hover:bg-white/10 backdrop-blur transition-colors"
-              >
-                Add photos
-              </Link>
-            </div>
-          )}
-        </section>
+              <div className="mt-4">
+                <div className="h-2 w-full rounded-full bg-white/10 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-cyan-300 to-emerald-300"
+                    style={{ width: `${nextCase?.id ? clamp01(completionPct / 100) * 100 : 0}%` }}
+                  />
+                </div>
+              </div>
+
+              <div className="mt-5 space-y-3">
+                {([
+                  {
+                    label: "Photos",
+                    done: patientPhotoCount >= 6,
+                    detail: nextCase?.id ? `${patientPhotoCount}/${PHOTOS_TARGET}` : "—",
+                  },
+                  {
+                    label: "Procedure",
+                    done: required.pct >= 0.95,
+                    detail: nextCase?.id ? `${required.answered}/${required.total}` : "—",
+                  },
+                  {
+                    label: "Graft Handling",
+                    done: modules.graftHandling.pct >= 0.6,
+                    detail: nextCase?.id ? `${modules.graftHandling.answered}/${modules.graftHandling.total}` : "—",
+                  },
+                  {
+                    label: "Healing Course",
+                    done: modules.healingCourse.pct >= 0.6,
+                    detail: nextCase?.id ? `${modules.healingCourse.answered}/${modules.healingCourse.total}` : "—",
+                  },
+                  {
+                    label: "Current Status",
+                    done: modules.currentStatus.pct >= 0.6,
+                    detail: nextCase?.id ? `${modules.currentStatus.answered}/${modules.currentStatus.total}` : "—",
+                  },
+                ] as const).map((item) => (
+                  <div key={item.label} className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={`inline-flex h-6 w-6 items-center justify-center rounded-lg border ${
+                          nextCase?.id && item.done
+                            ? "border-emerald-300/30 bg-emerald-300/10 text-emerald-200"
+                            : "border-white/10 bg-white/5 text-slate-300/70"
+                        }`}
+                        aria-hidden="true"
+                      >
+                        {nextCase?.id && item.done ? (
+                          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        ) : (
+                          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M12 6v6l4 2" strokeLinecap="round" strokeLinejoin="round" />
+                            <path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        )}
+                      </span>
+                      <div>
+                        <div className="text-sm font-medium text-white">{item.label}</div>
+                        <div className="text-xs text-slate-300/70">{item.detail}</div>
+                      </div>
+                    </div>
+                    {nextCase?.id && !item.done && (
+                      <span className="text-xs font-medium text-cyan-200/80">In progress</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {nextCase?.id && (
+                <div className="mt-6 flex flex-col sm:flex-row gap-3">
+                  <Link
+                    href={`/cases/${nextCase.id}/patient/questions`}
+                    className="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-950 bg-gradient-to-r from-cyan-300 to-emerald-300 hover:from-cyan-200 hover:to-emerald-200 transition-colors"
+                  >
+                    Complete Intelligence Questions
+                  </Link>
+                  <Link
+                    href={`/cases/${nextCase.id}/patient/photos`}
+                    className="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-200 border border-white/15 bg-white/5 hover:bg-white/10 backdrop-blur transition-colors"
+                  >
+                    Add photos
+                  </Link>
+                </div>
+              )}
+            </section>
+
+            <GraftIntegrityCard
+              caseId={latestSubmittedCase?.id ?? null}
+              initialEstimate={(graftIntegrityInitial ?? null) as any}
+            />
+          </div>
 
         {/* Unlock preview */}
         <section id="unlock-preview" className="lg:col-span-7 scroll-mt-24">

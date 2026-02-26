@@ -150,6 +150,16 @@ export type AuditReportContent = {
     }>;
     non_medical_disclaimer?: string;
   };
+  graftIntegrity?: {
+    auditor_status: "approved" | "pending" | "needs_more_evidence" | "rejected";
+    claimed_grafts: number | null;
+    estimated_extracted: { min: number | null; max: number | null };
+    estimated_implanted: { min: number | null; max: number | null };
+    variance_claimed_vs_implanted_pct: { min: number | null; max: number | null };
+    confidence: number;
+    confidence_label: "low" | "medium" | "high";
+    limitations: string[];
+  } | null;
   images?: ReportImage[];
 };
 
@@ -849,6 +859,149 @@ function addScoreByArea(doc: PDFKit.PDFDocument, content: AuditReportContent) {
   doc.moveDown(0.8);
 }
 
+function addGraftIntegrityIndex(doc: PDFKit.PDFDocument, content: AuditReportContent) {
+  // Always render a safe section; only include ranges if auditor-approved.
+  addSectionHeading(doc, "Graft Integrity Index (TM)");
+
+  const gi = content.graftIntegrity;
+  const status = String(gi?.auditor_status ?? "pending");
+  const approved = status === "approved";
+
+  const safePendingText = "Graft Integrity analysis pending auditor validation.";
+
+  const pageH = (doc.page as any).height as number;
+  const bottomLimit = pageH - MARGIN - 40;
+  const ensureSpace = (h: number) => {
+    if (doc.y + h > bottomLimit && doc.y > MARGIN + 30) {
+      doc.addPage();
+      doc.x = MARGIN;
+      doc.y = MARGIN;
+      addSectionHeading(doc, "Graft Integrity Index (continued)");
+    }
+  };
+
+  if (!gi || !approved) {
+    ensureSpace(72);
+    doc.fillColor(SLATE_600).font("Helvetica").fontSize(11);
+    doc.text(safePendingText, { width: CONTENT_WIDTH });
+    doc.moveDown(0.6);
+    doc.fillColor(SLATE_400).font("Helvetica").fontSize(9);
+    doc.text("Estimated range is based on available visual evidence; not a definitive graft count.", { width: CONTENT_WIDTH });
+    doc.moveDown(0.8);
+    return;
+  }
+
+  ensureSpace(220);
+
+  const x = MARGIN;
+  const w = CONTENT_WIDTH;
+  const y0 = doc.y;
+  const pad = 14;
+
+  const cardH = 180;
+  const g = doc.linearGradient(x, y0, x, y0 + cardH);
+  g.stop(0, "#ffffff").stop(1, "#f8fafc");
+  doc.roundedRect(x, y0, w, cardH, 14).fillColor(g).fill();
+  doc.roundedRect(x, y0, w, cardH, 14).strokeColor("#e2e8f0").lineWidth(1).stroke();
+
+  const fmtInt = (n: number) => new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(n);
+  const fmtRange = (min: number | null, max: number | null) => {
+    if (min === null && max === null) return "—";
+    if (min !== null && max !== null) return `${fmtInt(min)}–${fmtInt(max)}`;
+    if (min !== null) return `≥ ${fmtInt(min)}`;
+    return `≤ ${fmtInt(max as number)}`;
+  };
+  const fmtPct = (min: number | null, max: number | null) => {
+    const f = (v: number) => {
+      const n = Math.round(v * 10) / 10;
+      const sign = n > 0 ? "+" : "";
+      return `${sign}${n}%`;
+    };
+    if (min === null && max === null) return "—";
+    if (min !== null && max !== null) return `${f(min)} to ${f(max)}`;
+    if (min !== null) return `≥ ${f(min)}`;
+    return `≤ ${f(max as number)}`;
+  };
+
+  // Header row
+  doc.fillColor(SLATE_900).font("Helvetica-Bold").fontSize(12);
+  doc.text("Auditor-approved estimate (range)", x + pad, y0 + pad, { width: w - pad * 2 });
+
+  doc.fillColor(SLATE_600).font("Helvetica").fontSize(10);
+  doc.text("Estimated range based on available visual evidence; not a definitive graft count.", x + pad, y0 + pad + 18, {
+    width: w - pad * 2,
+  });
+
+  // Left metrics
+  const leftX = x + pad;
+  const rightX = x + w / 2 + 6;
+  const rowY = y0 + pad + 44;
+
+  const keyStyle = () => doc.fillColor(SLATE_600).font("Helvetica-Bold").fontSize(9);
+  const valStyle = () => doc.fillColor(SLATE_900).font("Helvetica-Bold").fontSize(12);
+
+  keyStyle(); doc.text("Claimed grafts", leftX, rowY);
+  valStyle(); doc.text(gi.claimed_grafts != null ? fmtInt(gi.claimed_grafts) : "—", leftX, rowY + 12);
+
+  keyStyle(); doc.text("Extracted range", leftX, rowY + 44);
+  valStyle(); doc.text(fmtRange(gi.estimated_extracted.min, gi.estimated_extracted.max), leftX, rowY + 56);
+
+  keyStyle(); doc.text("Implanted range", leftX, rowY + 88);
+  valStyle(); doc.text(fmtRange(gi.estimated_implanted.min, gi.estimated_implanted.max), leftX, rowY + 100);
+
+  // Right metrics: variance + confidence
+  keyStyle(); doc.text("Variance vs claimed (implanted)", rightX, rowY);
+  valStyle(); doc.text(fmtPct(gi.variance_claimed_vs_implanted_pct.min, gi.variance_claimed_vs_implanted_pct.max), rightX, rowY + 12);
+
+  keyStyle(); doc.text("Confidence", rightX, rowY + 44);
+  valStyle();
+  const confPct = Math.round(clamp(gi.confidence, 0, 1) * 100);
+  doc.text(`${String(gi.confidence_label).toUpperCase()} (${confPct}%)`, rightX, rowY + 56);
+
+  // Neutral variance bar (right column, under variance)
+  const barX = rightX;
+  const barY = rowY + 30;
+  const barW = w / 2 - pad - 10;
+  const barH = 10;
+  doc.roundedRect(barX, barY, barW, barH, 5).fillColor("#e5e7eb").fill();
+
+  const vMin = gi.variance_claimed_vs_implanted_pct.min;
+  const vMax = gi.variance_claimed_vs_implanted_pct.max;
+  if (typeof vMin === "number" && typeof vMax === "number" && Number.isFinite(vMin) && Number.isFinite(vMax)) {
+    // Map -50..+50 to bar width; clamp range inside.
+    const clampPct = (v: number) => Math.max(-50, Math.min(50, v));
+    const a = clampPct(Math.min(vMin, vMax));
+    const b = clampPct(Math.max(vMin, vMax));
+    const toX = (v: number) => barX + ((v + 50) / 100) * barW;
+    const segX = toX(a);
+    const segW = Math.max(2, toX(b) - segX);
+    const segGrad = doc.linearGradient(segX, barY, segX + segW, barY);
+    segGrad.stop(0, "#94a3b8").stop(1, "#64748b"); // neutral slate gradient
+    doc.roundedRect(segX, barY, segW, barH, 5).fillColor(segGrad).fill();
+    // center marker (0%)
+    const midX = toX(0);
+    doc.moveTo(midX, barY - 2).lineTo(midX, barY + barH + 2).strokeColor("#94a3b8").lineWidth(1).stroke();
+  }
+
+  // Limitations (2–3 bullets)
+  const lim = (gi.limitations ?? []).filter(Boolean).slice(0, 3);
+  const limY = y0 + cardH - 52;
+  doc.fillColor(SLATE_600).font("Helvetica-Bold").fontSize(9);
+  doc.text("Limitations", x + pad, limY);
+  doc.fillColor(SLATE_600).font("Helvetica").fontSize(9);
+  if (lim.length === 0) {
+    doc.text("—", x + pad, limY + 12);
+  } else {
+    let yy = limY + 12;
+    for (const line of lim) {
+      doc.text(`• ${String(line).trim()}`, x + pad, yy, { width: w - pad * 2 });
+      yy += 12;
+    }
+  }
+
+  doc.y = y0 + cardH + 10;
+}
+
 /**
  * Build PDF buffer from content. For images, pass pre-fetched buffers in content.images.
  * (The previous addImageGallery expected supabase - we'll simplify to just use buffers.)
@@ -912,6 +1065,7 @@ export async function buildAuditReportPdf(
   addAuditSummary(doc, content, radarImg);
   addClinicalNarrative(doc, content);
   addScoreByArea(doc, content);
+  addGraftIntegrityIndex(doc, content);
 
   // Add images if provided (with buffers already fetched)
   if (content.images?.length) {

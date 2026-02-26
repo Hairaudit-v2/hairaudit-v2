@@ -55,7 +55,7 @@ export default function PatientAuditFormClient({
   submittedAt?: string | null;
 }) {
   const glassCard =
-    "rounded-2xl border border-slate-200 bg-white/95 backdrop-blur shadow-sm";
+    "rounded-2xl border border-slate-300 bg-white shadow-sm";
   const [answers, setAnswers] = useState<PatientAuditAnswers>({});
   const [loading, setLoading] = useState(true);
   const [loadingError, setLoadingError] = useState<string | null>(null);
@@ -208,14 +208,14 @@ export default function PatientAuditFormClient({
   return (
     <div className="max-w-4xl space-y-6">
       <header>
-        <p className="text-sm text-slate-700">
+        <p className="text-sm text-slate-900">
           About 5–6 minutes. Complete your intelligence inputs to unlock deeper forensic analysis.
         </p>
         <div className={`mt-3 p-4 ${glassCard}`}>
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-sm font-semibold text-slate-900">Advanced forensic questions (optional)</p>
-              <p className="mt-1 text-sm text-slate-600">
+              <p className="mt-1 text-sm text-slate-800">
                 Adds deeper inputs for graft viability, donor risk, healing stage, and aesthetic consistency. You can skip anytime.
               </p>
             </div>
@@ -255,8 +255,8 @@ export default function PatientAuditFormClient({
               i === activeStep
                 ? "bg-gradient-to-r from-cyan-300 to-emerald-300 text-slate-950"
                 : i < activeStep
-                  ? "border border-emerald-200 bg-emerald-50 text-emerald-800"
-                  : "border border-slate-200 bg-slate-50 text-slate-700"
+                  ? "border border-emerald-200 bg-emerald-50 text-emerald-900"
+                  : "border border-slate-300 bg-white text-slate-800"
             }`}
           >
             {i + 1}
@@ -278,7 +278,7 @@ export default function PatientAuditFormClient({
           return (
             <section className={`p-6 ${glassCard}`}>
               <h2 className="text-lg font-semibold text-slate-900 mb-2">{section.title}</h2>
-              {section.description && <p className="text-sm text-slate-600 mb-4">{section.description}</p>}
+              {section.description && <p className="text-sm text-slate-800 mb-4">{section.description}</p>}
               <div className="space-y-5">
                 {section.questions.map((q) => (
                   <QuestionField
@@ -322,7 +322,7 @@ export default function PatientAuditFormClient({
       {isReviewStep && (
         <section className={`p-6 ${glassCard}`}>
           <h2 className="text-lg font-semibold text-slate-900 mb-2">2. Add your photos</h2>
-          <p className="text-sm text-slate-600 mb-4">
+          <p className="text-sm text-slate-800 mb-4">
             Pre-procedure, surgery, and post-procedure images go in the next step.
           </p>
           <button
@@ -337,7 +337,7 @@ export default function PatientAuditFormClient({
       )}
 
       <footer className="flex items-center justify-between pt-4 border-t border-slate-200">
-        <div className="text-sm text-slate-600 flex items-center gap-3">
+        <div className="text-sm text-slate-800 flex items-center gap-3">
           {message && (
             <>
               <span className={message.type === "ok" ? "text-emerald-700" : "text-rose-700"}>
@@ -407,9 +407,9 @@ function PatientReviewSummary({
   };
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white/95 backdrop-blur p-6 shadow-sm">
+    <section className="rounded-2xl border border-slate-300 bg-white p-6 shadow-sm">
       <h2 className="text-lg font-semibold text-slate-900 mb-4">Review Summary</h2>
-      <p className="text-sm text-slate-600 mb-4">Review your answers below. Use the step dots above to edit.</p>
+      <p className="text-sm text-slate-800 mb-4">Review your answers below. Use the step dots above to edit.</p>
       <div className="space-y-4">
         {sections.map((sec) => (
           <div key={sec.id}>
@@ -420,7 +420,7 @@ function PatientReviewSummary({
                 if (q.dependsOn && v === undefined) return null;
                 return (
                   <div key={q.id} className="flex justify-between gap-2">
-                    <dt className="text-slate-600">{q.prompt}</dt>
+                    <dt className="text-slate-800">{q.prompt}</dt>
                     <dd className="font-semibold text-slate-900">{fmt(q.id, v)}</dd>
                   </div>
                 );
@@ -469,7 +469,7 @@ function QuestionField({
     "w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 " +
     "focus:outline-none focus:ring-2 focus:ring-cyan-300/40 focus:border-cyan-400 " +
     "disabled:opacity-60 disabled:bg-slate-100 disabled:cursor-not-allowed";
-  const labelClass = "block text-sm font-semibold text-slate-800 mb-1";
+  const labelClass = "block text-sm font-semibold text-slate-900 mb-1";
 
   const render = () => {
     switch (question.type) {
@@ -547,7 +547,7 @@ function QuestionField({
               disabled={locked}
               className="w-full h-2 rounded-full appearance-none bg-slate-200 accent-emerald-600"
             />
-            <p className="text-xs text-slate-600">{num} / {max}</p>
+            <p className="text-xs text-slate-800">{num} / {max}</p>
           </div>
         );
       }
@@ -606,7 +606,7 @@ function QuestionField({
                   disabled={locked}
                   className="rounded-full accent-emerald-600"
                 />
-                <span className="text-sm capitalize text-slate-700">{v}</span>
+                <span className="text-sm capitalize text-slate-900">{v}</span>
               </label>
             ))}
           </div>
@@ -629,14 +629,14 @@ function QuestionField({
                   disabled={locked}
                   className="rounded-full accent-emerald-600"
                 />
-                <span className="text-sm text-slate-700">{opt.label}</span>
+                <span className="text-sm text-slate-900">{opt.label}</span>
               </label>
             ))}
             <button
               type="button"
               onClick={() => onChange(null)}
               disabled={locked || cur === null}
-              className="text-sm text-slate-600 underline underline-offset-4 disabled:opacity-60"
+              className="text-sm text-slate-700 underline underline-offset-4 disabled:opacity-60"
             >
               Clear
             </button>
@@ -665,7 +665,7 @@ function QuestionField({
                   disabled={locked}
                   className="rounded accent-emerald-600"
                 />
-                <span className="text-sm text-slate-700">{o.label}</span>
+                <span className="text-sm text-slate-900">{o.label}</span>
               </label>
             ))}
           </div>
@@ -683,7 +683,7 @@ function QuestionField({
         {question.prompt}
         {question.required && <span className="text-emerald-700 ml-1">*</span>}
       </label>
-      {question.help && <p className="text-xs text-slate-500 mb-2">{question.help}</p>}
+      {question.help && <p className="text-xs text-slate-700 mb-2">{question.help}</p>}
       {render()}
     </div>
   );
