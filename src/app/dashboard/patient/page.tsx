@@ -5,6 +5,7 @@ import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import CreateCaseButton from "../create-case-button";
 import { PATIENT_AUDIT_SECTIONS, type PatientAuditAnswers } from "@/lib/patientAuditForm";
+import DeleteDraftCaseButton from "./DeleteDraftCaseButton";
 
 function isAnswered(v: unknown): boolean {
   if (v === null || v === undefined) return false;
@@ -477,6 +478,7 @@ export default async function PatientDashboardPage() {
           <ul className="relative mt-5 space-y-3">
             {cases.map((c) => {
               const status = String(c.status ?? "draft");
+              const canDeleteDraft = status === "draft" && !c.submitted_at;
               const pill =
                 status === "complete"
                   ? "border-emerald-300/20 bg-emerald-300/10 text-emerald-200"
@@ -488,24 +490,29 @@ export default async function PatientDashboardPage() {
 
               return (
                 <li key={c.id}>
-                  <Link
-                    href={`/cases/${c.id}`}
-                    className="group block rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 sm:p-5 hover:bg-white/8 hover:border-white/15 transition-all shadow-[0_0_0_1px_rgba(255,255,255,0.03)]"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <div className="text-sm sm:text-base font-semibold text-white">
-                          {c.title ?? "Patient Audit"}
+                  <div className="group relative rounded-2xl border border-white/10 bg-white/5 backdrop-blur hover:bg-white/8 hover:border-white/15 transition-all shadow-[0_0_0_1px_rgba(255,255,255,0.03)]">
+                    <Link href={`/cases/${c.id}`} className="block p-4 sm:p-5">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <div className="text-sm sm:text-base font-semibold text-white">
+                            {c.title ?? "Patient Audit"}
+                          </div>
+                          <div className="mt-1 text-xs text-slate-200/70">
+                            Created: {new Date(c.created_at).toLocaleString()}
+                          </div>
                         </div>
-                        <div className="mt-1 text-xs text-slate-200/70">
-                          Created: {new Date(c.created_at).toLocaleString()}
-                        </div>
+                        <span className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold ${pill}`}>
+                          {status}
+                        </span>
                       </div>
-                      <span className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold ${pill}`}>
-                        {status}
-                      </span>
-                    </div>
-                  </Link>
+                    </Link>
+
+                    {canDeleteDraft && (
+                      <div className="px-4 pb-4 sm:px-5 sm:pb-5">
+                        <DeleteDraftCaseButton caseId={c.id} caseTitle={c.title} />
+                      </div>
+                    )}
+                  </div>
                 </li>
               );
             })}
