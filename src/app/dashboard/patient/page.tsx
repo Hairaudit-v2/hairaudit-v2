@@ -239,7 +239,7 @@ export default async function PatientDashboardPage() {
                 Complete Intelligence Questions
               </Link>
             ) : (
-              <CreateCaseButton />
+              <CreateCaseButton variant="premium" />
             )}
 
             <a
@@ -453,40 +453,65 @@ export default async function PatientDashboardPage() {
         </section>
       </section>
 
-      {/* Case list */}
-      <div className="mt-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold text-slate-900">My audit requests</h2>
-          <p className="text-sm text-slate-600 mt-1">Your cases and audit status history.</p>
-        </div>
-        <CreateCaseButton />
-      </div>
+      {/* Case history (match premium surface) */}
+      <section className="relative mt-10 overflow-hidden rounded-2xl border border-slate-900 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4 sm:p-6">
+        <div className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-cyan-500/10 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-violet-500/10 blur-3xl" />
 
-      {(!cases || cases.length === 0) ? (
-        <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-8 text-center">
-          <p className="text-slate-600 mb-4">No cases yet. Create your first one to activate the dashboard.</p>
-          <div className="inline-flex">
-            <CreateCaseButton />
+        <div className="relative flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold text-white">My audit requests</h2>
+            <p className="text-sm text-slate-200/70 mt-1">Your cases and audit status history.</p>
           </div>
+          <CreateCaseButton variant="premium" />
         </div>
-      ) : (
-        <ul className="mt-4 space-y-3">
-          {cases.map((c) => (
-            <li key={c.id}>
-              <Link
-                href={`/cases/${c.id}`}
-                className="block rounded-2xl border border-slate-200 bg-white p-4 hover:border-slate-300 hover:shadow-sm transition-all"
-              >
-                <span className="font-medium text-slate-900">{c.title ?? "My audit"}</span>
-                <span className="ml-2 text-slate-500 text-sm">— {c.status}</span>
-                <div className="text-xs text-slate-400 mt-2">
-                  Created: {new Date(c.created_at).toLocaleString()}
-                </div>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
+
+        {(!cases || cases.length === 0) ? (
+          <div className="relative mt-5 rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-8 text-center shadow-[0_0_0_1px_rgba(255,255,255,0.03)]">
+            <p className="text-slate-200/80 mb-4">No cases yet. Create your first one to activate the dashboard.</p>
+            <div className="inline-flex">
+              <CreateCaseButton variant="premium" />
+            </div>
+          </div>
+        ) : (
+          <ul className="relative mt-5 space-y-3">
+            {cases.map((c) => {
+              const status = String(c.status ?? "draft");
+              const pill =
+                status === "complete"
+                  ? "border-emerald-300/20 bg-emerald-300/10 text-emerald-200"
+                  : status === "submitted"
+                    ? "border-cyan-300/20 bg-cyan-300/10 text-cyan-200"
+                    : status === "audit_failed"
+                      ? "border-rose-300/20 bg-rose-300/10 text-rose-200"
+                      : "border-white/10 bg-white/5 text-slate-200/80";
+
+              return (
+                <li key={c.id}>
+                  <Link
+                    href={`/cases/${c.id}`}
+                    className="group block rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 sm:p-5 hover:bg-white/8 hover:border-white/15 transition-all shadow-[0_0_0_1px_rgba(255,255,255,0.03)]"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <div className="text-sm sm:text-base font-semibold text-white">
+                          {c.title ?? "Patient Audit"}
+                        </div>
+                        <div className="mt-1 text-xs text-slate-200/70">
+                          Created: {new Date(c.created_at).toLocaleString()}
+                        </div>
+                      </div>
+                      <span className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold ${pill}`}>
+                        {status}
+                      </span>
+                    </div>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }
