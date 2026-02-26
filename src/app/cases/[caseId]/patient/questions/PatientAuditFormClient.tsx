@@ -55,7 +55,7 @@ export default function PatientAuditFormClient({
   submittedAt?: string | null;
 }) {
   const glassCard =
-    "rounded-2xl border border-white/10 bg-white/5 backdrop-blur shadow-[0_0_0_1px_rgba(255,255,255,0.03)]";
+    "rounded-2xl border border-slate-200 bg-white/95 backdrop-blur shadow-sm";
   const [answers, setAnswers] = useState<PatientAuditAnswers>({});
   const [loading, setLoading] = useState(true);
   const [loadingError, setLoadingError] = useState<string | null>(null);
@@ -182,8 +182,8 @@ export default function PatientAuditFormClient({
   if (loading) {
     return (
       <div className={`animate-pulse p-6 ${glassCard}`}>
-        <div className="h-6 w-48 bg-white/10 rounded" />
-        <div className="h-4 w-full mt-4 bg-white/10 rounded" />
+        <div className="h-6 w-48 bg-slate-200 rounded" />
+        <div className="h-4 w-full mt-4 bg-slate-100 rounded" />
       </div>
     );
   }
@@ -208,14 +208,14 @@ export default function PatientAuditFormClient({
   return (
     <div className="max-w-4xl space-y-6">
       <header>
-        <p className="text-sm text-slate-200/70">
+        <p className="text-sm text-slate-700">
           About 5–6 minutes. Complete your intelligence inputs to unlock deeper forensic analysis.
         </p>
         <div className={`mt-3 p-4 ${glassCard}`}>
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-sm font-semibold text-white">Advanced forensic questions (optional)</p>
-              <p className="mt-1 text-sm text-slate-200/70">
+              <p className="text-sm font-semibold text-slate-900">Advanced forensic questions (optional)</p>
+              <p className="mt-1 text-sm text-slate-600">
                 Adds deeper inputs for graft viability, donor risk, healing stage, and aesthetic consistency. You can skip anytime.
               </p>
             </div>
@@ -227,14 +227,14 @@ export default function PatientAuditFormClient({
                 setActiveStep(0);
               }}
               disabled={locked}
-              className="shrink-0 rounded-xl px-3 py-2 text-sm font-semibold border border-white/15 bg-white/5 text-slate-200 hover:bg-white/10 disabled:opacity-60 transition-colors"
+              className="shrink-0 rounded-xl px-3 py-2 text-sm font-semibold border border-slate-300 bg-white text-slate-800 hover:bg-slate-50 disabled:opacity-60 transition-colors"
             >
               {showAdvanced ? "Hide advanced" : "Add advanced"}
             </button>
           </div>
         </div>
         {locked && (
-          <div className="mt-3 rounded-2xl border border-amber-300/20 bg-amber-300/10 p-4 text-sm text-amber-100">
+          <div className="mt-3 rounded-2xl border border-amber-300/30 bg-amber-50 p-4 text-sm text-amber-900">
             Case submitted. Intelligence inputs are locked.
           </div>
         )}
@@ -255,8 +255,8 @@ export default function PatientAuditFormClient({
               i === activeStep
                 ? "bg-gradient-to-r from-cyan-300 to-emerald-300 text-slate-950"
                 : i < activeStep
-                  ? "border border-emerald-300/20 bg-white/5 text-emerald-200"
-                  : "border border-white/10 bg-white/5 text-slate-200/70"
+                  ? "border border-emerald-200 bg-emerald-50 text-emerald-800"
+                  : "border border-slate-200 bg-slate-50 text-slate-700"
             }`}
           >
             {i + 1}
@@ -277,8 +277,8 @@ export default function PatientAuditFormClient({
           if (!section) return null;
           return (
             <section className={`p-6 ${glassCard}`}>
-              <h2 className="text-lg font-semibold text-white mb-2">{section.title}</h2>
-              {section.description && <p className="text-sm text-slate-200/70 mb-4">{section.description}</p>}
+              <h2 className="text-lg font-semibold text-slate-900 mb-2">{section.title}</h2>
+              {section.description && <p className="text-sm text-slate-600 mb-4">{section.description}</p>}
               <div className="space-y-5">
                 {section.questions.map((q) => (
                   <QuestionField
@@ -303,7 +303,7 @@ export default function PatientAuditFormClient({
             type="button"
             onClick={handleStepPrev}
             disabled={activeStep === 0 || locked}
-            className="rounded-xl px-4 py-2 text-sm font-semibold border border-white/15 bg-white/5 text-slate-200 hover:bg-white/10 disabled:opacity-50 transition-colors"
+            className="rounded-xl px-4 py-2 text-sm font-semibold border border-slate-300 bg-white text-slate-800 hover:bg-slate-50 disabled:opacity-50 transition-colors"
           >
             Previous
           </button>
@@ -321,8 +321,8 @@ export default function PatientAuditFormClient({
       {/* Review step CTA — Add photos */}
       {isReviewStep && (
         <section className={`p-6 ${glassCard}`}>
-          <h2 className="text-lg font-semibold text-white mb-2">2. Add your photos</h2>
-          <p className="text-sm text-slate-200/70 mb-4">
+          <h2 className="text-lg font-semibold text-slate-900 mb-2">2. Add your photos</h2>
+          <p className="text-sm text-slate-600 mb-4">
             Pre-procedure, surgery, and post-procedure images go in the next step.
           </p>
           <button
@@ -336,18 +336,18 @@ export default function PatientAuditFormClient({
         </section>
       )}
 
-      <footer className="flex items-center justify-between pt-4 border-t border-white/10">
-        <div className="text-sm text-slate-200/70 flex items-center gap-3">
+      <footer className="flex items-center justify-between pt-4 border-t border-slate-200">
+        <div className="text-sm text-slate-600 flex items-center gap-3">
           {message && (
             <>
-              <span className={message.type === "ok" ? "text-emerald-200" : "text-rose-200"}>
+              <span className={message.type === "ok" ? "text-emerald-700" : "text-rose-700"}>
                 {message.text}
               </span>
               {message.type === "err" && (
                 <button
                   type="button"
                   onClick={() => save()}
-                  className="text-sm font-semibold text-cyan-200 underline underline-offset-4 hover:opacity-90"
+                  className="text-sm font-semibold text-cyan-700 underline underline-offset-4 hover:text-cyan-800"
                 >
                   Retry
                 </button>
@@ -358,7 +358,7 @@ export default function PatientAuditFormClient({
         <div className="flex gap-3">
           <Link
             href={`/cases/${caseId}`}
-            className="rounded-xl px-4 py-2 text-sm font-semibold border border-white/15 bg-white/5 text-slate-200 hover:bg-white/10 transition-colors"
+            className="rounded-xl px-4 py-2 text-sm font-semibold border border-slate-300 bg-white text-slate-800 hover:bg-slate-50 transition-colors"
           >
             Back to case
           </Link>
@@ -366,7 +366,7 @@ export default function PatientAuditFormClient({
             <button
               onClick={() => save()}
               disabled={saving}
-              className="rounded-xl px-4 py-2 text-sm font-semibold border border-cyan-300/30 bg-white/5 text-cyan-200 hover:bg-white/10 transition-colors"
+              className="rounded-xl px-4 py-2 text-sm font-semibold border border-cyan-200 bg-cyan-50 text-cyan-800 hover:bg-cyan-100 transition-colors"
             >
               {saving ? "Saving…" : "Save answers"}
             </button>
@@ -407,21 +407,21 @@ function PatientReviewSummary({
   };
 
   return (
-    <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-6 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]">
-      <h2 className="text-lg font-semibold text-white mb-4">Review Summary</h2>
-      <p className="text-sm text-slate-200/70 mb-4">Review your answers below. Use the step dots above to edit.</p>
+    <section className="rounded-2xl border border-slate-200 bg-white/95 backdrop-blur p-6 shadow-sm">
+      <h2 className="text-lg font-semibold text-slate-900 mb-4">Review Summary</h2>
+      <p className="text-sm text-slate-600 mb-4">Review your answers below. Use the step dots above to edit.</p>
       <div className="space-y-4">
         {sections.map((sec) => (
           <div key={sec.id}>
-            <h3 className="text-sm font-semibold text-slate-200/80 mb-2">{sec.title}</h3>
+            <h3 className="text-sm font-semibold text-slate-800 mb-2">{sec.title}</h3>
             <dl className="space-y-1 text-sm">
               {sec.questions.map((q) => {
                 const v = answers[q.id];
                 if (q.dependsOn && v === undefined) return null;
                 return (
                   <div key={q.id} className="flex justify-between gap-2">
-                    <dt className="text-slate-200/70">{q.prompt}</dt>
-                    <dd className="font-semibold text-white">{fmt(q.id, v)}</dd>
+                    <dt className="text-slate-600">{q.prompt}</dt>
+                    <dd className="font-semibold text-slate-900">{fmt(q.id, v)}</dd>
                   </div>
                 );
               })}
@@ -432,7 +432,7 @@ function PatientReviewSummary({
       <button
         type="button"
         onClick={onEdit}
-        className="mt-4 text-sm font-semibold text-cyan-200 underline underline-offset-4 hover:opacity-90"
+        className="mt-4 text-sm font-semibold text-cyan-700 underline underline-offset-4 hover:text-cyan-800"
       >
         Edit answers
       </button>
@@ -466,10 +466,10 @@ function QuestionField({
 
   const fieldId = `patient-${question.id}`;
   const baseClass =
-    "w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-400/80 " +
-    "focus:outline-none focus:ring-2 focus:ring-cyan-300/30 focus:border-cyan-200/40 " +
-    "disabled:opacity-60 disabled:cursor-not-allowed";
-  const labelClass = "block text-sm font-semibold text-slate-200 mb-1";
+    "w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 " +
+    "focus:outline-none focus:ring-2 focus:ring-cyan-300/40 focus:border-cyan-400 " +
+    "disabled:opacity-60 disabled:bg-slate-100 disabled:cursor-not-allowed";
+  const labelClass = "block text-sm font-semibold text-slate-800 mb-1";
 
   const render = () => {
     switch (question.type) {
@@ -545,9 +545,9 @@ function QuestionField({
               value={num}
               onChange={(e) => onChange(Number(e.target.value))}
               disabled={locked}
-              className="w-full h-2 rounded-full appearance-none bg-white/10 accent-emerald-300"
+              className="w-full h-2 rounded-full appearance-none bg-slate-200 accent-emerald-600"
             />
-            <p className="text-xs text-slate-200/70">{num} / {max}</p>
+            <p className="text-xs text-slate-600">{num} / {max}</p>
           </div>
         );
       }
@@ -566,7 +566,7 @@ function QuestionField({
                 disabled={locked}
                 onClick={() => onChange(n)}
                 className={`w-10 h-10 rounded-lg border text-sm font-medium transition-colors ${
-                  num === n ? "border-emerald-300/30 bg-emerald-300/10 text-emerald-100" : "border-white/10 bg-white/5 text-slate-200 hover:bg-white/10"
+                  num === n ? "border-emerald-300 bg-emerald-50 text-emerald-800" : "border-slate-300 bg-white text-slate-800 hover:bg-slate-50"
                 }`}
               >
                 {n}
@@ -604,9 +604,9 @@ function QuestionField({
                   checked={(value as string) === v}
                   onChange={() => onChange(v)}
                   disabled={locked}
-                  className="rounded-full accent-emerald-300"
+                  className="rounded-full accent-emerald-600"
                 />
-                <span className="text-sm capitalize text-slate-200">{v}</span>
+                <span className="text-sm capitalize text-slate-700">{v}</span>
               </label>
             ))}
           </div>
@@ -627,16 +627,16 @@ function QuestionField({
                   checked={cur === opt.v}
                   onChange={() => onChange(opt.v)}
                   disabled={locked}
-                  className="rounded-full accent-emerald-300"
+                  className="rounded-full accent-emerald-600"
                 />
-                <span className="text-sm text-slate-200">{opt.label}</span>
+                <span className="text-sm text-slate-700">{opt.label}</span>
               </label>
             ))}
             <button
               type="button"
               onClick={() => onChange(null)}
               disabled={locked || cur === null}
-              className="text-sm text-slate-200/60 underline underline-offset-4 disabled:opacity-60"
+              className="text-sm text-slate-600 underline underline-offset-4 disabled:opacity-60"
             >
               Clear
             </button>
@@ -663,9 +663,9 @@ function QuestionField({
                     onChange(next.length ? next : null);
                   }}
                   disabled={locked}
-                  className="rounded accent-emerald-300"
+                  className="rounded accent-emerald-600"
                 />
-                <span className="text-sm text-slate-200">{o.label}</span>
+                <span className="text-sm text-slate-700">{o.label}</span>
               </label>
             ))}
           </div>
@@ -681,9 +681,9 @@ function QuestionField({
     <div>
       <label id={`${fieldId}-label`} htmlFor={primaryControlId} className={labelClass}>
         {question.prompt}
-        {question.required && <span className="text-emerald-200 ml-1">*</span>}
+        {question.required && <span className="text-emerald-700 ml-1">*</span>}
       </label>
-      {question.help && <p className="text-xs text-slate-200/60 mb-2">{question.help}</p>}
+      {question.help && <p className="text-xs text-slate-500 mb-2">{question.help}</p>}
       {render()}
     </div>
   );
