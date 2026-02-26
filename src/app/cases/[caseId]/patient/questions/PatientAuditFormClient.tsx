@@ -54,6 +54,8 @@ export default function PatientAuditFormClient({
   caseStatus: string;
   submittedAt?: string | null;
 }) {
+  const glassCard =
+    "rounded-2xl border border-white/10 bg-white/5 backdrop-blur shadow-[0_0_0_1px_rgba(255,255,255,0.03)]";
   const [answers, setAnswers] = useState<PatientAuditAnswers>({});
   const [loading, setLoading] = useState(true);
   const [loadingError, setLoadingError] = useState<string | null>(null);
@@ -179,21 +181,21 @@ export default function PatientAuditFormClient({
 
   if (loading) {
     return (
-      <div className="animate-pulse rounded-xl border p-6">
-        <div className="h-6 w-48 bg-gray-200 rounded" />
-        <div className="h-4 w-full mt-4 bg-gray-100 rounded" />
+      <div className={`animate-pulse p-6 ${glassCard}`}>
+        <div className="h-6 w-48 bg-white/10 rounded" />
+        <div className="h-4 w-full mt-4 bg-white/10 rounded" />
       </div>
     );
   }
 
   if (loadingError) {
     return (
-      <div className="rounded-xl border border-red-200 bg-red-50 p-6">
-        <p className="text-sm font-medium text-red-800">Could not load form</p>
-        <p className="mt-2 text-sm text-red-600">{loadingError}</p>
+      <div className="rounded-2xl border border-rose-300/20 bg-rose-300/10 p-6">
+        <p className="text-sm font-semibold text-rose-100">Could not load form</p>
+        <p className="mt-2 text-sm text-rose-100/80">{loadingError}</p>
         <Link
           href={`/cases/${caseId}`}
-          className="mt-4 inline-block text-sm font-medium text-red-700 hover:underline"
+          className="mt-4 inline-block text-sm font-semibold text-rose-100 underline underline-offset-4 hover:opacity-90"
         >
           Back to case
         </Link>
@@ -204,16 +206,16 @@ export default function PatientAuditFormClient({
   const isReviewStep = STEPS[activeStep]?.id === "review";
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="max-w-4xl space-y-6">
       <header>
-        <p className="text-sm text-gray-600">
-          About 5–6 minutes. Share your hair transplant experience for the audit.
+        <p className="text-sm text-slate-200/70">
+          About 5–6 minutes. Complete your intelligence inputs to unlock deeper forensic analysis.
         </p>
-        <div className="mt-3 rounded-xl border border-gray-200 bg-white p-4">
+        <div className={`mt-3 p-4 ${glassCard}`}>
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-sm font-medium text-gray-900">Advanced forensic questions (optional)</p>
-              <p className="mt-1 text-sm text-gray-600">
+              <p className="text-sm font-semibold text-white">Advanced forensic questions (optional)</p>
+              <p className="mt-1 text-sm text-slate-200/70">
                 Adds deeper inputs for graft viability, donor risk, healing stage, and aesthetic consistency. You can skip anytime.
               </p>
             </div>
@@ -225,15 +227,15 @@ export default function PatientAuditFormClient({
                 setActiveStep(0);
               }}
               disabled={locked}
-              className="shrink-0 rounded-lg px-3 py-2 text-sm font-medium border border-gray-300 hover:bg-gray-50 disabled:opacity-60"
+              className="shrink-0 rounded-xl px-3 py-2 text-sm font-semibold border border-white/15 bg-white/5 text-slate-200 hover:bg-white/10 disabled:opacity-60 transition-colors"
             >
               {showAdvanced ? "Hide advanced" : "Add advanced"}
             </button>
           </div>
         </div>
         {locked && (
-          <div className="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm">
-            Case submitted. Answers are locked.
+          <div className="mt-3 rounded-2xl border border-amber-300/20 bg-amber-300/10 p-4 text-sm text-amber-100">
+            Case submitted. Intelligence inputs are locked.
           </div>
         )}
       </header>
@@ -251,10 +253,10 @@ export default function PatientAuditFormClient({
             disabled={locked}
             className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
               i === activeStep
-                ? "bg-amber-500 text-slate-900"
+                ? "bg-gradient-to-r from-cyan-300 to-emerald-300 text-slate-950"
                 : i < activeStep
-                  ? "bg-amber-100 text-amber-800"
-                  : "bg-gray-100 text-gray-600"
+                  ? "border border-emerald-300/20 bg-white/5 text-emerald-200"
+                  : "border border-white/10 bg-white/5 text-slate-200/70"
             }`}
           >
             {i + 1}
@@ -274,9 +276,9 @@ export default function PatientAuditFormClient({
           const section = visibleSections[activeStep];
           if (!section) return null;
           return (
-            <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">{section.title}</h2>
-              {section.description && <p className="text-sm text-gray-600 mb-4">{section.description}</p>}
+            <section className={`p-6 ${glassCard}`}>
+              <h2 className="text-lg font-semibold text-white mb-2">{section.title}</h2>
+              {section.description && <p className="text-sm text-slate-200/70 mb-4">{section.description}</p>}
               <div className="space-y-5">
                 {section.questions.map((q) => (
                   <QuestionField
@@ -301,7 +303,7 @@ export default function PatientAuditFormClient({
             type="button"
             onClick={handleStepPrev}
             disabled={activeStep === 0 || locked}
-            className="rounded-lg px-4 py-2 text-sm font-medium border border-gray-300 hover:bg-gray-50 disabled:opacity-50"
+            className="rounded-xl px-4 py-2 text-sm font-semibold border border-white/15 bg-white/5 text-slate-200 hover:bg-white/10 disabled:opacity-50 transition-colors"
           >
             Previous
           </button>
@@ -309,7 +311,7 @@ export default function PatientAuditFormClient({
             type="button"
             onClick={handleStepNext}
             disabled={locked}
-            className="rounded-lg px-4 py-2 text-sm font-medium bg-amber-500 text-slate-900 hover:bg-amber-400"
+            className="rounded-xl px-4 py-2 text-sm font-semibold text-slate-950 bg-gradient-to-r from-cyan-300 to-emerald-300 hover:from-cyan-200 hover:to-emerald-200 transition-colors"
           >
             {activeStep === STEPS.length - 2 ? "Review" : "Next"}
           </button>
@@ -318,34 +320,34 @@ export default function PatientAuditFormClient({
 
       {/* Review step CTA — Add photos */}
       {isReviewStep && (
-        <section className="rounded-xl border border-gray-200 bg-amber-50/80 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">2. Add your photos</h2>
-          <p className="text-sm text-gray-600 mb-4">
+        <section className={`p-6 ${glassCard}`}>
+          <h2 className="text-lg font-semibold text-white mb-2">2. Add your photos</h2>
+          <p className="text-sm text-slate-200/70 mb-4">
             Pre-procedure, surgery, and post-procedure images go in the next step.
           </p>
           <button
             type="button"
             onClick={goToPhotos}
             disabled={saving || locked}
-            className="rounded-lg px-5 py-3 text-sm font-medium bg-amber-500 text-slate-900 hover:bg-amber-400 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+            className="rounded-xl px-5 py-3 text-sm font-semibold text-slate-950 bg-gradient-to-r from-cyan-300 to-emerald-300 hover:from-cyan-200 hover:to-emerald-200 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
           >
             {saving ? "Saving…" : "Add your photos →"}
           </button>
         </section>
       )}
 
-      <footer className="flex items-center justify-between pt-4 border-t">
-        <div className="text-sm text-gray-600 flex items-center gap-3">
+      <footer className="flex items-center justify-between pt-4 border-t border-white/10">
+        <div className="text-sm text-slate-200/70 flex items-center gap-3">
           {message && (
             <>
-              <span className={message.type === "ok" ? "text-amber-600" : "text-red-600"}>
+              <span className={message.type === "ok" ? "text-emerald-200" : "text-rose-200"}>
                 {message.text}
               </span>
               {message.type === "err" && (
                 <button
                   type="button"
                   onClick={() => save()}
-                  className="text-sm font-medium text-amber-600 hover:text-amber-700 underline"
+                  className="text-sm font-semibold text-cyan-200 underline underline-offset-4 hover:opacity-90"
                 >
                   Retry
                 </button>
@@ -356,7 +358,7 @@ export default function PatientAuditFormClient({
         <div className="flex gap-3">
           <Link
             href={`/cases/${caseId}`}
-            className="rounded-lg px-4 py-2 text-sm font-medium border border-gray-300 hover:bg-gray-50"
+            className="rounded-xl px-4 py-2 text-sm font-semibold border border-white/15 bg-white/5 text-slate-200 hover:bg-white/10 transition-colors"
           >
             Back to case
           </Link>
@@ -364,7 +366,7 @@ export default function PatientAuditFormClient({
             <button
               onClick={() => save()}
               disabled={saving}
-              className="rounded-lg px-4 py-2 text-sm font-medium border border-amber-500 text-amber-700 hover:bg-amber-50"
+              className="rounded-xl px-4 py-2 text-sm font-semibold border border-cyan-300/30 bg-white/5 text-cyan-200 hover:bg-white/10 transition-colors"
             >
               {saving ? "Saving…" : "Save answers"}
             </button>
@@ -405,21 +407,21 @@ function PatientReviewSummary({
   };
 
   return (
-    <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">Review Summary</h2>
-      <p className="text-sm text-gray-600 mb-4">Review your answers below. Use the step dots above to edit.</p>
+    <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-6 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]">
+      <h2 className="text-lg font-semibold text-white mb-4">Review Summary</h2>
+      <p className="text-sm text-slate-200/70 mb-4">Review your answers below. Use the step dots above to edit.</p>
       <div className="space-y-4">
         {sections.map((sec) => (
           <div key={sec.id}>
-            <h3 className="text-sm font-medium text-gray-700 mb-2">{sec.title}</h3>
+            <h3 className="text-sm font-semibold text-slate-200/80 mb-2">{sec.title}</h3>
             <dl className="space-y-1 text-sm">
               {sec.questions.map((q) => {
                 const v = answers[q.id];
                 if (q.dependsOn && v === undefined) return null;
                 return (
                   <div key={q.id} className="flex justify-between gap-2">
-                    <dt className="text-gray-600">{q.prompt}</dt>
-                    <dd className="font-medium">{fmt(q.id, v)}</dd>
+                    <dt className="text-slate-200/70">{q.prompt}</dt>
+                    <dd className="font-semibold text-white">{fmt(q.id, v)}</dd>
                   </div>
                 );
               })}
@@ -430,7 +432,7 @@ function PatientReviewSummary({
       <button
         type="button"
         onClick={onEdit}
-        className="mt-4 text-sm font-medium text-amber-600 hover:text-amber-700"
+        className="mt-4 text-sm font-semibold text-cyan-200 underline underline-offset-4 hover:opacity-90"
       >
         Edit answers
       </button>
@@ -463,8 +465,11 @@ function QuestionField({
   if (!show) return null;
 
   const fieldId = `patient-${question.id}`;
-  const baseClass = "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 disabled:opacity-60 disabled:bg-gray-100";
-  const labelClass = "block text-sm font-medium text-gray-700 mb-1";
+  const baseClass =
+    "w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-400/80 " +
+    "focus:outline-none focus:ring-2 focus:ring-cyan-300/30 focus:border-cyan-200/40 " +
+    "disabled:opacity-60 disabled:cursor-not-allowed";
+  const labelClass = "block text-sm font-semibold text-slate-200 mb-1";
 
   const render = () => {
     switch (question.type) {
@@ -540,9 +545,9 @@ function QuestionField({
               value={num}
               onChange={(e) => onChange(Number(e.target.value))}
               disabled={locked}
-              className="w-full h-2 rounded-full appearance-none bg-gray-200 accent-amber-500"
+              className="w-full h-2 rounded-full appearance-none bg-white/10 accent-emerald-300"
             />
-            <p className="text-xs text-gray-600">{num} / {max}</p>
+            <p className="text-xs text-slate-200/70">{num} / {max}</p>
           </div>
         );
       }
@@ -561,7 +566,7 @@ function QuestionField({
                 disabled={locked}
                 onClick={() => onChange(n)}
                 className={`w-10 h-10 rounded-lg border text-sm font-medium transition-colors ${
-                  num === n ? "border-amber-500 bg-amber-50 text-amber-800" : "border-gray-300 hover:bg-gray-50"
+                  num === n ? "border-emerald-300/30 bg-emerald-300/10 text-emerald-100" : "border-white/10 bg-white/5 text-slate-200 hover:bg-white/10"
                 }`}
               >
                 {n}
@@ -599,9 +604,9 @@ function QuestionField({
                   checked={(value as string) === v}
                   onChange={() => onChange(v)}
                   disabled={locked}
-                  className="rounded-full"
+                  className="rounded-full accent-emerald-300"
                 />
-                <span className="text-sm capitalize">{v}</span>
+                <span className="text-sm capitalize text-slate-200">{v}</span>
               </label>
             ))}
           </div>
@@ -622,16 +627,16 @@ function QuestionField({
                   checked={cur === opt.v}
                   onChange={() => onChange(opt.v)}
                   disabled={locked}
-                  className="rounded-full"
+                  className="rounded-full accent-emerald-300"
                 />
-                <span className="text-sm">{opt.label}</span>
+                <span className="text-sm text-slate-200">{opt.label}</span>
               </label>
             ))}
             <button
               type="button"
               onClick={() => onChange(null)}
               disabled={locked || cur === null}
-              className="text-sm text-gray-500 underline disabled:opacity-60"
+              className="text-sm text-slate-200/60 underline underline-offset-4 disabled:opacity-60"
             >
               Clear
             </button>
@@ -658,9 +663,9 @@ function QuestionField({
                     onChange(next.length ? next : null);
                   }}
                   disabled={locked}
-                  className="rounded"
+                  className="rounded accent-emerald-300"
                 />
-                <span className="text-sm">{o.label}</span>
+                <span className="text-sm text-slate-200">{o.label}</span>
               </label>
             ))}
           </div>
@@ -676,9 +681,9 @@ function QuestionField({
     <div>
       <label id={`${fieldId}-label`} htmlFor={primaryControlId} className={labelClass}>
         {question.prompt}
-        {question.required && <span className="text-amber-600 ml-1">*</span>}
+        {question.required && <span className="text-emerald-200 ml-1">*</span>}
       </label>
-      {question.help && <p className="text-xs text-gray-500 mb-2">{question.help}</p>}
+      {question.help && <p className="text-xs text-slate-200/60 mb-2">{question.help}</p>}
       {render()}
     </div>
   );

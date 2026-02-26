@@ -136,27 +136,73 @@ export default async function Page({ params }: { params: Promise<{ caseId: strin
   const showDoctorFlow = role === "doctor" || role === "auditor";
   const showClinicFlow = role === "clinic" || role === "auditor";
 
+  const status = String(c.status ?? "draft");
+  const statusPill =
+    status === "complete"
+      ? "border-emerald-300/20 bg-emerald-300/10 text-emerald-200"
+      : status === "submitted"
+        ? "border-cyan-300/20 bg-cyan-300/10 text-cyan-200"
+        : status === "audit_failed"
+          ? "border-rose-300/20 bg-rose-300/10 text-rose-200"
+          : "border-white/10 bg-white/5 text-slate-200/80";
+
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6">
       <Link
         href={dashboardPath}
-        className="inline-flex items-center text-sm font-medium text-slate-600 hover:text-amber-600 transition-colors"
+        className="inline-flex items-center text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
       >
         ← Back to dashboard
       </Link>
 
-      <h1 className="text-2xl font-bold text-slate-900 mt-4">{c.title ?? "Untitled case"}</h1>
-      <p className="text-slate-600 text-sm mt-1">Status: {c.status}</p>
+      <section className="relative mt-4 overflow-hidden rounded-2xl border border-slate-900 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-6 sm:p-8">
+        <div className="pointer-events-none absolute -top-20 -right-24 h-64 w-64 rounded-full bg-cyan-500/10 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-violet-500/10 blur-3xl" />
+
+        <div className="relative flex flex-col gap-5">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-medium tracking-wider text-slate-300/70 uppercase">Surgical Intelligence Case</p>
+              <h1 className="mt-2 text-2xl sm:text-3xl font-semibold text-white">
+                {c.title ?? "Untitled case"}
+              </h1>
+              <p className="mt-2 text-sm sm:text-base text-slate-200/70 max-w-2xl">
+                Complete contributions to unlock the highest-confidence forensic audit.
+              </p>
+            </div>
+            <span className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold ${statusPill}`}>
+              {status}
+            </span>
+          </div>
+
+          {showPatientFlow && (
+            <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+              <Link
+                href={`/cases/${c.id}/patient/questions`}
+                className="inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold text-slate-950 bg-gradient-to-r from-cyan-300 to-emerald-300 hover:from-cyan-200 hover:to-emerald-200 transition-colors shadow-sm"
+              >
+                Continue Intelligence Questions
+              </Link>
+              <Link
+                href={`/cases/${c.id}/patient/photos`}
+                className="inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold text-slate-200 border border-white/15 bg-white/5 hover:bg-white/10 backdrop-blur transition-colors"
+              >
+                Add / review photos
+              </Link>
+            </div>
+          )}
+        </div>
+      </section>
 
       {role === "auditor" && c.status === "audit_failed" && (
-        <div className="mt-6 p-5 rounded-xl border-2 border-amber-300 bg-amber-50">
-          <h2 className="font-semibold text-slate-900 mb-2">Manual audit required</h2>
-          <p className="text-sm text-slate-600 mb-3">
+        <div className="mt-6 p-5 rounded-2xl border border-rose-300/20 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+          <h2 className="font-semibold text-white mb-2">Manual audit required</h2>
+          <p className="text-sm text-slate-200/70 mb-3">
             The automated audit failed. Complete a manual audit to finalize this case.
           </p>
           <Link
             href={`/cases/${c.id}/audit`}
-            className="inline-flex items-center rounded-lg px-5 py-3 text-sm font-medium bg-amber-500 text-slate-900 hover:bg-amber-400"
+            className="inline-flex items-center rounded-xl px-5 py-3 text-sm font-semibold text-slate-950 bg-gradient-to-r from-rose-300 to-amber-200 hover:from-rose-200 hover:to-amber-100 transition-colors"
           >
             Complete manual audit →
           </Link>
@@ -165,18 +211,18 @@ export default async function Page({ params }: { params: Promise<{ caseId: strin
 
       {/* 3-step flow: 1. Information → 2. Photos → 3. Submit */}
       {showPatientFlow && (
-        <div className="mt-6 p-5 rounded-xl border border-slate-200 bg-white">
-          <h2 className="font-semibold text-slate-900 mb-4">Patient contribution</h2>
+        <div className="mt-6 p-5 rounded-2xl border border-slate-900 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+          <h2 className="font-semibold text-white mb-4">Patient contribution</h2>
           <div className="flex flex-col sm:flex-row gap-3">
             <Link
               href={`/cases/${c.id}/patient/questions`}
-              className="inline-flex items-center justify-center rounded-lg px-5 py-3 text-sm font-medium bg-amber-500 text-slate-900 hover:bg-amber-400 transition-colors"
+              className="inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold text-slate-950 bg-gradient-to-r from-cyan-300 to-emerald-300 hover:from-cyan-200 hover:to-emerald-200 transition-colors"
             >
-              1. Complete your information
+              1. Intelligence questions
             </Link>
             <Link
               href={`/cases/${c.id}/patient/photos`}
-              className="inline-flex items-center justify-center rounded-lg px-5 py-3 text-sm font-medium border border-slate-300 text-slate-700 hover:bg-slate-50 transition-colors"
+              className="inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold text-slate-200 border border-white/15 bg-white/5 hover:bg-white/10 backdrop-blur transition-colors"
             >
               2. Add your photos
             </Link>
@@ -185,18 +231,18 @@ export default async function Page({ params }: { params: Promise<{ caseId: strin
       )}
 
       {showDoctorFlow && (
-        <div className="mt-6 p-5 rounded-xl border border-slate-200 bg-white">
-          <h2 className="font-semibold text-slate-900 mb-4">Doctor contribution</h2>
+        <div className="mt-6 p-5 rounded-2xl border border-slate-900 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+          <h2 className="font-semibold text-white mb-4">Doctor contribution</h2>
           <div className="flex flex-col sm:flex-row gap-3">
             <Link
               href={`/cases/${c.id}/doctor/form`}
-              className="inline-flex items-center justify-center rounded-lg px-5 py-3 text-sm font-medium bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+              className="inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold text-slate-950 bg-gradient-to-r from-blue-300 to-cyan-200 hover:from-blue-200 hover:to-cyan-100 transition-colors"
             >
               1. Complete your information
             </Link>
             <Link
               href={`/cases/${c.id}/doctor/photos`}
-              className="inline-flex items-center justify-center rounded-lg px-5 py-3 text-sm font-medium border border-slate-300 text-slate-700 hover:bg-slate-50 transition-colors"
+              className="inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold text-slate-200 border border-white/15 bg-white/5 hover:bg-white/10 backdrop-blur transition-colors"
             >
               2. Add your photos
             </Link>
@@ -205,18 +251,18 @@ export default async function Page({ params }: { params: Promise<{ caseId: strin
       )}
 
       {showClinicFlow && (
-        <div className="mt-6 p-5 rounded-xl border border-slate-200 bg-white">
-          <h2 className="font-semibold text-slate-900 mb-4">Clinic contribution</h2>
+        <div className="mt-6 p-5 rounded-2xl border border-slate-900 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+          <h2 className="font-semibold text-white mb-4">Clinic contribution</h2>
           <div className="flex flex-col sm:flex-row gap-3">
             <Link
               href={`/cases/${c.id}/clinic/form`}
-              className="inline-flex items-center justify-center rounded-lg px-5 py-3 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
+              className="inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold text-slate-950 bg-gradient-to-r from-emerald-300 to-cyan-200 hover:from-emerald-200 hover:to-cyan-100 transition-colors"
             >
               1. Complete your information
             </Link>
             <Link
               href={`/cases/${c.id}/clinic/photos`}
-              className="inline-flex items-center justify-center rounded-lg px-5 py-3 text-sm font-medium border border-slate-300 text-slate-700 hover:bg-slate-50 transition-colors"
+              className="inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold text-slate-200 border border-white/15 bg-white/5 hover:bg-white/10 backdrop-blur transition-colors"
             >
               2. Add your photos
             </Link>
@@ -225,8 +271,8 @@ export default async function Page({ params }: { params: Promise<{ caseId: strin
       )}
 
       {(showPatientFlow || showDoctorFlow || showClinicFlow) && (
-        <div className="mt-6 p-5 rounded-xl border border-slate-200 bg-white">
-          <h2 className="font-semibold text-slate-900 mb-2">3. Submit for audit</h2>
+        <div className="mt-6 p-5 rounded-2xl border border-slate-900 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+          <h2 className="font-semibold text-white mb-2">3. Submit for audit</h2>
           <SubmitButton caseId={c.id} caseStatus={c.status ?? "draft"} submittedAt={c.submitted_at} />
         </div>
       )}

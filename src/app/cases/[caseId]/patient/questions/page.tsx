@@ -23,28 +23,39 @@ export default async function Page({
   if (!c) redirect("/dashboard");
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8">
-      <div className="mb-6">
-        <Link
-          href={`/cases/${caseId}`}
-          className="text-sm text-gray-600 hover:underline"
-        >
-          ← Back to case
-        </Link>
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+      <Link
+        href={`/cases/${caseId}`}
+        className="inline-flex items-center text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
+      >
+        ← Back to case
+      </Link>
+
+      <section className="relative mt-4 overflow-hidden rounded-2xl border border-slate-900 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-6 sm:p-8">
+        <div className="pointer-events-none absolute -top-20 -right-24 h-64 w-64 rounded-full bg-cyan-500/10 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-emerald-500/10 blur-3xl" />
+
+        <div className="relative">
+          <h1 className="text-2xl sm:text-3xl font-semibold text-white">
+            Intelligence Questions
+          </h1>
+          <p className="mt-2 text-sm sm:text-base text-slate-200/70 max-w-2xl">
+            These inputs unlock deeper forensic analysis across donor safety, graft viability, healing course, and aesthetic balance.
+          </p>
+          <div className="mt-4 text-xs leading-relaxed text-slate-300/70">
+            <div>Powered by Follicle Intelligence™</div>
+            <div>Vision Model: GPT-5.2</div>
+          </div>
+        </div>
+      </section>
+
+      <div className="mt-6">
+        <PatientAuditFormClient
+          caseId={caseId}
+          caseStatus={c.status ?? "draft"}
+          submittedAt={c.submitted_at}
+        />
       </div>
-
-      <h1 className="text-2xl font-bold text-gray-900 mb-2">
-        Patient Audit Form
-      </h1>
-      <p className="text-gray-600 mb-8">
-        Please complete this form about your hair transplant experience. It takes about 5–10 minutes.
-      </p>
-
-      <PatientAuditFormClient
-        caseId={caseId}
-        caseStatus={c.status ?? "draft"}
-        submittedAt={c.submitted_at}
-      />
     </div>
   );
 }
