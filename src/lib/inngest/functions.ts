@@ -166,10 +166,26 @@ export const runAudit = inngest.createFunction(
 
     // 6) Run AI audit (answers + images)
     const aiResult = await step.run("run-ai-audit", async () => {
+      const patientAnswers = existingSummary.patient_answers as Record<string, unknown> | null;
+      const enhanced =
+        patientAnswers && typeof patientAnswers === "object"
+          ? ((patientAnswers as Record<string, unknown>).enhanced_patient_answers as Record<string, unknown> | null | undefined)
+          : null;
+
+      // Baseline may be provided either as a top-level baseline object or inside enhanced answers.
+      const baseline =
+        patientAnswers && typeof patientAnswers === "object"
+          ? (((patientAnswers as Record<string, unknown>).patient_baseline ??
+              (enhanced && typeof enhanced === "object" ? (enhanced as any).baseline : null)) as Record<string, unknown> | null | undefined)
+          : null;
+
       return await runAIAudit({
-        patient_answers: existingSummary.patient_answers as Record<string, unknown> | null,
+        patient_answers: patientAnswers,
         doctor_answers: existingSummary.doctor_answers as Record<string, unknown> | null,
         clinic_answers: existingSummary.clinic_answers as Record<string, unknown> | null,
+        // Pass structured advanced inputs to GPT-5.2 (backward-compatible; optional).
+        enhanced_patient_answers: (enhanced as any) ?? null,
+        patient_baseline: (baseline as any) ?? null,
         imageUrls,
       });
     });

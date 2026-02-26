@@ -7,10 +7,43 @@ import { PATIENT_AUDIT_SECTIONS } from "@/lib/patientAuditForm";
 import type { PatientAuditAnswers, PatientFormQuestion } from "@/lib/patientAuditForm";
 import { validatePatientAuditV2, normalizePatientV2ForValidation } from "@/lib/patientAuditSchema";
 
-const STEPS = [
-  ...PATIENT_AUDIT_SECTIONS.map((s) => ({ id: s.id, title: s.title })),
-  { id: "review", title: "Review & Submit" },
-];
+function isNonEmptyObject(v: unknown): v is Record<string, unknown> {
+  return !!v && typeof v === "object" && !Array.isArray(v) && Object.keys(v as Record<string, unknown>).length > 0;
+}
+
+function getByPath(obj: Record<string, unknown>, path: string): unknown {
+  if (!path.includes(".")) return obj[path];
+  const parts = path.split(".").filter(Boolean);
+  let cur: unknown = obj;
+  for (const p of parts) {
+    if (!cur || typeof cur !== "object") return undefined;
+    cur = (cur as Record<string, unknown>)[p];
+  }
+  return cur;
+}
+
+function setByPath(obj: Record<string, unknown>, path: string, value: unknown): Record<string, unknown> {
+  if (!path.includes(".")) return { ...obj, [path]: value };
+  const parts = path.split(".").filter(Boolean);
+  const out: Record<string, unknown> = { ...obj };
+  let cur: Record<string, unknown> = out;
+  for (let i = 0; i < parts.length; i++) {
+    const key = parts[i]!;
+    const last = i === parts.length - 1;
+    if (last) {
+      cur[key] = value;
+    } else {
+      const next = cur[key];
+      if (!next || typeof next !== "object" || Array.isArray(next)) {
+        cur[key] = {};
+      } else {
+        cur[key] = { ...(next as Record<string, unknown>) };
+      }
+      cur = cur[key] as Record<string, unknown>;
+    }
+  }
+  return out;
+}
 
 export default function PatientAuditFormClient({
   caseId,
@@ -27,9 +60,16 @@ export default function PatientAuditFormClient({
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null);
   const [activeStep, setActiveStep] = useState(0);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const hasEditedRef = useRef(false);
   const locked = caseStatus === "submitted" || !!submittedAt;
   const router = useRouter();
+
+  const visibleSections = PATIENT_AUDIT_SECTIONS.filter((s) => !s.advanced || showAdvanced);
+  const STEPS = [
+    ...visibleSections.map((s) => ({ id: s.id, title: s.title })),
+    { id: "review", title: "Review & Submit" },
+  ];
 
   const load = useCallback(async () => {
     setLoadingError(null);
@@ -40,6 +80,8 @@ export default function PatientAuditFormClient({
       setAnswers({});
     } else if (json.patientAnswers) {
       setAnswers(json.patientAnswers);
+      const adv = (json.patientAnswers as Record<string, unknown>)?.enhanced_patient_answers;
+      if (isNonEmptyObject(adv)) setShowAdvanced(true);
     }
     setLoading(false);
   }, [caseId]);
@@ -50,7 +92,7 @@ export default function PatientAuditFormClient({
 
   const update = (id: string, value: string | number | string[] | boolean | null) => {
     hasEditedRef.current = true;
-    setAnswers((prev) => ({ ...prev, [id]: value }));
+    setAnswers((prev) => setByPath(prev as Record<string, unknown>, id, value) as PatientAuditAnswers);
   };
 
   const sanitizePayload = (raw: PatientAuditAnswers): PatientAuditAnswers => {
@@ -167,6 +209,28 @@ export default function PatientAuditFormClient({
         <p className="text-sm text-gray-600">
           About 5–6 minutes. Share your hair transplant experience for the audit.
         </p>
+        <div className="mt-3 rounded-xl border border-gray-200 bg-white p-4">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium text-gray-900">Advanced forensic questions (optional)</p>
+              <p className="mt-1 text-sm text-gray-600">
+                Adds deeper inputs for graft viability, donor risk, healing stage, and aesthetic consistency. You can skip anytime.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                if (locked) return;
+                setShowAdvanced((v) => !v);
+                setActiveStep(0);
+              }}
+              disabled={locked}
+              className="shrink-0 rounded-lg px-3 py-2 text-sm font-medium border border-gray-300 hover:bg-gray-50 disabled:opacity-60"
+            >
+              {showAdvanced ? "Hide advanced" : "Add advanced"}
+            </button>
+          </div>
+        </div>
         {locked && (
           <div className="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm">
             Case submitted. Answers are locked.
@@ -202,22 +266,23 @@ export default function PatientAuditFormClient({
       {isReviewStep ? (
         <PatientReviewSummary
           answers={answers}
-          sections={PATIENT_AUDIT_SECTIONS}
+          sections={visibleSections}
           onEdit={() => setActiveStep(0)}
         />
       ) : (
         (() => {
-          const section = PATIENT_AUDIT_SECTIONS[activeStep];
+          const section = visibleSections[activeStep];
           if (!section) return null;
           return (
             <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">{section.title}</h2>
+              {section.description && <p className="text-sm text-gray-600 mb-4">{section.description}</p>}
               <div className="space-y-5">
                 {section.questions.map((q) => (
                   <QuestionField
                     key={q.id}
                     question={q}
-                    value={answers[q.id]}
+                    value={getByPath(answers as Record<string, unknown>, q.id)}
                     onChange={(v) => update(q.id, v)}
                     allAnswers={answers}
                     locked={locked}
@@ -387,12 +452,13 @@ function QuestionField({
   locked: boolean;
 }) {
   const dep = question.dependsOn;
+  const getDepVal = (id: string) => getByPath(allAnswers as Record<string, unknown>, id);
   const show =
     !dep ||
-    (dep.value !== undefined && allAnswers[dep.questionId] === dep.value) ||
+    (dep.value !== undefined && getDepVal(dep.questionId) === dep.value) ||
     (dep.hasValue !== undefined &&
-      Array.isArray(allAnswers[dep.questionId]) &&
-      (allAnswers[dep.questionId] as string[]).includes(dep.hasValue));
+      Array.isArray(getDepVal(dep.questionId)) &&
+      (getDepVal(dep.questionId) as string[]).includes(dep.hasValue));
 
   if (!show) return null;
 
@@ -540,6 +606,38 @@ function QuestionField({
             ))}
           </div>
         );
+      case "boolean": {
+        const cur = typeof value === "boolean" ? value : value === null || value === undefined || value === "" ? null : Boolean(value);
+        return (
+          <div role="radiogroup" aria-labelledby={`${fieldId}-label`} className="flex gap-4">
+            {([
+              { label: "Yes", v: true },
+              { label: "No", v: false },
+            ] as const).map((opt) => (
+              <label key={opt.label} htmlFor={`${fieldId}-${String(opt.v)}`} className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  id={`${fieldId}-${String(opt.v)}`}
+                  name={question.id}
+                  checked={cur === opt.v}
+                  onChange={() => onChange(opt.v)}
+                  disabled={locked}
+                  className="rounded-full"
+                />
+                <span className="text-sm">{opt.label}</span>
+              </label>
+            ))}
+            <button
+              type="button"
+              onClick={() => onChange(null)}
+              disabled={locked || cur === null}
+              className="text-sm text-gray-500 underline disabled:opacity-60"
+            >
+              Clear
+            </button>
+          </div>
+        );
+      }
       case "checkbox": {
         const selected = Array.isArray(value) ? value : value ? [String(value)] : [];
         const opts = question.options ?? [];
