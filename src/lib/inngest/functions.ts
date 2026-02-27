@@ -441,7 +441,7 @@ export const runAudit = inngest.createFunction(
 
     // 1) Load case
     const c = await step.run("load-case", async () => {
-      const baseSelect = "id, user_id, status, submitted_at, doctor_id, clinic_id, evidence_score_doctor, evidence_score_patient";
+      const baseSelect = "id, user_id, patient_id, status, submitted_at, doctor_id, clinic_id, evidence_score_doctor, evidence_score_patient";
       const res = await supabase
         .from("cases")
         .select(baseSelect)
@@ -452,18 +452,47 @@ export const runAudit = inngest.createFunction(
       if (res.error && String(res.error.message || "").includes("evidence")) {
         const fb = await supabase
           .from("cases")
-          .select("id, user_id, status, submitted_at, doctor_id, clinic_id")
+          .select("id, user_id, patient_id, status, submitted_at, doctor_id, clinic_id")
           .eq("id", caseId)
           .maybeSingle();
         if (fb.error) throw new Error(`cases load failed: ${fb.error.message}`);
         if (!fb.data) throw new Error("Case not found");
-        if (fb.data.user_id !== userId) throw new Error("Forbidden: not owner");
+        const actorMatchesFallback =
+          fb.data.user_id === userId ||
+          fb.data.patient_id === userId ||
+          fb.data.doctor_id === userId ||
+          fb.data.clinic_id === userId;
+        if (!actorMatchesFallback) {
+          // Allow reruns when case ownership/assignees changed after original submit event.
+          logger.warn("runAudit: event userId no longer linked to case (fallback select); continuing", {
+            caseId,
+            userId,
+            user_id: fb.data.user_id,
+            patient_id: fb.data.patient_id,
+            doctor_id: fb.data.doctor_id,
+            clinic_id: fb.data.clinic_id,
+          });
+        }
         return fb.data as any;
       }
 
       if (res.error) throw new Error(`cases load failed: ${res.error.message}`);
       if (!res.data) throw new Error("Case not found");
-      if (res.data.user_id !== userId) throw new Error("Forbidden: not owner");
+      const actorMatches =
+        res.data.user_id === userId ||
+        res.data.patient_id === userId ||
+        res.data.doctor_id === userId ||
+        res.data.clinic_id === userId;
+      if (!actorMatches) {
+        logger.warn("runAudit: event userId no longer linked to case; continuing", {
+          caseId,
+          userId,
+          user_id: res.data.user_id,
+          patient_id: res.data.patient_id,
+          doctor_id: res.data.doctor_id,
+          clinic_id: res.data.clinic_id,
+        });
+      }
       return res.data as any;
     });
 
