@@ -23,6 +23,9 @@ const tailwindcssPath = getTailwindPath();
 
 const nextConfig: NextConfig = {
   serverExternalPackages: ["pdfkit", "@supabase/supabase-js", "@supabase/ssr", "inngest", "openai"],
+  outputFileTracingExcludes: {
+    "**": ["scripts/output/**"],
+  },
   turbopack: {
     resolveAlias: {
       tailwindcss: tailwindcssPath,

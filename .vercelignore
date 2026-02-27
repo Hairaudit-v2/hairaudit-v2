@@ -1,0 +1,2 @@
+# Exclude from Vercel deployment (reduces serverless function size)
+scripts/output/

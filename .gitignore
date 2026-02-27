@@ -42,3 +42,6 @@ next-env.d.ts
 
 # local legacy nested repo (not tracked in this repo)
 /hairaudit-v2/
+
+# test audit outputs (large, local only)
+/scripts/output/
