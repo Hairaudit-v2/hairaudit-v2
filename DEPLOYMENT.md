@@ -81,6 +81,8 @@ In Vercel → Project → **Settings** → **Environment Variables**, add:
 | `AUDITOR_NOTIFICATION_EMAIL` | Email for auditor alerts (default: `auditor@hairaudit.com`) | Production |
 | `NEXT_PUBLIC_APP_URL` | Public base URL (used for email links + Supabase auth redirects). Example: `https://hairaudit.com` | Production |
 
+**If using Vercel Deployment Protection** (password, Vercel Auth, etc.): enable **Protection Bypass for Automation** in **Settings → Deployment Protection**. The bypass secret is auto-set as `VERCEL_AUTOMATION_BYPASS_SECRET` so Inngest can call `/api/internal/build-pdf` without 401.
+
 ---
 
 ## Step 5: Supabase Auth Redirect URLs

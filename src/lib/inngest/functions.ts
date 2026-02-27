@@ -733,9 +733,16 @@ export const runAudit = inngest.createFunction(
         },
       };
 
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        "x-internal-token": token,
+      };
+      const bypass = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+      if (bypass) headers["x-vercel-protection-bypass"] = bypass;
+
       const res = await fetch(`${baseUrl}/api/internal/build-pdf`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-internal-token": token },
+        headers,
         body: JSON.stringify({
           token,
           content,
