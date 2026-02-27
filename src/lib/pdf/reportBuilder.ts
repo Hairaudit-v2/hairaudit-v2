@@ -1412,6 +1412,17 @@ export async function buildAuditReportPdf(
     doc.text(`Build: ${sha}`, MARGIN, doc.y + 28);
   }
 
+  const pdfDebugEnabled = String(process.env.PDF_DEBUG ?? "").toLowerCase() === "true";
+  if (pdfDebugEnabled) {
+    doc.moveDown(2);
+    doc.fillColor(SLATE_400).fontSize(8);
+    doc.text(
+      `Renderer: pdfkit • Mode: ${viewModel.auditMode} • Case: ${viewModel.caseId} v${viewModel.version}`,
+      MARGIN,
+      doc.y
+    );
+  }
+
   doc.end();
   return done;
 }

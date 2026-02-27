@@ -57,7 +57,21 @@ export async function GET(req: Request) {
     !!tokenPayload &&
     tokenPayload.caseId === caseId &&
     tokenPayload.auditMode === requestedAuditMode;
+
   if (!caseId) return new NextResponse("Missing caseId", { status: 400 });
+
+  if (token && !allowToken) {
+    return new NextResponse(
+      "<!doctype html><html><body><h1>Unauthorized</h1><p>Invalid report token.</p></body></html>",
+      {
+        status: 401,
+        headers: {
+          "Content-Type": "text/html; charset=utf-8",
+          "Cache-Control": "no-store",
+        },
+      }
+    );
+  }
 
   const supabase = supabaseAdmin();
 
@@ -74,7 +88,18 @@ export async function GET(req: Request) {
     // ignore: cookie-less/internal render path
   }
 
-  if (!allowToken && !sessionUserId) return new NextResponse("Unauthorized", { status: 401 });
+  if (!allowToken && !sessionUserId) {
+    return new NextResponse(
+      "<!doctype html><html><body><h1>Unauthorized</h1><p>Authentication required.</p></body></html>",
+      {
+        status: 401,
+        headers: {
+          "Content-Type": "text/html; charset=utf-8",
+          "Cache-Control": "no-store",
+        },
+      }
+    );
+  }
 
   /* Load case */
   const { data: c, error: caseErr } = await supabase
@@ -424,6 +449,14 @@ export async function GET(req: Request) {
       `
       : "";
 
+  const pdfDebugEnabled = String(process.env.PDF_DEBUG ?? "").toLowerCase() === "true";
+  const debugFooter = pdfDebugEnabled
+    ? `
+    <div class="footerDebug">
+      Renderer: playwright • Mode: ${esc(auditMode)} • Case: <span class="mono">${esc(caseId)}</span> v${esc(String(latestReport?.version ?? 1))}
+    </div>`
+    : "";
+
   const html = `<!doctype html>
 <html>
 <head>
@@ -555,6 +588,12 @@ export async function GET(req: Request) {
       color: var(--muted);
       border-top: 1px solid var(--line);
       padding-top: 8px;
+    }
+
+    .footerDebug {
+      margin-top: 4px;
+      font-size: 10px;
+      color: var(--muted);
     }
 
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
@@ -734,6 +773,7 @@ export async function GET(req: Request) {
 
     <div class="footer">
       HairAudit is an audit/reporting platform. This report is informational and not a medical diagnosis.
+      ${debugFooter}
     </div>
 
   </div>

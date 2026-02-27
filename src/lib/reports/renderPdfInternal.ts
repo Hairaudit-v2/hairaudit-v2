@@ -1,5 +1,13 @@
 import { createClient } from "@supabase/supabase-js";
-import { buildAuditReportPdf, normalizeAuditMode, type AuditReportContent, type ReportImage } from "@/lib/pdf/reportBuilder";
+import {
+  buildAuditReportPdf,
+  normalizeAuditMode,
+  type AuditReportContent,
+  type ReportImage,
+} from "@/lib/pdf/reportBuilder";
+import { buildPdfUrl } from "@/lib/reports/pdfUrl";
+import { signRenderToken } from "@/lib/reports/internalRenderToken";
+import { generateReportPdfFromUrl } from "@/lib/pdf/generateReportPdf";
 
 function supabaseAdmin() {
   return createClient(
@@ -218,7 +226,35 @@ export async function renderAndUploadPdfForCase(args: {
     images,
   };
 
-  const pdfBuffer = await buildAuditReportPdf(content);
+  const renderer = process.env.PDF_RENDERER === "pdfkit" ? "pdfkit" : "playwright";
+
+  let pdfBuffer: Buffer;
+
+  if (renderer === "pdfkit") {
+    pdfBuffer = await buildAuditReportPdf(content);
+  } else {
+    const tokenSecret =
+      String(process.env.REPORT_RENDER_TOKEN ?? "").trim() ||
+      String(process.env.INTERNAL_API_KEY ?? "").trim() ||
+      String(process.env.SUPABASE_SERVICE_ROLE_KEY ?? "").trim();
+
+    if (!tokenSecret) {
+      throw new Error("Missing REPORT_RENDER_TOKEN/INTERNAL_API_KEY/SUPABASE_SERVICE_ROLE_KEY for PDF render.");
+    }
+
+    const token = signRenderToken({
+      caseId,
+      auditMode,
+      exp: Date.now() + 10 * 60 * 1000,
+      secret: tokenSecret,
+    });
+
+    const baseUrl = (process.env.SITE_URL || "https://www.hairaudit.com").trim();
+    const url = buildPdfUrl({ caseId, auditMode, token, baseUrl });
+
+    pdfBuffer = await generateReportPdfFromUrl(url);
+  }
+
   const pdfPath = `${caseId}/v${version}.pdf`;
   const { error: uploadErr } = await supabase.storage
     .from(bucket)
