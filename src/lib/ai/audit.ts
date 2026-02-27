@@ -891,8 +891,8 @@ Safety:
     }
   }
 
-  // GPT-5.2: deeper forensic reasoning and stronger structured compliance.
-  const model = "gpt-5.2";
+  // GPT-5.2: deeper forensic reasoning. Override via OPENAI_MODEL env.
+  const model = process.env.OPENAI_MODEL || "gpt-5.2";
 
   const clampIntScore = (n: unknown) => {
     const v = Number(n);
