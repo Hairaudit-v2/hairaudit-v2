@@ -46,7 +46,7 @@ function isReportReadyForPdf(summary: any): boolean {
 }
 
 async function downloadImagesForCase(args: {
-  supabase: ReturnType<typeof supabaseAdmin>;
+  supabase: ReturnType<typeof createSupabaseAdminClient>;
   bucket: string;
   caseId: string;
 }): Promise<ReportImage[]> {
