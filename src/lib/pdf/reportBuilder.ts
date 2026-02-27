@@ -105,6 +105,17 @@ function drawNeuralWatermark(doc: PDFKit.PDFDocument) {
 
 export type ReportImage = { buffer: Buffer; label: string; type?: string };
 
+export type AuditMode = "patient" | "doctor" | "clinic" | "auditor";
+
+export function normalizeAuditMode(input?: string): AuditMode {
+  if (input === "doctor" || input === "clinic" || input === "auditor" || input === "patient") {
+    return input;
+  }
+  return "patient";
+}
+
+type ForensicPayload = NonNullable<AuditReportContent["forensic"]>;
+
 export type AuditReportContent = {
   caseId: string;
   version: number;
@@ -166,8 +177,8 @@ export type AuditReportContent = {
     overall_scores_v1?: { version?: number; performance_score?: number; confidence_grade?: string; confidence_multiplier?: number; benchmark_score?: number; domain_weights?: any };
     tiers_v1?: Array<{ tier_id?: string; title?: string; eligible?: boolean; reasons?: string[] }>;
   };
-  /** patient = patient-only audit; omit doctor-style sections (benchmark, v1 domains, completeness) */
-  auditMode?: "patient" | "full";
+  /** Strict audit mode for role-scoped PDF rendering. */
+  auditMode: AuditMode;
   graftIntegrity?: {
     auditor_status: "approved" | "pending" | "needs_more_evidence" | "rejected";
     claimed_grafts: number | null;
@@ -180,6 +191,112 @@ export type AuditReportContent = {
   } | null;
   images?: ReportImage[];
 };
+
+type BaseReportViewModel = Omit<AuditReportContent, "auditMode"> & { auditMode: AuditMode };
+
+export type PatientReportViewModel = BaseReportViewModel & {
+  auditMode: "patient";
+  forensic?: Pick<ForensicPayload, "summary" | "key_findings" | "red_flags" | "non_medical_disclaimer">;
+};
+
+export type DoctorReportViewModel = BaseReportViewModel & {
+  auditMode: "doctor";
+  forensic?: Omit<ForensicPayload, "confidence_model_v1">;
+};
+
+export type ClinicReportViewModel = BaseReportViewModel & {
+  auditMode: "clinic";
+  forensic?: Omit<ForensicPayload, "confidence_model_v1">;
+};
+
+export type AuditorReportViewModel = BaseReportViewModel & {
+  auditMode: "auditor";
+  forensic?: ForensicPayload;
+};
+
+export type ReportViewModel =
+  | PatientReportViewModel
+  | DoctorReportViewModel
+  | ClinicReportViewModel
+  | AuditorReportViewModel;
+
+export function buildReportViewModel(input: {
+  auditMode: AuditMode;
+  content: AuditReportContent;
+  rawCase?: unknown;
+  uploads?: unknown;
+  aiResult?: unknown;
+}): ReportViewModel {
+  const { auditMode, content } = input;
+  const base: BaseReportViewModel = { ...content, auditMode };
+  const forensic = content.forensic;
+
+  if (auditMode === "patient") {
+    const patientForensic = forensic
+      ? {
+          summary: forensic.summary,
+          key_findings: forensic.key_findings,
+          red_flags: forensic.red_flags,
+          non_medical_disclaimer: forensic.non_medical_disclaimer,
+        }
+      : undefined;
+    return {
+      ...base,
+      auditMode: "patient",
+      forensic: patientForensic,
+    };
+  }
+
+  if (auditMode === "doctor") {
+    return {
+      ...base,
+      auditMode: "doctor",
+      forensic: forensic ? { ...forensic, confidence_model_v1: undefined } : undefined,
+    };
+  }
+
+  if (auditMode === "clinic") {
+    return {
+      ...base,
+      auditMode: "clinic",
+      forensic: forensic ? { ...forensic, confidence_model_v1: undefined } : undefined,
+    };
+  }
+
+  return {
+    ...base,
+    auditMode: "auditor",
+    forensic,
+  };
+}
+
+function renderPatientPdf(doc: PDFKit.PDFDocument, content: PatientReportViewModel, radarImg?: { buffer: Buffer; width: number; height: number } | null) {
+  addAuditSummary(doc, content, radarImg);
+  addClinicalNarrative(doc, content);
+  addScoreByArea(doc, content);
+  addGraftIntegrityIndex(doc, content);
+}
+
+function renderDoctorPdf(doc: PDFKit.PDFDocument, content: DoctorReportViewModel, radarImg?: { buffer: Buffer; width: number; height: number } | null) {
+  addAuditSummary(doc, content, radarImg);
+  addClinicalNarrative(doc, content);
+  addScoreByArea(doc, content);
+  addGraftIntegrityIndex(doc, content);
+}
+
+function renderClinicPdf(doc: PDFKit.PDFDocument, content: ClinicReportViewModel, radarImg?: { buffer: Buffer; width: number; height: number } | null) {
+  addAuditSummary(doc, content, radarImg);
+  addClinicalNarrative(doc, content);
+  addScoreByArea(doc, content);
+  addGraftIntegrityIndex(doc, content);
+}
+
+function renderAuditorPdf(doc: PDFKit.PDFDocument, content: AuditorReportViewModel, radarImg?: { buffer: Buffer; width: number; height: number } | null) {
+  addAuditSummary(doc, content, radarImg);
+  addClinicalNarrative(doc, content);
+  addScoreByArea(doc, content);
+  addGraftIntegrityIndex(doc, content);
+}
 
 function scoreTier(score: number) {
   const s = Math.max(0, Math.min(100, Math.round(score)));
@@ -1137,6 +1254,19 @@ export async function buildAuditReportPdf(
   content: AuditReportContent,
   opts?: { logoPath?: string }
 ): Promise<Buffer> {
+  const normalizedMode = normalizeAuditMode((content as { auditMode?: string }).auditMode);
+  if ((content as { auditMode?: string }).auditMode !== normalizedMode) {
+    console.warn("[pdf] Invalid or missing auditMode; defaulting to 'patient'", {
+      received: (content as { auditMode?: string }).auditMode ?? null,
+      resolved: normalizedMode,
+      caseId: content.caseId,
+    });
+  }
+  const viewModel = buildReportViewModel({
+    auditMode: normalizedMode,
+    content,
+  });
+
   const PDFDocument = (await import("pdfkit")).default;
   const doc = new PDFDocument({ size: "A4", margin: MARGIN });
 
@@ -1174,28 +1304,39 @@ export async function buildAuditReportPdf(
   doc.y = 0;
   addHeader(doc, logoBuffer);
   doc.y = PAGE_TOP_CONTENT_Y;
-  addMeta(doc, content);
+  addMeta(doc, viewModel);
   let radarImg: { buffer: Buffer; width: number; height: number } | null = null;
-  if (content.radar?.section_scores && typeof content.radar.overall_score === "number") {
+  const radar = viewModel.radar;
+  if (radar?.section_scores && typeof radar.overall_score === "number") {
     try {
       const { renderRadarChartPng } = await import("./renderRadarChart");
       radarImg = await renderRadarChartPng({
-        section_scores: content.radar.section_scores,
-        overall_score: content.radar.overall_score,
-        confidence: content.radar.confidence,
+        section_scores: radar.section_scores,
+        overall_score: radar.overall_score,
+        confidence: radar.confidence,
       });
     } catch {
       radarImg = null;
     }
   }
 
-  addAuditSummary(doc, content, radarImg);
-  addClinicalNarrative(doc, content);
-  addScoreByArea(doc, content);
-  addGraftIntegrityIndex(doc, content);
+  switch (viewModel.auditMode) {
+    case "patient":
+      renderPatientPdf(doc, viewModel, radarImg);
+      break;
+    case "doctor":
+      renderDoctorPdf(doc, viewModel, radarImg);
+      break;
+    case "clinic":
+      renderClinicPdf(doc, viewModel, radarImg);
+      break;
+    case "auditor":
+      renderAuditorPdf(doc, viewModel, radarImg);
+      break;
+  }
 
   // Add images if provided (with buffers already fetched)
-  if (content.images?.length) {
+  if (viewModel.images?.length) {
     // Always start photos on a clean page so the grid isn't squeezed into whatever space remains.
     doc.addPage();
     doc.x = MARGIN;
@@ -1218,8 +1359,8 @@ export async function buildAuditReportPdf(
     let col = 0;
     let y = doc.y;
 
-    for (let idx = 0; idx < content.images.length; idx++) {
-      const img = content.images[idx]!;
+    for (let idx = 0; idx < viewModel.images.length; idx++) {
+      const img = viewModel.images[idx]!;
 
       // Page break before starting a new row if it won't fit.
       if (col === 0 && y + IMG_SIZE + LABEL_H > bottomLimit) {

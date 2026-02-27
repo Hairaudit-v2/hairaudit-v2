@@ -20,8 +20,8 @@ import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { tryCreateSupabaseAdminClient } from "@/lib/supabase/admin";
 import { parseRole, USER_ROLES } from "@/lib/roles";
 
-export default async function Page({ params }: { params: Promise<{ caseId: string }> }) {
-  const { caseId } = await params;
+export default async function Page({ params }: { params: { caseId: string } }) {
+  const { caseId } = params;
   let supabase: Awaited<ReturnType<typeof createSupabaseAuthServerClient>>;
   try {
     supabase = await createSupabaseAuthServerClient();
@@ -49,10 +49,10 @@ export default async function Page({ params }: { params: Promise<{ caseId: strin
   }
   const db = admin ?? supabase;
 
-  let role = parseRole((user.user_metadata as Record<string, unknown>)?.role);
+  let role = parseRole((user.user_metadata as Record<string, unknown>)?.role) || "patient";
   try {
     const { data: profile } = await db.from("profiles").select("role").eq("id", user.id).maybeSingle();
-    if (profile?.role) role = parseRole(profile.role);
+    if (profile?.role) role = parseRole(profile.role) || "patient";
   } catch {
     /* profiles may not exist / RLS may block */
   }
@@ -134,10 +134,15 @@ export default async function Page({ params }: { params: Promise<{ caseId: strin
     repErr = withStatus.error;
   }
 
-  // Role-specific action links
-  const showPatientFlow = role === "patient" || role === "auditor";
-  const showDoctorFlow = role === "doctor" || role === "auditor";
-  const showClinicFlow = role === "clinic" || role === "auditor";
+  // Case-scoped access flags (auditor sees all)
+  const isAuditor = role === "auditor";
+  const isPatientForCase = user.id === c.user_id || user.id === c.patient_id;
+  const isDoctorForCase = user.id === c.doctor_id;
+  const isClinicForCase = user.id === c.clinic_id;
+
+  const showPatientFlow = isAuditor || isPatientForCase;
+  const showDoctorFlow = isAuditor || isDoctorForCase;
+  const showClinicFlow = isAuditor || isClinicForCase;
 
   const status = String(c.status ?? "draft");
   const statusPill =

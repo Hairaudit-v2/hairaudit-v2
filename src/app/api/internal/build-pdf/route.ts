@@ -6,7 +6,7 @@
  */
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { buildAuditReportPdf, fetchReportImages } from "@/lib/pdf/reportBuilder";
+import { buildAuditReportPdf, fetchReportImages, normalizeAuditMode } from "@/lib/pdf/reportBuilder";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -47,7 +47,11 @@ export async function POST(req: Request) {
 
   try {
     const images = await fetchReportImages(supabase, bucket, uploads ?? []);
-    const pdfBuffer = await buildAuditReportPdf({ ...content, images });
+    const pdfBuffer = await buildAuditReportPdf({
+      ...content,
+      auditMode: normalizeAuditMode((content as { auditMode?: string }).auditMode),
+      images,
+    });
 
     const buf = Buffer.isBuffer(pdfBuffer) ? pdfBuffer : Buffer.from((pdfBuffer as { data?: number[] })?.data ?? []);
     const { error } = await supabase.storage.from(bucket).upload(pdfStoragePath, buf, {

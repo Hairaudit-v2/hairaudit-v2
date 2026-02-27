@@ -1,6 +1,6 @@
 import { inngest } from "./client";
 import { createClient } from "@supabase/supabase-js";
-import { buildAuditReportPdf, fetchReportImages } from "@/lib/pdf/reportBuilder";
+import { buildAuditReportPdf, fetchReportImages, type AuditMode } from "@/lib/pdf/reportBuilder";
 import { runAIAudit } from "@/lib/ai/audit";
 import { runGraftIntegrityModelEstimate } from "@/lib/ai/graftIntegrity";
 import { runDoctorScoringNarrative, DEFAULT_PROTOCOL_CATALOG, DEFAULT_TRAINING_MODULE_CATALOG } from "@/lib/ai/runDoctorScoringNarrative";
@@ -534,7 +534,18 @@ export const runAudit = inngest.createFunction(
     const doctorPhotos = uploads.filter((u) => String(u.type ?? "").startsWith("doctor_photo:"));
     const hasDoctorAnswers = existingSummary.doctor_answers && typeof existingSummary.doctor_answers === "object" && Object.keys(existingSummary.doctor_answers as object).length > 0;
     const hasClinicAnswers = existingSummary.clinic_answers && typeof existingSummary.clinic_answers === "object" && Object.keys(existingSummary.clinic_answers as object).length > 0;
-    const auditMode: "patient" | "full" = doctorPhotos.length > 0 || hasDoctorAnswers || hasClinicAnswers ? "full" : "patient";
+    const aiAuditMode: "patient" | "full" =
+      doctorPhotos.length > 0 || hasDoctorAnswers || hasClinicAnswers ? "full" : "patient";
+    const pdfAuditMode: AuditMode =
+      aiAuditMode === "patient"
+        ? "patient"
+        : (hasDoctorAnswers || doctorPhotos.length > 0) && hasClinicAnswers
+          ? "auditor"
+          : hasDoctorAnswers || doctorPhotos.length > 0
+            ? "doctor"
+            : hasClinicAnswers
+              ? "clinic"
+              : "patient";
 
     // 6) Run AI audit (answers + images)
     const aiResult = await step.run("run-ai-audit", async () => {
@@ -558,13 +569,13 @@ export const runAudit = inngest.createFunction(
         enhanced_patient_answers: (enhanced as any) ?? null,
         patient_baseline: (baseline as any) ?? null,
         imageUrls,
-        auditMode,
+        auditMode: aiAuditMode,
       });
     });
 
     // 6a) Doctor scoring narrative (GPT; non-blocking). Skip for patient-only audits.
     const scoringNarrative = await step.run("doctor-scoring-narrative", async () => {
-      if (auditMode === "patient") {
+      if (aiAuditMode === "patient") {
         return {
           narrative: "Doctor scoring narrative is not applicable for patient-only audits. Submit doctor documentation for a full audit.",
           model: "patient-audit",
@@ -627,7 +638,7 @@ export const runAudit = inngest.createFunction(
           clinic_id: (c as any)?.clinic_id ?? null,
         },
         doctorAnswersRaw: (existingSummary.doctor_answers as any) ?? null,
-        auditMode,
+        auditMode: aiAuditMode,
       });
     });
 
@@ -698,7 +709,7 @@ export const runAudit = inngest.createFunction(
       const images = await fetchReportImages(supabase, BUCKET, uploads.map((u) => ({ type: u.type, storage_path: u.storage_path })));
       const limitationsRaw = aiResult.data_quality?.limitations ?? [];
       const limitations =
-        auditMode === "patient"
+        aiAuditMode === "patient"
           ? limitationsRaw.filter(
               (l) =>
                 !/doctor|clinic|doctor_answers|clinic_answers/i.test(String(l))
@@ -709,7 +720,7 @@ export const runAudit = inngest.createFunction(
         caseId,
         version: nextVersion,
         generatedAt: new Date().toLocaleString(),
-        auditMode,
+        auditMode: pdfAuditMode,
         score: aiResult.score,
         donorQuality: aiResult.donor_quality,
         graftSurvival: aiResult.graft_survival_estimate,
@@ -722,7 +733,7 @@ export const runAudit = inngest.createFunction(
           key_findings: aiResult.key_findings as any,
           red_flags: aiResult.red_flags as any,
           non_medical_disclaimer: aiResult.non_medical_disclaimer,
-          ...(auditMode === "full" && {
+          ...(aiAuditMode === "full" && {
             domain_scores_v1: {
               version: 1,
               domains: (v1 as any)?.domains ?? undefined,
@@ -896,14 +907,14 @@ export const runAudit = inngest.createFunction(
         findings: aiResult.findings,
         // Store the full forensic audit payload for downstream UI + analytics
         forensic_audit: {
-          auditMode,
+          auditMode: pdfAuditMode,
           overall_score: aiResult.overall_score,
           confidence: aiResult.confidence,
           confidence_label: aiResult.confidence_label,
           data_quality: {
             ...aiResult.data_quality,
             limitations:
-              auditMode === "patient"
+              aiAuditMode === "patient"
                 ? (aiResult.data_quality?.limitations ?? []).filter(
                     (l) =>
                       !/doctor|clinic|doctor_answers|clinic_answers/i.test(

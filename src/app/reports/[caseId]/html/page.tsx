@@ -1,9 +1,13 @@
 import { createClient } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
+import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
+import { parseRole } from "@/lib/roles";
 import rubric from "@/lib/audit/rubrics/hairaudit_clinical_v1.json";
 import { scoreAudit } from "@/lib/audit/score";
 import ScoreAreaGraph from "@/components/reports/ScoreAreaGraph";
 import { buildRubricTitles } from "@/lib/audit/rubricTitles";
+import { buildReportViewModel, normalizeAuditMode, type AuditMode } from "@/lib/pdf/reportBuilder";
+import { resolveAuditModeFromCaseAccess } from "@/lib/reports/accessMode";
 
 function createSupabaseAdmin() {
   return createClient(
@@ -74,20 +78,21 @@ export default async function ReportHtmlPage({
   const expected = process.env.REPORT_RENDER_TOKEN ?? "local";
   const allowToken = token === expected;
 
-  // 🚫 For Playwright renders, NEVER use the cookie-based Supabase server client.
-  // Use service role client only.
+  let sessionUserId: string | null = null;
+  let sessionRole: string = "patient";
   if (!allowToken) {
-    // For now, keep this route token-only to avoid cookie write errors.
-    // If you want logged-in users to view this HTML in browser later,
-    // we'll do it via a Route Handler instead.
-    redirect("/login");
+    const auth = await createSupabaseAuthServerClient();
+    const { data: { user } } = await auth.auth.getUser();
+    if (!user) redirect("/login");
+    sessionUserId = user.id;
+    sessionRole = parseRole((user.user_metadata as Record<string, unknown>)?.role) || "patient";
   }
 
   const supabase = createSupabaseAdmin();
 
   const { data: c, error: caseErr } = await supabase
     .from("cases")
-    .select("id, title, status, created_at")
+    .select("id, title, status, created_at, user_id, patient_id, doctor_id, clinic_id")
     .eq("id", caseId)
     .maybeSingle();
 
@@ -100,6 +105,35 @@ export default async function ReportHtmlPage({
       </div>
     );
   }
+
+  if (sessionUserId) {
+    try {
+      const { data: profile } = await supabase.from("profiles").select("role").eq("id", sessionUserId).maybeSingle();
+      if (profile?.role) sessionRole = parseRole(profile.role) || "patient";
+    } catch {
+      // profiles may not exist
+    }
+  }
+
+  if (sessionUserId) {
+    const allowed =
+      sessionUserId === c.user_id ||
+      sessionUserId === c.patient_id ||
+      sessionUserId === c.doctor_id ||
+      sessionUserId === c.clinic_id ||
+      sessionRole === "auditor";
+    if (!allowed) redirect("/dashboard");
+  }
+
+  let auditMode: AuditMode = "patient";
+  if (sessionUserId) {
+    auditMode = resolveAuditModeFromCaseAccess({
+      role: sessionRole,
+      userId: sessionUserId,
+      caseRow: c,
+    });
+  }
+  auditMode = normalizeAuditMode(auditMode);
 
   const { data: uploads, error: upErr } = await supabase
     .from("uploads")
@@ -147,7 +181,6 @@ export default async function ReportHtmlPage({
   };
   const findings = Array.isArray(summary.findings) ? summary.findings : (summary.highlights ?? []);
   const forensic = summary.forensic_audit;
-  const isPatientAudit = forensic?.auditMode === "patient";
   const domainV1 = forensic?.domain_scores_v1?.domains ?? null;
   const benchmark = forensic?.benchmark ?? null;
 
@@ -169,6 +202,30 @@ export default async function ReportHtmlPage({
   const sections = comp.sections ?? fallbackSections;
   const domainsSafe = domains ?? undefined;
   const sectionsSafe = sections ?? undefined;
+  const viewModel = buildReportViewModel({
+    auditMode,
+    content: {
+      caseId,
+      version: Number(latestReport?.version ?? 1),
+      generatedAt: new Date().toLocaleString(),
+      auditMode,
+      score: typeof summary.score === "number" ? summary.score : undefined,
+      donorQuality: summary.donor_quality,
+      graftSurvival: summary.graft_survival_estimate,
+      notes: summary.notes,
+      findings,
+      areaScores: {
+        domains: domainsSafe,
+        sections: sectionsSafe,
+      },
+      forensic: forensic as any,
+      images: [],
+    },
+    rawCase: c,
+    uploads,
+    aiResult: summary,
+  });
+  const isAuditorMode = viewModel.auditMode === "auditor";
   const { domainTitles, sectionTitles } = buildRubricTitles(
     rubric as { domains?: { domain_id: string; title: string; sections?: { section_id: string; title: string }[] }[] }
   );
@@ -383,7 +440,7 @@ export default async function ReportHtmlPage({
                         )}
                       </td>
                     </tr>
-                    {!isPatientAudit && Array.isArray(domainV1) && domainV1.length > 0 && (
+                    {isAuditorMode && Array.isArray(domainV1) && domainV1.length > 0 && (
                       <tr>
                         <td>Domains (v1)</td>
                         <td>
@@ -445,7 +502,7 @@ export default async function ReportHtmlPage({
                         </td>
                       </tr>
                     )}
-                    {!isPatientAudit && (forensic as any)?.completeness_index_v1 && (
+                    {isAuditorMode && (forensic as any)?.completeness_index_v1 && (
                       <tr>
                         <td>Completeness index (v1)</td>
                         <td>{(forensic as any).completeness_index_v1?.score ?? "—"} / 100</td>

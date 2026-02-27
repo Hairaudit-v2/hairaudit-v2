@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
+import { parseRole } from "@/lib/roles";
 import rubric from "@/lib/audit/rubrics/hairaudit_clinical_v1.json";
 import { scoreAudit } from "@/lib/audit/score";
+import { buildReportViewModel, normalizeAuditMode, type AuditMode } from "@/lib/pdf/reportBuilder";
+import { resolveAuditModeFromCaseAccess } from "@/lib/reports/accessMode";
 
 /* Admin client (NO cookies, NO sessions — Playwright safe) */
 function supabaseAdmin() {
@@ -29,19 +33,63 @@ export async function GET(req: Request) {
   const token = url.searchParams.get("token") ?? "";
 
   const expected = process.env.REPORT_RENDER_TOKEN ?? "local";
-  if (token !== expected) return new NextResponse("Unauthorized", { status: 401 });
+  const allowToken = token === expected;
   if (!caseId) return new NextResponse("Missing caseId", { status: 400 });
 
   const supabase = supabaseAdmin();
 
+  let sessionUserId: string | null = null;
+  let sessionRole = "patient";
+  try {
+    const supabaseAuth = await createSupabaseAuthServerClient();
+    const { data: { user } } = await supabaseAuth.auth.getUser();
+    if (user) {
+      sessionUserId = user.id;
+      sessionRole = parseRole((user.user_metadata as Record<string, unknown>)?.role) || "patient";
+    }
+  } catch {
+    // ignore: cookie-less/internal render path
+  }
+
+  if (!allowToken && !sessionUserId) return new NextResponse("Unauthorized", { status: 401 });
+
   /* Load case */
   const { data: c, error: caseErr } = await supabase
     .from("cases")
-    .select("id, title, status, created_at")
+    .select("id, title, status, created_at, user_id, patient_id, doctor_id, clinic_id")
     .eq("id", caseId)
     .maybeSingle();
 
   if (caseErr || !c) return new NextResponse("Case not found", { status: 404 });
+
+  if (sessionUserId) {
+    const allowed =
+      sessionUserId === c.user_id ||
+      sessionUserId === c.patient_id ||
+      sessionUserId === c.doctor_id ||
+      sessionUserId === c.clinic_id ||
+      sessionRole === "auditor";
+    if (!allowed) return new NextResponse("Forbidden", { status: 403 });
+    try {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", sessionUserId)
+        .maybeSingle();
+      if (profile?.role) sessionRole = parseRole(profile.role) || "patient";
+    } catch {
+      // profiles may not exist
+    }
+  }
+  let auditMode: AuditMode = "patient";
+  if (sessionUserId) {
+    auditMode = resolveAuditModeFromCaseAccess({
+      role: sessionRole,
+      userId: sessionUserId,
+      caseRow: c,
+    });
+  }
+  auditMode = normalizeAuditMode(auditMode);
 
     /* Load uploads */
   const { data: uploads, error: upErr } = await supabase
@@ -212,8 +260,34 @@ export async function GET(req: Request) {
     fue_manual: "FUE (Manual)", fue_motorized: "FUE (Motorized)", fue_robotic: "FUE (Robotic)",
     fut: "FUT", combined: "Combined FUT + FUE",
   };
+  const viewModel = buildReportViewModel({
+    auditMode,
+    content: {
+      caseId,
+      version: Number(latestReport?.version ?? 1),
+      generatedAt: new Date().toLocaleString(),
+      auditMode,
+      score: overall,
+      donorQuality: String(metrics.donor_quality ?? "—"),
+      graftSurvival: String(metrics.graft_survival_estimate ?? "—"),
+      notes: typeof summary?.notes === "string" ? summary.notes : undefined,
+      findings: highlights,
+      areaScores: {
+        domains: compDomains,
+        sections: compSections,
+      },
+      forensic: summary?.forensic_audit as any,
+      images: [],
+    },
+    rawCase: c,
+    uploads,
+    aiResult: summary,
+  });
+
   const doctorBlock =
-    doctorAnswers && typeof doctorAnswers === "object"
+    (viewModel.auditMode === "doctor" || viewModel.auditMode === "auditor") &&
+    doctorAnswers &&
+    typeof doctorAnswers === "object"
       ? `
     <div class="section">
       <h2>Doctor / Clinic Submission</h2>
