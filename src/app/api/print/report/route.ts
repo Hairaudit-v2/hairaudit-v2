@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { buildReportViewModel, normalizeAuditMode, type AuditMode } from "@/lib/pdf/reportBuilder";
 import { verifyRenderToken } from "@/lib/reports/internalRenderToken";
-import { renderRadarChartPng } from "@/lib/pdf/renderRadarChart";
 import { renderEliteReportHtml } from "@/lib/reports/EliteReportHtml";
 
 type NumberRecord = Record<string, number>;
@@ -21,12 +20,50 @@ function clamp100(n: number) {
   return Math.max(0, Math.min(100, n));
 }
 
+function clamp01(n: number) {
+  return Math.max(0, Math.min(1, Number.isFinite(n) ? n : 0));
+}
+
 function scoreToDisplay(s: number) {
   const outOf5 = Math.round((s / 100) * 5);
   const clamped = Math.max(0, Math.min(5, outOf5));
   const level = s >= 80 ? "High" : s >= 50 ? "Medium" : "Low";
   return { outOf5: clamped, level };
 }
+
+function humanizeKey(s: string): string {
+  const t = String(s ?? "")
+    .trim()
+    .replaceAll("_", " ")
+    .replaceAll(".", " ")
+    .replace(/\s+/g, " ");
+  if (!t) return "";
+  return t.replace(/\b\w/g, (m) => m.toUpperCase());
+}
+
+const RADAR_AXIS_LABELS: Record<string, string> = {
+  donor_management: "Donor Management",
+  extraction_quality: "Extraction Quality",
+  graft_handling_and_viability: "Graft Handling",
+  recipient_placement: "Recipient Implantation",
+  density_distribution: "Density Distribution",
+  hairline_design: "Hairline Design",
+  post_op_course_and_aftercare: "Safety & Aftercare",
+  naturalness_and_aesthetics: "Naturalness",
+  complications_and_risks: "Complications & Risks",
+};
+
+const RADAR_AXIS_ORDER = [
+  "donor_management",
+  "extraction_quality",
+  "graft_handling_and_viability",
+  "recipient_placement",
+  "density_distribution",
+  "hairline_design",
+  "post_op_course_and_aftercare",
+  "naturalness_and_aesthetics",
+  "complications_and_risks",
+];
 
 /* GET /api/print/report?caseId=...&auditMode=...&token=... */
 export async function GET(req: Request) {
@@ -165,6 +202,9 @@ export async function GET(req: Request) {
     : null;
   const overall = overallFromForensic ?? overallFromSummary ?? null;
 
+  const forensicSectionScores = toNumberRecord(forensic?.section_scores ?? null);
+  const computedSectionScores = toNumberRecord(summary?.computed?.component_scores?.sections ?? null);
+  const summarySectionScores = toNumberRecord(summary?.section_scores ?? null);
   const sectionScores = toNumberRecord(
     summary?.computed?.component_scores?.sections ??
       summary?.section_scores ??
@@ -234,6 +274,63 @@ export async function GET(req: Request) {
     }
   }
 
+  const radarScoresBase =
+    Object.keys(forensicSectionScores).length > 0
+      ? forensicSectionScores
+      : Object.keys(computedSectionScores).length > 0
+        ? computedSectionScores
+        : Object.keys(summarySectionScores).length > 0
+          ? summarySectionScores
+          : null;
+
+  const radarScores =
+    radarScoresBase && Object.keys(radarScoresBase).length > 0 ? radarScoresBase : (Object.keys(domainScores).length ? domainScores : null);
+
+  const radarConfidence = clamp01(
+    Number.isFinite(Number(forensic?.confidence))
+      ? Number(forensic.confidence)
+      : Number.isFinite(Number(summary?.confidence_score))
+        ? Number(summary.confidence_score)
+        : 0.45
+  );
+
+  const radarOverall = clamp100(Number(overall ?? 0));
+
+  let radar: { labels: string[]; values: number[]; overall: number; confidence: number } | undefined;
+  try {
+    if (radarScores && Object.keys(radarScores).length > 0) {
+      const keysAvailable = new Set(Object.keys(radarScores));
+
+      // Stable order: rubric section order (if present) → known axis order → remaining keys.
+      const rubricSectionKeys: string[] = [];
+      for (const d of domainOrder) {
+        for (const sec of (d as { sections?: { section_id: string }[] }).sections ?? []) {
+          if (sec?.section_id) rubricSectionKeys.push(sec.section_id);
+        }
+      }
+
+      const orderedKeys = [
+        ...rubricSectionKeys,
+        ...RADAR_AXIS_ORDER,
+        ...Array.from(keysAvailable).sort((a, b) => a.localeCompare(b)),
+      ]
+        .filter((k, i, arr) => arr.indexOf(k) === i)
+        .filter((k) => keysAvailable.has(k));
+
+      const maxAxes = orderedKeys.length > 10 ? 8 : 10;
+      const picked = orderedKeys.slice(0, maxAxes);
+
+      const labels = picked.map((k) => sectionTitles[k] ?? RADAR_AXIS_LABELS[k] ?? humanizeKey(k));
+      const values = picked.map((k) => clamp100(Number((radarScores as any)[k])));
+
+      if (labels.length >= 3) {
+        radar = { labels, values, overall: radarOverall, confidence: radarConfidence };
+      }
+    }
+  } catch {
+    radar = undefined;
+  }
+
   const sectionScoreItems = Object.entries(sectionScores)
     .filter(([, v]) => v != null)
     .map(([id, v]) => {
@@ -246,26 +343,6 @@ export async function GET(req: Request) {
         level,
       };
     });
-
-  let radarDataUri: string | null = null;
-  try {
-    if (Object.keys(sectionScores).length > 0) {
-      const conf =
-        Number.isFinite(forensic?.confidence)
-          ? Number(forensic.confidence)
-          : Number.isFinite(summary?.confidence_score)
-            ? Number(summary.confidence_score)
-            : 0.45;
-      const radar = await renderRadarChartPng({
-        section_scores: sectionScores,
-        overall_score: Number(overall ?? 0),
-        confidence: conf,
-      });
-      radarDataUri = `data:image/png;base64,${radar.buffer.toString("base64")}`;
-    }
-  } catch (e) {
-    console.error("renderRadarChartPng failed:", e);
-  }
 
   const content = {
     caseId,
@@ -390,7 +467,7 @@ export async function GET(req: Request) {
     sectionScores: sectionScoreItems,
     highlights,
     risks,
-    radarDataUri,
+    radar,
     photosByCategory,
     doctorBlockHtml,
     debugFooter,

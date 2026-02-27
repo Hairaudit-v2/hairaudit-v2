@@ -7,6 +7,13 @@ type AreaScoreItem = {
   level: string;
 };
 
+type EliteRadarVm = {
+  labels: string[];
+  values: number[]; // 0-100
+  overall: number; // 0-100
+  confidence: number; // 0-1
+};
+
 export type EliteReportViewModel = {
   viewModel: ReportViewModel;
   caseId: string;
@@ -28,7 +35,7 @@ export type EliteReportViewModel = {
   sectionScores: AreaScoreItem[];
   highlights: string[];
   risks: string[];
-  radarDataUri?: string | null;
+  radar?: EliteRadarVm;
   photosByCategory: Record<string, { signedUrl: string | null; label: string }[]>;
   doctorBlockHtml?: string;
   debugFooter?: string;
@@ -41,6 +48,165 @@ function esc(s: string) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+function clamp01(n: number) {
+  return Math.max(0, Math.min(1, Number.isFinite(n) ? n : 0));
+}
+
+function clamp100(n: number) {
+  return Math.max(0, Math.min(100, Number.isFinite(n) ? n : 0));
+}
+
+function escapeXml(s: string) {
+  return String(s ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function wrapLabel(label: string, maxLen: number): string[] {
+  const s = String(label ?? "").trim();
+  if (!s || s.length <= maxLen) return [s || ""];
+  const words = s.split(/\s+/g).filter(Boolean);
+  if (words.length <= 1) return [s.slice(0, maxLen), s.slice(maxLen)].filter(Boolean).slice(0, 2);
+  const lines: string[] = [];
+  let cur = "";
+  for (const w of words) {
+    const next = cur ? `${cur} ${w}` : w;
+    if (next.length <= maxLen) cur = next;
+    else {
+      if (cur) lines.push(cur);
+      cur = w;
+    }
+    if (lines.length >= 2) break;
+  }
+  if (cur) lines.push(cur);
+  return lines.slice(0, 2);
+}
+
+// Radar is rendered as inline SVG (not server-side PNG) to avoid serverless wasm bundling issues.
+function renderRadarSvg(opts: {
+  labels: string[];
+  values: number[];
+  size: number;
+  levels: number;
+  overall: number;
+  confidence: number;
+}): string {
+  const size = Math.max(360, Math.floor(opts.size));
+  const levels = Math.max(3, Math.min(7, Math.floor(opts.levels)));
+
+  // Best-effort cap (labels stay readable for print).
+  const maxAxes = 10;
+  const hardCapAxes = opts.labels.length > maxAxes ? 8 : maxAxes;
+  const labels = opts.labels.slice(0, hardCapAxes);
+  const values = opts.values.slice(0, labels.length);
+
+  const n = labels.length;
+  const width = size;
+  const height = size;
+  const cx = width / 2;
+  const cy = height / 2;
+  const padding = 86; // room for labels
+  const rMax = Math.max(60, Math.min(width, height) / 2 - padding);
+  const angleStep = (2 * Math.PI) / Math.max(1, n);
+
+  const labelFontSize = n > 8 ? 10 : 12;
+  const maxLabelLen = n > 8 ? 12 : 14;
+
+  const pointsFor = (r: number) =>
+    Array.from({ length: n }, (_, i) => {
+      const angle = -Math.PI / 2 + i * angleStep;
+      const x = cx + r * Math.cos(angle);
+      const y = cy + r * Math.sin(angle);
+      return `${x},${y}`;
+    }).join(" ");
+
+  const ringPolys = Array.from({ length: levels }, (_, idx) => {
+    const pct = (idx + 1) / levels;
+    const r = rMax * pct;
+    const opacity = idx === levels - 1 ? 0.14 : 0.09;
+    return `<polygon points="${pointsFor(r)}" fill="none" stroke="rgba(148,163,184,${opacity})" stroke-width="1"/>`;
+  }).join("\n  ");
+
+  const spokes = Array.from({ length: n }, (_, i) => {
+    const angle = -Math.PI / 2 + i * angleStep;
+    const x = cx + rMax * Math.cos(angle);
+    const y = cy + rMax * Math.sin(angle);
+    return `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>`;
+  }).join("\n  ");
+
+  const valuePts = values.map((raw, i) => {
+    const v = clamp100(Number(raw));
+    const angle = -Math.PI / 2 + i * angleStep;
+    const r = (v / 100) * rMax;
+    const x = cx + r * Math.cos(angle);
+    const y = cy + r * Math.sin(angle);
+    return { x, y };
+  });
+
+  const polygon = `<polygon points="${valuePts.map((p) => `${p.x},${p.y}`).join(" ")}" fill="rgba(45,212,191,0.23)" stroke="rgba(45,212,191,0.95)" stroke-width="2"/>`;
+  const dots = valuePts
+    .map(
+      (p) =>
+        `<circle cx="${p.x}" cy="${p.y}" r="3.2" fill="rgba(251,191,36,0.96)" stroke="#0b1226" stroke-width="1"/>`
+    )
+    .join("\n  ");
+
+  const labelElems = labels
+    .map((label, i) => {
+      const angle = -Math.PI / 2 + i * angleStep;
+      const tx = cx + (rMax + 30) * Math.cos(angle);
+      const ty = cy + (rMax + 30) * Math.sin(angle);
+      const anchor =
+        Math.abs(Math.cos(angle)) < 0.28 ? "middle" : Math.cos(angle) > 0 ? "start" : "end";
+      const lines = wrapLabel(label, maxLabelLen);
+      return lines
+        .map((line, j) => {
+          const dy = (j - (lines.length - 1) / 2) * (labelFontSize + 2);
+          return `<text x="${tx}" y="${ty + dy}" fill="rgba(226,232,240,0.82)" font-size="${labelFontSize}" font-weight="600" font-family="Arial,sans-serif" text-anchor="${anchor}" dominant-baseline="middle">${escapeXml(line)}</text>`;
+        })
+        .join("\n  ");
+    })
+    .join("\n  ");
+
+  const overall = Math.round(clamp100(opts.overall));
+  const conf01 = clamp01(opts.confidence);
+  const confPct = Math.round(conf01 * 100);
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+  <defs>
+    <linearGradient id="eliteRadarBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#081225"/>
+      <stop offset="1" stop-color="#042a2a"/>
+    </linearGradient>
+    <radialGradient id="eliteRadarGlow" cx="50%" cy="45%" r="60%">
+      <stop offset="0" stop-color="rgba(45,212,191,0.10)"/>
+      <stop offset="0.55" stop-color="rgba(251,191,36,0.06)"/>
+      <stop offset="1" stop-color="rgba(0,0,0,0)"/>
+    </radialGradient>
+  </defs>
+
+  <rect x="0" y="0" width="${width}" height="${height}" rx="16" ry="16" fill="url(#eliteRadarBg)"/>
+  <rect x="0" y="0" width="${width}" height="${height}" rx="16" ry="16" fill="url(#eliteRadarGlow)"/>
+
+  ${ringPolys}
+  ${spokes}
+  ${polygon}
+  ${dots}
+
+  <text x="${cx}" y="${cy - 6}" fill="rgba(226,232,240,0.12)" font-size="${Math.round(
+    height * 0.18
+  )}" font-weight="800" font-family="Arial,sans-serif" text-anchor="middle" dominant-baseline="middle">${overall}</text>
+  <text x="${cx}" y="${cy + Math.round(height * 0.11)}" fill="rgba(226,232,240,0.88)" font-size="${Math.round(
+    height * 0.04
+  )}" font-weight="700" font-family="Arial,sans-serif" text-anchor="middle" dominant-baseline="middle">Confidence: ${confPct}%</text>
+  <text x="${cx}" y="${height - 18}" fill="rgba(226,232,240,0.72)" font-size="11" font-weight="600" font-family="Arial,sans-serif" text-anchor="middle" dominant-baseline="middle">Audit Performance Signature</text>
+
+  ${labelElems}
+</svg>`;
 }
 
 export function renderEliteReportHtml(vm: EliteReportViewModel): string {
@@ -57,7 +223,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     sectionScores,
     highlights,
     risks,
-    radarDataUri,
+    radar,
     photosByCategory,
     doctorBlockHtml,
     debugFooter,
@@ -171,6 +337,26 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     typeof vm.viewModel.score === "number" && Number.isFinite(vm.viewModel.score)
       ? vm.viewModel.score
       : null;
+
+  const radarBlock =
+    radar && Array.isArray(radar.labels) && Array.isArray(radar.values) && radar.labels.length >= 3
+      ? `
+      <div style="margin-top: 12px;">
+        <div style="font-size: 12px; font-weight: 800;">Audit Performance Signature</div>
+        <div class="subtitle" style="margin-top: 4px;">“This visual signature represents structural balance across core transplant domains.”</div>
+        <div class="radarWrap">
+          ${renderRadarSvg({
+            labels: radar.labels,
+            values: radar.values,
+            size: 520,
+            levels: 5,
+            overall: radar.overall,
+            confidence: radar.confidence,
+          })}
+        </div>
+      </div>
+      `
+      : "";
 
   const html = `<!doctype html>
 <html>
@@ -392,19 +578,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
         </div>
       </div>
 
-      ${
-        radarDataUri
-          ? `
-      <div style="margin-top: 12px;">
-        <div style="font-size: 12px; font-weight: 800;">Audit Performance Signature</div>
-        <div class="subtitle" style="margin-top: 4px;">“This visual signature represents structural balance across core transplant domains.”</div>
-        <div class="radarWrap">
-          <img class="radarImg" src="${radarDataUri}" alt="Radar chart" />
-        </div>
-      </div>
-      `
-          : ""
-      }
+      ${radarBlock}
 
       <div class="twoCol">
         <div class="listCard">

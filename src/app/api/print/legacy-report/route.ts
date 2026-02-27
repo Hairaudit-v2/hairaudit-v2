@@ -7,7 +7,6 @@ import { scoreAudit } from "@/lib/audit/score";
 import { buildReportViewModel, normalizeAuditMode, type AuditMode } from "@/lib/pdf/reportBuilder";
 import { resolveAuditModeFromCaseAccess } from "@/lib/reports/accessMode";
 import { verifyRenderToken } from "@/lib/reports/internalRenderToken";
-import { renderRadarChartPng } from "@/lib/pdf/renderRadarChart";
 
 /* Admin client (NO cookies, NO sessions — Playwright safe) */
 function supabaseAdmin() {
@@ -383,28 +382,7 @@ export async function GET(req: Request) {
   const created = new Date(c.created_at).toLocaleString();
   const generated = new Date().toLocaleString();
 
-  // Optional: radar render (server-side) for print/PDF export
-  let radarDataUri: string | null = null;
-  try {
-    const sectionScoresForRadar = toNumberRecord(forensic?.section_scores ?? summary?.section_scores ?? null);
-    if (Object.keys(sectionScoresForRadar).length > 0) {
-      const confForRadar =
-        Number.isFinite(forensic?.confidence)
-          ? Number(forensic.confidence)
-          : Number.isFinite(summary?.confidence_score)
-            ? Number(summary.confidence_score)
-            : 0.45;
-      const radar = await renderRadarChartPng({
-        section_scores: sectionScoresForRadar,
-        overall_score:
-          Number.isFinite(forensic?.overall_score) ? Number(forensic.overall_score) : (overall ?? 0),
-        confidence: confForRadar,
-      });
-      radarDataUri = `data:image/png;base64,${radar.buffer.toString("base64")}`;
-    }
-  } catch (e) {
-    console.error("renderRadarChartPng failed:", e);
-  }
+  // Radar chart is intentionally omitted in legacy print HTML.
 
   const photoCategoryKeys = Object.keys(byCategory);
   const photosBlock =
@@ -676,18 +654,7 @@ export async function GET(req: Request) {
         </div>
       </div>
 
-      ${radarDataUri
-      ? `
-      <div style="margin-top: 12px;">
-        <div style="font-size: 12px; font-weight: 800;">Audit Performance Signature</div>
-        <div class="subtitle" style="margin-top: 4px;">“This visual signature represents structural balance across core transplant domains.”</div>
-        <div class="radarWrap">
-          <img class="radarImg" src="${radarDataUri}" alt="Radar chart" />
-        </div>
-      </div>
-      `
-      : ""
-    }
+      ${""}
 
       <div class="twoCol">
         <div class="listCard">

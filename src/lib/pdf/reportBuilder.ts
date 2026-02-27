@@ -1305,20 +1305,9 @@ export async function buildAuditReportPdf(
   addHeader(doc, logoBuffer);
   doc.y = PAGE_TOP_CONTENT_Y;
   addMeta(doc, viewModel);
-  let radarImg: { buffer: Buffer; width: number; height: number } | null = null;
-  const radar = viewModel.radar;
-  if (radar?.section_scores && typeof radar.overall_score === "number") {
-    try {
-      const { renderRadarChartPng } = await import("./renderRadarChart");
-      radarImg = await renderRadarChartPng({
-        section_scores: radar.section_scores,
-        overall_score: radar.overall_score,
-        confidence: radar.confidence,
-      });
-    } catch {
-      radarImg = null;
-    }
-  }
+  // Radar chart is rendered as inline SVG in the elite HTML renderer for Playwright PDFs.
+  // The PDFKit path intentionally omits radar to avoid serverless wasm bundling issues.
+  const radarImg: { buffer: Buffer; width: number; height: number } | null = null;
 
   switch (viewModel.auditMode) {
     case "patient":
