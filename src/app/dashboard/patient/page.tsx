@@ -8,6 +8,20 @@ import { PATIENT_AUDIT_SECTIONS, type PatientAuditAnswers } from "@/lib/patientA
 import DeleteDraftCaseButton from "./DeleteDraftCaseButton";
 import GraftIntegrityCard from "./GraftIntegrityCard";
 
+function isMissingFeatureError(error: unknown): boolean {
+  const e = error as { status?: number; code?: string; message?: string } | null;
+  if (!e) return false;
+  if (e.status === 404) return true;
+  const code = String(e.code ?? "");
+  const message = String(e.message ?? "").toLowerCase();
+  return (
+    code === "PGRST205" ||
+    message.includes("not found") ||
+    message.includes("could not find the table") ||
+    message.includes("relation") && message.includes("does not exist")
+  );
+}
+
 function isAnswered(v: unknown): boolean {
   if (v === null || v === undefined) return false;
   if (typeof v === "string") return v.trim().length > 0;
@@ -126,17 +140,30 @@ export default async function PatientDashboardPage() {
     hasAnyCaseData = patientPhotoCount > 0 || Object.keys(patientAnswers).length > 0;
   }
 
-  const { data: graftIntegrityInitial } = latestSubmittedCase?.id
-    ? await admin
-        .from("graft_integrity_estimates")
-        .select(
-          "id, case_id, claimed_grafts, estimated_extracted_min, estimated_extracted_max, estimated_implanted_min, estimated_implanted_max, variance_claimed_vs_implanted_min_pct, variance_claimed_vs_implanted_max_pct, variance_claimed_vs_extracted_min_pct, variance_claimed_vs_extracted_max_pct, confidence, confidence_label, limitations, flags, ai_notes, auditor_status, auditor_notes, auditor_adjustments, evidence_sufficiency_score, inputs_used, created_at, updated_at"
-        )
-        .eq("case_id", latestSubmittedCase.id)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle()
-    : { data: null as any };
+  let graftIntegrityInitial: unknown = null;
+  let graftIntegrityRolloutPending = false;
+  if (latestSubmittedCase?.id) {
+    const giiRes = await admin
+      .from("graft_integrity_estimates")
+      .select(
+        "id, case_id, claimed_grafts, estimated_extracted_min, estimated_extracted_max, estimated_implanted_min, estimated_implanted_max, variance_claimed_vs_implanted_min_pct, variance_claimed_vs_implanted_max_pct, variance_claimed_vs_extracted_min_pct, variance_claimed_vs_extracted_max_pct, confidence, confidence_label, limitations, flags, ai_notes, auditor_status, auditor_notes, auditor_adjustments, evidence_sufficiency_score, inputs_used, created_at, updated_at"
+      )
+      .eq("case_id", latestSubmittedCase.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (giiRes.error) {
+      if (isMissingFeatureError(giiRes.error)) {
+        graftIntegrityInitial = null;
+        graftIntegrityRolloutPending = true;
+      } else {
+        console.error("[patient/dashboard] graft_integrity_estimates query failed", giiRes.error);
+      }
+    } else {
+      graftIntegrityInitial = giiRes.data ?? null;
+    }
+  }
 
   const PHOTOS_TARGET = 8;
   const photosPct = clamp01(patientPhotoCount / PHOTOS_TARGET);
@@ -385,10 +412,19 @@ export default async function PatientDashboardPage() {
               )}
             </section>
 
-            <GraftIntegrityCard
-              caseId={latestSubmittedCase?.id ?? null}
-              initialEstimate={(graftIntegrityInitial ?? null) as any}
-            />
+            {graftIntegrityInitial ? (
+              <GraftIntegrityCard
+                caseId={latestSubmittedCase?.id ?? null}
+                initialEstimate={(graftIntegrityInitial ?? null) as any}
+              />
+            ) : graftIntegrityRolloutPending ? (
+              <section className="rounded-2xl border border-white/10 bg-white/5 p-6">
+                <h2 className="text-sm font-semibold text-white">Graft Integrity Index</h2>
+                <p className="mt-2 text-xs text-slate-300/80">
+                  Coming soon: this feature is still rolling out in your environment.
+                </p>
+              </section>
+            ) : null}
           </div>
 
         {/* Unlock preview */}

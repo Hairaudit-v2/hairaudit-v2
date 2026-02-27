@@ -33,6 +33,20 @@ export type GraftIntegrityEstimateRow = {
   created_at: string | null;
 };
 
+function isMissingFeatureError(error: unknown): boolean {
+  const e = error as { status?: number; code?: string; message?: string } | null;
+  if (!e) return false;
+  if (e.status === 404) return true;
+  const code = String(e.code ?? "");
+  const message = String(e.message ?? "").toLowerCase();
+  return (
+    code === "PGRST205" ||
+    message.includes("not found") ||
+    message.includes("could not find the table") ||
+    (message.includes("relation") && message.includes("does not exist"))
+  );
+}
+
 function formatInt(n: number) {
   return new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(n);
 }
@@ -86,6 +100,7 @@ export default function GraftIntegrityCard(props: {
   const { caseId } = props;
   const [estimate, setEstimate] = useState<GraftIntegrityEstimateRow | null>(props.initialEstimate ?? null);
   const [loading, setLoading] = useState<boolean>(Boolean(caseId) && !props.initialEstimate);
+  const [featureUnavailable, setFeatureUnavailable] = useState(false);
 
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
 
@@ -110,7 +125,14 @@ export default function GraftIntegrityCard(props: {
         .maybeSingle();
 
       if (!alive) return;
-      if (!error) setEstimate((data ?? null) as unknown as GraftIntegrityEstimateRow | null);
+      if (!error) {
+        setFeatureUnavailable(false);
+        setEstimate((data ?? null) as unknown as GraftIntegrityEstimateRow | null);
+      } else if (isMissingFeatureError(error)) {
+        // Missing table in this environment: fail open and hide card.
+        setFeatureUnavailable(true);
+        setEstimate(null);
+      }
       setLoading(false);
     }
 
@@ -123,13 +145,15 @@ export default function GraftIntegrityCard(props: {
   useEffect(() => {
     if (!caseId) return;
 
+    if (featureUnavailable) return;
+
     const channel = supabase
       .channel(`gii:${caseId}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "graft_integrity_estimates", filter: `case_id=eq.${caseId}` },
         async () => {
-          const { data } = await supabase
+          const { data, error } = await supabase
             .from("graft_integrity_estimates")
             .select(
               "id, case_id, claimed_grafts, estimated_extracted_min, estimated_extracted_max, estimated_implanted_min, estimated_implanted_max, variance_claimed_vs_implanted_min_pct, variance_claimed_vs_implanted_max_pct, variance_claimed_vs_extracted_min_pct, variance_claimed_vs_extracted_max_pct, confidence, confidence_label, limitations, flags, ai_notes, auditor_status, auditor_notes, auditor_adjustments, evidence_sufficiency_score, inputs_used, created_at, updated_at"
@@ -138,6 +162,11 @@ export default function GraftIntegrityCard(props: {
             .order("created_at", { ascending: false })
             .limit(1)
             .maybeSingle();
+          if (error && isMissingFeatureError(error)) {
+            setFeatureUnavailable(true);
+            setEstimate(null);
+            return;
+          }
           setEstimate((data ?? null) as unknown as GraftIntegrityEstimateRow | null);
         }
       )
@@ -146,7 +175,9 @@ export default function GraftIntegrityCard(props: {
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [caseId, supabase]);
+  }, [caseId, featureUnavailable, supabase]);
+
+  if (featureUnavailable) return null;
 
   const status = estimate?.auditor_status ?? "pending";
   const statusBadge = statusUi(status);
