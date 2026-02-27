@@ -22,17 +22,10 @@ import { parseRole, USER_ROLES } from "@/lib/roles";
 
 export default async function Page({
   params,
-  searchParams,
 }: {
   params: Promise<{ caseId: string }>;
-  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { caseId } = await params;
-  const resolvedSearchParams = searchParams ? await searchParams : {};
-  const debugParam = resolvedSearchParams?.debug;
-  const showDebug = Array.isArray(debugParam)
-    ? debugParam.includes("1") || debugParam.includes("true")
-    : debugParam === "1" || debugParam === "true";
   let supabase: Awaited<ReturnType<typeof createSupabaseAuthServerClient>>;
   try {
     supabase = await createSupabaseAuthServerClient();
@@ -99,19 +92,6 @@ export default async function Page({
       <div className="max-w-3xl mx-auto px-4 sm:px-6">
         <div className="rounded-xl border border-slate-200 bg-white p-8 text-center">
           <p className="font-semibold text-slate-900">Case not found.</p>
-          {showDebug && (
-            <div className="mt-3 rounded-md border border-amber-300 bg-amber-50 p-3 text-left text-xs text-amber-900">
-              <div><b>debug</b></div>
-              <div>caseId: {caseId}</div>
-              <div>user.id: {String(user?.id ?? "null")}</div>
-              <div>role: {role}</div>
-              <div>allowed: {String(allowed)}</div>
-              <div>case.user_id: {String(c?.user_id ?? "null")}</div>
-              <div>case.patient_id: {String(c?.patient_id ?? "null")}</div>
-              <div>case.doctor_id: {String(c?.doctor_id ?? "null")}</div>
-              <div>case.clinic_id: {String(c?.clinic_id ?? "null")}</div>
-            </div>
-          )}
           <Link href="/dashboard" className="mt-4 inline-block text-amber-600 hover:text-amber-500 font-medium">
             ← Back to dashboard
           </Link>
@@ -180,15 +160,6 @@ export default async function Page({
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6">
-      {showDebug && (
-        <div className="mb-3 rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
-          <span className="font-semibold">debug </span>
-          <span>caseId: {caseId}</span>
-          <span className="ml-2">user.id: {String(user?.id ?? "null")}</span>
-          <span className="ml-2">role: {role}</span>
-          <span className="ml-2">allowed: {String(allowed)}</span>
-        </div>
-      )}
       <Link
         href={dashboardPath}
         className="inline-flex items-center text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
