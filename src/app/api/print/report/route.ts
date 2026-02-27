@@ -6,6 +6,7 @@ import rubric from "@/lib/audit/rubrics/hairaudit_clinical_v1.json";
 import { scoreAudit } from "@/lib/audit/score";
 import { buildReportViewModel, normalizeAuditMode, type AuditMode } from "@/lib/pdf/reportBuilder";
 import { resolveAuditModeFromCaseAccess } from "@/lib/reports/accessMode";
+import { verifyRenderToken } from "@/lib/reports/internalRenderToken";
 
 /* Admin client (NO cookies, NO sessions — Playwright safe) */
 function supabaseAdmin() {
@@ -32,9 +33,15 @@ export async function GET(req: Request) {
   const caseId = url.searchParams.get("caseId") ?? "";
   const token = url.searchParams.get("token") ?? "";
   const requestedAuditMode = normalizeAuditMode(url.searchParams.get("auditMode") ?? undefined);
-
-  const expected = process.env.REPORT_RENDER_TOKEN ?? "local";
-  const allowToken = token === expected;
+  const tokenSecret =
+    String(process.env.REPORT_RENDER_TOKEN ?? "").trim() ||
+    String(process.env.INTERNAL_API_KEY ?? "").trim() ||
+    String(process.env.SUPABASE_SERVICE_ROLE_KEY ?? "").trim();
+  const tokenPayload = tokenSecret ? verifyRenderToken(token, tokenSecret) : null;
+  const allowToken =
+    !!tokenPayload &&
+    tokenPayload.caseId === caseId &&
+    tokenPayload.auditMode === requestedAuditMode;
   if (!caseId) return new NextResponse("Missing caseId", { status: 400 });
 
   const supabase = supabaseAdmin();
@@ -83,8 +90,8 @@ export async function GET(req: Request) {
     }
   }
   let auditMode: AuditMode = "patient";
-  if (allowToken) {
-    auditMode = requestedAuditMode;
+  if (allowToken && tokenPayload) {
+    auditMode = tokenPayload.auditMode;
   } else if (sessionUserId) {
     auditMode = resolveAuditModeFromCaseAccess({
       role: sessionRole,

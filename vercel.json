@@ -2,6 +2,7 @@
   "framework": "nextjs",
   "functions": {
     "src/app/api/inngest/route.ts": { "memory": 1024, "maxDuration": 300 },
-    "src/app/api/internal/build-pdf/route.ts": { "memory": 1024, "maxDuration": 60 }
+    "src/app/api/internal/build-pdf/route.ts": { "memory": 1024, "maxDuration": 60 },
+    "src/app/api/internal/render-pdf/route.ts": { "memory": 1024, "maxDuration": 60 }
   }
 }

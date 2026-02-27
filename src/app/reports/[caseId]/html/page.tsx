@@ -8,6 +8,7 @@ import ScoreAreaGraph from "@/components/reports/ScoreAreaGraph";
 import { buildRubricTitles } from "@/lib/audit/rubricTitles";
 import { buildReportViewModel, normalizeAuditMode, type AuditMode } from "@/lib/pdf/reportBuilder";
 import { resolveAuditModeFromCaseAccess } from "@/lib/reports/accessMode";
+import { verifyRenderToken } from "@/lib/reports/internalRenderToken";
 
 function createSupabaseAdmin() {
   return createClient(
@@ -76,8 +77,12 @@ export default async function ReportHtmlPage({
   const token = sp?.token ?? "";
   const requestedAuditMode = normalizeAuditMode(sp?.auditMode);
 
-  const expected = process.env.REPORT_RENDER_TOKEN ?? "local";
-  const allowToken = token === expected;
+  const tokenSecret =
+    String(process.env.REPORT_RENDER_TOKEN ?? "").trim() ||
+    String(process.env.INTERNAL_API_KEY ?? "").trim() ||
+    String(process.env.SUPABASE_SERVICE_ROLE_KEY ?? "").trim();
+  const tokenPayload = tokenSecret ? verifyRenderToken(token, tokenSecret) : null;
+  const allowToken = !!tokenPayload && tokenPayload.caseId === caseId && tokenPayload.auditMode === requestedAuditMode;
 
   let sessionUserId: string | null = null;
   let sessionRole: string = "patient";
@@ -127,8 +132,8 @@ export default async function ReportHtmlPage({
   }
 
   let auditMode: AuditMode = "patient";
-  if (allowToken) {
-    auditMode = requestedAuditMode;
+  if (allowToken && tokenPayload) {
+    auditMode = tokenPayload.auditMode;
   } else if (sessionUserId) {
     auditMode = resolveAuditModeFromCaseAccess({
       role: sessionRole,

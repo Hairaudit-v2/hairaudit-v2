@@ -1,28 +1,19 @@
-type PdfAuditMode = "patient" | "doctor" | "clinic" | "auditor";
+import { normalizeAuditMode, type AuditMode } from "@/lib/pdf/reportBuilder";
 
-function buildPdfUrl(caseId: string, token: string, auditMode: PdfAuditMode): string {
+export function buildPdfUrl(args: {
+  caseId: string;
+  auditMode?: string;
+  token: string;
+  baseUrl: string;
+}): string {
+  const auditMode: AuditMode = normalizeAuditMode(args.auditMode);
+  const base = (args.baseUrl || "").replace(/\/+$/, "");
   const params = new URLSearchParams({
-    caseId,
+    caseId: args.caseId,
     auditMode,
-    token,
+    token: args.token,
     cb: String(Date.now()),
   });
-  return `/api/print/report?${params.toString()}`;
-}
-
-export function buildPatientPdfUrl(caseId: string, token: string): string {
-  return buildPdfUrl(caseId, token, "patient");
-}
-
-export function buildDoctorPdfUrl(caseId: string, token: string): string {
-  return buildPdfUrl(caseId, token, "doctor");
-}
-
-export function buildClinicPdfUrl(caseId: string, token: string): string {
-  return buildPdfUrl(caseId, token, "clinic");
-}
-
-export function buildAuditorPdfUrl(caseId: string, token: string): string {
-  return buildPdfUrl(caseId, token, "auditor");
+  return `${base}/api/print/report?${params.toString()}`;
 }
 

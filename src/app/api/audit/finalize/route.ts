@@ -2,10 +2,9 @@ import { NextResponse } from "next/server";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getUserRole } from "@/lib/case-access";
-import { buildAuditReportPdf, fetchReportImages, normalizeAuditMode } from "@/lib/pdf/reportBuilder";
+import { normalizeAuditMode } from "@/lib/pdf/reportBuilder";
 
 const AUDITOR_EMAIL = "auditor@hairaudit.com";
-const BUCKET = process.env.CASE_FILES_BUCKET || "case-files";
 
 export async function POST(req: Request) {
   try {
@@ -62,31 +61,30 @@ export async function POST(req: Request) {
           ? summary.findings
           : [];
 
-    const { data: uploads = [] } = await admin
-      .from("uploads")
-      .select("type, storage_path")
-      .eq("case_id", caseId);
-
-    const images = await fetchReportImages(admin, BUCKET, uploads ?? []);
-
-    const pdfBuffer = await buildAuditReportPdf({
-      caseId,
-      version: latestReport.version,
-      generatedAt: new Date().toLocaleString(),
-      auditMode: normalizeAuditMode("auditor"),
-      isManual: true,
-      score,
-      notes,
-      findings,
-      images,
+    const internalApiKey =
+      String(process.env.INTERNAL_API_KEY ?? "").trim() ||
+      String(process.env.SUPABASE_SERVICE_ROLE_KEY ?? "").trim();
+    if (!internalApiKey) {
+      return NextResponse.json({ error: "Missing internal API key configuration" }, { status: 500 });
+    }
+    const baseUrl = new URL(req.url).origin;
+    const renderRes = await fetch(`${baseUrl}/api/internal/render-pdf`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-internal-api-key": internalApiKey,
+      },
+      body: JSON.stringify({
+        caseId,
+        auditMode: normalizeAuditMode("auditor"),
+        version: latestReport.version,
+      }),
     });
-
-    const pdfPath = `${caseId}/v${latestReport.version}.pdf`;
-    const { error: uploadErr } = await admin.storage
-      .from(BUCKET)
-      .upload(pdfPath, pdfBuffer, { contentType: "application/pdf", upsert: true });
-
-    if (uploadErr) return NextResponse.json({ error: `Upload failed: ${uploadErr.message}` }, { status: 500 });
+    const renderJson = await renderRes.json().catch(() => ({}));
+    if (!renderRes.ok) {
+      return NextResponse.json({ error: renderJson?.error || "Failed to render PDF" }, { status: renderRes.status });
+    }
+    const pdfPath = String(renderJson?.pdfPath ?? `${caseId}/v${latestReport.version}.pdf`);
 
     const nextSummary = {
       ...summary,

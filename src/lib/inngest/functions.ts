@@ -1,6 +1,6 @@
 import { inngest } from "./client";
 import { createClient } from "@supabase/supabase-js";
-import { buildAuditReportPdf, fetchReportImages, type AuditMode } from "@/lib/pdf/reportBuilder";
+import { type AuditMode } from "@/lib/pdf/reportBuilder";
 import { runAIAudit } from "@/lib/ai/audit";
 import { runGraftIntegrityModelEstimate } from "@/lib/ai/graftIntegrity";
 import { runDoctorScoringNarrative, DEFAULT_PROTOCOL_CATALOG, DEFAULT_TRAINING_MODULE_CATALOG } from "@/lib/ai/runDoctorScoringNarrative";
@@ -17,6 +17,17 @@ function supabaseAdmin() {
 }
 
 const BUCKET = process.env.CASE_FILES_BUCKET || "case-files";
+const INTERNAL_API_KEY =
+  String(process.env.INTERNAL_API_KEY ?? "").trim() ||
+  String(process.env.SUPABASE_SERVICE_ROLE_KEY ?? "").trim();
+
+function resolveInternalBaseUrl(): string {
+  const configured = String(process.env.NEXT_PUBLIC_APP_URL ?? "").trim();
+  if (configured) return configured.replace(/\/+$/, "");
+  const vercel = String(process.env.VERCEL_URL ?? "").trim();
+  if (vercel) return `https://${vercel.replace(/\/+$/, "")}`;
+  throw new Error("Missing NEXT_PUBLIC_APP_URL/VERCEL_URL for internal render-pdf call");
+}
 
 // Minimal required categories for “submit”
 function isImageUpload(type: string): boolean {
@@ -704,79 +715,27 @@ export const runAudit = inngest.createFunction(
     const confLabelForReport = confForReport < 0.55 ? "low" : confForReport < 0.8 ? "medium" : "high";
 
     await step.run("build-and-upload-pdf", async () => {
-      // Inlined to avoid 401 from Vercel Deployment Protection when fetch'ing build-pdf API
-      const supabase = supabaseAdmin();
-      const images = await fetchReportImages(supabase, BUCKET, uploads.map((u) => ({ type: u.type, storage_path: u.storage_path })));
-      const limitationsRaw = aiResult.data_quality?.limitations ?? [];
-      const limitations =
-        aiAuditMode === "patient"
-          ? limitationsRaw.filter(
-              (l) =>
-                !/doctor|clinic|doctor_answers|clinic_answers/i.test(String(l))
-            )
-          : limitationsRaw;
-
-      const content = {
-        caseId,
-        version: nextVersion,
-        generatedAt: new Date().toLocaleString(),
-        auditMode: pdfAuditMode,
-        score: aiResult.score,
-        donorQuality: aiResult.donor_quality,
-        graftSurvival: aiResult.graft_survival_estimate,
-        notes: aiResult.notes || undefined,
-        findings: aiResult.findings,
-        model: aiResult.model,
-        uploadCount: uploads.length,
-        forensic: {
-          summary: aiResult.summary,
-          key_findings: aiResult.key_findings as any,
-          red_flags: aiResult.red_flags as any,
-          non_medical_disclaimer: aiResult.non_medical_disclaimer,
-          ...(aiAuditMode === "full" && {
-            domain_scores_v1: {
-              version: 1,
-              domains: (v1 as any)?.domains ?? undefined,
-            },
-            benchmark: (v1 as any)?.benchmark ?? undefined,
-            completeness_index_v1: (v1 as any)?.completeness_index_v1 ?? undefined,
-            confidence_model_v1: (v1 as any)?.confidence_model_v1 ?? undefined,
-            overall_scores_v1: (v1 as any)?.overall_scores_v1 ?? undefined,
-            tiers_v1: (v1 as any)?.tiers_v1 ?? undefined,
-          }),
+      if (!INTERNAL_API_KEY) throw new Error("Missing INTERNAL_API_KEY/SUPABASE_SERVICE_ROLE_KEY");
+      const baseUrl = resolveInternalBaseUrl();
+      const res = await fetch(`${baseUrl}/api/internal/render-pdf`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-internal-api-key": INTERNAL_API_KEY,
         },
-        graftIntegrity: graftIntegrity as any,
-        confidencePanel: {
-          photoCount: uploads.length,
-          missingCategories: aiResult.data_quality?.missing_photos ?? [],
-          confidenceScore: confForReport,
-          confidenceLabel: confLabelForReport,
-          limitations,
-        },
-        radar: {
-          section_scores: aiResult.section_scores as unknown as Record<string, number>,
-          overall_score: aiResult.overall_score,
-          confidence: confForReport,
-        },
-        areaScores: {
-          domains: {
-            donor_management: aiResult.section_scores.donor_management,
-            extraction_quality: aiResult.section_scores.extraction_quality,
-            graft_handling: aiResult.section_scores.graft_handling_and_viability,
-            recipient_implantation: aiResult.section_scores.recipient_placement,
-            safety_documentation_aftercare: aiResult.section_scores.post_op_course_and_aftercare,
-          },
-          sections: aiResult.section_scores,
-        },
-      };
-      const pdfBuffer = await buildAuditReportPdf({ ...content, images });
-      const buf = Buffer.isBuffer(pdfBuffer) ? pdfBuffer : Buffer.from((pdfBuffer as { data?: number[] })?.data ?? []);
-      const { error } = await supabase.storage.from(BUCKET).upload(pdfPath, buf, {
-        contentType: "application/pdf",
-        upsert: true,
+        body: JSON.stringify({
+          caseId,
+          auditMode: pdfAuditMode,
+          version: nextVersion,
+        }),
       });
-      if (error) throw new Error(`storage upload failed: ${error.message}`);
-      return { pdfPath, bytes: buf.length };
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(json?.error || `render-pdf failed with status ${res.status}`);
+      }
+      return {
+        pdfPath: String(json?.pdfPath ?? pdfPath),
+      };
     });
 
     // 10) Insert report row (with AI audit + answers)

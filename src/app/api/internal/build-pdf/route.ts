@@ -1,29 +1,21 @@
-/**
- * Internal API for PDF generation. Called by Inngest to avoid bundling
- * reportBuilder/pdfkit/@napi-rs/canvas into the api/inngest function (Vercel 300MB limit).
- *
- * POST with token, content (minus images), uploads list. Builds PDF, uploads to storage, returns path.
- */
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-import { buildAuditReportPdf, fetchReportImages, normalizeAuditMode } from "@/lib/pdf/reportBuilder";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-function supabaseAdmin() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { persistSession: false, autoRefreshToken: false } }
-  );
+function resolveBaseUrl(req: Request): string {
+  const configured = String(process.env.NEXT_PUBLIC_APP_URL ?? "").trim();
+  if (configured) return configured.replace(/\/+$/, "");
+  const fromVercel = String(process.env.VERCEL_URL ?? "").trim();
+  if (fromVercel) return `https://${fromVercel.replace(/\/+$/, "")}`;
+  return new URL(req.url).origin;
 }
 
 export async function POST(req: Request) {
   let body: {
-    content: Parameters<typeof buildAuditReportPdf>[0];
-    uploads: Array<{ type?: string; storage_path?: string }>;
-    pdfStoragePath: string;
+    content?: { caseId?: string; auditMode?: string; version?: number };
+    uploads?: Array<{ type?: string; storage_path?: string }>;
+    pdfStoragePath?: string;
     token?: string;
   };
   try {
@@ -32,35 +24,36 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  // Auth disabled: Inngest and build-pdf env mismatch in serverless. Re-enable when fixed.
-  // const token = req.headers.get("x-internal-token") ?? body.token ?? "";
-  // const expected = process.env.REPORT_RENDER_TOKEN ?? process.env.INTERNAL_BUILD_PDF_TOKEN ?? "local";
-  // if (expected !== "local" && token !== expected) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const { content, uploads, pdfStoragePath } = body;
-  if (!content?.caseId || !pdfStoragePath) {
-    return NextResponse.json({ error: "Missing content.caseId or pdfStoragePath" }, { status: 400 });
-  }
-
-  const supabase = supabaseAdmin();
-  const bucket = process.env.CASE_FILES_BUCKET || "case-files";
+  const caseId = String(body?.content?.caseId ?? "").trim();
+  if (!caseId) return NextResponse.json({ error: "Missing content.caseId" }, { status: 400 });
+  const internalApiKey =
+    String(process.env.INTERNAL_API_KEY ?? "").trim() ||
+    String(process.env.SUPABASE_SERVICE_ROLE_KEY ?? "").trim();
+  if (!internalApiKey) return NextResponse.json({ error: "Missing internal API key configuration" }, { status: 500 });
+  const baseUrl = resolveBaseUrl(req);
 
   try {
-    const images = await fetchReportImages(supabase, bucket, uploads ?? []);
-    const pdfBuffer = await buildAuditReportPdf({
-      ...content,
-      auditMode: normalizeAuditMode((content as { auditMode?: string }).auditMode),
-      images,
+    const renderRes = await fetch(`${baseUrl}/api/internal/render-pdf`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-internal-api-key": internalApiKey,
+      },
+      body: JSON.stringify({
+        caseId,
+        auditMode: body?.content?.auditMode,
+        version: body?.content?.version,
+      }),
     });
-
-    const buf = Buffer.isBuffer(pdfBuffer) ? pdfBuffer : Buffer.from((pdfBuffer as { data?: number[] })?.data ?? []);
-    const { error } = await supabase.storage.from(bucket).upload(pdfStoragePath, buf, {
-      contentType: "application/pdf",
-      upsert: true,
+    const renderJson = await renderRes.json().catch(() => ({}));
+    if (!renderRes.ok) {
+      return NextResponse.json({ error: renderJson?.error || "Render request failed" }, { status: renderRes.status });
+    }
+    return NextResponse.json({
+      pdfPath: renderJson?.pdfPath,
+      auditMode: renderJson?.auditMode,
+      caseId: renderJson?.caseId ?? caseId,
     });
-    if (error) throw new Error(`storage upload failed: ${error.message}`);
-
-    return NextResponse.json({ pdfPath: pdfStoragePath, bytes: buf.length });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     return NextResponse.json({ error: msg }, { status: 500 });
