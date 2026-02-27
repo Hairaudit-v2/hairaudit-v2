@@ -24,6 +24,8 @@ export async function generateReportPdfFromUrl(url: string): Promise<Buffer> {
     }
   }
 
+  console.log("[PDF] print url:", url);
+
   const isServerless = Boolean(
     process.env.VERCEL ||
     process.env.AWS_EXECUTION_ENV ||
@@ -50,6 +52,13 @@ export async function generateReportPdfFromUrl(url: string): Promise<Buffer> {
       `PDF preflight failed: HTTP ${preflight.status} ${preflight.statusText || ""}`.trim()
     );
   }
+
+  console.log("[PDF] preflight:", {
+    status: preflight.status,
+    xReportTemplate: preflight.headers.get("x-report-template"),
+    xAuditMode: preflight.headers.get("x-audit-mode"),
+    contentType: preflight.headers.get("content-type"),
+  });
 
   const templateHeader = preflight.headers.get("x-report-template");
   if (templateHeader !== "elite") {
