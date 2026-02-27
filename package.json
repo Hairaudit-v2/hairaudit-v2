@@ -3,7 +3,6 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "postinstall": "node scripts/strip-canvas-platforms.js || true",
     "dev": "next dev --webpack",
     "build": "next build",
     "start": "next start",
@@ -12,18 +11,17 @@
     "seed:patients": "tsx scripts/seedPatientAudits.ts"
   },
   "dependencies": {
-    "@napi-rs/canvas": "^0.1.95",
     "@supabase/auth-helpers-nextjs": "^0.15.0",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.93.3",
     "@vercel/speed-insights": "^1.3.1",
-    "chart.js": "^4.5.1",
     "framer-motion": "^12.34.0",
     "next": "16.1.6",
     "openai": "^6.19.0",
     "pdfkit": "^0.17.2",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "svg2png-wasm": "^1.4.1",
     "zod": "^4.3.6"
   },
   "devDependencies": {

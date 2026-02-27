@@ -1177,7 +1177,7 @@ export async function buildAuditReportPdf(
   if (content.radar?.section_scores && typeof content.radar.overall_score === "number") {
     try {
       const { renderRadarChartPng } = await import("./renderRadarChart");
-      radarImg = renderRadarChartPng({
+      radarImg = await renderRadarChartPng({
         section_scores: content.radar.section_scores,
         overall_score: content.radar.overall_score,
         confidence: content.radar.confidence,

@@ -22,22 +22,7 @@ function getTailwindPath(): string {
 const tailwindcssPath = getTailwindPath();
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ["pdfkit", "@supabase/supabase-js", "@supabase/ssr", "@napi-rs/canvas", "chart.js", "inngest", "openai"],
-  // Exclude unused @napi-rs/canvas platform binaries (Vercel uses linux-x64-gnu only). Saves ~400MB+.
-  outputFileTracingExcludes: {
-    "**": [
-      "node_modules/@napi-rs/canvas-darwin-x64/**",
-      "node_modules/@napi-rs/canvas-darwin-arm64/**",
-      "node_modules/@napi-rs/canvas-win32-x64-msvc/**",
-      "node_modules/@napi-rs/canvas-win32-arm64-msvc/**",
-      "node_modules/@napi-rs/canvas-linux-arm-gnueabihf/**",
-      "node_modules/@napi-rs/canvas-linux-x64-musl/**",
-      "node_modules/@napi-rs/canvas-linux-arm64-gnu/**",
-      "node_modules/@napi-rs/canvas-linux-arm64-musl/**",
-      "node_modules/@napi-rs/canvas-android-arm64/**",
-      "node_modules/@napi-rs/canvas-linux-riscv64-gnu/**",
-    ],
-  },
+  serverExternalPackages: ["pdfkit", "@supabase/supabase-js", "@supabase/ssr", "inngest", "openai"],
   turbopack: {
     resolveAlias: {
       tailwindcss: tailwindcssPath,
