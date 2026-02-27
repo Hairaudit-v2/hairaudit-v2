@@ -1,0 +1,90 @@
+{
+  "ok": false,
+  "case": {
+    "id": "8eb51367-52d3-4f04-8930-6cfaf778fe21",
+    "status": "audit_failed",
+    "created_at": "2026-02-27T03:34:02.852807+00:00"
+  },
+  "report": {
+    "id": "ad8b9589-d6a5-4542-815a-2c92b386db4a",
+    "version": 1,
+    "pdf_path": "",
+    "status": "failed",
+    "error": "Missing required patient photos (Current Front, Top, Donor rear)",
+    "summary": {
+      "patient_answers": {
+        "cost_model": "per_graft",
+        "pain_level": 7,
+        "shock_loss": "no",
+        "clinic_city": "Barcelona",
+        "clinic_name": "Test Clinic Barcelona 928",
+        "months_since": "9_12",
+        "would_repeat": "yes",
+        "complications": "no",
+        "donor_shaving": "full_shave",
+        "preop_consult": "yes",
+        "recovery_time": "2_4_weeks",
+        "what_included": [
+          "transport",
+          "followup"
+        ],
+        "bleeding_issue": "no",
+        "clinic_country": "spain",
+        "procedure_date": "2025-04-22",
+        "procedure_type": "fue",
+        "would_recommend": "yes",
+        "donor_appearance": 3,
+        "patient_baseline": {
+          "patient_age": 48,
+          "patient_sex": "Male",
+          "smoking_status": "No"
+        },
+        "post_op_swelling": "moderate",
+        "surgery_duration": "8_plus",
+        "total_paid_amount": 10315,
+        "total_paid_currency": "usd",
+        "density_satisfaction": 5,
+        "hairline_naturalness": 3,
+        "graft_number_received": 3324,
+        "doctor_present_implant": "not_sure",
+        "graft_number_disclosed": "yes",
+        "enhanced_patient_answers": {
+          "baseline": {
+            "diabetes": "No",
+            "patient_age": 48,
+            "patient_sex": "Male",
+            "smoking_status": "No",
+            "alcohol_frequency": "Rare"
+          },
+          "experience": {
+            "felt_rushed": true,
+            "felt_informed": "Somewhat",
+            "biggest_concern_now": "Hairline looks slightly unnatural",
+            "transparency_rating": 3,
+            "communication_rating": 2,
+            "considering_revision": "No",
+            "current_satisfaction": 9,
+            "legal_or_refund_dispute": "No"
+          },
+          "procedure_execution": {
+            "grafts_claimed_total": 3324,
+            "crown_pattern_discussed": "Yes",
+            "hairline_drawn_by_doctor": "Yes",
+            "single_hair_grafts_front": "Not sure",
+            "technician_role_extraction": "Technician",
+            "technician_role_implantation": "Doctor"
+          }
+        },
+        "doctor_present_extraction": "yes"
+      },
+      "patient_answers_updated_at": "2026-02-27T03:34:03.504Z"
+    },
+    "created_at": "2026-02-27T03:34:03.78723+00:00"
+  },
+  "derived": {
+    "overall_score": null,
+    "confidence": null,
+    "pdf_path": "",
+    "pdf_local_path": null
+  }
+}

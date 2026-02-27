@@ -1,0 +1,90 @@
+{
+  "ok": false,
+  "case": {
+    "id": "4134f3e8-3b2c-4a88-b45f-c98c0c49484f",
+    "status": "audit_failed",
+    "created_at": "2026-02-27T03:32:34.93567+00:00"
+  },
+  "report": {
+    "id": "89291e16-163a-493b-a64c-dd040925b9b5",
+    "version": 1,
+    "pdf_path": "",
+    "status": "failed",
+    "error": "Missing required patient photos (Current Front, Top, Donor rear)",
+    "summary": {
+      "patient_answers": {
+        "cost_model": "per_session",
+        "pain_level": 5,
+        "shock_loss": "yes",
+        "clinic_city": "Toronto",
+        "clinic_name": "Test Clinic Toronto 277",
+        "months_since": "6_9",
+        "would_repeat": "yes",
+        "complications": "no",
+        "donor_shaving": "full_shave",
+        "preop_consult": "yes",
+        "recovery_time": "under_1_week",
+        "what_included": [
+          "prp",
+          "transport"
+        ],
+        "bleeding_issue": "no",
+        "clinic_country": "canada",
+        "procedure_date": "2025-07-17",
+        "procedure_type": "fue",
+        "would_recommend": "yes",
+        "donor_appearance": 2,
+        "patient_baseline": {
+          "patient_age": 25,
+          "patient_sex": "Male",
+          "smoking_status": "No"
+        },
+        "post_op_swelling": "moderate",
+        "surgery_duration": "4_6h",
+        "total_paid_amount": 14760,
+        "total_paid_currency": "usd",
+        "density_satisfaction": 3,
+        "hairline_naturalness": 2,
+        "graft_number_received": 3866,
+        "doctor_present_implant": "no",
+        "graft_number_disclosed": "yes",
+        "enhanced_patient_answers": {
+          "baseline": {
+            "diabetes": "No",
+            "patient_age": 25,
+            "patient_sex": "Male",
+            "smoking_status": "No",
+            "alcohol_frequency": "Rare"
+          },
+          "experience": {
+            "felt_rushed": false,
+            "felt_informed": "Somewhat",
+            "biggest_concern_now": "Density is lower than expected",
+            "transparency_rating": 4,
+            "communication_rating": 1,
+            "considering_revision": "Yes",
+            "current_satisfaction": 6,
+            "legal_or_refund_dispute": "No"
+          },
+          "procedure_execution": {
+            "grafts_claimed_total": 3866,
+            "crown_pattern_discussed": "Yes",
+            "hairline_drawn_by_doctor": "Yes",
+            "single_hair_grafts_front": "Yes",
+            "technician_role_extraction": "Technician",
+            "technician_role_implantation": "Technician"
+          }
+        },
+        "doctor_present_extraction": "no"
+      },
+      "patient_answers_updated_at": "2026-02-27T03:32:35.554Z"
+    },
+    "created_at": "2026-02-27T03:32:35.85567+00:00"
+  },
+  "derived": {
+    "overall_score": null,
+    "confidence": null,
+    "pdf_path": "",
+    "pdf_local_path": null
+  }
+}

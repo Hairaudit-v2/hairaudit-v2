@@ -149,6 +149,22 @@ export type AuditReportContent = {
       evidence: Array<{ source_type: string; source_key: string; observation: string; confidence: number }>;
     }>;
     non_medical_disclaimer?: string;
+    domain_scores_v1?: {
+      version?: number;
+      domains?: Array<{
+        domain_id: string;
+        title: string;
+        raw_score: number;
+        confidence: number;
+        evidence_grade: string;
+        weighted_score: number;
+      }>;
+    };
+    benchmark?: { eligible?: boolean; gate_version?: string; reasons?: string[] };
+    completeness_index_v1?: { version?: number; score?: number; breakdown?: any };
+    confidence_model_v1?: { version?: number; evidence_grade?: string; confidence_multiplier?: number; base_multiplier?: number; penalties?: any[]; inputs?: any };
+    overall_scores_v1?: { version?: number; performance_score?: number; confidence_grade?: string; confidence_multiplier?: number; benchmark_score?: number; domain_weights?: any };
+    tiers_v1?: Array<{ tier_id?: string; title?: string; eligible?: boolean; reasons?: string[] }>;
   };
   graftIntegrity?: {
     auditor_status: "approved" | "pending" | "needs_more_evidence" | "rejected";
@@ -733,6 +749,115 @@ function addAuditSummary(
 }
 
 function addScoreByArea(doc: PDFKit.PDFDocument, content: AuditReportContent) {
+  const v1Domains = content.forensic?.domain_scores_v1?.domains ?? null;
+  if (Array.isArray(v1Domains) && v1Domains.length > 0) {
+    addSectionHeading(doc, "Score by Domain (v1)");
+    doc.fillColor(SLATE_600).fontSize(10).font("Helvetica");
+    doc.text("Evidence-weighted domains. Weighted score = raw score × confidence.", { width: CONTENT_WIDTH });
+    doc.moveDown(0.6);
+
+    const items = v1Domains.slice(0, 10).map((d) => ({
+      id: String(d.domain_id ?? "").trim(),
+      title: String(d.title ?? "").trim(),
+      raw: clamp(Number(d.raw_score ?? 0), 0, 100),
+      conf: clamp(Number(d.confidence ?? 0), 0, 1),
+      grade: String(d.evidence_grade ?? "").trim() || "—",
+      weighted: clamp(Number(d.weighted_score ?? 0), 0, 100),
+    }));
+
+    const x = MARGIN;
+    const w = CONTENT_WIDTH;
+    const pad = 12;
+    const rowH = 46;
+    const pageH = (doc.page as any).height as number;
+    const bottomLimit = pageH - MARGIN - 40;
+
+    const header = () => {
+      doc.fillColor(SLATE_400).font("Helvetica-Bold").fontSize(9);
+      doc.text("Domain", x + pad, doc.y, { width: w * 0.52 });
+      doc.text("Raw", x + w * 0.55, doc.y, { width: 40, align: "right" });
+      doc.text("Conf", x + w * 0.64, doc.y, { width: 48, align: "right" });
+      doc.text("Grade", x + w * 0.73, doc.y, { width: 48, align: "right" });
+      doc.text("Weighted", x + w * 0.82, doc.y, { width: w * 0.18 - pad, align: "right" });
+      doc.moveDown(0.6);
+    };
+
+    header();
+
+    for (const it of items) {
+      if (doc.y + rowH > bottomLimit && doc.y > MARGIN + 40) {
+        doc.addPage();
+        doc.x = MARGIN;
+        doc.y = MARGIN;
+        addSectionHeading(doc, "Score by Domain (continued)");
+        doc.fillColor(SLATE_600).fontSize(10).font("Helvetica");
+        doc.text("Evidence-weighted domains. Weighted score = raw score × confidence.", { width: CONTENT_WIDTH });
+        doc.moveDown(0.6);
+        header();
+      }
+
+      const y0 = doc.y;
+      const cardH = 40;
+      const g = doc.linearGradient(x, y0, x, y0 + cardH);
+      g.stop(0, "#ffffff").stop(1, "#f8fafc");
+      doc.roundedRect(x, y0, w, cardH, 12).fillColor(g).fill();
+      doc.roundedRect(x, y0, w, cardH, 12).strokeColor("#e2e8f0").lineWidth(1).stroke();
+
+      doc.fillColor(SLATE_900).font("Helvetica-Bold").fontSize(10);
+      doc.text(`${it.id}`, x + pad, y0 + 10, { width: 26 });
+      doc.fillColor(SLATE_900).font("Helvetica").fontSize(10);
+      doc.text(it.title, x + pad + 30, y0 + 10, { width: w * 0.48 - 30, ellipsis: true });
+
+      const confPct = Math.round(it.conf * 100);
+
+      doc.fillColor(SLATE_600).font("Helvetica-Bold").fontSize(10);
+      doc.text(String(Math.round(it.raw)), x + w * 0.55, y0 + 10, { width: 40, align: "right" });
+      doc.text(`${confPct}%`, x + w * 0.64, y0 + 10, { width: 48, align: "right" });
+      doc.text(it.grade, x + w * 0.73, y0 + 10, { width: 48, align: "right" });
+
+      // Weighted emphasized
+      const weightedColor =
+        it.weighted >= 85 ? "#059669" : it.weighted >= 70 ? "#16a34a" : it.weighted >= 55 ? AMBER_600 : "#dc2626";
+      doc.fillColor(weightedColor).font("Helvetica-Bold").fontSize(11);
+      doc.text(String(Math.round(it.weighted)), x + w * 0.82, y0 + 9, { width: w * 0.18 - pad, align: "right" });
+
+      // small subtitle
+      doc.fillColor(SLATE_400).font("Helvetica").fontSize(8);
+      doc.text("based on submitted documentation", x + pad, y0 + 24, { width: w - pad * 2 });
+
+      doc.y = y0 + cardH + 6;
+    }
+
+    // Benchmark badge (if present)
+    if (content.forensic?.benchmark) {
+      const b = content.forensic.benchmark;
+      const eligible = Boolean(b.eligible);
+      const tag = eligible ? "Benchmark eligible" : "Not benchmark eligible";
+      doc.moveDown(0.2);
+      doc.fillColor(eligible ? "#065f46" : SLATE_600).font("Helvetica-Bold").fontSize(9);
+      doc.text(tag);
+      const reasons = Array.isArray(b.reasons) ? b.reasons.slice(0, 3) : [];
+      if (reasons.length) {
+        doc.fillColor(SLATE_600).font("Helvetica").fontSize(9);
+        for (const r of reasons) doc.text(`• ${String(r).trim()}`, { indent: 12 });
+      }
+      doc.moveDown(0.8);
+    }
+
+    const ci = content.forensic?.completeness_index_v1;
+    if (ci && typeof ci === "object") {
+      const s = typeof (ci as any).score === "number" ? Math.max(0, Math.min(100, Math.round((ci as any).score))) : null;
+      if (s !== null) {
+        doc.fillColor(SLATE_600).font("Helvetica-Bold").fontSize(9);
+        doc.text(`Completeness Index (v1): ${s}/100`);
+        doc.fillColor(SLATE_400).font("Helvetica").fontSize(8);
+        doc.text("Based on submitted documentation.", { indent: 12 });
+        doc.moveDown(0.6);
+      }
+    }
+    return;
+  }
+
   const domains = content.areaScores?.domains ?? {};
   const sections = content.areaScores?.sections ?? {};
   const hasDomains = Object.keys(domains).length > 0;

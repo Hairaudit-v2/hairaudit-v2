@@ -1,0 +1,91 @@
+{
+  "ok": false,
+  "case": {
+    "id": "38a69420-ec3f-4231-9681-b50cad1eb57b",
+    "status": "audit_failed",
+    "created_at": "2026-02-27T03:30:20.610056+00:00"
+  },
+  "report": {
+    "id": "f72a155c-e1ad-42a1-8243-ef7fb081f24f",
+    "version": 1,
+    "pdf_path": "",
+    "status": "failed",
+    "error": "Missing required patient photos (Current Front, Top, Donor rear)",
+    "summary": {
+      "patient_answers": {
+        "cost_model": "per_graft",
+        "pain_level": 1,
+        "shock_loss": "no",
+        "clinic_city": "Frankfurt",
+        "clinic_name": "Test Clinic Frankfurt 565",
+        "months_since": "12_plus",
+        "surgeon_name": "Dr. Test 80",
+        "would_repeat": "yes",
+        "complications": "no",
+        "donor_shaving": "full_shave",
+        "preop_consult": "yes",
+        "recovery_time": "1_2_weeks",
+        "what_included": [
+          "procedure",
+          "prp"
+        ],
+        "bleeding_issue": "no",
+        "clinic_country": "germany",
+        "procedure_date": "2024-12-16",
+        "procedure_type": "fue",
+        "would_recommend": "no",
+        "donor_appearance": 5,
+        "patient_baseline": {
+          "patient_age": 57,
+          "patient_sex": "Female",
+          "smoking_status": "No"
+        },
+        "post_op_swelling": "none",
+        "surgery_duration": "under_4h",
+        "total_paid_amount": 15578,
+        "total_paid_currency": "usd",
+        "density_satisfaction": 2,
+        "hairline_naturalness": 4,
+        "graft_number_received": 1490,
+        "doctor_present_implant": "yes",
+        "graft_number_disclosed": "yes",
+        "enhanced_patient_answers": {
+          "baseline": {
+            "diabetes": "No",
+            "patient_age": 57,
+            "patient_sex": "Female",
+            "smoking_status": "No",
+            "alcohol_frequency": "Daily"
+          },
+          "experience": {
+            "felt_rushed": false,
+            "felt_informed": "Yes",
+            "biggest_concern_now": "Unsure about growth timeline",
+            "transparency_rating": 5,
+            "communication_rating": 5,
+            "considering_revision": "Unsure",
+            "current_satisfaction": 9,
+            "legal_or_refund_dispute": "No"
+          },
+          "procedure_execution": {
+            "grafts_claimed_total": 1490,
+            "crown_pattern_discussed": "Not sure",
+            "hairline_drawn_by_doctor": "Not sure",
+            "single_hair_grafts_front": "Yes",
+            "technician_role_extraction": "Mixed",
+            "technician_role_implantation": "Technician"
+          }
+        },
+        "doctor_present_extraction": "no"
+      },
+      "patient_answers_updated_at": "2026-02-27T03:30:21.244Z"
+    },
+    "created_at": "2026-02-27T03:30:21.551294+00:00"
+  },
+  "derived": {
+    "overall_score": null,
+    "confidence": null,
+    "pdf_path": "",
+    "pdf_local_path": null
+  }
+}

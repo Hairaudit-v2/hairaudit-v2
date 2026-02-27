@@ -1,0 +1,144 @@
+{
+  "caseId": "0cc71599-4bba-4088-a8c2-dd32f86ae469",
+  "dryRun": false,
+  "generated_at": "2026-02-27T03:35:00.221Z",
+  "patient": {
+    "age": 44,
+    "sex_assigned_at_birth": "Male",
+    "smoking": "No"
+  },
+  "clinic": {
+    "country": "Australia",
+    "procedure_type": "FUE",
+    "claimed_grafts": 2551,
+    "months_since": "9_12"
+  },
+  "test_identity": {
+    "user_id": "b75457f5-c40f-4c79-b099-b7a70378cfeb",
+    "email": "test+b97ce54078bf2d08@hairaudit.dev"
+  },
+  "images": [
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Ref4.png",
+      "upload_category": "preop_right",
+      "filename_tag": "any",
+      "forced_required": false
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Top View.jpg",
+      "upload_category": "preop_top",
+      "filename_tag": "top",
+      "forced_required": false
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Darren\\Front View.jpg",
+      "upload_category": "preop_front",
+      "filename_tag": "front",
+      "forced_required": false
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Austin\\WhatsApp Image 2025-10-15 at 08.22.17_c4040dc5.jpg",
+      "upload_category": "preop_donor_rear",
+      "filename_tag": "any",
+      "forced_required": true
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture26.png",
+      "upload_category": "day0_recipient",
+      "filename_tag": "any",
+      "forced_required": false
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture11.jpg",
+      "upload_category": "preop_left",
+      "filename_tag": "any",
+      "forced_required": false
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture18.jpg",
+      "upload_category": "day0_donor",
+      "filename_tag": "any",
+      "forced_required": false
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture9.jpg",
+      "upload_category": "preop_right",
+      "filename_tag": "any",
+      "forced_required": false
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Austin\\WhatsApp Image 2025-10-15 at 08.22.26_c0a656b3.jpg",
+      "upload_category": "preop_crown",
+      "filename_tag": "any",
+      "forced_required": false
+    }
+  ],
+  "patient_answers": {
+    "clinic_name": "Test Clinic Melbourne 618",
+    "clinic_country": "australia",
+    "clinic_city": "Melbourne",
+    "procedure_date": "2025-04-02",
+    "procedure_type": "fue",
+    "surgeon_name": "Dr. Test 30",
+    "preop_consult": "no",
+    "doctor_present_extraction": "yes",
+    "doctor_present_implant": "not_sure",
+    "graft_number_disclosed": "yes",
+    "graft_number_received": 2551,
+    "donor_shaving": "full_shave",
+    "surgery_duration": "6_8h",
+    "total_paid_currency": "usd",
+    "total_paid_amount": 13349,
+    "cost_model": "package",
+    "what_included": [
+      "procedure",
+      "accommodation",
+      "prp",
+      "followup"
+    ],
+    "pain_level": 2,
+    "post_op_swelling": "none",
+    "bleeding_issue": "no",
+    "recovery_time": "under_1_week",
+    "shock_loss": "not_sure",
+    "complications": "no",
+    "months_since": "9_12",
+    "density_satisfaction": 5,
+    "hairline_naturalness": 5,
+    "donor_appearance": 5,
+    "would_repeat": "no",
+    "would_recommend": "yes",
+    "enhanced_patient_answers": {
+      "baseline": {
+        "patient_age": 44,
+        "patient_sex": "Male",
+        "smoking_status": "No",
+        "alcohol_frequency": "Rare",
+        "diabetes": "No"
+      },
+      "procedure_execution": {
+        "grafts_claimed_total": 2551,
+        "technician_role_extraction": "Technician",
+        "technician_role_implantation": "Technician",
+        "hairline_drawn_by_doctor": "Technician",
+        "single_hair_grafts_front": "Yes",
+        "crown_pattern_discussed": "Yes"
+      },
+      "experience": {
+        "communication_rating": 3,
+        "transparency_rating": 4,
+        "felt_rushed": true,
+        "felt_informed": "Yes",
+        "legal_or_refund_dispute": "No",
+        "current_satisfaction": 5,
+        "biggest_concern_now": "Hairline looks slightly unnatural",
+        "considering_revision": "No"
+      }
+    },
+    "patient_baseline": {
+      "patient_age": 44,
+      "patient_sex": "Male",
+      "smoking_status": "No"
+    }
+  }
+}

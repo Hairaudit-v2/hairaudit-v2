@@ -1,0 +1,157 @@
+{
+  "caseId": "6f79e5d6-c1be-4070-bdff-a074c78ae38f",
+  "dryRun": false,
+  "generated_at": "2026-02-27T03:23:46.965Z",
+  "patient": {
+    "age": 28,
+    "sex_assigned_at_birth": "Male",
+    "smoking": "No"
+  },
+  "clinic": {
+    "country": "Mexico",
+    "procedure_type": "FUT",
+    "claimed_grafts": 2205,
+    "months_since": "9_12"
+  },
+  "test_identity": {
+    "user_id": "900008e7-15f7-40f2-a7a8-fe34b05b633f",
+    "email": "test+1e7b9dd373c1ae31@hairaudit.dev"
+  },
+  "images": [
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture1.jpg",
+      "upload_category": "preop_right",
+      "filename_tag": "any",
+      "forced_required": false
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Darren\\Top View.jpg",
+      "upload_category": "preop_top",
+      "filename_tag": "top",
+      "forced_required": false
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Darren\\Front View.jpg",
+      "upload_category": "preop_front",
+      "filename_tag": "front",
+      "forced_required": false
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture10.png",
+      "upload_category": "preop_donor_rear",
+      "filename_tag": "any",
+      "forced_required": true
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Austin\\WhatsApp Image 2025-10-15 at 08.22.43_d611886e.jpg",
+      "upload_category": "preop_right",
+      "filename_tag": "any",
+      "forced_required": false
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture86.png",
+      "upload_category": "postop_day0",
+      "filename_tag": "any",
+      "forced_required": false
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture69.png",
+      "upload_category": "day0_donor",
+      "filename_tag": "any",
+      "forced_required": false
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture84.jpg",
+      "upload_category": "preop_right",
+      "filename_tag": "any",
+      "forced_required": false
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Pre 3.jpg",
+      "upload_category": "preop_right",
+      "filename_tag": "any",
+      "forced_required": false
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture59.png",
+      "upload_category": "day0_donor",
+      "filename_tag": "any",
+      "forced_required": false
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Darren\\Pre 1.jpg",
+      "upload_category": "day0_recipient",
+      "filename_tag": "any",
+      "forced_required": false
+    }
+  ],
+  "patient_answers": {
+    "clinic_name": "Test Clinic Tijuana 911",
+    "clinic_country": "mexico",
+    "clinic_city": "Tijuana",
+    "procedure_date": "2025-04-20",
+    "procedure_type": "fut",
+    "surgeon_name": "Dr. Test 77",
+    "preop_consult": "no",
+    "doctor_present_extraction": "yes",
+    "doctor_present_implant": "yes",
+    "graft_number_disclosed": "yes",
+    "graft_number_received": 2205,
+    "donor_shaving": "full_shave",
+    "surgery_duration": "6_8h",
+    "total_paid_currency": "usd",
+    "total_paid_amount": 3272,
+    "cost_model": "per_graft",
+    "what_included": [
+      "procedure",
+      "prp",
+      "transport",
+      "medications",
+      "followup"
+    ],
+    "pain_level": 1,
+    "post_op_swelling": "none",
+    "bleeding_issue": "no",
+    "recovery_time": "under_1_week",
+    "shock_loss": "no",
+    "complications": "no",
+    "months_since": "9_12",
+    "density_satisfaction": 3,
+    "hairline_naturalness": 2,
+    "donor_appearance": 5,
+    "would_repeat": "no",
+    "would_recommend": "yes",
+    "enhanced_patient_answers": {
+      "baseline": {
+        "patient_age": 28,
+        "patient_sex": "Male",
+        "smoking_status": "No",
+        "alcohol_frequency": "Rare",
+        "diabetes": "No"
+      },
+      "procedure_execution": {
+        "grafts_claimed_total": 2205,
+        "technician_role_extraction": "Doctor",
+        "technician_role_implantation": "Doctor",
+        "hairline_drawn_by_doctor": "Yes",
+        "single_hair_grafts_front": "Not sure",
+        "crown_pattern_discussed": "Yes"
+      },
+      "experience": {
+        "communication_rating": 5,
+        "transparency_rating": 4,
+        "felt_rushed": false,
+        "felt_informed": "Somewhat",
+        "legal_or_refund_dispute": "No",
+        "current_satisfaction": 6,
+        "biggest_concern_now": "Density is lower than expected",
+        "considering_revision": "Unsure"
+      }
+    },
+    "patient_baseline": {
+      "patient_age": 28,
+      "patient_sex": "Male",
+      "smoking_status": "No"
+    }
+  }
+}

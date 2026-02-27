@@ -1,0 +1,128 @@
+{
+  "caseId": "5572c582-361a-4a33-9d06-cf243ec46565",
+  "dryRun": false,
+  "generated_at": "2026-02-27T02:42:51.255Z",
+  "patient": {
+    "age": 22,
+    "sex_assigned_at_birth": "Male",
+    "smoking": "No"
+  },
+  "clinic": {
+    "country": "Argentina",
+    "procedure_type": "DHI",
+    "claimed_grafts": 1504,
+    "months_since": "6_9"
+  },
+  "test_identity": {
+    "user_id": "95762ebd-f71f-4100-abea-b7b31bee4416",
+    "email": "test+881142180552dca5@hairaudit.dev"
+  },
+  "images": [
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Austin\\Austin Rock 1.jpg",
+      "upload_category": "day0_recipient",
+      "filename_tag": "any"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Top View.jpg",
+      "upload_category": "preop_top",
+      "filename_tag": "top"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Darren\\Front View.jpg",
+      "upload_category": "preop_front",
+      "filename_tag": "front"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture8.jpg",
+      "upload_category": "day0_donor",
+      "filename_tag": "any"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture5.jpg",
+      "upload_category": "intraop",
+      "filename_tag": "any"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\45.jpg",
+      "upload_category": "day0_donor",
+      "filename_tag": "any"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\01.jpg",
+      "upload_category": "day0_recipient",
+      "filename_tag": "any"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Left Side.jpg",
+      "upload_category": "preop_crown",
+      "filename_tag": "any"
+    }
+  ],
+  "patient_answers": {
+    "clinic_name": "Test Clinic Córdoba 296",
+    "clinic_country": "argentina",
+    "clinic_city": "Córdoba",
+    "procedure_date": "2025-07-01",
+    "procedure_type": "dhi",
+    "surgeon_name": "Dr. Test 44",
+    "preop_consult": "yes",
+    "doctor_present_extraction": "yes",
+    "doctor_present_implant": "yes",
+    "graft_number_disclosed": "yes",
+    "graft_number_received": 1504,
+    "donor_shaving": "full_shave",
+    "surgery_duration": "4_6h",
+    "total_paid_currency": "usd",
+    "total_paid_amount": 2864,
+    "cost_model": "per_graft",
+    "what_included": [
+      "medications",
+      "transport"
+    ],
+    "pain_level": 7,
+    "post_op_swelling": "none",
+    "bleeding_issue": "no",
+    "recovery_time": "2_4_weeks",
+    "shock_loss": "no",
+    "complications": "no",
+    "months_since": "6_9",
+    "density_satisfaction": 4,
+    "hairline_naturalness": 3,
+    "donor_appearance": 3,
+    "would_repeat": "yes",
+    "would_recommend": "no",
+    "enhanced_patient_answers": {
+      "baseline": {
+        "patient_age": 22,
+        "patient_sex": "Male",
+        "smoking_status": "No",
+        "alcohol_frequency": "Weekly",
+        "diabetes": "No"
+      },
+      "procedure_execution": {
+        "grafts_claimed_total": 1504,
+        "technician_role_extraction": "Mixed",
+        "technician_role_implantation": "Doctor",
+        "hairline_drawn_by_doctor": "Not sure",
+        "single_hair_grafts_front": "Not sure",
+        "crown_pattern_discussed": "Yes"
+      },
+      "experience": {
+        "communication_rating": 1,
+        "transparency_rating": 3,
+        "felt_rushed": true,
+        "felt_informed": "Somewhat",
+        "legal_or_refund_dispute": "No",
+        "current_satisfaction": 8,
+        "biggest_concern_now": "Donor area looks patchy",
+        "considering_revision": "Unsure"
+      }
+    },
+    "patient_baseline": {
+      "patient_age": 22,
+      "patient_sex": "Male",
+      "smoking_status": "No"
+    }
+  }
+}

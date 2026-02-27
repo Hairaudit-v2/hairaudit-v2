@@ -1,0 +1,91 @@
+{
+  "ok": false,
+  "case": {
+    "id": "5572c582-361a-4a33-9d06-cf243ec46565",
+    "status": "audit_failed",
+    "created_at": "2026-02-27T02:42:51.026048+00:00"
+  },
+  "report": {
+    "id": "7c6ec314-d54d-4047-b0ef-fcf7afd1858b",
+    "version": 1,
+    "pdf_path": "",
+    "status": "failed",
+    "error": "Missing required patient photos (Current Front, Top, Donor rear)",
+    "summary": {
+      "patient_answers": {
+        "cost_model": "per_graft",
+        "pain_level": 7,
+        "shock_loss": "no",
+        "clinic_city": "Córdoba",
+        "clinic_name": "Test Clinic Córdoba 296",
+        "months_since": "6_9",
+        "surgeon_name": "Dr. Test 44",
+        "would_repeat": "yes",
+        "complications": "no",
+        "donor_shaving": "full_shave",
+        "preop_consult": "yes",
+        "recovery_time": "2_4_weeks",
+        "what_included": [
+          "medications",
+          "transport"
+        ],
+        "bleeding_issue": "no",
+        "clinic_country": "argentina",
+        "procedure_date": "2025-07-01",
+        "procedure_type": "dhi",
+        "would_recommend": "no",
+        "donor_appearance": 3,
+        "patient_baseline": {
+          "patient_age": 22,
+          "patient_sex": "Male",
+          "smoking_status": "No"
+        },
+        "post_op_swelling": "none",
+        "surgery_duration": "4_6h",
+        "total_paid_amount": 2864,
+        "total_paid_currency": "usd",
+        "density_satisfaction": 4,
+        "hairline_naturalness": 3,
+        "graft_number_received": 1504,
+        "doctor_present_implant": "yes",
+        "graft_number_disclosed": "yes",
+        "enhanced_patient_answers": {
+          "baseline": {
+            "diabetes": "No",
+            "patient_age": 22,
+            "patient_sex": "Male",
+            "smoking_status": "No",
+            "alcohol_frequency": "Weekly"
+          },
+          "experience": {
+            "felt_rushed": true,
+            "felt_informed": "Somewhat",
+            "biggest_concern_now": "Donor area looks patchy",
+            "transparency_rating": 3,
+            "communication_rating": 1,
+            "considering_revision": "Unsure",
+            "current_satisfaction": 8,
+            "legal_or_refund_dispute": "No"
+          },
+          "procedure_execution": {
+            "grafts_claimed_total": 1504,
+            "crown_pattern_discussed": "Yes",
+            "hairline_drawn_by_doctor": "Not sure",
+            "single_hair_grafts_front": "Not sure",
+            "technician_role_extraction": "Mixed",
+            "technician_role_implantation": "Doctor"
+          }
+        },
+        "doctor_present_extraction": "yes"
+      },
+      "patient_answers_updated_at": "2026-02-27T02:42:51.751Z"
+    },
+    "created_at": "2026-02-27T02:42:52.046838+00:00"
+  },
+  "derived": {
+    "overall_score": null,
+    "confidence": null,
+    "pdf_path": "",
+    "pdf_local_path": null
+  }
+}

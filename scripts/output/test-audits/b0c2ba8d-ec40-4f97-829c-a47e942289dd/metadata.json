@@ -1,0 +1,163 @@
+{
+  "caseId": "b0c2ba8d-ec40-4f97-829c-a47e942289dd",
+  "dryRun": false,
+  "generated_at": "2026-02-27T03:33:12.182Z",
+  "patient": {
+    "age": 50,
+    "sex_assigned_at_birth": "Male",
+    "smoking": "No"
+  },
+  "clinic": {
+    "country": "India",
+    "procedure_type": "FUE",
+    "claimed_grafts": 2817,
+    "months_since": "9_12"
+  },
+  "test_identity": {
+    "user_id": "f16edc6c-ac9d-4ae8-91b7-b12ab4b178de",
+    "email": "test+cc146a725dc61d40@hairaudit.dev"
+  },
+  "images": [
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture40.jpg",
+      "upload_category": "postop_day0",
+      "filename_tag": "any",
+      "forced_required": false
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Darren\\Top View.jpg",
+      "upload_category": "preop_top",
+      "filename_tag": "top",
+      "forced_required": false
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Darren\\Front View.jpg",
+      "upload_category": "preop_front",
+      "filename_tag": "front",
+      "forced_required": false
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Darren\\Donor View.jpg",
+      "upload_category": "preop_donor_rear",
+      "filename_tag": "any",
+      "forced_required": true
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture70.jpg",
+      "upload_category": "day0_donor",
+      "filename_tag": "any",
+      "forced_required": false
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture20.jpg",
+      "upload_category": "preop_right",
+      "filename_tag": "any",
+      "forced_required": false
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture80.png",
+      "upload_category": "preop_left",
+      "filename_tag": "any",
+      "forced_required": false
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture74.jpg",
+      "upload_category": "preop_left",
+      "filename_tag": "any",
+      "forced_required": false
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Darren\\Left Side.jpg",
+      "upload_category": "day0_donor",
+      "filename_tag": "any",
+      "forced_required": false
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture26.png",
+      "upload_category": "day0_recipient",
+      "filename_tag": "any",
+      "forced_required": false
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Austin\\WhatsApp Image 2025-10-15 at 08.22.19_a4961a4d.jpg",
+      "upload_category": "day0_donor",
+      "filename_tag": "any",
+      "forced_required": false
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Austin\\WhatsApp Image 2025-10-15 at 08.22.46_ccfce150.jpg",
+      "upload_category": "preop_right",
+      "filename_tag": "any",
+      "forced_required": false
+    }
+  ],
+  "patient_answers": {
+    "clinic_name": "Test Clinic Bangalore 216",
+    "clinic_country": "india",
+    "clinic_city": "Bangalore",
+    "procedure_date": "2025-04-10",
+    "procedure_type": "fue",
+    "surgeon_name": "Dr. Test 20",
+    "preop_consult": "yes",
+    "doctor_present_extraction": "yes",
+    "doctor_present_implant": "no",
+    "graft_number_disclosed": "yes",
+    "graft_number_received": 2817,
+    "donor_shaving": "full_shave",
+    "surgery_duration": "6_8h",
+    "total_paid_currency": "usd",
+    "total_paid_amount": 9927,
+    "cost_model": "package",
+    "what_included": [
+      "medications",
+      "prp",
+      "accommodation",
+      "transport",
+      "followup"
+    ],
+    "pain_level": 7,
+    "post_op_swelling": "none",
+    "bleeding_issue": "no",
+    "recovery_time": "1_2_weeks",
+    "shock_loss": "yes",
+    "complications": "no",
+    "months_since": "9_12",
+    "density_satisfaction": 1,
+    "hairline_naturalness": 3,
+    "donor_appearance": 1,
+    "would_repeat": "not_sure",
+    "would_recommend": "no",
+    "enhanced_patient_answers": {
+      "baseline": {
+        "patient_age": 50,
+        "patient_sex": "Male",
+        "smoking_status": "No",
+        "alcohol_frequency": "Rare",
+        "diabetes": "No"
+      },
+      "procedure_execution": {
+        "grafts_claimed_total": 2817,
+        "technician_role_extraction": "Technician",
+        "technician_role_implantation": "Mixed",
+        "hairline_drawn_by_doctor": "Yes",
+        "single_hair_grafts_front": "No",
+        "crown_pattern_discussed": "No"
+      },
+      "experience": {
+        "communication_rating": 4,
+        "transparency_rating": 2,
+        "felt_rushed": false,
+        "felt_informed": "Yes",
+        "legal_or_refund_dispute": "No",
+        "current_satisfaction": 5,
+        "biggest_concern_now": "Density is lower than expected",
+        "considering_revision": "No"
+      }
+    },
+    "patient_baseline": {
+      "patient_age": 50,
+      "patient_sex": "Male",
+      "smoking_status": "No"
+    }
+  }
+}

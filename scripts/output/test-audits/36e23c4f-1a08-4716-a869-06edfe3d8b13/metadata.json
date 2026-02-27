@@ -1,0 +1,128 @@
+{
+  "caseId": "36e23c4f-1a08-4716-a869-06edfe3d8b13",
+  "dryRun": false,
+  "generated_at": "2026-02-27T03:06:09.381Z",
+  "patient": {
+    "age": 60,
+    "sex_assigned_at_birth": "Female",
+    "smoking": "No"
+  },
+  "clinic": {
+    "country": "Canada",
+    "procedure_type": "Not Sure",
+    "claimed_grafts": 3954,
+    "months_since": "under_3"
+  },
+  "test_identity": {
+    "user_id": "00008599-26e9-46cb-bae6-1aeffd100e96",
+    "email": "test+138807d32ef073be@hairaudit.dev"
+  },
+  "images": [
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Pre 2.jpg",
+      "upload_category": "preop_crown",
+      "filename_tag": "any"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Darren\\Top View.jpg",
+      "upload_category": "preop_top",
+      "filename_tag": "top"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Darren\\Front View.jpg",
+      "upload_category": "preop_front",
+      "filename_tag": "front"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Austin\\WhatsApp Image 2025-10-15 at 08.22.57_4453551a.jpg",
+      "upload_category": "preop_left",
+      "filename_tag": "any"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\45.png",
+      "upload_category": "day0_recipient",
+      "filename_tag": "any"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Austin\\WhatsApp Image 2025-10-15 at 08.22.19_a4961a4d.jpg",
+      "upload_category": "preop_right",
+      "filename_tag": "any"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Darren\\Left Side.jpg",
+      "upload_category": "preop_right",
+      "filename_tag": "any"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture2.png",
+      "upload_category": "postop_day0",
+      "filename_tag": "any"
+    }
+  ],
+  "patient_answers": {
+    "clinic_name": "Test Clinic Montreal 408",
+    "clinic_country": "canada",
+    "clinic_city": "Montreal",
+    "procedure_date": "2025-12-22",
+    "procedure_type": "not_sure",
+    "preop_consult": "yes",
+    "doctor_present_extraction": "yes",
+    "doctor_present_implant": "not_sure",
+    "graft_number_disclosed": "yes",
+    "graft_number_received": 3954,
+    "donor_shaving": "full_shave",
+    "surgery_duration": "under_4h",
+    "total_paid_currency": "eur",
+    "total_paid_amount": 4093,
+    "cost_model": "package",
+    "what_included": [
+      "accommodation",
+      "followup",
+      "medications"
+    ],
+    "pain_level": 7,
+    "post_op_swelling": "mild",
+    "bleeding_issue": "no",
+    "recovery_time": "1_2_weeks",
+    "shock_loss": "no",
+    "complications": "no",
+    "months_since": "under_3",
+    "density_satisfaction": 2,
+    "hairline_naturalness": 2,
+    "donor_appearance": 2,
+    "would_repeat": "no",
+    "would_recommend": "yes",
+    "enhanced_patient_answers": {
+      "baseline": {
+        "patient_age": 60,
+        "patient_sex": "Female",
+        "smoking_status": "No",
+        "alcohol_frequency": "Weekly",
+        "diabetes": "No"
+      },
+      "procedure_execution": {
+        "grafts_claimed_total": 3954,
+        "technician_role_extraction": "Doctor",
+        "technician_role_implantation": "Doctor",
+        "hairline_drawn_by_doctor": "Yes",
+        "single_hair_grafts_front": "Yes",
+        "crown_pattern_discussed": "Yes"
+      },
+      "experience": {
+        "communication_rating": 5,
+        "transparency_rating": 1,
+        "felt_rushed": true,
+        "felt_informed": "Yes",
+        "legal_or_refund_dispute": "No",
+        "current_satisfaction": 4,
+        "biggest_concern_now": "Hairline looks slightly unnatural",
+        "considering_revision": "No"
+      }
+    },
+    "patient_baseline": {
+      "patient_age": 60,
+      "patient_sex": "Female",
+      "smoking_status": "No"
+    }
+  }
+}

@@ -1,0 +1,94 @@
+{
+  "ok": false,
+  "case": {
+    "id": "016e9edd-cc85-4acd-91a9-86e04fd26c22",
+    "status": "audit_failed",
+    "created_at": "2026-02-27T03:25:07.837223+00:00"
+  },
+  "report": {
+    "id": "99d13a72-0323-4c7d-9b17-54df38aadb65",
+    "version": 1,
+    "pdf_path": "",
+    "status": "failed",
+    "error": "Missing required patient photos (Current Front, Top, Donor rear)",
+    "summary": {
+      "patient_answers": {
+        "cost_model": "per_session",
+        "pain_level": 5,
+        "shock_loss": "no",
+        "clinic_city": "São Paulo",
+        "clinic_name": "Test Clinic São Paulo 664",
+        "months_since": "6_9",
+        "surgeon_name": "Dr. Test 56",
+        "would_repeat": "yes",
+        "complications": "no",
+        "donor_shaving": "full_shave",
+        "preop_consult": "yes",
+        "recovery_time": "1_2_weeks",
+        "what_included": [
+          "transport",
+          "procedure",
+          "prp",
+          "followup",
+          "medications"
+        ],
+        "bleeding_issue": "no",
+        "clinic_country": "brazil",
+        "procedure_date": "2025-07-15",
+        "procedure_type": "fue",
+        "would_recommend": "yes",
+        "donor_appearance": 5,
+        "patient_baseline": {
+          "patient_age": 49,
+          "patient_sex": "Male",
+          "smoking_status": "No"
+        },
+        "post_op_swelling": "mild",
+        "surgery_duration": "under_4h",
+        "total_paid_amount": 3479,
+        "total_paid_currency": "eur",
+        "density_satisfaction": 2,
+        "hairline_naturalness": 1,
+        "graft_number_received": 3157,
+        "doctor_present_implant": "yes",
+        "graft_number_disclosed": "yes",
+        "enhanced_patient_answers": {
+          "baseline": {
+            "diabetes": "No",
+            "patient_age": 49,
+            "patient_sex": "Male",
+            "smoking_status": "No",
+            "alcohol_frequency": "Rare"
+          },
+          "experience": {
+            "felt_rushed": false,
+            "felt_informed": "No",
+            "biggest_concern_now": "Unsure about growth timeline",
+            "transparency_rating": 2,
+            "communication_rating": 2,
+            "considering_revision": "No",
+            "current_satisfaction": 8,
+            "legal_or_refund_dispute": "No"
+          },
+          "procedure_execution": {
+            "grafts_claimed_total": 3157,
+            "crown_pattern_discussed": "Yes",
+            "hairline_drawn_by_doctor": "Yes",
+            "single_hair_grafts_front": "Yes",
+            "technician_role_extraction": "Mixed",
+            "technician_role_implantation": "Not sure"
+          }
+        },
+        "doctor_present_extraction": "yes"
+      },
+      "patient_answers_updated_at": "2026-02-27T03:25:08.500Z"
+    },
+    "created_at": "2026-02-27T03:25:08.79514+00:00"
+  },
+  "derived": {
+    "overall_score": null,
+    "confidence": null,
+    "pdf_path": "",
+    "pdf_local_path": null
+  }
+}

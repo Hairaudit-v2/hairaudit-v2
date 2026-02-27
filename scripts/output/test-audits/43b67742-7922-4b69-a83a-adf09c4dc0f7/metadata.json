@@ -1,0 +1,136 @@
+{
+  "caseId": "43b67742-7922-4b69-a83a-adf09c4dc0f7",
+  "dryRun": false,
+  "generated_at": "2026-02-27T03:09:40.607Z",
+  "patient": {
+    "age": 47,
+    "sex_assigned_at_birth": "Male",
+    "smoking": "Occasionally"
+  },
+  "clinic": {
+    "country": "Poland",
+    "procedure_type": "Not Sure",
+    "claimed_grafts": 1925,
+    "months_since": "under_3"
+  },
+  "test_identity": {
+    "user_id": "ecedad55-7082-4595-a0db-20bda5a4a378",
+    "email": "test+8a768fac7dac92a8@hairaudit.dev"
+  },
+  "images": [
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture87.png",
+      "upload_category": "preop_right",
+      "filename_tag": "any",
+      "forced_required": false
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Top View.jpg",
+      "upload_category": "preop_top",
+      "filename_tag": "top",
+      "forced_required": false
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Darren\\Front View.jpg",
+      "upload_category": "preop_front",
+      "filename_tag": "front",
+      "forced_required": false
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Ref4.png",
+      "upload_category": "preop_donor_rear",
+      "filename_tag": "any",
+      "forced_required": true
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Austin\\WhatsApp Image 2025-10-15 at 08.22.57_dcce5943.jpg",
+      "upload_category": "day0_donor",
+      "filename_tag": "any",
+      "forced_required": false
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture31.png",
+      "upload_category": "preop_left",
+      "filename_tag": "any",
+      "forced_required": false
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Left Side.jpg",
+      "upload_category": "intraop",
+      "filename_tag": "any",
+      "forced_required": false
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Austin\\WhatsApp Image 2025-10-15 at 08.22.46_ccfce150.jpg",
+      "upload_category": "preop_left",
+      "filename_tag": "any",
+      "forced_required": false
+    }
+  ],
+  "patient_answers": {
+    "clinic_name": "Test Clinic Warsaw 93",
+    "clinic_country": "poland",
+    "clinic_city": "Warsaw",
+    "procedure_date": "2025-12-26",
+    "procedure_type": "not_sure",
+    "preop_consult": "yes",
+    "doctor_present_extraction": "no",
+    "doctor_present_implant": "not_sure",
+    "graft_number_disclosed": "yes",
+    "graft_number_received": 1925,
+    "donor_shaving": "full_shave",
+    "surgery_duration": "4_6h",
+    "total_paid_currency": "eur",
+    "total_paid_amount": 10056,
+    "cost_model": "per_graft",
+    "what_included": [
+      "prp",
+      "medications",
+      "procedure"
+    ],
+    "pain_level": 2,
+    "post_op_swelling": "none",
+    "bleeding_issue": "no",
+    "recovery_time": "1_2_weeks",
+    "shock_loss": "no",
+    "complications": "no",
+    "months_since": "under_3",
+    "density_satisfaction": 1,
+    "hairline_naturalness": 1,
+    "donor_appearance": 3,
+    "would_repeat": "yes",
+    "would_recommend": "yes",
+    "enhanced_patient_answers": {
+      "baseline": {
+        "patient_age": 47,
+        "patient_sex": "Male",
+        "smoking_status": "Occasionally",
+        "alcohol_frequency": "Rare",
+        "diabetes": "No"
+      },
+      "procedure_execution": {
+        "grafts_claimed_total": 1925,
+        "technician_role_extraction": "Doctor",
+        "technician_role_implantation": "Mixed",
+        "hairline_drawn_by_doctor": "Technician",
+        "single_hair_grafts_front": "No",
+        "crown_pattern_discussed": "Yes"
+      },
+      "experience": {
+        "communication_rating": 1,
+        "transparency_rating": 2,
+        "felt_rushed": true,
+        "felt_informed": "Yes",
+        "legal_or_refund_dispute": "No",
+        "current_satisfaction": 9,
+        "biggest_concern_now": "Hairline looks slightly unnatural",
+        "considering_revision": "No"
+      }
+    },
+    "patient_baseline": {
+      "patient_age": 47,
+      "patient_sex": "Male",
+      "smoking_status": "Occasionally"
+    }
+  }
+}

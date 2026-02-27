@@ -41,6 +41,21 @@ type Summary = {
     summary?: string;
     non_medical_disclaimer?: string;
     model?: string;
+    domain_scores_v1?: {
+      version?: number;
+      domains?: Array<{
+        domain_id?: string;
+        title?: string;
+        raw_score?: number;
+        confidence?: number;
+        evidence_grade?: string;
+        weighted_score?: number;
+        drivers?: string[];
+        limiters?: string[];
+        improvement_plan?: Array<{ priority?: number; action?: string; why?: string; evidence_needed?: string[] }>;
+      }>;
+    };
+    benchmark?: { eligible?: boolean; gate_version?: string; reasons?: string[] };
   };
 };
 
@@ -131,6 +146,8 @@ export default async function ReportHtmlPage({
   };
   const findings = Array.isArray(summary.findings) ? summary.findings : (summary.highlights ?? []);
   const forensic = summary.forensic_audit;
+  const domainV1 = forensic?.domain_scores_v1?.domains ?? null;
+  const benchmark = forensic?.benchmark ?? null;
 
   // Compute rubric score if answers exist (same as print route)
   let computed = summary?.computed ?? null;
@@ -364,6 +381,83 @@ export default async function ReportHtmlPage({
                         )}
                       </td>
                     </tr>
+                    {Array.isArray(domainV1) && domainV1.length > 0 && (
+                      <tr>
+                        <td>Domains (v1)</td>
+                        <td>
+                          {benchmark?.eligible ? "Benchmark eligible" : "Not benchmark eligible"}
+                          {benchmark?.gate_version ? ` • Gate: ${benchmark.gate_version}` : ""}
+                        </td>
+                        <td>
+                          {(forensic as any)?.overall_scores_v1 && (
+                            <div style={{ marginBottom: 10 }}>
+                              <div><strong>Performance Score:</strong> {(forensic as any).overall_scores_v1?.performance_score ?? "—"}</div>
+                              <div><strong>Confidence:</strong> {(forensic as any).overall_scores_v1?.confidence_grade ?? "—"} {typeof (forensic as any).overall_scores_v1?.confidence_multiplier === "number" ? `(${(forensic as any).overall_scores_v1.confidence_multiplier.toFixed(2)})` : ""}</div>
+                              <div><strong>Benchmark Score:</strong> {(forensic as any).overall_scores_v1?.benchmark_score ?? "—"}</div>
+                            </div>
+                          )}
+                          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                            <thead>
+                              <tr>
+                                <th>Domain</th>
+                                <th>Raw</th>
+                                <th>Conf</th>
+                                <th>Grade</th>
+                                <th>Weighted</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {domainV1.slice(0, 10).map((d, i) => (
+                                <tr key={i}>
+                                  <td><strong>{d.domain_id}</strong> — {d.title ?? ""}</td>
+                                  <td>{d.raw_score ?? "—"}</td>
+                                  <td>{typeof d.confidence === "number" ? `${Math.round(d.confidence * 100)}%` : "—"}</td>
+                                  <td>{d.evidence_grade ?? "—"}</td>
+                                  <td>{d.weighted_score ?? "—"}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                          {Array.isArray(benchmark?.reasons) && benchmark!.reasons!.length > 0 && (
+                            <div style={{ marginTop: 8 }}>
+                              <div className="muted">Eligibility reasons</div>
+                              <ul style={{ marginTop: 6, paddingLeft: 18 }}>
+                                {benchmark!.reasons!.slice(0, 6).map((r, idx) => (
+                                  <li key={idx}>{r}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          {Array.isArray((forensic as any)?.tiers_v1) && (forensic as any).tiers_v1.length > 0 && (
+                            <div style={{ marginTop: 10 }}>
+                              <div className="muted">Tier (v1)</div>
+                              <ul style={{ marginTop: 6, paddingLeft: 18 }}>
+                                {(forensic as any).tiers_v1.slice(0, 3).map((t: any, idx: number) => (
+                                  <li key={idx}>
+                                    <strong>{t.title}</strong>: {t.eligible ? "Eligible" : "Not yet"} {Array.isArray(t.reasons) && t.reasons.length ? `— ${t.reasons[0]}` : ""}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    )}
+                    {(forensic as any)?.completeness_index_v1 && (
+                      <tr>
+                        <td>Completeness index (v1)</td>
+                        <td>{(forensic as any).completeness_index_v1?.score ?? "—"} / 100</td>
+                        <td>
+                          <div className="muted">Based on submitted documentation.</div>
+                          <ul style={{ marginTop: 6, paddingLeft: 18 }}>
+                            <li>Photos: {(forensic as any).completeness_index_v1?.breakdown?.photo_coverage?.score ?? "—"} / 45</li>
+                            <li>Structured metadata: {(forensic as any).completeness_index_v1?.breakdown?.structured_metadata?.score ?? "—"} / 35</li>
+                            <li>Numeric precision: {(forensic as any).completeness_index_v1?.breakdown?.numeric_precision?.score ?? "—"} / 10</li>
+                            <li>Verification evidence: {(forensic as any).completeness_index_v1?.breakdown?.verification_evidence?.score ?? "—"} / 10</li>
+                          </ul>
+                        </td>
+                      </tr>
+                    )}
                     {Array.isArray(forensic.data_quality?.limitations) && forensic.data_quality!.limitations!.length > 0 && (
                       <tr>
                         <td>Limitations</td>

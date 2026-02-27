@@ -1,0 +1,135 @@
+{
+  "caseId": "f7ec6a44-ec19-427b-914e-806bc48dd2dd",
+  "dryRun": false,
+  "generated_at": "2026-02-27T03:32:20.071Z",
+  "patient": {
+    "age": 34,
+    "sex_assigned_at_birth": "Female",
+    "smoking": "Occasionally"
+  },
+  "clinic": {
+    "country": "India",
+    "procedure_type": "FUE",
+    "claimed_grafts": 2179,
+    "months_since": "9_12"
+  },
+  "test_identity": {
+    "user_id": "65781fd4-91b9-45f2-97fd-69ba0589f881",
+    "email": "test+463534356c82fbbb@hairaudit.dev"
+  },
+  "images": [
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture35.jpg",
+      "upload_category": "day0_recipient",
+      "filename_tag": "any",
+      "forced_required": false
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Top View.jpg",
+      "upload_category": "preop_top",
+      "filename_tag": "top",
+      "forced_required": false
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Darren\\Front View.jpg",
+      "upload_category": "preop_front",
+      "filename_tag": "front",
+      "forced_required": false
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture38.jpg",
+      "upload_category": "preop_donor_rear",
+      "filename_tag": "any",
+      "forced_required": true
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture17.jpg",
+      "upload_category": "preop_right",
+      "filename_tag": "any",
+      "forced_required": false
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture61.png",
+      "upload_category": "day0_recipient",
+      "filename_tag": "any",
+      "forced_required": false
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture51.png",
+      "upload_category": "preop_right",
+      "filename_tag": "any",
+      "forced_required": false
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Pre 4.jpg",
+      "upload_category": "preop_right",
+      "filename_tag": "any",
+      "forced_required": false
+    }
+  ],
+  "patient_answers": {
+    "clinic_name": "Test Clinic Hyderabad 697",
+    "clinic_country": "india",
+    "clinic_city": "Hyderabad",
+    "procedure_date": "2025-04-05",
+    "procedure_type": "fue",
+    "preop_consult": "yes",
+    "doctor_present_extraction": "yes",
+    "doctor_present_implant": "yes",
+    "graft_number_disclosed": "yes",
+    "graft_number_received": 2179,
+    "donor_shaving": "full_shave",
+    "surgery_duration": "4_6h",
+    "total_paid_currency": "usd",
+    "total_paid_amount": 13354,
+    "cost_model": "per_session",
+    "what_included": [
+      "prp",
+      "medications"
+    ],
+    "pain_level": 5,
+    "post_op_swelling": "mild",
+    "bleeding_issue": "yes",
+    "recovery_time": "2_4_weeks",
+    "shock_loss": "no",
+    "complications": "no",
+    "months_since": "9_12",
+    "density_satisfaction": 5,
+    "hairline_naturalness": 2,
+    "donor_appearance": 4,
+    "would_repeat": "yes",
+    "would_recommend": "yes",
+    "enhanced_patient_answers": {
+      "baseline": {
+        "patient_age": 34,
+        "patient_sex": "Female",
+        "smoking_status": "Occasionally",
+        "alcohol_frequency": "Rare",
+        "diabetes": "No"
+      },
+      "procedure_execution": {
+        "grafts_claimed_total": 2179,
+        "technician_role_extraction": "Technician",
+        "technician_role_implantation": "Not sure",
+        "hairline_drawn_by_doctor": "Yes",
+        "single_hair_grafts_front": "Yes",
+        "crown_pattern_discussed": "No"
+      },
+      "experience": {
+        "communication_rating": 5,
+        "transparency_rating": 4,
+        "felt_rushed": false,
+        "felt_informed": "No",
+        "legal_or_refund_dispute": "No",
+        "current_satisfaction": 6,
+        "biggest_concern_now": "Unsure about growth timeline",
+        "considering_revision": "Yes"
+      }
+    },
+    "patient_baseline": {
+      "patient_age": 34,
+      "patient_sex": "Female",
+      "smoking_status": "Occasionally"
+    }
+  }
+}

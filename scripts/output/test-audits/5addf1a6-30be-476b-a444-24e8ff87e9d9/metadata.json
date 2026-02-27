@@ -1,0 +1,144 @@
+{
+  "caseId": "5addf1a6-30be-476b-a444-24e8ff87e9d9",
+  "dryRun": false,
+  "generated_at": "2026-02-27T02:45:40.717Z",
+  "patient": {
+    "age": 23,
+    "sex_assigned_at_birth": "Female",
+    "smoking": "Occasionally"
+  },
+  "clinic": {
+    "country": "Argentina",
+    "procedure_type": "DHI",
+    "claimed_grafts": 1261,
+    "months_since": "9_12"
+  },
+  "test_identity": {
+    "user_id": "d85da9c6-8c34-4644-8257-a86a3e4ae5e5",
+    "email": "test+1c2f7f4f61916c7f@hairaudit.dev"
+  },
+  "images": [
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture71.png",
+      "upload_category": "preop_left",
+      "filename_tag": "any"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Darren\\Top View.jpg",
+      "upload_category": "preop_top",
+      "filename_tag": "top"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Darren\\Front View.jpg",
+      "upload_category": "preop_front",
+      "filename_tag": "front"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture12.jpg",
+      "upload_category": "preop_right",
+      "filename_tag": "any"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture2.jpg",
+      "upload_category": "preop_crown",
+      "filename_tag": "any"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Darren\\Pre 3.jpg",
+      "upload_category": "day0_recipient",
+      "filename_tag": "any"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture45.jpg",
+      "upload_category": "preop_crown",
+      "filename_tag": "any"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Austin\\WhatsApp Image 2025-10-15 at 08.22.56_6f6edf85.jpg",
+      "upload_category": "day0_recipient",
+      "filename_tag": "any"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture24.png",
+      "upload_category": "preop_right",
+      "filename_tag": "any"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture13.png",
+      "upload_category": "day0_recipient",
+      "filename_tag": "any"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture17.png",
+      "upload_category": "preop_left",
+      "filename_tag": "any"
+    }
+  ],
+  "patient_answers": {
+    "clinic_name": "Test Clinic Córdoba 542",
+    "clinic_country": "argentina",
+    "clinic_city": "Córdoba",
+    "procedure_date": "2025-04-11",
+    "procedure_type": "dhi",
+    "surgeon_name": "Dr. Test 61",
+    "preop_consult": "yes",
+    "doctor_present_extraction": "yes",
+    "doctor_present_implant": "yes",
+    "graft_number_disclosed": "yes",
+    "graft_number_received": 1261,
+    "donor_shaving": "partial_shave",
+    "surgery_duration": "4_6h",
+    "total_paid_currency": "eur",
+    "total_paid_amount": 12670,
+    "cost_model": "per_session",
+    "what_included": [
+      "accommodation",
+      "transport",
+      "followup"
+    ],
+    "pain_level": 7,
+    "post_op_swelling": "moderate",
+    "bleeding_issue": "no",
+    "recovery_time": "under_1_week",
+    "shock_loss": "no",
+    "complications": "no",
+    "months_since": "9_12",
+    "density_satisfaction": 5,
+    "hairline_naturalness": 1,
+    "donor_appearance": 5,
+    "would_repeat": "not_sure",
+    "would_recommend": "yes",
+    "enhanced_patient_answers": {
+      "baseline": {
+        "patient_age": 23,
+        "patient_sex": "Female",
+        "smoking_status": "Occasionally",
+        "alcohol_frequency": "Rare",
+        "diabetes": "No"
+      },
+      "procedure_execution": {
+        "grafts_claimed_total": 1261,
+        "technician_role_extraction": "Doctor",
+        "technician_role_implantation": "Mixed",
+        "hairline_drawn_by_doctor": "Yes",
+        "single_hair_grafts_front": "No",
+        "crown_pattern_discussed": "Yes"
+      },
+      "experience": {
+        "communication_rating": 4,
+        "transparency_rating": 1,
+        "felt_rushed": false,
+        "felt_informed": "Somewhat",
+        "legal_or_refund_dispute": "No",
+        "current_satisfaction": 6,
+        "biggest_concern_now": "Density is lower than expected",
+        "considering_revision": "Unsure"
+      }
+    },
+    "patient_baseline": {
+      "patient_age": 23,
+      "patient_sex": "Female",
+      "smoking_status": "Occasionally"
+    }
+  }
+}

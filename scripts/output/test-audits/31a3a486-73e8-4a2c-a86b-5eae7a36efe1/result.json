@@ -1,0 +1,92 @@
+{
+  "ok": false,
+  "case": {
+    "id": "31a3a486-73e8-4a2c-a86b-5eae7a36efe1",
+    "status": "audit_failed",
+    "created_at": "2026-02-27T03:34:13.421531+00:00"
+  },
+  "report": {
+    "id": "65d66b82-0315-4020-b9ac-11a679e389af",
+    "version": 1,
+    "pdf_path": "",
+    "status": "failed",
+    "error": "Missing required patient photos (Current Front, Top, Donor rear)",
+    "summary": {
+      "patient_answers": {
+        "cost_model": "per_graft",
+        "pain_level": 5,
+        "shock_loss": "yes",
+        "clinic_city": "Hyderabad",
+        "clinic_name": "Test Clinic Hyderabad 259",
+        "months_since": "3_6",
+        "would_repeat": "no",
+        "complications": "no",
+        "donor_shaving": "partial_shave",
+        "preop_consult": "yes",
+        "recovery_time": "4_plus_weeks",
+        "what_included": [
+          "followup",
+          "procedure",
+          "transport",
+          "accommodation"
+        ],
+        "bleeding_issue": "no",
+        "clinic_country": "india",
+        "procedure_date": "2025-10-14",
+        "procedure_type": "not_sure",
+        "would_recommend": "yes",
+        "donor_appearance": 2,
+        "patient_baseline": {
+          "patient_age": 34,
+          "patient_sex": "Male",
+          "smoking_status": "Daily"
+        },
+        "post_op_swelling": "mild",
+        "surgery_duration": "6_8h",
+        "total_paid_amount": 15776,
+        "total_paid_currency": "gbp",
+        "density_satisfaction": 1,
+        "hairline_naturalness": 4,
+        "graft_number_received": 2490,
+        "doctor_present_implant": "yes",
+        "graft_number_disclosed": "yes",
+        "enhanced_patient_answers": {
+          "baseline": {
+            "diabetes": "Not sure",
+            "patient_age": 34,
+            "patient_sex": "Male",
+            "smoking_status": "Daily",
+            "alcohol_frequency": "Daily"
+          },
+          "experience": {
+            "felt_rushed": false,
+            "felt_informed": "Yes",
+            "biggest_concern_now": "Unsure about growth timeline",
+            "transparency_rating": 3,
+            "communication_rating": 4,
+            "considering_revision": "No",
+            "current_satisfaction": 5,
+            "legal_or_refund_dispute": "No"
+          },
+          "procedure_execution": {
+            "grafts_claimed_total": 2490,
+            "crown_pattern_discussed": "Yes",
+            "hairline_drawn_by_doctor": "Not sure",
+            "single_hair_grafts_front": "Yes",
+            "technician_role_extraction": "Technician",
+            "technician_role_implantation": "Not sure"
+          }
+        },
+        "doctor_present_extraction": "yes"
+      },
+      "patient_answers_updated_at": "2026-02-27T03:34:14.033Z"
+    },
+    "created_at": "2026-02-27T03:34:14.328246+00:00"
+  },
+  "derived": {
+    "overall_score": null,
+    "confidence": null,
+    "pdf_path": "",
+    "pdf_local_path": null
+  }
+}

@@ -3,6 +3,7 @@ import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { canAccessCase } from "@/lib/case-access";
 import { mapLegacyDoctorAnswers } from "@/lib/doctorAuditSchema";
+import { computeDoctorAiContextV1 } from "@/lib/benchmarks/domainScoring";
 
 // GET ?caseId=... — applies backward compat mapping for legacy field names
 export async function GET(req: Request) {
@@ -61,6 +62,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Missing doctorAnswers" }, { status: 400 });
   }
 
+  // Never accept client-provided scoring/context; these are computed server-side.
+  const incomingClean = { ...(incoming as Record<string, unknown>) } as Record<string, unknown>;
+  delete (incomingClean as any).ai_context;
+  delete (incomingClean as any).scoring;
+
   const { data: existing } = await admin
     .from("reports")
     .select("id, version, summary")
@@ -71,7 +77,33 @@ export async function POST(req: Request) {
 
   const currentSummary = (existing?.summary ?? {}) as Record<string, unknown>;
   const currentDoctor = (currentSummary.doctor_answers ?? {}) as Record<string, unknown>;
-  const doctorAnswers = { ...currentDoctor, ...incoming } as Record<string, unknown>;
+  const doctorAnswers = { ...currentDoctor, ...incomingClean } as Record<string, unknown>;
+
+  // Compute completeness/confidence context continuously on save (best-effort).
+  try {
+    const { getUserRole } = await import("@/lib/case-access");
+    const role = await getUserRole(user.id);
+    const effectiveDoctorId = role === "doctor" ? user.id : (c?.doctor_id ?? null);
+    const effectiveClinicId = c?.clinic_id ?? null;
+
+    const { data: uploads, error: uploadsErr } = await admin
+      .from("uploads")
+      .select("type, metadata")
+      .eq("case_id", caseId);
+
+    if (!uploadsErr) {
+      const ctx = computeDoctorAiContextV1({
+        uploads: (uploads ?? []) as any,
+        doctorAnswersRaw: doctorAnswers,
+        doctorId: effectiveDoctorId,
+        clinicId: effectiveClinicId,
+      });
+      (doctorAnswers as any).ai_context = ctx.ai_context;
+    }
+  } catch {
+    // Best-effort only; never block save on context computation.
+  }
+
   const nextSummary = { ...currentSummary, doctor_answers: doctorAnswers };
 
   if (existing) {

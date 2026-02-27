@@ -2,8 +2,10 @@ import { inngest } from "./client";
 import { createClient } from "@supabase/supabase-js";
 import { runAIAudit } from "@/lib/ai/audit";
 import { runGraftIntegrityModelEstimate } from "@/lib/ai/graftIntegrity";
+import { runDoctorScoringNarrative, DEFAULT_PROTOCOL_CATALOG, DEFAULT_TRAINING_MODULE_CATALOG } from "@/lib/ai/runDoctorScoringNarrative";
 import { notifyPatientAuditFailed, notifyAuditorAuditFailed } from "@/lib/email";
 import { canSubmit } from "@/lib/auditPhotoSchemas";
+import { computeDomainScoresV1, computeDoctorAiContextV1 } from "@/lib/benchmarks/domainScoring";
 
 function supabaseAdmin() {
   return createClient(
@@ -437,16 +439,30 @@ export const runAudit = inngest.createFunction(
 
     // 1) Load case
     const c = await step.run("load-case", async () => {
-      const { data, error } = await supabase
+      const baseSelect = "id, user_id, status, submitted_at, doctor_id, clinic_id, evidence_score_doctor, evidence_score_patient";
+      const res = await supabase
         .from("cases")
-        .select("id, user_id, status, submitted_at")
+        .select(baseSelect)
         .eq("id", caseId)
         .maybeSingle();
 
-      if (error) throw new Error(`cases load failed: ${error.message}`);
-      if (!data) throw new Error("Case not found");
-      if (data.user_id !== userId) throw new Error("Forbidden: not owner");
-      return data;
+      // Backward compatibility: if evidence columns don't exist yet, fallback.
+      if (res.error && String(res.error.message || "").includes("evidence")) {
+        const fb = await supabase
+          .from("cases")
+          .select("id, user_id, status, submitted_at, doctor_id, clinic_id")
+          .eq("id", caseId)
+          .maybeSingle();
+        if (fb.error) throw new Error(`cases load failed: ${fb.error.message}`);
+        if (!fb.data) throw new Error("Case not found");
+        if (fb.data.user_id !== userId) throw new Error("Forbidden: not owner");
+        return fb.data as any;
+      }
+
+      if (res.error) throw new Error(`cases load failed: ${res.error.message}`);
+      if (!res.data) throw new Error("Case not found");
+      if (res.data.user_id !== userId) throw new Error("Forbidden: not owner");
+      return res.data as any;
     });
 
     // 2) Mark processing (optional but helpful)
@@ -539,6 +555,67 @@ export const runAudit = inngest.createFunction(
       });
     });
 
+    // 6a) Doctor scoring narrative (GPT; non-blocking). Deterministic ai_context remains truth.
+    const scoringNarrative = await step.run("doctor-scoring-narrative", async () => {
+      try {
+        const doctorAnswers = existingSummary.doctor_answers as Record<string, unknown> | null;
+
+        const ctx = computeDoctorAiContextV1({
+          uploads: uploads as any,
+          doctorAnswersRaw: (doctorAnswers as any) ?? null,
+          doctorId: (c as any)?.doctor_id ?? null,
+          clinicId: (c as any)?.clinic_id ?? null,
+        });
+
+        const missingRequired: string[] = [];
+        const per = (ctx.completeness_index_v1 as any)?.breakdown?.photo_coverage?.per_category ?? {};
+        for (const [k, v] of Object.entries(per)) {
+          if (Number((v as any)?.done ?? 0) < 1) missingRequired.push(`doctor_photo:${String(k)}`);
+        }
+        const missingStructured = (ctx.completeness_index_v1 as any)?.breakdown?.structured_metadata?.missing_keys ?? [];
+        for (const k of (Array.isArray(missingStructured) ? missingStructured : []).slice(0, 15)) {
+          missingRequired.push(`doctor_answers:${String(k)}`);
+        }
+
+        const imageFindingsSummary =
+          `data_quality.limitations: ${(aiResult as any)?.data_quality?.limitations?.slice?.(0, 8)?.join?.("; ") ?? "(none)"}\n` +
+          `key_findings: ${((aiResult as any)?.key_findings ?? []).slice(0, 5).map((x: any) => String(x?.title ?? "")).filter(Boolean).join("; ") || "(none)"}\n` +
+          `red_flags: ${((aiResult as any)?.red_flags ?? []).slice(0, 5).map((x: any) => String(x?.title ?? "")).filter(Boolean).join("; ") || "(none)"}`;
+
+        const out = await runDoctorScoringNarrative({
+          doctor_answers: doctorAnswers,
+          ai_context: { ...(ctx.ai_context as any), missing_required: missingRequired.slice(0, 30) },
+          ai_audit_result: aiResult as any,
+          image_findings_summary: imageFindingsSummary,
+          protocolCatalog: DEFAULT_PROTOCOL_CATALOG,
+          trainingModuleCatalog: DEFAULT_TRAINING_MODULE_CATALOG,
+        });
+
+        return { narrative: out.narrative, model: out.model, generated_at: new Date().toISOString() };
+      } catch (err: any) {
+        console.error("doctor-scoring-narrative failed", {
+          caseId,
+          message: String(err?.message ?? err),
+        });
+        return null;
+      }
+    });
+
+    // 6b) Evidence-weighted v1 domains (deterministic; confidence-gated)
+    const v1 = await step.run("compute-v1-domains", async () => {
+      return computeDomainScoresV1({
+        ai: aiResult as any,
+        uploads: uploads as any,
+        caseRow: {
+          evidence_score_doctor: (c as any)?.evidence_score_doctor ?? null,
+          evidence_score_patient: (c as any)?.evidence_score_patient ?? null,
+          doctor_id: (c as any)?.doctor_id ?? null,
+          clinic_id: (c as any)?.clinic_id ?? null,
+        },
+        doctorAnswersRaw: (existingSummary.doctor_answers as any) ?? null,
+      });
+    });
+
     // 7) Determine report version
     const nextVersion = await step.run("next-version", async () => {
       const { data, error } = await supabase
@@ -553,8 +630,11 @@ export const runAudit = inngest.createFunction(
       return Number(latest) + 1;
     });
 
-    // 8) Create PDF (includes AI audit results + case photos)
-    const pdfBuffer = await step.run("build-pdf", async () => {
+    // 8) Build + upload PDF (do NOT return Buffer from step output)
+    // Returning large Buffers from step.run can exceed Inngest payload limits (output_too_large).
+    const pdfPath = `${caseId}/v${nextVersion}.pdf`;
+
+    await step.run("build-and-upload-pdf", async () => {
       const { buildAuditReportPdf, fetchReportImages } = await import("@/lib/pdf/reportBuilder");
       const images = await fetchReportImages(supabase, BUCKET, uploads);
 
@@ -610,7 +690,7 @@ export const runAudit = inngest.createFunction(
       const confForReport = Number.isFinite(confModel) && confModel > 0 ? confModel : deriveConfidence();
       const confLabelForReport = confForReport < 0.55 ? "low" : confForReport < 0.8 ? "medium" : "high";
 
-      return buildAuditReportPdf({
+      const pdfBuffer = await buildAuditReportPdf({
         caseId,
         version: nextVersion,
         generatedAt: new Date().toLocaleString(),
@@ -626,6 +706,15 @@ export const runAudit = inngest.createFunction(
           key_findings: aiResult.key_findings as any,
           red_flags: aiResult.red_flags as any,
           non_medical_disclaimer: aiResult.non_medical_disclaimer,
+          domain_scores_v1: {
+            version: 1,
+            domains: (v1 as any)?.domains ?? undefined,
+          },
+          benchmark: (v1 as any)?.benchmark ?? undefined,
+          completeness_index_v1: (v1 as any)?.completeness_index_v1 ?? undefined,
+          confidence_model_v1: (v1 as any)?.confidence_model_v1 ?? undefined,
+          overall_scores_v1: (v1 as any)?.overall_scores_v1 ?? undefined,
+          tiers_v1: (v1 as any)?.tiers_v1 ?? undefined,
         },
         graftIntegrity: graftIntegrity as any,
         confidencePanel: {
@@ -652,25 +741,139 @@ export const runAudit = inngest.createFunction(
         },
         images,
       });
-    });
 
-    // 9) Upload PDF
-    const pdfPath = `${caseId}/v${nextVersion}.pdf`;
-
-    await step.run("upload-pdf", async () => {
-      // Inngest may serialize Buffer; ensure we pass a real Buffer
+      // Ensure we pass a real Buffer to storage.upload
       const buf = Buffer.isBuffer(pdfBuffer) ? pdfBuffer : Buffer.from((pdfBuffer as { data?: number[] }).data ?? []);
       const { error } = await supabase.storage.from(BUCKET).upload(pdfPath, buf, {
         contentType: "application/pdf",
         upsert: true,
       });
       if (error) throw new Error(`storage upload failed: ${error.message}`);
+
+      return { pdfPath, bytes: buf.length };
     });
 
     // 10) Insert report row (with AI audit + answers)
     await step.run("insert-report-row", async () => {
+      const doctorAnswersBase =
+        existingSummary.doctor_answers && typeof existingSummary.doctor_answers === "object"
+          ? ({ ...(existingSummary.doctor_answers as Record<string, unknown>) } as Record<string, unknown>)
+          : ({} as Record<string, unknown>);
+
+      const tiers = ((v1 as any)?.tiers_v1 ?? []) as Array<{ tier_id?: string; eligible?: boolean }>;
+      const tier: 1 | 2 | 3 | undefined = tiers.find((t) => t?.tier_id === "tier3_award")?.eligible
+        ? 3
+        : tiers.find((t) => t?.tier_id === "tier2_certified")?.eligible
+          ? 2
+          : tiers.find((t) => t?.tier_id === "tier1_standard")?.eligible
+            ? 1
+            : undefined;
+
+      const completeness = (v1 as any)?.completeness_index_v1;
+      const confidenceModel = (v1 as any)?.confidence_model_v1;
+      const benchmark = (v1 as any)?.benchmark;
+      const overall = (v1 as any)?.overall_scores_v1;
+      const domains = (((v1 as any)?.domains ?? []) as any[]).filter(Boolean);
+
+      // Persist computed AI context under doctor_answers (minimal/safe namespace).
+      (doctorAnswersBase as any).ai_context = {
+        completeness_score: Number(completeness?.score ?? 0),
+        completeness_breakdown: {
+          photos: Number(completeness?.breakdown?.photo_coverage?.score ?? 0),
+          structured: Number(completeness?.breakdown?.structured_metadata?.score ?? 0),
+          numeric: Number(completeness?.breakdown?.numeric_precision?.score ?? 0),
+          verification: Number(completeness?.breakdown?.verification_evidence?.score ?? 0),
+        },
+        evidence_grade: String(confidenceModel?.evidence_grade ?? "D"),
+        confidence_multiplier: Number(confidenceModel?.confidence_multiplier ?? 0.5),
+        benchmark_eligible: Boolean(benchmark?.eligible ?? false),
+        tier,
+      };
+
+      // Persist scoring snapshot under doctor_answers.scoring (v1 deterministic today; can be GPT/hybrid later).
+      const domainsRecord: Record<string, any> = {};
+      const protocolOps: any[] = [];
+      const suggestedModules: any[] = [];
+      for (const d of domains) {
+        const domainId = String(d?.domain_id ?? "");
+        if (!domainId) continue;
+        domainsRecord[domainId] = {
+          raw_score: Number(d?.raw_score ?? 0),
+          confidence: Number(d?.confidence ?? 0.5),
+          evidence_grade: String(d?.evidence_grade ?? "D"),
+          weighted_score: Number(d?.weighted_score ?? 0),
+          drivers: Array.isArray(d?.drivers) ? d.drivers : [],
+          limiters: Array.isArray(d?.limiters) ? d.limiters : [],
+          priority_actions: Array.isArray(d?.priority_actions)
+            ? d.priority_actions.map((a: any) => ({
+                action: String(a?.action ?? ""),
+                impact: a?.impact,
+                effort: a?.effort,
+                evidence_needed: Array.isArray(a?.evidence_needed) ? a.evidence_needed : undefined,
+              }))
+            : [],
+        };
+        if (Array.isArray(d?.protocol_opportunities)) protocolOps.push(...d.protocol_opportunities);
+        if (Array.isArray(d?.suggested_modules)) suggestedModules.push(...d.suggested_modules);
+      }
+
+      const uniqBy = <T,>(items: T[], key: (t: T) => string) => {
+        const out: T[] = [];
+        const seen = new Set<string>();
+        for (const it of items) {
+          const k = key(it);
+          if (!k || seen.has(k)) continue;
+          seen.add(k);
+          out.push(it);
+        }
+        return out;
+      };
+
+      // If GPT narrative exists, merge WHITELISTED narrative fields only (numbers remain deterministic).
+      const narrative = (scoringNarrative as any)?.narrative ?? null;
+      const narrativeDomains = narrative?.domains ?? null;
+      if (narrativeDomains && typeof narrativeDomains === "object") {
+        for (const key of ["SP", "DP", "GV", "IC", "DI"]) {
+          if (!domainsRecord[key]) continue;
+          const nd = (narrativeDomains as any)[key];
+          if (!nd || typeof nd !== "object") continue;
+          if (Array.isArray(nd.drivers)) domainsRecord[key].drivers = nd.drivers;
+          if (Array.isArray(nd.limiters)) domainsRecord[key].limiters = nd.limiters;
+          if (Array.isArray(nd.priority_actions)) domainsRecord[key].priority_actions = nd.priority_actions;
+        }
+      }
+
+      const narrativeProtocols = narrative?.protocol_opportunities;
+      const narrativeModules = narrative?.suggested_modules;
+      const narrativeMissingEvidence = narrative?.missing_evidence_priorities;
+
+      (doctorAnswersBase as any).scoring = {
+        domains: domainsRecord,
+        overall: {
+          raw_score: Number(overall?.performance_score ?? 0),
+          confidence: Number(overall?.confidence_multiplier ?? 0.5),
+          evidence_grade: String(overall?.confidence_grade ?? "D"),
+          weighted_score: Number(overall?.benchmark_score ?? 0),
+        },
+        protocol_opportunities: Array.isArray(narrativeProtocols)
+          ? narrativeProtocols
+          : uniqBy(protocolOps, (x: any) => String(x?.name ?? "")).slice(0, 25),
+        suggested_modules: Array.isArray(narrativeModules)
+          ? narrativeModules
+          : uniqBy(suggestedModules, (x: any) => String(x?.module_id ?? ""))?.slice(0, 25),
+        missing_evidence_priorities: Array.isArray(narrativeMissingEvidence) ? narrativeMissingEvidence : undefined,
+      };
+
+      if (scoringNarrative && (scoringNarrative as any)?.generated_at) {
+        (doctorAnswersBase as any).scoring_generated_at = String((scoringNarrative as any).generated_at);
+      }
+      if (scoringNarrative && (scoringNarrative as any)?.narrative) {
+        (doctorAnswersBase as any).scoring_version = "v2";
+      }
+
       const summary = {
         ...existingSummary,
+        doctor_answers: doctorAnswersBase,
         score: aiResult.score,
         donor_quality: aiResult.donor_quality,
         graft_survival_estimate: aiResult.graft_survival_estimate,
@@ -689,6 +892,15 @@ export const runAudit = inngest.createFunction(
           summary: aiResult.summary,
           non_medical_disclaimer: aiResult.non_medical_disclaimer,
           model: aiResult.model,
+          domain_scores_v1: {
+            version: 1,
+            domains: (v1 as any)?.domains ?? [],
+          },
+          benchmark: (v1 as any)?.benchmark ?? { eligible: false, gate_version: "balanced_v1", reasons: ["Benchmark computation unavailable."] },
+          completeness_index_v1: (v1 as any)?.completeness_index_v1 ?? { version: 1, score: 0, weights: { photos: 45, structured_metadata: 35, numeric_precision: 10, verification_evidence: 10 }, breakdown: {} },
+          confidence_model_v1: (v1 as any)?.confidence_model_v1 ?? undefined,
+          overall_scores_v1: (v1 as any)?.overall_scores_v1 ?? undefined,
+          tiers_v1: (v1 as any)?.tiers_v1 ?? undefined,
         },
         area_scores: null,
         section_scores: aiResult.section_scores,

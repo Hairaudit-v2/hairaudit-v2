@@ -1,0 +1,135 @@
+{
+  "caseId": "95a5c8f4-0fb1-4d1b-b748-1ec9aecfaafb",
+  "dryRun": false,
+  "generated_at": "2026-02-27T02:42:50.609Z",
+  "patient": {
+    "age": 29,
+    "sex_assigned_at_birth": "Male",
+    "smoking": "Occasionally"
+  },
+  "clinic": {
+    "country": "India",
+    "procedure_type": "DHI",
+    "claimed_grafts": 2036,
+    "months_since": "6_9"
+  },
+  "test_identity": {
+    "user_id": "6d63603b-2fdd-46fa-8709-e348927ede7b",
+    "email": "test+f1af0d6f8d721571@hairaudit.dev"
+  },
+  "images": [
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture16.jpg",
+      "upload_category": "preop_left",
+      "filename_tag": "any"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Top View.jpg",
+      "upload_category": "preop_top",
+      "filename_tag": "top"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Darren\\Front View.jpg",
+      "upload_category": "preop_front",
+      "filename_tag": "front"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture84.jpg",
+      "upload_category": "preop_left",
+      "filename_tag": "any"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\DHI-wallpaper-large.jpg",
+      "upload_category": "preop_crown",
+      "filename_tag": "any"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture1.jpg",
+      "upload_category": "day0_donor",
+      "filename_tag": "any"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture88.jpg",
+      "upload_category": "day0_recipient",
+      "filename_tag": "any"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture48.png",
+      "upload_category": "preop_right",
+      "filename_tag": "any"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture26.png",
+      "upload_category": "preop_right",
+      "filename_tag": "any"
+    }
+  ],
+  "patient_answers": {
+    "clinic_name": "Test Clinic Mumbai 532",
+    "clinic_country": "india",
+    "clinic_city": "Mumbai",
+    "procedure_date": "2025-07-14",
+    "procedure_type": "dhi",
+    "surgeon_name": "Dr. Test 77",
+    "preop_consult": "yes",
+    "doctor_present_extraction": "not_sure",
+    "doctor_present_implant": "yes",
+    "graft_number_disclosed": "yes",
+    "graft_number_received": 2036,
+    "donor_shaving": "partial_shave",
+    "surgery_duration": "4_6h",
+    "total_paid_currency": "usd",
+    "total_paid_amount": 11039,
+    "cost_model": "per_session",
+    "what_included": [
+      "transport",
+      "medications",
+      "accommodation",
+      "procedure"
+    ],
+    "pain_level": 5,
+    "post_op_swelling": "mild",
+    "bleeding_issue": "no",
+    "recovery_time": "2_4_weeks",
+    "shock_loss": "yes",
+    "complications": "no",
+    "months_since": "6_9",
+    "density_satisfaction": 4,
+    "hairline_naturalness": 4,
+    "donor_appearance": 4,
+    "would_repeat": "yes",
+    "would_recommend": "yes",
+    "enhanced_patient_answers": {
+      "baseline": {
+        "patient_age": 29,
+        "patient_sex": "Male",
+        "smoking_status": "Occasionally",
+        "alcohol_frequency": "Rare",
+        "diabetes": "No"
+      },
+      "procedure_execution": {
+        "grafts_claimed_total": 2036,
+        "technician_role_extraction": "Technician",
+        "technician_role_implantation": "Technician",
+        "hairline_drawn_by_doctor": "Not sure",
+        "single_hair_grafts_front": "Yes",
+        "crown_pattern_discussed": "Yes"
+      },
+      "experience": {
+        "communication_rating": 2,
+        "transparency_rating": 3,
+        "felt_rushed": false,
+        "felt_informed": "Yes",
+        "legal_or_refund_dispute": "Resolved",
+        "current_satisfaction": 8,
+        "biggest_concern_now": "Density is lower than expected",
+        "considering_revision": "No"
+      }
+    },
+    "patient_baseline": {
+      "patient_age": 29,
+      "patient_sex": "Male",
+      "smoking_status": "Occasionally"
+    }
+  }
+}

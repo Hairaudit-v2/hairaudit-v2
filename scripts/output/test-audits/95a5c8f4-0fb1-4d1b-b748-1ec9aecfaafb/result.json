@@ -1,0 +1,93 @@
+{
+  "ok": false,
+  "case": {
+    "id": "95a5c8f4-0fb1-4d1b-b748-1ec9aecfaafb",
+    "status": "audit_failed",
+    "created_at": "2026-02-27T02:42:50.393066+00:00"
+  },
+  "report": {
+    "id": "9dd2b40c-06af-4ee2-b292-e0607c977089",
+    "version": 1,
+    "pdf_path": "",
+    "status": "failed",
+    "error": "Missing required patient photos (Current Front, Top, Donor rear)",
+    "summary": {
+      "patient_answers": {
+        "cost_model": "per_session",
+        "pain_level": 5,
+        "shock_loss": "yes",
+        "clinic_city": "Mumbai",
+        "clinic_name": "Test Clinic Mumbai 532",
+        "months_since": "6_9",
+        "surgeon_name": "Dr. Test 77",
+        "would_repeat": "yes",
+        "complications": "no",
+        "donor_shaving": "partial_shave",
+        "preop_consult": "yes",
+        "recovery_time": "2_4_weeks",
+        "what_included": [
+          "transport",
+          "medications",
+          "accommodation",
+          "procedure"
+        ],
+        "bleeding_issue": "no",
+        "clinic_country": "india",
+        "procedure_date": "2025-07-14",
+        "procedure_type": "dhi",
+        "would_recommend": "yes",
+        "donor_appearance": 4,
+        "patient_baseline": {
+          "patient_age": 29,
+          "patient_sex": "Male",
+          "smoking_status": "Occasionally"
+        },
+        "post_op_swelling": "mild",
+        "surgery_duration": "4_6h",
+        "total_paid_amount": 11039,
+        "total_paid_currency": "usd",
+        "density_satisfaction": 4,
+        "hairline_naturalness": 4,
+        "graft_number_received": 2036,
+        "doctor_present_implant": "yes",
+        "graft_number_disclosed": "yes",
+        "enhanced_patient_answers": {
+          "baseline": {
+            "diabetes": "No",
+            "patient_age": 29,
+            "patient_sex": "Male",
+            "smoking_status": "Occasionally",
+            "alcohol_frequency": "Rare"
+          },
+          "experience": {
+            "felt_rushed": false,
+            "felt_informed": "Yes",
+            "biggest_concern_now": "Density is lower than expected",
+            "transparency_rating": 3,
+            "communication_rating": 2,
+            "considering_revision": "No",
+            "current_satisfaction": 8,
+            "legal_or_refund_dispute": "Resolved"
+          },
+          "procedure_execution": {
+            "grafts_claimed_total": 2036,
+            "crown_pattern_discussed": "Yes",
+            "hairline_drawn_by_doctor": "Not sure",
+            "single_hair_grafts_front": "Yes",
+            "technician_role_extraction": "Technician",
+            "technician_role_implantation": "Technician"
+          }
+        },
+        "doctor_present_extraction": "not_sure"
+      },
+      "patient_answers_updated_at": "2026-02-27T02:42:51.112Z"
+    },
+    "created_at": "2026-02-27T02:42:51.482836+00:00"
+  },
+  "derived": {
+    "overall_score": null,
+    "confidence": null,
+    "pdf_path": "",
+    "pdf_local_path": null
+  }
+}

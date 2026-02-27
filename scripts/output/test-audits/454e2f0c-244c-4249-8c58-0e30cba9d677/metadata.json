@@ -1,0 +1,139 @@
+{
+  "caseId": "454e2f0c-244c-4249-8c58-0e30cba9d677",
+  "dryRun": false,
+  "generated_at": "2026-02-27T03:15:36.042Z",
+  "patient": {
+    "age": 33,
+    "sex_assigned_at_birth": "Female",
+    "smoking": "No"
+  },
+  "clinic": {
+    "country": "Argentina",
+    "procedure_type": "FUT",
+    "claimed_grafts": 2840,
+    "months_since": "9_12"
+  },
+  "test_identity": {
+    "user_id": "43f71e0e-49a0-4195-a931-aa1dd50bc722",
+    "email": "test+938c1ef84ca745a8@hairaudit.dev"
+  },
+  "images": [
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture40.jpg",
+      "upload_category": "preop_left",
+      "filename_tag": "any"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Darren\\Top View.jpg",
+      "upload_category": "preop_top",
+      "filename_tag": "top"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Darren\\Front View.jpg",
+      "upload_category": "preop_front",
+      "filename_tag": "front"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture86.png",
+      "upload_category": "day0_donor",
+      "filename_tag": "any"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Austin\\WhatsApp Image 2025-10-15 at 08.22.57_509fb85a.jpg",
+      "upload_category": "preop_left",
+      "filename_tag": "any"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture9.jpg",
+      "upload_category": "day0_recipient",
+      "filename_tag": "any"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\40.jpg",
+      "upload_category": "preop_crown",
+      "filename_tag": "any"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Pre 2.jpg",
+      "upload_category": "day0_donor",
+      "filename_tag": "any"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture16.jpg",
+      "upload_category": "preop_crown",
+      "filename_tag": "any"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture24.jpg",
+      "upload_category": "day0_recipient",
+      "filename_tag": "any"
+    }
+  ],
+  "patient_answers": {
+    "clinic_name": "Test Clinic Buenos Aires 413",
+    "clinic_country": "argentina",
+    "clinic_city": "Buenos Aires",
+    "procedure_date": "2025-04-23",
+    "procedure_type": "fut",
+    "preop_consult": "yes",
+    "doctor_present_extraction": "yes",
+    "doctor_present_implant": "not_sure",
+    "graft_number_disclosed": "yes",
+    "graft_number_received": 2840,
+    "donor_shaving": "full_shave",
+    "surgery_duration": "4_6h",
+    "total_paid_currency": "usd",
+    "total_paid_amount": 13212,
+    "cost_model": "per_graft",
+    "what_included": [
+      "medications",
+      "prp",
+      "followup",
+      "accommodation"
+    ],
+    "pain_level": 2,
+    "post_op_swelling": "none",
+    "bleeding_issue": "no",
+    "recovery_time": "1_2_weeks",
+    "shock_loss": "not_sure",
+    "complications": "no",
+    "months_since": "9_12",
+    "density_satisfaction": 4,
+    "hairline_naturalness": 2,
+    "donor_appearance": 5,
+    "would_repeat": "not_sure",
+    "would_recommend": "yes",
+    "enhanced_patient_answers": {
+      "baseline": {
+        "patient_age": 33,
+        "patient_sex": "Female",
+        "smoking_status": "No",
+        "alcohol_frequency": "Weekly",
+        "diabetes": "No"
+      },
+      "procedure_execution": {
+        "grafts_claimed_total": 2840,
+        "technician_role_extraction": "Doctor",
+        "technician_role_implantation": "Doctor",
+        "hairline_drawn_by_doctor": "Not sure",
+        "single_hair_grafts_front": "Yes",
+        "crown_pattern_discussed": "Yes"
+      },
+      "experience": {
+        "communication_rating": 4,
+        "transparency_rating": 2,
+        "felt_rushed": false,
+        "felt_informed": "Somewhat",
+        "legal_or_refund_dispute": "No",
+        "current_satisfaction": 6,
+        "biggest_concern_now": "Unsure about growth timeline",
+        "considering_revision": "No"
+      }
+    },
+    "patient_baseline": {
+      "patient_age": 33,
+      "patient_sex": "Female",
+      "smoking_status": "No"
+    }
+  }
+}

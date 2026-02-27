@@ -1,0 +1,92 @@
+{
+  "ok": false,
+  "case": {
+    "id": "0d3703fd-4cec-4587-ae87-c527e5eed015",
+    "status": "audit_failed",
+    "created_at": "2026-02-27T03:18:41.742629+00:00"
+  },
+  "report": {
+    "id": "75e2a653-a2a9-4c45-b43e-2ec2b55a9518",
+    "version": 1,
+    "pdf_path": "",
+    "status": "failed",
+    "error": "Missing required patient photos (Current Front, Top, Donor rear)",
+    "summary": {
+      "patient_answers": {
+        "cost_model": "per_session",
+        "pain_level": 7,
+        "shock_loss": "no",
+        "clinic_city": "Montreal",
+        "clinic_name": "Test Clinic Montreal 86",
+        "months_since": "6_9",
+        "surgeon_name": "Dr. Test 56",
+        "would_repeat": "yes",
+        "complications": "no",
+        "donor_shaving": "full_shave",
+        "preop_consult": "yes",
+        "recovery_time": "2_4_weeks",
+        "what_included": [
+          "transport",
+          "medications",
+          "followup"
+        ],
+        "bleeding_issue": "no",
+        "clinic_country": "canada",
+        "procedure_date": "2025-07-28",
+        "procedure_type": "dhi",
+        "would_recommend": "no",
+        "donor_appearance": 1,
+        "patient_baseline": {
+          "patient_age": 60,
+          "patient_sex": "Female",
+          "smoking_status": "No"
+        },
+        "post_op_swelling": "mild",
+        "surgery_duration": "4_6h",
+        "total_paid_amount": 1260,
+        "total_paid_currency": "usd",
+        "density_satisfaction": 5,
+        "hairline_naturalness": 5,
+        "graft_number_received": 3475,
+        "doctor_present_implant": "yes",
+        "graft_number_disclosed": "yes",
+        "enhanced_patient_answers": {
+          "baseline": {
+            "diabetes": "Not sure",
+            "patient_age": 60,
+            "patient_sex": "Female",
+            "smoking_status": "No",
+            "alcohol_frequency": "Daily"
+          },
+          "experience": {
+            "felt_rushed": false,
+            "felt_informed": "Somewhat",
+            "biggest_concern_now": "Unsure about growth timeline",
+            "transparency_rating": 4,
+            "communication_rating": 3,
+            "considering_revision": "No",
+            "current_satisfaction": 9,
+            "legal_or_refund_dispute": "No"
+          },
+          "procedure_execution": {
+            "grafts_claimed_total": 3475,
+            "crown_pattern_discussed": "Yes",
+            "hairline_drawn_by_doctor": "Yes",
+            "single_hair_grafts_front": "Not sure",
+            "technician_role_extraction": "Not sure",
+            "technician_role_implantation": "Mixed"
+          }
+        },
+        "doctor_present_extraction": "yes"
+      },
+      "patient_answers_updated_at": "2026-02-27T03:18:42.367Z"
+    },
+    "created_at": "2026-02-27T03:18:42.63978+00:00"
+  },
+  "derived": {
+    "overall_score": null,
+    "confidence": null,
+    "pdf_path": "",
+    "pdf_local_path": null
+  }
+}

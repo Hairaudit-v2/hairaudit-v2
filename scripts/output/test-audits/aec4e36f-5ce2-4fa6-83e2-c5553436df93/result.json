@@ -1,0 +1,93 @@
+{
+  "ok": false,
+  "case": {
+    "id": "aec4e36f-5ce2-4fa6-83e2-c5553436df93",
+    "status": "audit_failed",
+    "created_at": "2026-02-27T03:27:12.084945+00:00"
+  },
+  "report": {
+    "id": "d52c6986-e4c9-4e6d-8b19-8d2b4b112061",
+    "version": 1,
+    "pdf_path": "",
+    "status": "failed",
+    "error": "Missing required patient photos (Current Front, Top, Donor rear)",
+    "summary": {
+      "patient_answers": {
+        "cost_model": "per_graft",
+        "pain_level": 7,
+        "shock_loss": "no",
+        "clinic_city": "Bogotá",
+        "clinic_name": "Test Clinic Bogotá 90",
+        "months_since": "9_12",
+        "surgeon_name": "Dr. Test 12",
+        "would_repeat": "not_sure",
+        "complications": "no",
+        "donor_shaving": "full_shave",
+        "preop_consult": "yes",
+        "recovery_time": "1_2_weeks",
+        "what_included": [
+          "accommodation",
+          "followup",
+          "transport",
+          "medications"
+        ],
+        "bleeding_issue": "no",
+        "clinic_country": "colombia",
+        "procedure_date": "2025-04-23",
+        "procedure_type": "fue",
+        "would_recommend": "no",
+        "donor_appearance": 1,
+        "patient_baseline": {
+          "patient_age": 61,
+          "patient_sex": "Female",
+          "smoking_status": "No"
+        },
+        "post_op_swelling": "none",
+        "surgery_duration": "under_4h",
+        "total_paid_amount": 3524,
+        "total_paid_currency": "usd",
+        "density_satisfaction": 4,
+        "hairline_naturalness": 3,
+        "graft_number_received": 1561,
+        "doctor_present_implant": "yes",
+        "graft_number_disclosed": "yes",
+        "enhanced_patient_answers": {
+          "baseline": {
+            "diabetes": "No",
+            "patient_age": 61,
+            "patient_sex": "Female",
+            "smoking_status": "No",
+            "alcohol_frequency": "Weekly"
+          },
+          "experience": {
+            "felt_rushed": false,
+            "felt_informed": "Somewhat",
+            "biggest_concern_now": "Hairline looks slightly unnatural",
+            "transparency_rating": 4,
+            "communication_rating": 3,
+            "considering_revision": "No",
+            "current_satisfaction": 4,
+            "legal_or_refund_dispute": "No"
+          },
+          "procedure_execution": {
+            "grafts_claimed_total": 1561,
+            "crown_pattern_discussed": "No",
+            "hairline_drawn_by_doctor": "Yes",
+            "single_hair_grafts_front": "Not sure",
+            "technician_role_extraction": "Technician",
+            "technician_role_implantation": "Not sure"
+          }
+        },
+        "doctor_present_extraction": "not_sure"
+      },
+      "patient_answers_updated_at": "2026-02-27T03:27:12.710Z"
+    },
+    "created_at": "2026-02-27T03:27:13.014238+00:00"
+  },
+  "derived": {
+    "overall_score": null,
+    "confidence": null,
+    "pdf_path": "",
+    "pdf_local_path": null
+  }
+}

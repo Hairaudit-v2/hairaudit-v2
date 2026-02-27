@@ -1,0 +1,138 @@
+{
+  "caseId": "a06f875a-7cd7-4895-a2d8-5dd7a0b3c190",
+  "dryRun": false,
+  "generated_at": "2026-02-27T03:33:47.429Z",
+  "patient": {
+    "age": 57,
+    "sex_assigned_at_birth": "Male",
+    "smoking": "Daily"
+  },
+  "clinic": {
+    "country": "Poland",
+    "procedure_type": "DHI",
+    "claimed_grafts": 3132,
+    "months_since": "9_12"
+  },
+  "test_identity": {
+    "user_id": "861af06e-bd14-46a3-8279-70ab27553bf5",
+    "email": "test+0984621fbbca84a9@hairaudit.dev"
+  },
+  "images": [
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture27.png",
+      "upload_category": "postop_day0",
+      "filename_tag": "any",
+      "forced_required": false
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Darren\\Top View.jpg",
+      "upload_category": "preop_top",
+      "filename_tag": "top",
+      "forced_required": false
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Darren\\Front View.jpg",
+      "upload_category": "preop_front",
+      "filename_tag": "front",
+      "forced_required": false
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture4.jpg",
+      "upload_category": "preop_donor_rear",
+      "filename_tag": "any",
+      "forced_required": true
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture1.jpg",
+      "upload_category": "day0_recipient",
+      "filename_tag": "any",
+      "forced_required": false
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\11.png",
+      "upload_category": "preop_crown",
+      "filename_tag": "any",
+      "forced_required": false
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture44.jpg",
+      "upload_category": "preop_crown",
+      "filename_tag": "any",
+      "forced_required": false
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\31.png",
+      "upload_category": "day0_donor",
+      "filename_tag": "any",
+      "forced_required": false
+    }
+  ],
+  "patient_answers": {
+    "clinic_name": "Test Clinic Wroclaw 980",
+    "clinic_country": "poland",
+    "clinic_city": "Wroclaw",
+    "procedure_date": "2025-04-19",
+    "procedure_type": "dhi",
+    "surgeon_name": "Dr. Test 81",
+    "preop_consult": "yes",
+    "doctor_present_extraction": "not_sure",
+    "doctor_present_implant": "no",
+    "graft_number_disclosed": "yes",
+    "graft_number_received": 3132,
+    "donor_shaving": "full_shave",
+    "surgery_duration": "6_8h",
+    "total_paid_currency": "eur",
+    "total_paid_amount": 7243,
+    "cost_model": "per_graft",
+    "what_included": [
+      "followup",
+      "transport",
+      "prp",
+      "accommodation"
+    ],
+    "pain_level": 7,
+    "post_op_swelling": "mild",
+    "bleeding_issue": "not_sure",
+    "recovery_time": "2_4_weeks",
+    "shock_loss": "no",
+    "complications": "no",
+    "months_since": "9_12",
+    "density_satisfaction": 1,
+    "hairline_naturalness": 2,
+    "donor_appearance": 1,
+    "would_repeat": "yes",
+    "would_recommend": "yes",
+    "enhanced_patient_answers": {
+      "baseline": {
+        "patient_age": 57,
+        "patient_sex": "Male",
+        "smoking_status": "Daily",
+        "alcohol_frequency": "Rare",
+        "diabetes": "No"
+      },
+      "procedure_execution": {
+        "grafts_claimed_total": 3132,
+        "technician_role_extraction": "Technician",
+        "technician_role_implantation": "Mixed",
+        "hairline_drawn_by_doctor": "Yes",
+        "single_hair_grafts_front": "No",
+        "crown_pattern_discussed": "Yes"
+      },
+      "experience": {
+        "communication_rating": 3,
+        "transparency_rating": 3,
+        "felt_rushed": false,
+        "felt_informed": "Yes",
+        "legal_or_refund_dispute": "No",
+        "current_satisfaction": 8,
+        "biggest_concern_now": "Unsure about growth timeline",
+        "considering_revision": "Unsure"
+      }
+    },
+    "patient_baseline": {
+      "patient_age": 57,
+      "patient_sex": "Male",
+      "smoking_status": "Daily"
+    }
+  }
+}

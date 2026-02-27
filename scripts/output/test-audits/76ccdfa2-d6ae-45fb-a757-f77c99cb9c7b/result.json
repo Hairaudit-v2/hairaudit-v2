@@ -1,0 +1,1600 @@
+{
+  "ok": true,
+  "case": {
+    "id": "76ccdfa2-d6ae-45fb-a757-f77c99cb9c7b",
+    "status": "complete",
+    "created_at": "2026-02-27T03:22:01.226898+00:00"
+  },
+  "report": {
+    "id": "a8547e26-0037-478f-9bb8-7704dbab3d85",
+    "version": 2,
+    "pdf_path": "76ccdfa2-d6ae-45fb-a757-f77c99cb9c7b/v2.pdf",
+    "status": "complete",
+    "error": null,
+    "summary": {
+      "notes": "AI audit failed: 400 Timeout while downloading https://vbzjkqhvzfunahmlxevb.supabase.co/storage/v1/object/sign/case-files/cases/76ccdfa2-d6ae-45fb-a757-f77c99cb9c7b/patient/preop_left/1772162531965-Picture47.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jNjQ2MjA3YS1kOTRjLTRlYjMtYWJlZC1kMjdmZjM5ODZmYWEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJjYXNlLWZpbGVzL2Nhc2VzLzc2Y2NkZmEyLWQ2YWUtNDVmYi1hNzU3LWY3N2M5OWNiOWM3Yi9wYXRpZW50L3ByZW9wX2xlZnQvMTc3MjE2MjUzMTk2NS1QaWN0dXJlNDcucG5nIiwiaWF0IjoxNzcyMTYyNTQzLCJleHAiOjE3NzIxNjM0NDN9.BdONALgVV4V1p9gRAjCa40W37TMzmpEuexYW4_vihiM.",
+      "score": 0,
+      "ai_audit": {
+        "model": "error",
+        "generated_at": "2026-02-27T03:23:21.412Z"
+      },
+      "findings": [],
+      "area_scores": null,
+      "donor_quality": "Cannot assess",
+      "clinic_answers": null,
+      "doctor_answers": {
+        "scoring": {
+          "domains": {
+            "DI": {
+              "drivers": [
+                "Patient photo set: required views present."
+              ],
+              "limiters": [
+                "Doctor photo set incomplete (8 required missing).",
+                "Doctor documentation incomplete (answers missing required fields).",
+                "AI inputs missing: doctor_answers, clinic_answers.",
+                "Doctor answers not submitted."
+              ],
+              "raw_score": 0,
+              "confidence": 0.5,
+              "evidence_grade": "A",
+              "weighted_score": 0,
+              "priority_actions": [
+                {
+                  "action": "Complete the required doctor photo set for standardized benchmarking.",
+                  "effort": "med",
+                  "impact": "high",
+                  "evidence_needed": [
+                    "doctor_photo:preop_front",
+                    "doctor_photo:preop_left",
+                    "doctor_photo:preop_right",
+                    "doctor_photo:preop_top",
+                    "doctor_photo:preop_crown",
+                    "doctor_photo:preop_donor_rear"
+                  ]
+                },
+                {
+                  "action": "Complete missing required fields in the doctor audit form (procedure + handling details).",
+                  "effort": "med",
+                  "impact": "high",
+                  "evidence_needed": [
+                    "doctor_answers:required_fields"
+                  ]
+                },
+                {
+                  "action": "Add clearer close-ups for day-of donor/recipient to improve view classification and technique evidence.",
+                  "effort": "med",
+                  "impact": "med",
+                  "evidence_needed": [
+                    "doctor_photo:day0_donor",
+                    "doctor_photo:day0_recipient"
+                  ]
+                },
+                {
+                  "action": "Ensure the case has a complete photo set and a completed doctor form before submission for benchmarking.",
+                  "effort": "low",
+                  "impact": "med",
+                  "evidence_needed": [
+                    "doctor_photo:required_set",
+                    "doctor_answers:required_fields"
+                  ]
+                }
+              ]
+            },
+            "DP": {
+              "drivers": [
+                "insufficient evidence: AI audit failed"
+              ],
+              "limiters": [
+                "Doctor photo set incomplete (8 required missing).",
+                "Doctor documentation incomplete (answers missing required fields).",
+                "AI inputs missing: doctor_answers, clinic_answers."
+              ],
+              "raw_score": 0,
+              "confidence": 0.5,
+              "evidence_grade": "A",
+              "weighted_score": 0,
+              "priority_actions": [
+                {
+                  "action": "Complete the required doctor photo set for standardized benchmarking.",
+                  "effort": "med",
+                  "impact": "high",
+                  "evidence_needed": [
+                    "doctor_photo:preop_front",
+                    "doctor_photo:preop_left",
+                    "doctor_photo:preop_right",
+                    "doctor_photo:preop_top",
+                    "doctor_photo:preop_crown",
+                    "doctor_photo:preop_donor_rear"
+                  ]
+                },
+                {
+                  "action": "Complete missing required fields in the doctor audit form (procedure + handling details).",
+                  "effort": "med",
+                  "impact": "high",
+                  "evidence_needed": [
+                    "doctor_answers:required_fields"
+                  ]
+                },
+                {
+                  "action": "Add clearer close-ups for day-of donor/recipient to improve view classification and technique evidence.",
+                  "effort": "med",
+                  "impact": "med",
+                  "evidence_needed": [
+                    "doctor_photo:day0_donor",
+                    "doctor_photo:day0_recipient"
+                  ]
+                },
+                {
+                  "action": "Include donor marking evidence and extraction-pattern documentation (safe-zone mapping + distribution).",
+                  "effort": "low",
+                  "impact": "high",
+                  "evidence_needed": [
+                    "doctor_answers:donorMappingMethod",
+                    "doctor_answers:percentExtractionPerZoneControlled",
+                    "doctor_photo:preop_donor_rear"
+                  ]
+                }
+              ]
+            },
+            "GV": {
+              "drivers": [
+                "insufficient evidence: AI audit failed"
+              ],
+              "limiters": [
+                "Doctor photo set incomplete (8 required missing).",
+                "Doctor documentation incomplete (answers missing required fields).",
+                "AI inputs missing: doctor_answers, clinic_answers.",
+                "Doctor answers not submitted."
+              ],
+              "raw_score": 0,
+              "confidence": 0.5,
+              "evidence_grade": "A",
+              "weighted_score": 0,
+              "priority_actions": [
+                {
+                  "action": "Complete the required doctor photo set for standardized benchmarking.",
+                  "effort": "med",
+                  "impact": "high",
+                  "evidence_needed": [
+                    "doctor_photo:preop_front",
+                    "doctor_photo:preop_left",
+                    "doctor_photo:preop_right",
+                    "doctor_photo:preop_top",
+                    "doctor_photo:preop_crown",
+                    "doctor_photo:preop_donor_rear"
+                  ]
+                },
+                {
+                  "action": "Complete missing required fields in the doctor audit form (procedure + handling details).",
+                  "effort": "med",
+                  "impact": "high",
+                  "evidence_needed": [
+                    "doctor_answers:required_fields"
+                  ]
+                },
+                {
+                  "action": "Add clearer close-ups for day-of donor/recipient to improve view classification and technique evidence.",
+                  "effort": "med",
+                  "impact": "med",
+                  "evidence_needed": [
+                    "doctor_photo:day0_donor",
+                    "doctor_photo:day0_recipient"
+                  ]
+                },
+                {
+                  "action": "Document graft holding solution, temperature control, and out-of-body time logging explicitly for this case.",
+                  "effort": "low",
+                  "impact": "high",
+                  "evidence_needed": [
+                    "doctor_answers:holdingSolution",
+                    "doctor_answers:temperatureControlled",
+                    "doctor_answers:outOfBodyTimeLogged"
+                  ]
+                }
+              ]
+            },
+            "IC": {
+              "drivers": [
+                "insufficient evidence: AI audit failed"
+              ],
+              "limiters": [
+                "Doctor photo set incomplete (8 required missing).",
+                "Doctor documentation incomplete (answers missing required fields).",
+                "AI inputs missing: doctor_answers, clinic_answers."
+              ],
+              "raw_score": 0,
+              "confidence": 0.5,
+              "evidence_grade": "A",
+              "weighted_score": 0,
+              "priority_actions": [
+                {
+                  "action": "Complete the required doctor photo set for standardized benchmarking.",
+                  "effort": "med",
+                  "impact": "high",
+                  "evidence_needed": [
+                    "doctor_photo:preop_front",
+                    "doctor_photo:preop_left",
+                    "doctor_photo:preop_right",
+                    "doctor_photo:preop_top",
+                    "doctor_photo:preop_crown",
+                    "doctor_photo:preop_donor_rear"
+                  ]
+                },
+                {
+                  "action": "Complete missing required fields in the doctor audit form (procedure + handling details).",
+                  "effort": "med",
+                  "impact": "high",
+                  "evidence_needed": [
+                    "doctor_answers:required_fields"
+                  ]
+                },
+                {
+                  "action": "Add clearer close-ups for day-of donor/recipient to improve view classification and technique evidence.",
+                  "effort": "med",
+                  "impact": "med",
+                  "evidence_needed": [
+                    "doctor_photo:day0_donor",
+                    "doctor_photo:day0_recipient"
+                  ]
+                },
+                {
+                  "action": "Provide intra-op/day0 recipient close-ups showing placement pattern and directionality evidence where available.",
+                  "effort": "med",
+                  "impact": "med",
+                  "evidence_needed": [
+                    "doctor_photo:day0_recipient",
+                    "doctor_photo:intraop"
+                  ]
+                }
+              ]
+            },
+            "SP": {
+              "drivers": [
+                "insufficient evidence: AI audit failed"
+              ],
+              "limiters": [
+                "Doctor photo set incomplete (8 required missing).",
+                "Doctor documentation incomplete (answers missing required fields).",
+                "AI inputs missing: doctor_answers, clinic_answers."
+              ],
+              "raw_score": 0,
+              "confidence": 0.5,
+              "evidence_grade": "A",
+              "weighted_score": 0,
+              "priority_actions": [
+                {
+                  "action": "Complete the required doctor photo set for standardized benchmarking.",
+                  "effort": "med",
+                  "impact": "high",
+                  "evidence_needed": [
+                    "doctor_photo:preop_front",
+                    "doctor_photo:preop_left",
+                    "doctor_photo:preop_right",
+                    "doctor_photo:preop_top",
+                    "doctor_photo:preop_crown",
+                    "doctor_photo:preop_donor_rear"
+                  ]
+                },
+                {
+                  "action": "Complete missing required fields in the doctor audit form (procedure + handling details).",
+                  "effort": "med",
+                  "impact": "high",
+                  "evidence_needed": [
+                    "doctor_answers:required_fields"
+                  ]
+                },
+                {
+                  "action": "Add clearer close-ups for day-of donor/recipient to improve view classification and technique evidence.",
+                  "effort": "med",
+                  "impact": "med",
+                  "evidence_needed": [
+                    "doctor_photo:day0_donor",
+                    "doctor_photo:day0_recipient"
+                  ]
+                },
+                {
+                  "action": "Attach planning documentation: density targets by zone, recipient plan/zones, and graft distribution plan.",
+                  "effort": "low",
+                  "impact": "high",
+                  "evidence_needed": [
+                    "doctor_answers:totalGraftsImplanted",
+                    "doctor_photo:preop_front",
+                    "doctor_photo:preop_top"
+                  ]
+                }
+              ]
+            }
+          },
+          "overall": {
+            "raw_score": 0,
+            "confidence": 0.5,
+            "evidence_grade": "D",
+            "weighted_score": 0
+          },
+          "suggested_modules": [
+            {
+              "title": "Hairline & Zone Plan Documentation",
+              "reason": "Standardizes planning artifacts and density/graft distribution documentation.",
+              "module_id": "MOD_SP_001",
+              "linked_domain": "SP"
+            },
+            {
+              "title": "Donor Preservation: Safe Zone + Distribution Planning",
+              "reason": "Targets donor mapping and extraction distribution evidence quality.",
+              "module_id": "MOD_DP_001",
+              "linked_domain": "DP"
+            },
+            {
+              "title": "FUE Parameters: Punch, Movement, Depth Control",
+              "reason": "Improves technique-critical metadata completeness and risk control documentation.",
+              "module_id": "MOD_DP_002",
+              "linked_domain": "DP"
+            },
+            {
+              "title": "Viability Chain: OBT + Hydration Controls",
+              "reason": "Improves documentation and control of holding/hydration/temperature workflow.",
+              "module_id": "MOD_GV_001",
+              "linked_domain": "GV"
+            },
+            {
+              "title": "Storage Solutions: Selection + Evidence",
+              "reason": "Standardizes holdingSolution selection and how it is documented as evidence.",
+              "module_id": "MOD_GV_002",
+              "linked_domain": "GV"
+            },
+            {
+              "title": "Recipient Site Planning + Placement Consistency",
+              "reason": "Improves day0/intraop evidence capture and implantation method documentation.",
+              "module_id": "MOD_IC_001",
+              "linked_domain": "IC"
+            },
+            {
+              "title": "Implanter Workflow: Setup + Evidence",
+              "reason": "Ensures implanterType evidence and placement workflow are consistently recorded.",
+              "module_id": "MOD_IC_002",
+              "linked_domain": "IC"
+            },
+            {
+              "title": "Audit Defensibility: Documentation Checklist",
+              "reason": "Improves completeness index and benchmarking readiness.",
+              "module_id": "MOD_DI_001",
+              "linked_domain": "DI"
+            }
+          ],
+          "protocol_opportunities": [
+            {
+              "name": "Zone-based density targets + graft distribution plan template",
+              "indication": "When planning artifacts are not attached or density targets are not explicit.",
+              "documentation_required": [
+                "doctor_answers:totalGraftsImplanted",
+                "doctor_photo:preop_front",
+                "doctor_photo:preop_top"
+              ],
+              "expected_benefit_domain": "SP"
+            },
+            {
+              "name": "Safe-zone mapping + density-mapped grid planning",
+              "indication": "When donor limitations or long-term preservation risk is a concern.",
+              "documentation_required": [
+                "doctor_answers:donorMappingMethod",
+                "doctor_answers:percentExtractionPerZoneControlled",
+                "doctor_photo:preop_donor_rear"
+              ],
+              "expected_benefit_domain": "DP"
+            },
+            {
+              "name": "Punch parameter standardization (diameter/movement/depth control)",
+              "indication": "For FUE cases to reduce transection/scarring risk indicators.",
+              "documentation_required": [
+                "doctor_answers:fuePunchDiameterRangeMm",
+                "doctor_answers:fuePunchMovement",
+                "doctor_answers:fueDepthControl"
+              ],
+              "expected_benefit_domain": "DP"
+            },
+            {
+              "name": "Hypothermic holding solution protocol (e.g., HypoThermosol/ATP-enhanced)",
+              "indication": "When graft out-of-body time is non-trivial or multi-batch implantation workflow is used.",
+              "documentation_required": [
+                "doctor_answers:holdingSolution",
+                "doctor_answers:temperatureControlled",
+                "doctor_answers:outOfBodyTimeLogged"
+              ],
+              "expected_benefit_domain": "GV"
+            },
+            {
+              "name": "Out-of-body time (OBT) logging + hydration workflow standardization",
+              "indication": "When OBT is estimated or not recorded; especially in large sessions.",
+              "documentation_required": [
+                "doctor_answers:outOfBodyTimeLogged",
+                "doctor_answers:avgOutOfBodyTimeHours"
+              ],
+              "expected_benefit_domain": "GV"
+            },
+            {
+              "name": "Implantation workflow standardization (implanter vs forceps) + team role clarity",
+              "indication": "When implantation is mixed-role or technique varies within the case.",
+              "documentation_required": [
+                "doctor_answers:implantationMethod",
+                "doctor_answers:implantationPerformedBy",
+                "doctor_photo:day0_recipient"
+              ],
+              "expected_benefit_domain": "IC"
+            },
+            {
+              "name": "Angle/direction QA checklist for recipient placement",
+              "indication": "When intra-op or day0 photos are available and directional consistency is assessable.",
+              "documentation_required": [
+                "doctor_photo:intraop",
+                "doctor_photo:day0_recipient"
+              ],
+              "expected_benefit_domain": "IC"
+            },
+            {
+              "name": "Documentation integrity checklist (pre-op, day0, protocols, verification)",
+              "indication": "When aiming for benchmarking/certification tiers.",
+              "documentation_required": [
+                "doctor_photo:required_set",
+                "doctor_answers:required_fields",
+                "doctor_answers:graftCountDoubleVerified"
+              ],
+              "expected_benefit_domain": "DI"
+            }
+          ]
+        },
+        "ai_context": {
+          "evidence_grade": "D",
+          "benchmark_eligible": false,
+          "completeness_score": 0,
+          "confidence_multiplier": 0.5,
+          "completeness_breakdown": {
+            "photos": 0,
+            "numeric": 0,
+            "structured": 0,
+            "verification": 0
+          }
+        }
+      },
+      "forensic_audit": {
+        "model": "error",
+        "summary": "AI audit failed: 400 Timeout while downloading https://vbzjkqhvzfunahmlxevb.supabase.co/storage/v1/object/sign/case-files/cases/76ccdfa2-d6ae-45fb-a757-f77c99cb9c7b/patient/preop_left/1772162531965-Picture47.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jNjQ2MjA3YS1kOTRjLTRlYjMtYWJlZC1kMjdmZjM5ODZmYWEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJjYXNlLWZpbGVzL2Nhc2VzLzc2Y2NkZmEyLWQ2YWUtNDVmYi1hNzU3LWY3N2M5OWNiOWM3Yi9wYXRpZW50L3ByZW9wX2xlZnQvMTc3MjE2MjUzMTk2NS1QaWN0dXJlNDcucG5nIiwiaWF0IjoxNzcyMTYyNTQzLCJleHAiOjE3NzIxNjM0NDN9.BdONALgVV4V1p9gRAjCa40W37TMzmpEuexYW4_vihiM.",
+        "tiers_v1": [
+          {
+            "title": "Standard Audit",
+            "reasons": [
+              "Completeness < 60."
+            ],
+            "tier_id": "tier1_standard",
+            "eligible": false
+          },
+          {
+            "title": "Certified Submission",
+            "reasons": [
+              "Requires completeness ≥ 85 and benchmark eligibility."
+            ],
+            "tier_id": "tier2_certified",
+            "eligible": false
+          },
+          {
+            "title": "Award Eligibility",
+            "reasons": [
+              "Requires completeness ≥ 92, grade A, intraop, and follow-up evidence (postop_day0_3)."
+            ],
+            "tier_id": "tier3_award",
+            "eligible": false
+          }
+        ],
+        "benchmark": {
+          "reasons": [
+            "No doctor_id/clinic_id set on case; cannot attribute benchmarking.",
+            "Completeness < 85 (confidence-gated).",
+            "Evidence grade must be A or B.",
+            "Required doctor photo set not complete (all required categories must meet min).",
+            "Missing graftCountImplanted (totalGraftsImplanted)."
+          ],
+          "eligible": false,
+          "gate_version": "balanced_v1",
+          "confidence_grade": "D",
+          "overall_confidence": 0.5,
+          "doctor_evidence_grade": null,
+          "doctor_answers_complete": false
+        },
+        "red_flags": [],
+        "confidence": 0.45,
+        "data_quality": {
+          "limitations": [
+            "AI audit failed: 400 Timeout while downloading https://vbzjkqhvzfunahmlxevb.supabase.co/storage/v1/object/sign/case-files/cases/76ccdfa2-d6ae-45fb-a757-f77c99cb9c7b/patient/preop_left/1772162531965-Picture47.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jNjQ2MjA3YS1kOTRjLTRlYjMtYWJlZC1kMjdmZjM5ODZmYWEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJjYXNlLWZpbGVzL2Nhc2VzLzc2Y2NkZmEyLWQ2YWUtNDVmYi1hNzU3LWY3N2M5OWNiOWM3Yi9wYXRpZW50L3ByZW9wX2xlZnQvMTc3MjE2MjUzMTk2NS1QaWN0dXJlNDcucG5nIiwiaWF0IjoxNzcyMTYyNTQzLCJleHAiOjE3NzIxNjM0NDN9.BdONALgVV4V1p9gRAjCa40W37TMzmpEuexYW4_vihiM."
+          ],
+          "missing_inputs": [
+            "doctor_answers",
+            "clinic_answers"
+          ],
+          "missing_photos": []
+        },
+        "key_findings": [],
+        "overall_score": 0,
+        "section_scores": {
+          "hairline_design": 0,
+          "donor_management": 0,
+          "extraction_quality": 0,
+          "recipient_placement": 0,
+          "density_distribution": 0,
+          "complications_and_risks": 0,
+          "naturalness_and_aesthetics": 0,
+          "graft_handling_and_viability": 0,
+          "post_op_course_and_aftercare": 0
+        },
+        "confidence_label": "low",
+        "domain_scores_v1": {
+          "domains": [
+            {
+              "title": "Surgical Planning & Design",
+              "drivers": [
+                "insufficient evidence: AI audit failed"
+              ],
+              "limiters": [
+                "Doctor photo set incomplete (8 required missing).",
+                "Doctor documentation incomplete (answers missing required fields).",
+                "AI inputs missing: doctor_answers, clinic_answers."
+              ],
+              "domain_id": "SP",
+              "raw_score": 0,
+              "confidence": 0.5,
+              "top_drivers": [
+                "insufficient evidence: AI audit failed"
+              ],
+              "top_limiters": [
+                "Doctor photo set incomplete (8 required missing).",
+                "Doctor documentation incomplete (answers missing required fields).",
+                "AI inputs missing: doctor_answers, clinic_answers."
+              ],
+              "evidence_grade": "A",
+              "weighted_score": 0,
+              "improvement_plan": [
+                {
+                  "why": "Based on submitted documentation, missing standardized views reduces audit defensibility and confidence gating for benchmarking.",
+                  "action": "Complete the required doctor photo set for standardized benchmarking.",
+                  "priority": 1,
+                  "evidence_needed": [
+                    "doctor_photo:preop_front",
+                    "doctor_photo:preop_left",
+                    "doctor_photo:preop_right",
+                    "doctor_photo:preop_top",
+                    "doctor_photo:preop_crown",
+                    "doctor_photo:preop_donor_rear"
+                  ]
+                },
+                {
+                  "why": "Based on submitted documentation, absent protocol fields prevent evidence-weighted scoring of technique and viability-chain controls.",
+                  "action": "Complete missing required fields in the doctor audit form (procedure + handling details).",
+                  "priority": 2,
+                  "evidence_needed": [
+                    "doctor_answers:required_fields"
+                  ]
+                },
+                {
+                  "why": "Based on submitted documentation, unclear/unknown views limit angle/direction and extraction-pattern assessment.",
+                  "action": "Add clearer close-ups for day-of donor/recipient to improve view classification and technique evidence.",
+                  "priority": 3,
+                  "evidence_needed": [
+                    "doctor_photo:day0_donor",
+                    "doctor_photo:day0_recipient"
+                  ]
+                },
+                {
+                  "why": "Based on submitted documentation, planning/design scoring is evidence-weighted and cannot be inferred reliably without explicit planning artifacts.",
+                  "action": "Attach planning documentation: density targets by zone, recipient plan/zones, and graft distribution plan.",
+                  "priority": 2,
+                  "evidence_needed": [
+                    "doctor_answers:totalGraftsImplanted",
+                    "doctor_photo:preop_front",
+                    "doctor_photo:preop_top"
+                  ]
+                }
+              ],
+              "priority_actions": [
+                {
+                  "order": 1,
+                  "action": "Complete the required doctor photo set for standardized benchmarking.",
+                  "effort": "med",
+                  "impact": "high",
+                  "evidence_needed": [
+                    "doctor_photo:preop_front",
+                    "doctor_photo:preop_left",
+                    "doctor_photo:preop_right",
+                    "doctor_photo:preop_top",
+                    "doctor_photo:preop_crown",
+                    "doctor_photo:preop_donor_rear"
+                  ]
+                },
+                {
+                  "order": 2,
+                  "action": "Complete missing required fields in the doctor audit form (procedure + handling details).",
+                  "effort": "med",
+                  "impact": "high",
+                  "evidence_needed": [
+                    "doctor_answers:required_fields"
+                  ]
+                },
+                {
+                  "order": 3,
+                  "action": "Add clearer close-ups for day-of donor/recipient to improve view classification and technique evidence.",
+                  "effort": "med",
+                  "impact": "med",
+                  "evidence_needed": [
+                    "doctor_photo:day0_donor",
+                    "doctor_photo:day0_recipient"
+                  ]
+                },
+                {
+                  "order": 4,
+                  "action": "Attach planning documentation: density targets by zone, recipient plan/zones, and graft distribution plan.",
+                  "effort": "low",
+                  "impact": "high",
+                  "evidence_needed": [
+                    "doctor_answers:totalGraftsImplanted",
+                    "doctor_photo:preop_front",
+                    "doctor_photo:preop_top"
+                  ]
+                }
+              ],
+              "suggested_modules": [
+                {
+                  "title": "Hairline & Zone Plan Documentation",
+                  "reason": "Standardizes planning artifacts and density/graft distribution documentation.",
+                  "module_id": "MOD_SP_001",
+                  "linked_domain": "SP"
+                }
+              ],
+              "protocol_opportunities": [
+                {
+                  "name": "Zone-based density targets + graft distribution plan template",
+                  "indication": "When planning artifacts are not attached or density targets are not explicit.",
+                  "documentation_required": [
+                    "doctor_answers:totalGraftsImplanted",
+                    "doctor_photo:preop_front",
+                    "doctor_photo:preop_top"
+                  ],
+                  "expected_benefit_domain": "SP"
+                }
+              ]
+            },
+            {
+              "title": "Donor Preservation & Extraction Quality",
+              "drivers": [
+                "insufficient evidence: AI audit failed"
+              ],
+              "limiters": [
+                "Doctor photo set incomplete (8 required missing).",
+                "Doctor documentation incomplete (answers missing required fields).",
+                "AI inputs missing: doctor_answers, clinic_answers."
+              ],
+              "domain_id": "DP",
+              "raw_score": 0,
+              "confidence": 0.5,
+              "top_drivers": [
+                "insufficient evidence: AI audit failed"
+              ],
+              "top_limiters": [
+                "Doctor photo set incomplete (8 required missing).",
+                "Doctor documentation incomplete (answers missing required fields).",
+                "AI inputs missing: doctor_answers, clinic_answers."
+              ],
+              "evidence_grade": "A",
+              "weighted_score": 0,
+              "improvement_plan": [
+                {
+                  "why": "Based on submitted documentation, missing standardized views reduces audit defensibility and confidence gating for benchmarking.",
+                  "action": "Complete the required doctor photo set for standardized benchmarking.",
+                  "priority": 1,
+                  "evidence_needed": [
+                    "doctor_photo:preop_front",
+                    "doctor_photo:preop_left",
+                    "doctor_photo:preop_right",
+                    "doctor_photo:preop_top",
+                    "doctor_photo:preop_crown",
+                    "doctor_photo:preop_donor_rear"
+                  ]
+                },
+                {
+                  "why": "Based on submitted documentation, absent protocol fields prevent evidence-weighted scoring of technique and viability-chain controls.",
+                  "action": "Complete missing required fields in the doctor audit form (procedure + handling details).",
+                  "priority": 2,
+                  "evidence_needed": [
+                    "doctor_answers:required_fields"
+                  ]
+                },
+                {
+                  "why": "Based on submitted documentation, unclear/unknown views limit angle/direction and extraction-pattern assessment.",
+                  "action": "Add clearer close-ups for day-of donor/recipient to improve view classification and technique evidence.",
+                  "priority": 3,
+                  "evidence_needed": [
+                    "doctor_photo:day0_donor",
+                    "doctor_photo:day0_recipient"
+                  ]
+                },
+                {
+                  "why": "Based on submitted documentation, donor preservation scoring depends on clear planning evidence and donor-area views.",
+                  "action": "Include donor marking evidence and extraction-pattern documentation (safe-zone mapping + distribution).",
+                  "priority": 2,
+                  "evidence_needed": [
+                    "doctor_answers:donorMappingMethod",
+                    "doctor_answers:percentExtractionPerZoneControlled",
+                    "doctor_photo:preop_donor_rear"
+                  ]
+                }
+              ],
+              "priority_actions": [
+                {
+                  "order": 1,
+                  "action": "Complete the required doctor photo set for standardized benchmarking.",
+                  "effort": "med",
+                  "impact": "high",
+                  "evidence_needed": [
+                    "doctor_photo:preop_front",
+                    "doctor_photo:preop_left",
+                    "doctor_photo:preop_right",
+                    "doctor_photo:preop_top",
+                    "doctor_photo:preop_crown",
+                    "doctor_photo:preop_donor_rear"
+                  ]
+                },
+                {
+                  "order": 2,
+                  "action": "Complete missing required fields in the doctor audit form (procedure + handling details).",
+                  "effort": "med",
+                  "impact": "high",
+                  "evidence_needed": [
+                    "doctor_answers:required_fields"
+                  ]
+                },
+                {
+                  "order": 3,
+                  "action": "Add clearer close-ups for day-of donor/recipient to improve view classification and technique evidence.",
+                  "effort": "med",
+                  "impact": "med",
+                  "evidence_needed": [
+                    "doctor_photo:day0_donor",
+                    "doctor_photo:day0_recipient"
+                  ]
+                },
+                {
+                  "order": 4,
+                  "action": "Include donor marking evidence and extraction-pattern documentation (safe-zone mapping + distribution).",
+                  "effort": "low",
+                  "impact": "high",
+                  "evidence_needed": [
+                    "doctor_answers:donorMappingMethod",
+                    "doctor_answers:percentExtractionPerZoneControlled",
+                    "doctor_photo:preop_donor_rear"
+                  ]
+                }
+              ],
+              "suggested_modules": [
+                {
+                  "title": "Donor Preservation: Safe Zone + Distribution Planning",
+                  "reason": "Targets donor mapping and extraction distribution evidence quality.",
+                  "module_id": "MOD_DP_001",
+                  "linked_domain": "DP"
+                },
+                {
+                  "title": "FUE Parameters: Punch, Movement, Depth Control",
+                  "reason": "Improves technique-critical metadata completeness and risk control documentation.",
+                  "module_id": "MOD_DP_002",
+                  "linked_domain": "DP"
+                }
+              ],
+              "protocol_opportunities": [
+                {
+                  "name": "Safe-zone mapping + density-mapped grid planning",
+                  "indication": "When donor limitations or long-term preservation risk is a concern.",
+                  "documentation_required": [
+                    "doctor_answers:donorMappingMethod",
+                    "doctor_answers:percentExtractionPerZoneControlled",
+                    "doctor_photo:preop_donor_rear"
+                  ],
+                  "expected_benefit_domain": "DP"
+                },
+                {
+                  "name": "Punch parameter standardization (diameter/movement/depth control)",
+                  "indication": "For FUE cases to reduce transection/scarring risk indicators.",
+                  "documentation_required": [
+                    "doctor_answers:fuePunchDiameterRangeMm",
+                    "doctor_answers:fuePunchMovement",
+                    "doctor_answers:fueDepthControl"
+                  ],
+                  "expected_benefit_domain": "DP"
+                }
+              ]
+            },
+            {
+              "title": "Graft Handling & Viability Chain",
+              "drivers": [
+                "insufficient evidence: AI audit failed"
+              ],
+              "limiters": [
+                "Doctor photo set incomplete (8 required missing).",
+                "Doctor documentation incomplete (answers missing required fields).",
+                "AI inputs missing: doctor_answers, clinic_answers.",
+                "Doctor answers not submitted."
+              ],
+              "domain_id": "GV",
+              "raw_score": 0,
+              "confidence": 0.5,
+              "top_drivers": [
+                "insufficient evidence: AI audit failed"
+              ],
+              "top_limiters": [
+                "Doctor photo set incomplete (8 required missing).",
+                "Doctor documentation incomplete (answers missing required fields).",
+                "AI inputs missing: doctor_answers, clinic_answers."
+              ],
+              "evidence_grade": "A",
+              "weighted_score": 0,
+              "improvement_plan": [
+                {
+                  "why": "Based on submitted documentation, missing standardized views reduces audit defensibility and confidence gating for benchmarking.",
+                  "action": "Complete the required doctor photo set for standardized benchmarking.",
+                  "priority": 1,
+                  "evidence_needed": [
+                    "doctor_photo:preop_front",
+                    "doctor_photo:preop_left",
+                    "doctor_photo:preop_right",
+                    "doctor_photo:preop_top",
+                    "doctor_photo:preop_crown",
+                    "doctor_photo:preop_donor_rear"
+                  ]
+                },
+                {
+                  "why": "Based on submitted documentation, absent protocol fields prevent evidence-weighted scoring of technique and viability-chain controls.",
+                  "action": "Complete missing required fields in the doctor audit form (procedure + handling details).",
+                  "priority": 2,
+                  "evidence_needed": [
+                    "doctor_answers:required_fields"
+                  ]
+                },
+                {
+                  "why": "Based on submitted documentation, unclear/unknown views limit angle/direction and extraction-pattern assessment.",
+                  "action": "Add clearer close-ups for day-of donor/recipient to improve view classification and technique evidence.",
+                  "priority": 3,
+                  "evidence_needed": [
+                    "doctor_photo:day0_donor",
+                    "doctor_photo:day0_recipient"
+                  ]
+                },
+                {
+                  "why": "Based on submitted documentation, viability-chain controls are answers-driven; missing specifics reduce confidence and audit defensibility.",
+                  "action": "Document graft holding solution, temperature control, and out-of-body time logging explicitly for this case.",
+                  "priority": 2,
+                  "evidence_needed": [
+                    "doctor_answers:holdingSolution",
+                    "doctor_answers:temperatureControlled",
+                    "doctor_answers:outOfBodyTimeLogged"
+                  ]
+                }
+              ],
+              "priority_actions": [
+                {
+                  "order": 1,
+                  "action": "Complete the required doctor photo set for standardized benchmarking.",
+                  "effort": "med",
+                  "impact": "high",
+                  "evidence_needed": [
+                    "doctor_photo:preop_front",
+                    "doctor_photo:preop_left",
+                    "doctor_photo:preop_right",
+                    "doctor_photo:preop_top",
+                    "doctor_photo:preop_crown",
+                    "doctor_photo:preop_donor_rear"
+                  ]
+                },
+                {
+                  "order": 2,
+                  "action": "Complete missing required fields in the doctor audit form (procedure + handling details).",
+                  "effort": "med",
+                  "impact": "high",
+                  "evidence_needed": [
+                    "doctor_answers:required_fields"
+                  ]
+                },
+                {
+                  "order": 3,
+                  "action": "Add clearer close-ups for day-of donor/recipient to improve view classification and technique evidence.",
+                  "effort": "med",
+                  "impact": "med",
+                  "evidence_needed": [
+                    "doctor_photo:day0_donor",
+                    "doctor_photo:day0_recipient"
+                  ]
+                },
+                {
+                  "order": 4,
+                  "action": "Document graft holding solution, temperature control, and out-of-body time logging explicitly for this case.",
+                  "effort": "low",
+                  "impact": "high",
+                  "evidence_needed": [
+                    "doctor_answers:holdingSolution",
+                    "doctor_answers:temperatureControlled",
+                    "doctor_answers:outOfBodyTimeLogged"
+                  ]
+                }
+              ],
+              "suggested_modules": [
+                {
+                  "title": "Viability Chain: OBT + Hydration Controls",
+                  "reason": "Improves documentation and control of holding/hydration/temperature workflow.",
+                  "module_id": "MOD_GV_001",
+                  "linked_domain": "GV"
+                },
+                {
+                  "title": "Storage Solutions: Selection + Evidence",
+                  "reason": "Standardizes holdingSolution selection and how it is documented as evidence.",
+                  "module_id": "MOD_GV_002",
+                  "linked_domain": "GV"
+                }
+              ],
+              "protocol_opportunities": [
+                {
+                  "name": "Hypothermic holding solution protocol (e.g., HypoThermosol/ATP-enhanced)",
+                  "indication": "When graft out-of-body time is non-trivial or multi-batch implantation workflow is used.",
+                  "documentation_required": [
+                    "doctor_answers:holdingSolution",
+                    "doctor_answers:temperatureControlled",
+                    "doctor_answers:outOfBodyTimeLogged"
+                  ],
+                  "expected_benefit_domain": "GV"
+                },
+                {
+                  "name": "Out-of-body time (OBT) logging + hydration workflow standardization",
+                  "indication": "When OBT is estimated or not recorded; especially in large sessions.",
+                  "documentation_required": [
+                    "doctor_answers:outOfBodyTimeLogged",
+                    "doctor_answers:avgOutOfBodyTimeHours"
+                  ],
+                  "expected_benefit_domain": "GV"
+                }
+              ]
+            },
+            {
+              "title": "Implantation Consistency & Technique",
+              "drivers": [
+                "insufficient evidence: AI audit failed"
+              ],
+              "limiters": [
+                "Doctor photo set incomplete (8 required missing).",
+                "Doctor documentation incomplete (answers missing required fields).",
+                "AI inputs missing: doctor_answers, clinic_answers."
+              ],
+              "domain_id": "IC",
+              "raw_score": 0,
+              "confidence": 0.5,
+              "top_drivers": [
+                "insufficient evidence: AI audit failed"
+              ],
+              "top_limiters": [
+                "Doctor photo set incomplete (8 required missing).",
+                "Doctor documentation incomplete (answers missing required fields).",
+                "AI inputs missing: doctor_answers, clinic_answers."
+              ],
+              "evidence_grade": "A",
+              "weighted_score": 0,
+              "improvement_plan": [
+                {
+                  "why": "Based on submitted documentation, missing standardized views reduces audit defensibility and confidence gating for benchmarking.",
+                  "action": "Complete the required doctor photo set for standardized benchmarking.",
+                  "priority": 1,
+                  "evidence_needed": [
+                    "doctor_photo:preop_front",
+                    "doctor_photo:preop_left",
+                    "doctor_photo:preop_right",
+                    "doctor_photo:preop_top",
+                    "doctor_photo:preop_crown",
+                    "doctor_photo:preop_donor_rear"
+                  ]
+                },
+                {
+                  "why": "Based on submitted documentation, absent protocol fields prevent evidence-weighted scoring of technique and viability-chain controls.",
+                  "action": "Complete missing required fields in the doctor audit form (procedure + handling details).",
+                  "priority": 2,
+                  "evidence_needed": [
+                    "doctor_answers:required_fields"
+                  ]
+                },
+                {
+                  "why": "Based on submitted documentation, unclear/unknown views limit angle/direction and extraction-pattern assessment.",
+                  "action": "Add clearer close-ups for day-of donor/recipient to improve view classification and technique evidence.",
+                  "priority": 3,
+                  "evidence_needed": [
+                    "doctor_photo:day0_donor",
+                    "doctor_photo:day0_recipient"
+                  ]
+                },
+                {
+                  "why": "Based on submitted documentation, implantation consistency requires visual evidence for spacing and directional alignment.",
+                  "action": "Provide intra-op/day0 recipient close-ups showing placement pattern and directionality evidence where available.",
+                  "priority": 2,
+                  "evidence_needed": [
+                    "doctor_photo:day0_recipient",
+                    "doctor_photo:intraop"
+                  ]
+                }
+              ],
+              "priority_actions": [
+                {
+                  "order": 1,
+                  "action": "Complete the required doctor photo set for standardized benchmarking.",
+                  "effort": "med",
+                  "impact": "high",
+                  "evidence_needed": [
+                    "doctor_photo:preop_front",
+                    "doctor_photo:preop_left",
+                    "doctor_photo:preop_right",
+                    "doctor_photo:preop_top",
+                    "doctor_photo:preop_crown",
+                    "doctor_photo:preop_donor_rear"
+                  ]
+                },
+                {
+                  "order": 2,
+                  "action": "Complete missing required fields in the doctor audit form (procedure + handling details).",
+                  "effort": "med",
+                  "impact": "high",
+                  "evidence_needed": [
+                    "doctor_answers:required_fields"
+                  ]
+                },
+                {
+                  "order": 3,
+                  "action": "Add clearer close-ups for day-of donor/recipient to improve view classification and technique evidence.",
+                  "effort": "med",
+                  "impact": "med",
+                  "evidence_needed": [
+                    "doctor_photo:day0_donor",
+                    "doctor_photo:day0_recipient"
+                  ]
+                },
+                {
+                  "order": 4,
+                  "action": "Provide intra-op/day0 recipient close-ups showing placement pattern and directionality evidence where available.",
+                  "effort": "med",
+                  "impact": "med",
+                  "evidence_needed": [
+                    "doctor_photo:day0_recipient",
+                    "doctor_photo:intraop"
+                  ]
+                }
+              ],
+              "suggested_modules": [
+                {
+                  "title": "Recipient Site Planning + Placement Consistency",
+                  "reason": "Improves day0/intraop evidence capture and implantation method documentation.",
+                  "module_id": "MOD_IC_001",
+                  "linked_domain": "IC"
+                },
+                {
+                  "title": "Implanter Workflow: Setup + Evidence",
+                  "reason": "Ensures implanterType evidence and placement workflow are consistently recorded.",
+                  "module_id": "MOD_IC_002",
+                  "linked_domain": "IC"
+                }
+              ],
+              "protocol_opportunities": [
+                {
+                  "name": "Implantation workflow standardization (implanter vs forceps) + team role clarity",
+                  "indication": "When implantation is mixed-role or technique varies within the case.",
+                  "documentation_required": [
+                    "doctor_answers:implantationMethod",
+                    "doctor_answers:implantationPerformedBy",
+                    "doctor_photo:day0_recipient"
+                  ],
+                  "expected_benefit_domain": "IC"
+                },
+                {
+                  "name": "Angle/direction QA checklist for recipient placement",
+                  "indication": "When intra-op or day0 photos are available and directional consistency is assessable.",
+                  "documentation_required": [
+                    "doctor_photo:intraop",
+                    "doctor_photo:day0_recipient"
+                  ],
+                  "expected_benefit_domain": "IC"
+                }
+              ]
+            },
+            {
+              "title": "Documentation Integrity & Audit Defensibility",
+              "drivers": [
+                "Patient photo set: required views present."
+              ],
+              "limiters": [
+                "Doctor photo set incomplete (8 required missing).",
+                "Doctor documentation incomplete (answers missing required fields).",
+                "AI inputs missing: doctor_answers, clinic_answers.",
+                "Doctor answers not submitted."
+              ],
+              "domain_id": "DI",
+              "raw_score": 0,
+              "confidence": 0.5,
+              "top_drivers": [
+                "Patient photo set: required views present."
+              ],
+              "top_limiters": [
+                "Doctor photo set incomplete (8 required missing).",
+                "Doctor documentation incomplete (answers missing required fields).",
+                "AI inputs missing: doctor_answers, clinic_answers."
+              ],
+              "evidence_grade": "A",
+              "weighted_score": 0,
+              "improvement_plan": [
+                {
+                  "why": "Based on submitted documentation, missing standardized views reduces audit defensibility and confidence gating for benchmarking.",
+                  "action": "Complete the required doctor photo set for standardized benchmarking.",
+                  "priority": 1,
+                  "evidence_needed": [
+                    "doctor_photo:preop_front",
+                    "doctor_photo:preop_left",
+                    "doctor_photo:preop_right",
+                    "doctor_photo:preop_top",
+                    "doctor_photo:preop_crown",
+                    "doctor_photo:preop_donor_rear"
+                  ]
+                },
+                {
+                  "why": "Based on submitted documentation, absent protocol fields prevent evidence-weighted scoring of technique and viability-chain controls.",
+                  "action": "Complete missing required fields in the doctor audit form (procedure + handling details).",
+                  "priority": 2,
+                  "evidence_needed": [
+                    "doctor_answers:required_fields"
+                  ]
+                },
+                {
+                  "why": "Based on submitted documentation, unclear/unknown views limit angle/direction and extraction-pattern assessment.",
+                  "action": "Add clearer close-ups for day-of donor/recipient to improve view classification and technique evidence.",
+                  "priority": 3,
+                  "evidence_needed": [
+                    "doctor_photo:day0_donor",
+                    "doctor_photo:day0_recipient"
+                  ]
+                },
+                {
+                  "why": "Benchmarking requires high audit defensibility; incomplete documentation is confidence-gated out of rankings.",
+                  "action": "Ensure the case has a complete photo set and a completed doctor form before submission for benchmarking.",
+                  "priority": 1,
+                  "evidence_needed": [
+                    "doctor_photo:required_set",
+                    "doctor_answers:required_fields"
+                  ]
+                }
+              ],
+              "priority_actions": [
+                {
+                  "order": 1,
+                  "action": "Complete the required doctor photo set for standardized benchmarking.",
+                  "effort": "med",
+                  "impact": "high",
+                  "evidence_needed": [
+                    "doctor_photo:preop_front",
+                    "doctor_photo:preop_left",
+                    "doctor_photo:preop_right",
+                    "doctor_photo:preop_top",
+                    "doctor_photo:preop_crown",
+                    "doctor_photo:preop_donor_rear"
+                  ]
+                },
+                {
+                  "order": 2,
+                  "action": "Complete missing required fields in the doctor audit form (procedure + handling details).",
+                  "effort": "med",
+                  "impact": "high",
+                  "evidence_needed": [
+                    "doctor_answers:required_fields"
+                  ]
+                },
+                {
+                  "order": 3,
+                  "action": "Add clearer close-ups for day-of donor/recipient to improve view classification and technique evidence.",
+                  "effort": "med",
+                  "impact": "med",
+                  "evidence_needed": [
+                    "doctor_photo:day0_donor",
+                    "doctor_photo:day0_recipient"
+                  ]
+                },
+                {
+                  "order": 4,
+                  "action": "Ensure the case has a complete photo set and a completed doctor form before submission for benchmarking.",
+                  "effort": "low",
+                  "impact": "med",
+                  "evidence_needed": [
+                    "doctor_photo:required_set",
+                    "doctor_answers:required_fields"
+                  ]
+                }
+              ],
+              "suggested_modules": [
+                {
+                  "title": "Audit Defensibility: Documentation Checklist",
+                  "reason": "Improves completeness index and benchmarking readiness.",
+                  "module_id": "MOD_DI_001",
+                  "linked_domain": "DI"
+                }
+              ],
+              "protocol_opportunities": [
+                {
+                  "name": "Documentation integrity checklist (pre-op, day0, protocols, verification)",
+                  "indication": "When aiming for benchmarking/certification tiers.",
+                  "documentation_required": [
+                    "doctor_photo:required_set",
+                    "doctor_answers:required_fields",
+                    "doctor_answers:graftCountDoubleVerified"
+                  ],
+                  "expected_benefit_domain": "DI"
+                }
+              ]
+            }
+          ],
+          "version": 1
+        },
+        "overall_scores_v1": {
+          "version": 1,
+          "domain_weights": {
+            "DI": 15,
+            "DP": 25,
+            "GV": 20,
+            "IC": 25,
+            "SP": 15
+          },
+          "benchmark_score": 0,
+          "confidence_grade": "D",
+          "performance_score": 0,
+          "confidence_multiplier": 0.5
+        },
+        "photo_observations": [
+          {
+            "image_url": "https://vbzjkqhvzfunahmlxevb.supabase.co/storage/v1/object/sign/case-files/cases/76ccdfa2-d6ae-45fb-a757-f77c99cb9c7b/patient/day0_recipient/1772162537884-02.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jNjQ2MjA3YS1kOTRjLTRlYjMtYWJlZC1kMjdmZjM5ODZmYWEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJjYXNlLWZpbGVzL2Nhc2VzLzc2Y2NkZmEyLWQ2YWUtNDVmYi1hNzU3LWY3N2M5OWNiOWM3Yi9wYXRpZW50L2RheTBfcmVjaXBpZW50LzE3NzIxNjI1Mzc4ODQtMDIuanBnIiwiaWF0IjoxNzcyMTYyNTQyLCJleHAiOjE3NzIxNjM0NDJ9.UE2x_BSUUJCPyQhJ_YJ45NFwBBMalBqkV8BfssgRUV8",
+            "confidence": 0,
+            "what_cannot": [
+              "AI audit failed"
+            ],
+            "observations": [
+              "AI audit failed: 400 Timeout while downloading https://vbzjkqhvzfunahmlxevb.supabase.co/storage/v1/object/sign/case-files/cases/76ccdfa2-d6ae-45fb-a757-f77c99cb9c7b/patient/preop_left/1772162531965-Picture47.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jNjQ2MjA3YS1kOTRjLTRlYjMtYWJlZC1kMjdmZjM5ODZmYWEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJjYXNlLWZpbGVzL2Nhc2VzLzc2Y2NkZmEyLWQ2YWUtNDVmYi1hNzU3LWY3N2M5OWNiOWM3Yi9wYXRpZW50L3ByZW9wX2xlZnQvMTc3MjE2MjUzMTk2NS1QaWN0dXJlNDcucG5nIiwiaWF0IjoxNzcyMTYyNTQzLCJleHAiOjE3NzIxNjM0NDN9.BdONALgVV4V1p9gRAjCa40W37TMzmpEuexYW4_vihiM."
+            ],
+            "suspected_view": "unknown",
+            "what_can_be_assessed": []
+          },
+          {
+            "image_url": "https://vbzjkqhvzfunahmlxevb.supabase.co/storage/v1/object/sign/case-files/cases/76ccdfa2-d6ae-45fb-a757-f77c99cb9c7b/patient/preop_left/1772162536434-Picture12.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jNjQ2MjA3YS1kOTRjLTRlYjMtYWJlZC1kMjdmZjM5ODZmYWEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJjYXNlLWZpbGVzL2Nhc2VzLzc2Y2NkZmEyLWQ2YWUtNDVmYi1hNzU3LWY3N2M5OWNiOWM3Yi9wYXRpZW50L3ByZW9wX2xlZnQvMTc3MjE2MjUzNjQzNC1QaWN0dXJlMTIucG5nIiwiaWF0IjoxNzcyMTYyNTQyLCJleHAiOjE3NzIxNjM0NDJ9.4Ph7gkF6v2A4izuK9U-seSc0o1fV1KambpyHP8aGOEo",
+            "confidence": 0,
+            "what_cannot": [
+              "AI audit failed"
+            ],
+            "observations": [
+              "AI audit failed: 400 Timeout while downloading https://vbzjkqhvzfunahmlxevb.supabase.co/storage/v1/object/sign/case-files/cases/76ccdfa2-d6ae-45fb-a757-f77c99cb9c7b/patient/preop_left/1772162531965-Picture47.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jNjQ2MjA3YS1kOTRjLTRlYjMtYWJlZC1kMjdmZjM5ODZmYWEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJjYXNlLWZpbGVzL2Nhc2VzLzc2Y2NkZmEyLWQ2YWUtNDVmYi1hNzU3LWY3N2M5OWNiOWM3Yi9wYXRpZW50L3ByZW9wX2xlZnQvMTc3MjE2MjUzMTk2NS1QaWN0dXJlNDcucG5nIiwiaWF0IjoxNzcyMTYyNTQzLCJleHAiOjE3NzIxNjM0NDN9.BdONALgVV4V1p9gRAjCa40W37TMzmpEuexYW4_vihiM."
+            ],
+            "suspected_view": "unknown",
+            "what_can_be_assessed": []
+          },
+          {
+            "image_url": "https://vbzjkqhvzfunahmlxevb.supabase.co/storage/v1/object/sign/case-files/cases/76ccdfa2-d6ae-45fb-a757-f77c99cb9c7b/patient/day0_recipient/1772162535018-Pre_2.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jNjQ2MjA3YS1kOTRjLTRlYjMtYWJlZC1kMjdmZjM5ODZmYWEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJjYXNlLWZpbGVzL2Nhc2VzLzc2Y2NkZmEyLWQ2YWUtNDVmYi1hNzU3LWY3N2M5OWNiOWM3Yi9wYXRpZW50L2RheTBfcmVjaXBpZW50LzE3NzIxNjI1MzUwMTgtUHJlXzIuanBnIiwiaWF0IjoxNzcyMTYyNTQzLCJleHAiOjE3NzIxNjM0NDN9.FMB1havSHgccjhZT13RCiHD3paKhsbFzUZSHX-yKk_k",
+            "confidence": 0,
+            "what_cannot": [
+              "AI audit failed"
+            ],
+            "observations": [
+              "AI audit failed: 400 Timeout while downloading https://vbzjkqhvzfunahmlxevb.supabase.co/storage/v1/object/sign/case-files/cases/76ccdfa2-d6ae-45fb-a757-f77c99cb9c7b/patient/preop_left/1772162531965-Picture47.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jNjQ2MjA3YS1kOTRjLTRlYjMtYWJlZC1kMjdmZjM5ODZmYWEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJjYXNlLWZpbGVzL2Nhc2VzLzc2Y2NkZmEyLWQ2YWUtNDVmYi1hNzU3LWY3N2M5OWNiOWM3Yi9wYXRpZW50L3ByZW9wX2xlZnQvMTc3MjE2MjUzMTk2NS1QaWN0dXJlNDcucG5nIiwiaWF0IjoxNzcyMTYyNTQzLCJleHAiOjE3NzIxNjM0NDN9.BdONALgVV4V1p9gRAjCa40W37TMzmpEuexYW4_vihiM."
+            ],
+            "suspected_view": "unknown",
+            "what_can_be_assessed": []
+          },
+          {
+            "image_url": "https://vbzjkqhvzfunahmlxevb.supabase.co/storage/v1/object/sign/case-files/cases/76ccdfa2-d6ae-45fb-a757-f77c99cb9c7b/patient/preop_left/1772162531965-Picture47.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jNjQ2MjA3YS1kOTRjLTRlYjMtYWJlZC1kMjdmZjM5ODZmYWEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJjYXNlLWZpbGVzL2Nhc2VzLzc2Y2NkZmEyLWQ2YWUtNDVmYi1hNzU3LWY3N2M5OWNiOWM3Yi9wYXRpZW50L3ByZW9wX2xlZnQvMTc3MjE2MjUzMTk2NS1QaWN0dXJlNDcucG5nIiwiaWF0IjoxNzcyMTYyNTQzLCJleHAiOjE3NzIxNjM0NDN9.BdONALgVV4V1p9gRAjCa40W37TMzmpEuexYW4_vihiM",
+            "confidence": 0,
+            "what_cannot": [
+              "AI audit failed"
+            ],
+            "observations": [
+              "AI audit failed: 400 Timeout while downloading https://vbzjkqhvzfunahmlxevb.supabase.co/storage/v1/object/sign/case-files/cases/76ccdfa2-d6ae-45fb-a757-f77c99cb9c7b/patient/preop_left/1772162531965-Picture47.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jNjQ2MjA3YS1kOTRjLTRlYjMtYWJlZC1kMjdmZjM5ODZmYWEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJjYXNlLWZpbGVzL2Nhc2VzLzc2Y2NkZmEyLWQ2YWUtNDVmYi1hNzU3LWY3N2M5OWNiOWM3Yi9wYXRpZW50L3ByZW9wX2xlZnQvMTc3MjE2MjUzMTk2NS1QaWN0dXJlNDcucG5nIiwiaWF0IjoxNzcyMTYyNTQzLCJleHAiOjE3NzIxNjM0NDN9.BdONALgVV4V1p9gRAjCa40W37TMzmpEuexYW4_vihiM."
+            ],
+            "suspected_view": "unknown",
+            "what_can_be_assessed": []
+          },
+          {
+            "image_url": "https://vbzjkqhvzfunahmlxevb.supabase.co/storage/v1/object/sign/case-files/cases/76ccdfa2-d6ae-45fb-a757-f77c99cb9c7b/patient/day0_recipient/1772162529736-WhatsApp_Image_2025-10-15_at_08.22.57_4453551a.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jNjQ2MjA3YS1kOTRjLTRlYjMtYWJlZC1kMjdmZjM5ODZmYWEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJjYXNlLWZpbGVzL2Nhc2VzLzc2Y2NkZmEyLWQ2YWUtNDVmYi1hNzU3LWY3N2M5OWNiOWM3Yi9wYXRpZW50L2RheTBfcmVjaXBpZW50LzE3NzIxNjI1Mjk3MzYtV2hhdHNBcHBfSW1hZ2VfMjAyNS0xMC0xNV9hdF8wOC4yMi41N180NDUzNTUxYS5qcGciLCJpYXQiOjE3NzIxNjI1NDQsImV4cCI6MTc3MjE2MzQ0NH0.wfkUC-mx9WFmJdSmtDDOjqEFnnLk3C-j-c7CqPjpvyU",
+            "confidence": 0,
+            "what_cannot": [
+              "AI audit failed"
+            ],
+            "observations": [
+              "AI audit failed: 400 Timeout while downloading https://vbzjkqhvzfunahmlxevb.supabase.co/storage/v1/object/sign/case-files/cases/76ccdfa2-d6ae-45fb-a757-f77c99cb9c7b/patient/preop_left/1772162531965-Picture47.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jNjQ2MjA3YS1kOTRjLTRlYjMtYWJlZC1kMjdmZjM5ODZmYWEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJjYXNlLWZpbGVzL2Nhc2VzLzc2Y2NkZmEyLWQ2YWUtNDVmYi1hNzU3LWY3N2M5OWNiOWM3Yi9wYXRpZW50L3ByZW9wX2xlZnQvMTc3MjE2MjUzMTk2NS1QaWN0dXJlNDcucG5nIiwiaWF0IjoxNzcyMTYyNTQzLCJleHAiOjE3NzIxNjM0NDN9.BdONALgVV4V1p9gRAjCa40W37TMzmpEuexYW4_vihiM."
+            ],
+            "suspected_view": "unknown",
+            "what_can_be_assessed": []
+          },
+          {
+            "image_url": "https://vbzjkqhvzfunahmlxevb.supabase.co/storage/v1/object/sign/case-files/cases/76ccdfa2-d6ae-45fb-a757-f77c99cb9c7b/patient/preop_crown/1772162528296-Right_Side.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jNjQ2MjA3YS1kOTRjLTRlYjMtYWJlZC1kMjdmZjM5ODZmYWEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJjYXNlLWZpbGVzL2Nhc2VzLzc2Y2NkZmEyLWQ2YWUtNDVmYi1hNzU3LWY3N2M5OWNiOWM3Yi9wYXRpZW50L3ByZW9wX2Nyb3duLzE3NzIxNjI1MjgyOTYtUmlnaHRfU2lkZS5qcGciLCJpYXQiOjE3NzIxNjI1NDQsImV4cCI6MTc3MjE2MzQ0NH0.DQH7pOqXxsM8uU1yC3ypjVOBQyPgKnB4lD0qJWFzlBo",
+            "confidence": 0,
+            "what_cannot": [
+              "AI audit failed"
+            ],
+            "observations": [
+              "AI audit failed: 400 Timeout while downloading https://vbzjkqhvzfunahmlxevb.supabase.co/storage/v1/object/sign/case-files/cases/76ccdfa2-d6ae-45fb-a757-f77c99cb9c7b/patient/preop_left/1772162531965-Picture47.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jNjQ2MjA3YS1kOTRjLTRlYjMtYWJlZC1kMjdmZjM5ODZmYWEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJjYXNlLWZpbGVzL2Nhc2VzLzc2Y2NkZmEyLWQ2YWUtNDVmYi1hNzU3LWY3N2M5OWNiOWM3Yi9wYXRpZW50L3ByZW9wX2xlZnQvMTc3MjE2MjUzMTk2NS1QaWN0dXJlNDcucG5nIiwiaWF0IjoxNzcyMTYyNTQzLCJleHAiOjE3NzIxNjM0NDN9.BdONALgVV4V1p9gRAjCa40W37TMzmpEuexYW4_vihiM."
+            ],
+            "suspected_view": "unknown",
+            "what_can_be_assessed": []
+          },
+          {
+            "image_url": "https://vbzjkqhvzfunahmlxevb.supabase.co/storage/v1/object/sign/case-files/cases/76ccdfa2-d6ae-45fb-a757-f77c99cb9c7b/patient/preop_right/1772162527306-Picture66.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jNjQ2MjA3YS1kOTRjLTRlYjMtYWJlZC1kMjdmZjM5ODZmYWEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJjYXNlLWZpbGVzL2Nhc2VzLzc2Y2NkZmEyLWQ2YWUtNDVmYi1hNzU3LWY3N2M5OWNiOWM3Yi9wYXRpZW50L3ByZW9wX3JpZ2h0LzE3NzIxNjI1MjczMDYtUGljdHVyZTY2LmpwZyIsImlhdCI6MTc3MjE2MjU0NSwiZXhwIjoxNzcyMTYzNDQ1fQ.d49GP0kAmROyf819BBMkaxpWcQQK3Y7I-NOwVe1ih5w",
+            "confidence": 0,
+            "what_cannot": [
+              "AI audit failed"
+            ],
+            "observations": [
+              "AI audit failed: 400 Timeout while downloading https://vbzjkqhvzfunahmlxevb.supabase.co/storage/v1/object/sign/case-files/cases/76ccdfa2-d6ae-45fb-a757-f77c99cb9c7b/patient/preop_left/1772162531965-Picture47.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jNjQ2MjA3YS1kOTRjLTRlYjMtYWJlZC1kMjdmZjM5ODZmYWEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJjYXNlLWZpbGVzL2Nhc2VzLzc2Y2NkZmEyLWQ2YWUtNDVmYi1hNzU3LWY3N2M5OWNiOWM3Yi9wYXRpZW50L3ByZW9wX2xlZnQvMTc3MjE2MjUzMTk2NS1QaWN0dXJlNDcucG5nIiwiaWF0IjoxNzcyMTYyNTQzLCJleHAiOjE3NzIxNjM0NDN9.BdONALgVV4V1p9gRAjCa40W37TMzmpEuexYW4_vihiM."
+            ],
+            "suspected_view": "unknown",
+            "what_can_be_assessed": []
+          },
+          {
+            "image_url": "https://vbzjkqhvzfunahmlxevb.supabase.co/storage/v1/object/sign/case-files/cases/76ccdfa2-d6ae-45fb-a757-f77c99cb9c7b/patient/preop_donor_rear/1772162525865-Picture1.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jNjQ2MjA3YS1kOTRjLTRlYjMtYWJlZC1kMjdmZjM5ODZmYWEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJjYXNlLWZpbGVzL2Nhc2VzLzc2Y2NkZmEyLWQ2YWUtNDVmYi1hNzU3LWY3N2M5OWNiOWM3Yi9wYXRpZW50L3ByZW9wX2Rvbm9yX3JlYXIvMTc3MjE2MjUyNTg2NS1QaWN0dXJlMS5qcGciLCJpYXQiOjE3NzIxNjI1NDUsImV4cCI6MTc3MjE2MzQ0NX0.EBx_AfvpYZonAL8oPkPc3GMBIx82M8cEdj4zSbkODwE",
+            "confidence": 0,
+            "what_cannot": [
+              "AI audit failed"
+            ],
+            "observations": [
+              "AI audit failed: 400 Timeout while downloading https://vbzjkqhvzfunahmlxevb.supabase.co/storage/v1/object/sign/case-files/cases/76ccdfa2-d6ae-45fb-a757-f77c99cb9c7b/patient/preop_left/1772162531965-Picture47.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jNjQ2MjA3YS1kOTRjLTRlYjMtYWJlZC1kMjdmZjM5ODZmYWEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJjYXNlLWZpbGVzL2Nhc2VzLzc2Y2NkZmEyLWQ2YWUtNDVmYi1hNzU3LWY3N2M5OWNiOWM3Yi9wYXRpZW50L3ByZW9wX2xlZnQvMTc3MjE2MjUzMTk2NS1QaWN0dXJlNDcucG5nIiwiaWF0IjoxNzcyMTYyNTQzLCJleHAiOjE3NzIxNjM0NDN9.BdONALgVV4V1p9gRAjCa40W37TMzmpEuexYW4_vihiM."
+            ],
+            "suspected_view": "unknown",
+            "what_can_be_assessed": []
+          },
+          {
+            "image_url": "https://vbzjkqhvzfunahmlxevb.supabase.co/storage/v1/object/sign/case-files/cases/76ccdfa2-d6ae-45fb-a757-f77c99cb9c7b/patient/preop_front/1772162524848-Front_View.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jNjQ2MjA3YS1kOTRjLTRlYjMtYWJlZC1kMjdmZjM5ODZmYWEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJjYXNlLWZpbGVzL2Nhc2VzLzc2Y2NkZmEyLWQ2YWUtNDVmYi1hNzU3LWY3N2M5OWNiOWM3Yi9wYXRpZW50L3ByZW9wX2Zyb250LzE3NzIxNjI1MjQ4NDgtRnJvbnRfVmlldy5qcGciLCJpYXQiOjE3NzIxNjI1NDYsImV4cCI6MTc3MjE2MzQ0Nn0.mCGpIweZMYrEGisfo73UpzWiorv7xLycOiHTsAGfEZ4",
+            "confidence": 0,
+            "what_cannot": [
+              "AI audit failed"
+            ],
+            "observations": [
+              "AI audit failed: 400 Timeout while downloading https://vbzjkqhvzfunahmlxevb.supabase.co/storage/v1/object/sign/case-files/cases/76ccdfa2-d6ae-45fb-a757-f77c99cb9c7b/patient/preop_left/1772162531965-Picture47.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jNjQ2MjA3YS1kOTRjLTRlYjMtYWJlZC1kMjdmZjM5ODZmYWEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJjYXNlLWZpbGVzL2Nhc2VzLzc2Y2NkZmEyLWQ2YWUtNDVmYi1hNzU3LWY3N2M5OWNiOWM3Yi9wYXRpZW50L3ByZW9wX2xlZnQvMTc3MjE2MjUzMTk2NS1QaWN0dXJlNDcucG5nIiwiaWF0IjoxNzcyMTYyNTQzLCJleHAiOjE3NzIxNjM0NDN9.BdONALgVV4V1p9gRAjCa40W37TMzmpEuexYW4_vihiM."
+            ],
+            "suspected_view": "unknown",
+            "what_can_be_assessed": []
+          },
+          {
+            "image_url": "https://vbzjkqhvzfunahmlxevb.supabase.co/storage/v1/object/sign/case-files/cases/76ccdfa2-d6ae-45fb-a757-f77c99cb9c7b/patient/preop_top/1772162523850-Top_View.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jNjQ2MjA3YS1kOTRjLTRlYjMtYWJlZC1kMjdmZjM5ODZmYWEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJjYXNlLWZpbGVzL2Nhc2VzLzc2Y2NkZmEyLWQ2YWUtNDVmYi1hNzU3LWY3N2M5OWNiOWM3Yi9wYXRpZW50L3ByZW9wX3RvcC8xNzcyMTYyNTIzODUwLVRvcF9WaWV3LmpwZyIsImlhdCI6MTc3MjE2MjU0NiwiZXhwIjoxNzcyMTYzNDQ2fQ.iDEb4WqYbH_xS0FFAJmuHAS9jJDYIIAfyqFotiIulJs",
+            "confidence": 0,
+            "what_cannot": [
+              "AI audit failed"
+            ],
+            "observations": [
+              "AI audit failed: 400 Timeout while downloading https://vbzjkqhvzfunahmlxevb.supabase.co/storage/v1/object/sign/case-files/cases/76ccdfa2-d6ae-45fb-a757-f77c99cb9c7b/patient/preop_left/1772162531965-Picture47.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jNjQ2MjA3YS1kOTRjLTRlYjMtYWJlZC1kMjdmZjM5ODZmYWEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJjYXNlLWZpbGVzL2Nhc2VzLzc2Y2NkZmEyLWQ2YWUtNDVmYi1hNzU3LWY3N2M5OWNiOWM3Yi9wYXRpZW50L3ByZW9wX2xlZnQvMTc3MjE2MjUzMTk2NS1QaWN0dXJlNDcucG5nIiwiaWF0IjoxNzcyMTYyNTQzLCJleHAiOjE3NzIxNjM0NDN9.BdONALgVV4V1p9gRAjCa40W37TMzmpEuexYW4_vihiM."
+            ],
+            "suspected_view": "unknown",
+            "what_can_be_assessed": []
+          }
+        ],
+        "confidence_model_v1": {
+          "inputs": {
+            "completeness_score": 0,
+            "missing_day0_donor": true,
+            "missing_day0_recipient": true,
+            "missing_holdingSolution": true,
+            "required_photos_coverage": 0,
+            "missing_graftCountImplanted": true,
+            "structured_metadata_completion": 0,
+            "missing_technique_critical_block": false
+          },
+          "version": 1,
+          "penalties": [
+            {
+              "id": "missing_day0_evidence",
+              "amount": 0.1,
+              "reason": "Missing day0_recipient or day0_donor."
+            },
+            {
+              "id": "missing_holdingSolution",
+              "amount": 0.05,
+              "reason": "Missing holdingSolution."
+            },
+            {
+              "id": "missing_graftCountImplanted",
+              "amount": 0.05,
+              "reason": "Missing graftCountImplanted (totalGraftsImplanted)."
+            }
+          ],
+          "evidence_grade": "D",
+          "base_multiplier": 0.55,
+          "confidence_multiplier": 0.5
+        },
+        "completeness_index_v1": {
+          "score": 0,
+          "version": 1,
+          "weights": {
+            "photos": 45,
+            "numeric_precision": 10,
+            "structured_metadata": 35,
+            "verification_evidence": 10
+          },
+          "breakdown": {
+            "photo_coverage": {
+              "base": 0,
+              "bonus": 0,
+              "score": 0,
+              "per_category": {
+                "preop_top": {
+                  "min": 1,
+                  "done": 0,
+                  "uploaded": 0
+                },
+                "day0_donor": {
+                  "min": 1,
+                  "done": 0,
+                  "uploaded": 0
+                },
+                "preop_left": {
+                  "min": 1,
+                  "done": 0,
+                  "uploaded": 0
+                },
+                "preop_crown": {
+                  "min": 1,
+                  "done": 0,
+                  "uploaded": 0
+                },
+                "preop_front": {
+                  "min": 1,
+                  "done": 0,
+                  "uploaded": 0
+                },
+                "preop_right": {
+                  "min": 1,
+                  "done": 0,
+                  "uploaded": 0
+                },
+                "day0_recipient": {
+                  "min": 1,
+                  "done": 0,
+                  "uploaded": 0
+                },
+                "preop_donor_rear": {
+                  "min": 1,
+                  "done": 0,
+                  "uploaded": 0
+                }
+              }
+            },
+            "numeric_precision": {
+              "done": 0,
+              "score": 0,
+              "total": 11,
+              "missing_keys": [
+                "yearsPerformingHairTransplants",
+                "totalGraftsExtracted",
+                "totalGraftsImplanted",
+                "totalProcedureCostUsd",
+                "preOpDensityFuPerCm2",
+                "avgOutOfBodyTimeHours",
+                "fueDocumentedTransectionRatePercent",
+                "estimatedGraftSurvivalPercent",
+                "incisionToImplantMinutes",
+                "outOfBodyTimeAvgMinutes",
+                "densityTargetFUcm2"
+              ]
+            },
+            "structured_metadata": {
+              "done": 0,
+              "score": 0,
+              "total": 10,
+              "missing_keys": [
+                "procedureType",
+                "implantationMethod",
+                "holdingSolution",
+                "totalGraftsExtracted",
+                "totalGraftsImplanted",
+                "extractionPerformedBy",
+                "implantationPerformedBy",
+                "microscopeStationsUsed",
+                "densePackingAttempted",
+                "incisionTiming"
+              ]
+            },
+            "verification_evidence": {
+              "score": 0,
+              "points": {
+                "intraop_present": 0,
+                "graft_count_verified": 0,
+                "day0_donor_recipient_present": 0
+              }
+            }
+          }
+        },
+        "non_medical_disclaimer": "HairAudit is an informational audit/reporting tool and not a medical diagnosis or medical advice."
+      },
+      "section_scores": {
+        "hairline_design": 0,
+        "donor_management": 0,
+        "extraction_quality": 0,
+        "recipient_placement": 0,
+        "density_distribution": 0,
+        "complications_and_risks": 0,
+        "naturalness_and_aesthetics": 0,
+        "graft_handling_and_viability": 0,
+        "post_op_course_and_aftercare": 0
+      },
+      "patient_answers": {
+        "cost_model": "per_graft",
+        "pain_level": 4,
+        "shock_loss": "not_sure",
+        "clinic_city": "Krakow",
+        "clinic_name": "Test Clinic Krakow 504",
+        "months_since": "6_9",
+        "would_repeat": "yes",
+        "complications": "yes",
+        "donor_shaving": "full_shave",
+        "preop_consult": "yes",
+        "recovery_time": "under_1_week",
+        "what_included": [
+          "accommodation",
+          "followup",
+          "medications",
+          "prp"
+        ],
+        "bleeding_issue": "no",
+        "clinic_country": "poland",
+        "procedure_date": "2025-07-01",
+        "procedure_type": "robotic",
+        "would_recommend": "yes",
+        "donor_appearance": 1,
+        "patient_baseline": {
+          "patient_age": 23,
+          "patient_sex": "Male",
+          "smoking_status": "No"
+        },
+        "post_op_swelling": "none",
+        "surgery_duration": "8_plus",
+        "total_paid_amount": 7175,
+        "total_paid_currency": "usd",
+        "density_satisfaction": 4,
+        "hairline_naturalness": 5,
+        "complications_details": "Minor infection treated with antibiotics",
+        "graft_number_received": 2550,
+        "doctor_present_implant": "no",
+        "graft_number_disclosed": "yes",
+        "enhanced_patient_answers": {
+          "baseline": {
+            "diabetes": "No",
+            "patient_age": 23,
+            "patient_sex": "Male",
+            "smoking_status": "No",
+            "alcohol_frequency": "Weekly"
+          },
+          "experience": {
+            "felt_rushed": true,
+            "felt_informed": "Somewhat",
+            "biggest_concern_now": "Unsure about growth timeline",
+            "transparency_rating": 4,
+            "communication_rating": 4,
+            "considering_revision": "Unsure",
+            "current_satisfaction": 9,
+            "legal_or_refund_dispute": "No"
+          },
+          "procedure_execution": {
+            "grafts_claimed_total": 2550,
+            "crown_pattern_discussed": "Yes",
+            "hairline_drawn_by_doctor": "Yes",
+            "single_hair_grafts_front": "Not sure",
+            "technician_role_extraction": "Mixed",
+            "technician_role_implantation": "Doctor"
+          }
+        },
+        "doctor_present_extraction": "no"
+      },
+      "graft_survival_estimate": "Unknown"
+    },
+    "created_at": "2026-02-27T03:23:21.816742+00:00"
+  },
+  "derived": {
+    "overall_score": 0,
+    "confidence": 0.45,
+    "pdf_path": "76ccdfa2-d6ae-45fb-a757-f77c99cb9c7b/v2.pdf",
+    "pdf_local_path": "G:\\hairaudit-v2\\scripts\\output\\test-audits\\76ccdfa2-d6ae-45fb-a757-f77c99cb9c7b\\report.pdf"
+  }
+}

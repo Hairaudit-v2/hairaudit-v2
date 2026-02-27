@@ -1,0 +1,135 @@
+{
+  "caseId": "aec4e36f-5ce2-4fa6-83e2-c5553436df93",
+  "dryRun": false,
+  "generated_at": "2026-02-27T03:27:12.251Z",
+  "patient": {
+    "age": 61,
+    "sex_assigned_at_birth": "Female",
+    "smoking": "No"
+  },
+  "clinic": {
+    "country": "Colombia",
+    "procedure_type": "FUE",
+    "claimed_grafts": 1561,
+    "months_since": "9_12"
+  },
+  "test_identity": {
+    "user_id": "47c8e5fe-09fa-4014-a9bf-5a51a54e72fb",
+    "email": "test+33ab708878157577@hairaudit.dev"
+  },
+  "images": [
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture75.jpg",
+      "upload_category": "preop_right",
+      "filename_tag": "any"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Top View.jpg",
+      "upload_category": "preop_top",
+      "filename_tag": "top"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Darren\\Front View.jpg",
+      "upload_category": "preop_front",
+      "filename_tag": "front"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture4 (2).png",
+      "upload_category": "preop_left",
+      "filename_tag": "any"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture77.png",
+      "upload_category": "postop_day0",
+      "filename_tag": "any"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture72.png",
+      "upload_category": "day0_donor",
+      "filename_tag": "any"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Darren\\Pre 2.jpg",
+      "upload_category": "day0_donor",
+      "filename_tag": "any"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture22.png",
+      "upload_category": "day0_recipient",
+      "filename_tag": "any"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture26.png",
+      "upload_category": "day0_donor",
+      "filename_tag": "any"
+    }
+  ],
+  "patient_answers": {
+    "clinic_name": "Test Clinic Bogotá 90",
+    "clinic_country": "colombia",
+    "clinic_city": "Bogotá",
+    "procedure_date": "2025-04-23",
+    "procedure_type": "fue",
+    "surgeon_name": "Dr. Test 12",
+    "preop_consult": "yes",
+    "doctor_present_extraction": "not_sure",
+    "doctor_present_implant": "yes",
+    "graft_number_disclosed": "yes",
+    "graft_number_received": 1561,
+    "donor_shaving": "full_shave",
+    "surgery_duration": "under_4h",
+    "total_paid_currency": "usd",
+    "total_paid_amount": 3524,
+    "cost_model": "per_graft",
+    "what_included": [
+      "accommodation",
+      "followup",
+      "transport",
+      "medications"
+    ],
+    "pain_level": 7,
+    "post_op_swelling": "none",
+    "bleeding_issue": "no",
+    "recovery_time": "1_2_weeks",
+    "shock_loss": "no",
+    "complications": "no",
+    "months_since": "9_12",
+    "density_satisfaction": 4,
+    "hairline_naturalness": 3,
+    "donor_appearance": 1,
+    "would_repeat": "not_sure",
+    "would_recommend": "no",
+    "enhanced_patient_answers": {
+      "baseline": {
+        "patient_age": 61,
+        "patient_sex": "Female",
+        "smoking_status": "No",
+        "alcohol_frequency": "Weekly",
+        "diabetes": "No"
+      },
+      "procedure_execution": {
+        "grafts_claimed_total": 1561,
+        "technician_role_extraction": "Technician",
+        "technician_role_implantation": "Not sure",
+        "hairline_drawn_by_doctor": "Yes",
+        "single_hair_grafts_front": "Not sure",
+        "crown_pattern_discussed": "No"
+      },
+      "experience": {
+        "communication_rating": 3,
+        "transparency_rating": 4,
+        "felt_rushed": false,
+        "felt_informed": "Somewhat",
+        "legal_or_refund_dispute": "No",
+        "current_satisfaction": 4,
+        "biggest_concern_now": "Hairline looks slightly unnatural",
+        "considering_revision": "No"
+      }
+    },
+    "patient_baseline": {
+      "patient_age": 61,
+      "patient_sex": "Female",
+      "smoking_status": "No"
+    }
+  }
+}

@@ -9,6 +9,9 @@ import DoctorAnswersSummary from "@/components/reports/DoctorAnswersSummary";
 import PatientAnswersSummary from "@/components/reports/PatientAnswersSummary";
 import EvidenceSummary from "@/components/reports/EvidenceSummary";
 import ScoreAreaGraph from "@/components/reports/ScoreAreaGraph";
+import DomainScoreCards from "@/components/reports/DomainScoreCards";
+import CompletenessIndexCard from "@/components/reports/CompletenessIndexCard";
+import DoctorScoringNarrativeCard from "@/components/reports/DoctorScoringNarrativeCard";
 import rubric from "@/lib/audit/rubrics/hairaudit_clinical_v1.json";
 import { buildRubricTitles } from "@/lib/audit/rubricTitles";
 import { mapLegacyDoctorAnswers } from "@/lib/doctorAuditSchema";
@@ -283,9 +286,66 @@ export default async function Page({ params }: { params: Promise<{ caseId: strin
 
       {reports && reports.length > 0 && (() => {
         const latest = reports[0];
+        const summary = (latest?.summary as Record<string, unknown>) ?? {};
+        const forensic = (summary?.forensic_audit as Record<string, unknown> | null | undefined) ?? null;
+        const v1 = forensic && typeof forensic === "object"
+          ? ((forensic as any).domain_scores_v1 as { domains?: unknown[] } | null | undefined)
+          : null;
+        const domains = Array.isArray(v1?.domains) ? (v1!.domains as any[]) : [];
+        const benchmark = (forensic as any)?.benchmark as any;
+        const overallScores = (forensic as any)?.overall_scores_v1 as any;
+        const tiers = (forensic as any)?.tiers_v1 as any[] | undefined;
+        if (!domains.length) return null;
+        return (
+          <div className="mt-6">
+            <DomainScoreCards domains={domains as any} benchmark={benchmark as any} overallScores={overallScores as any} />
+            {Array.isArray(tiers) && tiers.length > 0 && (
+              <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-5">
+                <h3 className="font-semibold text-slate-900">Submission Tier (v1)</h3>
+                <p className="mt-1 text-sm text-slate-600">Based on submitted documentation.</p>
+                <div className="mt-3 grid gap-2">
+                  {tiers.slice(0, 3).map((t) => (
+                    <div key={t.tier_id} className="flex items-start justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm">
+                      <div>
+                        <div className="font-semibold text-slate-900">{t.title}</div>
+                        {Array.isArray(t.reasons) && t.reasons.length > 0 && (
+                          <div className="text-xs text-slate-600 mt-1">{t.reasons[0]}</div>
+                        )}
+                      </div>
+                      <div className={`shrink-0 rounded px-2 py-0.5 text-xs font-bold ${t.eligible ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-700"}`}>
+                        {t.eligible ? "Eligible" : "Not yet"}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
+      {reports && reports.length > 0 && (() => {
+        const latest = reports[0];
+        const summary = (latest?.summary as Record<string, unknown>) ?? {};
+        const forensic = (summary?.forensic_audit as any) ?? null;
+        const ci = forensic?.completeness_index_v1 ?? null;
+        if (!ci) return null;
+        return (
+          <div className="mt-6">
+            <CompletenessIndexCard ci={ci} />
+          </div>
+        );
+      })()}
+
+      {reports && reports.length > 0 && (() => {
+        const latest = reports[0];
         const summary = latest?.summary as Record<string, unknown> | undefined;
         const raw = summary?.doctor_answers as Record<string, unknown> | undefined;
         const doctorAnswers = raw ? mapLegacyDoctorAnswers(raw) : null;
+        const scoring = (raw as any)?.scoring ?? null;
+        const scoringVersion = (raw as any)?.scoring_version ?? null;
+        const scoringGeneratedAt = (raw as any)?.scoring_generated_at ?? null;
+        const aiContext = (raw as any)?.ai_context ?? null;
         const r = latest as { patient_audit_version?: number; patient_audit_v2?: Record<string, unknown> | null };
         const patientAnswers =
           r?.patient_audit_version === 2 && r?.patient_audit_v2 && Object.keys(r.patient_audit_v2).length > 0
@@ -299,6 +359,14 @@ export default async function Page({ params }: { params: Promise<{ caseId: strin
               <div className="mt-6">
                 <DoctorAnswersSummary answers={doctorAnswers!} />
               </div>
+            )}
+            {(scoring && typeof scoring === "object") && (
+              <DoctorScoringNarrativeCard
+                scoring={scoring as any}
+                scoringVersion={scoringVersion as any}
+                generatedAt={scoringGeneratedAt as any}
+                aiContext={aiContext as any}
+              />
             )}
             {hasPatient && (
               <div className="mt-6">

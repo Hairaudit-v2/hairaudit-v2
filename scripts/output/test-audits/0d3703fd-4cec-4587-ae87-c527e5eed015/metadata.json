@@ -1,0 +1,144 @@
+{
+  "caseId": "0d3703fd-4cec-4587-ae87-c527e5eed015",
+  "dryRun": false,
+  "generated_at": "2026-02-27T03:18:41.902Z",
+  "patient": {
+    "age": 60,
+    "sex_assigned_at_birth": "Female",
+    "smoking": "No"
+  },
+  "clinic": {
+    "country": "Canada",
+    "procedure_type": "DHI",
+    "claimed_grafts": 3475,
+    "months_since": "6_9"
+  },
+  "test_identity": {
+    "user_id": "d7a021f9-76cc-442e-a955-dbe7599cd705",
+    "email": "test+21b8a89a7fbbb5b9@hairaudit.dev"
+  },
+  "images": [
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture5.jpg",
+      "upload_category": "day0_donor",
+      "filename_tag": "any"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Darren\\Top View.jpg",
+      "upload_category": "preop_top",
+      "filename_tag": "top"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Darren\\Front View.jpg",
+      "upload_category": "preop_front",
+      "filename_tag": "front"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture9.jpg",
+      "upload_category": "postop_day0",
+      "filename_tag": "any"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture39.png",
+      "upload_category": "intraop",
+      "filename_tag": "any"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Darren\\Crown.jpg",
+      "upload_category": "preop_crown",
+      "filename_tag": "crown"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture32.jpg",
+      "upload_category": "preop_left",
+      "filename_tag": "any"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture83.jpg",
+      "upload_category": "preop_right",
+      "filename_tag": "any"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture16.png",
+      "upload_category": "preop_right",
+      "filename_tag": "any"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture9.png",
+      "upload_category": "preop_left",
+      "filename_tag": "any"
+    },
+    {
+      "filePath": "G:\\hairaudit-v2\\hairaudit-v2\\testimages\\Random images\\Picture16.jpg",
+      "upload_category": "preop_left",
+      "filename_tag": "any"
+    }
+  ],
+  "patient_answers": {
+    "clinic_name": "Test Clinic Montreal 86",
+    "clinic_country": "canada",
+    "clinic_city": "Montreal",
+    "procedure_date": "2025-07-28",
+    "procedure_type": "dhi",
+    "surgeon_name": "Dr. Test 56",
+    "preop_consult": "yes",
+    "doctor_present_extraction": "yes",
+    "doctor_present_implant": "yes",
+    "graft_number_disclosed": "yes",
+    "graft_number_received": 3475,
+    "donor_shaving": "full_shave",
+    "surgery_duration": "4_6h",
+    "total_paid_currency": "usd",
+    "total_paid_amount": 1260,
+    "cost_model": "per_session",
+    "what_included": [
+      "transport",
+      "medications",
+      "followup"
+    ],
+    "pain_level": 7,
+    "post_op_swelling": "mild",
+    "bleeding_issue": "no",
+    "recovery_time": "2_4_weeks",
+    "shock_loss": "no",
+    "complications": "no",
+    "months_since": "6_9",
+    "density_satisfaction": 5,
+    "hairline_naturalness": 5,
+    "donor_appearance": 1,
+    "would_repeat": "yes",
+    "would_recommend": "no",
+    "enhanced_patient_answers": {
+      "baseline": {
+        "patient_age": 60,
+        "patient_sex": "Female",
+        "smoking_status": "No",
+        "alcohol_frequency": "Daily",
+        "diabetes": "Not sure"
+      },
+      "procedure_execution": {
+        "grafts_claimed_total": 3475,
+        "technician_role_extraction": "Not sure",
+        "technician_role_implantation": "Mixed",
+        "hairline_drawn_by_doctor": "Yes",
+        "single_hair_grafts_front": "Not sure",
+        "crown_pattern_discussed": "Yes"
+      },
+      "experience": {
+        "communication_rating": 3,
+        "transparency_rating": 4,
+        "felt_rushed": false,
+        "felt_informed": "Somewhat",
+        "legal_or_refund_dispute": "No",
+        "current_satisfaction": 9,
+        "biggest_concern_now": "Unsure about growth timeline",
+        "considering_revision": "No"
+      }
+    },
+    "patient_baseline": {
+      "patient_age": 60,
+      "patient_sex": "Female",
+      "smoking_status": "No"
+    }
+  }
+}
