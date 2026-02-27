@@ -530,6 +530,12 @@ export const runAudit = inngest.createFunction(
       return urls;
     });
 
+    // Detect patient-only audit: no doctor/clinic answers and no doctor photos
+    const doctorPhotos = uploads.filter((u) => String(u.type ?? "").startsWith("doctor_photo:"));
+    const hasDoctorAnswers = existingSummary.doctor_answers && typeof existingSummary.doctor_answers === "object" && Object.keys(existingSummary.doctor_answers as object).length > 0;
+    const hasClinicAnswers = existingSummary.clinic_answers && typeof existingSummary.clinic_answers === "object" && Object.keys(existingSummary.clinic_answers as object).length > 0;
+    const auditMode = doctorPhotos.length > 0 || hasDoctorAnswers || hasClinicAnswers ? "full" : "patient";
+
     // 6) Run AI audit (answers + images)
     const aiResult = await step.run("run-ai-audit", async () => {
       const patientAnswers = existingSummary.patient_answers as Record<string, unknown> | null;
@@ -549,15 +555,22 @@ export const runAudit = inngest.createFunction(
         patient_answers: patientAnswers,
         doctor_answers: existingSummary.doctor_answers as Record<string, unknown> | null,
         clinic_answers: existingSummary.clinic_answers as Record<string, unknown> | null,
-        // Pass structured advanced inputs to GPT-5.2 (backward-compatible; optional).
         enhanced_patient_answers: (enhanced as any) ?? null,
         patient_baseline: (baseline as any) ?? null,
         imageUrls,
+        auditMode,
       });
     });
 
-    // 6a) Doctor scoring narrative (GPT; non-blocking). Deterministic ai_context remains truth.
+    // 6a) Doctor scoring narrative (GPT; non-blocking). Skip for patient-only audits.
     const scoringNarrative = await step.run("doctor-scoring-narrative", async () => {
+      if (auditMode === "patient") {
+        return {
+          narrative: "Doctor scoring narrative is not applicable for patient-only audits. Submit doctor documentation for a full audit.",
+          model: "patient-audit",
+          generated_at: new Date().toISOString(),
+        };
+      }
       try {
         const doctorAnswers = existingSummary.doctor_answers as Record<string, unknown> | null;
 
@@ -614,6 +627,7 @@ export const runAudit = inngest.createFunction(
           clinic_id: (c as any)?.clinic_id ?? null,
         },
         doctorAnswersRaw: (existingSummary.doctor_answers as any) ?? null,
+        auditMode,
       });
     });
 

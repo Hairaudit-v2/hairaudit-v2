@@ -737,9 +737,11 @@ function computeCompletenessIndex(params: {
   doctorAnswersComplete: boolean;
   missingInputs?: string[];
   missingPhotos?: string[];
+  auditMode?: "patient" | "full";
 }): { completeness01: number; limiters: string[]; evidenceNeeded: string[] } {
   const limiters: string[] = [];
   const evidenceNeeded: string[] = [];
+  const isPatientOnly = params.auditMode === "patient";
 
   const photos = (params.uploads ?? []).map((u) => ({ type: String(u.type ?? "") }));
   const patientPhotos = photos.filter((p) => String(p.type).startsWith("patient_photo:"));
@@ -755,13 +757,15 @@ function computeCompletenessIndex(params: {
     limiters.push(`Patient photo set incomplete (${missingPatient.length} required missing).`);
     evidenceNeeded.push(...missingPatient.map((k) => `patient_photo:${k}`));
   }
-  if (missingDoctor.length) {
-    limiters.push(`Doctor photo set incomplete (${missingDoctor.length} required missing).`);
-    evidenceNeeded.push(...missingDoctor.map((k) => `doctor_photo:${k}`));
-  }
-  if (!params.doctorAnswersComplete) {
-    limiters.push("Doctor documentation incomplete (answers missing required fields).");
-    evidenceNeeded.push("Complete doctor audit form (required fields)");
+  if (!isPatientOnly) {
+    if (missingDoctor.length) {
+      limiters.push(`Doctor photo set incomplete (${missingDoctor.length} required missing).`);
+      evidenceNeeded.push(...missingDoctor.map((k) => `doctor_photo:${k}`));
+    }
+    if (!params.doctorAnswersComplete) {
+      limiters.push("Doctor documentation incomplete (answers missing required fields).");
+      evidenceNeeded.push("Complete doctor audit form (required fields)");
+    }
   }
 
   const missingInputs = (params.missingInputs ?? []).filter(Boolean);
@@ -769,13 +773,14 @@ function computeCompletenessIndex(params: {
   if (missingInputs.length) limiters.push(`AI inputs missing: ${missingInputs.slice(0, 4).join(", ")}.`);
   if (missingPhotos.length) limiters.push(`AI photo limitations: ${missingPhotos.slice(0, 4).join(", ")}.`);
 
-  // Simple completeness index: photos (50%) + doctor answers (30%) + AI missing signals (20%).
   const patientReq = PATIENT_REQUIRED_KEYS.length || 1;
   const doctorReq = DOCTOR_REQUIRED_KEYS.length || 1;
   const patientHave = patientReq - missingPatient.length;
   const doctorHave = doctorReq - missingDoctor.length;
-  const photoFactor = 0.5 * (patientHave / patientReq) + 0.5 * (doctorHave / doctorReq);
-  const answerFactor = params.doctorAnswersComplete ? 1 : 0.4;
+  const photoFactor = isPatientOnly
+    ? patientHave / patientReq
+    : 0.5 * (patientHave / patientReq) + 0.5 * (doctorHave / doctorReq);
+  const answerFactor = isPatientOnly ? 1 : params.doctorAnswersComplete ? 1 : 0.4;
   const aiFactor = missingInputs.length + missingPhotos.length === 0 ? 1 : Math.max(0.4, 1 - 0.15 * (missingInputs.length + missingPhotos.length));
 
   const completeness01 = clamp01(0.5 * photoFactor + 0.3 * answerFactor + 0.2 * aiFactor);
@@ -924,6 +929,7 @@ export function computeDomainScoresV1(params: {
     clinic_id?: string | null;
   } | null;
   doctorAnswersRaw?: Record<string, unknown> | null;
+  auditMode?: "patient" | "full";
 }): {
   domains: DomainScoreV1[];
   benchmark: BenchmarkEligibility;
@@ -957,7 +963,11 @@ export function computeDomainScoresV1(params: {
   const sectionEvidence = params.ai?.section_score_evidence ?? {};
   const evidenceFor = (k: string) => bestEvidenceSnippets({ evidence: sectionEvidence[k], max: 2 });
 
-  const missingInputs = params.ai?.data_quality?.missing_inputs ?? [];
+  const isPatientOnly = params.auditMode === "patient";
+  let missingInputs = params.ai?.data_quality?.missing_inputs ?? [];
+  if (isPatientOnly) {
+    missingInputs = missingInputs.filter((x) => x !== "doctor_answers" && x !== "clinic_answers");
+  }
   const missingPhotos = params.ai?.data_quality?.missing_photos ?? [];
 
   const completeness = computeCompletenessIndex({
@@ -965,6 +975,7 @@ export function computeDomainScoresV1(params: {
     doctorAnswersComplete,
     missingInputs,
     missingPhotos,
+    auditMode: params.auditMode ?? "full",
   });
 
   const completenessIndexV1 = computeCompletenessIndexDoctorV1({
@@ -1009,8 +1020,10 @@ export function computeDomainScoresV1(params: {
       if (id === "GV") return uniq([...evidenceFor("graft_handling_and_viability")]).slice(0, 3);
       if (id === "IC") return uniq([...evidenceFor("recipient_placement"), ...evidenceFor("naturalness_and_aesthetics")]).slice(0, 4);
       return uniq([
-        ...(doctorAnswersComplete ? ["Doctor answers: required fields completed."] : []),
-        ...(missingDoctorKeys.length === 0 ? ["Doctor photo set: required views present."] : []),
+        ...(isPatientOnly ? [] : [
+          ...(doctorAnswersComplete ? ["Doctor answers: required fields completed."] : []),
+          ...(missingDoctorKeys.length === 0 ? ["Doctor photo set: required views present."] : []),
+        ]),
         ...(missingPatientKeys.length === 0 ? ["Patient photo set: required views present."] : []),
       ]).slice(0, 4);
     })();
@@ -1018,14 +1031,14 @@ export function computeDomainScoresV1(params: {
     const limiters: string[] = uniq([
       ...(id !== "DI" ? completeness.limiters : []),
       ...(id === "DI" ? completeness.limiters : []),
-      ...(doctorIssues.length && (id === "GV" || id === "DI") ? doctorIssues.slice(0, 3) : []),
+      ...(!isPatientOnly && doctorIssues.length && (id === "GV" || id === "DI") ? doctorIssues.slice(0, 3) : []),
     ]).slice(0, 8);
 
     const improvement_plan = improvementTemplates({
       domainId: id,
-      missingDoctorKeys,
+      missingDoctorKeys: isPatientOnly ? [] : missingDoctorKeys,
       missingPatientKeys,
-      doctorAnswersIssues: doctorIssues,
+      doctorAnswersIssues: isPatientOnly ? [] : doctorIssues,
       viewCoverageFactor: viewFactor,
     });
 
@@ -1067,6 +1080,7 @@ export function computeDomainScoresV1(params: {
     doctorAnswersRaw: params.doctorAnswersRaw ?? null,
     doctorId: params.caseRow?.doctor_id ?? null,
     clinicId: params.caseRow?.clinic_id ?? null,
+    auditMode: params.auditMode ?? "full",
   });
 
   const weights = { SP: 15, DP: 25, GV: 20, IC: 25, DI: 15 } as const;
@@ -1112,8 +1126,24 @@ export function computeBenchmarkEligibility(params: {
   doctorAnswersRaw?: Record<string, unknown> | null;
   doctorId: string | null;
   clinicId: string | null;
+  auditMode?: "patient" | "full";
 }): BenchmarkEligibility {
   const reasons: string[] = [];
+  const isPatientOnly = params.auditMode === "patient";
+
+  if (isPatientOnly) {
+    reasons.push("Patient audit – doctor/clinic documentation not submitted for benchmarking.");
+    return {
+      eligible: false,
+      gate_version: "balanced_v1",
+      reasons,
+      overall_confidence: Math.round(clamp(Number(params.confidenceModel?.confidence_multiplier ?? 0.5), 0.5, 1.0) * 1000) / 1000,
+      confidence_grade: params.confidenceModel?.evidence_grade ?? "D",
+      doctor_evidence_grade: null,
+      doctor_answers_complete: false,
+    };
+  }
+
   const completeness = clamp(Number(params.completeness?.score ?? 0), 0, 100);
   const grade = params.confidenceModel?.evidence_grade ?? "D";
   const requiredComplete = requiredPhotoSetComplete(params.uploads ?? []);

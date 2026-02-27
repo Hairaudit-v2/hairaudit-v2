@@ -95,6 +95,8 @@ export interface EnhancedPatientAnswers {
   experience?: PatientExperience;
 }
 
+export type AuditMode = "patient" | "full";
+
 export type AIAuditInput = {
   patient_answers?: Record<string, unknown> | null;
   doctor_answers?: Record<string, unknown> | null;
@@ -103,6 +105,8 @@ export type AIAuditInput = {
   enhanced_patient_answers?: EnhancedPatientAnswers | null;
   /** Publicly fetchable image URLs (e.g. Supabase signed URLs) for vision analysis */
   imageUrls?: string[];
+  /** patient = evaluate only patient evidence; full = require doctor/clinic for benchmarking */
+  auditMode?: AuditMode;
 };
 
 export type AIAuditResult = {
@@ -691,10 +695,15 @@ export async function runAIAudit(input: AIAuditInput): Promise<AIAuditResult> {
 
   const apiKey = process.env.OPENAI_API_KEY;
   const imageUrls = (input.imageUrls ?? []).filter(Boolean).slice(0, 10);
+  const auditMode = input.auditMode ?? "full";
+  const isPatientOnly = auditMode === "patient";
+
   const autoMissingInputs: string[] = [];
   if (!input.patient_answers || Object.keys(input.patient_answers).length === 0) autoMissingInputs.push("patient_answers");
-  if (!input.doctor_answers || Object.keys(input.doctor_answers).length === 0) autoMissingInputs.push("doctor_answers");
-  if (!input.clinic_answers || Object.keys(input.clinic_answers).length === 0) autoMissingInputs.push("clinic_answers");
+  if (!isPatientOnly) {
+    if (!input.doctor_answers || Object.keys(input.doctor_answers).length === 0) autoMissingInputs.push("doctor_answers");
+    if (!input.clinic_answers || Object.keys(input.clinic_answers).length === 0) autoMissingInputs.push("clinic_answers");
+  }
   const autoMissingPhotos: string[] = imageUrls.length > 0 ? [] : ["photos"];
 
   if (!apiKey) {
@@ -767,6 +776,9 @@ export async function runAIAudit(input: AIAuditInput): Promise<AIAuditResult> {
 - Always include the non_medical_disclaimer field and keep it neutral.
 
 You MUST be objective and evidence-based. Use audit language only: quality indicators, risk flags, and data insufficiency.
+
+${isPatientOnly ? `## Audit mode: PATIENT-ONLY
+This is a patient audit. Doctor and clinic documentation are NOT provided and are NOT expected. Evaluate ONLY based on patient answers and patient-submitted photos. Do NOT list doctor_answers, clinic_answers, or doctor photo requirements as missing or as limiters. Score and assess based solely on available patient evidence.` : ""}
 
 ## Forensic inference objectives (answers-driven; MUST APPLY WHEN POSSIBLE)
 Using patient-provided answers (and any structured enhanced inputs), you must infer and discuss (without diagnosing):
