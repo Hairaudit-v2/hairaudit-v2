@@ -19,7 +19,10 @@ function supabaseAdmin() {
 const BUCKET = process.env.CASE_FILES_BUCKET || "case-files";
 const INTERNAL_API_KEY =
   String(process.env.INTERNAL_API_KEY ?? "").trim() ||
-  String(process.env.SUPABASE_SERVICE_ROLE_KEY ?? "").trim();
+  String(process.env.SUPABASE_SERVICE_ROLE_KEY ?? "").trim() ||
+  String(process.env.REPORT_RENDER_TOKEN ?? "").trim() ||
+  String(process.env.INTERNAL_BUILD_PDF_TOKEN ?? "").trim();
+const VERCEL_AUTOMATION_BYPASS_SECRET = String(process.env.VERCEL_AUTOMATION_BYPASS_SECRET ?? "").trim();
 
 function resolveInternalBaseUrl(): string {
   const configured = String(process.env.NEXT_PUBLIC_APP_URL ?? "").trim();
@@ -722,6 +725,12 @@ export const runAudit = inngest.createFunction(
         headers: {
           "Content-Type": "application/json",
           "x-internal-api-key": INTERNAL_API_KEY,
+          ...(VERCEL_AUTOMATION_BYPASS_SECRET
+            ? {
+                "x-vercel-protection-bypass": VERCEL_AUTOMATION_BYPASS_SECRET,
+                "x-vercel-set-bypass-cookie": "true",
+              }
+            : {}),
         },
         body: JSON.stringify({
           caseId,

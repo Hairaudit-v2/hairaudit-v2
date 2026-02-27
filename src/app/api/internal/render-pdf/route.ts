@@ -19,13 +19,19 @@ function supabaseAdmin() {
 function resolveInternalApiKey(req: Request): string {
   const bearer = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim();
   const header = req.headers.get("x-internal-api-key")?.trim();
-  return bearer || header || "";
+  const legacy = req.headers.get("x-internal-token")?.trim();
+  return bearer || header || legacy || "";
 }
 
 function isInternalAuthorized(req: Request): boolean {
   const provided = resolveInternalApiKey(req);
   if (!provided) return false;
-  const allow = [process.env.INTERNAL_API_KEY, process.env.SUPABASE_SERVICE_ROLE_KEY]
+  const allow = [
+    process.env.INTERNAL_API_KEY,
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+    process.env.REPORT_RENDER_TOKEN,
+    process.env.INTERNAL_BUILD_PDF_TOKEN,
+  ]
     .map((v) => String(v ?? "").trim())
     .filter(Boolean);
   return allow.includes(provided);

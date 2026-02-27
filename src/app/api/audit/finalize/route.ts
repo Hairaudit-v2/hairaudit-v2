@@ -63,7 +63,10 @@ export async function POST(req: Request) {
 
     const internalApiKey =
       String(process.env.INTERNAL_API_KEY ?? "").trim() ||
-      String(process.env.SUPABASE_SERVICE_ROLE_KEY ?? "").trim();
+      String(process.env.SUPABASE_SERVICE_ROLE_KEY ?? "").trim() ||
+      String(process.env.REPORT_RENDER_TOKEN ?? "").trim() ||
+      String(process.env.INTERNAL_BUILD_PDF_TOKEN ?? "").trim();
+    const vercelBypass = String(process.env.VERCEL_AUTOMATION_BYPASS_SECRET ?? "").trim();
     if (!internalApiKey) {
       return NextResponse.json({ error: "Missing internal API key configuration" }, { status: 500 });
     }
@@ -73,6 +76,12 @@ export async function POST(req: Request) {
       headers: {
         "Content-Type": "application/json",
         "x-internal-api-key": internalApiKey,
+        ...(vercelBypass
+          ? {
+              "x-vercel-protection-bypass": vercelBypass,
+              "x-vercel-set-bypass-cookie": "true",
+            }
+          : {}),
       },
       body: JSON.stringify({
         caseId,
