@@ -37,6 +37,27 @@ export async function generateReportPdfFromUrl(url: string): Promise<Buffer> {
       }
     : undefined;
 
+  // Preflight check: ensure we are hitting the elite print renderer
+  const preflight = await fetch(url, {
+    headers: extraHTTPHeaders as HeadersInit | undefined,
+  }).catch((err: unknown) => {
+    const msg = (err as Error)?.message ?? "Unknown error";
+    throw new Error(`PDF preflight failed: ${msg}`);
+  });
+
+  if (!preflight.ok) {
+    throw new Error(
+      `PDF preflight failed: HTTP ${preflight.status} ${preflight.statusText || ""}`.trim()
+    );
+  }
+
+  const templateHeader = preflight.headers.get("x-report-template");
+  if (templateHeader !== "elite") {
+    throw new Error(
+      `PDF preflight refused: expected X-Report-Template=elite but got '${templateHeader ?? "null"}'.`
+    );
+  }
+
   const browser = isServerless
     ? await (async () => {
         const [{ chromium }, chromiumPack] = await Promise.all([
@@ -67,9 +88,6 @@ export async function generateReportPdfFromUrl(url: string): Promise<Buffer> {
       !/hairaudit report|professional hair transplant audit report/i.test(gateText);
     if (looksLikeGate) {
       throw new Error("PDF render blocked by authentication gate (likely Vercel protection).");
-    }
-    if (/automated audit summary/i.test(gateText)) {
-      throw new Error("PDF render blocked: legacy Automated audit summary page detected.");
     }
 
     await page.emulateMedia({ media: "print" });
