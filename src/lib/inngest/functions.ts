@@ -696,10 +696,20 @@ export const runAudit = inngest.createFunction(
       // Inlined to avoid 401 from Vercel Deployment Protection when fetch'ing build-pdf API
       const supabase = supabaseAdmin();
       const images = await fetchReportImages(supabase, BUCKET, uploads.map((u) => ({ type: u.type, storage_path: u.storage_path })));
+      const limitationsRaw = aiResult.data_quality?.limitations ?? [];
+      const limitations =
+        auditMode === "patient"
+          ? limitationsRaw.filter(
+              (l) =>
+                !/doctor|clinic|doctor_answers|clinic_answers/i.test(String(l))
+            )
+          : limitationsRaw;
+
       const content = {
         caseId,
         version: nextVersion,
         generatedAt: new Date().toLocaleString(),
+        auditMode,
         score: aiResult.score,
         donorQuality: aiResult.donor_quality,
         graftSurvival: aiResult.graft_survival_estimate,
@@ -712,15 +722,17 @@ export const runAudit = inngest.createFunction(
           key_findings: aiResult.key_findings as any,
           red_flags: aiResult.red_flags as any,
           non_medical_disclaimer: aiResult.non_medical_disclaimer,
-          domain_scores_v1: {
-            version: 1,
-            domains: (v1 as any)?.domains ?? undefined,
-          },
-          benchmark: (v1 as any)?.benchmark ?? undefined,
-          completeness_index_v1: (v1 as any)?.completeness_index_v1 ?? undefined,
-          confidence_model_v1: (v1 as any)?.confidence_model_v1 ?? undefined,
-          overall_scores_v1: (v1 as any)?.overall_scores_v1 ?? undefined,
-          tiers_v1: (v1 as any)?.tiers_v1 ?? undefined,
+          ...(auditMode === "full" && {
+            domain_scores_v1: {
+              version: 1,
+              domains: (v1 as any)?.domains ?? undefined,
+            },
+            benchmark: (v1 as any)?.benchmark ?? undefined,
+            completeness_index_v1: (v1 as any)?.completeness_index_v1 ?? undefined,
+            confidence_model_v1: (v1 as any)?.confidence_model_v1 ?? undefined,
+            overall_scores_v1: (v1 as any)?.overall_scores_v1 ?? undefined,
+            tiers_v1: (v1 as any)?.tiers_v1 ?? undefined,
+          }),
         },
         graftIntegrity: graftIntegrity as any,
         confidencePanel: {
@@ -728,7 +740,7 @@ export const runAudit = inngest.createFunction(
           missingCategories: aiResult.data_quality?.missing_photos ?? [],
           confidenceScore: confForReport,
           confidenceLabel: confLabelForReport,
-          limitations: aiResult.data_quality?.limitations ?? [],
+          limitations,
         },
         radar: {
           section_scores: aiResult.section_scores as unknown as Record<string, number>,
@@ -884,10 +896,22 @@ export const runAudit = inngest.createFunction(
         findings: aiResult.findings,
         // Store the full forensic audit payload for downstream UI + analytics
         forensic_audit: {
+          auditMode,
           overall_score: aiResult.overall_score,
           confidence: aiResult.confidence,
           confidence_label: aiResult.confidence_label,
-          data_quality: aiResult.data_quality,
+          data_quality: {
+            ...aiResult.data_quality,
+            limitations:
+              auditMode === "patient"
+                ? (aiResult.data_quality?.limitations ?? []).filter(
+                    (l) =>
+                      !/doctor|clinic|doctor_answers|clinic_answers/i.test(
+                        String(l)
+                      )
+                  )
+                : aiResult.data_quality?.limitations,
+          },
           section_scores: aiResult.section_scores,
           key_findings: aiResult.key_findings,
           red_flags: aiResult.red_flags,

@@ -778,7 +778,11 @@ export async function runAIAudit(input: AIAuditInput): Promise<AIAuditResult> {
 You MUST be objective and evidence-based. Use audit language only: quality indicators, risk flags, and data insufficiency.
 
 ${isPatientOnly ? `## Audit mode: PATIENT-ONLY
-This is a patient audit. Doctor and clinic documentation are NOT provided and are NOT expected. Evaluate ONLY based on patient answers and patient-submitted photos. Do NOT list doctor_answers, clinic_answers, or doctor photo requirements as missing or as limiters. Score and assess based solely on available patient evidence.` : ""}
+This is a patient audit. Doctor and clinic documentation are NOT provided and are NOT expected.
+- Evaluate ONLY based on patient answers and patient-submitted photos.
+- Do NOT list doctor_answers, clinic_answers, doctor photos, or clinic requirements as missing, limiters, or in data_quality.limitations.
+- In limitations, NEVER mention: "clinic answers", "doctor answers", "missing clinic", "missing doctor", "no clinic", "no doctor", or any doctor/clinic documentation.
+- Score and assess based solely on available patient evidence.` : ""}
 
 ## Forensic inference objectives (answers-driven; MUST APPLY WHEN POSSIBLE)
 Using patient-provided answers (and any structured enhanced inputs), you must infer and discuss (without diagnosing):

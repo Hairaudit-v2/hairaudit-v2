@@ -22,7 +22,8 @@ type Summary = {
   notes?: string;
   findings?: string[];
   highlights?: string[];
-  forensic_audit?: {
+    forensic_audit?: {
+    auditMode?: "patient" | "full";
     overall_score?: number;
     confidence?: number;
     confidence_label?: "low" | "medium" | "high";
@@ -146,6 +147,7 @@ export default async function ReportHtmlPage({
   };
   const findings = Array.isArray(summary.findings) ? summary.findings : (summary.highlights ?? []);
   const forensic = summary.forensic_audit;
+  const isPatientAudit = forensic?.auditMode === "patient";
   const domainV1 = forensic?.domain_scores_v1?.domains ?? null;
   const benchmark = forensic?.benchmark ?? null;
 
@@ -381,7 +383,7 @@ export default async function ReportHtmlPage({
                         )}
                       </td>
                     </tr>
-                    {Array.isArray(domainV1) && domainV1.length > 0 && (
+                    {!isPatientAudit && Array.isArray(domainV1) && domainV1.length > 0 && (
                       <tr>
                         <td>Domains (v1)</td>
                         <td>
@@ -443,7 +445,7 @@ export default async function ReportHtmlPage({
                         </td>
                       </tr>
                     )}
-                    {(forensic as any)?.completeness_index_v1 && (
+                    {!isPatientAudit && (forensic as any)?.completeness_index_v1 && (
                       <tr>
                         <td>Completeness index (v1)</td>
                         <td>{(forensic as any).completeness_index_v1?.score ?? "—"} / 100</td>

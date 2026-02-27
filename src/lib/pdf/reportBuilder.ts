@@ -166,6 +166,8 @@ export type AuditReportContent = {
     overall_scores_v1?: { version?: number; performance_score?: number; confidence_grade?: string; confidence_multiplier?: number; benchmark_score?: number; domain_weights?: any };
     tiers_v1?: Array<{ tier_id?: string; title?: string; eligible?: boolean; reasons?: string[] }>;
   };
+  /** patient = patient-only audit; omit doctor-style sections (benchmark, v1 domains, completeness) */
+  auditMode?: "patient" | "full";
   graftIntegrity?: {
     auditor_status: "approved" | "pending" | "needs_more_evidence" | "rejected";
     claimed_grafts: number | null;
