@@ -11,6 +11,7 @@
     "seed:patients": "tsx scripts/seedPatientAudits.ts"
   },
   "dependencies": {
+    "@sparticuz/chromium": "^143.0.4",
     "@supabase/auth-helpers-nextjs": "^0.15.0",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.93.3",
@@ -19,6 +20,7 @@
     "next": "16.1.6",
     "openai": "^6.19.0",
     "pdfkit": "^0.17.2",
+    "playwright-core": "^1.58.2",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "svg2png-wasm": "^1.4.1",

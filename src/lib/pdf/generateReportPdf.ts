@@ -1,9 +1,27 @@
-import { chromium } from "playwright";
-
 export async function generateReportPdfFromUrl(url: string): Promise<Buffer> {
-  const browser = await chromium.launch({
-    headless: true,
-  });
+  const isServerless = Boolean(
+    process.env.VERCEL ||
+    process.env.AWS_EXECUTION_ENV ||
+    process.env.LAMBDA_TASK_ROOT
+  );
+
+  const browser = isServerless
+    ? await (async () => {
+        const [{ chromium }, chromiumPack] = await Promise.all([
+          import("playwright-core"),
+          import("@sparticuz/chromium"),
+        ]);
+        const executablePath = await chromiumPack.default.executablePath();
+        return chromium.launch({
+          args: chromiumPack.default.args,
+          executablePath,
+          headless: true,
+        });
+      })()
+    : await (async () => {
+        const { chromium } = await import("playwright");
+        return chromium.launch({ headless: true });
+      })();
 
   try {
     const page = await browser.newPage();
