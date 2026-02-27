@@ -309,19 +309,19 @@ export default async function Page({
           <div className="mt-6">
             <DomainScoreCards domains={domains as any} benchmark={benchmark as any} overallScores={overallScores as any} />
             {Array.isArray(tiers) && tiers.length > 0 && (
-              <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-5">
-                <h3 className="font-semibold text-slate-900">Submission Tier (v1)</h3>
-                <p className="mt-1 text-sm text-slate-600">Based on submitted documentation.</p>
+              <div className="mt-4 rounded-2xl border border-slate-900 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-5">
+                <h3 className="font-semibold text-white">Submission Tier (v1)</h3>
+                <p className="mt-1 text-sm text-slate-300/80">Based on submitted documentation.</p>
                 <div className="mt-3 grid gap-2">
                   {tiers.slice(0, 3).map((t) => (
-                    <div key={t.tier_id} className="flex items-start justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm">
+                    <div key={t.tier_id} className="flex items-start justify-between gap-3 rounded-xl border border-white/10 bg-white/5 p-3 text-sm">
                       <div>
-                        <div className="font-semibold text-slate-900">{t.title}</div>
+                        <div className="font-semibold text-white">{t.title}</div>
                         {Array.isArray(t.reasons) && t.reasons.length > 0 && (
-                          <div className="text-xs text-slate-600 mt-1">{t.reasons[0]}</div>
+                          <div className="text-xs text-slate-300/80 mt-1">{t.reasons[0]}</div>
                         )}
                       </div>
-                      <div className={`shrink-0 rounded px-2 py-0.5 text-xs font-bold ${t.eligible ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-700"}`}>
+                      <div className={`shrink-0 rounded px-2 py-0.5 text-xs font-bold ${t.eligible ? "bg-emerald-300/20 text-emerald-200" : "bg-slate-700/70 text-slate-200"}`}>
                         {t.eligible ? "Eligible" : "Not yet"}
                       </div>
                     </div>
@@ -413,11 +413,11 @@ export default async function Page({
         );
       })()}
 
-      <div className="mt-6 p-4 rounded-xl border border-slate-200 bg-white">
-        <h2 className="font-semibold text-slate-900 mb-2">Reports</h2>
-        {repErr && <p className="text-red-600 text-sm">❌ {repErr.message}</p>}
+      <div className="mt-6 rounded-2xl border border-slate-900 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-5">
+        <h2 className="font-semibold text-white mb-2">Reports</h2>
+        {repErr && <p className="text-rose-300 text-sm">❌ {repErr.message}</p>}
         {!reports || reports.length === 0 ? (
-          <p className="text-slate-600 text-sm">No report yet. Submit the case to trigger audit.</p>
+          <p className="text-slate-300/80 text-sm">No report yet. Submit the case to trigger audit.</p>
         ) : (
           <ul className="space-y-4">
             {reports.map((r) => {
@@ -425,20 +425,20 @@ export default async function Page({
               const isProcessing = !r.pdf_path && (r as any).status !== "failed";
               const isFailed = (r as any).status === "failed";
               return (
-                <li key={r.id} className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+                <li key={r.id} className="rounded-xl border border-white/10 bg-white/5 p-4">
                   <div className="flex flex-wrap items-center gap-2">
-                    <b className="text-slate-900">Report v{r.version}</b>
+                    <b className="text-white">Report v{r.version}</b>
                     {isFailed ? (
-                      <span className="rounded-md bg-red-100 px-2 py-1 text-xs text-red-800">Failed</span>
+                      <span className="rounded-md bg-rose-300/20 px-2 py-1 text-xs text-rose-200">Failed</span>
                     ) : isProcessing ? (
-                      <span className="rounded-md bg-amber-100 px-2 py-1 text-xs text-amber-800">Processing…</span>
+                      <span className="rounded-md bg-amber-300/20 px-2 py-1 text-xs text-amber-200">Processing…</span>
                     ) : (
                       <AuditScoreBadge score={summary?.score} />
                     )}
-                    <span className="text-xs text-slate-500">{new Date(r.created_at).toLocaleString()}</span>
+                    <span className="text-xs text-slate-300/70">{new Date(r.created_at).toLocaleString()}</span>
                   </div>
                   {isFailed && (r as any).error && (
-                    <p className="mt-2 text-xs text-red-600">{(r as any).error}</p>
+                    <p className="mt-2 text-xs text-rose-300">{(r as any).error}</p>
                   )}
                   {r.pdf_path && (
                     <div className="mt-2">
@@ -452,17 +452,17 @@ export default async function Page({
         )}
       </div>
 
-      <div className="mt-6 p-4 rounded-xl border border-slate-200 bg-white">
-        <h2 className="font-semibold text-slate-900 mb-2">Uploaded files</h2>
-        {upErr && <p className="text-red-600 text-sm">❌ {upErr.message}</p>}
+      <div className="mt-6 rounded-2xl border border-slate-900 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-5">
+        <h2 className="font-semibold text-white mb-2">Uploaded files</h2>
+        {upErr && <p className="text-rose-300 text-sm">❌ {upErr.message}</p>}
         {!uploads || uploads.length === 0 ? (
-          <p className="text-slate-600 text-sm">No uploads yet.</p>
+          <p className="text-slate-300/80 text-sm">No uploads yet.</p>
         ) : (
           <ul className="space-y-2">
             {uploads.map((u) => (
-              <li key={u.id} className="text-sm text-slate-700">
-                <span className="font-medium">{u.type}</span>
-                <span className="text-slate-500 ml-2">{u.storage_path}</span>
+              <li key={u.id} className="text-sm text-slate-200">
+                <span className="font-medium text-white">{u.type}</span>
+                <span className="text-slate-300/70 ml-2">{u.storage_path}</span>
               </li>
             ))}
           </ul>

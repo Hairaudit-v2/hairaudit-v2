@@ -7,6 +7,7 @@ import { scoreAudit } from "@/lib/audit/score";
 import { buildReportViewModel, normalizeAuditMode, type AuditMode } from "@/lib/pdf/reportBuilder";
 import { resolveAuditModeFromCaseAccess } from "@/lib/reports/accessMode";
 import { verifyRenderToken } from "@/lib/reports/internalRenderToken";
+import { renderRadarChartPng } from "@/lib/pdf/renderRadarChart";
 
 /* Admin client (NO cookies, NO sessions — Playwright safe) */
 function supabaseAdmin() {
@@ -25,6 +26,20 @@ function esc(s: string) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+function toNumberRecord(x: unknown): Record<string, number> {
+  if (!x || typeof x !== "object") return {};
+  const out: Record<string, number> = {};
+  for (const [k, v] of Object.entries(x as Record<string, unknown>)) {
+    const n = Number(v);
+    if (Number.isFinite(n)) out[k] = n;
+  }
+  return out;
+}
+
+function clamp100(n: number) {
+  return Math.max(0, Math.min(100, n));
 }
 
 /* GET /api/print/report?caseId=...&token=... */
@@ -165,6 +180,7 @@ export async function GET(req: Request) {
     .maybeSingle();
 
   const summary = (latestReport?.summary ?? {}) as any;
+  const forensic = (summary?.forensic_audit ?? summary?.forensic ?? null) as any;
 
   // -----------------------------
   // Compute rubric score if answers exist
@@ -222,8 +238,19 @@ export async function GET(req: Request) {
   };
 
   // Component scores for area graphs (domain + section level)
-  const compDomains = computed?.component_scores?.domains ?? {};
-  const compSections = computed?.component_scores?.sections ?? {};
+  const compDomainsBase = toNumberRecord(
+    computed?.component_scores?.domains ??
+      summary?.computed?.component_scores?.domains ??
+      summary?.area_scores ??
+      null
+  );
+  const compSectionsBase = toNumberRecord(
+    computed?.component_scores?.sections ??
+      summary?.computed?.component_scores?.sections ??
+      summary?.section_scores ??
+      forensic?.section_scores ??
+      null
+  );
 
   // Build area score items: score 0-100 → display as X/5, with High/Medium/Low level
   const scoreToDisplay = (s: number) => {
@@ -234,6 +261,23 @@ export async function GET(req: Request) {
   };
 
   const domainOrder = (rubric as { domains?: { domain_id: string; title: string }[] })?.domains ?? [];
+
+  // If we only have section scores (AI forensic audit), derive domain scores by averaging domain sections.
+  const derivedDomainsFromSections: Record<string, number> = {};
+  if (Object.keys(compDomainsBase).length === 0 && Object.keys(compSectionsBase).length > 0) {
+    for (const d of domainOrder as any[]) {
+      const secs = (d?.sections ?? []) as { section_id: string }[];
+      const vals = secs
+        .map((s) => compSectionsBase[s.section_id])
+        .filter((n): n is number => typeof n === "number" && Number.isFinite(n));
+      if (vals.length) {
+        derivedDomainsFromSections[d.domain_id] = vals.reduce((a, b) => a + b, 0) / vals.length;
+      }
+    }
+  }
+
+  const compDomains = Object.keys(compDomainsBase).length ? compDomainsBase : derivedDomainsFromSections;
+  const compSections = compSectionsBase;
   const areaScores = domainOrder
     .filter((d) => compDomains[d.domain_id] != null)
     .map((d) => {
@@ -252,8 +296,8 @@ export async function GET(req: Request) {
     .filter(([, v]) => v != null)
     .map(([id, v]) => ({
       title: sectionTitles[id] ?? id.replace(/[._]/g, " "),
-      score: Number(v),
-      ...scoreToDisplay(Number(v)),
+      score: clamp100(Number(v)),
+      ...scoreToDisplay(clamp100(Number(v))),
     }));
 
   // Highlights/Risks
@@ -314,6 +358,71 @@ export async function GET(req: Request) {
   const created = new Date(c.created_at).toLocaleString();
   const generated = new Date().toLocaleString();
 
+  // Optional: radar render (server-side) for print/PDF export
+  let radarDataUri: string | null = null;
+  try {
+    const sectionScoresForRadar = toNumberRecord(forensic?.section_scores ?? summary?.section_scores ?? null);
+    if (Object.keys(sectionScoresForRadar).length > 0) {
+      const confForRadar =
+        Number.isFinite(forensic?.confidence)
+          ? Number(forensic.confidence)
+          : Number.isFinite(summary?.confidence_score)
+            ? Number(summary.confidence_score)
+            : 0.45;
+      const radar = await renderRadarChartPng({
+        section_scores: sectionScoresForRadar,
+        overall_score:
+          Number.isFinite(forensic?.overall_score) ? Number(forensic.overall_score) : (overall ?? 0),
+        confidence: confForRadar,
+      });
+      radarDataUri = `data:image/png;base64,${radar.buffer.toString("base64")}`;
+    }
+  } catch (e) {
+    console.error("renderRadarChartPng failed:", e);
+  }
+
+  const photoCategoryKeys = Object.keys(byCategory);
+  const photosBlock =
+    photoCategoryKeys.length > 0
+      ? `
+    <div class="section pageBreak">
+      <h2>Case Photos</h2>
+      <div class="subtitle" style="margin-top: 4px;">Grouped by upload category.</div>
+      ${photoCategoryKeys
+        .map((cat) => {
+          const items = (byCategory[cat] ?? []).filter((x) => !!x?.signedUrl);
+          if (!items.length) return "";
+          return `
+        <div class="photoCat">
+          <div class="photoCatTitle">${esc(String(cat).replaceAll("_", " "))}</div>
+          <div class="photoGrid">
+            ${items
+              .map(
+                (u) => `
+              <figure class="photo">
+                <img src="${esc(String(u.signedUrl))}" alt="${esc(String(u.metadata?.label ?? u.type ?? "photo"))}" />
+                <figcaption>${esc(String(u.metadata?.label ?? u.type ?? ""))}</figcaption>
+              </figure>`
+              )
+              .join("")}
+          </div>
+        </div>`;
+        })
+        .join("")}
+    </div>
+      `
+      : "";
+
+  const narrativeFromForensic =
+    forensic?.summary && typeof forensic.summary === "string"
+      ? `
+    <div class="section pageBreak">
+      <h2>Clinical Narrative</h2>
+      <div class="subtitle" style="margin-top: 4px;">Clinical-grade audit narrative generated from available imagery.</div>
+      <div class="prose">${esc(forensic.summary).replaceAll("\n", "<br/>")}</div>
+    </div>
+      `
+      : "";
 
   const html = `<!doctype html>
 <html>
@@ -343,6 +452,7 @@ export async function GET(req: Request) {
     }
 
     .wrap { max-width: 900px; margin: 0 auto; }
+    .pageBreak { page-break-before: always; }
 
     .topbar {
       display:flex;
@@ -448,6 +558,29 @@ export async function GET(req: Request) {
     }
 
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+    .prose { margin-top: 10px; font-size: 12px; line-height: 1.55; color: var(--ink); }
+
+    .radarWrap { margin-top: 12px; display:flex; justify-content:center; }
+    .radarImg {
+      width: 100%;
+      max-width: 560px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: #0b1226;
+      padding: 10px;
+    }
+
+    .photoCat { margin-top: 14px; page-break-inside: avoid; }
+    .photoCatTitle { font-size: 12px; font-weight: 800; margin-bottom: 8px; color: var(--ink); text-transform: capitalize; }
+    .photoGrid { display:grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .photo { margin: 0; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: #fff; }
+    .photo img { display:block; width: 100%; height: 170px; object-fit: cover; }
+    .photo figcaption { padding: 8px 10px; font-size: 10px; color: var(--muted); border-top: 1px solid var(--line); }
+
+    @media print {
+      .photo img { height: 165px; }
+    }
   </style>
 </head>
 
@@ -504,55 +637,18 @@ export async function GET(req: Request) {
         </div>
       </div>
 
-      ${areaScores.length > 0
-    ? `
-      <div class="section">
-        <h2>Score by Area</h2>
-        <p class="subtitle" style="margin-top: 4px;">Your score for each capture point (out of 5, with level)</p>
-        <div class="areaScoreGrid">
-          ${areaScores
-    .map(
-      (a) => `
-            <div class="areaScoreCard">
-              <div class="areaScoreTitle">${esc(a.title)}</div>
-              <div class="areaScoreBar">
-                <div class="areaScoreFill ${a.level.toLowerCase()}" style="width: ${a.score}%;"></div>
-              </div>
-              <div class="areaScoreMeta">
-                <span>${a.outOf5}/5</span>
-                <b>${esc(a.level)} level</b>
-              </div>
-            </div>`
-    )
-    .join("")}
+      ${radarDataUri
+      ? `
+      <div style="margin-top: 12px;">
+        <div style="font-size: 12px; font-weight: 800;">Audit Performance Signature</div>
+        <div class="subtitle" style="margin-top: 4px;">“This visual signature represents structural balance across core transplant domains.”</div>
+        <div class="radarWrap">
+          <img class="radarImg" src="${radarDataUri}" alt="Radar chart" />
         </div>
-        ${sectionScoresList.length > 0
-    ? `
-        <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line);">
-          <div style="font-size: 11px; font-weight: 700; color: var(--muted); margin-bottom: 8px;">Detailed section scores</div>
-          <div class="areaScoreGrid" style="grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));">
-            ${sectionScoresList
-    .map(
-      (a) => `
-              <div class="areaScoreCard">
-                <div class="areaScoreTitle" style="font-size: 11px;">${esc(a.title)}</div>
-                <div class="areaScoreBar">
-                  <div class="areaScoreFill ${a.level.toLowerCase()}" style="width: ${a.score}%;"></div>
-                </div>
-                <div class="areaScoreMeta">
-                  <span>${a.outOf5}/5</span>
-                  <b>${esc(a.level)}</b>
-                </div>
-              </div>`
-    )
-    .join("")}
-          </div>
-        </div>
-        `
-    : ""}
       </div>
       `
-    : ""}
+      : ""
+    }
 
       <div class="twoCol">
         <div class="listCard">
@@ -572,6 +668,67 @@ export async function GET(req: Request) {
         </div>
       </div>
     </div>
+
+    ${areaScores.length > 0 || sectionScoresList.length > 0
+      ? `
+    <div class="section pageBreak">
+      <h2>Score by Area</h2>
+      <div class="subtitle" style="margin-top: 4px;">Your score for each capture point (out of 5, with level).</div>
+      ${areaScores.length > 0
+        ? `
+      <div class="areaScoreGrid">
+        ${areaScores
+          .map(
+            (a) => `
+          <div class="areaScoreCard">
+            <div class="areaScoreTitle">${esc(a.title)}</div>
+            <div class="areaScoreBar">
+              <div class="areaScoreFill ${a.level.toLowerCase()}" style="width: ${a.score}%;"></div>
+            </div>
+            <div class="areaScoreMeta">
+              <span>${a.outOf5}/5</span>
+              <b>${esc(a.level)} level</b>
+            </div>
+          </div>`
+          )
+          .join("")}
+      </div>
+        `
+        : `<div class="subtitle" style="margin-top: 8px;">Domain-level scores not available for this report.</div>`
+      }
+
+      ${sectionScoresList.length > 0
+        ? `
+      <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line);">
+        <div style="font-size: 11px; font-weight: 700; color: var(--muted); margin-bottom: 8px;">Detailed section scores</div>
+        <div class="areaScoreGrid" style="grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));">
+          ${sectionScoresList
+            .map(
+              (a) => `
+            <div class="areaScoreCard">
+              <div class="areaScoreTitle" style="font-size: 11px;">${esc(a.title)}</div>
+              <div class="areaScoreBar">
+                <div class="areaScoreFill ${a.level.toLowerCase()}" style="width: ${a.score}%;"></div>
+              </div>
+              <div class="areaScoreMeta">
+                <span>${a.outOf5}/5</span>
+                <b>${esc(a.level)}</b>
+              </div>
+            </div>`
+            )
+            .join("")}
+        </div>
+      </div>
+        `
+        : ""
+      }
+    </div>
+      `
+      : ""
+    }
+
+    ${narrativeFromForensic}
+    ${photosBlock}
 
     ${doctorBlock}
 
