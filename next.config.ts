@@ -22,7 +22,21 @@ function getTailwindPath(): string {
 const tailwindcssPath = getTailwindPath();
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ["pdfkit", "@supabase/supabase-js", "@supabase/ssr", "inngest", "openai"],
+  serverExternalPackages: [
+    "pdfkit",
+    "@supabase/supabase-js",
+    "@supabase/ssr",
+    "inngest",
+    "openai",
+    "@sparticuz/chromium",
+    "playwright-core",
+  ],
+  outputFileTracingIncludes: {
+    "**": [
+      "./node_modules/@sparticuz/chromium/bin/**",
+      "./node_modules/.pnpm/@sparticuz+chromium@*/node_modules/@sparticuz/chromium/bin/**",
+    ],
+  },
   outputFileTracingExcludes: {
     "**": ["scripts/output/**"],
   },
