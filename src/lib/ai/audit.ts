@@ -965,7 +965,7 @@ Safety:
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       response_format: { type: "json_schema", json_schema: FORENSIC_AUDIT_JSON_SCHEMA } as any,
       temperature: 0.2,
-      max_tokens: imageUrls.length > 0 ? 3000 : 1500,
+      max_completion_tokens: imageUrls.length > 0 ? 3000 : 1500,
     });
 
     const raw = completion.choices[0]?.message?.content;

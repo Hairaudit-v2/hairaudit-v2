@@ -392,7 +392,7 @@ export async function runGraftIntegrityEstimate(input: {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     response_format: { type: "json_schema", json_schema: GRAFT_INTEGRITY_JSON_SCHEMA } as any,
     temperature: 0.2,
-    max_tokens: 2000,
+    max_completion_tokens: 2000,
   });
 
   const raw = completion.choices[0]?.message?.content;
