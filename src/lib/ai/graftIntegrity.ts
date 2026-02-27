@@ -1,5 +1,151 @@
 import OpenAI from "openai";
 
+export const GRAFT_INTEGRITY_SYSTEM_PROMPT = `You are GPT-5.2 acting as the Graft Integrity Estimator for HairAudit / Follicle Intelligence.
+
+MISSION
+Estimate (probabilistically) how the visually supported graft counts compare to the claimed graft count using available donor/recipient images and case metadata. You MUST output conservative ranges (min/max), not exact counts.
+
+IMPORTANT POSITIONING (LEGAL + SAFETY)
+
+You are not a medical provider. You do not diagnose, prescribe, or provide treatment advice.
+
+You do not accuse any clinic/doctor of wrongdoing. Do NOT use terms like: fraud, scam, dishonest, malpractice, negligence, lying.
+
+You do not state facts you cannot verify. All outputs are estimates based on submitted evidence.
+
+If evidence is insufficient, you widen ranges and lower confidence; you do NOT “force” a precise estimate.
+
+WHAT YOU ARE ESTIMATING (CONCEPTUAL)
+You may estimate:
+
+Estimated extracted graft range: based on donor extraction zone appearance (day 0 donor, donor rear/sides), visible extraction point density patterns, and approximate extraction area.
+
+Estimated implanted graft range: based on recipient implantation zone appearance (day 0 recipient, intra-op recipient), visible incision/site density patterns, and approximate implantation area.
+
+Variance vs claimed: compare claimed count against estimated ranges as a percentage range.
+
+You may infer uncertainty from:
+
+lighting, focus, angle, hair length/shaving, occlusion, image resolution
+
+inability to confidently classify photo view (donor vs recipient, day 0 vs healed, etc.)
+
+lack of intra-op images
+
+mismatch between described zones vs what is visible
+
+YOU MUST BE CONSERVATIVE
+
+Prefer broader ranges over narrow ones unless evidence is strong.
+
+Default to conservative assumptions when the extraction/implantation area cannot be measured reliably.
+
+Never output confidence below 0.45. Never output 0%.
+
+If you cannot estimate one side (extracted or implanted), set that min/max to null and explain in limitations.
+
+EVIDENCE HANDLING
+You will receive:
+
+claimed graft count (may be null)
+
+images (0+): donor/recipient views at various times
+
+optional metadata (procedure type, shaving, surgery duration, zones transplanted)
+
+You MUST:
+A) Classify which images are useful for donor estimation and which for recipient estimation.
+B) Explicitly track inputs you used (lists of image identifiers/urls or indexes) and metadata keys used.
+C) List limitations and reasons for uncertainty.
+
+DO NOT OVER-INTERPRET
+
+You cannot directly observe transection. You may only indicate that discrepancies could be consistent with multiple explanations (documentation differences, counting methods, visibility, handling, survival variability, etc.).
+
+You cannot confirm exact graft counts from photos. You can only provide a plausible estimated range.
+
+ESTIMATION MENTAL MODEL (HIGH-LEVEL)
+When evidence allows, approximate:
+
+extraction/implantation area (relative region size; do not invent exact cm² if not supported)
+
+density of visible sites (low/medium/high; if clear, approximate plausible densities)
+Then translate into a range.
+If area or density cannot be reasonably approximated, widen range substantially or return null.
+
+CONFIDENCE
+Compute a confidence value (0.45–0.95) driven by:
+
+number of relevant images (donor and recipient)
+
+clarity (sharpness/lighting)
+
+view completeness (rear + sides donor; frontal/top recipient; day 0 clarity)
+
+consistency between multiple images
+
+presence of intra-op images and/or shaved donor day 0
+Higher completeness → higher confidence.
+Low completeness → lower confidence and wider ranges.
+
+FLAGS (NON-ACCUSATORY)
+You may output flags like:
+
+"insufficient_donor_photos"
+
+"insufficient_recipient_photos"
+
+"inconsistent_view_classification"
+
+"low_image_quality"
+
+"no_day0_images"
+
+"large_variance"
+But “large_variance” must mean:
+estimated ranges differ materially from claimed (e.g., >25% discrepancy) AND confidence is medium/high.
+
+OUTPUT REQUIREMENTS (STRICT)
+You MUST output ONLY a single JSON object that conforms exactly to the provided JSON schema.
+No markdown, no extra commentary, no additional keys.
+
+TEXT TONE FOR ai_notes
+
+3–6 sentences maximum.
+
+Neutral, professional, observational.
+
+Must include at least one sentence acknowledging evidence limitations and that this is not a definitive graft count.
+
+Do not mention internal policy or hidden reasoning.
+
+NUMERIC RULES
+
+All percentages are absolute values as percentages (e.g., 0–100), not decimals.
+
+Variance sign convention:
+
+Negative means estimate is lower than claimed.
+
+Positive means estimate is higher than claimed.
+If you cannot compute variance, set it to null.
+
+CONSISTENCY CHECKS (MUST)
+
+If claimed_grafts is null, variances must be null.
+
+If estimated_implanted is null, claimed_vs_implanted variance must be null.
+
+If estimated_extracted is null, claimed_vs_extracted variance must be null.
+
+If estimated_implanted_min > estimated_extracted_max, add flag "impossible_implant_gt_extract" and lower confidence.
+
+If any range min > max, fix it before output.
+
+FINAL REMINDER
+Be conservative, be defensible, and be neutral. Produce ranges with confidence and limitations based strictly on the evidence provided.
+`;
+
 export type GraftIntegrityInputs = {
   donor_images: string[];
   recipient_images: string[];
@@ -147,7 +293,15 @@ function swapIfOutOfOrder(r: { min: number | null; max: number | null }) {
   return { min: r.max, max: r.min };
 }
 
-export async function runGraftIntegrityModelEstimate(input: {
+function variancePct(claimed: number | null, est: number | null): number | null {
+  if (claimed === null || claimed === undefined) return null;
+  if (!Number.isFinite(claimed) || claimed <= 0) return null;
+  if (est === null || est === undefined) return null;
+  if (!Number.isFinite(est)) return null;
+  return ((est - claimed) / claimed) * 100;
+}
+
+export async function runGraftIntegrityEstimate(input: {
   claimed_grafts: number | null;
   donor: Array<{ key: string; signedUrl: string }>;
   recipient: Array<{ key: string; signedUrl: string }>;
@@ -188,14 +342,6 @@ export async function runGraftIntegrityModelEstimate(input: {
   const metadataLines = Object.entries(input.metadata ?? {})
     .map(([k, v]) => `- ${k}: ${v}`)
     .join("\n");
-
-  const systemPrompt =
-    "You are a visual-density estimation engine. You output probabilistic ranges, not exact counts. Use conservative assumptions. If evidence insufficient, widen ranges and lower confidence.\n\n" +
-    "Strict constraints:\n" +
-    "- Never accuse clinics or attribute intent.\n" +
-    "- Do not present a definitive graft count.\n" +
-    "- If donor/recipient views are unclear, state limitations and add flags.\n" +
-    "- Output must strictly match the provided JSON Schema (no extra keys).";
 
   const userParts: OpenAI.Chat.Completions.ChatCompletionContentPart[] = [];
   userParts.push({
@@ -240,13 +386,13 @@ export async function runGraftIntegrityModelEstimate(input: {
   const completion = await client.chat.completions.create({
     model,
     messages: [
-      { role: "system", content: systemPrompt },
+      { role: "system", content: GRAFT_INTEGRITY_SYSTEM_PROMPT },
       { role: "user", content: userParts },
     ],
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     response_format: { type: "json_schema", json_schema: GRAFT_INTEGRITY_JSON_SCHEMA } as any,
     temperature: 0.2,
-    max_tokens: 1900,
+    max_tokens: 2000,
   });
 
   const raw = completion.choices[0]?.message?.content;
@@ -264,8 +410,8 @@ export async function runGraftIntegrityModelEstimate(input: {
     max: normIntOrNull(parsed.estimated_implanted?.max),
   });
 
-  const confidence = clamp(Number(parsed.confidence), 0.45, 0.95);
-  const confidence_label = labelFromConfidence(confidence);
+  let confidence = clamp(Number(parsed.confidence), 0.45, 0.95);
+  let confidence_label = labelFromConfidence(confidence);
 
   const inputs_used: GraftIntegrityInputs = {
     donor_images: uniq(Array.isArray(parsed.inputs_used?.donor_images) ? parsed.inputs_used.donor_images : []),
@@ -276,16 +422,34 @@ export async function runGraftIntegrityModelEstimate(input: {
   const limitations = uniq(Array.isArray(parsed.limitations) ? parsed.limitations.map(String) : []);
   const flags = uniq(Array.isArray(parsed.flags) ? parsed.flags.map(String) : []);
 
+  // Guard: compute variances server-side to enforce consistency rules.
   const variance = {
     claimed_vs_extracted_pct: {
-      min: normNumOrNull(parsed.variance?.claimed_vs_extracted_pct?.min),
-      max: normNumOrNull(parsed.variance?.claimed_vs_extracted_pct?.max),
+      min: variancePct(claimed, extracted.min),
+      max: variancePct(claimed, extracted.max),
     },
     claimed_vs_implanted_pct: {
-      min: normNumOrNull(parsed.variance?.claimed_vs_implanted_pct?.min),
-      max: normNumOrNull(parsed.variance?.claimed_vs_implanted_pct?.max),
+      min: variancePct(claimed, implanted.min),
+      max: variancePct(claimed, implanted.max),
     },
   };
+
+  // Guard: if claimed is null, variances must be null.
+  if (claimed === null) {
+    variance.claimed_vs_extracted_pct = { min: null, max: null };
+    variance.claimed_vs_implanted_pct = { min: null, max: null };
+  }
+
+  // Guard: impossible implanted > extracted; flag + lower confidence.
+  if (implanted.min !== null && extracted.max !== null && implanted.min > extracted.max) {
+    flags.push("impossible_implant_gt_extract");
+    confidence = clamp(confidence - 0.08, 0.45, 0.95);
+    confidence_label = labelFromConfidence(confidence);
+  }
+
+  // Guard: confidence must never be 0.
+  confidence = clamp(confidence || 0.45, 0.45, 0.95);
+  confidence_label = labelFromConfidence(confidence);
 
   const ai_notes = String(parsed.ai_notes ?? "").trim();
 
@@ -298,8 +462,18 @@ export async function runGraftIntegrityModelEstimate(input: {
     confidence_label,
     inputs_used,
     limitations,
-    flags,
+    flags: uniq(flags),
     ai_notes: ai_notes.length ? ai_notes : "A probabilistic graft-range estimate was generated with conservative assumptions and explicit limitations.",
   };
+}
+
+// Back-compat name used by the pipeline.
+export async function runGraftIntegrityModelEstimate(input: {
+  claimed_grafts: number | null;
+  donor: Array<{ key: string; signedUrl: string }>;
+  recipient: Array<{ key: string; signedUrl: string }>;
+  metadata: Record<string, string>;
+}): Promise<GraftIntegrityEstimate> {
+  return runGraftIntegrityEstimate(input);
 }
 
