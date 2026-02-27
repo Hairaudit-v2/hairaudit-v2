@@ -80,7 +80,17 @@ function computeModuleCompletion(answers: PatientAuditAnswers, prefixes: string[
   return { total, answered, pct: answered / total };
 }
 
-export default async function PatientDashboardPage() {
+export default async function PatientDashboardPage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const resolvedSearchParams = searchParams ? await searchParams : {};
+  const debugParam = resolvedSearchParams?.debug;
+  const showDebugBadge = Array.isArray(debugParam)
+    ? debugParam.includes("1") || debugParam.includes("true")
+    : debugParam === "1" || debugParam === "true";
+
   const supabase = await createSupabaseAuthServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
@@ -182,6 +192,7 @@ export default async function PatientDashboardPage() {
   );
 
   const showConversionPrompt = Boolean(nextCase?.id) && completionPct < 70;
+  const debugCaseIds = (cases ?? []).slice(0, 5).map((c) => c.id);
 
   const unlockCards: Array<{
     title: string;
@@ -522,6 +533,13 @@ export default async function PatientDashboardPage() {
           <div>
             <h2 className="text-lg font-semibold text-white">My audit requests</h2>
             <p className="text-sm text-slate-200/70 mt-1">Your cases and audit status history.</p>
+            {showDebugBadge && (
+              <div className="mt-2 inline-flex items-center gap-2 rounded-md border border-amber-300/30 bg-amber-300/10 px-2.5 py-1 text-xs text-amber-200">
+                <span className="font-semibold">Debug</span>
+                <span>cases.length: {(cases ?? []).length}</span>
+                <span>first IDs: {debugCaseIds.join(", ") || "none"}</span>
+              </div>
+            )}
           </div>
           <CreateCaseButton variant="premium" />
         </div>
