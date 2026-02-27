@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { maxTokensParam } from "@/lib/ai/openaiTokenCompat";
 
 export const GRAFT_INTEGRITY_SYSTEM_PROMPT = `You are GPT-5.2 acting as the Graft Integrity Estimator for HairAudit / Follicle Intelligence.
 
@@ -383,6 +384,7 @@ export async function runGraftIntegrityEstimate(input: {
     userParts.push({ type: "text", text: "\n## Recipient images\n(none provided)" });
   }
 
+  const tokenParam = maxTokensParam(model, 2000);
   const completion = await client.chat.completions.create({
     model,
     messages: [
@@ -392,7 +394,7 @@ export async function runGraftIntegrityEstimate(input: {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     response_format: { type: "json_schema", json_schema: GRAFT_INTEGRITY_JSON_SCHEMA } as any,
     temperature: 0.2,
-    max_completion_tokens: 2000,
+    ...(tokenParam as any),
   });
 
   const raw = completion.choices[0]?.message?.content;

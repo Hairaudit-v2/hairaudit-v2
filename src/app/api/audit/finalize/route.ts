@@ -31,7 +31,7 @@ export async function POST(req: Request) {
 
     const { data: latestReport, error: repErr } = await admin
       .from("reports")
-      .select("id, version, summary")
+      .select("id, version, summary, status")
       .eq("case_id", caseId)
       .order("version", { ascending: false })
       .limit(1)
@@ -60,6 +60,21 @@ export async function POST(req: Request) {
         : Array.isArray(summary.findings)
           ? summary.findings
           : [];
+
+    const nextSummary = {
+      ...summary,
+      score,
+      notes,
+      findings,
+      manual_audit: true,
+      manual_audit_completed_at: new Date().toISOString(),
+    };
+
+    // First persist the manual audit so the PDF generator can read a finalized summary.
+    await admin
+      .from("reports")
+      .update({ status: "complete", error: null, summary: nextSummary })
+      .eq("id", latestReport.id);
 
     const internalApiKey =
       String(process.env.INTERNAL_API_KEY ?? "").trim() ||
@@ -91,22 +106,16 @@ export async function POST(req: Request) {
     });
     const renderJson = await renderRes.json().catch(() => ({}));
     if (!renderRes.ok) {
+      if (renderRes.status === 409 && renderJson?.code === "AUDIT_NOT_READY") {
+        return NextResponse.json({ code: "AUDIT_NOT_READY", error: renderJson?.error || "Audit not ready" }, { status: 409 });
+      }
       return NextResponse.json({ error: renderJson?.error || "Failed to render PDF" }, { status: renderRes.status });
     }
     const pdfPath = String(renderJson?.pdfPath ?? `${caseId}/v${latestReport.version}.pdf`);
 
-    const nextSummary = {
-      ...summary,
-      score,
-      notes,
-      findings,
-      manual_audit: true,
-      manual_audit_completed_at: new Date().toISOString(),
-    };
-
     await admin
       .from("reports")
-      .update({ pdf_path: pdfPath, status: "complete", error: null, summary: nextSummary })
+      .update({ pdf_path: pdfPath })
       .eq("id", latestReport.id);
 
     await admin.from("cases").update({ status: "complete" }).eq("id", caseId);

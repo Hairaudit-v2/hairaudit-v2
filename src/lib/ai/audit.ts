@@ -3,6 +3,7 @@
 // Falls back to text-only if no vision capability or images unavailable.
 
 import OpenAI from "openai";
+import { maxTokensParam } from "@/lib/ai/openaiTokenCompat";
 
 export interface PatientBaseline {
   patient_age: number;
@@ -971,6 +972,7 @@ Safety:
   };
 
   try {
+    const tokenParam = maxTokensParam(model, imageUrls.length > 0 ? 4096 : 2048);
     const completion = await client.chat.completions.create({
       model,
       messages: [
@@ -980,7 +982,7 @@ Safety:
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       response_format: { type: "json_schema", json_schema: FORENSIC_AUDIT_JSON_SCHEMA } as any,
       temperature: 0.2,
-      max_completion_tokens: imageUrls.length > 0 ? 4096 : 2048,
+      ...(tokenParam as any),
     });
 
     const choice = completion.choices[0];

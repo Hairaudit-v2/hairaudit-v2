@@ -56,6 +56,9 @@ export async function POST(req: Request) {
     });
     const renderJson = await renderRes.json().catch(() => ({}));
     if (!renderRes.ok) {
+      if (renderRes.status === 409 && renderJson?.code === "AUDIT_NOT_READY") {
+        return NextResponse.json({ code: "AUDIT_NOT_READY", error: renderJson?.error || "Audit not ready" }, { status: 409 });
+      }
       return NextResponse.json({ error: renderJson?.error || "Render request failed" }, { status: renderRes.status });
     }
     return NextResponse.json({

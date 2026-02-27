@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { maxTokensParam } from "@/lib/ai/openaiTokenCompat";
 import { z } from "zod";
 import type { AIAuditResult } from "@/lib/ai/audit";
 
@@ -531,6 +532,7 @@ export async function runDoctorScoringNarrative(params: {
           `Return corrected JSON that matches the schema exactly.`
         : userPrompt;
 
+    const tokenParam = maxTokensParam(model, 1200);
     const completion = await client.chat.completions.create({
       model,
       messages: [
@@ -540,7 +542,7 @@ export async function runDoctorScoringNarrative(params: {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       response_format: { type: "json_schema", json_schema: DOCTOR_SCORING_NARRATIVE_JSON_SCHEMA_V2 } as any,
       temperature: 0.2,
-      max_completion_tokens: 1200,
+      ...(tokenParam as any),
     });
 
     const raw = completion.choices[0]?.message?.content;

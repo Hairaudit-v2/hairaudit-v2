@@ -28,6 +28,22 @@ function toNumberRecord(x: unknown): Record<string, number> {
   return out;
 }
 
+function auditNotReady(message: string) {
+  return Object.assign(new Error(message), { code: "AUDIT_NOT_READY" as const });
+}
+
+function isReportReadyForPdf(summary: any): boolean {
+  if (!summary || typeof summary !== "object") return false;
+  if (summary.manual_audit === true) return true;
+  if (summary.forensic_audit && typeof summary.forensic_audit === "object") return true;
+  if (summary.forensic && typeof summary.forensic === "object") return true;
+  if (Number.isFinite(Number(summary.overall_score))) return true;
+  if (Number.isFinite(Number(summary.score))) return true;
+  if (summary.section_scores && typeof summary.section_scores === "object") return true;
+  if (summary.computed && typeof summary.computed === "object") return true;
+  return false;
+}
+
 async function downloadImagesForCase(args: {
   supabase: ReturnType<typeof supabaseAdmin>;
   bucket: string;
@@ -100,27 +116,25 @@ export async function renderAndUploadPdfForCase(args: {
     version = Number(data?.version ?? 0) + 1;
   }
 
-  // Load the report summary for this version (fallback to latest)
+  // Load the report summary for this version (deterministic: no fallback)
   const { data: reportRow } = await supabase
     .from("reports")
-    .select("summary, created_at, version")
+    .select("summary, created_at, version, status, pdf_path")
     .eq("case_id", caseId)
     .eq("version", version)
     .maybeSingle();
 
-  const { data: latestRow } =
-    reportRow?.summary
-      ? { data: null as any }
-      : await supabase
-          .from("reports")
-          .select("summary, created_at, version")
-          .eq("case_id", caseId)
-          .order("version", { ascending: false })
-          .limit(1)
-          .maybeSingle();
+  if (!reportRow) {
+    throw auditNotReady(`Report row not found for v${version}`);
+  }
+  if (String((reportRow as any)?.status ?? "") === "processing") {
+    throw auditNotReady(`Audit/report is still processing for v${version}`);
+  }
+  const summary = (reportRow.summary ?? {}) as any;
+  if (!isReportReadyForPdf(summary)) {
+    throw auditNotReady(`Report summary not finalized for v${version}`);
+  }
 
-  const effective = (reportRow?.summary ? reportRow : latestRow) as any;
-  const summary = (effective?.summary ?? {}) as any;
   const forensic = (summary?.forensic_audit ?? summary?.forensic ?? null) as any;
 
   const overallFromForensic = toNum(forensic?.overall_score);
@@ -141,19 +155,20 @@ export async function renderAndUploadPdfForCase(args: {
   );
 
   // Confidence (0–1). Use forensic if present; otherwise derive a safe floor.
-  const photoCount = Number((summary?.uploadCount ?? summary?.upload_count) ?? 0) || 0;
+  // Prefer explicit counts if stored; otherwise fall back to downloaded images length.
+  const photoCountStored = Number((summary?.uploadCount ?? summary?.upload_count) ?? 0) || 0;
   const missingCategories = Array.isArray(forensic?.data_quality?.missing_photos)
     ? forensic.data_quality.missing_photos
     : Array.isArray(forensic?.data_quality?.missing_inputs)
       ? forensic.data_quality.missing_inputs
       : [];
   const missingPenalty = clamp((missingCategories.length || 0) / 6, 0, 1) * 0.25;
+  const images = await downloadImagesForCase({ supabase, bucket, caseId });
+  const photoCount = photoCountStored || images.length || 0;
   const photoFactor = clamp(photoCount / 6, 0, 1);
   const derivedConfidence = clamp(0.45 + 0.35 * photoFactor - missingPenalty, 0.45, 0.92);
   const conf = clamp(toNum(forensic?.confidence) ?? derivedConfidence, 0.45, 0.95);
   const confLabel = conf < 0.55 ? "low" : conf < 0.8 ? "medium" : "high";
-
-  const images = await downloadImagesForCase({ supabase, bucket, caseId });
 
   const findings =
     Array.isArray(summary?.findings) ? summary.findings :
@@ -163,7 +178,7 @@ export async function renderAndUploadPdfForCase(args: {
   const content: AuditReportContent = {
     caseId,
     version: Number(version),
-    generatedAt: new Date().toLocaleString(),
+    generatedAt: reportRow?.created_at ? new Date(reportRow.created_at).toLocaleString() : new Date().toLocaleString(),
     auditMode,
     score: overall,
     donorQuality: String(summary?.donor_quality ?? summary?.key_metrics?.donor_quality ?? "—"),

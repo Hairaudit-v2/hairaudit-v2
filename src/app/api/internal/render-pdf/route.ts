@@ -47,7 +47,12 @@ export async function POST(req: Request) {
     });
     return NextResponse.json(result);
   } catch (e: unknown) {
-    return NextResponse.json({ error: (e as Error)?.message ?? "Render failed" }, { status: 500 });
+    const msg = (e as Error)?.message ?? "Render failed";
+    const code = (e as any)?.code;
+    if (code === "AUDIT_NOT_READY") {
+      return NextResponse.json({ code: "AUDIT_NOT_READY", error: msg }, { status: 409 });
+    }
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
 

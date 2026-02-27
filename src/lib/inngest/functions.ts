@@ -729,17 +729,6 @@ export const runAudit = inngest.createFunction(
     const confForReport = Number.isFinite(Number(aiResult.confidence)) && Number(aiResult.confidence) > 0 ? Number(aiResult.confidence) : deriveConfidence();
     const confLabelForReport = confForReport < 0.55 ? "low" : confForReport < 0.8 ? "medium" : "high";
 
-    await step.run("build-and-upload-pdf", async () => {
-      const result = await renderAndUploadPdfForCase({
-        caseId,
-        auditMode: pdfAuditMode,
-        version: nextVersion,
-      });
-      return {
-        pdfPath: String(result.pdfPath ?? pdfPath),
-      };
-    });
-
     // 10) Insert report row (with AI audit + answers)
     await step.run("insert-report-row", async () => {
       const doctorAnswersBase =
@@ -878,8 +867,8 @@ export const runAudit = inngest.createFunction(
         forensic_audit: {
           auditMode: pdfAuditMode,
           overall_score: aiResult.overall_score,
-          confidence: aiResult.confidence,
-          confidence_label: aiResult.confidence_label,
+          confidence: confForReport,
+          confidence_label: confLabelForReport,
           data_quality: {
             ...aiResult.data_quality,
             limitations:
@@ -920,15 +909,55 @@ export const runAudit = inngest.createFunction(
       const { error } = await supabase.from("reports").insert({
         case_id: caseId,
         version: nextVersion,
-        pdf_path: pdfPath,
+        pdf_path: null,
         summary,
         status: "complete",
+        error: null,
       });
 
       if (error) throw new Error(`reports insert failed: ${error.message}`);
     });
 
-    // 11) Mark case complete
+    // 11) Build + upload PDF (deterministic: reads report vN summary from DB)
+    await step.run("build-and-upload-pdf", async () => {
+      try {
+        const result = await renderAndUploadPdfForCase({
+          caseId,
+          auditMode: pdfAuditMode,
+          version: nextVersion,
+        });
+        return { pdfPath: String(result.pdfPath ?? pdfPath) };
+      } catch (e: any) {
+        const code = e?.code;
+        const msg = String(e?.message ?? e);
+        if (code === "AUDIT_NOT_READY") {
+          await supabase
+            .from("reports")
+            .update({ status: "processing", error: msg })
+            .eq("case_id", caseId)
+            .eq("version", nextVersion);
+        } else {
+          await supabase
+            .from("reports")
+            .update({ status: "failed", error: msg })
+            .eq("case_id", caseId)
+            .eq("version", nextVersion);
+        }
+        throw e;
+      }
+    });
+
+    // 12) Mark report complete
+    await step.run("finalize-report-row", async () => {
+      const { error } = await supabase
+        .from("reports")
+        .update({ status: "complete", pdf_path: pdfPath, error: null })
+        .eq("case_id", caseId)
+        .eq("version", nextVersion);
+      if (error) throw new Error(`reports finalize failed: ${error.message}`);
+    });
+
+    // 13) Mark case complete
     await step.run("mark-complete", async () => {
       const { error } = await supabase
         .from("cases")

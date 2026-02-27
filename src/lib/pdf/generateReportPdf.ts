@@ -1,4 +1,29 @@
 export async function generateReportPdfFromUrl(url: string): Promise<Buffer> {
+  // Hard guardrail: our PDF rendering MUST only ever print the dedicated print route.
+  // This prevents regressions where we accidentally print legacy HTML pages.
+  let parsed: URL | null = null;
+  try {
+    parsed = new URL(url);
+  } catch {
+    // best-effort: allow relative URLs in dev, but still enforce route shape below
+  }
+  const path = parsed ? parsed.pathname : url;
+  if (!String(path).includes("/api/print/report")) {
+    throw new Error(
+      `PDF render refused: non-print URL. Expected '/api/print/report', got '${String(path)}'`
+    );
+  }
+  if (parsed) {
+    const caseId = parsed.searchParams.get("caseId");
+    const auditMode = parsed.searchParams.get("auditMode");
+    const token = parsed.searchParams.get("token");
+    if (!caseId || !auditMode || !token) {
+      throw new Error(
+        `PDF render refused: missing required params (caseId/auditMode/token) in '${parsed.pathname}'`
+      );
+    }
+  }
+
   const isServerless = Boolean(
     process.env.VERCEL ||
     process.env.AWS_EXECUTION_ENV ||
@@ -42,6 +67,9 @@ export async function generateReportPdfFromUrl(url: string): Promise<Buffer> {
       !/hairaudit report|professional hair transplant audit report/i.test(gateText);
     if (looksLikeGate) {
       throw new Error("PDF render blocked by authentication gate (likely Vercel protection).");
+    }
+    if (/automated audit summary/i.test(gateText)) {
+      throw new Error("PDF render blocked: legacy Automated audit summary page detected.");
     }
 
     await page.emulateMedia({ media: "print" });
