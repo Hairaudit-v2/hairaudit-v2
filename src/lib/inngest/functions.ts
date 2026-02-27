@@ -7,6 +7,7 @@ import { runDoctorScoringNarrative, DEFAULT_PROTOCOL_CATALOG, DEFAULT_TRAINING_M
 import { notifyPatientAuditFailed, notifyAuditorAuditFailed } from "@/lib/email";
 import { canSubmit } from "@/lib/auditPhotoSchemas";
 import { computeDomainScoresV1, computeDoctorAiContextV1 } from "@/lib/benchmarks/domainScoring";
+import { renderAndUploadPdfForCase } from "@/lib/reports/renderPdfInternal";
 
 function supabaseAdmin() {
   return createClient(
@@ -17,20 +18,6 @@ function supabaseAdmin() {
 }
 
 const BUCKET = process.env.CASE_FILES_BUCKET || "case-files";
-const INTERNAL_API_KEY =
-  String(process.env.INTERNAL_API_KEY ?? "").trim() ||
-  String(process.env.SUPABASE_SERVICE_ROLE_KEY ?? "").trim() ||
-  String(process.env.REPORT_RENDER_TOKEN ?? "").trim() ||
-  String(process.env.INTERNAL_BUILD_PDF_TOKEN ?? "").trim();
-const VERCEL_AUTOMATION_BYPASS_SECRET = String(process.env.VERCEL_AUTOMATION_BYPASS_SECRET ?? "").trim();
-
-function resolveInternalBaseUrl(): string {
-  const configured = String(process.env.NEXT_PUBLIC_APP_URL ?? "").trim();
-  if (configured) return configured.replace(/\/+$/, "");
-  const vercel = String(process.env.VERCEL_URL ?? "").trim();
-  if (vercel) return `https://${vercel.replace(/\/+$/, "")}`;
-  throw new Error("Missing NEXT_PUBLIC_APP_URL/VERCEL_URL for internal render-pdf call");
-}
 
 // Minimal required categories for “submit”
 function isImageUpload(type: string): boolean {
@@ -718,32 +705,13 @@ export const runAudit = inngest.createFunction(
     const confLabelForReport = confForReport < 0.55 ? "low" : confForReport < 0.8 ? "medium" : "high";
 
     await step.run("build-and-upload-pdf", async () => {
-      if (!INTERNAL_API_KEY) throw new Error("Missing INTERNAL_API_KEY/SUPABASE_SERVICE_ROLE_KEY");
-      const baseUrl = resolveInternalBaseUrl();
-      const res = await fetch(`${baseUrl}/api/internal/render-pdf`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-internal-api-key": INTERNAL_API_KEY,
-          ...(VERCEL_AUTOMATION_BYPASS_SECRET
-            ? {
-                "x-vercel-protection-bypass": VERCEL_AUTOMATION_BYPASS_SECRET,
-                "x-vercel-set-bypass-cookie": "true",
-              }
-            : {}),
-        },
-        body: JSON.stringify({
-          caseId,
-          auditMode: pdfAuditMode,
-          version: nextVersion,
-        }),
+      const result = await renderAndUploadPdfForCase({
+        caseId,
+        auditMode: pdfAuditMode,
+        version: nextVersion,
       });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(json?.error || `render-pdf failed with status ${res.status}`);
-      }
       return {
-        pdfPath: String(json?.pdfPath ?? pdfPath),
+        pdfPath: String(result.pdfPath ?? pdfPath),
       };
     });
 
