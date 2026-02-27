@@ -534,7 +534,7 @@ export const runAudit = inngest.createFunction(
     const doctorPhotos = uploads.filter((u) => String(u.type ?? "").startsWith("doctor_photo:"));
     const hasDoctorAnswers = existingSummary.doctor_answers && typeof existingSummary.doctor_answers === "object" && Object.keys(existingSummary.doctor_answers as object).length > 0;
     const hasClinicAnswers = existingSummary.clinic_answers && typeof existingSummary.clinic_answers === "object" && Object.keys(existingSummary.clinic_answers as object).length > 0;
-    const auditMode = doctorPhotos.length > 0 || hasDoctorAnswers || hasClinicAnswers ? "full" : "patient";
+    const auditMode: "patient" | "full" = doctorPhotos.length > 0 || hasDoctorAnswers || hasClinicAnswers ? "full" : "patient";
 
     // 6) Run AI audit (answers + images)
     const aiResult = await step.run("run-ai-audit", async () => {
