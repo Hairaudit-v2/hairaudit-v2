@@ -38,7 +38,8 @@ export async function POST(req: Request) {
     new URL(req.url).searchParams.get("token") ??
     "";
   const expected = process.env.REPORT_RENDER_TOKEN ?? process.env.INTERNAL_BUILD_PDF_TOKEN ?? "local";
-  if (token !== expected) {
+  // When no token is configured (expected === "local"), allow requests from our own Inngest
+  if (expected !== "local" && token !== expected) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
