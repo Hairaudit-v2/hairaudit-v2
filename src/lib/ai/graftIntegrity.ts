@@ -337,7 +337,7 @@ export async function runGraftIntegrityEstimate(input: {
   }
 
   const client = new OpenAI({ apiKey });
-  const model = process.env.OPENAI_MODEL || "gpt-5.2";
+  const model = process.env.OPENAI_MODEL || "gpt-4o";
 
   const metadataLines = Object.entries(input.metadata ?? {})
     .map(([k, v]) => `- ${k}: ${v}`)

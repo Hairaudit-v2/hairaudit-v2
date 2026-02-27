@@ -903,8 +903,7 @@ Safety:
     }
   }
 
-  // GPT-5.2: deeper forensic reasoning. Override via OPENAI_MODEL env.
-  const model = process.env.OPENAI_MODEL || "gpt-5.2";
+  const model = process.env.OPENAI_MODEL || "gpt-4o";
 
   const clampIntScore = (n: unknown) => {
     const v = Number(n);
@@ -977,12 +976,15 @@ Safety:
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       response_format: { type: "json_schema", json_schema: FORENSIC_AUDIT_JSON_SCHEMA } as any,
       temperature: 0.2,
-      max_completion_tokens: imageUrls.length > 0 ? 3000 : 1500,
+      max_completion_tokens: imageUrls.length > 0 ? 4096 : 2048,
     });
 
-    const raw = completion.choices[0]?.message?.content;
+    const choice = completion.choices[0];
+    const raw = choice?.message?.content;
     if (!raw) {
-      throw new Error("Empty AI response");
+      const reason = choice?.finish_reason ?? "unknown";
+      const msg = (choice?.message as { refusal?: string } | undefined)?.refusal;
+      throw new Error(`Empty AI response (finish_reason: ${reason}${msg ? `, refusal: ${msg}` : ""})`);
     }
 
     const parsed = JSON.parse(raw) as AIAuditResult;

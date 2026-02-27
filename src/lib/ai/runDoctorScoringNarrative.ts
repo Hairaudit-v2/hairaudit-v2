@@ -449,7 +449,7 @@ export async function runDoctorScoringNarrative(params: {
   if (!apiKey) throw new Error("OPENAI_API_KEY not configured");
 
   const client = new OpenAI({ apiKey });
-  const model = process.env.OPENAI_MODEL || "gpt-5.2";
+  const model = process.env.OPENAI_MODEL || "gpt-4o";
 
   const completeness = Number(params.ai_context?.completeness_score ?? 0);
   const evidenceGrade = (params.ai_context?.evidence_grade ?? "D") as "A" | "B" | "C" | "D";
