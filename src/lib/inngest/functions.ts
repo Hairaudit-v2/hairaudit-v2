@@ -737,6 +737,7 @@ export const runAudit = inngest.createFunction(
         method: "POST",
         headers: { "Content-Type": "application/json", "x-internal-token": token },
         body: JSON.stringify({
+          token,
           content,
           uploads: uploads.map((u) => ({ type: u.type, storage_path: u.storage_path })),
           pdfStoragePath: pdfPath,

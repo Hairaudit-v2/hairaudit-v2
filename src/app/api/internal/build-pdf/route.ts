@@ -20,21 +20,26 @@ function supabaseAdmin() {
 }
 
 export async function POST(req: Request) {
-  const token = req.headers.get("x-internal-token") ?? new URL(req.url).searchParams.get("token") ?? "";
-  const expected = process.env.REPORT_RENDER_TOKEN ?? process.env.INTERNAL_BUILD_PDF_TOKEN ?? "local";
-  if (token !== expected) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   let body: {
     content: Parameters<typeof buildAuditReportPdf>[0];
     uploads: Array<{ type?: string; storage_path?: string }>;
     pdfStoragePath: string;
+    token?: string;
   };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const token =
+    req.headers.get("x-internal-token") ??
+    body.token ??
+    new URL(req.url).searchParams.get("token") ??
+    "";
+  const expected = process.env.REPORT_RENDER_TOKEN ?? process.env.INTERNAL_BUILD_PDF_TOKEN ?? "local";
+  if (token !== expected) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { content, uploads, pdfStoragePath } = body;
