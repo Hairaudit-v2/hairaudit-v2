@@ -1,5 +1,6 @@
 import { inngest } from "./client";
 import { createClient } from "@supabase/supabase-js";
+import { buildAuditReportPdf, fetchReportImages } from "@/lib/pdf/reportBuilder";
 import { runAIAudit } from "@/lib/ai/audit";
 import { runGraftIntegrityModelEstimate } from "@/lib/ai/graftIntegrity";
 import { runDoctorScoringNarrative, DEFAULT_PROTOCOL_CATALOG, DEFAULT_TRAINING_MODULE_CATALOG } from "@/lib/ai/runDoctorScoringNarrative";
@@ -678,10 +679,9 @@ export const runAudit = inngest.createFunction(
     const confLabelForReport = confForReport < 0.55 ? "low" : confForReport < 0.8 ? "medium" : "high";
 
     await step.run("build-and-upload-pdf", async () => {
-      // Use current deployment URL so Inngest and build-pdf share the same env (avoids 401 when APP_BASE_URL points elsewhere)
-      const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : (process.env.APP_BASE_URL ?? "http://localhost:3000");
-      const token = process.env.REPORT_RENDER_TOKEN ?? process.env.INTERNAL_BUILD_PDF_TOKEN ?? "local";
-
+      // Inlined to avoid 401 from Vercel Deployment Protection when fetch'ing build-pdf API
+      const supabase = supabaseAdmin();
+      const images = await fetchReportImages(supabase, BUCKET, uploads.map((u) => ({ type: u.type, storage_path: u.storage_path })));
       const content = {
         caseId,
         version: nextVersion,
@@ -732,31 +732,14 @@ export const runAudit = inngest.createFunction(
           sections: aiResult.section_scores,
         },
       };
-
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-        "x-internal-token": token,
-      };
-      const bypass = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
-      if (bypass) headers["x-vercel-protection-bypass"] = bypass;
-
-      const res = await fetch(`${baseUrl}/api/internal/build-pdf`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          token,
-          content,
-          uploads: uploads.map((u) => ({ type: u.type, storage_path: u.storage_path })),
-          pdfStoragePath: pdfPath,
-        }),
+      const pdfBuffer = await buildAuditReportPdf({ ...content, images });
+      const buf = Buffer.isBuffer(pdfBuffer) ? pdfBuffer : Buffer.from((pdfBuffer as { data?: number[] })?.data ?? []);
+      const { error } = await supabase.storage.from(BUCKET).upload(pdfPath, buf, {
+        contentType: "application/pdf",
+        upsert: true,
       });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(`build-pdf API failed: ${res.status} ${(err as any).error ?? res.statusText}`);
-      }
-      const out = (await res.json()) as { pdfPath?: string; bytes?: number };
-      return { pdfPath: out.pdfPath ?? pdfPath, bytes: out.bytes ?? 0 };
+      if (error) throw new Error(`storage upload failed: ${error.message}`);
+      return { pdfPath, bytes: buf.length };
     });
 
     // 10) Insert report row (with AI audit + answers)
