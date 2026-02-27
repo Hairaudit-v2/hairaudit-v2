@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { normalizePatientPhotoCategory } from "@/lib/photoCategories";
+import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 
 export const runtime = "nodejs"; // we use Buffer
 
@@ -19,6 +20,14 @@ function safeName(name: string) {
 
 export async function POST(req: Request) {
   try {
+    const auth = await createSupabaseAuthServerClient();
+    const {
+      data: { user },
+    } = await auth.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+    }
+
     const form = await req.formData();
 
     const caseId = form.get("caseId") as string | null;
@@ -52,11 +61,15 @@ export async function POST(req: Request) {
     // ✅ Ensure case exists + read lock fields
     const { data: c, error: caseErr } = await supabase
       .from("cases")
-      .select("id, user_id, status, submitted_at")
+      .select("id, user_id, patient_id, status, submitted_at")
       .eq("id", caseId)
       .maybeSingle();
 
     if (caseErr || !c) {
+      return NextResponse.json({ ok: false, error: "Case not found", caseId }, { status: 404 });
+    }
+
+    if (c.user_id !== user.id && c.patient_id !== user.id) {
       return NextResponse.json({ ok: false, error: "Case not found", caseId }, { status: 404 });
     }
 

@@ -17,12 +17,12 @@ export default async function Page({ params }: PageProps) {
 
   const { data: c } = await supabase
     .from("cases")
-    .select("id, status, submitted_at")
+    .select("id, status, submitted_at, user_id, patient_id")
     .eq("id", caseId)
-    .eq("user_id", user.id)
     .maybeSingle();
 
-  if (!c) redirect("/dashboard");
+  const allowed = !!c && (c.user_id === user.id || c.patient_id === user.id);
+  if (!allowed) redirect("/dashboard");
 
   const { data: uploads } = await supabase
     .from("uploads")

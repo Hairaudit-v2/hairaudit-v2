@@ -16,11 +16,11 @@ export async function GET(req: Request) {
     const supabase = createSupabaseAdminClient();
     const { data: c } = await supabase
       .from("cases")
-      .select("id, user_id")
+      .select("id, user_id, patient_id")
       .eq("id", caseId)
       .maybeSingle();
 
-    if (!c || c.user_id !== user.id) {
+    if (!c || (c.user_id !== user.id && c.patient_id !== user.id)) {
       return NextResponse.json({ error: "Case not found" }, { status: 404 });
     }
 
@@ -75,11 +75,11 @@ export async function POST(req: Request) {
 
     const { data: c } = await supabase
       .from("cases")
-      .select("id, user_id, status, submitted_at")
+      .select("id, user_id, patient_id, status, submitted_at")
       .eq("id", caseId)
       .maybeSingle();
 
-    if (!c || c.user_id !== user.id) {
+    if (!c || (c.user_id !== user.id && c.patient_id !== user.id)) {
       return NextResponse.json({ error: "Case not found" }, { status: 404 });
     }
 
