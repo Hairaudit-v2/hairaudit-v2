@@ -69,11 +69,12 @@ export default async function ReportHtmlPage({
   searchParams,
 }: {
   params: Promise<{ caseId: string }>;
-  searchParams?: Promise<{ token?: string }>;
+  searchParams?: Promise<{ token?: string; auditMode?: string }>;
 }) {
   const { caseId } = await params;
-  const sp = (await (searchParams ?? Promise.resolve({}))) as { token?: string };
+  const sp = (await (searchParams ?? Promise.resolve({}))) as { token?: string; auditMode?: string };
   const token = sp?.token ?? "";
+  const requestedAuditMode = normalizeAuditMode(sp?.auditMode);
 
   const expected = process.env.REPORT_RENDER_TOKEN ?? "local";
   const allowToken = token === expected;
@@ -126,7 +127,9 @@ export default async function ReportHtmlPage({
   }
 
   let auditMode: AuditMode = "patient";
-  if (sessionUserId) {
+  if (allowToken) {
+    auditMode = requestedAuditMode;
+  } else if (sessionUserId) {
     auditMode = resolveAuditModeFromCaseAccess({
       role: sessionRole,
       userId: sessionUserId,

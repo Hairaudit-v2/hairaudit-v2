@@ -31,6 +31,7 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const caseId = url.searchParams.get("caseId") ?? "";
   const token = url.searchParams.get("token") ?? "";
+  const requestedAuditMode = normalizeAuditMode(url.searchParams.get("auditMode") ?? undefined);
 
   const expected = process.env.REPORT_RENDER_TOKEN ?? "local";
   const allowToken = token === expected;
@@ -82,7 +83,9 @@ export async function GET(req: Request) {
     }
   }
   let auditMode: AuditMode = "patient";
-  if (sessionUserId) {
+  if (allowToken) {
+    auditMode = requestedAuditMode;
+  } else if (sessionUserId) {
     auditMode = resolveAuditModeFromCaseAccess({
       role: sessionRole,
       userId: sessionUserId,
