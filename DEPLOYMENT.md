@@ -75,7 +75,7 @@ In Vercel → Project → **Settings** → **Environment Variables**, add:
 | `SUPABASE_SERVICE_ROLE_KEY` | Your Supabase service role key | Production |
 | `OPENAI_API_KEY` | `sk-...` (optional, for AI audit) | Production |
 | `CASE_FILES_BUCKET` | `case-files` | Production |
-| `REPORT_RENDER_TOKEN` | A random secret string | Production |
+| `REPORT_RENDER_TOKEN` or `INTERNAL_BUILD_PDF_TOKEN` | A random secret string (auths build-pdf API used by Inngest) | **Production and Preview** |
 | `RESEND_API_KEY` | Resend API key (for audit failure emails) | Production |
 | `NOTIFICATION_FROM_EMAIL` | Verified sender email (e.g. `noreply@hairaudit.com`) | Production |
 | `AUDITOR_NOTIFICATION_EMAIL` | Email for auditor alerts (default: `auditor@hairaudit.com`) | Production |

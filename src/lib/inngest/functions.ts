@@ -678,7 +678,8 @@ export const runAudit = inngest.createFunction(
     const confLabelForReport = confForReport < 0.55 ? "low" : confForReport < 0.8 ? "medium" : "high";
 
     await step.run("build-and-upload-pdf", async () => {
-      const baseUrl = process.env.APP_BASE_URL ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+      // Use current deployment URL so Inngest and build-pdf share the same env (avoids 401 when APP_BASE_URL points elsewhere)
+      const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : (process.env.APP_BASE_URL ?? "http://localhost:3000");
       const token = process.env.REPORT_RENDER_TOKEN ?? process.env.INTERNAL_BUILD_PDF_TOKEN ?? "local";
 
       const content = {
