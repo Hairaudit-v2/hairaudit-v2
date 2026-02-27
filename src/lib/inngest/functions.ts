@@ -630,67 +630,58 @@ export const runAudit = inngest.createFunction(
       return Number(latest) + 1;
     });
 
-    // 8) Build + upload PDF (do NOT return Buffer from step output)
-    // Returning large Buffers from step.run can exceed Inngest payload limits (output_too_large).
+    // 8) Build + upload PDF via separate API (avoids bundling reportBuilder/canvas into api/inngest → Vercel 300MB limit)
     const pdfPath = `${caseId}/v${nextVersion}.pdf`;
 
-    await step.run("build-and-upload-pdf", async () => {
-      const { buildAuditReportPdf, fetchReportImages } = await import("@/lib/pdf/reportBuilder");
-      const images = await fetchReportImages(supabase, BUCKET, uploads);
+    const graftIntegrity = await step.run("load-graft-integrity", async () => {
+      const { data } = await supabase
+        .from("graft_integrity_estimates")
+        .select(
+          "claimed_grafts, estimated_extracted_min, estimated_extracted_max, estimated_implanted_min, estimated_implanted_max, variance_claimed_vs_implanted_min_pct, variance_claimed_vs_implanted_max_pct, confidence, confidence_label, limitations, auditor_status"
+        )
+        .eq("case_id", caseId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-      const graftIntegrity = await (async () => {
-        const { data } = await supabase
-          .from("graft_integrity_estimates")
-          .select(
-            "claimed_grafts, estimated_extracted_min, estimated_extracted_max, estimated_implanted_min, estimated_implanted_max, variance_claimed_vs_implanted_min_pct, variance_claimed_vs_implanted_max_pct, confidence, confidence_label, limitations, auditor_status"
-          )
-          .eq("case_id", caseId)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        const status = String((data as any)?.auditor_status ?? "pending") as any;
-        return {
-          auditor_status: status,
-          claimed_grafts: (data as any)?.claimed_grafts ?? null,
-          estimated_extracted: { min: (data as any)?.estimated_extracted_min ?? null, max: (data as any)?.estimated_extracted_max ?? null },
-          estimated_implanted: { min: (data as any)?.estimated_implanted_min ?? null, max: (data as any)?.estimated_implanted_max ?? null },
-          variance_claimed_vs_implanted_pct: {
-            min: (data as any)?.variance_claimed_vs_implanted_min_pct ?? null,
-            max: (data as any)?.variance_claimed_vs_implanted_max_pct ?? null,
-          },
-          confidence: Number((data as any)?.confidence ?? 0.45),
-          confidence_label: String((data as any)?.confidence_label ?? "medium"),
-          limitations: Array.isArray((data as any)?.limitations) ? (data as any).limitations : [],
-        };
-      })();
-
-      const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
-
-      // Derived confidence fallback (used only when model confidence is 0/undefined).
-      // Factors: number of photos, view classification success rate, and missing categories.
-      const photoCount = uploads.length;
-      const missingCategories = aiResult.data_quality?.missing_photos ?? [];
-      const missingCount = Array.isArray(missingCategories) ? missingCategories.length : 0;
-
-      const obs = Array.isArray(aiResult.photo_observations) ? aiResult.photo_observations : [];
-      const totalViews = obs.length || imageUrls.length || 0;
-      const knownViews = obs.filter((p: any) => String(p?.suspected_view ?? "") && String(p?.suspected_view ?? "") !== "unknown").length;
-      const viewSuccessRate = totalViews > 0 ? knownViews / totalViews : 0;
-
-      const deriveConfidence = () => {
-        const photoFactor = clamp(photoCount / 6, 0, 1);
-        const viewFactor = clamp(viewSuccessRate, 0, 1);
-        const missingPenalty = clamp(missingCount / 6, 0, 1) * 0.25;
-        const derived = 0.45 + 0.35 * photoFactor + 0.25 * viewFactor - missingPenalty;
-        return clamp(derived, 0.45, 0.92);
+      const status = String((data as any)?.auditor_status ?? "pending") as any;
+      return {
+        auditor_status: status,
+        claimed_grafts: (data as any)?.claimed_grafts ?? null,
+        estimated_extracted: { min: (data as any)?.estimated_extracted_min ?? null, max: (data as any)?.estimated_extracted_max ?? null },
+        estimated_implanted: { min: (data as any)?.estimated_implanted_min ?? null, max: (data as any)?.estimated_implanted_max ?? null },
+        variance_claimed_vs_implanted_pct: {
+          min: (data as any)?.variance_claimed_vs_implanted_min_pct ?? null,
+          max: (data as any)?.variance_claimed_vs_implanted_max_pct ?? null,
+        },
+        confidence: Number((data as any)?.confidence ?? 0.45),
+        confidence_label: String((data as any)?.confidence_label ?? "medium"),
+        limitations: Array.isArray((data as any)?.limitations) ? (data as any).limitations : [],
       };
+    });
 
-      const confModel = Number(aiResult.confidence);
-      const confForReport = Number.isFinite(confModel) && confModel > 0 ? confModel : deriveConfidence();
-      const confLabelForReport = confForReport < 0.55 ? "low" : confForReport < 0.8 ? "medium" : "high";
+    const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
+    const photoCount = uploads.length;
+    const missingCategories = aiResult.data_quality?.missing_photos ?? [];
+    const missingCount = Array.isArray(missingCategories) ? missingCategories.length : 0;
+    const obs = Array.isArray(aiResult.photo_observations) ? aiResult.photo_observations : [];
+    const totalViews = obs.length || imageUrls.length || 0;
+    const knownViews = obs.filter((p: any) => String(p?.suspected_view ?? "") && String(p?.suspected_view ?? "") !== "unknown").length;
+    const viewSuccessRate = totalViews > 0 ? knownViews / totalViews : 0;
+    const deriveConfidence = () => {
+      const photoFactor = clamp(photoCount / 6, 0, 1);
+      const viewFactor = clamp(viewSuccessRate, 0, 1);
+      const missingPenalty = clamp(missingCount / 6, 0, 1) * 0.25;
+      return clamp(0.45 + 0.35 * photoFactor + 0.25 * viewFactor - missingPenalty, 0.45, 0.92);
+    };
+    const confForReport = Number.isFinite(Number(aiResult.confidence)) && Number(aiResult.confidence) > 0 ? Number(aiResult.confidence) : deriveConfidence();
+    const confLabelForReport = confForReport < 0.55 ? "low" : confForReport < 0.8 ? "medium" : "high";
 
-      const pdfBuffer = await buildAuditReportPdf({
+    await step.run("build-and-upload-pdf", async () => {
+      const baseUrl = process.env.APP_BASE_URL ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+      const token = process.env.REPORT_RENDER_TOKEN ?? process.env.INTERNAL_BUILD_PDF_TOKEN ?? "local";
+
+      const content = {
         caseId,
         version: nextVersion,
         generatedAt: new Date().toLocaleString(),
@@ -739,18 +730,24 @@ export const runAudit = inngest.createFunction(
           },
           sections: aiResult.section_scores,
         },
-        images,
+      };
+
+      const res = await fetch(`${baseUrl}/api/internal/build-pdf`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-internal-token": token },
+        body: JSON.stringify({
+          content,
+          uploads: uploads.map((u) => ({ type: u.type, storage_path: u.storage_path })),
+          pdfStoragePath: pdfPath,
+        }),
       });
 
-      // Ensure we pass a real Buffer to storage.upload
-      const buf = Buffer.isBuffer(pdfBuffer) ? pdfBuffer : Buffer.from((pdfBuffer as { data?: number[] }).data ?? []);
-      const { error } = await supabase.storage.from(BUCKET).upload(pdfPath, buf, {
-        contentType: "application/pdf",
-        upsert: true,
-      });
-      if (error) throw new Error(`storage upload failed: ${error.message}`);
-
-      return { pdfPath, bytes: buf.length };
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(`build-pdf API failed: ${res.status} ${(err as any).error ?? res.statusText}`);
+      }
+      const out = (await res.json()) as { pdfPath?: string; bytes?: number };
+      return { pdfPath: out.pdfPath ?? pdfPath, bytes: out.bytes ?? 0 };
     });
 
     // 10) Insert report row (with AI audit + answers)
