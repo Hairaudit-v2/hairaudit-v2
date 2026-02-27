@@ -631,7 +631,7 @@ export async function GET(req: Request) {
         <div class="mark">HA</div>
         <div>
           <h1 class="title">HairAudit Report</h1>
-          <div class="subtitle">Automated audit summary</div>
+          <div class="subtitle">Clinical audit report</div>
         </div>
       </div>
 
