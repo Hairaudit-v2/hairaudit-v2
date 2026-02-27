@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local legacy nested repo (not tracked in this repo)
+/hairaudit-v2/
