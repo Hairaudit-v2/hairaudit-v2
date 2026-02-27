@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import {
   buildAuditReportPdf,
   normalizeAuditMode,
@@ -8,14 +8,7 @@ import {
 import { buildPdfUrl } from "@/lib/reports/pdfUrl";
 import { signRenderToken } from "@/lib/reports/internalRenderToken";
 import { generateReportPdfFromUrl } from "@/lib/pdf/generateReportPdf";
-
-function supabaseAdmin() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { persistSession: false, autoRefreshToken: false } }
-  );
-}
+import { getBaseUrl } from "@/lib/reports/getBaseUrl";
 
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
@@ -105,7 +98,7 @@ export async function renderAndUploadPdfForCase(args: {
 
   const auditMode = normalizeAuditMode(args.auditMode);
 
-  const supabase = supabaseAdmin();
+  const supabase = createSupabaseAdminClient();
   const bucket = process.env.CASE_FILES_BUCKET || "case-files";
 
   let version =
@@ -249,7 +242,7 @@ export async function renderAndUploadPdfForCase(args: {
       secret: tokenSecret,
     });
 
-    const baseUrl = (process.env.SITE_URL || "https://www.hairaudit.com").trim();
+    const baseUrl = getBaseUrl(args.baseUrl);
     const url = buildPdfUrl({ caseId, auditMode, token, baseUrl });
 
     pdfBuffer = await generateReportPdfFromUrl(url);
@@ -261,6 +254,6 @@ export async function renderAndUploadPdfForCase(args: {
     .upload(pdfPath, pdfBuffer, { contentType: "application/pdf", upsert: true });
   if (uploadErr) throw new Error(`Upload failed: ${uploadErr.message}`);
 
-  return { pdfPath, auditMode, caseId };
+  return { pdfPath, auditMode, caseId, renderer };
 }
 

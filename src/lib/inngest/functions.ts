@@ -909,7 +909,7 @@ export const runAudit = inngest.createFunction(
       const { error } = await supabase.from("reports").insert({
         case_id: caseId,
         version: nextVersion,
-        pdf_path: null,
+        pdf_path: pdfPath,
         summary,
         status: "complete",
         error: null,
