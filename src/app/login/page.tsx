@@ -10,14 +10,14 @@ export default function LoginPage() {
   const supabase = createSupabaseBrowserClient();
   const [email, setEmail] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
-  const [busyProvider, setBusyProvider] = useState<"google" | "apple" | "email" | null>(null);
+  const [busyProvider, setBusyProvider] = useState<"google" | "email" | null>(null);
 
   const appUrl =
     (process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "") || "").trim() ||
     "https://hairaudit.com";
   const redirectTo = `${appUrl}/auth/callback`;
 
-  async function signInWithProvider(provider: "google" | "apple") {
+  async function signInWithProvider(provider: "google") {
     setMsg(null);
     setBusyProvider(provider);
 
@@ -83,14 +83,6 @@ export default function LoginPage() {
                 className="w-full rounded-lg border border-slate-300 bg-white text-slate-900 py-2.5 font-semibold hover:bg-slate-50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 Continue with Google
-              </button>
-              <button
-                type="button"
-                onClick={() => signInWithProvider("apple")}
-                disabled={busyProvider !== null}
-                className="w-full rounded-lg border border-slate-300 bg-white text-slate-900 py-2.5 font-semibold hover:bg-slate-50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                Continue with Apple
               </button>
             </div>
 
