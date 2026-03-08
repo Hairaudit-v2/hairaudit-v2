@@ -11,6 +11,44 @@ export default async function ClinicDashboardPage() {
   if (!user) redirect("/login");
 
   const admin = createSupabaseAdminClient();
+  const userEmail = String(user.email ?? "").toLowerCase();
+
+  const { data: byUserProfile } = await admin
+    .from("clinic_profiles")
+    .select(
+      "id, linked_user_id, clinic_name, clinic_email, transparency_score, audited_case_count, contributed_case_count, benchmark_eligible_count, average_forensic_score, documentation_integrity_average, current_award_tier"
+    )
+    .eq("linked_user_id", user.id)
+    .limit(1)
+    .maybeSingle();
+  const { data: byEmailProfile } = !byUserProfile && userEmail
+    ? await admin
+        .from("clinic_profiles")
+        .select(
+          "id, linked_user_id, clinic_name, clinic_email, transparency_score, audited_case_count, contributed_case_count, benchmark_eligible_count, average_forensic_score, documentation_integrity_average, current_award_tier"
+        )
+        .eq("clinic_email", userEmail)
+        .limit(1)
+        .maybeSingle()
+    : { data: null as typeof byUserProfile };
+
+  let clinicProfile = byUserProfile ?? byEmailProfile;
+  if (!clinicProfile && userEmail) {
+    const { data: createdClinicProfile } = await admin
+      .from("clinic_profiles")
+      .insert({
+        linked_user_id: user.id,
+        clinic_name: `Clinic ${user.id.slice(0, 8)}`,
+        clinic_email: userEmail,
+      })
+      .select(
+        "id, linked_user_id, clinic_name, clinic_email, transparency_score, audited_case_count, contributed_case_count, benchmark_eligible_count, average_forensic_score, documentation_integrity_average, current_award_tier"
+      )
+      .maybeSingle();
+    clinicProfile = createdClinicProfile;
+  } else if (clinicProfile && !clinicProfile.linked_user_id) {
+    await admin.from("clinic_profiles").update({ linked_user_id: user.id }).eq("id", clinicProfile.id);
+  }
 
   const [{ data: cases }, { count: completedTotal }] = await Promise.all([
     admin
@@ -126,6 +164,30 @@ export default async function ClinicDashboardPage() {
           >
             View clinic leaderboard →
           </Link>
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-4 mb-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <div className="text-xs font-semibold text-emerald-700">Clinic Transparency Dashboard</div>
+            <div className="mt-1 text-sm text-emerald-900">
+              Transparency participation rate:{" "}
+              <span className="font-semibold">
+                {Number(clinicProfile?.transparency_score ?? 0).toFixed(1)}%
+              </span>
+            </div>
+          </div>
+          <div className="rounded-lg border border-emerald-300 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-800">
+            Tier: {String(clinicProfile?.current_award_tier ?? "VERIFIED")}
+          </div>
+        </div>
+        <div className="mt-3 grid gap-2 text-xs text-emerald-900 sm:grid-cols-3">
+          <div>Total audited cases: {clinicProfile?.audited_case_count ?? 0}</div>
+          <div>Total doctor-contributed cases: {clinicProfile?.contributed_case_count ?? 0}</div>
+          <div>Benchmark-eligible cases: {clinicProfile?.benchmark_eligible_count ?? 0}</div>
+          <div>Average forensic score: {Number(clinicProfile?.average_forensic_score ?? 0).toFixed(1)}</div>
+          <div>Documentation integrity average: {Number(clinicProfile?.documentation_integrity_average ?? 0).toFixed(1)}</div>
         </div>
       </div>
 

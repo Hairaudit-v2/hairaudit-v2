@@ -18,6 +18,7 @@ import DomainIntelligenceAccordion from "@/components/reports/DomainIntelligence
 import VersionHistoryDrawer from "@/components/reports/VersionHistoryDrawer";
 import UploadThumbnailGallery from "@/components/reports/UploadThumbnailGallery";
 import LatestReportCard from "@/components/reports/LatestReportCard";
+import InviteClinicContributionCard from "@/components/case/InviteClinicContributionCard";
 
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { tryCreateSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -217,6 +218,11 @@ export default async function Page({
   const normalizedPatient = reportPatientAnswers ? (normalizeIntakeFormData(reportPatientAnswers) as Record<string, unknown>) : null;
   const monthLabels: Record<string, string> = { under_3: "<3 mo", "3_6": "3-6 mo", "6_9": "6-9 mo", "9_12": "9-12 mo", "12_plus": "12+ mo" };
   const clinicLabel = normalizedPatient?.clinic_name ? String(normalizedPatient.clinic_name) : "Unknown clinic";
+  const doctorLabel = normalizedPatient?.doctor_name
+    ? String(normalizedPatient.doctor_name)
+    : normalizedPatient?.surgeon_name
+      ? String(normalizedPatient.surgeon_name)
+      : "";
   const procedureDate = normalizedPatient?.procedure_date ? String(normalizedPatient.procedure_date) : "Not provided";
   const monthsPostOp = normalizedPatient?.months_since ? (monthLabels[String(normalizedPatient.months_since)] ?? String(normalizedPatient.months_since)) : "Not provided";
   const confidenceLabel = overallScores?.confidence_grade ?? c.confidence_label_doctor ?? c.confidence_label_patient ?? "pending";
@@ -355,6 +361,15 @@ export default async function Page({
           )}
         </div>
       </section>
+
+      {isPatientForCase && (
+        <InviteClinicContributionCard
+          caseId={c.id}
+          disabled={Boolean(c.submitted_at) || c.status === "submitted"}
+          defaultClinicName={clinicLabel === "Unknown clinic" ? "" : clinicLabel}
+          defaultDoctorName={doctorLabel}
+        />
+      )}
 
       <section className="mt-6 grid gap-6 lg:grid-cols-2">
         <div className="grid gap-6">

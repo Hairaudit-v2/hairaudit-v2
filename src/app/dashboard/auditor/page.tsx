@@ -100,6 +100,12 @@ export default async function AuditorDashboardPage() {
           <h1 className="text-2xl font-bold text-slate-900">Auditor Dashboard</h1>
           <p className="text-slate-600 text-sm mt-1">Full access to all submitted audit cases</p>
         </div>
+        <Link
+          href="/admin/contribution-requests"
+          className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+        >
+          Contribution Requests →
+        </Link>
       </div>
 
       <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 mb-6">
