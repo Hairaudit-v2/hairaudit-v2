@@ -9,13 +9,15 @@ import SiteHeader from "@/components/SiteHeader";
 export default function LoginPage() {
   const supabase = createSupabaseBrowserClient();
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
-  const [busyProvider, setBusyProvider] = useState<"google" | "email" | null>(null);
+  const [busyProvider, setBusyProvider] = useState<"google" | "email" | "password" | null>(null);
 
   const appUrl =
     (process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "") || "").trim() ||
     "https://hairaudit.com";
-  const redirectTo = `${appUrl}/auth/callback`;
+  const oauthRedirectTo = `${appUrl}/auth/callback`;
+  const magicLinkRedirectTo = `${appUrl}/auth/magic-link`;
 
   useEffect(() => {
     let mounted = true;
@@ -34,21 +36,42 @@ export default function LoginPage() {
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo },
+      options: { redirectTo: oauthRedirectTo },
     });
 
     if (error) setMsg(`❌ ${error.message}`);
     setBusyProvider(null);
   }
 
-  async function sendMagicLink(e: React.FormEvent) {
+  async function signInWithPassword(e: React.FormEvent) {
     e.preventDefault();
     setMsg(null);
+    setBusyProvider("password");
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      setMsg(`❌ ${error.message}`);
+    } else {
+      window.location.href = "/dashboard";
+    }
+    setBusyProvider(null);
+  }
+
+  async function sendMagicLink() {
+    setMsg(null);
+    if (!email.trim()) {
+      setMsg("Enter your email first to receive a magic link.");
+      return;
+    }
     setBusyProvider("email");
 
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: redirectTo },
+      options: { emailRedirectTo: magicLinkRedirectTo },
     });
 
     if (error) {
@@ -97,7 +120,7 @@ export default function LoginPage() {
               </button>
             </div>
 
-            <form onSubmit={sendMagicLink} className="mt-6 space-y-4">
+            <form onSubmit={signInWithPassword} className="mt-6 space-y-4">
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1">
                   Email
@@ -114,14 +137,39 @@ export default function LoginPage() {
                   placeholder="you@example.com"
                 />
               </div>
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1">
+                  Password
+                </label>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  autoComplete="current-password"
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-slate-900 placeholder-slate-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-colors"
+                  placeholder="••••••••"
+                />
+              </div>
               <button
                 type="submit"
                 disabled={busyProvider !== null}
                 className="w-full rounded-lg bg-amber-500 text-slate-900 py-2.5 font-semibold hover:bg-amber-400 transition-colors disabled:opacity-60 disabled:cursor-not-allowed focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
               >
-                Continue with Email
+                Sign in with Email + Password
               </button>
             </form>
+
+            <button
+              type="button"
+              onClick={sendMagicLink}
+              disabled={busyProvider !== null}
+              className="mt-3 w-full rounded-lg border border-slate-300 bg-white text-slate-900 py-2.5 font-semibold hover:bg-slate-50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              Continue with Email Magic Link
+            </button>
 
             {msg && (
               <p className="mt-4 text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">

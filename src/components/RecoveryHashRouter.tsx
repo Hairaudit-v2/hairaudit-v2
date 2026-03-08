@@ -18,8 +18,8 @@ export default function RecoveryHashRouter() {
     }
 
     if (isMagicLink) {
-      if (window.location.pathname === "/login") return;
-      window.location.replace(`/login${hash}`);
+      if (window.location.pathname === "/auth/magic-link") return;
+      window.location.replace(`/auth/magic-link${hash}`);
     }
   }, []);
 
