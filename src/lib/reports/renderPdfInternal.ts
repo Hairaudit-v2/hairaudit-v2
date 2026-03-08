@@ -16,6 +16,7 @@ import {
   deriveDomainScoresHeuristic,
   toNumberRecord,
 } from "@/lib/reports/pdfReadiness";
+import { loadLatestEvidenceManifest } from "@/lib/evidence/prepareCaseEvidence";
 
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
@@ -39,6 +40,35 @@ async function downloadImagesForCase(args: {
   bucket: string;
   caseId: string;
 }): Promise<ReportImage[]> {
+  const manifest = await loadLatestEvidenceManifest({
+    supabase: args.supabase,
+    caseId: args.caseId,
+    status: "ready",
+  });
+  const prepared = Array.isArray(manifest?.prepared_images)
+    ? (manifest.prepared_images as Array<{ prepared_path?: string; category?: string }>)
+    : [];
+
+  const out: ReportImage[] = [];
+  for (const p of prepared) {
+    try {
+      const preparedPath = String(p.prepared_path ?? "");
+      if (!preparedPath) continue;
+      const { data, error } = await args.supabase.storage.from(args.bucket).download(preparedPath);
+      if (error || !data) continue;
+      const buffer = Buffer.from(await data.arrayBuffer());
+      out.push({
+        buffer,
+        label: String(p.category ?? "prepared evidence"),
+        type: "prepared_evidence",
+      });
+    } catch {
+      // Skip failed prepared evidence image and continue.
+    }
+  }
+  if (out.length > 0) return out;
+
+  // Legacy fallback if evidence manifest isn't available yet.
   const { data: uploads } = await args.supabase
     .from("uploads")
     .select("id, type, storage_path, metadata, created_at")
@@ -51,7 +81,6 @@ async function downloadImagesForCase(args: {
   };
 
   const imgUploads = (uploads ?? []).filter(isImg);
-  const out: ReportImage[] = [];
 
   for (const u of imgUploads) {
     try {

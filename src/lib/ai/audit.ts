@@ -104,8 +104,16 @@ export type AIAuditInput = {
   clinic_answers?: Record<string, unknown> | null;
   patient_baseline?: PatientBaseline | null;
   enhanced_patient_answers?: EnhancedPatientAnswers | null;
-  /** Publicly fetchable image URLs (e.g. Supabase signed URLs) for vision analysis */
-  imageUrls?: string[];
+  /** Server-prepared images for vision analysis (data URI payloads are built server-side). */
+  imageInputs?: Array<{
+    sourceKey: string;
+    mimeType: string;
+    dataBase64: string;
+  }>;
+  /** Optional: image keys that failed server-side download/prep and were skipped. */
+  failedImageKeys?: string[];
+  /** Optional: total image candidates before failures, for confidence penalties. */
+  requestedImageCount?: number;
   /** patient = evaluate only patient evidence; full = require doctor/clinic for benchmarking */
   auditMode?: AuditMode;
 };
@@ -761,7 +769,14 @@ export async function runAIAudit(input: AIAuditInput): Promise<AIAuditResult> {
   const NEUTRAL_SCORE_IF_INSUFFICIENT_EVIDENCE = 60;
 
   const apiKey = process.env.OPENAI_API_KEY;
-  const imageUrls = (input.imageUrls ?? []).filter(Boolean).slice(0, 10);
+  const imageInputs = (input.imageInputs ?? [])
+    .filter((x) => x && typeof x.sourceKey === "string" && typeof x.dataBase64 === "string" && x.dataBase64.length > 0)
+    .slice(0, 10);
+  const failedImageKeys = Array.from(new Set((input.failedImageKeys ?? []).map((x) => String(x).trim()).filter(Boolean)));
+  const requestedImageCount = Math.max(
+    Number.isFinite(Number(input.requestedImageCount)) ? Math.round(Number(input.requestedImageCount)) : 0,
+    imageInputs.length + failedImageKeys.length
+  );
   const auditMode = input.auditMode ?? "full";
   const isPatientOnly = auditMode === "patient";
 
@@ -771,7 +786,7 @@ export async function runAIAudit(input: AIAuditInput): Promise<AIAuditResult> {
     if (!input.doctor_answers || Object.keys(input.doctor_answers).length === 0) autoMissingInputs.push("doctor_answers");
     if (!input.clinic_answers || Object.keys(input.clinic_answers).length === 0) autoMissingInputs.push("clinic_answers");
   }
-  const autoMissingPhotos: string[] = imageUrls.length > 0 ? [] : ["photos"];
+  const autoMissingPhotos: string[] = imageInputs.length > 0 ? [] : ["photos"];
 
   if (!apiKey) {
     const section_scores = {
@@ -960,22 +975,26 @@ Safety:
     },
   ];
 
-  if (imageUrls.length > 0) {
+  if (imageInputs.length > 0) {
     userContent.push({
       type: "text",
       text:
         "\n## Photos to analyze (VIEW-AWARE)\n" +
-        "You MUST create one photo_observations[] entry per image URL, even if you're unsure.\n" +
+        "You MUST create one photo_observations[] entry per image_source_key, even if you're unsure.\n" +
         "For each photo, classify suspected_view as one of:\n" +
         '["preop_front","preop_left","preop_right","preop_top","preop_crown","donor_rear","donor_sides","intraop_recipient","intraop_donor","postop_day0","postop_healed","unknown"]\n' +
         "Then list what_can_be_assessed, what_cannot (angle/lighting/blur/occlusion/distance), 2–6 short observations, and a confidence 0–1.\n" +
         "Unknown/unclear photos should LOWER confidence and add limitations, not change section scores.\n" +
         "When donor/extraction sites are visible, explicitly address: extraction distribution/spread, qualitative punch size, doubles/multiples, overharvesting/patchiness.",
     });
-    for (const url of imageUrls) {
+    for (const image of imageInputs) {
+      userContent.push({
+        type: "text",
+        text: `image_source_key: ${image.sourceKey}`,
+      });
       userContent.push({
         type: "image_url",
-        image_url: { url },
+        image_url: { url: `data:${image.mimeType || "image/jpeg"};base64,${image.dataBase64}` },
       });
     }
   }
@@ -1044,7 +1063,7 @@ Safety:
   };
 
   try {
-    const tokenParam = maxTokensParam(model, imageUrls.length > 0 ? 4096 : 2048);
+    const tokenParam = maxTokensParam(model, imageInputs.length > 0 ? 4096 : 2048);
     const completion = await client.chat.completions.create({
       model,
       messages: [
@@ -1118,7 +1137,8 @@ Safety:
         if (!byUrl.has(u)) byUrl.set(u, p as AIAuditResult["photo_observations"][number]);
       }
       const out: AIAuditResult["photo_observations"] = [];
-      for (const u of imageUrls) {
+      const sourceKeys = imageInputs.map((x) => x.sourceKey);
+      for (const u of sourceKeys) {
         const p = byUrl.get(u);
         if (p) out.push(p);
         else {
@@ -1137,8 +1157,8 @@ Safety:
 
     const confidenceFromModel = clamp01(parsed.confidence);
     const knownViews = normalizedPhotos.filter((p) => p.suspected_view !== "unknown").length;
-    const viewCoverage = imageUrls.length > 0 ? knownViews / imageUrls.length : 1;
-    const photoFactor = clamp(imageUrls.length / 6, 0, 1);
+    const viewCoverage = imageInputs.length > 0 ? knownViews / imageInputs.length : 1;
+    const photoFactor = clamp(imageInputs.length / 6, 0, 1);
     const viewFactor = clamp(viewCoverage, 0, 1);
     const patientCount = countNonEmpty(input.patient_answers ?? undefined);
     const doctorCount = countNonEmpty(input.doctor_answers ?? undefined);
@@ -1162,9 +1182,13 @@ Safety:
       1
     );
     const missingPenalty = clamp(autoMissingInputs.length / 3, 0, 1) * 0.12;
+    const imageFailurePenalty =
+      requestedImageCount > 0
+        ? clamp(failedImageKeys.length / requestedImageCount, 0, 1) * 0.2
+        : 0;
 
     const derivedCoverageConfidence = clamp(
-      CONFIDENCE_FLOOR + 0.3 * photoFactor + 0.2 * viewFactor + 0.3 * answerFactor - missingPenalty,
+      CONFIDENCE_FLOOR + 0.3 * photoFactor + 0.2 * viewFactor + 0.3 * answerFactor - missingPenalty - imageFailurePenalty,
       CONFIDENCE_FLOOR,
       CONFIDENCE_CAP
     );
@@ -1177,10 +1201,17 @@ Safety:
 
     const data_quality: AIAuditResult["data_quality"] = {
       missing_inputs: uniq([...(parsed.data_quality?.missing_inputs ?? []), ...autoMissingInputs]).slice(0, 20),
-      missing_photos: uniq([...(parsed.data_quality?.missing_photos ?? []), ...autoMissingPhotos]).slice(0, 30),
+      missing_photos: uniq([...(parsed.data_quality?.missing_photos ?? []), ...autoMissingPhotos, ...failedImageKeys]).slice(0, 30),
       limitations: uniq([
         ...(parsed.data_quality?.limitations ?? []),
-        ...(imageUrls.length > 0 && viewCoverage < 1 ? [`View coverage incomplete: ${(viewCoverage * 100).toFixed(0)}% of photos confidently classified.`] : []),
+        ...(failedImageKeys.length
+          ? [
+              `Some submitted photos could not be downloaded and were excluded from analysis (${failedImageKeys.length}/${requestedImageCount || failedImageKeys.length}).`,
+            ]
+          : []),
+        ...(imageInputs.length > 0 && viewCoverage < 1
+          ? [`View coverage incomplete: ${(viewCoverage * 100).toFixed(0)}% of photos confidently classified.`]
+          : []),
         ...(!input.patient_baseline ? ["Baseline missing: age/sex/smoking not provided; risk inference limited."] : []),
         ...(!input.enhanced_patient_answers ? ["Structured enhanced answers missing; predictive modeling is limited."] : []),
       ]).slice(0, 30),
@@ -1267,15 +1298,15 @@ Safety:
       confidence_label: confidenceLabelFrom(CONFIDENCE_FLOOR),
       data_quality: {
         missing_inputs: autoMissingInputs,
-        missing_photos: autoMissingPhotos,
+        missing_photos: uniq([...autoMissingPhotos, ...failedImageKeys]),
         limitations: [`AI audit failed: ${msg}`],
       },
       section_scores,
       section_score_evidence,
       key_findings: [],
       red_flags: [],
-      photo_observations: imageUrls.map((u) => ({
-        image_url: u,
+      photo_observations: imageInputs.map((img) => ({
+        image_url: img.sourceKey,
         suspected_view: "unknown",
         what_can_be_assessed: [],
         what_cannot: ["AI audit failed"],

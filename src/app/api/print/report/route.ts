@@ -11,6 +11,7 @@ import {
   evaluatePdfReadiness,
   toNumberRecord,
 } from "@/lib/reports/pdfReadiness";
+import { loadLatestEvidenceManifest } from "@/lib/evidence/prepareCaseEvidence";
 
 function clamp100(n: number) {
   return Math.max(0, Math.min(100, n));
@@ -125,62 +126,88 @@ export async function GET(req: Request) {
       headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" },
     });
   }
-  // Load uploads
-  const { data: uploads, error: upErr } = await supabase
-    .from("uploads")
-    .select("id, type, storage_path, metadata, created_at")
-    .eq("case_id", caseId)
-    .order("created_at", { ascending: true });
-
-  if (upErr) {
-    console.error("uploads error:", upErr.message);
-  }
-
   const bucket = process.env.CASE_FILES_BUCKET || "case-files";
-
-  const imageUploads = (uploads ?? []).filter((u) => {
-    const t = String(u.type ?? "").toLowerCase();
-    return (
-      t.startsWith("patient_photo:") ||
-      t.includes("image") ||
-      t.includes("photo") ||
-      t.includes("jpg") ||
-      t.includes("jpeg") ||
-      t.includes("png") ||
-      t.includes("webp")
-    );
+  const photosByCategory: Record<string, { signedUrl: string | null; label: string }[]> = {};
+  const manifest = await loadLatestEvidenceManifest({
+    supabase: supabase as any,
+    caseId,
+    status: "ready",
   });
 
-  const signedImages = await Promise.all(
-    imageUploads.map(async (u) => {
-      const path = String(u.storage_path ?? "");
-      if (!path) return { ...u, signedUrl: null };
+  if (manifest?.prepared_images?.length) {
+    const signedPrepared = await Promise.all(
+      manifest.prepared_images.map(async (item) => {
+        const path = String(item.prepared_path ?? "");
+        if (!path) return { ...item, signedUrl: null };
+        const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, 60 * 10);
+        if (error) {
+          console.error("prepared signed url error:", error.message);
+          return { ...item, signedUrl: null };
+        }
+        return { ...item, signedUrl: data?.signedUrl ?? null };
+      })
+    );
+    for (const u of signedPrepared) {
+      const canonical = String((u as any)?.category ?? "uncategorized");
+      const cat = `${photoCategoryGroup(canonical)} - ${canonical.replaceAll("_", " ")}`;
+      const label = String((u as any)?.category ?? "prepared evidence");
+      photosByCategory[cat] = photosByCategory[cat] || [];
+      photosByCategory[cat].push({ signedUrl: (u as any).signedUrl ?? null, label });
+    }
+  } else {
+    // Legacy fallback while manifests backfill.
+    const { data: uploads, error: upErr } = await supabase
+      .from("uploads")
+      .select("id, type, storage_path, metadata, created_at")
+      .eq("case_id", caseId)
+      .order("created_at", { ascending: true });
 
-      const { data, error } = await supabase.storage
-        .from(bucket)
-        .createSignedUrl(path, 60 * 10);
+    if (upErr) {
+      console.error("uploads error:", upErr.message);
+    }
 
-      if (error) {
-        console.error("signed url error:", error.message);
-        return { ...u, signedUrl: null };
-      }
+    const imageUploads = (uploads ?? []).filter((u) => {
+      const t = String(u.type ?? "").toLowerCase();
+      return (
+        t.startsWith("patient_photo:") ||
+        t.includes("image") ||
+        t.includes("photo") ||
+        t.includes("jpg") ||
+        t.includes("jpeg") ||
+        t.includes("png") ||
+        t.includes("webp")
+      );
+    });
 
-      return {
-        ...u,
-        signedUrl: data?.signedUrl ?? null,
-      };
-    })
-  );
+    const signedImages = await Promise.all(
+      imageUploads.map(async (u) => {
+        const path = String(u.storage_path ?? "");
+        if (!path) return { ...u, signedUrl: null };
 
-  const photosByCategory: Record<string, { signedUrl: string | null; label: string }[]> = {};
-  for (const u of signedImages) {
-    const canonical = inferCanonicalPhotoCategory(u as any);
-    const cat = `${photoCategoryGroup(canonical)} - ${canonical.replaceAll("_", " ")}`;
-    const label =
-      String((u as any)?.metadata?.label ?? "").trim() ||
-      String((u as any)?.type ?? "photo");
-    photosByCategory[cat] = photosByCategory[cat] || [];
-    photosByCategory[cat].push({ signedUrl: (u as any).signedUrl ?? null, label });
+        const { data, error } = await supabase.storage
+          .from(bucket)
+          .createSignedUrl(path, 60 * 10);
+
+        if (error) {
+          console.error("signed url error:", error.message);
+          return { ...u, signedUrl: null };
+        }
+
+        return {
+          ...u,
+          signedUrl: data?.signedUrl ?? null,
+        };
+      })
+    );
+    for (const u of signedImages) {
+      const canonical = inferCanonicalPhotoCategory(u as any);
+      const cat = `${photoCategoryGroup(canonical)} - ${canonical.replaceAll("_", " ")}`;
+      const label =
+        String((u as any)?.metadata?.label ?? "").trim() ||
+        String((u as any)?.type ?? "photo");
+      photosByCategory[cat] = photosByCategory[cat] || [];
+      photosByCategory[cat].push({ signedUrl: (u as any).signedUrl ?? null, label });
+    }
   }
 
   // Load latest report summary
@@ -446,7 +473,7 @@ export async function GET(req: Request) {
     auditMode: mode,
     content,
     rawCase: c,
-    uploads,
+    uploads: [],
     aiResult: summary,
   });
 

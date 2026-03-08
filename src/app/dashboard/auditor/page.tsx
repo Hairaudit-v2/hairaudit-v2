@@ -34,6 +34,39 @@ export default async function AuditorDashboardPage() {
     if (!reportByCase.has(cid)) reportByCase.set(cid, { pdf_path: r.pdf_path, status: r.status });
   }
 
+  const evidenceByCase = new Map<
+    string,
+    {
+      quality_score: number | null;
+      missing_categories: string[] | null;
+      prepared_images: Array<{ category?: string }> | null;
+      status?: string | null;
+    }
+  >();
+  try {
+    const evidenceRes = await admin
+      .from("case_evidence_manifests")
+      .select("case_id, quality_score, missing_categories, prepared_images, status, created_at")
+      .in("case_id", caseIds.length ? caseIds : ["00000000-0000-0000-0000-000000000000"])
+      .order("created_at", { ascending: false });
+    if (evidenceRes.error && !isMissingFeatureError(evidenceRes.error)) {
+      throw evidenceRes.error;
+    }
+    for (const row of (evidenceRes.data ?? []) as any[]) {
+      const cid = String(row.case_id);
+      if (!evidenceByCase.has(cid)) {
+        evidenceByCase.set(cid, {
+          quality_score: row.quality_score ?? null,
+          missing_categories: Array.isArray(row.missing_categories) ? row.missing_categories : [],
+          prepared_images: Array.isArray(row.prepared_images) ? row.prepared_images : [],
+          status: row.status ?? null,
+        });
+      }
+    }
+  } catch {
+    // Evidence manifest table may not be deployed yet in every environment.
+  }
+
   // Optional feature: must never crash the dashboard if table is missing or query errors
   let giiLatestByCase = new Map<string, any>();
   let giiUnavailable = false;
@@ -121,9 +154,20 @@ export default async function AuditorDashboardPage() {
           {cases.map((c) => {
             const rep = reportByCase.get(c.id);
             const gii = (giiLatestByCase as Map<string, any>).get(c.id);
+            const evidence = evidenceByCase.get(c.id);
             const hasPdf = !!rep?.pdf_path;
             const isProcessing = rep?.status === "processing" || (!rep?.pdf_path && rep?.status !== "failed");
             const giiStatus = gii?.auditor_status ?? (gii ? "pending" : null);
+            const categoryCounts = Object.entries(
+              ((evidence?.prepared_images ?? []) as Array<{ category?: string }>).reduce(
+                (acc, item) => {
+                  const key = String(item.category ?? "uncategorized");
+                  acc[key] = (acc[key] ?? 0) + 1;
+                  return acc;
+                },
+                {} as Record<string, number>
+              )
+            );
             return (
               <li key={c.id}>
                 <Link
@@ -138,7 +182,31 @@ export default async function AuditorDashboardPage() {
                     {giiStatus === "approved" && <span className="inline-flex rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">Graft Integrity Approved</span>}
                     {giiStatus === "pending" && gii && <span className="inline-flex rounded-md bg-cyan-50 px-2 py-0.5 text-xs font-medium text-cyan-700">Graft Integrity Pending</span>}
                     {giiStatus === "needs_more_evidence" && <span className="inline-flex rounded-md bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">Needs More Evidence</span>}
+                    {evidence && (
+                      <span className="inline-flex rounded-md bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">
+                        Evidence score {Math.round(Number(evidence.quality_score ?? 0))}
+                      </span>
+                    )}
                   </div>
+                  {evidence && (
+                    <div className="text-xs text-slate-500 mt-2 space-y-1">
+                      <div>
+                        Missing categories:{" "}
+                        {(evidence.missing_categories ?? []).length
+                          ? (evidence.missing_categories ?? []).slice(0, 4).join(", ")
+                          : "none"}
+                      </div>
+                      <div>
+                        Prepared category counts:{" "}
+                        {categoryCounts.length
+                          ? categoryCounts
+                              .slice(0, 5)
+                              .map(([k, v]) => `${k}:${v}`)
+                              .join(" | ")
+                          : "none"}
+                      </div>
+                    </div>
+                  )}
                   <div className="text-xs text-slate-400 mt-2">
                     Created: {new Date(c.created_at).toLocaleString()}
                   </div>

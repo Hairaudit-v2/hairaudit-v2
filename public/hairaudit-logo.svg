@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+<title id="title">HairAudit Logo</title>
+<desc id="desc">HairAudit monogram with clinical shield and follicle nodes.</desc>
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#0f172a"/>
+    <stop offset="100%" stop-color="#1e293b"/>
+  </linearGradient>
+  <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#fbbf24"/>
+    <stop offset="100%" stop-color="#f59e0b"/>
+  </linearGradient>
+</defs>
+<rect x="6" y="6" width="116" height="116" rx="24" fill="url(#bg)"/>
+<path d="M64 26 L95 40 L95 66 C95 84 82 99 64 104 C46 99 33 84 33 66 L33 40 Z" fill="none" stroke="url(#accent)" stroke-width="6"/>
+<circle cx="50" cy="56" r="4.5" fill="#2dd4bf"/>
+<circle cx="64" cy="50" r="4.5" fill="#2dd4bf"/>
+<circle cx="78" cy="56" r="4.5" fill="#2dd4bf"/>
+<path d="M50 56 L64 50 L78 56" stroke="#2dd4bf" stroke-width="2.5" fill="none"/>
+<path d="M64 50 L64 80" stroke="#2dd4bf" stroke-width="2.5" fill="none"/>
+<path d="M49 82 L79 82" stroke="#fbbf24" stroke-width="5" stroke-linecap="round"/>
+<path d="M49 90 L79 90" stroke="#fbbf24" stroke-width="5" stroke-linecap="round"/>
+</svg>

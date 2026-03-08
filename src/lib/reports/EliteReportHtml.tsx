@@ -218,8 +218,6 @@ function renderRadarSvg(opts: {
 export function renderEliteReportHtml(vm: EliteReportViewModel): string {
   const {
     caseId,
-    caseStatus,
-    caseCreatedAt,
     generatedAt,
     version,
     grade,
@@ -347,6 +345,13 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     typeof vm.viewModel.score === "number" && Number.isFinite(vm.viewModel.score)
       ? vm.viewModel.score
       : null;
+  const confidenceScorePct = (() => {
+    const confFromPanel = Number((vm.viewModel as any)?.confidencePanel?.confidenceScore);
+    const confFromRadar = Number(radar?.confidence);
+    const conf = Number.isFinite(confFromPanel) ? confFromPanel : Number.isFinite(confFromRadar) ? confFromRadar : null;
+    if (conf === null) return "N/A";
+    return `${Math.round(clamp01(conf) * 100)}%`;
+  })();
 
   const radarBlock =
     radar && Array.isArray(radar.labels) && Array.isArray(radar.values) && radar.labels.length >= 3
@@ -414,21 +419,18 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     }
 
     .brand { display:flex; gap: 12px; align-items:flex-start; }
-
-    .mark {
-      width: 44px;
-      height: 44px;
-      border-radius: 14px;
+    .brandLogo {
+      width: 54px;
+      height: 54px;
+      object-fit: contain;
+      border-radius: 12px;
       border: 1px solid var(--line);
-      background: radial-gradient(circle at 30% 20%, #fff, #eef1f7);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-weight: 900;
+      background: #fff;
+      padding: 6px;
     }
-
-    .title { margin: 0; font-size: 18px; font-weight: 800; }
-    .subtitle { margin-top: 4px; font-size: 12px; color: var(--muted); }
+    .title { margin: 0; font-size: 20px; font-weight: 900; letter-spacing: -0.01em; }
+    .subtitle { margin-top: 2px; font-size: 12px; color: var(--muted); }
+    .kicker { margin-top: 2px; font-size: 11px; color: #334155; font-weight: 700; }
 
     .meta {
       text-align:right;
@@ -543,18 +545,19 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
 
     <div class="topbar">
       <div class="brand">
-        <div class="mark">HA</div>
+        <img class="brandLogo" src="/hairaudit-logo.svg" alt="HairAudit logo" />
         <div>
-          <h1 class="title">HairAudit Report</h1>
-          <div class="subtitle">Clinical report</div>
+          <h1 class="title">HairAudit™</h1>
+          <div class="subtitle">AI Clinical Hair Transplant Audit</div>
+          <div class="kicker">Powered by Follicle Intelligence</div>
         </div>
       </div>
 
       <div class="meta">
-        <div><b>Case:</b> <span class="mono">${esc(caseId)}</span></div>
-        <div><b>Status:</b> ${esc(String(caseStatus ?? ""))}</div>
-        <div><b>Created:</b> ${esc(caseCreatedAt ?? "")}</div>
-        <div><b>Generated:</b> ${esc(generatedAt)}</div>
+        <div><b>Case ID:</b> <span class="mono">${esc(caseId)}</span></div>
+        <div><b>Report version:</b> ${version ? `v${esc(String(version))}` : "—"}</div>
+        <div><b>Confidence score:</b> ${esc(confidenceScorePct)}</div>
+        <div><b>Audit date:</b> ${esc(generatedAt)}</div>
       </div>
     </div>
 

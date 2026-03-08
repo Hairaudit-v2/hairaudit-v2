@@ -304,8 +304,8 @@ function variancePct(claimed: number | null, est: number | null): number | null 
 
 export async function runGraftIntegrityEstimate(input: {
   claimed_grafts: number | null;
-  donor: Array<{ key: string; signedUrl: string }>;
-  recipient: Array<{ key: string; signedUrl: string }>;
+  donor: Array<{ key: string; signedUrl?: string; dataUrl?: string }>;
+  recipient: Array<{ key: string; signedUrl?: string; dataUrl?: string }>;
   metadata: Record<string, string>;
 }): Promise<GraftIntegrityEstimate> {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -367,8 +367,10 @@ export async function runGraftIntegrityEstimate(input: {
   if (input.donor.length > 0) {
     userParts.push({ type: "text", text: "\n## Donor images (keys are storage paths)" });
     for (const d of input.donor.slice(0, 10)) {
+      const imageUrl = d.dataUrl || d.signedUrl;
+      if (!imageUrl) continue;
       userParts.push({ type: "text", text: `donor_image_key: ${d.key}` });
-      userParts.push({ type: "image_url", image_url: { url: d.signedUrl } });
+      userParts.push({ type: "image_url", image_url: { url: imageUrl } });
     }
   } else {
     userParts.push({ type: "text", text: "\n## Donor images\n(none provided)" });
@@ -377,8 +379,10 @@ export async function runGraftIntegrityEstimate(input: {
   if (input.recipient.length > 0) {
     userParts.push({ type: "text", text: "\n## Recipient images (keys are storage paths)" });
     for (const r of input.recipient.slice(0, 10)) {
+      const imageUrl = r.dataUrl || r.signedUrl;
+      if (!imageUrl) continue;
       userParts.push({ type: "text", text: `recipient_image_key: ${r.key}` });
-      userParts.push({ type: "image_url", image_url: { url: r.signedUrl } });
+      userParts.push({ type: "image_url", image_url: { url: imageUrl } });
     }
   } else {
     userParts.push({ type: "text", text: "\n## Recipient images\n(none provided)" });
@@ -472,8 +476,8 @@ export async function runGraftIntegrityEstimate(input: {
 // Back-compat name used by the pipeline.
 export async function runGraftIntegrityModelEstimate(input: {
   claimed_grafts: number | null;
-  donor: Array<{ key: string; signedUrl: string }>;
-  recipient: Array<{ key: string; signedUrl: string }>;
+  donor: Array<{ key: string; signedUrl?: string; dataUrl?: string }>;
+  recipient: Array<{ key: string; signedUrl?: string; dataUrl?: string }>;
   metadata: Record<string, string>;
 }): Promise<GraftIntegrityEstimate> {
   return runGraftIntegrityEstimate(input);

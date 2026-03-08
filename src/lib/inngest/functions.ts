@@ -8,9 +8,9 @@ import { notifyPatientAuditFailed, notifyAuditorAuditFailed } from "@/lib/email"
 import { canSubmit } from "@/lib/auditPhotoSchemas";
 import { computeDomainScoresV1, computeDoctorAiContextV1 } from "@/lib/benchmarks/domainScoring";
 import { renderAndUploadPdfForCase } from "@/lib/reports/renderPdfInternal";
-import { buildAuditImageSelection } from "@/lib/photos/classification";
 import { normalizeIntakeFormData, toNestedForApi } from "@/lib/intake/normalizeIntakeFormData";
 import { shouldGeneratePdf } from "@/lib/reports/pdfReadiness";
+import { prepareCaseEvidenceManifest } from "@/lib/evidence/prepareCaseEvidence";
 
 function supabaseAdmin() {
   return createClient(
@@ -70,7 +70,16 @@ function normalizePatientAnswersForAudit(raw: Record<string, unknown> | null): R
   };
 }
 
-type PipelinePhaseStatus = "processing" | "audit_complete" | "pdf_pending" | "pdf_ready" | "failed";
+type PipelinePhaseStatus =
+  | "processing"
+  | "evidence_preparing"
+  | "evidence_ready"
+  | "audit_running"
+  | "audit_complete"
+  | "pdf_pending"
+  | "pdf_ready"
+  | "audit_failed"
+  | "failed";
 
 async function setCasePipelineStatus(
   supabase: ReturnType<typeof supabaseAdmin>,
@@ -79,9 +88,13 @@ async function setCasePipelineStatus(
 ) {
   const fallbackMap: Record<PipelinePhaseStatus, string> = {
     processing: "processing",
+    evidence_preparing: "processing",
+    evidence_ready: "processing",
+    audit_running: "processing",
     audit_complete: "processing",
     pdf_pending: "processing",
     pdf_ready: "complete",
+    audit_failed: "audit_failed",
     failed: "audit_failed",
   };
   let res = await supabase.from("cases").update({ status }).eq("id", caseId);
@@ -102,9 +115,13 @@ async function setReportPipelineStatus(
 ) {
   const fallbackMap: Record<PipelinePhaseStatus, string> = {
     processing: "processing",
+    evidence_preparing: "processing",
+    evidence_ready: "processing",
+    audit_running: "processing",
     audit_complete: "processing",
     pdf_pending: "processing",
     pdf_ready: "complete",
+    audit_failed: "failed",
     failed: "failed",
   };
   const payload = { status, ...(extra ?? {}) } as Record<string, unknown>;
@@ -326,28 +343,18 @@ export const runGraftIntegrityEstimate = inngest.createFunction(
     const alwaysInsertIfApproved = Boolean(data.alwaysInsertIfApproved);
     const supabase = supabaseAdmin();
 
-    // 1) Load uploads + summary (same sources as the main audit)
-    const { uploads, patientAnswers } = await step.run("load-gii-inputs", async () => {
-      const [{ data: uploads, error: upErr }, { data: report, error: repErr }] = await Promise.all([
-        supabase
-          .from("uploads")
-          .select("id, type, storage_path, metadata, created_at")
-          .eq("case_id", caseId)
-          .order("created_at", { ascending: false }),
-        supabase
-          .from("reports")
-          .select("id, summary")
-          .eq("case_id", caseId)
-          .order("version", { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-      ]);
-
-      if (upErr) throw new Error(`uploads load failed: ${upErr.message}`);
-      if (repErr) throw new Error(`reports load failed: ${repErr.message}`);
+    // 1) Load latest summary for graft count metadata.
+    const patientAnswers = await step.run("load-gii-summary", async () => {
+      const { data: report, error } = await supabase
+        .from("reports")
+        .select("id, summary")
+        .eq("case_id", caseId)
+        .order("version", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw new Error(`reports load failed: ${error.message}`);
       const summary = (report?.summary ?? {}) as Record<string, unknown>;
-      const patientAnswers = (summary.patient_answers ?? null) as Record<string, unknown> | null;
-      return { uploads: uploads ?? [], patientAnswers };
+      return (summary.patient_answers ?? null) as Record<string, unknown> | null;
     });
 
     const claimedGrafts = pickClaimedGrafts(patientAnswers);
@@ -362,56 +369,62 @@ export const runGraftIntegrityEstimate = inngest.createFunction(
       if (v && v !== "undefined" && v !== "null") meta[k] = v;
     }
 
-    // 2) Pick donor/recipient-relevant images (by upload category/key heuristics)
-    const imageUploads = uploads.filter((u: any) => isImageUpload(u.type));
-    const donorCandidates = imageUploads.filter((u: any) => {
-      const t = String(u.type ?? "").toLowerCase();
-      const cat = String(u?.metadata?.category ?? "").toLowerCase();
-      return t.includes("donor") || cat.includes("donor") || cat.includes("donor_rear") || t.includes("day0_donor");
-    });
-    const recipientCandidates = imageUploads.filter((u: any) => {
-      const t = String(u.type ?? "").toLowerCase();
-      const cat = String(u?.metadata?.category ?? "").toLowerCase();
-      return t.includes("recipient") || cat.includes("recipient") || t.includes("day0_recipient") || t.includes("intraop") || cat.includes("any_day0") || cat.includes("any_early_postop");
-    });
-
-    // Avoid duplicates (prefer donor set first)
-    const donorSet = new Set(donorCandidates.map((u: any) => String(u.storage_path)));
-    const recipientFiltered = recipientCandidates.filter((u: any) => !donorSet.has(String(u.storage_path)));
-
-    // 3) Sign URLs (model sees signed URLs; model keys are storage paths)
-    const donorSigned = await step.run("sign-donor-urls", async () => {
-      const out: Array<{ key: string; signedUrl: string }> = [];
-      for (const u of donorCandidates.slice(0, 10)) {
-        const key = String(u.storage_path);
-        const { data } = await supabase.storage.from(BUCKET).createSignedUrl(key, 60 * 15);
-        if (data?.signedUrl) out.push({ key, signedUrl: data.signedUrl });
-      }
-      return out;
+    // 2) Reuse the same deterministic evidence preparation pipeline.
+    const preparedEvidence = await step.run("prepare-case-evidence", async () => {
+      return await prepareCaseEvidenceManifest({
+        supabase,
+        caseId,
+        bucket: BUCKET,
+        logger: {
+          warn: (message, data) => logger.warn(message, data),
+          error: (message, data) => logger.error(message, data),
+        },
+      });
     });
 
-    const recipientSigned = await step.run("sign-recipient-urls", async () => {
-      const out: Array<{ key: string; signedUrl: string }> = [];
-      for (const u of recipientFiltered.slice(0, 10)) {
-        const key = String(u.storage_path);
-        const { data } = await supabase.storage.from(BUCKET).createSignedUrl(key, 60 * 15);
-        if (data?.signedUrl) out.push({ key, signedUrl: data.signedUrl });
-      }
-      return out;
+    const preparedImages = preparedEvidence.manifest.prepared_images ?? [];
+    const donorPrepared = preparedEvidence.modelInputs.filter((img) => {
+      const c = String(img.category || "").toLowerCase();
+      return c.includes("donor");
+    });
+    const recipientPrepared = preparedEvidence.modelInputs.filter((img) => {
+      const c = String(img.category || "").toLowerCase();
+      return c.includes("recipient") || c.includes("intraop") || c.includes("postop");
     });
 
     const { score: evidenceScore, recommendedMissingPhotos } = classifyEvidenceCoverage({
       claimedGrafts,
-      donor: donorCandidates,
-      recipient: recipientFiltered,
+      donor: preparedImages
+        .filter((img) => String(img.category || "").toLowerCase().includes("donor"))
+        .map((img) => ({
+          type: `prepared:${img.category}`,
+          storage_path: img.prepared_path,
+          metadata: { category: img.category, quality_label: img.quality_label },
+        })),
+      recipient: preparedImages
+        .filter((img) => {
+          const c = String(img.category || "").toLowerCase();
+          return c.includes("recipient") || c.includes("intraop") || c.includes("postop");
+        })
+        .map((img) => ({
+          type: `prepared:${img.category}`,
+          storage_path: img.prepared_path,
+          metadata: { category: img.category, quality_label: img.quality_label },
+        })),
     });
 
-    // 4) Run model + persist. This function is independent of the main audit flow.
+    // 3) Run model + persist. This function is independent of the main audit flow.
     const modelOut = await step.run("run-gii-model", async () => {
       return await runGraftIntegrityModelEstimate({
         claimed_grafts: claimedGrafts,
-        donor: donorSigned,
-        recipient: recipientSigned,
+        donor: donorPrepared.slice(0, 10).map((img) => ({
+          key: img.sourceKey,
+          dataUrl: `data:${img.mimeType};base64,${img.dataBase64}`,
+        })),
+        recipient: recipientPrepared.slice(0, 10).map((img) => ({
+          key: img.sourceKey,
+          dataUrl: `data:${img.mimeType};base64,${img.dataBase64}`,
+        })),
         metadata: meta,
       });
     });
@@ -438,8 +451,8 @@ export const runGraftIntegrityEstimate = inngest.createFunction(
       claimedGrafts,
       confidence: adjusted.confidence,
       evidenceScore,
-      donorImages: donorSigned.length,
-      recipientImages: recipientSigned.length,
+      donorImages: donorPrepared.length,
+      recipientImages: recipientPrepared.length,
     });
 
     return { ok: true, caseId };
@@ -625,16 +638,55 @@ export const runAudit = inngest.createFunction(
       };
     });
 
-    // 5) Get signed URLs for images (for AI vision)
-    const imageUrls = await step.run("get-signed-image-urls", async () => {
-      const imageUploads = uploads.filter((u) => isImageUpload(u.type));
-      const selected = buildAuditImageSelection(imageUploads, 10);
-      const urls: string[] = [];
-      for (const u of selected) {
-        const { data } = await supabase.storage.from(BUCKET).createSignedUrl(u.storage_path, 60 * 15);
-        if (data?.signedUrl) urls.push(data.signedUrl);
-      }
-      return urls;
+    await step.run("mark-evidence-preparing", async () => {
+      await setCasePipelineStatus(supabase, caseId, "evidence_preparing");
+    });
+
+    // 5) Deterministic evidence preparation stage (shared by AI audit + graft integrity + PDF).
+    const preparedVision = await step.run("prepare-case-evidence", async () => {
+      return await prepareCaseEvidenceManifest({
+        supabase,
+        caseId,
+        bucket: BUCKET,
+        uploads: uploads as {
+          id: string;
+          type?: string | null;
+          storage_path?: string | null;
+          metadata?: Record<string, unknown> | null;
+          created_at?: string | null;
+        }[],
+        logger: {
+          warn: (message, data) => logger.warn(message, data),
+          error: (message, data) => logger.error(message, data),
+        },
+      });
+    });
+    const imageIngestionStats = {
+      manifest_id: preparedVision.manifest.id,
+      status: preparedVision.manifest.status,
+      selected_count: uploads.filter((u) => isImageUpload(String(u.type ?? ""))).length,
+      prepared_count: preparedVision.manifest.prepared_images.length,
+      failed_count: (preparedVision.manifest.errors ?? []).length,
+      quality_score: Number(preparedVision.manifest.quality_score ?? 0),
+      missing_categories: preparedVision.manifest.missing_categories ?? [],
+      errors: preparedVision.manifest.errors ?? [],
+      prepared_category_counts: Object.values(
+        (preparedVision.manifest.prepared_images ?? []).reduce(
+          (acc, item) => {
+            const key = String(item.category || "uncategorized");
+            const entry = acc[key] ?? { category: key, count: 0 };
+            entry.count += 1;
+            acc[key] = entry;
+            return acc;
+          },
+          {} as Record<string, { category: string; count: number }>
+        )
+      ),
+      generated_at: preparedVision.manifest.updated_at ?? new Date().toISOString(),
+    };
+
+    await step.run("mark-evidence-ready", async () => {
+      await setCasePipelineStatus(supabase, caseId, "evidence_ready");
     });
 
     // Detect patient-only audit: no doctor/clinic answers and no doctor photos
@@ -654,7 +706,11 @@ export const runAudit = inngest.createFunction(
               ? "clinic"
               : "patient";
 
-    // 6) Run AI audit (answers + images)
+    await step.run("mark-audit-running", async () => {
+      await setCasePipelineStatus(supabase, caseId, "audit_running");
+    });
+
+    // 6) Run AI audit (answers + prepared evidence images)
     const aiResult = await step.run("run-ai-audit", async () => {
       const patientAnswers = existingSummary.patient_answers as Record<string, unknown> | null;
       const enhanced =
@@ -675,10 +731,95 @@ export const runAudit = inngest.createFunction(
         clinic_answers: existingSummary.clinic_answers as Record<string, unknown> | null,
         enhanced_patient_answers: (enhanced as any) ?? null,
         patient_baseline: (baseline as any) ?? null,
-        imageUrls,
+        imageInputs: preparedVision.modelInputs.map((img) => ({
+          sourceKey: img.sourceKey,
+          mimeType: img.mimeType,
+          dataBase64: img.dataBase64,
+        })),
+        failedImageKeys: (preparedVision.manifest.errors ?? []).map((e) => String(e).split(":")[0] ?? String(e)),
+        requestedImageCount: imageIngestionStats.selected_count,
         auditMode: aiAuditMode,
       });
     });
+
+    const aiAuditFailureReason = (() => {
+      const model = String((aiResult as any)?.model ?? "").toLowerCase();
+      const summaryText = String((aiResult as any)?.summary ?? "");
+      const notesText = String((aiResult as any)?.notes ?? "");
+      const limitations = Array.isArray((aiResult as any)?.data_quality?.limitations)
+        ? ((aiResult as any).data_quality.limitations as unknown[]).map((x) => String(x))
+        : [];
+      const failureLine =
+        limitations.find((x) => /ai audit failed:/i.test(x)) ||
+        [summaryText, notesText].find((x) => /ai audit failed:/i.test(x));
+      if (model === "error") return failureLine || "AI audit failed: model returned error";
+      if (failureLine) return failureLine;
+      return null;
+    })();
+
+    if (aiAuditFailureReason) {
+      const failedVersion = await step.run("next-version-audit-failed", async () => {
+        const { data, error } = await supabase
+          .from("reports")
+          .select("version")
+          .eq("case_id", caseId)
+          .order("version", { ascending: false })
+          .limit(1);
+
+        if (error) throw new Error(`reports load failed: ${error.message}`);
+        const latest = data?.[0]?.version ?? 0;
+        return Number(latest) + 1;
+      });
+
+      await step.run("insert-audit-failed-report", async () => {
+        const { error } = await supabase.from("reports").insert({
+          case_id: caseId,
+          version: failedVersion,
+          pdf_path: "",
+          summary: {
+            ...existingSummary,
+            image_ingestion_stats: imageIngestionStats,
+            score: 0,
+            donor_quality: "Cannot assess",
+            graft_survival_estimate: "Unknown",
+            notes: String(aiAuditFailureReason),
+            findings: [],
+            forensic_audit: {
+              auditMode: pdfAuditMode,
+              overall_score: 0,
+              confidence: 0.45,
+              confidence_label: "low",
+              data_quality: aiResult.data_quality,
+              section_scores: aiResult.section_scores,
+              key_findings: aiResult.key_findings,
+              red_flags: aiResult.red_flags,
+              photo_observations: aiResult.photo_observations,
+              summary: aiResult.summary,
+              non_medical_disclaimer: aiResult.non_medical_disclaimer,
+              model: aiResult.model,
+            },
+          },
+          status: "failed",
+          error: String(aiAuditFailureReason),
+        });
+        if (error) throw new Error(`reports insert failed: ${error.message}`);
+      });
+
+      await step.run("mark-audit-failed-phase", async () => {
+        await setReportPipelineStatus(supabase, caseId, failedVersion, "audit_failed", {
+          error: String(aiAuditFailureReason),
+          pdf_path: "",
+        });
+        await setCasePipelineStatus(supabase, caseId, "audit_failed");
+      });
+
+      logger.warn("Audit failed before PDF generation", {
+        caseId,
+        version: failedVersion,
+        reason: aiAuditFailureReason,
+      });
+      return { ok: false, version: failedVersion, status: "audit_failed" as const };
+    }
 
     // 6a) Doctor scoring narrative (GPT; non-blocking) only for non-patient audits.
     const scoringNarrative =
@@ -794,7 +935,7 @@ export const runAudit = inngest.createFunction(
     const missingCategories = aiResult.data_quality?.missing_photos ?? [];
     const missingCount = Array.isArray(missingCategories) ? missingCategories.length : 0;
     const obs = Array.isArray(aiResult.photo_observations) ? aiResult.photo_observations : [];
-    const totalViews = obs.length || imageUrls.length || 0;
+    const totalViews = obs.length || preparedVision.modelInputs.length || 0;
     const knownViews = obs.filter((p: any) => String(p?.suspected_view ?? "") && String(p?.suspected_view ?? "") !== "unknown").length;
     const viewSuccessRate = totalViews > 0 ? knownViews / totalViews : 0;
     const deriveConfidence = () => {
@@ -934,6 +1075,7 @@ export const runAudit = inngest.createFunction(
 
       const summary = {
         ...existingSummary,
+        image_ingestion_stats: imageIngestionStats,
         doctor_answers: doctorAnswersBase,
         score: aiResult.score,
         donor_quality: aiResult.donor_quality,
@@ -980,6 +1122,7 @@ export const runAudit = inngest.createFunction(
         ai_audit: {
           model: aiResult.model,
           generated_at: new Date().toISOString(),
+          image_ingestion_stats: imageIngestionStats,
         },
       };
 

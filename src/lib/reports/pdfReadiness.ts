@@ -76,15 +76,32 @@ export function isAuditSummaryReady(summary: unknown): boolean {
       null)
   );
   const narrative = String(forensic?.summary ?? s.notes ?? "").trim();
+  const model = String(forensic?.model ?? s?.ai_audit?.model ?? "").toLowerCase();
+  const aiFailureSignals = [
+    narrative,
+    String(s.notes ?? ""),
+    ...(((forensic?.data_quality as Record<string, unknown> | undefined)?.limitations as unknown[]) ?? []).map((x) => String(x)),
+  ];
+  if (model === "error" || aiFailureSignals.some((line) => /ai audit failed:/i.test(line))) {
+    return false;
+  }
   return Number.isFinite(overall) && Object.keys(sections).length > 0 && narrative.length > 0;
 }
 
 export function evaluatePdfReadiness(input: PdfReadinessInput): PdfReadinessResult {
-  if (String(input.caseStatus ?? "").toLowerCase() === "processing") {
+  const caseStatus = String(input.caseStatus ?? "").toLowerCase();
+  const reportStatus = String(input.reportStatus ?? "").toLowerCase();
+  if (caseStatus === "processing") {
     return { ready: false, reason: "case status is processing" };
   }
-  if (String(input.reportStatus ?? "").toLowerCase() === "processing") {
+  if (reportStatus === "processing") {
     return { ready: false, reason: "report status is processing" };
+  }
+  if (caseStatus === "audit_failed" || caseStatus === "failed") {
+    return { ready: false, reason: "audit failed for this case" };
+  }
+  if (reportStatus === "audit_failed" || reportStatus === "failed") {
+    return { ready: false, reason: "report is marked as audit failed" };
   }
   if (!isAuditSummaryReady(input.summary)) {
     return { ready: false, reason: "audit summary is incomplete" };
