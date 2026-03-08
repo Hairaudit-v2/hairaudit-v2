@@ -11,6 +11,7 @@ import { renderAndUploadPdfForCase } from "@/lib/reports/renderPdfInternal";
 import { normalizeIntakeFormData, toNestedForApi } from "@/lib/intake/normalizeIntakeFormData";
 import { shouldGeneratePdf } from "@/lib/reports/pdfReadiness";
 import { prepareCaseEvidenceManifest } from "@/lib/evidence/prepareCaseEvidence";
+import { computeAuditorReviewEligibility } from "@/lib/auditor/eligibility";
 
 function supabaseAdmin() {
   return createClient(
@@ -776,6 +777,9 @@ export const runAudit = inngest.createFunction(
           case_id: caseId,
           version: failedVersion,
           pdf_path: "",
+          auditor_review_eligibility: "not_eligible",
+          auditor_review_status: "not_requested",
+          auditor_review_reason: null,
           summary: {
             ...existingSummary,
             image_ingestion_stats: imageIngestionStats,
@@ -1126,6 +1130,9 @@ export const runAudit = inngest.createFunction(
         },
       };
 
+      const finalAiScore = Number(overall?.performance_score ?? overall?.benchmark_score ?? 0);
+      const { eligibility: auditorReviewEligibility, status: auditorReviewStatus, reason: auditorReviewReason } = computeAuditorReviewEligibility(finalAiScore);
+
       const { error } = await supabase.from("reports").insert({
         case_id: caseId,
         version: nextVersion,
@@ -1133,6 +1140,9 @@ export const runAudit = inngest.createFunction(
         summary,
         status: "processing",
         error: null,
+        auditor_review_eligibility: auditorReviewEligibility,
+        auditor_review_status: auditorReviewStatus,
+        auditor_review_reason: auditorReviewReason,
       });
 
       if (error) throw new Error(`reports insert failed: ${error.message}`);

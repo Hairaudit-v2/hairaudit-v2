@@ -1,4 +1,5 @@
 import { determineAwardTier, type AwardTier, type TransparencyMetrics } from "@/lib/transparency/awardRules";
+import { isProvisionalForAward } from "@/lib/auditor/eligibility";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 type AdminClient = SupabaseClient;
@@ -56,15 +57,19 @@ export async function refreshClinicTransparencyMetrics(admin: AdminClient, clini
   if (caseIds.length > 0) {
     const { data: reports } = await admin
       .from("reports")
-      .select("case_id, version, summary")
+      .select("case_id, version, summary, auditor_review_eligibility, auditor_review_status")
       .in("case_id", caseIds)
       .order("version", { ascending: false });
 
-    const latestByCase = new Map<string, { summary: unknown }>();
+    const latestByCase = new Map<string, { summary: unknown; auditor_review_eligibility?: string; auditor_review_status?: string }>();
     for (const r of reports ?? []) {
       const caseId = String(r.case_id ?? "");
       if (!caseId || latestByCase.has(caseId)) continue;
-      latestByCase.set(caseId, { summary: r.summary });
+      latestByCase.set(caseId, {
+        summary: r.summary,
+        auditor_review_eligibility: (r as { auditor_review_eligibility?: string }).auditor_review_eligibility,
+        auditor_review_status: (r as { auditor_review_status?: string }).auditor_review_status,
+      });
     }
 
     const scores: number[] = [];
@@ -73,7 +78,8 @@ export async function refreshClinicTransparencyMetrics(admin: AdminClient, clini
       const parsed = parseForensicMetrics(report.summary);
       if (typeof parsed.averageAuditScore === "number") scores.push(parsed.averageAuditScore);
       if (typeof parsed.documentationIntegrityAverage === "number") integrity.push(parsed.documentationIntegrityAverage);
-      if (parsed.benchmarkEligible) benchmarkEligibleCount += 1;
+      const provisional = isProvisionalForAward(report.auditor_review_eligibility, report.auditor_review_status);
+      if (parsed.benchmarkEligible && !provisional) benchmarkEligibleCount += 1;
     }
     averageAuditScore = avg(scores);
     documentationIntegrityAverage = avg(integrity);
@@ -145,15 +151,19 @@ export async function refreshDoctorTransparencyMetrics(admin: AdminClient, docto
   if (caseIds.length > 0) {
     const { data: reports } = await admin
       .from("reports")
-      .select("case_id, version, summary")
+      .select("case_id, version, summary, auditor_review_eligibility, auditor_review_status")
       .in("case_id", caseIds)
       .order("version", { ascending: false });
 
-    const latestByCase = new Map<string, { summary: unknown }>();
+    const latestByCase = new Map<string, { summary: unknown; auditor_review_eligibility?: string; auditor_review_status?: string }>();
     for (const r of reports ?? []) {
       const caseId = String(r.case_id ?? "");
       if (!caseId || latestByCase.has(caseId)) continue;
-      latestByCase.set(caseId, { summary: r.summary });
+      latestByCase.set(caseId, {
+        summary: r.summary,
+        auditor_review_eligibility: (r as { auditor_review_eligibility?: string }).auditor_review_eligibility,
+        auditor_review_status: (r as { auditor_review_status?: string }).auditor_review_status,
+      });
     }
 
     const scores: number[] = [];
@@ -162,7 +172,8 @@ export async function refreshDoctorTransparencyMetrics(admin: AdminClient, docto
       const parsed = parseForensicMetrics(report.summary);
       if (typeof parsed.averageAuditScore === "number") scores.push(parsed.averageAuditScore);
       if (typeof parsed.documentationIntegrityAverage === "number") integrity.push(parsed.documentationIntegrityAverage);
-      if (parsed.benchmarkEligible) benchmarkEligibleCount += 1;
+      const provisional = isProvisionalForAward(report.auditor_review_eligibility, report.auditor_review_status);
+      if (parsed.benchmarkEligible && !provisional) benchmarkEligibleCount += 1;
     }
     averageAuditScore = avg(scores);
     documentationIntegrityAverage = avg(integrity);

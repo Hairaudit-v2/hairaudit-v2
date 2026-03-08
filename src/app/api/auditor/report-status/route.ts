@@ -69,9 +69,14 @@ export async function POST(req: Request) {
 
     const nextSummary = { ...summary, auditor_review: nextReview };
 
+    const updatePayload: Record<string, unknown> = { summary: nextSummary };
+    if (action === "approve_final_report") {
+      updatePayload.auditor_review_status = "completed";
+    }
+
     const { error: updateErr } = await admin
       .from("reports")
-      .update({ summary: nextSummary })
+      .update(updatePayload)
       .eq("id", reportId);
 
     if (updateErr) return NextResponse.json({ ok: false, error: updateErr.message }, { status: 500 });

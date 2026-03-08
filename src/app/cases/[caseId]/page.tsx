@@ -16,6 +16,8 @@ import { mapLegacyDoctorAnswers } from "@/lib/doctorAuditSchema";
 import { normalizeIntakeFormData } from "@/lib/intake/normalizeIntakeFormData";
 import DomainIntelligenceAccordion from "@/components/reports/DomainIntelligenceAccordion";
 import AuditorReviewPanel from "@/components/reports/AuditorReviewPanel";
+import { isAuditorReviewAvailable } from "@/lib/auditor/eligibility";
+import UnlockAuditorReviewButton from "./UnlockAuditorReviewButton";
 import VersionHistoryDrawer from "@/components/reports/VersionHistoryDrawer";
 import UploadThumbnailGallery from "@/components/reports/UploadThumbnailGallery";
 import LatestReportCard from "@/components/reports/LatestReportCard";
@@ -159,15 +161,15 @@ export default async function Page({
     /* table may not exist */
   }
 
-  // Try with status/error (requires migration 20250210000004); fallback if columns don't exist
-  let reports: { id: string; version: number; pdf_path: string | null; summary: unknown; created_at: string; status?: string; error?: string | null; patient_audit_version?: number; patient_audit_v2?: Record<string, unknown> | null }[] | null = null;
+  // Try with status/error and auditor review columns; fallback if columns don't exist
+  let reports: { id: string; version: number; pdf_path: string | null; summary: unknown; created_at: string; status?: string; error?: string | null; patient_audit_version?: number; patient_audit_v2?: Record<string, unknown> | null; auditor_review_eligibility?: string; auditor_review_status?: string; auditor_review_reason?: string | null }[] | null = null;
   let repErr: { message: string } | null = null;
   const withStatus = await db
     .from("reports")
-    .select("id, version, pdf_path, summary, created_at, status, error, patient_audit_version, patient_audit_v2")
+    .select("id, version, pdf_path, summary, created_at, status, error, patient_audit_version, patient_audit_v2, auditor_review_eligibility, auditor_review_status, auditor_review_reason")
     .eq("case_id", c.id)
     .order("version", { ascending: false });
-  if (withStatus.error && (String(withStatus.error.message).includes("status") || String(withStatus.error.message).includes("patient_audit") || String(withStatus.error.message).includes("does not exist"))) {
+  if (withStatus.error && (String(withStatus.error.message).includes("status") || String(withStatus.error.message).includes("patient_audit") || String(withStatus.error.message).includes("auditor_review") || String(withStatus.error.message).includes("does not exist"))) {
     const fallback = await db
       .from("reports")
       .select("id, version, pdf_path, summary, created_at")
@@ -201,6 +203,8 @@ export default async function Page({
           : "border-white/10 bg-white/5 text-slate-200/80";
 
   const latestReport = reports?.[0] ?? null;
+  const auditorReviewEligibility = (latestReport as { auditor_review_eligibility?: string } | null)?.auditor_review_eligibility;
+  const showAuditorReview = isAuditor && latestReport && isAuditorReviewAvailable(auditorReviewEligibility);
   const latestSummary = (latestReport?.summary as Record<string, unknown>) ?? {};
   const forensic = (latestSummary?.forensic_audit as Record<string, unknown> | null | undefined) ?? null;
   const domainV1 = forensic && typeof forensic === "object" ? ((forensic as any).domain_scores_v1 as { domains?: unknown[] } | null | undefined) : null;
@@ -450,16 +454,44 @@ export default async function Page({
 
       {domains.length > 0 && (
         <div className="mt-6">
-          {isAuditor && latestReport ? (
-            <AuditorReviewPanel
-              caseId={c.id}
-              reportId={latestReport.id}
-              domains={domains as any}
-              benchmark={benchmark}
-              overallScores={overallScores}
-            />
+          {showAuditorReview && latestReport ? (
+            <>
+              {auditorReviewEligibility === "eligible_low_score" && (
+                <div className="mb-4 rounded-xl border border-amber-300/40 bg-amber-950/40 px-4 py-3">
+                  <p className="text-sm font-medium text-amber-100">
+                    Extreme-score review available: this case scored below 60 and is eligible for optional expert auditor review.
+                  </p>
+                </div>
+              )}
+              {auditorReviewEligibility === "eligible_high_score" && (
+                <div className="mb-4 rounded-xl border border-emerald-300/40 bg-emerald-950/40 px-4 py-3">
+                  <p className="text-sm font-medium text-emerald-100">
+                    Recognition-band review available: this case scored above 90 and is eligible for optional expert auditor review.
+                  </p>
+                </div>
+              )}
+              {auditorReviewEligibility === "eligible_manual_unlock" && (
+                <div className="mb-4 rounded-xl border border-slate-500/40 bg-slate-800/40 px-4 py-3">
+                  <p className="text-sm font-medium text-slate-200">
+                    Manual review unlocked: this case has been made eligible for optional auditor review by an admin.
+                  </p>
+                </div>
+              )}
+              <AuditorReviewPanel
+                caseId={c.id}
+                reportId={latestReport.id}
+                domains={domains as any}
+                benchmark={benchmark}
+                overallScores={overallScores}
+              />
+            </>
           ) : (
-            <DomainIntelligenceAccordion domains={domains as any} />
+            <>
+              <DomainIntelligenceAccordion domains={domains as any} />
+              {isAuditor && latestReport && !showAuditorReview && (
+                <UnlockAuditorReviewButton reportId={latestReport.id} />
+              )}
+            </>
           )}
         </div>
       )}
