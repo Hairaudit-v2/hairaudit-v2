@@ -150,9 +150,9 @@ export async function renderAndUploadPdfForCase(args: {
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
-    giiRow = res.data;
+    giiRow = res.error ? null : res.data;
   } catch {
-    /* graft_integrity_estimates may not exist in this environment */
+    giiRow = null;
   }
 
   const gii = giiRow as any;

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { isAuditor } from "@/lib/auth/isAuditor";
 
 export const runtime = "nodejs";
 
@@ -33,8 +34,7 @@ export async function POST(req: Request) {
     const admin = createSupabaseAdminClient();
     const { data: profile, error: profErr } = await admin.from("profiles").select("role").eq("id", user.id).maybeSingle();
     if (profErr) return NextResponse.json({ ok: false, error: profErr.message }, { status: 500 });
-    const isAuditor = profile?.role === "auditor" || user.email === "auditor@hairaudit.com";
-    if (!isAuditor) return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
+    if (!isAuditor({ profileRole: profile?.role, userEmail: user.email })) return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
 
     const body = (await req.json().catch(() => null)) as any;
     const estimateId = String(body?.estimateId ?? "").trim();

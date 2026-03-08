@@ -2,6 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { isAuditor } from "@/lib/auth/isAuditor";
+import { isMissingFeatureError } from "@/lib/db/isMissingFeatureError";
 import GraftIntegrityReviewPanel from "./GraftIntegrityReviewPanel";
 
 export default async function AuditorDashboardPage() {
@@ -11,10 +13,8 @@ export default async function AuditorDashboardPage() {
 
   const admin = createSupabaseAdminClient();
 
-  // Restrict to auditor@hairaudit.com or profile role auditor
   const { data: profile } = await admin.from("profiles").select("role").eq("id", user.id).maybeSingle();
-  const isAuditor = profile?.role === "auditor" || user.email === "auditor@hairaudit.com";
-  if (!isAuditor) redirect("/login/auditor");
+  if (!isAuditor({ profileRole: profile?.role, userEmail: user.email })) redirect("/login/auditor");
 
   const { data: cases } = await admin
     .from("cases")
@@ -34,19 +34,26 @@ export default async function AuditorDashboardPage() {
     if (!reportByCase.has(cid)) reportByCase.set(cid, { pdf_path: r.pdf_path, status: r.status });
   }
 
-  const { data: giiRows } = await admin
-    .from("graft_integrity_estimates")
-    .select(
-      "id, case_id, claimed_grafts, estimated_extracted_min, estimated_extracted_max, estimated_implanted_min, estimated_implanted_max, variance_claimed_vs_implanted_min_pct, variance_claimed_vs_implanted_max_pct, variance_claimed_vs_extracted_min_pct, variance_claimed_vs_extracted_max_pct, confidence, confidence_label, evidence_sufficiency_score, inputs_used, limitations, flags, ai_notes, auditor_status, auditor_notes, auditor_adjustments, audited_by, audited_at, created_at, updated_at"
-    )
-    .order("created_at", { ascending: false })
-    .limit(200);
-
-  // Keep the latest estimate row per case
-  const giiLatestByCase = new Map<string, any>();
-  for (const r of (giiRows ?? []) as any[]) {
-    const cid = String(r.case_id);
-    if (!giiLatestByCase.has(cid)) giiLatestByCase.set(cid, r);
+  // Optional feature: must never crash the dashboard if table is missing or query errors
+  let giiLatestByCase = new Map<string, any>();
+  let giiUnavailable = false;
+  try {
+    const giiRes = await admin
+      .from("graft_integrity_estimates")
+      .select(
+        "id, case_id, claimed_grafts, estimated_extracted_min, estimated_extracted_max, estimated_implanted_min, estimated_implanted_max, variance_claimed_vs_implanted_min_pct, variance_claimed_vs_implanted_max_pct, variance_claimed_vs_extracted_min_pct, variance_claimed_vs_extracted_max_pct, confidence, confidence_label, evidence_sufficiency_score, inputs_used, limitations, flags, ai_notes, auditor_status, auditor_notes, auditor_adjustments, audited_by, audited_at, created_at, updated_at"
+      )
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (giiRes.error && isMissingFeatureError(giiRes.error)) giiUnavailable = true;
+    else if (!giiRes.error) {
+      for (const r of (giiRes.data ?? []) as any[]) {
+        const cid = String(r.case_id);
+        if (!giiLatestByCase.has(cid)) giiLatestByCase.set(cid, r);
+      }
+    }
+  } catch {
+    giiUnavailable = true;
   }
   const giiLatest = Array.from(giiLatestByCase.values());
 
@@ -69,10 +76,19 @@ export default async function AuditorDashboardPage() {
       </div>
 
       <div className="mb-8">
-        <GraftIntegrityReviewPanel
-          cases={(cases ?? []) as any}
-          initialEstimates={giiLatest as any}
-        />
+        {giiUnavailable ? (
+          <div className="rounded-xl border border-slate-200 bg-white p-6">
+            <div className="text-sm font-semibold text-slate-900">Graft Integrity</div>
+            <div className="mt-1 text-sm text-slate-600">
+              Graft Integrity feature unavailable or not yet deployed.
+            </div>
+          </div>
+        ) : (
+          <GraftIntegrityReviewPanel
+            cases={(cases ?? []) as any}
+            initialEstimates={giiLatest as any}
+          />
+        )}
       </div>
 
       {failedCases.length > 0 && (

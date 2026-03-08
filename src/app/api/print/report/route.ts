@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { buildReportViewModel, normalizeAuditMode, type AuditMode } from "@/lib/pdf/reportBuilder";
+import { buildReportViewModel, normalizeAuditMode, type AuditMode, type AuditReportContent } from "@/lib/pdf/reportBuilder";
 import { verifyRenderToken } from "@/lib/reports/internalRenderToken";
 import { renderEliteReportHtml } from "@/lib/reports/EliteReportHtml";
 
@@ -344,20 +344,21 @@ export async function GET(req: Request) {
       };
     });
 
-  // Load graft integrity for PDF (only approved appears in patient PDF)
-  const { data: giiRow } = await supabase
-    .from("graft_integrity_estimates")
-    .select(
-      "claimed_grafts, estimated_extracted_min, estimated_extracted_max, estimated_implanted_min, estimated_implanted_max, variance_claimed_vs_implanted_min_pct, variance_claimed_vs_implanted_max_pct, confidence, confidence_label, limitations, auditor_status"
-    )
-    .eq("case_id", caseId)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  const gii = giiRow as any;
-  const graftIntegrity =
-    gii != null
+  // Optional feature: Graft Integrity must never break report rendering.
+  let graftIntegrity: NonNullable<AuditReportContent["graftIntegrity"]> | undefined = undefined;
+  try {
+    const giiRes = await supabase
+      .from("graft_integrity_estimates")
+      .select(
+        "claimed_grafts, estimated_extracted_min, estimated_extracted_max, estimated_implanted_min, estimated_implanted_max, variance_claimed_vs_implanted_min_pct, variance_claimed_vs_implanted_max_pct, confidence, confidence_label, limitations, auditor_status"
+      )
+      .eq("case_id", caseId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (giiRes.error) throw giiRes.error;
+    const gii = giiRes.data as any;
+    graftIntegrity = gii != null
       ? {
           auditor_status: (String(gii?.auditor_status ?? "pending") ?? "pending") as "approved" | "pending" | "needs_more_evidence" | "rejected",
           claimed_grafts: Number.isFinite(Number(gii?.claimed_grafts)) ? Number(gii.claimed_grafts) : null,
@@ -378,6 +379,9 @@ export async function GET(req: Request) {
           limitations: Array.isArray(gii?.limitations) ? gii.limitations : [],
         }
       : undefined;
+  } catch {
+    graftIntegrity = undefined;
+  }
 
   const content = {
     caseId,

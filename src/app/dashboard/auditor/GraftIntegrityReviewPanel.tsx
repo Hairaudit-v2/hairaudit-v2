@@ -118,6 +118,7 @@ export default function GraftIntegrityReviewPanel(props: {
   const [overrideExtractedMax, setOverrideExtractedMax] = useState<Record<string, string>>({});
   const [overrideImplantedMin, setOverrideImplantedMin] = useState<Record<string, string>>({});
   const [overrideImplantedMax, setOverrideImplantedMax] = useState<Record<string, string>>({});
+  const [overrideErrorByEstimate, setOverrideErrorByEstimate] = useState<Record<string, string>>({});
 
   const [thumbs, setThumbs] = useState<Record<string, string | null>>({});
 
@@ -234,11 +235,40 @@ export default function GraftIntegrityReviewPanel(props: {
   async function approveWithOverrides(e: AuditorGiiRow) {
     setBusyId(e.id);
     setMessage(null);
+    setOverrideErrorByEstimate((p) => ({ ...p, [e.id]: "" }));
     try {
       const extracted_min = overrideExtractedMin[e.id] ? Number(overrideExtractedMin[e.id]) : null;
       const extracted_max = overrideExtractedMax[e.id] ? Number(overrideExtractedMax[e.id]) : null;
       const implanted_min = overrideImplantedMin[e.id] ? Number(overrideImplantedMin[e.id]) : null;
       const implanted_max = overrideImplantedMax[e.id] ? Number(overrideImplantedMax[e.id]) : null;
+
+      // Client-side validation before API call
+      const hasAny = extracted_min != null || extracted_max != null || implanted_min != null || implanted_max != null;
+      if (!hasAny) {
+        setOverrideErrorByEstimate((p) => ({ ...p, [e.id]: "Enter at least one override value." }));
+        setBusyId(null);
+        return;
+      }
+      if (extracted_min != null && extracted_max != null && extracted_min > extracted_max) {
+        setOverrideErrorByEstimate((p) => ({ ...p, [e.id]: "Extracted min cannot exceed extracted max." }));
+        setBusyId(null);
+        return;
+      }
+      if (implanted_min != null && implanted_max != null && implanted_min > implanted_max) {
+        setOverrideErrorByEstimate((p) => ({ ...p, [e.id]: "Implanted min cannot exceed implanted max." }));
+        setBusyId(null);
+        return;
+      }
+      const impMax = implanted_max ?? implanted_min;
+      const extMax = extracted_max ?? extracted_min;
+      if (impMax != null && extMax != null && impMax > extMax) {
+        const note = (internalNotes[e.id] ?? "").trim();
+        if (note.length < 10) {
+          setOverrideErrorByEstimate((p) => ({ ...p, [e.id]: "Implanted exceeds extracted. Add an internal note (min 10 chars) to override." }));
+          setBusyId(null);
+          return;
+        }
+      }
 
       const res = await fetch("/api/auditor/graft-integrity/review", {
         method: "POST",
@@ -277,6 +307,7 @@ export default function GraftIntegrityReviewPanel(props: {
       );
     } catch (err) {
       setMessage({ type: "error", text: err instanceof Error ? err.message : "Override failed" });
+      setOverrideErrorByEstimate((p) => ({ ...p, [e.id]: "" }));
     } finally {
       setBusyId(null);
     }
@@ -538,6 +569,9 @@ export default function GraftIntegrityReviewPanel(props: {
 
                     <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
                       <div className="text-xs font-semibold text-slate-700">Manual override (ranges)</div>
+                      {overrideErrorByEstimate[e.id] && (
+                        <div className="mt-2 text-xs text-rose-600 font-medium">{overrideErrorByEstimate[e.id]}</div>
+                      )}
                       <div className="mt-2 grid grid-cols-2 gap-2">
                         <div>
                           <label className="block text-[11px] font-semibold text-slate-600">Extracted min</label>

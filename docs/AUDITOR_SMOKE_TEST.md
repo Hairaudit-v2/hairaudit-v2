@@ -5,6 +5,7 @@ Run these steps to verify auditor flow end-to-end.
 ## Prerequisites
 
 - Auditor account: `auditor@hairaudit.com` (password set in Supabase)
+- `ALLOW_AUDITOR_EMAIL_OVERRIDE=true` in env (required until profiles.role is populated for auditors)
 - At least one submitted case with Graft Integrity estimate (or use a case that has donor/recipient photos)
 
 ## Smoke Test Steps

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { isMissingFeatureError } from "@/lib/db/isMissingFeatureError";
 
 type AuditorStatus = "pending" | "approved" | "rejected" | "needs_more_evidence";
 type ConfidenceLabel = "low" | "medium" | "high";
@@ -32,20 +33,6 @@ export type GraftIntegrityEstimateRow = {
   updated_at: string | null;
   created_at: string | null;
 };
-
-function isMissingFeatureError(error: unknown): boolean {
-  const e = error as { status?: number; code?: string; message?: string } | null;
-  if (!e) return false;
-  if (e.status === 404) return true;
-  const code = String(e.code ?? "");
-  const message = String(e.message ?? "").toLowerCase();
-  return (
-    code === "PGRST205" ||
-    message.includes("not found") ||
-    message.includes("could not find the table") ||
-    (message.includes("relation") && message.includes("does not exist"))
-  );
-}
 
 function formatInt(n: number) {
   return new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(n);

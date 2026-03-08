@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { parseRole, USER_ROLES } from "@/lib/roles";
+import { resolveAuditorRole } from "@/lib/auth/isAuditor";
 
 export default async function DashboardPage() {
   const supabase = await createSupabaseAuthServerClient();
@@ -15,9 +16,11 @@ export default async function DashboardPage() {
   try {
     const admin = createSupabaseAdminClient();
     const { data: profile } = await admin.from("profiles").select("role").eq("id", user.id).maybeSingle();
-    if (profile?.role) role = parseRole(profile.role);
-    // Never downgrade auditor: profile/email wins for auditor resolution
-    if (user.email === "auditor@hairaudit.com") role = "auditor";
+    role = resolveAuditorRole({
+      profileRole: profile?.role,
+      userMetadataRole: (user.user_metadata as Record<string, unknown>)?.role,
+      userEmail: user.email,
+    });
   } catch {
     // profiles table may not exist
   }

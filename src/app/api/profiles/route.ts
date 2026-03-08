@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { parseRole, type UserRole } from "@/lib/roles";
+import { parseRole } from "@/lib/roles";
+import { isAuditor, resolveAuditorRole } from "@/lib/auth/isAuditor";
 
 // GET — fetch current user's profile (role)
 export async function GET() {
@@ -16,9 +17,11 @@ export async function GET() {
     .eq("id", user.id)
     .maybeSingle();
 
-  const role = profile?.role
-    ? parseRole(profile.role)
-    : parseRole((user.user_metadata as Record<string, unknown>)?.role);
+  const role = resolveAuditorRole({
+    profileRole: profile?.role,
+    userMetadataRole: (user.user_metadata as Record<string, unknown>)?.role,
+    userEmail: user.email,
+  });
 
   return NextResponse.json({
     role,
@@ -35,10 +38,13 @@ export async function POST(req: Request) {
 
   const body = await req.json().catch(() => ({}));
   let role = parseRole(body?.role);
-  // Never downgrade auditor: auditor@hairaudit.com must resolve as auditor
-  if (user.email === "auditor@hairaudit.com" && body?.role === "auditor") role = "auditor";
 
   const admin = createSupabaseAdminClient();
+  const { data: profile } = await admin.from("profiles").select("role").eq("id", user.id).maybeSingle();
+  // Prevent privilege escalation: only allow role=auditor if user is auditor (profile or email override)
+  if (role === "auditor" && !isAuditor({ profileRole: profile?.role, userEmail: user.email })) {
+    role = "patient";
+  }
   const { error } = await admin.from("profiles").upsert(
     {
       id: user.id,

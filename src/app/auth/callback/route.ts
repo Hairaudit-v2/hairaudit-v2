@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { parseRole } from "@/lib/roles";
+import { resolveAuditorRole } from "@/lib/auth/isAuditor";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -11,15 +11,16 @@ export async function GET(request: Request) {
     const supabase = await createSupabaseServerClient();
     await supabase.auth.exchangeCodeForSession(code);
 
-    // After the session is established, create/update the user's profile (role) if possible.
-    // This avoids the signup flow failing when email confirmations are enabled (no session at signUp time).
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        let role = parseRole((user.user_metadata as Record<string, unknown>)?.role);
-        // Never downgrade auditor: auditor@hairaudit.com must resolve as auditor
-        if (user.email === "auditor@hairaudit.com") role = "auditor";
         const admin = createSupabaseAdminClient();
+        const { data: profile } = await admin.from("profiles").select("role").eq("id", user.id).maybeSingle();
+        const role = resolveAuditorRole({
+          profileRole: profile?.role,
+          userMetadataRole: (user.user_metadata as Record<string, unknown>)?.role,
+          userEmail: user.email,
+        });
         await admin.from("profiles").upsert(
           {
             id: user.id,

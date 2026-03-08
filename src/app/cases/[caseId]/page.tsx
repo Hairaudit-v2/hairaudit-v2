@@ -21,6 +21,7 @@ import { mapLegacyDoctorAnswers } from "@/lib/doctorAuditSchema";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { tryCreateSupabaseAdminClient } from "@/lib/supabase/admin";
 import { parseRole, USER_ROLES } from "@/lib/roles";
+import { resolveAuditorRole } from "@/lib/auth/isAuditor";
 
 export default async function Page({
   params,
@@ -58,8 +59,11 @@ export default async function Page({
   let role = parseRole((user.user_metadata as Record<string, unknown>)?.role) || "patient";
   try {
     const { data: profile } = await db.from("profiles").select("role").eq("id", user.id).maybeSingle();
-    if (profile?.role) role = parseRole(profile.role) || "patient";
-    if (user.email === "auditor@hairaudit.com") role = "auditor";
+    role = resolveAuditorRole({
+      profileRole: profile?.role,
+      userMetadataRole: (user.user_metadata as Record<string, unknown>)?.role,
+      userEmail: user.email,
+    });
   } catch {
     /* profiles may not exist / RLS may block */
   }
@@ -120,7 +124,7 @@ export default async function Page({
     .eq("case_id", c.id)
     .order("created_at", { ascending: false });
 
-  // Load latest graft integrity estimate (for auditor review / patient card)
+  // Optional feature: graft integrity must never break case page
   let graftIntegrityEstimate: any = null;
   try {
     const giiRes = await db
