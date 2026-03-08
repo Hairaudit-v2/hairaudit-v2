@@ -76,7 +76,8 @@ export function isAuditSummaryReady(summary: unknown): boolean {
       null)
   );
   const narrative = String(forensic?.summary ?? s.notes ?? "").trim();
-  const model = String(forensic?.model ?? s?.ai_audit?.model ?? "").toLowerCase();
+  const aiAudit = (s.ai_audit ?? null) as Record<string, unknown> | null;
+  const model = String(forensic?.model ?? aiAudit?.["model"] ?? "").toLowerCase();
   const aiFailureSignals = [
     narrative,
     String(s.notes ?? ""),
