@@ -10,6 +10,12 @@ import { signRenderToken } from "@/lib/reports/internalRenderToken";
 import { generateReportPdfFromUrl } from "@/lib/pdf/generateReportPdf";
 import { getBaseUrl } from "@/lib/reports/getBaseUrl";
 import rubric from "@/lib/audit/rubrics/hairaudit_clinical_v1.json";
+import {
+  assertPdfReady,
+  deriveDomainScoresFromSections,
+  deriveDomainScoresHeuristic,
+  toNumberRecord,
+} from "@/lib/reports/pdfReadiness";
 
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
@@ -20,79 +26,12 @@ function toNum(n: unknown): number | null {
   return Number.isFinite(v) ? v : null;
 }
 
-function toNumberRecord(x: unknown): Record<string, number> {
-  if (!x || typeof x !== "object") return {};
-  const out: Record<string, number> = {};
-  for (const [k, v] of Object.entries(x as Record<string, unknown>)) {
-    const n = Number(v);
-    if (Number.isFinite(n)) out[k] = n;
-  }
-  return out;
-}
-
-function auditNotReady(message: string) {
-  return Object.assign(new Error(message), { code: "AUDIT_NOT_READY" as const });
-}
-
-function deriveDomainScoresFromSections(
-  sectionScores: Record<string, number>,
-  domainDefs: Array<{ domain_id: string; sections?: Array<{ section_id: string }> }>
-) {
-  if (Object.keys(sectionScores).length === 0) return {};
-  const out: Record<string, number> = {};
-  for (const domain of domainDefs) {
-    const values = (domain.sections ?? [])
-      .map((s) => sectionScores[s.section_id])
-      .filter((n): n is number => Number.isFinite(n));
-    if (values.length === 0) continue;
-    out[domain.domain_id] = values.reduce((a, b) => a + b, 0) / values.length;
-  }
-  return out;
-}
-
-function deriveDomainScoresHeuristic(sectionScores: Record<string, number>) {
-  const avg = (keys: string[]) => {
-    const vals = keys.map((k) => sectionScores[k]).filter((n): n is number => Number.isFinite(n));
-    if (!vals.length) return null;
-    return vals.reduce((a, b) => a + b, 0) / vals.length;
-  };
-  const out: Record<string, number> = {};
-  const rules: Array<[string, string[]]> = [
-    ["donor_management", ["donor_management"]],
-    ["extraction_quality", ["extraction_quality"]],
-    ["graft_handling", ["graft_handling_and_viability"]],
-    ["recipient_implantation", ["recipient_placement", "hairline_design", "density_distribution", "naturalness_and_aesthetics"]],
-    ["safety_documentation_aftercare", ["post_op_course_and_aftercare", "complications_and_risks"]],
-    ["consultation_indication", ["hairline_design", "naturalness_and_aesthetics"]],
-  ];
-  for (const [domainId, keys] of rules) {
-    const value = avg(keys);
-    if (value !== null) out[domainId] = value;
-  }
-  return out;
-}
-
 function normalizeMetric(value: unknown): string {
   const text = String(value ?? "").trim();
   if (!text || text === "—" || text.toLowerCase() === "unknown" || text.toLowerCase() === "n/a") {
     return "Insufficient evidence";
   }
   return text;
-}
-
-function isReportReadyForPdf(summary: any): boolean {
-  if (!summary || typeof summary !== "object") return false;
-  if (summary.manual_audit === true) return true;
-  const forensic = (summary.forensic_audit ?? summary.forensic) as Record<string, unknown> | null;
-  const overall = Number(summary.overall_score ?? summary.score ?? (forensic as any)?.overall_score);
-  const sections = toNumberRecord(
-    (summary as any)?.computed?.component_scores?.sections ??
-      summary.section_scores ??
-      (forensic as any)?.section_scores ??
-      null
-  );
-  const narrative = String((forensic as any)?.summary ?? summary.notes ?? "").trim();
-  return Number.isFinite(overall) && Object.keys(sections).length > 0 && narrative.length > 0;
 }
 
 async function downloadImagesForCase(args: {
@@ -176,23 +115,21 @@ export async function renderAndUploadPdfForCase(args: {
     .maybeSingle();
 
   if (!reportRow) {
-    throw auditNotReady(`Report row not found for v${version}`);
+    throw Object.assign(new Error(`AUDIT_NOT_READY: report row not found for v${version}`), {
+      code: "AUDIT_NOT_READY" as const,
+    });
   }
   const { data: caseRow } = await supabase
     .from("cases")
     .select("status")
     .eq("id", caseId)
     .maybeSingle();
-  if (String((caseRow as any)?.status ?? "").toLowerCase() === "processing") {
-    throw auditNotReady(`Case status is still processing for ${caseId}`);
-  }
-  if (String((reportRow as any)?.status ?? "") === "processing") {
-    throw auditNotReady(`Audit/report is still processing for v${version}`);
-  }
   const summary = (reportRow.summary ?? {}) as any;
-  if (!isReportReadyForPdf(summary)) {
-    throw auditNotReady(`Report summary not finalized for v${version}`);
-  }
+  assertPdfReady({
+    caseStatus: (caseRow as { status?: string | null } | null)?.status ?? null,
+    reportStatus: (reportRow as { status?: string | null }).status ?? null,
+    summary,
+  });
 
   const forensic = (summary?.forensic_audit ?? summary?.forensic ?? null) as any;
 

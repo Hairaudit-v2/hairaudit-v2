@@ -5,18 +5,12 @@ import { verifyRenderToken } from "@/lib/reports/internalRenderToken";
 import { renderEliteReportHtml } from "@/lib/reports/EliteReportHtml";
 import rubric from "@/lib/audit/rubrics/hairaudit_clinical_v1.json";
 import { inferCanonicalPhotoCategory, photoCategoryGroup } from "@/lib/photos/classification";
-
-type NumberRecord = Record<string, number>;
-
-function toNumberRecord(x: unknown): NumberRecord {
-  if (!x || typeof x !== "object") return {};
-  const out: NumberRecord = {};
-  for (const [k, v] of Object.entries(x as Record<string, unknown>)) {
-    const n = Number(v);
-    if (Number.isFinite(n)) out[k] = n;
-  }
-  return out;
-}
+import {
+  deriveDomainScoresFromSections,
+  deriveDomainScoresHeuristic,
+  evaluatePdfReadiness,
+  toNumberRecord,
+} from "@/lib/reports/pdfReadiness";
 
 function clamp100(n: number) {
   return Math.max(0, Math.min(100, n));
@@ -49,59 +43,6 @@ function normalizeMetric(value: unknown): string {
     return "Insufficient evidence";
   }
   return text;
-}
-
-function deriveDomainScoresFromSections(
-  sectionScores: Record<string, number>,
-  domainDefs: Array<{ domain_id: string; sections?: Array<{ section_id: string }> }>
-) {
-  if (Object.keys(sectionScores).length === 0) return {};
-  const out: Record<string, number> = {};
-  for (const d of domainDefs) {
-    const values = (d.sections ?? [])
-      .map((s) => sectionScores[s.section_id])
-      .filter((n): n is number => Number.isFinite(n));
-    if (values.length === 0) continue;
-    out[d.domain_id] = values.reduce((a, b) => a + b, 0) / values.length;
-  }
-  return out;
-}
-
-function deriveDomainScoresHeuristic(sectionScores: Record<string, number>) {
-  const avg = (keys: string[]) => {
-    const vals = keys.map((k) => sectionScores[k]).filter((n): n is number => Number.isFinite(n));
-    if (!vals.length) return null;
-    return vals.reduce((a, b) => a + b, 0) / vals.length;
-  };
-  const out: Record<string, number> = {};
-  const rules: Array<[string, string[]]> = [
-    ["donor_management", ["donor_management"]],
-    ["extraction_quality", ["extraction_quality"]],
-    ["graft_handling", ["graft_handling_and_viability"]],
-    ["recipient_implantation", ["recipient_placement", "hairline_design", "density_distribution", "naturalness_and_aesthetics"]],
-    ["safety_documentation_aftercare", ["post_op_course_and_aftercare", "complications_and_risks"]],
-    ["consultation_indication", ["hairline_design", "naturalness_and_aesthetics"]],
-  ];
-  for (const [domainId, keys] of rules) {
-    const value = avg(keys);
-    if (value !== null) out[domainId] = value;
-  }
-  return out;
-}
-
-function isAuditSummaryReady(summary: any): boolean {
-  if (!summary || typeof summary !== "object") return false;
-  if (summary.manual_audit === true) return true;
-  const forensic = (summary.forensic_audit ?? summary.forensic) as Record<string, unknown> | null;
-  const overall = Number(summary.overall_score ?? summary.score ?? (forensic as any)?.overall_score);
-  const sectionScores = toNumberRecord(
-    summary?.computed?.component_scores?.sections ??
-      summary?.section_scores ??
-      (forensic as any)?.section_scores ??
-      null
-  );
-  const narrative = String((forensic as any)?.summary ?? summary?.notes ?? "").trim();
-  return Number.isFinite(overall) && Object.keys(sectionScores).length > 0 && narrative.length > 0;
 }
 
 const RADAR_AXIS_LABELS: Record<string, string> = {
@@ -184,17 +125,6 @@ export async function GET(req: Request) {
       headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" },
     });
   }
-  if (String(c.status ?? "").toLowerCase() === "processing") {
-    return new NextResponse("AUDIT_NOT_READY: case status is processing", {
-      status: 409,
-      headers: {
-        "Content-Type": "text/plain; charset=utf-8",
-        "Cache-Control": "no-store",
-        "X-Report-Status": "audit-not-ready",
-      },
-    });
-  }
-
   // Load uploads
   const { data: uploads, error: upErr } = await supabase
     .from("uploads")
@@ -263,8 +193,13 @@ export async function GET(req: Request) {
     .maybeSingle();
 
   const summary = (latestReport?.summary ?? {}) as any;
-  if (String((latestReport as any)?.status ?? "").toLowerCase() === "processing" || !isAuditSummaryReady(summary)) {
-    return new NextResponse("AUDIT_NOT_READY: report summary is incomplete", {
+  const readiness = evaluatePdfReadiness({
+    caseStatus: c.status,
+    reportStatus: (latestReport as { status?: string | null } | null)?.status ?? null,
+    summary,
+  });
+  if (!readiness.ready) {
+    return new NextResponse(`AUDIT_NOT_READY: ${readiness.reason ?? "audit summary is incomplete"}`, {
       status: 409,
       headers: {
         "Content-Type": "text/plain; charset=utf-8",
