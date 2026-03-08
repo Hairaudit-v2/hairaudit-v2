@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import type { ContributionRequestWithRelations } from "../page";
+import type { ContributionRequestWithRelations } from "./page";
 
 type Metrics = {
   total: number;

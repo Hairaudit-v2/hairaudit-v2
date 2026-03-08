@@ -15,6 +15,7 @@ import DoctorScoringNarrativeCard from "@/components/reports/DoctorScoringNarrat
 import { mapLegacyDoctorAnswers } from "@/lib/doctorAuditSchema";
 import { normalizeIntakeFormData } from "@/lib/intake/normalizeIntakeFormData";
 import DomainIntelligenceAccordion from "@/components/reports/DomainIntelligenceAccordion";
+import AuditorReviewPanel from "@/components/reports/AuditorReviewPanel";
 import VersionHistoryDrawer from "@/components/reports/VersionHistoryDrawer";
 import UploadThumbnailGallery from "@/components/reports/UploadThumbnailGallery";
 import LatestReportCard from "@/components/reports/LatestReportCard";
@@ -449,7 +450,17 @@ export default async function Page({
 
       {domains.length > 0 && (
         <div className="mt-6">
-          <DomainIntelligenceAccordion domains={domains as any} />
+          {isAuditor ? (
+            <AuditorReviewPanel
+              caseId={c.id}
+              reportId={latestReport.id}
+              domains={domains as any}
+              benchmark={benchmark}
+              overallScores={overallScores}
+            />
+          ) : (
+            <DomainIntelligenceAccordion domains={domains as any} />
+          )}
         </div>
       )}
 
