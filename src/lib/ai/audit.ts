@@ -688,6 +688,72 @@ function formatEnhancedPatientAnswersForPrompt(enhanced: EnhancedPatientAnswers 
   return lines.length ? lines.join("\n") : "(none provided)";
 }
 
+function extractGraftHandlingEvidence(input: AIAuditInput) {
+  const patient = (input.patient_answers ?? {}) as Record<string, unknown>;
+  const enhanced = (input.enhanced_patient_answers ?? {}) as Record<string, unknown>;
+  const graftHandling = (enhanced.graft_handling ?? {}) as Record<string, unknown>;
+  const baselineFromFlat = (patient.enhanced_patient_answers as Record<string, unknown> | undefined)?.graft_handling as
+    | Record<string, unknown>
+    | undefined;
+  const merged = { ...(baselineFromFlat ?? {}), ...graftHandling };
+  const val = (k: string) => String((merged as any)?.[k] ?? (patient as any)?.[k] ?? "").trim();
+  return {
+    out_of_body_time_estimate: val("out_of_body_time_estimate"),
+    storage_solution: val("storage_solution"),
+    temperature_control: val("temperature_control"),
+    grafts_kept_hydrated: val("grafts_kept_hydrated"),
+  };
+}
+
+function enforceNarrativeGrounding(
+  result: Pick<AIAuditResult, "summary" | "key_findings">,
+  evidence: ReturnType<typeof extractGraftHandlingEvidence>
+) {
+  const hasValue = (v: string) => v.length > 0 && v.toLowerCase() !== "not sure";
+  const needsInsufficient = {
+    outOfBody: !hasValue(evidence.out_of_body_time_estimate),
+    chilling: !hasValue(evidence.temperature_control),
+    hydration: !hasValue(evidence.grafts_kept_hydrated),
+  };
+
+  const sentenceFilter = (text: string) => {
+    const chunks = String(text)
+      .split(/(?<=[.!?])\s+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const kept: string[] = [];
+    let replaced = false;
+
+    for (const sentence of chunks) {
+      const low = sentence.toLowerCase();
+      const mentionsOutOfBody = /out[- ]of[- ]body|ischemia|prolonged holding/.test(low);
+      const mentionsChilling = /chill|cold|temperature control|hypotherm/.test(low);
+      const mentionsHydration = /hydration|hydrated|desiccation|dry(ing)? graft/.test(low);
+
+      if ((mentionsOutOfBody && needsInsufficient.outOfBody) || (mentionsChilling && needsInsufficient.chilling) || (mentionsHydration && needsInsufficient.hydration)) {
+        replaced = true;
+        continue;
+      }
+      kept.push(sentence);
+    }
+
+    if (replaced) {
+      kept.push(
+        "Evidence was insufficient to confirm out-of-body duration, chilling conditions, and hydration workflow from the submitted inputs."
+      );
+    }
+    return kept.join(" ").trim();
+  };
+
+  return {
+    summary: sentenceFilter(result.summary),
+    key_findings: (result.key_findings ?? []).map((kf) => ({
+      ...kf,
+      impact: sentenceFilter(String(kf.impact ?? "")),
+    })),
+  };
+}
+
 /** Run AI audit on answers + optionally images. Returns structured audit result. */
 export async function runAIAudit(input: AIAuditInput): Promise<AIAuditResult> {
   const CONFIDENCE_FLOOR = 0.45;
@@ -794,6 +860,12 @@ Using patient-provided answers (and any structured enhanced inputs), you must in
 - Aesthetic consistency risk (hairline/temple/crown logic + directionality, conditional on evidence)
 - Healing trajectory stage (based on stated postop timing + symptoms; if timing absent, say insufficient evidence)
 - Confidence adjustments based on data completeness (missing data lowers confidence, not section scores)
+
+## Narrative grounding requirements (STRICT)
+- Never claim extended out-of-body time unless input explicitly contains out_of_body_time_estimate.
+- Never claim chilling/cold storage unless input explicitly contains temperature_control.
+- Never claim hydration/desiccation handling unless input explicitly contains grafts_kept_hydrated and/or storage_solution.
+- If any of the above are missing or "Not sure", you must state "evidence was insufficient" instead of inferring details.
 
 ## Scoring rubric (MUST FOLLOW)
 ${rubricToPrompt()}
@@ -1135,7 +1207,11 @@ Safety:
       section_scores.complications_and_risks,
       survivalEvidenceWeak
     );
-    const notes = String(parsed.summary ?? "").slice(0, 1400);
+    const grounded = enforceNarrativeGrounding(
+      { summary: String(parsed.summary ?? ""), key_findings: Array.isArray(parsed.key_findings) ? parsed.key_findings : [] },
+      extractGraftHandlingEvidence(input)
+    );
+    const notes = String(grounded.summary ?? "").slice(0, 1400);
     const findings = (Array.isArray(parsed.key_findings) ? parsed.key_findings : [])
       .slice(0, 10)
       .map((f) => String(f.title ?? "").slice(0, 160))
@@ -1143,6 +1219,8 @@ Safety:
 
     return {
       ...parsed,
+      summary: grounded.summary,
+      key_findings: grounded.key_findings,
       model,
       overall_score,
       confidence,

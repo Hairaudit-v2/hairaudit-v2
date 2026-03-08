@@ -1,18 +1,7 @@
 "use client";
 
-import { normalizeIntake } from "@/lib/intake/normalizeIntake";
+import { normalizeIntakeFormData } from "@/lib/intake/normalizeIntakeFormData";
 import { PATIENT_AUDIT_SECTIONS } from "@/lib/patientAuditForm";
-
-function getByPath(obj: Record<string, unknown>, path: string): unknown {
-  if (!path.includes(".")) return obj[path];
-  const parts = path.split(".").filter(Boolean);
-  let cur: unknown = obj;
-  for (const p of parts) {
-    if (!cur || typeof cur !== "object") return undefined;
-    cur = (cur as Record<string, unknown>)[p];
-  }
-  return cur;
-}
 
 /** Displays patient audit highlights for admin/review. Supports v2 and legacy data. */
 export default function PatientAnswersSummary({
@@ -23,12 +12,10 @@ export default function PatientAnswersSummary({
   className?: string;
 }) {
   if (!answers || typeof answers !== "object") return null;
-  const normalized = normalizeIntake(answers);
-  const a = normalized as Record<string, unknown>;
+  const a = normalizeIntakeFormData(answers) as Record<string, unknown>;
 
-  // Temporary: verify normalized payload (remove after debugging)
-  if (typeof window !== "undefined") {
-    console.log("[PatientAnswersSummary] normalized payload:", JSON.stringify(normalized).slice(0, 500) + (JSON.stringify(normalized).length > 500 ? "…" : ""));
+  if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
+    console.log("[PatientAnswersSummary] canonical intake:", JSON.stringify(a).slice(0, 500) + (JSON.stringify(a).length > 500 ? "…" : ""));
   }
 
   const fmt = (v: unknown) => (v === null || v === undefined || v === "" ? "—" : String(v));
@@ -68,7 +55,7 @@ export default function PatientAnswersSummary({
   const advancedSections = PATIENT_AUDIT_SECTIONS.filter((s) => s.advanced);
   const hasAdvanced = advancedSections.some((sec) =>
     sec.questions.some((q) => {
-      const v = a[q.id] ?? getByPath(answers as Record<string, unknown>, q.id);
+      const v = a[q.id];
       return v !== null && v !== undefined && v !== "";
     })
   );
@@ -176,7 +163,7 @@ export default function PatientAnswersSummary({
             {advancedSections.map((sec) => {
               const rows = sec.questions
                 .map((q) => {
-                  const v = a[q.id] ?? getByPath(answers as Record<string, unknown>, q.id);
+                  const v = a[q.id];
                   if (v === null || v === undefined || v === "") return null;
                   const labelMap =
                     q.options?.length

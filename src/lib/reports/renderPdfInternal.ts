@@ -9,6 +9,7 @@ import { buildPdfUrl } from "@/lib/reports/pdfUrl";
 import { signRenderToken } from "@/lib/reports/internalRenderToken";
 import { generateReportPdfFromUrl } from "@/lib/pdf/generateReportPdf";
 import { getBaseUrl } from "@/lib/reports/getBaseUrl";
+import rubric from "@/lib/audit/rubrics/hairaudit_clinical_v1.json";
 
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
@@ -33,16 +34,65 @@ function auditNotReady(message: string) {
   return Object.assign(new Error(message), { code: "AUDIT_NOT_READY" as const });
 }
 
+function deriveDomainScoresFromSections(
+  sectionScores: Record<string, number>,
+  domainDefs: Array<{ domain_id: string; sections?: Array<{ section_id: string }> }>
+) {
+  if (Object.keys(sectionScores).length === 0) return {};
+  const out: Record<string, number> = {};
+  for (const domain of domainDefs) {
+    const values = (domain.sections ?? [])
+      .map((s) => sectionScores[s.section_id])
+      .filter((n): n is number => Number.isFinite(n));
+    if (values.length === 0) continue;
+    out[domain.domain_id] = values.reduce((a, b) => a + b, 0) / values.length;
+  }
+  return out;
+}
+
+function deriveDomainScoresHeuristic(sectionScores: Record<string, number>) {
+  const avg = (keys: string[]) => {
+    const vals = keys.map((k) => sectionScores[k]).filter((n): n is number => Number.isFinite(n));
+    if (!vals.length) return null;
+    return vals.reduce((a, b) => a + b, 0) / vals.length;
+  };
+  const out: Record<string, number> = {};
+  const rules: Array<[string, string[]]> = [
+    ["donor_management", ["donor_management"]],
+    ["extraction_quality", ["extraction_quality"]],
+    ["graft_handling", ["graft_handling_and_viability"]],
+    ["recipient_implantation", ["recipient_placement", "hairline_design", "density_distribution", "naturalness_and_aesthetics"]],
+    ["safety_documentation_aftercare", ["post_op_course_and_aftercare", "complications_and_risks"]],
+    ["consultation_indication", ["hairline_design", "naturalness_and_aesthetics"]],
+  ];
+  for (const [domainId, keys] of rules) {
+    const value = avg(keys);
+    if (value !== null) out[domainId] = value;
+  }
+  return out;
+}
+
+function normalizeMetric(value: unknown): string {
+  const text = String(value ?? "").trim();
+  if (!text || text === "—" || text.toLowerCase() === "unknown" || text.toLowerCase() === "n/a") {
+    return "Insufficient evidence";
+  }
+  return text;
+}
+
 function isReportReadyForPdf(summary: any): boolean {
   if (!summary || typeof summary !== "object") return false;
   if (summary.manual_audit === true) return true;
-  if (summary.forensic_audit && typeof summary.forensic_audit === "object") return true;
-  if (summary.forensic && typeof summary.forensic === "object") return true;
-  if (Number.isFinite(Number(summary.overall_score))) return true;
-  if (Number.isFinite(Number(summary.score))) return true;
-  if (summary.section_scores && typeof summary.section_scores === "object") return true;
-  if (summary.computed && typeof summary.computed === "object") return true;
-  return false;
+  const forensic = (summary.forensic_audit ?? summary.forensic) as Record<string, unknown> | null;
+  const overall = Number(summary.overall_score ?? summary.score ?? (forensic as any)?.overall_score);
+  const sections = toNumberRecord(
+    (summary as any)?.computed?.component_scores?.sections ??
+      summary.section_scores ??
+      (forensic as any)?.section_scores ??
+      null
+  );
+  const narrative = String((forensic as any)?.summary ?? summary.notes ?? "").trim();
+  return Number.isFinite(overall) && Object.keys(sections).length > 0 && narrative.length > 0;
 }
 
 async function downloadImagesForCase(args: {
@@ -128,6 +178,14 @@ export async function renderAndUploadPdfForCase(args: {
   if (!reportRow) {
     throw auditNotReady(`Report row not found for v${version}`);
   }
+  const { data: caseRow } = await supabase
+    .from("cases")
+    .select("status")
+    .eq("id", caseId)
+    .maybeSingle();
+  if (String((caseRow as any)?.status ?? "").toLowerCase() === "processing") {
+    throw auditNotReady(`Case status is still processing for ${caseId}`);
+  }
   if (String((reportRow as any)?.status ?? "") === "processing") {
     throw auditNotReady(`Audit/report is still processing for v${version}`);
   }
@@ -189,6 +247,16 @@ export async function renderAndUploadPdfForCase(args: {
       summary?.area_scores ??
       null
   );
+  const derivedDomains =
+    Object.keys(domains).length > 0
+      ? domains
+      : deriveDomainScoresFromSections(
+          sectionScores,
+          ((rubric as { domains?: Array<{ domain_id: string; sections?: Array<{ section_id: string }> }> }).domains ??
+            []) as Array<{ domain_id: string; sections?: Array<{ section_id: string }> }>
+        );
+  const effectiveDomains =
+    Object.keys(derivedDomains).length > 0 ? derivedDomains : deriveDomainScoresHeuristic(sectionScores);
 
   // Confidence (0–1). Use forensic if present; otherwise derive a safe floor.
   // Prefer explicit counts if stored; otherwise fall back to downloaded images length.
@@ -217,8 +285,8 @@ export async function renderAndUploadPdfForCase(args: {
     generatedAt: reportRow?.created_at ? new Date(reportRow.created_at).toLocaleString() : new Date().toLocaleString(),
     auditMode,
     score: overall,
-    donorQuality: String(summary?.donor_quality ?? summary?.key_metrics?.donor_quality ?? "—"),
-    graftSurvival: String(summary?.graft_survival_estimate ?? summary?.key_metrics?.graft_survival_estimate ?? "—"),
+    donorQuality: normalizeMetric(summary?.donor_quality ?? summary?.key_metrics?.donor_quality),
+    graftSurvival: normalizeMetric(summary?.graft_survival_estimate ?? summary?.key_metrics?.graft_survival_estimate),
     notes: typeof summary?.notes === "string" ? summary.notes : undefined,
     findings,
     model: String(forensic?.model ?? summary?.model ?? ""),
@@ -234,7 +302,7 @@ export async function renderAndUploadPdfForCase(args: {
       ? { section_scores: sectionScores, overall_score: Number(overall ?? 0), confidence: conf }
       : undefined,
     areaScores: {
-      domains: Object.keys(domains).length ? domains : undefined,
+      domains: Object.keys(effectiveDomains).length ? effectiveDomains : undefined,
       sections: Object.keys(sectionScores).length ? sectionScores : undefined,
     },
     forensic: forensic

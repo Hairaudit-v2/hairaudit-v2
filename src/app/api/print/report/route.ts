@@ -3,6 +3,8 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { buildReportViewModel, normalizeAuditMode, type AuditMode, type AuditReportContent } from "@/lib/pdf/reportBuilder";
 import { verifyRenderToken } from "@/lib/reports/internalRenderToken";
 import { renderEliteReportHtml } from "@/lib/reports/EliteReportHtml";
+import rubric from "@/lib/audit/rubrics/hairaudit_clinical_v1.json";
+import { inferCanonicalPhotoCategory, photoCategoryGroup } from "@/lib/photos/classification";
 
 type NumberRecord = Record<string, number>;
 
@@ -39,6 +41,67 @@ function humanizeKey(s: string): string {
     .replace(/\s+/g, " ");
   if (!t) return "";
   return t.replace(/\b\w/g, (m) => m.toUpperCase());
+}
+
+function normalizeMetric(value: unknown): string {
+  const text = String(value ?? "").trim();
+  if (!text || text === "—" || text.toLowerCase() === "unknown" || text.toLowerCase() === "n/a") {
+    return "Insufficient evidence";
+  }
+  return text;
+}
+
+function deriveDomainScoresFromSections(
+  sectionScores: Record<string, number>,
+  domainDefs: Array<{ domain_id: string; sections?: Array<{ section_id: string }> }>
+) {
+  if (Object.keys(sectionScores).length === 0) return {};
+  const out: Record<string, number> = {};
+  for (const d of domainDefs) {
+    const values = (d.sections ?? [])
+      .map((s) => sectionScores[s.section_id])
+      .filter((n): n is number => Number.isFinite(n));
+    if (values.length === 0) continue;
+    out[d.domain_id] = values.reduce((a, b) => a + b, 0) / values.length;
+  }
+  return out;
+}
+
+function deriveDomainScoresHeuristic(sectionScores: Record<string, number>) {
+  const avg = (keys: string[]) => {
+    const vals = keys.map((k) => sectionScores[k]).filter((n): n is number => Number.isFinite(n));
+    if (!vals.length) return null;
+    return vals.reduce((a, b) => a + b, 0) / vals.length;
+  };
+  const out: Record<string, number> = {};
+  const rules: Array<[string, string[]]> = [
+    ["donor_management", ["donor_management"]],
+    ["extraction_quality", ["extraction_quality"]],
+    ["graft_handling", ["graft_handling_and_viability"]],
+    ["recipient_implantation", ["recipient_placement", "hairline_design", "density_distribution", "naturalness_and_aesthetics"]],
+    ["safety_documentation_aftercare", ["post_op_course_and_aftercare", "complications_and_risks"]],
+    ["consultation_indication", ["hairline_design", "naturalness_and_aesthetics"]],
+  ];
+  for (const [domainId, keys] of rules) {
+    const value = avg(keys);
+    if (value !== null) out[domainId] = value;
+  }
+  return out;
+}
+
+function isAuditSummaryReady(summary: any): boolean {
+  if (!summary || typeof summary !== "object") return false;
+  if (summary.manual_audit === true) return true;
+  const forensic = (summary.forensic_audit ?? summary.forensic) as Record<string, unknown> | null;
+  const overall = Number(summary.overall_score ?? summary.score ?? (forensic as any)?.overall_score);
+  const sectionScores = toNumberRecord(
+    summary?.computed?.component_scores?.sections ??
+      summary?.section_scores ??
+      (forensic as any)?.section_scores ??
+      null
+  );
+  const narrative = String((forensic as any)?.summary ?? summary?.notes ?? "").trim();
+  return Number.isFinite(overall) && Object.keys(sectionScores).length > 0 && narrative.length > 0;
 }
 
 const RADAR_AXIS_LABELS: Record<string, string> = {
@@ -121,6 +184,16 @@ export async function GET(req: Request) {
       headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" },
     });
   }
+  if (String(c.status ?? "").toLowerCase() === "processing") {
+    return new NextResponse("AUDIT_NOT_READY: case status is processing", {
+      status: 409,
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "no-store",
+        "X-Report-Status": "audit-not-ready",
+      },
+    });
+  }
 
   // Load uploads
   const { data: uploads, error: upErr } = await supabase
@@ -171,10 +244,8 @@ export async function GET(req: Request) {
 
   const photosByCategory: Record<string, { signedUrl: string | null; label: string }[]> = {};
   for (const u of signedImages) {
-    const metaCat = (u as any)?.metadata?.category;
-    const type = String((u as any)?.type ?? "");
-    const typeCat = type.startsWith("patient_photo:") ? type.split(":")[1] : null;
-    const cat = metaCat || typeCat || "uncategorized";
+    const canonical = inferCanonicalPhotoCategory(u as any);
+    const cat = `${photoCategoryGroup(canonical)} - ${canonical.replaceAll("_", " ")}`;
     const label =
       String((u as any)?.metadata?.label ?? "").trim() ||
       String((u as any)?.type ?? "photo");
@@ -185,13 +256,23 @@ export async function GET(req: Request) {
   // Load latest report summary
   const { data: latestReport } = await supabase
     .from("reports")
-    .select("id, version, summary, created_at")
+    .select("id, version, summary, created_at, status")
     .eq("case_id", caseId)
     .order("version", { ascending: false })
     .limit(1)
     .maybeSingle();
 
   const summary = (latestReport?.summary ?? {}) as any;
+  if (String((latestReport as any)?.status ?? "").toLowerCase() === "processing" || !isAuditSummaryReady(summary)) {
+    return new NextResponse("AUDIT_NOT_READY: report summary is incomplete", {
+      status: 409,
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "no-store",
+        "X-Report-Status": "audit-not-ready",
+      },
+    });
+  }
   const forensic = (summary?.forensic_audit ?? summary?.forensic ?? null) as any;
 
   const overallFromForensic = Number.isFinite(Number(forensic?.overall_score))
@@ -212,11 +293,20 @@ export async function GET(req: Request) {
       null
   );
 
-  const domainScores = toNumberRecord(
+  const domainScoresBase = toNumberRecord(
     summary?.computed?.component_scores?.domains ??
       summary?.area_scores ??
       null
   );
+  const domainOrder = (
+    summary?.rubric_domains as { domain_id: string; title: string; sections?: { section_id: string; title: string }[] }[] | undefined
+  ) ?? ((rubric as { domains?: { domain_id: string; title: string; sections?: { section_id: string; title: string }[] }[] }).domains ?? []);
+  const domainScores =
+    Object.keys(domainScoresBase).length > 0
+      ? domainScoresBase
+      : deriveDomainScoresFromSections(sectionScores, domainOrder as Array<{ domain_id: string; sections?: Array<{ section_id: string }> }>);
+  const effectiveDomainScores =
+    Object.keys(domainScores).length > 0 ? domainScores : deriveDomainScoresHeuristic(sectionScores);
 
   const highlights = Array.isArray(summary.findings)
     ? summary.findings
@@ -227,40 +317,35 @@ export async function GET(req: Request) {
   const risks = Array.isArray(summary.risks) ? summary.risks : [];
 
   const metrics = {
-    donorQuality: String(
-      summary.donor_quality ?? summary?.key_metrics?.donor_quality ?? "—"
+    donorQuality: normalizeMetric(
+      summary.donor_quality ?? summary?.key_metrics?.donor_quality
     ),
-    graftSurvival: String(
+    graftSurvival: normalizeMetric(
       summary.graft_survival_estimate ??
-        summary?.key_metrics?.graft_survival_estimate ??
-        "—"
+        summary?.key_metrics?.graft_survival_estimate
     ),
-    transectionRisk: String(summary?.key_metrics?.transection_risk ?? "—"),
-    implantationDensity: String(
-      summary?.key_metrics?.implantation_density ?? "—"
+    transectionRisk: normalizeMetric(summary?.key_metrics?.transection_risk),
+    implantationDensity: normalizeMetric(
+      summary?.key_metrics?.implantation_density
     ),
-    hairlineNaturalness: String(
-      summary?.key_metrics?.hairline_naturalness ?? "—"
+    hairlineNaturalness: normalizeMetric(
+      summary?.key_metrics?.hairline_naturalness
     ),
-    donorScarVisibility: String(
-      summary?.key_metrics?.donor_scar_visibility ?? "—"
+    donorScarVisibility: normalizeMetric(
+      summary?.key_metrics?.donor_scar_visibility
     ),
   };
-
-  const domainOrder =
-    (summary?.rubric_domains as { domain_id: string; title: string }[] | undefined) ??
-    [];
 
   const areaDomains =
     domainOrder.length > 0
       ? domainOrder
-          .filter((d) => domainScores[d.domain_id] != null)
+          .filter((d) => effectiveDomainScores[d.domain_id] != null)
           .map((d) => {
-            const s = Number(domainScores[d.domain_id]);
+            const s = Number(effectiveDomainScores[d.domain_id]);
             const { outOf5, level } = scoreToDisplay(s);
             return { title: d.title, score: s, outOf5, level };
           })
-      : Object.entries(domainScores).map(([key, value]) => {
+      : Object.entries(effectiveDomainScores).map(([key, value]) => {
           const s = Number(value);
           const { outOf5, level } = scoreToDisplay(s);
           return { title: key.replace(/[._]/g, " "), score: s, outOf5, level };
@@ -284,7 +369,11 @@ export async function GET(req: Request) {
           : null;
 
   const radarScores =
-    radarScoresBase && Object.keys(radarScoresBase).length > 0 ? radarScoresBase : (Object.keys(domainScores).length ? domainScores : null);
+    radarScoresBase && Object.keys(radarScoresBase).length > 0
+      ? radarScoresBase
+      : Object.keys(effectiveDomainScores).length
+        ? effectiveDomainScores
+        : null;
 
   const radarConfidence = clamp01(
     Number.isFinite(Number(forensic?.confidence))
@@ -396,7 +485,7 @@ export async function GET(req: Request) {
     notes: typeof summary?.notes === "string" ? summary.notes : undefined,
     findings: highlights,
     areaScores: {
-      domains: Object.keys(domainScores).length ? domainScores : undefined,
+      domains: Object.keys(effectiveDomainScores).length ? effectiveDomainScores : undefined,
       sections: Object.keys(sectionScores).length ? sectionScores : undefined,
     },
     forensic: forensic

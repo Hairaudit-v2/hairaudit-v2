@@ -48,6 +48,15 @@ export async function generateReportPdfFromUrl(url: string): Promise<Buffer> {
   });
 
   if (!preflight.ok) {
+    let bodyText = "";
+    try {
+      bodyText = await preflight.text();
+    } catch {
+      bodyText = "";
+    }
+    if (preflight.status === 409 || /AUDIT_NOT_READY/i.test(bodyText)) {
+      throw Object.assign(new Error(bodyText || "AUDIT_NOT_READY"), { code: "AUDIT_NOT_READY" as const });
+    }
     throw new Error(
       `PDF preflight failed: HTTP ${preflight.status} ${preflight.statusText || ""}`.trim()
     );

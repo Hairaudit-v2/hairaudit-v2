@@ -8,6 +8,8 @@ import { notifyPatientAuditFailed, notifyAuditorAuditFailed } from "@/lib/email"
 import { canSubmit } from "@/lib/auditPhotoSchemas";
 import { computeDomainScoresV1, computeDoctorAiContextV1 } from "@/lib/benchmarks/domainScoring";
 import { renderAndUploadPdfForCase } from "@/lib/reports/renderPdfInternal";
+import { buildAuditImageSelection } from "@/lib/photos/classification";
+import { normalizeIntakeFormData, toNestedForApi } from "@/lib/intake/normalizeIntakeFormData";
 
 function supabaseAdmin() {
   return createClient(
@@ -55,6 +57,16 @@ function pickClaimedGrafts(patientAnswers: Record<string, unknown> | null): numb
 
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
+}
+
+function normalizePatientAnswersForAudit(raw: Record<string, unknown> | null): Record<string, unknown> | null {
+  if (!raw || typeof raw !== "object") return null;
+  const flat = normalizeIntakeFormData(raw);
+  const nested = toNestedForApi(flat);
+  return {
+    ...raw,
+    ...nested,
+  };
 }
 
 function classifyEvidenceCoverage(params: {
@@ -253,7 +265,7 @@ export const runGraftIntegrityEstimate = inngest.createFunction(
   {
     id: "run-graft-integrity-estimate",
     retries: 2,
-    concurrency: { limit: 10 },
+    concurrency: { limit: 5 },
   },
   [{ event: "case/submitted" }, { event: "case/graft-integrity-only-requested" }],
   async ({ event, step, logger }) => {
@@ -545,7 +557,7 @@ export const runAudit = inngest.createFunction(
     const existingSummary = await step.run("load-report-summary", async () => {
       const { data, error } = await supabase
         .from("reports")
-        .select("id, summary")
+        .select("id, summary, patient_audit_version, patient_audit_v2")
         .eq("case_id", caseId)
         .order("version", { ascending: false })
         .limit(1)
@@ -553,8 +565,17 @@ export const runAudit = inngest.createFunction(
 
       if (error) throw new Error(`reports load failed: ${error.message}`);
       const s = (data?.summary ?? {}) as Record<string, unknown>;
+      const savedV2 =
+        (data as { patient_audit_version?: number; patient_audit_v2?: Record<string, unknown> | null } | null)
+          ?.patient_audit_version === 2 &&
+        (data as { patient_audit_v2?: Record<string, unknown> | null } | null)?.patient_audit_v2 &&
+        typeof (data as { patient_audit_v2?: Record<string, unknown> | null } | null)?.patient_audit_v2 === "object"
+          ? ((data as { patient_audit_v2?: Record<string, unknown> | null }).patient_audit_v2 as Record<string, unknown>)
+          : null;
+      const summaryPatient = (s.patient_answers ?? null) as Record<string, unknown> | null;
+      const patientAnswers = normalizePatientAnswersForAudit(savedV2 ?? summaryPatient);
       return {
-        patient_answers: s.patient_answers ?? null,
+        patient_answers: patientAnswers,
         doctor_answers: s.doctor_answers ?? null,
         clinic_answers: s.clinic_answers ?? null,
       };
@@ -563,8 +584,9 @@ export const runAudit = inngest.createFunction(
     // 5) Get signed URLs for images (for AI vision)
     const imageUrls = await step.run("get-signed-image-urls", async () => {
       const imageUploads = uploads.filter((u) => isImageUpload(u.type));
+      const selected = buildAuditImageSelection(imageUploads, 10);
       const urls: string[] = [];
-      for (const u of imageUploads.slice(0, 10)) {
+      for (const u of selected) {
         const { data } = await supabase.storage.from(BUCKET).createSignedUrl(u.storage_path, 60 * 15);
         if (data?.signedUrl) urls.push(data.signedUrl);
       }

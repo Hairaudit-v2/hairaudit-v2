@@ -4,46 +4,17 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PATIENT_AUDIT_SECTIONS } from "@/lib/patientAuditForm";
-import { normalizeIntake } from "@/lib/intake/normalizeIntake";
-import type { PatientAuditAnswers, PatientFormQuestion } from "@/lib/patientAuditForm";
+import type { PatientFormQuestion } from "@/lib/patientAuditForm";
+import {
+  type IntakeFormData,
+  normalizeIntakeFormData,
+  toNestedForApi,
+  getAdvancedSectionsCompletion,
+} from "@/lib/intake/normalizeIntakeFormData";
 import { validatePatientAuditV2, normalizePatientV2ForValidation } from "@/lib/patientAuditSchema";
 
 function isNonEmptyObject(v: unknown): v is Record<string, unknown> {
   return !!v && typeof v === "object" && !Array.isArray(v) && Object.keys(v as Record<string, unknown>).length > 0;
-}
-
-function getByPath(obj: Record<string, unknown>, path: string): unknown {
-  if (!path.includes(".")) return obj[path];
-  const parts = path.split(".").filter(Boolean);
-  let cur: unknown = obj;
-  for (const p of parts) {
-    if (!cur || typeof cur !== "object") return undefined;
-    cur = (cur as Record<string, unknown>)[p];
-  }
-  return cur;
-}
-
-function setByPath(obj: Record<string, unknown>, path: string, value: unknown): Record<string, unknown> {
-  if (!path.includes(".")) return { ...obj, [path]: value };
-  const parts = path.split(".").filter(Boolean);
-  const out: Record<string, unknown> = { ...obj };
-  let cur: Record<string, unknown> = out;
-  for (let i = 0; i < parts.length; i++) {
-    const key = parts[i]!;
-    const last = i === parts.length - 1;
-    if (last) {
-      cur[key] = value;
-    } else {
-      const next = cur[key];
-      if (!next || typeof next !== "object" || Array.isArray(next)) {
-        cur[key] = {};
-      } else {
-        cur[key] = { ...(next as Record<string, unknown>) };
-      }
-      cur = cur[key] as Record<string, unknown>;
-    }
-  }
-  return out;
 }
 
 export default function PatientAuditFormClient({
@@ -57,7 +28,7 @@ export default function PatientAuditFormClient({
 }) {
   const glassCard =
     "rounded-2xl border border-slate-300 bg-white shadow-sm";
-  const [answers, setAnswers] = useState<PatientAuditAnswers>({});
+  const [formData, setFormData] = useState<IntakeFormData>({});
   const [loading, setLoading] = useState(true);
   const [loadingError, setLoadingError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -74,17 +45,24 @@ export default function PatientAuditFormClient({
     { id: "review", title: "Review & Submit" },
   ];
 
+  const updateField = useCallback((fieldKey: string, value: string | number | string[] | boolean | null) => {
+    hasEditedRef.current = true;
+    setFormData((prev) => ({ ...prev, [fieldKey]: value }));
+  }, []);
+
   const load = useCallback(async () => {
     setLoadingError(null);
     const res = await fetch(`/api/patient-answers?caseId=${caseId}`);
     const json = await res.json().catch(() => ({}));
     if (!res.ok) {
       setLoadingError(json?.error ?? "Failed to load answers");
-      setAnswers({});
+      setFormData({});
     } else if (json.patientAnswers) {
-      setAnswers(json.patientAnswers);
-      const adv = (json.patientAnswers as Record<string, unknown>)?.enhanced_patient_answers;
-      if (isNonEmptyObject(adv)) setShowAdvanced(true);
+      const canonical = normalizeIntakeFormData(json.patientAnswers as Record<string, unknown>);
+      setFormData(canonical);
+      if (json.patientAnswers?.enhanced_patient_answers && isNonEmptyObject(json.patientAnswers.enhanced_patient_answers)) {
+        setShowAdvanced(true);
+      }
     }
     setLoading(false);
   }, [caseId]);
@@ -93,29 +71,8 @@ export default function PatientAuditFormClient({
     load();
   }, [load]);
 
-  const update = (id: string, value: string | number | string[] | boolean | null) => {
-    hasEditedRef.current = true;
-    setAnswers((prev) => setByPath(prev as Record<string, unknown>, id, value) as PatientAuditAnswers);
-  };
-
-  const sanitizePayload = (raw: PatientAuditAnswers): PatientAuditAnswers => {
-    const payload: PatientAuditAnswers = {};
-    for (const [k, v] of Object.entries(raw)) {
-      if (v === undefined) continue;
-      if (typeof v === "string" || typeof v === "number" || typeof v === "boolean" || v === null) {
-        payload[k] = v;
-      } else if (Array.isArray(v)) {
-        payload[k] = v.map((x) => (typeof x === "string" ? x : String(x)));
-      } else {
-        payload[k] = v;
-      }
-    }
-    return payload;
-  };
-
-  const save = async (answersToSave?: PatientAuditAnswers) => {
-    const raw = answersToSave ?? answers;
-    const payload = sanitizePayload(raw);
+  const save = useCallback(async () => {
+    const payload = toNestedForApi(formData);
     setMessage(null);
     setSaving(true);
     try {
@@ -134,20 +91,19 @@ export default function PatientAuditFormClient({
     } finally {
       setSaving(false);
     }
-  };
+  }, [caseId, formData]);
 
   useEffect(() => {
     if (!hasEditedRef.current || locked) return;
-    const t = setTimeout(() => save(undefined), 2000);
+    const t = setTimeout(() => save(), 2000);
     return () => clearTimeout(t);
-  }, [answers, locked]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [formData, locked, save]);
 
   const goToPhotos = async () => {
-    let payload = sanitizePayload(answers) as Record<string, unknown>;
+    const payload = toNestedForApi(formData) as Record<string, unknown>;
     const normalized = normalizePatientV2ForValidation(payload);
     if (normalized.pain_level === undefined || normalized.pain_level === null) {
-      normalized.pain_level = 1;
-      payload = { ...payload, pain_level: 1 };
+      (payload as Record<string, unknown>).pain_level = 1;
     }
     const err = validatePatientAuditV2(normalized);
     if (err) {
@@ -171,6 +127,8 @@ export default function PatientAuditFormClient({
       setSaving(false);
     }
   };
+
+  const advancedCompletion = getAdvancedSectionsCompletion(formData);
 
   const handleStepNext = () => {
     if (activeStep < STEPS.length - 1) setActiveStep((s) => s + 1);
@@ -219,6 +177,14 @@ export default function PatientAuditFormClient({
               <p className="mt-1 text-sm text-slate-800">
                 Adds deeper inputs for graft viability, donor risk, healing stage, and aesthetic consistency. You can skip anytime.
               </p>
+              {showAdvanced && Object.keys(advancedCompletion).length > 0 && (
+                <p className="mt-2 text-xs text-slate-600">
+                  {Object.entries(advancedCompletion)
+                    .map(([, s]) => `${s.complete}/${s.total}`)
+                    .join(" · ")}{" "}
+                  completed
+                </p>
+              )}
             </div>
             <button
               type="button"
@@ -268,7 +234,7 @@ export default function PatientAuditFormClient({
       {/* Content */}
       {isReviewStep ? (
         <PatientReviewSummary
-          answers={answers}
+          values={formData}
           sections={visibleSections}
           onEdit={() => setActiveStep(0)}
         />
@@ -285,9 +251,9 @@ export default function PatientAuditFormClient({
                   <QuestionField
                     key={q.id}
                     question={q}
-                    value={getByPath(answers as Record<string, unknown>, q.id)}
-                    onChange={(v) => update(q.id, v)}
-                    allAnswers={answers}
+                    value={formData[q.id]}
+                    onChange={(v) => updateField(q.id, v)}
+                    values={formData}
                     locked={locked}
                   />
                 ))}
@@ -379,17 +345,16 @@ export default function PatientAuditFormClient({
 }
 
 function PatientReviewSummary({
-  answers,
+  values,
   sections,
   onEdit,
 }: {
-  answers: PatientAuditAnswers;
+  values: IntakeFormData;
   sections: { id: string; title: string; questions: PatientFormQuestion[] }[];
   onEdit: () => void;
 }) {
-  const normalized = normalizeIntake(answers as Record<string, unknown>);
-  if (typeof window !== "undefined") {
-    console.log("[PatientReviewSummary] normalized payload:", JSON.stringify(normalized).slice(0, 600) + (JSON.stringify(normalized).length > 600 ? "…" : ""));
+  if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
+    console.log("[PatientReviewSummary] canonical intake:", JSON.stringify(values).slice(0, 600) + (JSON.stringify(values).length > 600 ? "…" : ""));
   }
   const labels: Record<string, Record<string, string>> = {
     clinic_country: { turkey: "Turkey", spain: "Spain", india: "India", thailand: "Thailand", mexico: "Mexico", brazil: "Brazil", argentina: "Argentina", colombia: "Colombia", australia: "Australia", uk: "UK", usa: "USA", canada: "Canada", uae: "UAE", belgium: "Belgium", germany: "Germany", poland: "Poland", greece: "Greece", other: "Other" },
@@ -421,7 +386,7 @@ function PatientReviewSummary({
             <h3 className="text-sm font-semibold text-slate-800 mb-2">{sec.title}</h3>
             <dl className="space-y-1 text-sm">
               {sec.questions.map((q) => {
-                const v = normalized[q.id] ?? getByPath(answers as Record<string, unknown>, q.id);
+                const v = values[q.id];
                 if (q.dependsOn && v === undefined) return null;
                 return (
                   <div key={q.id} className="flex justify-between gap-2">
@@ -449,17 +414,17 @@ function QuestionField({
   question,
   value,
   onChange,
-  allAnswers,
+  values,
   locked,
 }: {
   question: PatientFormQuestion & { dependsOn?: { questionId: string; value?: string; hasValue?: string } };
   value: unknown;
   onChange: (v: string | number | string[] | boolean | null) => void;
-  allAnswers: PatientAuditAnswers;
+  values: IntakeFormData;
   locked: boolean;
 }) {
   const dep = question.dependsOn;
-  const getDepVal = (id: string) => getByPath(allAnswers as Record<string, unknown>, id);
+  const getDepVal = (id: string) => values[id];
   const show =
     !dep ||
     (dep.value !== undefined && getDepVal(dep.questionId) === dep.value) ||
