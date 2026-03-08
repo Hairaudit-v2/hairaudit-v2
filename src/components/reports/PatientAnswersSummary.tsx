@@ -1,5 +1,7 @@
 "use client";
 
+import { useMemo, useState } from "react";
+
 import { normalizeIntakeFormData } from "@/lib/intake/normalizeIntakeFormData";
 import { PATIENT_AUDIT_SECTIONS } from "@/lib/patientAuditForm";
 
@@ -68,122 +70,135 @@ export default function PatientAnswersSummary({
     return String(v);
   };
 
+  const tabDefs = [
+    { id: "overview", label: "Overview" },
+    { id: "biology", label: "Patient Biology" },
+    { id: "procedure", label: "Procedure Details" },
+    { id: "healing", label: "Healing" },
+    { id: "scores", label: "Patient Scores" },
+  ] as const;
+
+  const [activeTab, setActiveTab] = useState<(typeof tabDefs)[number]["id"]>("overview");
+
+  const overviewRows = [
+    { label: "Clinic", value: clinic },
+    { label: "Procedure date", value: procedureDate },
+    { label: "Procedure type", value: procedureType },
+    { label: "Months post-op", value: monthsSince },
+    { label: "Cost", value: amount != null ? `${currency} ${amount}` : fmt(a.total_paid_amount) },
+  ];
+
+  const scoreRows = [
+    { label: "Density satisfaction", value: density != null ? `${density}/5` : "—" },
+    { label: "Hairline naturalness", value: hairline != null ? `${hairline}/5` : "—" },
+    { label: "Donor appearance", value: donor != null ? `${donor}/5` : "—" },
+    { label: "Would recommend", value: recommend },
+    { label: "Cost model", value: costModel },
+  ];
+
+  const groupedRows = useMemo(() => {
+    const groups = {
+      biology: [] as { prompt: string; value: string }[],
+      procedure: [] as { prompt: string; value: string }[],
+      healing: [] as { prompt: string; value: string }[],
+    };
+
+    for (const section of PATIENT_AUDIT_SECTIONS) {
+      const key = `${section.id} ${section.title}`.toLowerCase();
+      const target =
+        key.includes("biology") || key.includes("health") || key.includes("history")
+          ? "biology"
+          : key.includes("heal") || key.includes("recovery") || key.includes("post")
+            ? "healing"
+            : "procedure";
+
+      for (const q of section.questions) {
+        const v = a[q.id];
+        if (v === null || v === undefined || v === "") continue;
+        const labelMap = q.options?.length ? Object.fromEntries((q.options ?? []).map((o) => [o.value, o.label])) : undefined;
+        groups[target].push({ prompt: q.prompt, value: fmtWithLabels(q.id, v, labelMap) });
+      }
+    }
+
+    return groups;
+  }, [a]);
+
+  function renderRows(rows: Array<{ label: string; value: string }> | Array<{ prompt: string; value: string }>) {
+    if (!rows || rows.length === 0) {
+      return <p className="text-sm text-slate-300/70">No data provided yet.</p>;
+    }
+    return (
+      <dl className="grid gap-2 text-sm">
+        {rows.map((row) => {
+          const label = "label" in row ? row.label : row.prompt;
+          return (
+            <div key={label} className="flex items-start justify-between gap-4 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">
+              <dt className="text-slate-300/80">{label}</dt>
+              <dd className="text-right font-medium text-white">{row.value}</dd>
+            </div>
+          );
+        })}
+      </dl>
+    );
+  }
+
   return (
-    <div className={`rounded-xl border border-slate-200 bg-white p-5 ${className}`}>
-      <h3 className="font-semibold text-slate-900 mb-4">Patient Submission Summary</h3>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
-            Clinic & Procedure
-          </h4>
-          <dl className="space-y-1 text-sm">
-            <div className="flex justify-between gap-2">
-              <dt className="text-slate-600">Clinic</dt>
-              <dd className="font-medium">{clinic}</dd>
-            </div>
-            <div className="flex justify-between gap-2">
-              <dt className="text-slate-600">Date</dt>
-              <dd className="font-medium">{procedureDate}</dd>
-            </div>
-            <div className="flex justify-between gap-2">
-              <dt className="text-slate-600">Procedure type</dt>
-              <dd className="font-medium">{procedureType}</dd>
-            </div>
-            <div className="flex justify-between gap-2">
-              <dt className="text-slate-600">Months since</dt>
-              <dd className="font-medium">{monthsSince}</dd>
-            </div>
-          </dl>
-        </div>
-        <div>
-          <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
-            Transparency
-          </h4>
-          <dl className="space-y-1 text-sm">
-            <div className="flex justify-between gap-2">
-              <dt className="text-slate-600">Doctor present (extraction)</dt>
-              <dd className="font-medium">{doctorExtraction}</dd>
-            </div>
-            <div className="flex justify-between gap-2">
-              <dt className="text-slate-600">Doctor present (implant)</dt>
-              <dd className="font-medium">{doctorImplant}</dd>
-            </div>
-            <div className="flex justify-between gap-2">
-              <dt className="text-slate-600">Graft count disclosed</dt>
-              <dd className="font-medium">{graftDisclosed}</dd>
-            </div>
-          </dl>
-        </div>
-      </div>
-      <div className="mt-4 pt-4 border-t border-slate-100">
-        <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
-          Results
-        </h4>
-        <dl className="space-y-1 text-sm">
-          <div className="flex justify-between gap-2">
-            <dt className="text-slate-600">Density satisfaction</dt>
-            <dd className="font-medium">{density != null ? `${density}/5` : "—"}</dd>
-          </div>
-          <div className="flex justify-between gap-2">
-            <dt className="text-slate-600">Hairline naturalness</dt>
-            <dd className="font-medium">{hairline != null ? `${hairline}/5` : "—"}</dd>
-          </div>
-          <div className="flex justify-between gap-2">
-            <dt className="text-slate-600">Donor appearance</dt>
-            <dd className="font-medium">{donor != null ? `${donor}/5` : "—"}</dd>
-          </div>
-          <div className="flex justify-between gap-2">
-            <dt className="text-slate-600">Would recommend</dt>
-            <dd className="font-medium">{recommend}</dd>
-          </div>
-        </dl>
-      </div>
-      <div className="mt-4 pt-4 border-t border-slate-100">
-        <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
-          Cost
-        </h4>
-        <dl className="space-y-1 text-sm">
-          <div className="flex justify-between gap-2">
-            <dt className="text-slate-600">Amount</dt>
-            <dd className="font-medium">{amount != null ? `${currency} ${amount}` : fmt(a.total_paid_amount)}</dd>
-          </div>
-          <div className="flex justify-between gap-2">
-            <dt className="text-slate-600">Cost model</dt>
-            <dd className="font-medium">{costModel}</dd>
-          </div>
-        </dl>
+    <div className={`rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm ${className}`}>
+      <h3 className="mb-4 text-lg font-semibold text-white">Patient Submission Summary</h3>
+
+      <div className="mb-4 flex flex-wrap gap-2">
+        {tabDefs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`rounded-lg border px-3 py-1.5 text-sm transition ${
+              activeTab === tab.id
+                ? "border-cyan-300/40 bg-cyan-300/15 text-cyan-100"
+                : "border-white/15 bg-white/5 text-slate-300 hover:bg-white/10"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
-      {hasAdvanced && (
-        <div className="mt-4 pt-4 border-t border-slate-100">
-          <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
-            Advanced forensic (optional)
-          </h4>
+      {activeTab === "overview" && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>{renderRows(overviewRows)}</div>
+          <div>
+            {renderRows([
+              { label: "Doctor present (extraction)", value: doctorExtraction },
+              { label: "Doctor present (implant)", value: doctorImplant },
+              { label: "Graft count disclosed", value: graftDisclosed },
+              { label: "Recommendation intent", value: recommend },
+            ])}
+          </div>
+        </div>
+      )}
+
+      {activeTab === "biology" && renderRows(groupedRows.biology)}
+      {activeTab === "procedure" && renderRows(groupedRows.procedure)}
+      {activeTab === "healing" && renderRows(groupedRows.healing)}
+      {activeTab === "scores" && renderRows(scoreRows)}
+
+      {hasAdvanced && activeTab !== "overview" && (
+        <div className="mt-4 border-t border-white/10 pt-4">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-300">Advanced Forensic Signals</p>
           <div className="space-y-3">
             {advancedSections.map((sec) => {
               const rows = sec.questions
                 .map((q) => {
                   const v = a[q.id];
                   if (v === null || v === undefined || v === "") return null;
-                  const labelMap =
-                    q.options?.length
-                      ? Object.fromEntries((q.options ?? []).map((o) => [o.value, o.label]))
-                      : undefined;
+                  const labelMap = q.options?.length ? Object.fromEntries((q.options ?? []).map((o) => [o.value, o.label])) : undefined;
                   return { prompt: q.prompt, value: fmtWithLabels(q.id, v, labelMap) };
                 })
                 .filter(Boolean) as { prompt: string; value: string }[];
               if (rows.length === 0) return null;
               return (
-                <div key={sec.id}>
-                  <h5 className="text-xs font-medium text-slate-600 mb-1">{sec.title}</h5>
-                  <dl className="space-y-1 text-sm">
-                    {rows.map((r) => (
-                      <div key={r.prompt} className="flex justify-between gap-2">
-                        <dt className="text-slate-600">{r.prompt}</dt>
-                        <dd className="font-medium">{r.value}</dd>
-                      </div>
-                    ))}
-                  </dl>
+                <div key={sec.id} className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
+                  <h5 className="mb-2 text-sm font-medium text-white">{sec.title}</h5>
+                  {renderRows(rows)}
                 </div>
               );
             })}

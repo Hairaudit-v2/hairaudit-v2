@@ -7,10 +7,12 @@ export default function SubmitButton({
   caseId,
   caseStatus,
   submittedAt,
+  compact = false,
 }: {
   caseId: string;
   caseStatus: string;
   submittedAt?: string | null;
+  compact?: boolean;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -43,18 +45,20 @@ export default function SubmitButton({
 
   return (
     <div className="space-y-3">
-      <p className="text-sm text-gray-600">
-        Submit this case to trigger the audit. A report will be generated asynchronously.
-      </p>
+      {!compact && (
+        <p className="text-sm text-gray-600">
+          Submit this case to trigger the audit. A report will be generated asynchronously.
+        </p>
+      )}
       <button
         onClick={submit}
         disabled={busy || locked}
-        className="rounded-lg px-4 py-2.5 font-medium transition-opacity disabled:opacity-60 disabled:cursor-not-allowed bg-amber-500 text-slate-900 hover:bg-amber-400"
+        className="rounded-lg px-4 py-2.5 text-sm font-medium transition-opacity disabled:cursor-not-allowed disabled:opacity-60 bg-amber-500 text-slate-900 hover:bg-amber-400"
       >
         {locked ? "Already submitted" : busy ? "Submitting…" : isResubmit ? "Resubmit for audit" : "Submit for audit"}
       </button>
 
-      {submittedAt && (
+      {!compact && submittedAt && (
         <div className="text-sm text-gray-600">
           Submitted {new Date(submittedAt).toLocaleString()}
         </div>

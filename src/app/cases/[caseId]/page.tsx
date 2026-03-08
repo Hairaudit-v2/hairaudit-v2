@@ -4,20 +4,20 @@ import { cookies } from "next/headers";
 
 import SubmitButton from "./submit-button";
 import DownloadReport from "./download-report";
-import AuditScoreBadge from "@/components/reports/AuditScoreBadge";
 import GraftIntegrityCard from "@/app/dashboard/patient/GraftIntegrityCard";
 import GraftIntegrityReviewPanel from "@/app/dashboard/auditor/GraftIntegrityReviewPanel";
 import AuditorRerunPanel from "./AuditorRerunPanel";
 import DoctorAnswersSummary from "@/components/reports/DoctorAnswersSummary";
 import PatientAnswersSummary from "@/components/reports/PatientAnswersSummary";
 import EvidenceSummary from "@/components/reports/EvidenceSummary";
-import ScoreAreaGraph from "@/components/reports/ScoreAreaGraph";
-import DomainScoreCards from "@/components/reports/DomainScoreCards";
 import CompletenessIndexCard from "@/components/reports/CompletenessIndexCard";
 import DoctorScoringNarrativeCard from "@/components/reports/DoctorScoringNarrativeCard";
-import rubric from "@/lib/audit/rubrics/hairaudit_clinical_v1.json";
-import { buildRubricTitles } from "@/lib/audit/rubricTitles";
 import { mapLegacyDoctorAnswers } from "@/lib/doctorAuditSchema";
+import { normalizeIntakeFormData } from "@/lib/intake/normalizeIntakeFormData";
+import DomainIntelligenceAccordion from "@/components/reports/DomainIntelligenceAccordion";
+import VersionHistoryDrawer from "@/components/reports/VersionHistoryDrawer";
+import UploadThumbnailGallery from "@/components/reports/UploadThumbnailGallery";
+import LatestReportCard from "@/components/reports/LatestReportCard";
 
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { tryCreateSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -183,51 +183,116 @@ export default async function Page({
           ? "border-rose-300/20 bg-rose-300/10 text-rose-200"
           : "border-white/10 bg-white/5 text-slate-200/80";
 
+  const latestReport = reports?.[0] ?? null;
+  const latestSummary = (latestReport?.summary as Record<string, unknown>) ?? {};
+  const forensic = (latestSummary?.forensic_audit as Record<string, unknown> | null | undefined) ?? null;
+  const domainV1 = forensic && typeof forensic === "object" ? ((forensic as any).domain_scores_v1 as { domains?: unknown[] } | null | undefined) : null;
+  const domains = Array.isArray(domainV1?.domains) ? (domainV1?.domains as any[]) : [];
+  const benchmark = (forensic as any)?.benchmark as { eligible?: boolean; reasons?: string[] } | undefined;
+  const overallScores = (forensic as any)?.overall_scores_v1 as
+    | { performance_score?: number; confidence_grade?: string; confidence_multiplier?: number; benchmark_score?: number }
+    | undefined;
+  const completenessIndex = (forensic as any)?.completeness_index_v1 ?? null;
+  const reportScore = typeof latestSummary?.score === "number" ? latestSummary.score : overallScores?.performance_score;
+
+  const reportPatientAnswers =
+    latestReport?.patient_audit_version === 2 && latestReport?.patient_audit_v2 && Object.keys(latestReport.patient_audit_v2).length > 0
+      ? latestReport.patient_audit_v2
+      : ((latestSummary?.patient_answers as Record<string, unknown> | undefined) ?? null);
+  const normalizedPatient = reportPatientAnswers ? (normalizeIntakeFormData(reportPatientAnswers) as Record<string, unknown>) : null;
+  const monthLabels: Record<string, string> = { under_3: "<3 mo", "3_6": "3-6 mo", "6_9": "6-9 mo", "9_12": "9-12 mo", "12_plus": "12+ mo" };
+  const clinicLabel = normalizedPatient?.clinic_name ? String(normalizedPatient.clinic_name) : "Unknown clinic";
+  const procedureDate = normalizedPatient?.procedure_date ? String(normalizedPatient.procedure_date) : "Not provided";
+  const monthsPostOp = normalizedPatient?.months_since ? (monthLabels[String(normalizedPatient.months_since)] ?? String(normalizedPatient.months_since)) : "Not provided";
+  const confidenceLabel = overallScores?.confidence_grade ?? c.confidence_label_doctor ?? c.confidence_label_patient ?? "pending";
+
+  const uploadEntryPath = showDoctorFlow
+    ? `/cases/${c.id}/doctor/photos`
+    : showClinicFlow
+      ? `/cases/${c.id}/clinic/photos`
+      : `/cases/${c.id}/patient/photos`;
+  const continuePath = showPatientFlow
+    ? `/cases/${c.id}/patient/questions`
+    : showDoctorFlow
+      ? `/cases/${c.id}/doctor/form`
+      : showClinicFlow
+        ? `/cases/${c.id}/clinic/form`
+        : `/cases/${c.id}`;
+
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6">
+    <div className="mx-auto max-w-[1200px] px-4 pb-10 sm:px-6">
       <Link
         href={dashboardPath}
-        className="inline-flex items-center text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
+        className="inline-flex items-center text-sm font-medium text-slate-400 hover:text-slate-200 transition-colors"
       >
         ← Back to dashboard
       </Link>
 
-      <section className="relative mt-4 overflow-hidden rounded-2xl border border-slate-900 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-6 sm:p-8">
-        <div className="pointer-events-none absolute -top-20 -right-24 h-64 w-64 rounded-full bg-cyan-500/10 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-violet-500/10 blur-3xl" />
-
-        <div className="relative flex flex-col gap-5">
-          <div className="flex items-start justify-between gap-4">
+      <section className="relative mt-6 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-6">
+        <div className="pointer-events-none absolute -top-20 -right-20 h-64 w-64 rounded-full bg-cyan-400/10 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-violet-400/10 blur-3xl" />
+        <div className="relative grid gap-6">
+          <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <p className="text-xs font-medium tracking-wider text-slate-300/70 uppercase">Surgical Intelligence Case</p>
-              <h1 className="mt-2 text-2xl sm:text-3xl font-semibold text-white">
-                {c.title ?? "Untitled case"}
-              </h1>
-              <p className="mt-2 text-sm sm:text-base text-slate-200/70 max-w-2xl">
-                Complete contributions to unlock the highest-confidence forensic audit.
-              </p>
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Forensic AI Workspace</p>
+              <h1 className="mt-2 text-2xl font-semibold text-white">{c.title ?? "Untitled case"}</h1>
             </div>
-            <span className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold ${statusPill}`}>
-              {status}
+            <span className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold uppercase ${statusPill}`}>
+              {status.replaceAll("_", " ")}
             </span>
           </div>
 
-          {showPatientFlow && (
-            <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
-              <Link
-                href={`/cases/${c.id}/patient/questions`}
-                className="inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold text-slate-950 bg-gradient-to-r from-cyan-300 to-emerald-300 hover:from-cyan-200 hover:to-emerald-200 transition-colors shadow-sm"
-              >
-                Continue Intelligence Questions
-              </Link>
-              <Link
-                href={`/cases/${c.id}/patient/photos`}
-                className="inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold text-slate-200 border border-white/15 bg-white/5 hover:bg-white/10 backdrop-blur transition-colors"
-              >
-                Add / review photos
-              </Link>
+          <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+                <p className="text-xs uppercase tracking-wide text-slate-400">Case ID</p>
+                <p className="mt-1 truncate font-mono text-sm text-slate-100">{c.id}</p>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+                <p className="text-xs uppercase tracking-wide text-slate-400">Clinic</p>
+                <p className="mt-1 text-sm text-slate-100">{clinicLabel}</p>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+                <p className="text-xs uppercase tracking-wide text-slate-400">Procedure Date</p>
+                <p className="mt-1 text-sm text-slate-100">{procedureDate}</p>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+                <p className="text-xs uppercase tracking-wide text-slate-400">Months Post-op</p>
+                <p className="mt-1 text-sm text-slate-100">{monthsPostOp}</p>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+                <p className="text-xs uppercase tracking-wide text-slate-400">Score</p>
+                <p className="mt-1 text-lg font-semibold text-white">{reportScore ?? "Pending"}</p>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+                <p className="text-xs uppercase tracking-wide text-slate-400">Confidence</p>
+                <p className="mt-1 text-sm font-medium text-cyan-200">{String(confidenceLabel).toUpperCase()}</p>
+              </div>
             </div>
-          )}
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Link
+                href={continuePath}
+                className="inline-flex items-center justify-center rounded-xl border border-cyan-300/30 bg-cyan-300/15 px-4 py-3 text-sm font-semibold text-cyan-100 hover:bg-cyan-300/25"
+              >
+                Continue Questions
+              </Link>
+              <Link
+                href={uploadEntryPath}
+                className="inline-flex items-center justify-center rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-slate-100 hover:bg-white/15"
+              >
+                Upload Evidence
+              </Link>
+              <div className="rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm">
+                <p className="mb-1 text-xs uppercase tracking-wide text-slate-400">Run Audit</p>
+                <SubmitButton caseId={c.id} caseStatus={c.status ?? "draft"} submittedAt={c.submitted_at} compact />
+              </div>
+              <div className="rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm">
+                <p className="mb-2 text-xs uppercase tracking-wide text-slate-400">Download Report</p>
+                {latestReport?.pdf_path ? <DownloadReport pdfPath={latestReport.pdf_path} /> : <p className="text-xs text-slate-300/70">No PDF yet.</p>}
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -246,77 +311,88 @@ export default async function Page({
         </div>
       )}
 
-      {/* 3-step flow: 1. Information → 2. Photos → 3. Submit */}
-      {showPatientFlow && (
-        <div className="mt-6 p-5 rounded-2xl border border-slate-900 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-          <h2 className="font-semibold text-white mb-4">Patient contribution</h2>
-          <div className="flex flex-col sm:flex-row gap-3">
+      <section className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+        <h2 className="mb-4 text-lg font-semibold text-white">Contribution Paths</h2>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {showPatientFlow && (
             <Link
               href={`/cases/${c.id}/patient/questions`}
-              className="inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold text-slate-950 bg-gradient-to-r from-cyan-300 to-emerald-300 hover:from-cyan-200 hover:to-emerald-200 transition-colors"
+              className="inline-flex items-center justify-center rounded-xl border border-cyan-300/35 bg-cyan-300/15 px-4 py-3 text-sm font-semibold text-cyan-100"
             >
-              1. Intelligence questions
+              Patient Questions
             </Link>
-            <Link
-              href={`/cases/${c.id}/patient/photos`}
-              className="inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold text-slate-200 border border-white/15 bg-white/5 hover:bg-white/10 backdrop-blur transition-colors"
-            >
-              2. Add your photos
-            </Link>
-          </div>
-        </div>
-      )}
-
-      {showDoctorFlow && (
-        <div className="mt-6 p-5 rounded-2xl border border-slate-900 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-          <h2 className="font-semibold text-white mb-4">Doctor contribution</h2>
-          <div className="flex flex-col sm:flex-row gap-3">
+          )}
+          {showDoctorFlow && (
             <Link
               href={`/cases/${c.id}/doctor/form`}
-              className="inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold text-slate-950 bg-gradient-to-r from-blue-300 to-cyan-200 hover:from-blue-200 hover:to-cyan-100 transition-colors"
+              className="inline-flex items-center justify-center rounded-xl border border-blue-300/35 bg-blue-300/15 px-4 py-3 text-sm font-semibold text-blue-100"
             >
-              1. Complete your information
+              Doctor Form
             </Link>
-            <Link
-              href={`/cases/${c.id}/doctor/photos`}
-              className="inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold text-slate-200 border border-white/15 bg-white/5 hover:bg-white/10 backdrop-blur transition-colors"
-            >
-              2. Add your photos
-            </Link>
-          </div>
-        </div>
-      )}
-
-      {showClinicFlow && (
-        <div className="mt-6 p-5 rounded-2xl border border-slate-900 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-          <h2 className="font-semibold text-white mb-4">Clinic contribution</h2>
-          <div className="flex flex-col sm:flex-row gap-3">
+          )}
+          {showClinicFlow && (
             <Link
               href={`/cases/${c.id}/clinic/form`}
-              className="inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold text-slate-950 bg-gradient-to-r from-emerald-300 to-cyan-200 hover:from-emerald-200 hover:to-cyan-100 transition-colors"
+              className="inline-flex items-center justify-center rounded-xl border border-emerald-300/35 bg-emerald-300/15 px-4 py-3 text-sm font-semibold text-emerald-100"
             >
-              1. Complete your information
+              Clinic Form
             </Link>
-            <Link
-              href={`/cases/${c.id}/clinic/photos`}
-              className="inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold text-slate-200 border border-white/15 bg-white/5 hover:bg-white/10 backdrop-blur transition-colors"
-            >
-              2. Add your photos
-            </Link>
+          )}
+        </div>
+      </section>
+
+      <section className="mt-6 grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-6">
+          <EvidenceSummary caseRow={c} uploads={uploads ?? []} />
+          <CompletenessIndexCard ci={completenessIndex} />
+        </div>
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+          <h2 className="text-lg font-semibold text-white">Intelligence Dashboard</h2>
+          <p className="mt-1 text-sm text-slate-300/80">Domain signal strengths and benchmark readiness.</p>
+
+          <div className="mt-4 space-y-3">
+            {domains.length > 0 ? (
+              domains.map((domain) => {
+                const weighted = Math.round(Number((domain as any).weighted_score ?? 0));
+                const confidence = Math.round(Number((domain as any).confidence ?? 0) * 100);
+                return (
+                  <div key={(domain as any).domain_id} className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
+                    <div className="mb-1 flex items-center justify-between gap-3">
+                      <p className="text-sm font-medium text-white">
+                        {(domain as any).domain_id} - {(domain as any).title}
+                      </p>
+                      <span className="rounded-md border border-cyan-300/35 bg-cyan-300/15 px-2 py-0.5 text-xs font-semibold text-cyan-100">
+                        {weighted}
+                      </span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-slate-700/70">
+                      <div className="h-full rounded-full bg-gradient-to-r from-cyan-300 to-emerald-300" style={{ width: `${Math.max(5, Math.min(100, weighted))}%` }} />
+                    </div>
+                    <p className="mt-1 text-xs text-slate-300/80">Confidence {confidence}%</p>
+                  </div>
+                );
+              })
+            ) : (
+              <p className="text-sm text-slate-300/70">No domain data available yet.</p>
+            )}
+          </div>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
+              <p className="text-xs uppercase tracking-wide text-slate-400">Evidence Confidence Multiplier</p>
+              <p className="mt-1 text-lg font-semibold text-cyan-100">
+                {typeof overallScores?.confidence_multiplier === "number" ? overallScores.confidence_multiplier.toFixed(2) : "N/A"}
+              </p>
+            </div>
+            <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
+              <p className="text-xs uppercase tracking-wide text-slate-400">Benchmark Eligibility</p>
+              <p className={`mt-1 text-sm font-semibold ${benchmark?.eligible ? "text-emerald-200" : "text-slate-200"}`}>
+                {benchmark?.eligible ? "Eligible" : "Not Eligible"}
+              </p>
+            </div>
           </div>
         </div>
-      )}
-
-      {(showPatientFlow || showDoctorFlow || showClinicFlow) && (
-        <div className="mt-6 p-5 rounded-2xl border border-slate-900 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-          <h2 className="font-semibold text-white mb-2">3. Submit for audit</h2>
-          <SubmitButton caseId={c.id} caseStatus={c.status ?? "draft"} submittedAt={c.submitted_at} />
-        </div>
-      )}
-
-      <div className="mt-6">
-        <EvidenceSummary caseRow={c} uploads={uploads ?? []} />
-      </div>
+      </section>
 
       {/* Graft Integrity: auditor sees full review panel; patient sees approved/pending card */}
       {isAuditor && (
@@ -341,61 +417,14 @@ export default async function Page({
         </div>
       )}
 
-      {reports && reports.length > 0 && (() => {
-        const latest = reports[0];
-        const summary = (latest?.summary as Record<string, unknown>) ?? {};
-        const forensic = (summary?.forensic_audit as Record<string, unknown> | null | undefined) ?? null;
-        const v1 = forensic && typeof forensic === "object"
-          ? ((forensic as any).domain_scores_v1 as { domains?: unknown[] } | null | undefined)
-          : null;
-        const domains = Array.isArray(v1?.domains) ? (v1!.domains as any[]) : [];
-        const benchmark = (forensic as any)?.benchmark as any;
-        const overallScores = (forensic as any)?.overall_scores_v1 as any;
-        const tiers = (forensic as any)?.tiers_v1 as any[] | undefined;
-        if (!domains.length) return null;
-        return (
-          <div className="mt-6">
-            <DomainScoreCards domains={domains as any} benchmark={benchmark as any} overallScores={overallScores as any} />
-            {Array.isArray(tiers) && tiers.length > 0 && (
-              <div className="mt-4 rounded-2xl border border-slate-900 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-5">
-                <h3 className="font-semibold text-white">Submission Tier (v1)</h3>
-                <p className="mt-1 text-sm text-slate-300/80">Based on submitted documentation.</p>
-                <div className="mt-3 grid gap-2">
-                  {tiers.slice(0, 3).map((t) => (
-                    <div key={t.tier_id} className="flex items-start justify-between gap-3 rounded-xl border border-white/10 bg-white/5 p-3 text-sm">
-                      <div>
-                        <div className="font-semibold text-white">{t.title}</div>
-                        {Array.isArray(t.reasons) && t.reasons.length > 0 && (
-                          <div className="text-xs text-slate-300/80 mt-1">{t.reasons[0]}</div>
-                        )}
-                      </div>
-                      <div className={`shrink-0 rounded px-2 py-0.5 text-xs font-bold ${t.eligible ? "bg-emerald-300/20 text-emerald-200" : "bg-slate-700/70 text-slate-200"}`}>
-                        {t.eligible ? "Eligible" : "Not yet"}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        );
-      })()}
+      {domains.length > 0 && (
+        <div className="mt-6">
+          <DomainIntelligenceAccordion domains={domains as any} />
+        </div>
+      )}
 
-      {reports && reports.length > 0 && (() => {
-        const latest = reports[0];
-        const summary = (latest?.summary as Record<string, unknown>) ?? {};
-        const forensic = (summary?.forensic_audit as any) ?? null;
-        const ci = forensic?.completeness_index_v1 ?? null;
-        if (!ci) return null;
-        return (
-          <div className="mt-6">
-            <CompletenessIndexCard ci={ci} />
-          </div>
-        );
-      })()}
-
-      {reports && reports.length > 0 && (() => {
-        const latest = reports[0];
+      {latestReport && (() => {
+        const latest = latestReport;
         const summary = latest?.summary as Record<string, unknown> | undefined;
         const raw = summary?.doctor_answers as Record<string, unknown> | undefined;
         const doctorAnswers = raw ? mapLegacyDoctorAnswers(raw) : null;
@@ -434,87 +463,22 @@ export default async function Page({
         );
       })()}
 
-      {reports && reports.length > 0 && (() => {
-        const latest = reports[0];
-        const summary = (latest?.summary as Record<string, unknown>) ?? {};
-        const computed = summary?.computed as
-          | { component_scores?: { domains?: Record<string, number>; sections?: Record<string, number> } }
-          | undefined;
-        const comp = computed?.component_scores;
-        const fallbackDomains = (summary?.area_scores as Record<string, number> | null | undefined) ?? undefined;
-        const fallbackSections = (summary?.section_scores as Record<string, number> | null | undefined) ?? undefined;
-        const domains = comp?.domains ?? fallbackDomains;
-        const sections = comp?.sections ?? fallbackSections;
-        if (!domains && !sections) return null;
-        const { domainTitles, sectionTitles } = buildRubricTitles(
-          rubric as { domains?: { domain_id: string; title: string; sections?: { section_id: string; title: string }[] }[] }
-        );
-        return (
-          <div className="mt-6">
-            <ScoreAreaGraph
-              domains={domains}
-              sections={sections}
-              domainTitles={domainTitles}
-              sectionTitles={sectionTitles}
-            />
+      <section className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-white">Latest Report</h2>
+            {repErr && <p className="text-sm text-rose-300">{repErr.message}</p>}
           </div>
-        );
-      })()}
+          {reports && reports.length > 0 && <VersionHistoryDrawer reports={reports as any} />}
+        </div>
+        <div className="mt-4">
+          <LatestReportCard report={latestReport as any} />
+        </div>
+      </section>
 
-      <div className="mt-6 rounded-2xl border border-slate-900 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-5">
-        <h2 className="font-semibold text-white mb-2">Reports</h2>
-        {repErr && <p className="text-rose-300 text-sm">❌ {repErr.message}</p>}
-        {!reports || reports.length === 0 ? (
-          <p className="text-slate-300/80 text-sm">No report yet. Submit the case to trigger audit.</p>
-        ) : (
-          <ul className="space-y-4">
-            {reports.map((r) => {
-              const summary = (r.summary ?? {}) as { score?: number };
-              const isProcessing = !r.pdf_path && (r as any).status !== "failed";
-              const isFailed = (r as any).status === "failed";
-              return (
-                <li key={r.id} className="rounded-xl border border-white/10 bg-white/5 p-4">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <b className="text-white">Report v{r.version}</b>
-                    {isFailed ? (
-                      <span className="rounded-md bg-rose-300/20 px-2 py-1 text-xs text-rose-200">Failed</span>
-                    ) : isProcessing ? (
-                      <span className="rounded-md bg-amber-300/20 px-2 py-1 text-xs text-amber-200">Processing…</span>
-                    ) : (
-                      <AuditScoreBadge score={summary?.score} />
-                    )}
-                    <span className="text-xs text-slate-300/70">{new Date(r.created_at).toLocaleString()}</span>
-                  </div>
-                  {isFailed && (r as any).error && (
-                    <p className="mt-2 text-xs text-rose-300">{(r as any).error}</p>
-                  )}
-                  {r.pdf_path && (
-                    <div className="mt-2">
-                      <DownloadReport pdfPath={r.pdf_path} />
-                    </div>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </div>
-
-      <div className="mt-6 rounded-2xl border border-slate-900 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-5">
-        <h2 className="font-semibold text-white mb-2">Uploaded files</h2>
-        {upErr && <p className="text-rose-300 text-sm">❌ {upErr.message}</p>}
-        {!uploads || uploads.length === 0 ? (
-          <p className="text-slate-300/80 text-sm">No uploads yet.</p>
-        ) : (
-          <ul className="space-y-2">
-            {uploads.map((u) => (
-              <li key={u.id} className="text-sm text-slate-200">
-                <span className="font-medium text-white">{u.type}</span>
-                <span className="text-slate-300/70 ml-2">{u.storage_path}</span>
-              </li>
-            ))}
-          </ul>
-        )}
+      {upErr && <p className="mt-6 text-sm text-rose-300">{upErr.message}</p>}
+      <div className="mt-6">
+        <UploadThumbnailGallery uploads={(uploads ?? []) as any} />
       </div>
     </div>
   );

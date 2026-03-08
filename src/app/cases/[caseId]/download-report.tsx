@@ -27,9 +27,9 @@ export default function DownloadReport({ pdfPath }: { pdfPath: string }) {
       <button
         onClick={download}
         disabled={busy}
-        className="rounded-lg px-3 py-2 text-sm font-medium bg-amber-500 text-slate-900 hover:bg-amber-400 disabled:opacity-60"
+        className="rounded-lg border border-cyan-300/30 bg-cyan-300/15 px-3 py-2 text-sm font-medium text-cyan-100 hover:bg-cyan-300/25 disabled:opacity-60"
       >
-        {busy ? "Preparing…" : "Download PDF"}
+        {busy ? "Preparing..." : "Download Report"}
       </button>
       {err && <p className="mt-2 text-sm text-red-600">❌ {err}</p>}
     </div>
