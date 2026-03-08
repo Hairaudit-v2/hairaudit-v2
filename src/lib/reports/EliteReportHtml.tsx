@@ -219,9 +219,14 @@ function renderRadarSvg(opts: {
 export function renderEliteReportHtml(vm: EliteReportViewModel): string {
   const { caseId, generatedAt, version, metrics, areaDomains, sectionScores, highlights, risks, radar, photosByCategory, doctorBlockHtml, debugFooter } = vm;
   const overallScore = typeof vm.viewModel.score === "number" && Number.isFinite(vm.viewModel.score) ? vm.viewModel.score : null;
-
-  const viewModelWithConfidence = vm.viewModel as ReportViewModel & {
-    confidencePanel?: { confidenceScore?: number };
+  const viewModelExt = vm.viewModel as ReportViewModel & {
+    model?: string;
+    confidencePanel?: {
+      confidenceScore?: number;
+      confidenceLabel?: string;
+      missingCategories?: string[];
+      limitations?: string[];
+    };
     forensic?: {
       summary?: string;
       key_findings?: Array<{
@@ -263,15 +268,29 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
         };
       };
     };
+    graftIntegrity?: {
+      auditor_status?: "approved" | "pending" | "needs_more_evidence" | "rejected";
+      claimed_grafts?: number | null;
+      estimated_implanted?: { min?: number | null; max?: number | null };
+      confidence?: number;
+      confidence_label?: "low" | "medium" | "high";
+      limitations?: string[];
+    } | null;
   };
+  const forensic = viewModelExt.forensic;
+  const keyFindings = Array.isArray(forensic?.key_findings) ? forensic.key_findings : [];
+  const narrativeText = String(forensic?.summary ?? "").trim();
   const confidenceNumeric =
-    typeof viewModelWithConfidence.confidencePanel?.confidenceScore === "number"
-      ? viewModelWithConfidence.confidencePanel.confidenceScore
+    typeof viewModelExt.confidencePanel?.confidenceScore === "number"
+      ? viewModelExt.confidencePanel.confidenceScore
       : typeof radar?.confidence === "number"
         ? radar.confidence
         : null;
-  const confidenceScorePct = confidenceNumeric == null ? "N/A" : `${Math.round(clamp01(confidenceNumeric) * 100)}%`;
-
+  const confidencePct = confidenceNumeric == null ? null : Math.round(clamp01(confidenceNumeric) * 100);
+  const confidenceScorePct = confidencePct == null ? "N/A" : `${confidencePct}%`;
+  const confidenceBand =
+    confidencePct == null ? "Limited" : confidencePct >= 80 ? "High" : confidencePct >= 60 ? "Moderate" : "Low";
+  const modelVersion = String(viewModelExt.model ?? version ? `v${String(version ?? "")}` : "N/A").trim();
   const scoreBand = (() => {
     if (overallScore == null) return { label: "Review", color: "#F6C46D" };
     if (overallScore >= 90) return { label: "Platinum", color: "#DDE7F5" };
@@ -280,13 +299,8 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     if (overallScore >= 60) return { label: "Bronze", color: "#E9D0B3" };
     return { label: "Review", color: "#F6C46D" };
   })();
-
-  const forensic = viewModelWithConfidence.forensic;
-  const keyFindings = Array.isArray(forensic?.key_findings) ? forensic.key_findings : [];
-  const narrativeText = String(forensic?.summary ?? "").trim();
   const norm = (s: string) => s.toLowerCase();
   const average = (nums: number[]) => (nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : null);
-
   const findScore = (matchers: string[]) => {
     const domainScores = areaDomains
       .filter((d) => matchers.some((m) => norm(d.title).includes(m)))
@@ -297,85 +311,83 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       .map((s) => s.score);
     return average(secScores);
   };
-
   const domains = [
     {
       title: "Donor Management",
       match: ["donor"],
-      clinical: "Even donor extraction patterns are important to reduce long-term donor thinning or visible patchiness risk.",
-      monitoring: "Monitor donor density and pattern uniformity over the next 6-12 months.",
+      clinical: "Donor management patterns may influence long-term donor preservation and visual uniformity.",
+      monitoring: "Monitor donor density and visible donor homogeneity over the next 6-12 months.",
     },
     {
       title: "Recipient Site Design",
       match: ["recipient", "hairline", "naturalness", "design"],
-      clinical: "Recipient site design affects frontal naturalness, transition softness, and long-term visual balance.",
-      monitoring: "Track symmetry, transition softness, and zone blending during maturation.",
+      clinical: "Recipient site distribution can influence naturalness and zone-to-zone balance.",
+      monitoring: "Monitor transition softness, frontal framing, and regional blending during growth cycles.",
     },
     {
       title: "Graft Handling",
       match: ["graft", "hydrat", "viability", "storage", "out-of-body"],
-      clinical: "Graft handling conditions can influence viability and growth consistency.",
-      monitoring: "If concerns persist, request more detailed handling documentation and follow-up context.",
+      clinical: "Graft handling consistency may influence viability and downstream growth quality.",
+      monitoring: "Where evidence is limited, request procedural details or additional intra-operative documentation.",
     },
     {
       title: "Implantation Technique",
       match: ["implant", "placement", "spacing", "angle", "density"],
-      clinical: "Implantation spacing and angle consistency influence achieved density and natural appearance.",
-      monitoring: "Monitor maturation density and pattern consistency in frontal and mid-scalp zones.",
+      clinical: "Implantation spacing and angle coherence can influence visual density and native blending.",
+      monitoring: "Track maturing density pattern and directional consistency between regions.",
     },
     {
       title: "Documentation Quality",
       match: ["document", "aftercare", "safety", "evidence", "photo"],
-      clinical: "Documentation quality determines how confidently procedural quality can be interpreted.",
-      monitoring: "Request additional follow-up imagery or records where evidence remains limited.",
+      clinical: "Documentation quality determines confidence in all pattern-based interpretations.",
+      monitoring: "Add missing captures where possible to improve future confidence and longitudinal comparability.",
     },
   ];
-
-  const domainBlocks = domains
-    .map((domain) => {
+  const domainCards = domains
+    .map((domain, idx) => {
       const score = findScore(domain.match);
       const matchingFindings = keyFindings.filter((f) =>
         domain.match.some((m) => norm(String(f?.title ?? "")).includes(m) || norm(String(f?.impact ?? "")).includes(m))
       );
-      const narrative =
+      const observation =
         String(matchingFindings[0]?.impact ?? "").trim() ||
         (score == null
-          ? "Evidence was insufficient to produce a high-confidence explanatory narrative for this domain."
+          ? "Assessment is limited by available evidence in this domain."
           : score >= 80
-            ? "Observed indicators are generally consistent with strong execution in this domain."
+            ? "Observed patterns appear consistent with stronger domain performance."
             : score >= 65
-              ? "Observed indicators are mixed, with acceptable features and some uncertainty."
-              : "Observed indicators suggest this domain may require closer clinical follow-up.");
+              ? "Observed patterns are mixed with moderate confidence."
+              : "Observed patterns suggest this area may benefit from closer follow-up.");
       const evidence = matchingFindings
         .flatMap((f) => (Array.isArray(f?.evidence) ? f.evidence : []))
         .map((e) => String(e?.observation ?? "").trim())
         .filter(Boolean)
         .slice(0, 3);
       const guidance = String(matchingFindings[0]?.recommended_next_step ?? "").trim() || domain.monitoring;
-
-      const scoreWidth = score == null ? 12 : Math.max(5, Math.min(100, Math.round(score)));
+      const scoreWidth = score == null ? 10 : Math.max(5, Math.min(100, Math.round(score)));
       const scoreClass = score == null ? "low" : score >= 80 ? "high" : score >= 60 ? "medium" : "low";
       const scoreLabel = score == null ? "Insufficient evidence" : `${Math.round(score)} / 100`;
-
       return `
-      <div class="domainBlock">
-        <h3>${esc(domain.title)}</h3>
-        <div class="domainScoreRow">
-          <div class="domainScoreText">${esc(scoreLabel)}</div>
-          <div class="areaScoreBar"><div class="areaScoreFill ${scoreClass}" style="width:${scoreWidth}%;"></div></div>
+        <div class="domainCard ${idx % 2 ? "domainAlt" : ""}">
+          <div class="domainTop">
+            <h3>${esc(domain.title)}</h3>
+            <div class="domainScoreValue">${esc(scoreLabel)}</div>
+          </div>
+          <div class="bar"><div class="barFill ${scoreClass}" style="width:${scoreWidth}%;"></div></div>
+          <div class="microTitle">Observation</div>
+          <p class="miniText">${esc(observation)}</p>
+          <div class="microTitle">Why It Matters</div>
+          <p class="miniText">${esc(domain.clinical)}</p>
+          <div class="microTitle">Evidence</div>
+          <ul class="microList">
+            ${(evidence.length ? evidence : ["No high-confidence evidence bullets were available for this domain."])
+              .map((item) => `<li>${esc(item)}</li>`)
+              .join("")}
+          </ul>
+          <div class="microTitle">Monitoring Guidance</div>
+          <p class="miniText">${esc(guidance)}</p>
         </div>
-        <div class="prose">${esc(narrative)}</div>
-        <div class="subhead">Supporting Evidence</div>
-        <ul class="miniList">
-          ${(evidence.length ? evidence : ["Insufficient evidence for detailed supporting observations in this domain."])
-            .map((e) => `<li>${esc(e)}</li>`)
-            .join("")}
-        </ul>
-        <div class="subhead">Clinical Relevance</div>
-        <p class="miniText">${esc(domain.clinical)}</p>
-        <div class="subhead">Monitoring Guidance</div>
-        <p class="miniText">${esc(guidance)}</p>
-      </div>`;
+      `;
     })
     .join("");
 
@@ -386,45 +398,65 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
   const donorViews = catLower.filter((x) => x.includes("donor")).length;
   const recipientViews = catLower.filter((x) => x.includes("recipient") || x.includes("front") || x.includes("top") || x.includes("crown")).length;
   const intraViews = catLower.filter((x) => x.includes("intra")).length;
+  const missingCats = Array.isArray(viewModelExt.confidencePanel?.missingCategories)
+    ? viewModelExt.confidencePanel!.missingCategories!.filter(Boolean)
+    : [];
+  const limitationNotes = Array.isArray(viewModelExt.confidencePanel?.limitations)
+    ? viewModelExt.confidencePanel!.limitations!.filter(Boolean)
+    : [];
 
-  const photoBlock =
-    photoCatsWithItems.length === 0
-      ? `<div class="subtitle">No image groups available.</div>`
-      : photoCatsWithItems
-          .map((cat) => {
-            const items = (photosByCategory[cat] ?? []).filter((x) => !!x?.signedUrl);
-            const confidenceTag = items.length >= 3 ? "High confidence" : items.length === 2 ? "Moderate confidence" : "Low confidence";
-            const observation = cat.toLowerCase().includes("donor")
-              ? "Donor region appears reviewed for extraction distribution and overharvesting pattern signals."
-              : cat.toLowerCase().includes("recipient")
-                ? "Recipient region appears reviewed for spacing consistency and density distribution cues."
-                : cat.toLowerCase().includes("intra")
-                  ? "Intra-operative images provide procedural context where available."
-                  : "Image group contributes contextual pattern evidence.";
-            return `
-            <div class="photoCat">
-              <div class="photoCatTitle">${esc(String(cat).replaceAll("_", " "))}</div>
-              <div class="photoGrid">
+  const executiveSummary =
+    narrativeText.length > 0
+      ? narrativeText.split(".").slice(0, 2).join(".").trim() + (narrativeText.includes(".") ? "." : "")
+      : "This report summarizes pattern-based AI observations across donor, recipient, implantation, and documentation evidence.";
+
+  const riskStrip = `
+    <div class="riskStrip">
+      <div class="riskPill good">✔ Strong indicators: ${highlights.length}</div>
+      <div class="riskPill watch">⚠ Areas requiring review: ${risks.length}</div>
+      <div class="riskPill note">ℹ Limited evidence markers: ${allPhotos.length === 0 ? 1 : 0}</div>
+    </div>
+  `;
+
+  const photoGroups = photoCatsWithItems.length
+    ? photoCatsWithItems
+        .map((cat) => {
+          const items = (photosByCategory[cat] ?? []).filter((x) => !!x?.signedUrl);
+          const lower = cat.toLowerCase();
+          const groupObservation = lower.includes("donor")
+            ? "Donor captures were reviewed for extraction spread, clustering, and density preservation cues."
+            : lower.includes("recipient")
+              ? "Recipient captures were reviewed for spacing pattern, directional flow, and density balance cues."
+              : lower.includes("intra")
+                ? "Intra-operative captures were reviewed for procedural context and handling visibility."
+                : "Submitted captures were reviewed for category-specific visual context.";
+          return `
+            <div class="photoGroup">
+              <div class="photoGroupTitle">${esc(String(cat).replaceAll("_", " "))}</div>
+              <div class="forensicGrid">
                 ${items
                   .map(
                     (u) => `
-                  <figure class="photo">
-                    <img src="${esc(String(u.signedUrl))}" alt="${esc(String(u.label || "photo"))}" />
-                    <figcaption>${esc(String(u.label || ""))}</figcaption>
-                  </figure>`
+                      <figure class="forensicPhoto">
+                        <img src="${esc(String(u.signedUrl))}" alt="${esc(String(u.label || "photo"))}" />
+                        <figcaption>${esc(String(u.label || ""))}</figcaption>
+                      </figure>
+                    `
                   )
                   .join("")}
               </div>
-              <p class="miniText"><b>AI Observations:</b> ${esc(observation)} <span class="confTag">${esc(confidenceTag)}</span></p>
-            </div>`;
-          })
-          .join("");
+              <p class="miniText"><b>AI Observation:</b> ${esc(groupObservation)}</p>
+            </div>
+          `;
+        })
+        .join("")
+    : `<div class="emptyState">No photo evidence groups were available for this report.</div>`;
 
   const patientGuidance = domains.map((d) => d.monitoring).slice(0, 4);
   const predictiveOutlook =
     metrics.graftSurvival.toLowerCase().includes("insufficient")
-      ? "Based on currently submitted evidence, graft survival projection remains low-confidence and should be interpreted cautiously."
-      : `Based on available visual density patterns, observed implantation quality appears broadly consistent with a ${esc(metrics.graftSurvival)} graft survival expectation range.`;
+      ? "Current visual evidence supports only a low-confidence graft survival outlook estimate."
+      : `Observed implantation and density patterns appear broadly consistent with a ${esc(metrics.graftSurvival)} graft survival expectation range.`;
 
   const fingerprintSummary = buildSurgicalFingerprintSummary({
     areaDomains,
@@ -445,46 +477,72 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
         .map((idx) => {
           const threshold = (idx + 1) * 20;
           const active = card.strength >= threshold;
-          return `<span class="fpStripDot ${active ? "active" : ""}"></span>`;
+          return `<span class="fpDot ${active ? "active" : ""}"></span>`;
         })
         .join("");
       return `
       <div class="fpCard">
         <div class="fpHead">
-          <div class="fpTitleWrap">
-            <span class="fpIcon">${esc(card.icon)}</span>
-            <h3 class="fpTitle">${esc(card.title)}</h3>
-          </div>
+          <div class="fpTitleWrap"><span class="fpIcon">${esc(card.icon)}</span><h4>${esc(card.title)}</h4></div>
           <span class="fpPill ${confidenceClass}">${esc(confidenceText)}</span>
         </div>
         <div class="fpLabel">${esc(card.label)}</div>
         <p class="miniText"><b>AI Observation:</b> ${esc(card.observation)}</p>
         <p class="miniText"><b>Why It Matters:</b> ${esc(card.whyItMatters)}</p>
         ${card.limitation ? `<p class="miniText"><b>Limitation:</b> ${esc(card.limitation)}</p>` : ""}
-        <div class="fpStrip" aria-hidden="true">${stripe}</div>
+        <div class="fpStrength">${stripe}</div>
       </div>`;
     })
     .join("");
 
-  const radarBlock =
+  const radarPanel =
     radar && Array.isArray(radar.labels) && Array.isArray(radar.values) && radar.labels.length >= 3
       ? `
-      <div style="margin-top: 12px;">
-        <div style="font-size: 12px; font-weight: 800;">Audit Performance Signature</div>
-        <div class="subtitle" style="margin-top: 4px;">Structural balance across core transplant domains.</div>
+      <div class="radarPanel">
+        <div class="panelTitle">Diagnostic Radar Signature</div>
         <div class="radarWrap">
           ${renderRadarSvg({
             labels: radar.labels,
             values: radar.values,
-            size: 520,
+            size: 500,
             levels: 5,
             overall: radar.overall,
             confidence: radar.confidence,
           })}
         </div>
-        <div class="miniText">Primary axes: Donor Management, Recipient Site Design, Graft Handling, Implantation Technique, Documentation Quality.</div>
+        <div class="miniText">Balanced performance signatures indicate consistency across key transplant domains.</div>
+      </div>`
+      : `<div class="radarPanel"><div class="emptyState">Radar signature unavailable for this report.</div></div>`;
+
+  const gii = viewModelExt.graftIntegrity ?? null;
+  const graftIntegrityModule = gii
+    ? `
+      <div class="premCard">
+        <div class="premTitle">Graft Integrity Index</div>
+        <div class="miniText"><b>Auditor status:</b> ${esc(String(gii.auditor_status ?? "pending"))}</div>
+        <div class="miniText"><b>Claimed grafts:</b> ${gii.claimed_grafts == null ? "N/A" : esc(String(gii.claimed_grafts))}</div>
+        <div class="miniText"><b>Estimated implanted:</b> ${
+          gii.estimated_implanted?.min == null && gii.estimated_implanted?.max == null
+            ? "N/A"
+            : `${esc(String(gii.estimated_implanted?.min ?? "N/A"))} - ${esc(String(gii.estimated_implanted?.max ?? "N/A"))}`
+        }</div>
+        <div class="miniText"><b>Confidence:</b> ${gii.confidence_label ? esc(String(gii.confidence_label)) : "N/A"}</div>
       </div>
-      `
+    `
+    : "";
+  const auditorModule =
+    gii?.auditor_status && gii.auditor_status !== "pending"
+      ? `
+      <div class="premCard">
+        <div class="premTitle">Human Auditor Validation</div>
+        <div class="miniText">Current auditor validation status: <b>${esc(String(gii.auditor_status))}</b>.</div>
+        ${
+          Array.isArray(gii.limitations) && gii.limitations.length > 0
+            ? `<ul class="microList">${gii.limitations.slice(0, 3).map((x) => `<li>${esc(String(x))}</li>`).join("")}</ul>`
+            : `<div class="miniText">No additional auditor limitation notes were provided.</div>`
+        }
+      </div>
+    `
       : "";
 
   const html = `<!doctype html>
@@ -497,11 +555,14 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     @page { size: A4; margin: 16mm 14mm; }
 
     :root {
-      --ink: #0b0d12;
-      --muted: #5b6472;
-      --line: #e6e8ee;
-      --card: #f7f8fb;
-      --soft: #fbfbfd;
+      --ink: #081026;
+      --muted: #4b5c78;
+      --line: #dbe5f4;
+      --line-strong: #b6c6de;
+      --card: #f7faff;
+      --soft: #f2f7ff;
+      --hero: #081a34;
+      --hero2: #0f274a;
       --card-radius: 14px;
       --card-padding: 14px;
       --card-gap: 12px;
@@ -512,86 +573,165 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     body {
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
       color: var(--ink);
-      background: linear-gradient(180deg, #ffffff 0%, #f3f8ff 100%);
+      background:
+        radial-gradient(circle at 8% 12%, rgba(148, 163, 184, 0.08), transparent 38%),
+        radial-gradient(circle at 90% 8%, rgba(14, 165, 233, 0.08), transparent 42%),
+        linear-gradient(180deg, #ffffff 0%, #f5f9ff 100%);
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
     }
 
-    .wrap { max-width: 900px; margin: 0 auto; padding: 0 4px; }
+    .wrap { max-width: 910px; margin: 0 auto; padding: 0 4px; }
     .pageBreak { page-break-before: always; }
     h2 { page-break-after: avoid; }
 
-    .topbar {
-      display:flex;
-      justify-content:space-between;
-      gap: 16px;
-      padding: 14px 16px;
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      background: linear-gradient(180deg, #ffffff 0%, var(--soft) 100%);
+    .hero {
+      border-radius: 18px;
+      border: 1px solid rgba(148, 163, 184, 0.24);
+      background:
+        radial-gradient(circle at 8% 20%, rgba(45,212,191,0.20), rgba(45,212,191,0) 42%),
+        radial-gradient(circle at 92% 10%, rgba(251,191,36,0.20), rgba(251,191,36,0) 45%),
+        linear-gradient(140deg, var(--hero) 0%, var(--hero2) 100%);
+      color: #edf3ff;
+      padding: 18px;
       page-break-inside: avoid;
+      box-shadow: 0 18px 36px rgba(2, 12, 35, 0.16);
     }
-
+    .topbar { display:flex; justify-content:space-between; gap: 14px; }
     .brand { display:flex; gap: 12px; align-items:flex-start; }
     .brandLogo {
       width: 54px;
       height: 54px;
       object-fit: contain;
       border-radius: 12px;
-      border: 1px solid var(--line);
-      background: #fff;
+      border: 1px solid rgba(226,232,240,0.35);
+      background: rgba(255,255,255,0.96);
       padding: 6px;
     }
-    .title { margin: 0; font-size: 20px; font-weight: 900; letter-spacing: -0.01em; }
-    .subtitle { margin-top: 2px; font-size: 12px; color: var(--muted); }
-    .kicker { margin-top: 2px; font-size: 11px; color: #334155; font-weight: 700; }
+    .title { margin: 0; font-size: 22px; font-weight: 900; letter-spacing: -0.01em; color: #f8fbff; }
+    .subtitle { margin-top: 4px; font-size: 12px; color: #d8e4ff; line-height: 1.45; }
+    .kicker { margin-top: 6px; font-size: 11px; color: #b8cef6; font-weight: 700; letter-spacing: .03em; }
 
     .meta {
       text-align:right;
       font-size: 11px;
-      color: var(--muted);
-      line-height: 1.4;
+      color: #d6e3fb;
+      line-height: 1.45;
+      min-width: 210px;
     }
-    .meta b { color: var(--ink); }
+    .meta b { color: #ffffff; }
+    .metaRow { padding: 2px 0; border-bottom: 1px dashed rgba(203,213,225,0.25); }
+    .metaRow:last-child { border-bottom: none; }
 
     .section {
       margin-top: 18px;
-      padding: var(--card-padding) 16px;
+      padding: 16px;
       border: 1px solid var(--line);
       border-radius: var(--card-radius);
-      background: #fff;
+      background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
       page-break-inside: avoid;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
     }
-
-    .sectionHead { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+    .sectionHead { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom: 10px; }
+    .sectionHead h2 { margin: 0; font-size: 18px; letter-spacing: -0.01em; }
     .pillRow { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
 
     .pill {
       display:inline-flex; gap:6px; align-items:center;
       padding: 6px 10px; border-radius: 999px;
-      border: 1px solid var(--line); background: #fff;
+      border: 1px solid var(--line-strong); background: #fff;
       font-size: 11px; color: var(--muted);
     }
     .pill b { color: var(--ink); }
 
-    .scoreGrid { display:grid; grid-template-columns: 1fr 2fr; gap: 12px; margin-top: 12px; page-break-inside: avoid; }
-
-    .scoreCard {
-      border: 1px solid var(--line);
-      border-radius: var(--card-radius);
-      padding: var(--card-padding);
-      background: radial-gradient(circle at 25% 20%, #ffffff 0%, #eef6ff 100%);
+    .execLayout { display:grid; grid-template-columns: 1.1fr 1.4fr; gap: 12px; }
+    .scoreBadge {
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      border-radius: 18px;
+      padding: 14px;
+      background:
+        radial-gradient(circle at 20% 10%, rgba(251, 191, 36, 0.25), rgba(251,191,36,0) 55%),
+        linear-gradient(155deg, #ffffff 0%, #ecf4ff 100%);
+      min-height: 220px;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
     }
-    .scoreLabel { font-size: 12px; color: var(--muted); }
-    .scoreValue { font-size: 42px; font-weight: 900; letter-spacing: -0.03em; line-height: 1; margin-top: 6px; }
-    .scoreSub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+    .scoreLabel { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #556685; font-weight: 700; }
+    .scoreBubble {
+      width: 150px; height: 150px; border-radius: 999px;
+      display:flex; align-items:center; justify-content:center; flex-direction: column;
+      border: 1px solid rgba(148,163,184,0.3);
+      background: radial-gradient(circle at 30% 20%, #ffffff 0%, #e3eefc 100%);
+      box-shadow: inset 0 0 0 4px rgba(255,255,255,0.6), 0 12px 28px rgba(15,23,42,.09);
+    }
+    .scoreValue { font-size: 44px; font-weight: 900; line-height: 1; letter-spacing: -0.03em; }
+    .scoreSub { font-size: 10px; color: var(--muted); margin-top: 4px; }
+    .tierTag {
+      margin-top: 10px; display: inline-flex; padding: 7px 12px; border-radius: 999px;
+      border: 1px solid var(--line-strong); font-size: 11px; font-weight: 800;
+    }
 
-    .metricCard { border: 1px solid var(--line); border-radius: var(--card-radius); padding: var(--card-padding); background:#fff; }
-    .metricTitle { font-size: 12px; color: var(--muted); margin-bottom: 8px; font-weight: 700; }
+    .metricCard, .panelCard { border: 1px solid var(--line); border-radius: 14px; padding: 12px; background:#fff; }
+    .metricTitle, .panelTitle { font-size: 12px; color: var(--muted); margin-bottom: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; }
     .metricList { display:grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; }
     .metricList div { display:flex; justify-content:space-between; gap:10px; font-size: 11px; flex-wrap: wrap; }
     .metricList span { color: var(--muted); }
     .metricList b { color: var(--ink); word-break: break-word; overflow-wrap: break-word; max-width: 65%; text-align: right; }
+    .radarPanel { margin-top: 12px; border: 1px solid var(--line); border-radius: 16px; padding: 12px; background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%); }
+    .radarWrap { margin-top: 8px; display:flex; justify-content:center; page-break-inside: avoid; }
+    .radarWrap svg { max-width: 100%; height: auto; border-radius: 16px; border: 1px solid rgba(14,165,233,0.2); }
+    .infoGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+    .riskStrip { margin-top: 10px; display:flex; gap:8px; flex-wrap:wrap; }
+    .riskPill { padding: 6px 10px; border-radius: 999px; font-size: 11px; border: 1px solid transparent; font-weight: 700; }
+    .riskPill.good { background: #ecfdf5; border-color: #a7f3d0; color: #166534; }
+    .riskPill.watch { background: #fffbeb; border-color: #fcd34d; color: #92400e; }
+    .riskPill.note { background: #eff6ff; border-color: #bfdbfe; color: #1e3a8a; }
+    .summaryCard { margin-top: 10px; border: 1px solid var(--line); border-radius: 14px; padding: 12px; background: #fff; }
+
+    .domainGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; }
+    .domainCard { border: 1px solid var(--line); border-radius: 14px; padding: 12px; background: #fff; page-break-inside: avoid; }
+    .domainAlt { background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%); }
+    .domainTop { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
+    .domainTop h3 { margin:0; font-size: 14px; }
+    .domainScoreValue { font-size: 12px; font-weight: 800; color: #0f172a; white-space: nowrap; }
+    .bar { margin-top: 8px; height: 8px; background: #e7edf6; border-radius: 999px; overflow: hidden; }
+    .barFill { height: 100%; border-radius: 999px; }
+    .barFill.high { background: #059669; }
+    .barFill.medium { background: #d97706; }
+    .barFill.low { background: #64748b; }
+    .microTitle { margin-top: 8px; font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: #637793; font-weight: 800; }
+    .microList { margin: 6px 0 0; padding-left: 17px; }
+    .microList li { margin: 4px 0; font-size: 11px; color: #11223a; }
+
+    .forensicBoard { border: 1px solid var(--line); border-radius: 14px; padding: 12px; background: linear-gradient(180deg, #ffffff 0%, #f7faff 100%); }
+    .photoGroup { margin-top: 12px; padding-top: 10px; border-top: 1px dashed #cbd5e1; }
+    .photoGroup:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+    .photoGroupTitle { font-size: 12px; font-weight: 800; text-transform: capitalize; color: #0f1f39; }
+    .forensicGrid { display:grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 8px; }
+    .forensicPhoto { margin:0; border: 1px solid var(--line); border-radius: 12px; overflow:hidden; background:#fff; }
+    .forensicPhoto img { display:block; width:100%; height:170px; object-fit:cover; }
+    .forensicPhoto figcaption { font-size:10px; color: var(--muted); border-top:1px solid var(--line); padding:8px; min-height: 32px; }
+    .limitPanel { margin-top: 12px; border: 1px solid #bfdbfe; border-radius: 12px; padding: 10px; background: #eff6ff; font-size: 11px; color: #1e3a8a; }
+
+    .premiumGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+    .premCard { border: 1px solid #d4d4f9; border-radius: 12px; padding: 12px; background: linear-gradient(180deg, #ffffff 0%, #f8f5ff 100%); }
+    .premTitle { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: #4338ca; margin-bottom: 6px; }
+    .fingerprintSection { margin-top: 12px; border: 1px solid #bae6fd; border-radius: 14px; padding: 12px; background: linear-gradient(180deg, #ffffff 0%, #f0f9ff 100%); }
+    .fpGrid { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
+    .fpCard { border: 1px solid #dbeafe; border-radius: 12px; padding: 10px; background: #fff; }
+    .fpHead { display:flex; justify-content:space-between; align-items:center; gap: 8px; }
+    .fpTitleWrap { display:flex; align-items:center; gap: 6px; }
+    .fpTitleWrap h4 { margin:0; font-size: 12px; }
+    .fpIcon { width: 20px; height: 20px; border-radius: 999px; border: 1px solid var(--line); display:inline-flex; align-items:center; justify-content:center; font-size: 11px; }
+    .fpPill { font-size: 10px; font-weight: 800; border-radius: 999px; padding: 3px 8px; border: 1px solid transparent; }
+    .fpPillHigh { background: #dcfce7; color: #166534; border-color: #86efac; }
+    .fpPillModerate { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
+    .fpPillLow { background: #e2e8f0; color: #334155; border-color: #cbd5e1; }
+    .fpLabel { margin-top: 6px; font-size: 12px; font-weight: 800; color: #0f172a; }
+    .fpStrength { margin-top: 8px; display:flex; gap: 4px; }
+    .fpDot { width: 14px; height: 5px; border-radius: 999px; background: #e2e8f0; }
+    .fpDot.active { background: #38bdf8; }
 
     .twoCol { display:grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
     .listCard { border: 1px solid var(--line); border-radius: var(--card-radius); padding: var(--card-padding); background:#fff; page-break-inside: avoid; }
@@ -599,22 +739,12 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     .listCard ul { margin: 0; padding-left: 18px; }
     .listCard li { font-size: 11px; color: var(--ink); margin: 6px 0; }
     .wrapText { word-break: break-word; overflow-wrap: break-word; }
-
-    .areaScoreGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; margin-top: 14px; }
-    .areaScoreCard {
-      border: 1px solid var(--line); border-radius: var(--card-radius); padding: var(--card-padding); background: #fff;
-      display: flex; flex-direction: column; gap: 8px;
-      page-break-inside: avoid;
-    }
-    .areaScoreTitle { font-size: 12px; font-weight: 700; color: var(--ink); word-break: break-word; overflow-wrap: break-word; }
-    .areaScoreBar { height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; }
-    .areaScoreFill { height: 100%; border-radius: 4px; }
-    .areaScoreFill.high { background: #059669; }
-    .areaScoreFill.medium { background: #d97706; }
-    .areaScoreFill.low { background: #dc2626; }
-    .areaScoreMeta { font-size: 11px; color: var(--muted); display: flex; justify-content: space-between; }
-    .areaScoreMeta b { color: var(--ink); }
-
+    .iconPositive { color: #15803d; }
+    .iconWatch { color: #b45309; }
+    .iconGuide { color: #1d4ed8; }
+    .iconOutlook { color: #6d28d9; }
+    .emptyState { font-size: 11px; color: var(--muted); border: 1px dashed #cbd5e1; border-radius: 10px; padding: 10px; background: #fff; }
+    .miniText { margin-top: 6px; font-size: 11px; color: var(--ink); line-height: 1.5; }
     .footer {
       margin-top: 18px;
       font-size: 10px;
@@ -631,72 +761,13 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
 
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 
-    .prose { margin-top: 10px; font-size: 12px; line-height: 1.55; color: var(--ink); word-break: break-word; overflow-wrap: break-word; }
-
-    .radarWrap { margin-top: 12px; display:flex; justify-content:center; page-break-inside: avoid; }
-    .radarWrap svg { max-width: 100%; height: auto; border-radius: 16px; border: 1px solid rgba(14,165,233,0.2); }
-
-    .photoCat { margin-top: 14px; page-break-inside: avoid; }
-    .photoCatTitle { font-size: 12px; font-weight: 800; margin-bottom: 8px; color: var(--ink); text-transform: capitalize; }
-    .photoGrid { display:grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-    .photo { margin: 0; border: 1px solid var(--line); border-radius: var(--card-radius); overflow: hidden; background: #fff; page-break-inside: avoid; }
-    .photo img { display:block; width: 100%; height: 170px; object-fit: cover; max-width: 100%; }
-    .photo figcaption { padding: 8px 10px; font-size: 10px; color: var(--muted); border-top: 1px solid var(--line); word-break: break-word; overflow-wrap: break-word; min-height: 1.4em; line-height: 1.3; }
-    .domainBlock { border: 1px solid var(--line); border-radius: var(--card-radius); padding: 12px; margin-top: 10px; background: #fff; }
-    .domainBlock h3 { margin: 0 0 8px; font-size: 14px; }
-    .domainScoreRow { display: grid; grid-template-columns: 140px 1fr; gap: 10px; align-items: center; margin-bottom: 8px; }
-    .domainScoreText { font-size: 12px; font-weight: 800; }
-    .subhead { margin-top: 8px; font-size: 11px; font-weight: 800; color: var(--muted); }
-    .miniList { margin: 6px 0 0; padding-left: 18px; }
-    .miniList li { font-size: 11px; margin: 4px 0; }
-    .miniText { margin: 6px 0 0; font-size: 11px; color: var(--ink); line-height: 1.45; }
-    .confTag { margin-left: 8px; font-size: 10px; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; background: #fff; }
-    .execGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
-    .bandBadge { display: inline-flex; align-items: center; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--line); font-size: 11px; font-weight: 800; margin-top: 8px; }
-    .limitPanel { margin-top: 12px; border: 1px solid var(--line); border-radius: 12px; padding: 10px; background: #f6fbff; font-size: 11px; }
-    .fingerprintSection {
-      margin-top: 18px;
-      border: 1px solid rgba(56, 189, 248, 0.22);
-      border-radius: 16px;
-      background:
-        radial-gradient(circle at 10% 5%, rgba(125, 211, 252, 0.12), rgba(255,255,255,0) 45%),
-        radial-gradient(circle at 90% 10%, rgba(45, 212, 191, 0.08), rgba(255,255,255,0) 45%),
-        linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
-      padding: 14px;
-      page-break-inside: avoid;
-    }
-    .fpGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-    .fpCard {
-      border: 1px solid rgba(148, 163, 184, 0.32);
-      border-radius: 12px;
-      padding: 10px;
-      background: linear-gradient(180deg, #ffffff 0%, #f9fcff 100%);
-      box-shadow: 0 0 0 1px rgba(125, 211, 252, 0.08), 0 8px 24px rgba(15, 23, 42, 0.04);
-    }
-    .fpHead { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-    .fpTitleWrap { display: flex; align-items: center; gap: 6px; }
-    .fpIcon {
-      width: 20px; height: 20px; border-radius: 999px; border: 1px solid var(--line);
-      display: inline-flex; align-items: center; justify-content: center; font-size: 11px;
-      background: #fff;
-    }
-    .fpTitle { margin: 0; font-size: 12px; font-weight: 800; }
-    .fpLabel { margin-top: 6px; font-size: 12px; font-weight: 700; color: #0f172a; }
-    .fpPill { font-size: 10px; font-weight: 800; border-radius: 999px; padding: 3px 8px; border: 1px solid transparent; }
-    .fpPillHigh { background: #dcfce7; color: #166534; border-color: #86efac; }
-    .fpPillModerate { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
-    .fpPillLow { background: #e2e8f0; color: #334155; border-color: #cbd5e1; }
-    .fpStrip { margin-top: 8px; display: flex; gap: 4px; }
-    .fpStripDot { width: 14px; height: 5px; border-radius: 999px; background: #e2e8f0; display: inline-block; }
-    .fpStripDot.active { background: #38bdf8; }
-
     @media print {
       .wrap { padding: 0; }
-      .section { margin-top: 14px; padding: 12px 14px; }
-      .topbar { padding: 12px 14px; }
+      .hero { padding: 14px; }
+      .section { margin-top: 14px; padding: 12px; }
+      .execLayout, .domainGrid, .forensicGrid, .infoGrid, .premiumGrid, .fpGrid { grid-template-columns: 1fr; }
       .fpGrid { grid-template-columns: 1fr; }
-      .photo img { height: 165px; }
-      .photoGrid { gap: 8px; }
+      .forensicPhoto img { height: 165px; }
       .footer { page-break-inside: avoid; margin-top: 14px; padding-top: 6px; }
     }
   </style>
@@ -705,27 +776,29 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
 <body>
   <div class="wrap">
 
-    <div class="topbar">
-      <div class="brand">
-        <img class="brandLogo" src="/hairaudit-logo.svg" alt="HairAudit logo" />
-        <div>
-          <h1 class="title">HairAudit AI Surgical Analysis</h1>
-          <div class="subtitle">AI-assisted visual analysis of hair transplant surgical outcomes and documentation quality.</div>
-          <div class="kicker">Powered by Follicle Intelligence</div>
+    <div class="hero">
+      <div class="topbar">
+        <div class="brand">
+          <img class="brandLogo" src="/hairaudit-logo.svg" alt="HairAudit logo" />
+          <div>
+            <h1 class="title">HairAudit AI Surgical Analysis</h1>
+            <div class="subtitle">AI-assisted visual review of transplant quality, donor management, implantation patterning, and documentation confidence.</div>
+            <div class="kicker">ELITE AI SURGICAL INTELLIGENCE REPORT</div>
+          </div>
         </div>
-      </div>
 
-      <div class="meta">
-        <div><b>Case ID:</b> <span class="mono">${esc(caseId)}</span></div>
-        <div><b>Report version:</b> ${version ? `v${esc(String(version))}` : "—"}</div>
-        <div><b>AI confidence level:</b> ${esc(confidenceScorePct)}</div>
-        <div><b>Audit date:</b> ${esc(generatedAt)}</div>
+        <div class="meta">
+          <div class="metaRow"><b>Case ID:</b> <span class="mono">${esc(caseId)}</span></div>
+          <div class="metaRow"><b>Date generated:</b> ${esc(generatedAt)}</div>
+          <div class="metaRow"><b>Model version:</b> ${esc(modelVersion || "N/A")}</div>
+          <div class="metaRow"><b>Confidence label:</b> ${esc(confidenceBand)}</div>
+        </div>
       </div>
     </div>
 
     <div class="section">
       <div class="sectionHead">
-        <h2>Executive AI Summary</h2>
+        <h2>Executive Intelligence Summary</h2>
         <div class="pillRow">
           <span class="pill">Overall Surgical Quality Score</span>
           ${
@@ -736,12 +809,14 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
         </div>
       </div>
 
-      <div class="scoreGrid">
-        <div class="scoreCard">
-          <div class="scoreLabel">AI Score</div>
-          <div class="scoreValue">${overallScore === null ? "—" : esc(String(overallScore))}</div>
-          <div class="scoreSub">out of 100</div>
-          <div class="bandBadge" style="background:${scoreBand.color};">${esc(scoreBand.label)} band</div>
+      <div class="execLayout">
+        <div class="scoreBadge">
+          <div class="scoreLabel">Overall Surgical Quality Score</div>
+          <div class="scoreBubble">
+            <div class="scoreValue">${overallScore === null ? "—" : esc(String(overallScore))}</div>
+            <div class="scoreSub">out of 100</div>
+          </div>
+          <div class="tierTag" style="background:${scoreBand.color};">Tier: ${esc(scoreBand.label)}</div>
         </div>
 
         <div class="metricCard">
@@ -757,97 +832,80 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
         </div>
       </div>
 
-      <div class="execGrid">
-        <div class="listCard">
-          <div class="listTitle">Data Integrity Summary</div>
+      ${radarPanel}
+      <div class="infoGrid">
+        <div class="panelCard">
+          <div class="panelTitle">AI Confidence</div>
+          <div class="miniText"><b>${esc(confidenceScorePct)}</b> confidence (${esc(confidenceBand)}).</div>
+          <div class="miniText">Confidence reflects visual evidence clarity and completeness across submitted documentation.</div>
+        </div>
+        <div class="panelCard">
+          <div class="panelTitle">Data Integrity</div>
           <ul>
             <li>Images analysed: ${allPhotos.length}</li>
             <li>Donor views: ${donorViews}</li>
             <li>Recipient views: ${recipientViews}</li>
             <li>Intra-operative images: ${intraViews}</li>
+            <li>Missing categories: ${missingCats.length > 0 ? esc(missingCats.join(", ")) : "None reported"}</li>
           </ul>
-          <div class="miniText">
-            This analysis is generated using a multi-layer visual pattern recognition engine that evaluates donor extraction patterns, recipient site design, graft distribution, and documentation completeness. The confidence score reflects the quality and completeness of the submitted evidence.
-          </div>
-        </div>
-        <div class="listCard">
-          <div class="listTitle">Risk Indicators</div>
-          <ul>
-            <li>✔ Strong indicators: ${highlights.length}</li>
-            <li>⚠ Areas requiring review: ${risks.length}</li>
-            <li>ℹ Limited evidence: ${allPhotos.length === 0 ? 1 : 0}</li>
-          </ul>
-          <div class="miniText">
-            Confidence reflects the amount and clarity of visual evidence available. Higher confidence indicates more comprehensive documentation and clearer imagery.
-          </div>
+          <div class="miniText">Evidence completeness note: ${allPhotos.length >= 6 ? "sufficient for broader interpretation." : "limited for high-confidence interpretation."}</div>
         </div>
       </div>
-
-      ${radarBlock}
-
+      ${riskStrip}
+      <div class="summaryCard">
+        <div class="panelTitle">Executive AI Summary</div>
+        <div class="miniText">${esc(executiveSummary)}</div>
+      </div>
       ${
-        (highlights?.length ?? 0) > 0 || (risks?.length ?? 0) > 0
-          ? `
-      <div class="twoCol">
-        <div class="listCard">
-          <div class="listTitle">Highlights</div>
-          ${
-            (highlights?.length ?? 0) > 0
-              ? `<ul>${(highlights ?? []).map((x) => `<li class="wrapText">${esc(String(x))}</li>`).join("")}</ul>`
-              : `<div class="subtitle">None captured.</div>`
-          }
-        </div>
-
-        <div class="listCard">
-          <div class="listTitle">Risks / Watch-outs</div>
-          ${
-            (risks?.length ?? 0) > 0
-              ? `<ul>${(risks ?? []).map((x) => `<li class="wrapText">${esc(String(x))}</li>`).join("")}</ul>`
-              : `<div class="subtitle">None flagged.</div>`
-          }
-        </div>
-      </div>
-      `
+        limitationNotes.length > 0
+          ? `<div class="limitPanel"><b>Evidence limitations:</b> ${esc(limitationNotes.slice(0, 3).join(" | "))}</div>`
           : ""
       }
     </div>
 
     <div class="section pageBreak">
-      <h2>Detailed Section Analysis</h2>
-      <div class="subtitle">Why this score was assigned, what it means, and what to monitor.</div>
-      ${domainBlocks}
+      <div class="sectionHead">
+        <h2>Section-by-Section Analysis</h2>
+        <span class="pill">Clinical intelligence cards</span>
+      </div>
+      <div class="domainGrid">${domainCards}</div>
     </div>
 
     <div class="section pageBreak">
-      <h2>Photo Evidence Analysis</h2>
-      <div class="subtitle">Grouped visual evidence with confidence context.</div>
-      ${photoBlock}
+      <div class="sectionHead">
+        <h2>Photo Evidence Intelligence</h2>
+        <span class="pill">Forensic visual board</span>
+      </div>
+      <div class="forensicBoard">${photoGroups}</div>
       <div class="limitPanel">
         <b>Evidence Limitations:</b>
         ${
           allPhotos.length === 0
-            ? " Limited evidence was available for visual assessment."
-            : " Limited or missing viewpoints may reduce confidence for graft handling and procedural detail interpretation."
+            ? "Limited visual evidence was available for image-level interpretation."
+            : `Some inferences may be constrained by image angle, focus, or missing capture categories${missingCats.length ? ` (${esc(missingCats.join(", "))})` : ""}.`
         }
       </div>
     </div>
 
-    <div class="fingerprintSection">
-      <h2>AI Surgical Fingerprint Analysis</h2>
-      <div class="subtitle">Pattern-based visual review of extraction, implantation, spacing, and density consistency.</div>
-      <div class="fpGrid">${fingerprintCards}</div>
-      ${
-        fingerprintSummary.limitedEvidence
-          ? `<div class="limitPanel"><b>Evidence note:</b> Pattern interpretation is limited by available image quality or angle coverage in one or more domains.</div>`
-          : ""
-      }
-    </div>
-
-    <div class="section">
-      <h2>Findings, Risks, and Recommendations</h2>
+    <div class="section pageBreak">
+      <div class="sectionHead">
+        <h2>Findings, Recommendations, and Premium Layers</h2>
+        <span class="pill">Conclusive intelligence view</span>
+      </div>
+      ${(graftIntegrityModule || auditorModule) ? `<div class="premiumGrid">${graftIntegrityModule}${auditorModule}</div>` : ""}
+      <div class="fingerprintSection">
+        <div class="panelTitle">AI Surgical Fingerprint Analysis</div>
+        <div class="miniText">Pattern-based visual review of extraction, implantation, spacing, and density consistency.</div>
+        <div class="fpGrid">${fingerprintCards}</div>
+        ${
+          fingerprintSummary.limitedEvidence
+            ? `<div class="limitPanel"><b>Evidence note:</b> Pattern interpretation is limited by available image quality or angle coverage in one or more domains.</div>`
+            : ""
+        }
+      </div>
       <div class="twoCol">
         <div class="listCard">
-          <div class="listTitle">Key Positive Indicators</div>
+          <div class="listTitle"><span class="iconPositive">●</span> Key Positive Indicators</div>
           ${
             highlights.length > 0
               ? `<ul>${highlights.map((x) => `<li class="wrapText">✔ ${esc(String(x))}</li>`).join("")}</ul>`
@@ -855,7 +913,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
           }
         </div>
         <div class="listCard">
-          <div class="listTitle">Areas Requiring Attention</div>
+          <div class="listTitle"><span class="iconWatch">●</span> Areas Requiring Review</div>
           ${
             risks.length > 0
               ? `<ul>${risks.map((x) => `<li class="wrapText">⚠ ${esc(String(x))}</li>`).join("")}</ul>`
@@ -864,16 +922,16 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
         </div>
       </div>
       <div class="listCard" style="margin-top:12px;">
-        <div class="listTitle">Patient Guidance</div>
+        <div class="listTitle"><span class="iconGuide">●</span> Patient Guidance</div>
         <ul>${patientGuidance.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>
       </div>
       <div class="listCard" style="margin-top:12px;">
-        <div class="listTitle">Predictive Outlook</div>
+        <div class="listTitle"><span class="iconOutlook">●</span> Predictive Outlook</div>
         <div class="miniText">${predictiveOutlook}</div>
       </div>
       ${
         narrativeText.length > 0
-          ? `<div class="listCard" style="margin-top:12px;"><div class="listTitle">Clinical Narrative</div><div class="prose">${esc(narrativeText).replaceAll("\n", "<br/>")}</div></div>`
+          ? `<div class="listCard" style="margin-top:12px;"><div class="listTitle">Clinical Narrative</div><div class="miniText">${esc(narrativeText).replaceAll("\n", "<br/>")}</div></div>`
           : ""
       }
     </div>
