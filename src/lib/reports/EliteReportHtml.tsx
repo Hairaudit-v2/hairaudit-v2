@@ -409,12 +409,27 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     narrativeText.length > 0
       ? narrativeText.split(".").slice(0, 2).join(".").trim() + (narrativeText.includes(".") ? "." : "")
       : "This report summarizes pattern-based AI observations across donor, recipient, implantation, and documentation evidence.";
-
+  const scoreConfLine =
+    confidencePct == null
+      ? "Confidence: N/A - based on available donor and recipient evidence."
+      : `Confidence: ${confidencePct}% - based on available donor and recipient evidence.`;
+  const compactStatus = (label: string, tone: "good" | "watch" | "note", value: string) =>
+    `<div class="riskPill ${tone}"><span>${esc(label)}</span><b>${esc(value)}</b></div>`;
+  const donorRisk =
+    /high|elevated|poor/i.test(`${metrics.transectionRisk} ${metrics.donorQuality}`) ? "Watch" : "Stable";
+  const recipientConsistency =
+    /insufficient|uneven|variable/i.test(`${metrics.implantationDensity} ${metrics.hairlineNaturalness}`)
+      ? "Mixed"
+      : "Consistent";
+  const docCompleteness =
+    allPhotos.length >= 8 && missingCats.length === 0 ? "Strong" : allPhotos.length >= 4 ? "Moderate" : "Limited";
+  const implantConfidence = confidencePct == null ? "Limited" : confidencePct >= 80 ? "High" : confidencePct >= 60 ? "Moderate" : "Low";
   const riskStrip = `
     <div class="riskStrip">
-      <div class="riskPill good">✔ Strong indicators: ${highlights.length}</div>
-      <div class="riskPill watch">⚠ Areas requiring review: ${risks.length}</div>
-      <div class="riskPill note">ℹ Limited evidence markers: ${allPhotos.length === 0 ? 1 : 0}</div>
+      ${compactStatus("Donor Preservation Risk", donorRisk === "Stable" ? "good" : "watch", donorRisk)}
+      ${compactStatus("Recipient Density Consistency", recipientConsistency === "Consistent" ? "good" : "watch", recipientConsistency)}
+      ${compactStatus("Documentation Completeness", docCompleteness === "Strong" ? "good" : docCompleteness === "Moderate" ? "note" : "watch", docCompleteness)}
+      ${compactStatus("Implantation Pattern Confidence", implantConfidence === "High" ? "good" : implantConfidence === "Moderate" ? "note" : "watch", implantConfidence)}
     </div>
   `;
 
@@ -590,15 +605,15 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     .hero {
       position: relative;
       border-radius: 18px;
-      border: 1px solid rgba(148, 163, 184, 0.24);
+      border: 1px solid rgba(160, 184, 219, 0.36);
       background:
-        radial-gradient(circle at 8% 20%, rgba(45,212,191,0.18), rgba(45,212,191,0) 42%),
-        radial-gradient(circle at 92% 10%, rgba(251,191,36,0.22), rgba(251,191,36,0) 45%),
-        linear-gradient(140deg, var(--hero) 0%, var(--hero2) 100%);
+        radial-gradient(circle at 8% 20%, rgba(45,212,191,0.24), rgba(45,212,191,0) 44%),
+        radial-gradient(circle at 92% 10%, rgba(251,191,36,0.28), rgba(251,191,36,0) 46%),
+        linear-gradient(140deg, #05172f 0%, #0c2f59 100%);
       color: #edf3ff;
-      padding: 22px;
+      padding: 26px;
       page-break-inside: avoid;
-      box-shadow: 0 22px 44px rgba(2, 12, 35, 0.18);
+      box-shadow: 0 30px 56px rgba(2, 12, 35, 0.24);
     }
     .heroTexture {
       position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
@@ -607,7 +622,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
         radial-gradient(circle at 18% 62%, rgba(148,163,184,0.12) 0, rgba(148,163,184,0) 35%);
       opacity: .45;
     }
-    .topbar { display:flex; justify-content:space-between; gap: 14px; }
+    .topbar { display:flex; justify-content:space-between; gap: 16px; position: relative; z-index: 1; }
     .brand { display:flex; gap: 12px; align-items:flex-start; }
     .logoStack { display:flex; align-items:center; gap: 8px; }
     .brandLogo {
@@ -638,6 +653,11 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       color: #d6e3fb;
       line-height: 1.45;
       min-width: 210px;
+      border: 1px solid rgba(180, 199, 230, 0.35);
+      border-radius: 12px;
+      background: rgba(7, 20, 41, 0.35);
+      padding: 10px 12px;
+      backdrop-filter: blur(1px);
     }
     .meta b { color: #ffffff; }
     .metaRow { padding: 2px 0; border-bottom: 1px dashed rgba(203,213,225,0.25); }
@@ -669,34 +689,46 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     }
     .pill b { color: var(--ink); }
 
-    .execLayout { display:grid; grid-template-columns: 1.1fr 1.4fr; gap: 14px; }
+    .p1Zone {
+      margin-top: 14px;
+      border: 1px solid rgba(182, 201, 228, 0.55);
+      border-radius: 16px;
+      padding: 22px;
+      background:
+        radial-gradient(circle at 15% 8%, rgba(191,219,254,0.28), rgba(191,219,254,0) 45%),
+        repeating-linear-gradient(120deg, rgba(148,163,184,0.05) 0, rgba(148,163,184,0.05) 1px, transparent 1px, transparent 22px),
+        linear-gradient(180deg, #fafdff 0%, #f2f7ff 100%);
+    }
+    .execLayout { display:grid; grid-template-columns: 1.12fr 1.38fr; gap: 26px; align-items: stretch; }
     .scoreBadge {
       border: 1px solid rgba(213, 164, 58, 0.45);
       border-radius: 20px;
-      padding: 16px;
+      padding: 24px;
       background:
         radial-gradient(circle at 20% 10%, rgba(251, 191, 36, 0.28), rgba(251,191,36,0) 55%),
         linear-gradient(155deg, #ffffff 0%, #ebf3ff 100%);
-      min-height: 250px;
+      min-height: 390px;
       display:flex;
       flex-direction:column;
       justify-content:space-between;
-      box-shadow: 0 10px 28px rgba(213, 164, 58, 0.12);
+      box-shadow: 0 14px 32px rgba(213, 164, 58, 0.14);
     }
     .scoreLabel { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #556685; font-weight: 700; }
     .scoreBubble {
-      width: 180px; height: 180px; border-radius: 999px;
+      width: 238px; height: 238px; border-radius: 999px;
       display:flex; align-items:center; justify-content:center; flex-direction: column;
       border: 1px solid rgba(213,164,58,0.45);
       background: radial-gradient(circle at 30% 20%, #ffffff 0%, #e0ecfb 100%);
-      box-shadow: inset 0 0 0 5px rgba(255,255,255,0.7), 0 14px 30px rgba(15,23,42,.11);
+      box-shadow: inset 0 0 0 6px rgba(255,255,255,0.75), 0 16px 34px rgba(15,23,42,.13), 0 0 26px rgba(213,164,58,.22);
     }
-    .scoreValue { font-size: 54px; font-weight: 900; line-height: 1; letter-spacing: -0.035em; }
+    .scoreValue { font-size: 74px; font-weight: 900; line-height: 1; letter-spacing: -0.045em; }
     .scoreSub { font-size: 10px; color: var(--muted); margin-top: 4px; }
     .tierTag {
       margin-top: 10px; display: inline-flex; padding: 7px 12px; border-radius: 999px;
       border: 1px solid rgba(213,164,58,.5); font-size: 11px; font-weight: 800; background: var(--gold-soft);
     }
+    .scoreConfLine { margin-top: 12px; font-size: 11px; color: #385173; line-height: 1.55; max-width: 92%; }
+    .p1RightCol { display:flex; flex-direction:column; gap: 16px; height: 100%; }
 
     .metricCard, .panelCard { border: 1px solid var(--line); border-radius: 14px; padding: 12px; background:#fff; }
     .metricTitle, .panelTitle { font-size: 12px; color: var(--muted); margin-bottom: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; }
@@ -705,18 +737,42 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     .metricList span { color: var(--muted); }
     .metricList b { color: var(--ink); word-break: break-word; overflow-wrap: break-word; max-width: 65%; text-align: right; }
     .radarPanel {
-      margin-top: 14px; border: 1px solid var(--line); border-radius: 16px; padding: 14px; background: linear-gradient(180deg, #f7fbff 0%, #ffffff 100%);
+      margin-top: 14px; border: 1px solid var(--line); border-radius: 16px; padding: 18px; background: linear-gradient(180deg, #f7fbff 0%, #ffffff 100%);
       page-break-inside: avoid; break-inside: avoid;
+      box-shadow: 0 8px 24px rgba(15,23,42,0.05);
     }
-    .radarWrap { margin-top: 8px; display:flex; justify-content:center; page-break-inside: avoid; break-inside: avoid; }
+    .radarWrap { margin-top: 12px; display:flex; justify-content:center; page-break-inside: avoid; break-inside: avoid; min-height: 380px; align-items: center; }
     .radarWrap svg { max-width: 100%; height: auto; border-radius: 16px; border: 1px solid rgba(14,165,233,0.2); }
-    .infoGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-    .riskStrip { margin-top: 10px; display:flex; gap:8px; flex-wrap:wrap; }
-    .riskPill { padding: 6px 10px; border-radius: 999px; font-size: 11px; border: 1px solid transparent; font-weight: 700; }
+    .infoGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px; align-items: stretch; }
+    .panelCard {
+      box-shadow: 0 6px 16px rgba(15,23,42,0.03);
+      background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+      border-color: #cfdcf0;
+      min-height: 188px;
+      display:flex;
+      flex-direction:column;
+      justify-content:flex-start;
+    }
+    .kpiValue { font-size: 26px; font-weight: 900; letter-spacing: -0.02em; color: #0f2344; margin-top: 2px; }
+    .kpiSub { font-size: 11px; color: #4e678b; margin-top: 2px; }
+    .kpiList { margin: 7px 0 0; padding-left: 18px; }
+    .kpiList li { margin: 3px 0; font-size: 11px; color: #112545; }
+    .riskStrip { margin-top: 16px; display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; }
+    .riskPill {
+      padding: 9px 10px; border-radius: 12px; font-size: 10px; border: 1px solid transparent; font-weight: 700;
+      display:flex; flex-direction:column; gap:4px;
+    }
+    .riskPill b { font-size: 12px; line-height: 1.1; }
     .riskPill.good { background: #ecfdf5; border-color: #a7f3d0; color: #166534; }
     .riskPill.watch { background: #fffbeb; border-color: #fcd34d; color: #92400e; }
     .riskPill.note { background: #eff6ff; border-color: #bfdbfe; color: #1e3a8a; }
-    .summaryCard { margin-top: 12px; border: 1px solid var(--line); border-radius: 14px; padding: 14px; background: #fff; }
+    .executiveDivider {
+      height: 1px;
+      margin: 22px 0 14px;
+      background: linear-gradient(90deg, rgba(123,150,189,0.75), rgba(123,150,189,0.1), rgba(123,150,189,0.0));
+    }
+    .summaryCard { margin-top: 0; border: 1px solid var(--line); border-radius: 14px; padding: 18px; background: #fff; }
+    .summaryCard .miniText { font-size: 12px; line-height: 1.65; }
 
     .domainGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 10px; }
     .domainCard { border: 1px solid var(--line); border-radius: 14px; padding: 12px; background: #fff; page-break-inside: avoid; break-inside: avoid; }
@@ -810,8 +866,13 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       .wrap { padding: 0; }
       .hero { padding: 14px; break-inside: avoid; }
       .section { margin-top: 14px; padding: 12px; }
-      .execLayout, .domainGrid, .forensicGrid, .infoGrid, .premiumGrid, .fpGrid { grid-template-columns: 1fr; }
+      .execLayout, .domainGrid, .forensicGrid, .infoGrid, .premiumGrid, .fpGrid, .riskStrip { grid-template-columns: 1fr; }
       .fpGrid { grid-template-columns: 1fr; }
+      .p1Zone { padding: 14px; }
+      .scoreBadge { min-height: 300px; padding: 16px; }
+      .scoreBubble { width: 188px; height: 188px; }
+      .scoreValue { font-size: 60px; }
+      .radarWrap { min-height: 300px; }
       .forensicPhoto img { height: 165px; }
       .footer { page-break-inside: avoid; margin-top: 14px; padding-top: 6px; }
       .sectionDivider { margin: 8px 0 10px; }
@@ -833,7 +894,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
           </div>
           <div>
             <h1 class="title">HairAudit AI Surgical Analysis</h1>
-            <div class="subtitle">AI-assisted visual review of transplant quality, donor management, implantation patterning, and documentation confidence.</div>
+            <div class="subtitle">AI-assisted visual review of transplant quality, donor management, recipient design, and documentation confidence.</div>
             <div class="kicker">ELITE AI SURGICAL INTELLIGENCE REPORT</div>
           </div>
         </div>
@@ -861,49 +922,58 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       </div>
       <div class="sectionDivider"></div>
 
-      <div class="execLayout">
-        <div class="scoreBadge">
-          <div class="scoreLabel">Overall Surgical Quality Score</div>
-          <div class="scoreBubble">
-            <div class="scoreValue">${overallScore === null ? "—" : esc(String(overallScore))}</div>
-            <div class="scoreSub">out of 100</div>
+      <div class="p1Zone">
+        <div class="execLayout">
+          <div class="scoreBadge">
+            <div class="scoreLabel">Overall Surgical Quality Score</div>
+            <div class="scoreBubble">
+              <div class="scoreValue">${overallScore === null ? "—" : esc(String(overallScore))}</div>
+              <div class="scoreSub">out of 100</div>
+            </div>
+            <div class="tierTag" style="background:${scoreBand.color};">Tier: ${esc(scoreBand.label)}</div>
+            <div class="scoreConfLine">${esc(scoreConfLine)}</div>
           </div>
-          <div class="tierTag" style="background:${scoreBand.color};">Tier: ${esc(scoreBand.label)}</div>
+
+          <div class="p1RightCol">
+            <div class="metricCard">
+              <div class="metricTitle">Key Metrics</div>
+              <div class="metricList">
+                <div><span>Donor quality</span><b>${esc(metrics.donorQuality)}</b></div>
+                <div><span>Survival estimate</span><b>${esc(metrics.graftSurvival)}</b></div>
+                <div><span>Transection risk</span><b>${esc(metrics.transectionRisk)}</b></div>
+                <div><span>Implant density</span><b>${esc(metrics.implantationDensity)}</b></div>
+                <div><span>Hairline naturalness</span><b>${esc(metrics.hairlineNaturalness)}</b></div>
+                <div><span>Donor scar visibility</span><b>${esc(metrics.donorScarVisibility)}</b></div>
+              </div>
+            </div>
+            ${radarPanel}
+          </div>
         </div>
 
-        <div class="metricCard">
-          <div class="metricTitle">Key Metrics</div>
-          <div class="metricList">
-            <div><span>Donor quality</span><b>${esc(metrics.donorQuality)}</b></div>
-            <div><span>Survival estimate</span><b>${esc(metrics.graftSurvival)}</b></div>
-            <div><span>Transection risk</span><b>${esc(metrics.transectionRisk)}</b></div>
-            <div><span>Implant density</span><b>${esc(metrics.implantationDensity)}</b></div>
-            <div><span>Hairline naturalness</span><b>${esc(metrics.hairlineNaturalness)}</b></div>
-            <div><span>Donor scar visibility</span><b>${esc(metrics.donorScarVisibility)}</b></div>
+        <div class="infoGrid">
+          <div class="panelCard">
+            <div class="panelTitle">AI Confidence</div>
+            <div class="kpiValue">${esc(confidenceScorePct)}</div>
+            <div class="kpiSub">${esc(confidenceBand)} confidence band</div>
+            <div class="miniText">Confidence reflects visual evidence clarity and completeness across submitted documentation.</div>
+          </div>
+          <div class="panelCard">
+            <div class="panelTitle">Data Integrity</div>
+            <div class="kpiValue">${allPhotos.length}</div>
+            <div class="kpiSub">images analyzed</div>
+            <ul class="kpiList">
+              <li>Donor views: ${donorViews}</li>
+              <li>Recipient views: ${recipientViews}</li>
+              <li>Intra-operative images: ${intraViews}</li>
+              <li>Missing categories: ${missingCats.length > 0 ? esc(missingCats.join(", ")) : "None reported"}</li>
+            </ul>
+            <div class="miniText">Evidence completeness: ${allPhotos.length >= 6 ? "sufficient for broader interpretation." : "limited for high-confidence interpretation."}</div>
           </div>
         </div>
+        ${riskStrip}
       </div>
 
-      ${radarPanel}
-      <div class="infoGrid">
-        <div class="panelCard">
-          <div class="panelTitle">AI Confidence</div>
-          <div class="miniText"><b>${esc(confidenceScorePct)}</b> confidence (${esc(confidenceBand)}).</div>
-          <div class="miniText">Confidence reflects visual evidence clarity and completeness across submitted documentation.</div>
-        </div>
-        <div class="panelCard">
-          <div class="panelTitle">Data Integrity</div>
-          <ul>
-            <li>Images analysed: ${allPhotos.length}</li>
-            <li>Donor views: ${donorViews}</li>
-            <li>Recipient views: ${recipientViews}</li>
-            <li>Intra-operative images: ${intraViews}</li>
-            <li>Missing categories: ${missingCats.length > 0 ? esc(missingCats.join(", ")) : "None reported"}</li>
-          </ul>
-          <div class="miniText">Evidence completeness note: ${allPhotos.length >= 6 ? "sufficient for broader interpretation." : "limited for high-confidence interpretation."}</div>
-        </div>
-      </div>
-      ${riskStrip}
+      <div class="executiveDivider"></div>
       <div class="summaryCard">
         <div class="panelTitle">Executive AI Summary</div>
         <div class="miniText">${esc(executiveSummary)}</div>
