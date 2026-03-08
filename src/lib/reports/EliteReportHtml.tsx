@@ -433,34 +433,77 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     </div>
   `;
 
-  const photoGroups = photoCatsWithItems.length
-    ? photoCatsWithItems
-        .map((cat) => {
-          const items = (photosByCategory[cat] ?? []).filter((x) => !!x?.signedUrl);
-          const lower = cat.toLowerCase();
-          const groupObservation = lower.includes("donor")
-            ? "Donor captures were reviewed for extraction spread, clustering, and density preservation cues."
-            : lower.includes("recipient")
-              ? "Recipient captures were reviewed for spacing pattern, directional flow, and density balance cues."
-              : lower.includes("intra")
-                ? "Intra-operative captures were reviewed for procedural context and handling visibility."
-                : "Submitted captures were reviewed for category-specific visual context.";
+  const mapToEvidenceGroup = (rawCat: string): { key: string; title: string; icon: string; order: number } => {
+    const lower = rawCat.toLowerCase();
+    if (lower.includes("pre-op") || lower.includes("preop") || lower.includes("pre-operative")) return { key: "preop", title: "Pre-Operative", icon: "◇", order: 0 };
+    if (lower.includes("donor") && (lower.includes("day") || lower.includes("day0"))) return { key: "donor", title: "Donor Region (Day 0)", icon: "◯", order: 1 };
+    if (lower.includes("recipient") || lower.includes("day-of recipient")) return { key: "recipient", title: "Recipient Area (Day 0)", icon: "▣", order: 2 };
+    if (lower.includes("intra") || lower.includes("intra-op")) return { key: "intra", title: "Intra-Operative Views", icon: "◫", order: 3 };
+    if (lower.includes("post-op") || lower.includes("postop") || lower.includes("current") || lower.includes("follow")) return { key: "postop", title: "Post-Operative / Follow-Up", icon: "▤", order: 4 };
+    if (lower.includes("donor")) return { key: "donor", title: "Donor Region (Day 0)", icon: "◯", order: 1 };
+    return { key: "other", title: String(rawCat).replaceAll("_", " "), icon: "▢", order: 5 };
+  };
+  const agg: Record<string, { key: string; title: string; icon: string; order: number; items: { signedUrl: string; label: string }[] }> = {};
+  for (const cat of photoCatsWithItems) {
+    const items = (photosByCategory[cat] ?? []).filter((x) => !!x?.signedUrl).map((x) => ({ signedUrl: String(x.signedUrl), label: String(x.label || "Photo").trim() || "Image" }));
+    if (items.length === 0) continue;
+    const mapped = mapToEvidenceGroup(cat);
+    const existing = agg[mapped.key];
+    if (existing) {
+      existing.items.push(...items);
+    } else {
+      agg[mapped.key] = { key: mapped.key, title: mapped.title, icon: mapped.icon, order: mapped.order, items };
+    }
+  }
+  const evidenceGroups = Object.values(agg).sort((a, b) => a.order - b.order);
+  const groupObservation = (key: string): string => {
+    if (key === "donor") return "Donor region appears evenly harvested with no obvious clustering patterns in the available views.";
+    if (key === "recipient") return "Recipient captures were reviewed for spacing pattern, directional flow, and density balance cues.";
+    if (key === "intra") return "Intra-operative captures were reviewed for procedural context and handling visibility.";
+    if (key === "preop") return "Pre-operative views provide baseline context for donor and recipient assessment.";
+    if (key === "postop") return "Follow-up imagery provides longitudinal context for healing and growth pattern evaluation.";
+    return "Submitted captures were reviewed for category-specific visual context.";
+  };
+  const groupConfidence = (items: { signedUrl: string; label: string }[], key: string): "high" | "moderate" | "limited" => {
+    const n = items.length;
+    if (n >= 2 && (confidencePct == null || confidencePct >= 70)) return "high";
+    if (n >= 1 && (confidencePct == null || confidencePct >= 50)) return "moderate";
+    return "limited";
+  };
+  const photoGroups = evidenceGroups.length
+    ? evidenceGroups
+        .map((g) => {
+          const conf = groupConfidence(g.items, g.key);
+          const confClass = conf === "high" ? "high" : conf === "moderate" ? "moderate" : "limited";
+          const confLabel = conf === "high" ? "High" : conf === "moderate" ? "Moderate" : "Limited";
+          const obs = groupObservation(g.key);
+          const isSingle = g.items.length === 1;
           return `
-            <div class="photoGroup">
-              <div class="photoGroupTitle">${esc(String(cat).replaceAll("_", " "))}</div>
-              <div class="forensicGrid">
-                ${items
+            <div class="evidenceGroup">
+              <div class="evidenceGroupHead">
+                <div class="evidenceGroupIcon">${esc(g.icon)}</div>
+                <div class="evidenceGroupTitle">${esc(g.title)}</div>
+              </div>
+              <div class="evidencePhotoGrid${isSingle ? " single" : ""}">
+                ${g.items
                   .map(
                     (u) => `
-                      <figure class="forensicPhoto">
-                        <img src="${esc(String(u.signedUrl))}" alt="${esc(String(u.label || "photo"))}" />
-                        <figcaption>${esc(String(u.label || ""))}</figcaption>
+                      <figure class="evidencePhotoCard">
+                        <div class="imgWrap">
+                          <img src="${esc(u.signedUrl)}" alt="${esc(u.label)}" />
+                        </div>
+                        <figcaption class="imgLabel">${esc(u.label || "Photo")}</figcaption>
                       </figure>
                     `
                   )
                   .join("")}
               </div>
-              <p class="miniText"><b>AI Observation:</b> ${esc(groupObservation)}</p>
+              <div class="evidenceObsPanel">
+                <div class="evidenceObsRow">
+                  <span class="evidenceConfPill ${confClass}">Confidence: ${esc(confLabel)}</span>
+                </div>
+                <div><b>Observation</b> — ${esc(obs)}</div>
+              </div>
             </div>
           `;
         })
@@ -622,45 +665,25 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
         radial-gradient(circle at 18% 62%, rgba(148,163,184,0.12) 0, rgba(148,163,184,0) 35%);
       opacity: .45;
     }
-    .topbar { display:flex; justify-content:space-between; gap: 16px; position: relative; z-index: 1; }
-    .brand { display:flex; gap: 12px; align-items:flex-start; }
-    .logoStack { display:flex; align-items:center; gap: 8px; }
-    .brandLogo {
-      width: 56px;
-      height: 56px;
-      object-fit: contain;
-      border-radius: 12px;
-      border: 1px solid rgba(226,232,240,0.35);
-      background: rgba(255,255,255,0.96);
-      padding: 6px;
-    }
-    .fiLogo {
-      width: 172px;
-      height: 48px;
-      object-fit: contain;
-      border-radius: 8px;
-      border: 1px solid rgba(226,232,240,0.20);
-      background: rgba(255,255,255,0.06);
-      padding: 4px 8px;
-    }
-    .title { margin: 0; font-size: 24px; font-weight: 900; letter-spacing: -0.01em; color: #f8fbff; line-height: 1.15; }
-    .subtitle { margin-top: 5px; font-size: 12px; color: #d8e4ff; line-height: 1.5; max-width: 520px; }
-    .kicker { margin-top: 6px; font-size: 11px; color: #b8cef6; font-weight: 700; letter-spacing: .03em; }
+    .topbar { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; position: relative; z-index: 1; }
+    .brand { display: flex; flex-direction: column; justify-content: flex-start; align-items: flex-start; }
+    .title { margin: 0; font-size: 24px; font-weight: 900; letter-spacing: -0.01em; color: #f8fbff; line-height: 1.2; }
+    .heroSubtitle { margin-top: 6px; font-size: 12px; color: #d8e4ff; line-height: 1.5; max-width: 480px; }
 
     .meta {
-      text-align:right;
+      text-align: right;
       font-size: 11px;
       color: #d6e3fb;
-      line-height: 1.45;
-      min-width: 210px;
+      line-height: 1.5;
+      min-width: 200px;
       border: 1px solid rgba(180, 199, 230, 0.35);
       border-radius: 12px;
       background: rgba(7, 20, 41, 0.35);
-      padding: 10px 12px;
+      padding: 12px 14px;
       backdrop-filter: blur(1px);
     }
     .meta b { color: #ffffff; }
-    .metaRow { padding: 2px 0; border-bottom: 1px dashed rgba(203,213,225,0.25); }
+    .metaRow { padding: 3px 0; border-bottom: 1px dashed rgba(203,213,225,0.25); }
     .metaRow:last-child { border-bottom: none; }
 
     .section {
@@ -673,6 +696,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       break-inside: avoid;
       box-shadow: 0 10px 26px rgba(15, 23, 42, 0.045);
     }
+    .p1Section { margin-top: 28px; }
     .sectionHead {
       display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom: 10px;
       page-break-after: avoid; break-after: avoid;
@@ -689,8 +713,9 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     }
     .pill b { color: var(--ink); }
 
+    .p1Section .sectionDivider { margin-bottom: 0; }
     .p1Zone {
-      margin-top: 14px;
+      margin-top: 28px;
       border: 1px solid rgba(182, 201, 228, 0.55);
       border-radius: 16px;
       padding: 22px;
@@ -699,18 +724,19 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
         repeating-linear-gradient(120deg, rgba(148,163,184,0.05) 0, rgba(148,163,184,0.05) 1px, transparent 1px, transparent 22px),
         linear-gradient(180deg, #fafdff 0%, #f2f7ff 100%);
     }
-    .execLayout { display:grid; grid-template-columns: 1.12fr 1.38fr; gap: 26px; align-items: stretch; }
+    .execLayout { display: grid; grid-template-columns: 1.12fr 1.38fr; gap: 24px; align-items: stretch; }
     .scoreBadge {
       border: 1px solid rgba(213, 164, 58, 0.45);
       border-radius: 20px;
-      padding: 24px;
+      padding: 28px;
+      margin-right: 24px;
       background:
         radial-gradient(circle at 20% 10%, rgba(251, 191, 36, 0.28), rgba(251,191,36,0) 55%),
         linear-gradient(155deg, #ffffff 0%, #ebf3ff 100%);
       min-height: 390px;
-      display:flex;
-      flex-direction:column;
-      justify-content:space-between;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
       box-shadow: 0 14px 32px rgba(213, 164, 58, 0.14);
     }
     .scoreLabel { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #556685; font-weight: 700; }
@@ -737,27 +763,35 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     .metricList span { color: var(--muted); }
     .metricList b { color: var(--ink); word-break: break-word; overflow-wrap: break-word; max-width: 65%; text-align: right; }
     .radarPanel {
-      margin-top: 14px; border: 1px solid var(--line); border-radius: 16px; padding: 18px; background: linear-gradient(180deg, #f7fbff 0%, #ffffff 100%);
-      page-break-inside: avoid; break-inside: avoid;
-      box-shadow: 0 8px 24px rgba(15,23,42,0.05);
+      margin-top: 24px;
+      margin-bottom: 8px;
+      border: 1px solid #e6edf3;
+      border-radius: 12px;
+      padding: 20px;
+      background: #ffffff;
+      page-break-inside: avoid;
+      break-inside: avoid;
+      box-shadow: 0 4px 16px rgba(15,23,42,0.04);
     }
-    .radarWrap { margin-top: 12px; display:flex; justify-content:center; page-break-inside: avoid; break-inside: avoid; min-height: 380px; align-items: center; }
-    .radarWrap svg { max-width: 100%; height: auto; border-radius: 16px; border: 1px solid rgba(14,165,233,0.2); }
-    .infoGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px; align-items: stretch; }
-    .panelCard {
+    .radarWrap { margin-top: 12px; display: flex; justify-content: center; page-break-inside: avoid; break-inside: avoid; min-height: 380px; align-items: center; }
+    .radarWrap svg { max-width: 100%; height: auto; border-radius: 12px; border: 1px solid rgba(14,165,233,0.15); }
+    .infoGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 24px; align-items: stretch; }
+    .p1Zone .panelCard {
       box-shadow: 0 6px 16px rgba(15,23,42,0.03);
       background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
-      border-color: #cfdcf0;
+      border: 1px solid #e6edf3;
+      border-radius: 12px;
+      padding: 18px;
       min-height: 188px;
-      display:flex;
-      flex-direction:column;
-      justify-content:flex-start;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
     }
     .kpiValue { font-size: 26px; font-weight: 900; letter-spacing: -0.02em; color: #0f2344; margin-top: 2px; }
     .kpiSub { font-size: 11px; color: #4e678b; margin-top: 2px; }
     .kpiList { margin: 7px 0 0; padding-left: 18px; }
     .kpiList li { margin: 3px 0; font-size: 11px; color: #112545; }
-    .riskStrip { margin-top: 16px; display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; }
+    .riskStrip { margin-top: 20px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
     .riskPill {
       padding: 9px 10px; border-radius: 12px; font-size: 10px; border: 1px solid transparent; font-weight: 700;
       display:flex; flex-direction:column; gap:4px;
@@ -767,12 +801,14 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     .riskPill.watch { background: #fffbeb; border-color: #fcd34d; color: #92400e; }
     .riskPill.note { background: #eff6ff; border-color: #bfdbfe; color: #1e3a8a; }
     .executiveDivider {
-      height: 1px;
-      margin: 22px 0 14px;
-      background: linear-gradient(90deg, rgba(123,150,189,0.75), rgba(123,150,189,0.1), rgba(123,150,189,0.0));
+      border-top: 1px solid #e6edf3;
+      margin-top: 28px;
+      margin-bottom: 18px;
+      height: 0;
+      background: none;
     }
     .summaryCard { margin-top: 0; border: 1px solid var(--line); border-radius: 14px; padding: 18px; background: #fff; }
-    .summaryCard .miniText { font-size: 12px; line-height: 1.65; }
+    .summaryCard .miniText { font-size: 12px; line-height: 1.5; max-width: 700px; }
 
     .domainGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 10px; }
     .domainCard { border: 1px solid var(--line); border-radius: 14px; padding: 12px; background: #fff; page-break-inside: avoid; break-inside: avoid; }
@@ -789,23 +825,123 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     .microList { margin: 6px 0 0; padding-left: 17px; }
     .microList li { margin: 4px 0; font-size: 11px; color: #11223a; }
 
+    /* ---------- Visual Evidence Analysis (Photo Evidence) ---------- */
+    .evidenceSectionTitle { font-size: 20px; font-weight: 900; letter-spacing: -0.01em; color: var(--ink); margin: 0 0 4px 0; }
+    .evidenceSectionSubtitle { font-size: 12px; color: var(--muted); line-height: 1.5; margin: 0 0 16px 0; }
     .forensicBoard {
-      border: 1px solid var(--line); border-radius: 14px; padding: 14px; background: linear-gradient(180deg, #ffffff 0%, #f7faff 100%);
-      page-break-inside: avoid; break-inside: avoid;
+      position: relative;
+      border: 1px solid var(--line-strong);
+      border-radius: 16px;
+      padding: 20px;
+      background:
+        repeating-linear-gradient(0deg, transparent 0, transparent 22px, rgba(148,163,184,0.03) 22px, rgba(148,163,184,0.03) 23px),
+        repeating-linear-gradient(90deg, transparent 0, transparent 22px, rgba(148,163,184,0.03) 22px, rgba(148,163,184,0.03) 23px),
+        linear-gradient(180deg, #ffffff 0%, #f8fbff 50%, #f2f7ff 100%);
+      page-break-inside: avoid;
+      break-inside: avoid;
+      box-shadow: 0 6px 20px rgba(15,23,42,0.06);
     }
-    .photoGroup {
-      margin-top: 12px; padding-top: 10px; border-top: 1px dashed #cbd5e1;
-      page-break-inside: avoid; break-inside: avoid;
+    .evidenceGroup {
+      margin-top: 20px;
+      padding-top: 18px;
+      border-top: 1px solid rgba(148,163,184,0.25);
+      page-break-inside: avoid;
+      break-inside: avoid;
     }
-    .photoGroup:first-child { margin-top: 0; padding-top: 0; border-top: none; }
-    .photoGroupTitle { font-size: 12px; font-weight: 800; text-transform: capitalize; color: #0f1f39; }
-    .forensicGrid { display:grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 8px; }
+    .evidenceGroup:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+    .evidenceGroupHead {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(148,163,184,0.18);
+    }
+    .evidenceGroupIcon { width: 28px; height: 28px; border-radius: 8px; background: rgba(14,165,233,0.12); display: flex; align-items: center; justify-content: center; font-size: 12px; color: #0369a1; }
+    .evidenceGroupTitle { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: #0f2344; }
+    .evidencePhotoGrid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+      margin-top: 12px;
+    }
+    .evidencePhotoGrid.single { grid-template-columns: 1fr; justify-items: center; max-width: 360px; margin-left: auto; margin-right: auto; }
+    .evidencePhotoCard {
+      margin: 0;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+      background: #fff;
+      box-shadow: 0 4px 12px rgba(15,23,42,0.04);
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+    .evidencePhotoCard .imgWrap {
+      position: relative;
+      background: #f1f5f9;
+      padding: 6px;
+      border-bottom: 1px solid rgba(203,213,225,0.6);
+    }
+    .evidencePhotoCard img { display: block; width: 100%; height: 160px; object-fit: cover; border-radius: 8px; }
+    .evidencePhotoCard .imgLabel {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      color: var(--muted);
+      padding: 8px 10px 6px;
+      background: #f9fbff;
+      border-top: 1px solid rgba(203,213,225,0.5);
+      min-height: 32px;
+    }
+    .evidenceObsPanel {
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid rgba(191,219,254,0.6);
+      background: linear-gradient(180deg, #f8fbff 0%, #eff6ff 100%);
+      font-size: 11px;
+      line-height: 1.55;
+      color: #1e3a8a;
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+    .evidenceObsRow { display: flex; align-items: flex-start; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+    .evidenceObsRow:last-child { margin-bottom: 0; }
+    .evidenceConfPill {
+      flex-shrink: 0;
+      font-size: 9px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+    }
+    .evidenceConfPill.high { background: #dcfce7; color: #166534; border-color: #86efac; }
+    .evidenceConfPill.moderate { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
+    .evidenceConfPill.limited { background: #e2e8f0; color: #334155; border-color: #cbd5e1; }
+    .evidenceLimitationsPanel {
+      margin-top: 20px;
+      padding: 14px 16px;
+      border: 1px solid rgba(148,163,184,0.35);
+      border-radius: 12px;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+      font-size: 11px;
+      line-height: 1.55;
+      color: #334155;
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+    .evidenceLimitationsPanel .panelLabel { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 6px; }
+    .forensicGrid { display:grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-top: 8px; }
     .forensicPhoto {
       margin:0; border: 1px solid var(--line); border-radius: 12px; overflow:hidden; background:#fff;
+      box-shadow: 0 4px 12px rgba(15,23,42,0.04);
       page-break-inside: avoid; break-inside: avoid;
     }
-    .forensicPhoto img { display:block; width:100%; height:172px; object-fit:cover; border-bottom: 1px solid #d2dced; }
-    .forensicPhoto figcaption { font-size:10px; color: var(--muted); border-top:1px solid var(--line); padding:9px; min-height: 34px; background: #f9fbff; }
+    .forensicPhoto img { display:block; width:100%; height:160px; object-fit:cover; }
+    .forensicPhoto figcaption { font-size:10px; color: var(--muted); padding:8px 10px; min-height: 32px; background: #f9fbff; border-top: 1px solid rgba(203,213,225,0.5); font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
     .limitPanel { margin-top: 12px; border: 1px solid #bfdbfe; border-radius: 12px; padding: 10px; background: #eff6ff; font-size: 11px; color: #1e3a8a; }
 
     .premiumGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
@@ -873,7 +1009,9 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       .scoreBubble { width: 188px; height: 188px; }
       .scoreValue { font-size: 60px; }
       .radarWrap { min-height: 300px; }
-      .forensicPhoto img { height: 165px; }
+      .forensicPhoto img, .evidencePhotoCard img { height: 140px; }
+      .evidenceGroup, .evidenceObsPanel, .evidenceLimitationsPanel, .evidencePhotoCard { break-inside: avoid; page-break-inside: avoid; }
+      .evidencePhotoGrid { gap: 10px; }
       .footer { page-break-inside: avoid; margin-top: 14px; padding-top: 6px; }
       .sectionDivider { margin: 8px 0 10px; }
       .domainCard, .listCard, .forensicPhoto, .premCard, .fpCard, .radarPanel, .fingerprintSection, .photoGroup { break-inside: avoid-page; page-break-inside: avoid; }
@@ -888,27 +1026,19 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       <div class="heroTexture"></div>
       <div class="topbar">
         <div class="brand">
-          <div class="logoStack">
-            <img class="brandLogo" src="/hairaudit-logo.svg" alt="HairAudit logo" />
-            <img class="fiLogo" src="/follicle-intelligence-logo.svg" alt="Follicle Intelligence logo" />
-          </div>
-          <div>
-            <h1 class="title">HairAudit AI Surgical Analysis</h1>
-            <div class="subtitle">AI-assisted visual review of transplant quality, donor management, recipient design, and documentation confidence.</div>
-            <div class="kicker">ELITE AI SURGICAL INTELLIGENCE REPORT</div>
-          </div>
+          <h1 class="title">HairAudit AI Surgical Analysis</h1>
+          <div class="heroSubtitle">AI-Assisted Transplant Quality Review</div>
         </div>
-
         <div class="meta">
-          <div class="metaRow"><b>Case ID:</b> <span class="mono">${esc(caseId)}</span></div>
-          <div class="metaRow"><b>Date generated:</b> ${esc(generatedAt)}</div>
-          <div class="metaRow"><b>Model version:</b> ${esc(modelVersion || "N/A")}</div>
-          <div class="metaRow"><b>Confidence label:</b> ${esc(confidenceBand)}</div>
+          <div class="metaRow"><b>Case ID</b> <span class="mono">${esc(caseId)}</span></div>
+          <div class="metaRow"><b>Report Date</b> ${esc(generatedAt)}</div>
+          <div class="metaRow"><b>Model Version</b> ${esc(modelVersion || "N/A")}</div>
+          <div class="metaRow"><b>Confidence Label</b> ${esc(confidenceBand)}</div>
         </div>
       </div>
     </div>
 
-    <div class="section">
+    <div class="section p1Section">
       <div class="sectionHead">
         <h2>Executive Intelligence Summary</h2>
         <div class="pillRow">
@@ -996,17 +1126,22 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
 
     <div class="section pageBreak">
       <div class="sectionHead">
-        <h2>Photo Evidence Intelligence</h2>
-        <span class="pill">Forensic visual board</span>
+        <div>
+          <h2 class="evidenceSectionTitle">Visual Evidence Analysis</h2>
+          <div class="evidenceSectionSubtitle">AI-assisted review of donor, recipient, and procedural image documentation.</div>
+        </div>
+        <span class="pill">Forensic evidence board</span>
       </div>
       <div class="sectionDivider"></div>
       <div class="forensicBoard">${photoGroups}</div>
-      <div class="limitPanel">
-        <b>Evidence Limitations:</b>
+      <div class="evidenceLimitationsPanel">
+        <div class="panelLabel">Evidence Limitations</div>
         ${
           allPhotos.length === 0
             ? "Limited visual evidence was available for image-level interpretation."
-            : `Some inferences may be constrained by image angle, focus, or missing capture categories${missingCats.length ? ` (${esc(missingCats.join(", "))})` : ""}.`
+            : allPhotos.length >= 6 && missingCats.length === 0
+              ? "Available images provide moderate to strong coverage of the donor and recipient areas. Further intra-operative documentation may improve assessment depth for graft handling practices."
+              : `Available images provide ${allPhotos.length >= 4 ? "moderate" : "limited"} coverage of the donor and recipient areas.${missingCats.length ? ` Limited ${esc(missingCats.join(", "))} documentation prevents deeper assessment in some domains.` : " Limited intra-operative documentation may constrain graft handling evaluation."}`
         }
       </div>
     </div>
