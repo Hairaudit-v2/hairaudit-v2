@@ -13,6 +13,7 @@ export default function AuditorLoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
+  const [sendingReset, setSendingReset] = useState(false);
 
   async function signIn(e: React.FormEvent) {
     e.preventDefault();
@@ -52,18 +53,37 @@ export default function AuditorLoginPage() {
     window.location.href = "/dashboard/auditor";
   }
 
+  async function sendPasswordReset() {
+    setMsg(null);
+    setSendingReset(true);
+
+    const appUrl =
+      (process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "") || "").trim() ||
+      "https://hairaudit.com";
+    const { error } = await supabase.auth.resetPasswordForEmail(AUDITOR_EMAIL, {
+      redirectTo: `${appUrl}/auth/recovery`,
+    });
+
+    if (error) {
+      setMsg(`❌ ${error.message}`);
+    } else {
+      setMsg("Reset email sent. Open the link and set a new password.");
+    }
+    setSendingReset(false);
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       <SiteHeader variant="minimal" />
 
       <main className="flex-1 flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
-          <a
+          <Link
             href="/"
             className="inline-flex items-center text-sm text-slate-500 hover:text-amber-400 mb-4 transition-colors"
           >
             ← Back to HairAudit
-          </a>
+          </Link>
           <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
             <div className="mb-6 flex justify-center rounded-xl bg-slate-900 px-4 py-3">
               <Image
@@ -127,6 +147,17 @@ export default function AuditorLoginPage() {
             )}
 
             <p className="mt-6 text-center text-sm text-slate-600">
+              <button
+                type="button"
+                onClick={sendPasswordReset}
+                disabled={sendingReset}
+                className="font-medium text-slate-700 hover:text-slate-900 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {sendingReset ? "Sending reset link..." : "Forgot password?"}
+              </button>
+            </p>
+
+            <p className="mt-2 text-center text-sm text-slate-600">
               Not an auditor?{" "}
               <Link href="/login" className="font-medium text-amber-600 hover:text-amber-500">
                 Standard sign in
