@@ -114,7 +114,7 @@ function renderRadarSvg(opts: {
   const rMax = Math.max(60, Math.min(width, height) / 2 - padding);
   const angleStep = (2 * Math.PI) / Math.max(1, n);
 
-  const labelFontSize = n > 8 ? 10 : 12;
+  const labelFontSize = n > 8 ? 11 : 13;
   const maxLabelLen = n > 8 ? 12 : 14;
 
   const pointsFor = (r: number) =>
@@ -562,7 +562,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
           ${renderRadarSvg({
             labels: radar.labels,
             values: radar.values,
-            size: 500,
+            size: 540,
             levels: 5,
             overall: radar.overall,
             confidence: radar.confidence,
@@ -650,13 +650,13 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       border-radius: 18px;
       border: 1px solid rgba(160, 184, 219, 0.36);
       background:
-        radial-gradient(circle at 8% 20%, rgba(45,212,191,0.24), rgba(45,212,191,0) 44%),
-        radial-gradient(circle at 92% 10%, rgba(251,191,36,0.28), rgba(251,191,36,0) 46%),
+        radial-gradient(circle at 8% 20%, rgba(45,212,191,0.28), rgba(45,212,191,0) 44%),
+        radial-gradient(circle at 92% 10%, rgba(251,191,36,0.32), rgba(251,191,36,0) 46%),
         linear-gradient(140deg, #05172f 0%, #0c2f59 100%);
       color: #edf3ff;
-      padding: 26px;
+      padding: 30px;
       page-break-inside: avoid;
-      box-shadow: 0 30px 56px rgba(2, 12, 35, 0.24);
+      box-shadow: 0 34px 64px rgba(2, 12, 35, 0.24);
     }
     .heroTexture {
       position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
@@ -667,19 +667,19 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     }
     .topbar { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; position: relative; z-index: 1; }
     .brand { display: flex; flex-direction: column; justify-content: flex-start; align-items: flex-start; }
-    .title { margin: 0; font-size: 24px; font-weight: 900; letter-spacing: -0.01em; color: #f8fbff; line-height: 1.2; }
-    .heroSubtitle { margin-top: 6px; font-size: 12px; color: #d8e4ff; line-height: 1.5; max-width: 480px; }
+    .title { margin: 0; font-size: 26px; font-weight: 900; letter-spacing: -0.01em; color: #f8fbff; line-height: 1.2; }
+    .heroSubtitle { margin-top: 7px; font-size: 12px; color: #d8e4ff; line-height: 1.6; max-width: 500px; font-weight: 500; }
 
     .meta {
       text-align: right;
-      font-size: 11px;
+      font-size: 10px;
       color: #d6e3fb;
       line-height: 1.5;
-      min-width: 200px;
+      min-width: 216px;
       border: 1px solid rgba(180, 199, 230, 0.35);
       border-radius: 12px;
       background: rgba(7, 20, 41, 0.35);
-      padding: 12px 14px;
+      padding: 13px 15px;
       backdrop-filter: blur(1px);
     }
     .meta b { color: #ffffff; }
@@ -696,7 +696,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       break-inside: avoid;
       box-shadow: 0 10px 26px rgba(15, 23, 42, 0.045);
     }
-    .p1Section { margin-top: 28px; }
+    .p1Section { margin-top: 34px; }
     .sectionHead {
       display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom: 10px;
       page-break-after: avoid; break-after: avoid;
@@ -713,48 +713,73 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     }
     .pill b { color: var(--ink); }
 
+    .p1Section .sectionHead { margin-bottom: 12px; }
     .p1Section .sectionDivider { margin-bottom: 0; }
     .p1Zone {
-      margin-top: 28px;
+      position: relative;
+      overflow: hidden;
+      margin-top: 32px;
       border: 1px solid rgba(182, 201, 228, 0.55);
-      border-radius: 16px;
-      padding: 22px;
+      border-radius: 18px;
+      padding: 34px;
       background:
         radial-gradient(circle at 15% 8%, rgba(191,219,254,0.28), rgba(191,219,254,0) 45%),
+        radial-gradient(circle at 68% 18%, rgba(14,165,233,0.11), rgba(14,165,233,0) 42%),
         repeating-linear-gradient(120deg, rgba(148,163,184,0.05) 0, rgba(148,163,184,0.05) 1px, transparent 1px, transparent 22px),
         linear-gradient(180deg, #fafdff 0%, #f2f7ff 100%);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 18px 36px rgba(15,23,42,0.07);
     }
-    .execLayout { display: grid; grid-template-columns: 1.12fr 1.38fr; gap: 24px; align-items: stretch; }
-    .scoreBadge {
-      border: 1px solid rgba(213, 164, 58, 0.45);
-      border-radius: 20px;
-      padding: 28px;
-      margin-right: 24px;
+    .p1Zone::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
       background:
-        radial-gradient(circle at 20% 10%, rgba(251, 191, 36, 0.28), rgba(251,191,36,0) 55%),
-        linear-gradient(155deg, #ffffff 0%, #ebf3ff 100%);
-      min-height: 390px;
+        radial-gradient(circle at 18% 26%, rgba(250,204,21,0.12), rgba(250,204,21,0) 32%),
+        radial-gradient(circle at 70% 20%, rgba(56,189,248,0.10), rgba(56,189,248,0) 36%);
+      opacity: .85;
+    }
+    .execLayout { position: relative; z-index: 1; display: grid; grid-template-columns: 1.3fr 1fr; gap: 36px; align-items: stretch; }
+    .scoreBadge {
+      position: relative;
+      border: 1px solid rgba(213, 164, 58, 0.45);
+      border-radius: 24px;
+      padding: 36px;
+      margin-right: 0;
+      background:
+        radial-gradient(circle at 16% 8%, rgba(251, 191, 36, 0.36), rgba(251,191,36,0) 50%),
+        radial-gradient(circle at 88% 18%, rgba(148, 163, 184, 0.24), rgba(148,163,184,0) 48%),
+        linear-gradient(155deg, #ffffff 0%, #e6f0ff 100%);
+      min-height: 470px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      box-shadow: 0 14px 32px rgba(213, 164, 58, 0.14);
+      box-shadow: 0 24px 48px rgba(213, 164, 58, 0.22), 0 14px 30px rgba(15,23,42,0.1);
+    }
+    .scoreBadge::after {
+      content: "";
+      position: absolute;
+      inset: 1px;
+      border-radius: 23px;
+      pointer-events: none;
+      background: linear-gradient(165deg, rgba(255,255,255,0.48), rgba(255,255,255,0) 50%);
     }
     .scoreLabel { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #556685; font-weight: 700; }
     .scoreBubble {
-      width: 238px; height: 238px; border-radius: 999px;
+      width: 278px; height: 278px; border-radius: 999px;
       display:flex; align-items:center; justify-content:center; flex-direction: column;
       border: 1px solid rgba(213,164,58,0.45);
-      background: radial-gradient(circle at 30% 20%, #ffffff 0%, #e0ecfb 100%);
-      box-shadow: inset 0 0 0 6px rgba(255,255,255,0.75), 0 16px 34px rgba(15,23,42,.13), 0 0 26px rgba(213,164,58,.22);
+      background: radial-gradient(circle at 30% 20%, #ffffff 0%, #dbe9fb 100%);
+      box-shadow: inset 0 0 0 8px rgba(255,255,255,0.78), 0 22px 42px rgba(15,23,42,.14), 0 0 36px rgba(213,164,58,.3);
     }
-    .scoreValue { font-size: 74px; font-weight: 900; line-height: 1; letter-spacing: -0.045em; }
-    .scoreSub { font-size: 10px; color: var(--muted); margin-top: 4px; }
+    .scoreValue { font-size: 92px; font-weight: 900; line-height: 1; letter-spacing: -0.05em; color: #061733; }
+    .scoreSub { font-size: 10px; color: #4e678b; margin-top: 6px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; }
     .tierTag {
-      margin-top: 10px; display: inline-flex; padding: 7px 12px; border-radius: 999px;
-      border: 1px solid rgba(213,164,58,.5); font-size: 11px; font-weight: 800; background: var(--gold-soft);
+      margin-top: 14px; display: inline-flex; padding: 9px 14px; border-radius: 999px;
+      border: 1px solid rgba(213,164,58,.55); font-size: 11px; font-weight: 800; background: var(--gold-soft);
     }
-    .scoreConfLine { margin-top: 12px; font-size: 11px; color: #385173; line-height: 1.55; max-width: 92%; }
-    .p1RightCol { display:flex; flex-direction:column; gap: 16px; height: 100%; }
+    .scoreConfLine { margin-top: 16px; font-size: 11px; color: #2b4a72; line-height: 1.65; max-width: 93%; font-weight: 600; }
+    .p1RightCol { display:flex; flex-direction:column; gap: 24px; height: 100%; }
 
     .metricCard, .panelCard { border: 1px solid var(--line); border-radius: 14px; padding: 12px; background:#fff; }
     .metricTitle, .panelTitle { font-size: 12px; color: var(--muted); margin-bottom: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; }
@@ -763,52 +788,58 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     .metricList span { color: var(--muted); }
     .metricList b { color: var(--ink); word-break: break-word; overflow-wrap: break-word; max-width: 65%; text-align: right; }
     .radarPanel {
-      margin-top: 24px;
-      margin-bottom: 8px;
+      margin-top: 26px;
+      margin-bottom: 10px;
       border: 1px solid #e6edf3;
       border-radius: 12px;
-      padding: 20px;
-      background: #ffffff;
+      padding: 28px;
+      background:
+        radial-gradient(circle at 22% 14%, rgba(14,165,233,0.08), rgba(14,165,233,0) 45%),
+        linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
       page-break-inside: avoid;
       break-inside: avoid;
-      box-shadow: 0 4px 16px rgba(15,23,42,0.04);
+      box-shadow: 0 14px 30px rgba(15,23,42,0.08);
     }
-    .radarWrap { margin-top: 12px; display: flex; justify-content: center; page-break-inside: avoid; break-inside: avoid; min-height: 380px; align-items: center; }
+    .radarWrap { margin-top: 16px; display: flex; justify-content: center; page-break-inside: avoid; break-inside: avoid; min-height: 460px; align-items: center; }
     .radarWrap svg { max-width: 100%; height: auto; border-radius: 12px; border: 1px solid rgba(14,165,233,0.15); }
-    .infoGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 24px; align-items: stretch; }
+    .radarPanel .miniText { margin-top: 16px; margin-bottom: 8px; }
+    .infoGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: 26px; align-items: stretch; }
     .p1Zone .panelCard {
       box-shadow: 0 6px 16px rgba(15,23,42,0.03);
       background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
       border: 1px solid #e6edf3;
-      border-radius: 12px;
-      padding: 18px;
-      min-height: 188px;
+      border-radius: 14px;
+      padding: 22px;
+      min-height: 224px;
       display: flex;
       flex-direction: column;
       justify-content: flex-start;
     }
-    .kpiValue { font-size: 26px; font-weight: 900; letter-spacing: -0.02em; color: #0f2344; margin-top: 2px; }
-    .kpiSub { font-size: 11px; color: #4e678b; margin-top: 2px; }
-    .kpiList { margin: 7px 0 0; padding-left: 18px; }
+    .p1Zone .panelTitle { margin-bottom: 12px; }
+    .kpiValue { font-size: 34px; font-weight: 900; letter-spacing: -0.02em; color: #0f2344; margin-top: 6px; line-height: 1.05; }
+    .kpiSub { font-size: 11px; color: #4e678b; margin-top: 6px; }
+    .kpiList { margin: 11px 0 0; padding-left: 18px; }
     .kpiList li { margin: 3px 0; font-size: 11px; color: #112545; }
-    .riskStrip { margin-top: 20px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .riskStrip { margin-top: 24px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
     .riskPill {
-      padding: 9px 10px; border-radius: 12px; font-size: 10px; border: 1px solid transparent; font-weight: 700;
+      padding: 13px 14px; border-radius: 12px; font-size: 8.5px; border: 1px solid transparent; font-weight: 700;
       display:flex; flex-direction:column; gap:4px;
+      line-height: 1.35;
     }
-    .riskPill b { font-size: 12px; line-height: 1.1; }
+    .riskPill b { font-size: 14px; line-height: 1.1; letter-spacing: -0.01em; }
     .riskPill.good { background: #ecfdf5; border-color: #a7f3d0; color: #166534; }
     .riskPill.watch { background: #fffbeb; border-color: #fcd34d; color: #92400e; }
     .riskPill.note { background: #eff6ff; border-color: #bfdbfe; color: #1e3a8a; }
     .executiveDivider {
       border-top: 1px solid #e6edf3;
-      margin-top: 28px;
-      margin-bottom: 18px;
+      margin-top: 34px;
+      margin-bottom: 20px;
       height: 0;
       background: none;
     }
-    .summaryCard { margin-top: 0; border: 1px solid var(--line); border-radius: 14px; padding: 18px; background: #fff; }
-    .summaryCard .miniText { font-size: 12px; line-height: 1.5; max-width: 700px; }
+    .summaryCard { margin-top: 0; border: 1px solid var(--line); border-radius: 14px; padding: 22px; background: #fff; }
+    .summaryCard .panelTitle { font-size: 12.5px; color: #385173; margin-bottom: 12px; }
+    .summaryCard .miniText { font-size: 13px; line-height: 1.65; max-width: 700px; color: #102543; }
 
     .domainGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 10px; }
     .domainCard { border: 1px solid var(--line); border-radius: 14px; padding: 12px; background: #fff; page-break-inside: avoid; break-inside: avoid; }
@@ -1000,15 +1031,20 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
 
     @media print {
       .wrap { padding: 0; }
-      .hero { padding: 14px; break-inside: avoid; }
+      .hero { padding: 24px; break-inside: avoid; }
       .section { margin-top: 14px; padding: 12px; }
       .execLayout, .domainGrid, .forensicGrid, .infoGrid, .premiumGrid, .fpGrid, .riskStrip { grid-template-columns: 1fr; }
       .fpGrid { grid-template-columns: 1fr; }
-      .p1Zone { padding: 14px; }
-      .scoreBadge { min-height: 300px; padding: 16px; }
-      .scoreBubble { width: 188px; height: 188px; }
-      .scoreValue { font-size: 60px; }
-      .radarWrap { min-height: 300px; }
+      .p1Section { margin-top: 26px; }
+      .p1Zone { margin-top: 26px; padding: 22px; }
+      .scoreBadge { min-height: 380px; padding: 24px; }
+      .scoreBubble { width: 220px; height: 220px; }
+      .scoreValue { font-size: 72px; }
+      .radarPanel { margin-top: 24px; padding: 22px; }
+      .radarWrap { min-height: 360px; }
+      .infoGrid { margin-top: 24px; gap: 16px; }
+      .riskStrip { margin-top: 22px; gap: 12px; }
+      .executiveDivider { margin-top: 28px; margin-bottom: 18px; }
       .forensicPhoto img, .evidencePhotoCard img { height: 140px; }
       .evidenceGroup, .evidenceObsPanel, .evidenceLimitationsPanel, .evidencePhotoCard { break-inside: avoid; page-break-inside: avoid; }
       .evidencePhotoGrid { gap: 10px; }
