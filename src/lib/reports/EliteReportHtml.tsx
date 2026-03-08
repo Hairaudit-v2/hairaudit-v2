@@ -109,7 +109,7 @@ function renderRadarSvg(opts: {
   const height = size;
   const cx = width / 2;
   const cy = height / 2;
-  const padding = 86; // room for labels
+  const padding = 98; // room for labels, avoid clipping in print
   const rMax = Math.max(60, Math.min(width, height) / 2 - padding);
   const angleStep = (2 * Math.PI) / Math.max(1, n);
 
@@ -147,13 +147,18 @@ function renderRadarSvg(opts: {
     return { x, y };
   });
 
-  const polygon = `<polygon points="${valuePts.map((p) => `${p.x},${p.y}`).join(" ")}" fill="rgba(45,212,191,0.23)" stroke="rgba(45,212,191,0.95)" stroke-width="2"/>`;
-  const dots = valuePts
-    .map(
-      (p) =>
-        `<circle cx="${p.x}" cy="${p.y}" r="3.2" fill="rgba(251,191,36,0.96)" stroke="#0b1226" stroke-width="1"/>`
-    )
-    .join("\n  ");
+  const allZeros = values.every((v) => !Number.isFinite(v) || Number(v) === 0);
+  const polygon = allZeros
+    ? ""
+    : `<polygon points="${valuePts.map((p) => `${p.x},${p.y}`).join(" ")}" fill="rgba(45,212,191,0.23)" stroke="rgba(45,212,191,0.95)" stroke-width="2"/>`;
+  const dots = allZeros
+    ? ""
+    : valuePts
+        .map(
+          (p) =>
+            `<circle cx="${p.x}" cy="${p.y}" r="3.2" fill="rgba(251,191,36,0.96)" stroke="#0b1226" stroke-width="1"/>`
+        )
+        .join("\n  ");
 
   const labelElems = labels
     .map((label, i) => {
@@ -176,7 +181,7 @@ function renderRadarSvg(opts: {
   const conf01 = clamp01(opts.confidence);
   const confPct = Math.round(conf01 * 100);
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" style="overflow:visible">
   <defs>
     <linearGradient id="eliteRadarBg" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#081225"/>
@@ -203,6 +208,7 @@ function renderRadarSvg(opts: {
   <text x="${cx}" y="${cy + Math.round(height * 0.11)}" fill="rgba(226,232,240,0.88)" font-size="${Math.round(
     height * 0.04
   )}" font-weight="700" font-family="Arial,sans-serif" text-anchor="middle" dominant-baseline="middle">Confidence: ${confPct}%</text>
+  ${allZeros ? `<text x="${cx}" y="${cy + Math.round(height * 0.18)}" fill="rgba(226,232,240,0.6)" font-size="11" font-weight="600" font-family="Arial,sans-serif" text-anchor="middle" dominant-baseline="middle">Performance data will populate as sections are scored</text>` : ""}
   <text x="${cx}" y="${height - 18}" fill="rgba(226,232,240,0.72)" font-size="11" font-weight="600" font-family="Arial,sans-serif" text-anchor="middle" dominant-baseline="middle">Audit Performance Signature</text>
 
   ${labelElems}
@@ -229,17 +235,20 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     debugFooter,
   } = vm;
 
-  const photoCategoryKeys = Object.keys(photosByCategory);
+  const photoCategoryKeys = Object.keys(photosByCategory ?? {});
+  const photoCatsWithItems = photoCategoryKeys.filter(
+    (cat) => (photosByCategory[cat] ?? []).filter((x) => !!x?.signedUrl).length > 0
+  );
 
   const photosBlock =
-    photoCategoryKeys.length > 0
+    photoCatsWithItems.length > 0
       ? `
     <div class="section pageBreak">
       <h2>Case Photos</h2>
       <div class="subtitle" style="margin-top: 4px;">Grouped by upload category.</div>
-      ${photoCategoryKeys
+      ${photoCatsWithItems
         .map((cat) => {
-          const items = (photosByCategory[cat] ?? []).filter((x) => !!x.signedUrl);
+          const items = (photosByCategory[cat] ?? []).filter((x) => !!x?.signedUrl);
           if (!items.length) return "";
           return `
         <div class="photoCat">
@@ -262,17 +271,17 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       `
       : "";
 
-  const areaScoresBlock =
-    areaDomains.length > 0 || sectionScores.length > 0
+  const hasAreaScores = (areaDomains?.length ?? 0) > 0 || (sectionScores?.length ?? 0) > 0;
+  const areaScoresBlock = hasAreaScores
       ? `
     <div class="section pageBreak">
       <h2>Score by Area</h2>
       <div class="subtitle" style="margin-top: 4px;">Your score for each capture point (out of 5, with level).</div>
       ${
-        areaDomains.length > 0
+        (areaDomains?.length ?? 0) > 0
           ? `
       <div class="areaScoreGrid">
-        ${areaDomains
+        ${(areaDomains ?? [])
           .map(
             (a) => `
           <div class="areaScoreCard">
@@ -293,12 +302,12 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       }
 
       ${
-        sectionScores.length > 0
+        (sectionScores?.length ?? 0) > 0
           ? `
       <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line);">
         <div style="font-size: 11px; font-weight: 700; color: var(--muted); margin-bottom: 8px;">Detailed section scores</div>
         <div class="areaScoreGrid" style="grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));">
-          ${sectionScores
+          ${(sectionScores ?? [])
             .map(
               (a) => `
             <div class="areaScoreCard">
@@ -322,13 +331,14 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       `
       : "";
 
+  const narrativeText = (vm.viewModel.forensic?.summary ?? "").toString().trim();
   const narrativeSummary =
-    vm.viewModel.forensic?.summary && typeof vm.viewModel.forensic.summary === "string"
+    narrativeText.length > 0
       ? `
     <div class="section pageBreak">
       <h2>Clinical Narrative</h2>
       <div class="subtitle" style="margin-top: 4px;">Clinical-grade audit narrative generated from available imagery.</div>
-      <div class="prose">${esc(vm.viewModel.forensic.summary).replaceAll("\n", "<br/>")}</div>
+      <div class="prose">${esc(narrativeText).replaceAll("\n", "<br/>")}</div>
     </div>
       `
       : "";
@@ -373,6 +383,9 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       --line: #e6e8ee;
       --card: #f7f8fb;
       --soft: #fbfbfd;
+      --card-radius: 14px;
+      --card-padding: 14px;
+      --card-gap: 12px;
     }
 
     * { box-sizing: border-box; }
@@ -385,8 +398,9 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       print-color-adjust: exact;
     }
 
-    .wrap { max-width: 900px; margin: 0 auto; }
+    .wrap { max-width: 900px; margin: 0 auto; padding: 0 4px; }
     .pageBreak { page-break-before: always; }
+    h2 { page-break-after: avoid; }
 
     .topbar {
       display:flex;
@@ -426,9 +440,9 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
 
     .section {
       margin-top: 18px;
-      padding: 14px 16px;
+      padding: var(--card-padding) 16px;
       border: 1px solid var(--line);
-      border-radius: 16px;
+      border-radius: var(--card-radius);
       background: #fff;
       page-break-inside: avoid;
     }
@@ -444,37 +458,39 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     }
     .pill b { color: var(--ink); }
 
-    .scoreGrid { display:grid; grid-template-columns: 1fr 2fr; gap: 12px; margin-top: 12px; }
+    .scoreGrid { display:grid; grid-template-columns: 1fr 2fr; gap: 12px; margin-top: 12px; page-break-inside: avoid; }
 
     .scoreCard {
       border: 1px solid var(--line);
-      border-radius: 16px;
-      padding: 14px;
+      border-radius: var(--card-radius);
+      padding: var(--card-padding);
       background: linear-gradient(180deg, #fff 0%, var(--soft) 100%);
     }
     .scoreLabel { font-size: 12px; color: var(--muted); }
     .scoreValue { font-size: 42px; font-weight: 900; letter-spacing: -0.03em; line-height: 1; margin-top: 6px; }
     .scoreSub { font-size: 11px; color: var(--muted); margin-top: 4px; }
 
-    .metricCard { border: 1px solid var(--line); border-radius: 16px; padding: 14px; background:#fff; }
+    .metricCard { border: 1px solid var(--line); border-radius: var(--card-radius); padding: var(--card-padding); background:#fff; }
     .metricTitle { font-size: 12px; color: var(--muted); margin-bottom: 8px; font-weight: 700; }
     .metricList { display:grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; }
-    .metricList div { display:flex; justify-content:space-between; gap:10px; font-size: 11px; }
+    .metricList div { display:flex; justify-content:space-between; gap:10px; font-size: 11px; flex-wrap: wrap; }
     .metricList span { color: var(--muted); }
-    .metricList b { color: var(--ink); }
+    .metricList b { color: var(--ink); word-break: break-word; overflow-wrap: break-word; max-width: 65%; text-align: right; }
 
     .twoCol { display:grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
-    .listCard { border: 1px solid var(--line); border-radius: 16px; padding: 14px; background:#fff; }
+    .listCard { border: 1px solid var(--line); border-radius: var(--card-radius); padding: var(--card-padding); background:#fff; page-break-inside: avoid; }
     .listTitle { font-size: 12px; font-weight: 800; margin-bottom: 8px; }
     .listCard ul { margin: 0; padding-left: 18px; }
     .listCard li { font-size: 11px; color: var(--ink); margin: 6px 0; }
+    .wrapText { word-break: break-word; overflow-wrap: break-word; }
 
     .areaScoreGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; margin-top: 14px; }
     .areaScoreCard {
-      border: 1px solid var(--line); border-radius: 14px; padding: 12px; background: #fff;
+      border: 1px solid var(--line); border-radius: var(--card-radius); padding: var(--card-padding); background: #fff;
       display: flex; flex-direction: column; gap: 8px;
+      page-break-inside: avoid;
     }
-    .areaScoreTitle { font-size: 12px; font-weight: 700; color: var(--ink); }
+    .areaScoreTitle { font-size: 12px; font-weight: 700; color: var(--ink); word-break: break-word; overflow-wrap: break-word; }
     .areaScoreBar { height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; }
     .areaScoreFill { height: 100%; border-radius: 4px; }
     .areaScoreFill.high { background: #059669; }
@@ -499,27 +515,25 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
 
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 
-    .prose { margin-top: 10px; font-size: 12px; line-height: 1.55; color: var(--ink); }
+    .prose { margin-top: 10px; font-size: 12px; line-height: 1.55; color: var(--ink); word-break: break-word; overflow-wrap: break-word; }
 
-    .radarWrap { margin-top: 12px; display:flex; justify-content:center; }
-    .radarImg {
-      width: 100%;
-      max-width: 560px;
-      border-radius: 16px;
-      border: 1px solid var(--line);
-      background: #0b1226;
-      padding: 10px;
-    }
+    .radarWrap { margin-top: 12px; display:flex; justify-content:center; page-break-inside: avoid; }
+    .radarWrap svg { max-width: 100%; height: auto; border-radius: 16px; border: 1px solid rgba(14,165,233,0.2); }
 
     .photoCat { margin-top: 14px; page-break-inside: avoid; }
     .photoCatTitle { font-size: 12px; font-weight: 800; margin-bottom: 8px; color: var(--ink); text-transform: capitalize; }
     .photoGrid { display:grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-    .photo { margin: 0; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: #fff; }
-    .photo img { display:block; width: 100%; height: 170px; object-fit: cover; }
-    .photo figcaption { padding: 8px 10px; font-size: 10px; color: var(--muted); border-top: 1px solid var(--line); }
+    .photo { margin: 0; border: 1px solid var(--line); border-radius: var(--card-radius); overflow: hidden; background: #fff; page-break-inside: avoid; }
+    .photo img { display:block; width: 100%; height: 170px; object-fit: cover; max-width: 100%; }
+    .photo figcaption { padding: 8px 10px; font-size: 10px; color: var(--muted); border-top: 1px solid var(--line); word-break: break-word; overflow-wrap: break-word; min-height: 1.4em; line-height: 1.3; }
 
     @media print {
+      .wrap { padding: 0; }
+      .section { margin-top: 14px; padding: 12px 14px; }
+      .topbar { padding: 12px 14px; }
       .photo img { height: 165px; }
+      .photoGrid { gap: 8px; }
+      .footer { page-break-inside: avoid; margin-top: 14px; padding-top: 6px; }
     }
   </style>
 </head>
@@ -580,35 +594,41 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
 
       ${radarBlock}
 
+      ${
+        (highlights?.length ?? 0) > 0 || (risks?.length ?? 0) > 0
+          ? `
       <div class="twoCol">
         <div class="listCard">
           <div class="listTitle">Highlights</div>
           ${
-            highlights.length
-              ? `<ul>${highlights.map((x) => `<li>${esc(String(x))}</li>`).join("")}</ul>`
-              : `<div class="subtitle">No highlights captured yet.</div>`
+            (highlights?.length ?? 0) > 0
+              ? `<ul>${(highlights ?? []).map((x) => `<li class="wrapText">${esc(String(x))}</li>`).join("")}</ul>`
+              : `<div class="subtitle">None captured.</div>`
           }
         </div>
 
         <div class="listCard">
           <div class="listTitle">Risks / Watch-outs</div>
           ${
-            risks.length
-              ? `<ul>${risks.map((x) => `<li>${esc(String(x))}</li>`).join("")}</ul>`
-              : `<div class="subtitle">No risks flagged yet.</div>`
+            (risks?.length ?? 0) > 0
+              ? `<ul>${(risks ?? []).map((x) => `<li class="wrapText">${esc(String(x))}</li>`).join("")}</ul>`
+              : `<div class="subtitle">None flagged.</div>`
           }
         </div>
       </div>
+      `
+          : ""
+      }
     </div>
 
     ${areaScoresBlock}
     ${narrativeSummary}
     ${photosBlock}
-    ${doctorBlockHtml ?? ""}
+    ${(vm.viewModel.auditMode === "doctor" || vm.viewModel.auditMode === "auditor") && doctorBlockHtml ? doctorBlockHtml : ""}
 
     <div class="footer">
       HairAudit is an audit/reporting platform. This report is informational and not a medical diagnosis.
-      ${debugFooter ?? ""}
+      ${typeof debugFooter === "string" && debugFooter.trim().length > 0 ? `<div class="footerDebug">${debugFooter}</div>` : ""}
     </div>
 
   </div>
