@@ -1104,7 +1104,8 @@ function addScoreByArea(doc: PDFKit.PDFDocument, content: AuditReportContent) {
 }
 
 function addGraftIntegrityIndex(doc: PDFKit.PDFDocument, content: AuditReportContent) {
-  // Always render a safe section; only include ranges if auditor-approved.
+  // Patient/PDF safety: only approved Graft Integrity surfaces high-impact claims (ranges, variance).
+  // Pending/rejected/needs_more_evidence show placeholder only.
   addSectionHeading(doc, "Graft Integrity Index (TM)");
 
   const gi = content.graftIntegrity;

@@ -171,6 +171,7 @@ export default function GraftIntegrityCard(props: {
   const confBadge = confidenceUi(estimate?.confidence_label ?? "medium");
 
   const showNeedsEvidence = status === "needs_more_evidence";
+  // Only approved: high-impact claims (ranges, variance) must never surface to patients when pending/rejected/needs_more_evidence
   const isApproved = status === "approved";
   const limitations = Array.isArray(estimate?.limitations) ? estimate?.limitations : [];
   const shortLimitations = limitations.slice(0, 3);

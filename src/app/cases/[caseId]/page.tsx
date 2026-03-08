@@ -7,6 +7,7 @@ import DownloadReport from "./download-report";
 import AuditScoreBadge from "@/components/reports/AuditScoreBadge";
 import GraftIntegrityCard from "@/app/dashboard/patient/GraftIntegrityCard";
 import GraftIntegrityReviewPanel from "@/app/dashboard/auditor/GraftIntegrityReviewPanel";
+import AuditorRerunPanel from "./AuditorRerunPanel";
 import DoctorAnswersSummary from "@/components/reports/DoctorAnswersSummary";
 import PatientAnswersSummary from "@/components/reports/PatientAnswersSummary";
 import EvidenceSummary from "@/components/reports/EvidenceSummary";
@@ -331,6 +332,12 @@ export default async function Page({
       {isPatientForCase && (
         <div className="mt-6">
           <GraftIntegrityCard caseId={c.id} initialEstimate={graftIntegrityEstimate} />
+        </div>
+      )}
+
+      {isAuditor && reports && reports.length > 0 && (
+        <div className="mt-6">
+          <AuditorRerunPanel caseId={c.id} latestReportVersion={(reports[0] as any)?.version} />
         </div>
       )}
 

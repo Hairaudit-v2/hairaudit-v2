@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PATIENT_AUDIT_SECTIONS } from "@/lib/patientAuditForm";
+import { normalizeIntake } from "@/lib/intake/normalizeIntake";
 import type { PatientAuditAnswers, PatientFormQuestion } from "@/lib/patientAuditForm";
 import { validatePatientAuditV2, normalizePatientV2ForValidation } from "@/lib/patientAuditSchema";
 
@@ -386,6 +387,10 @@ function PatientReviewSummary({
   sections: { id: string; title: string; questions: PatientFormQuestion[] }[];
   onEdit: () => void;
 }) {
+  const normalized = normalizeIntake(answers as Record<string, unknown>);
+  if (typeof window !== "undefined") {
+    console.log("[PatientReviewSummary] normalized payload:", JSON.stringify(normalized).slice(0, 600) + (JSON.stringify(normalized).length > 600 ? "…" : ""));
+  }
   const labels: Record<string, Record<string, string>> = {
     clinic_country: { turkey: "Turkey", spain: "Spain", india: "India", thailand: "Thailand", mexico: "Mexico", brazil: "Brazil", argentina: "Argentina", colombia: "Colombia", australia: "Australia", uk: "UK", usa: "USA", canada: "Canada", uae: "UAE", belgium: "Belgium", germany: "Germany", poland: "Poland", greece: "Greece", other: "Other" },
     procedure_type: { fue: "FUE", fut: "FUT", dhi: "DHI", robotic: "Robotic", not_sure: "Not Sure", other: "Other" },
@@ -416,7 +421,7 @@ function PatientReviewSummary({
             <h3 className="text-sm font-semibold text-slate-800 mb-2">{sec.title}</h3>
             <dl className="space-y-1 text-sm">
               {sec.questions.map((q) => {
-                const v = answers[q.id];
+                const v = normalized[q.id] ?? getByPath(answers as Record<string, unknown>, q.id);
                 if (q.dependsOn && v === undefined) return null;
                 return (
                   <div key={q.id} className="flex justify-between gap-2">

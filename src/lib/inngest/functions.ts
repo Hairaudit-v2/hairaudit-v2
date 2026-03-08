@@ -184,8 +184,10 @@ async function upsertGraftIntegrityEstimate(params: {
   claimedGrafts: number | null;
   modelOut: Awaited<ReturnType<typeof runGraftIntegrityModelEstimate>>;
   evidenceSufficiencyScore: number;
+  /** When true, if existing row is approved, insert new row instead of overwriting (rerun safety). */
+  alwaysInsertIfApproved?: boolean;
 }) {
-  const { supabase, caseId, claimedGrafts, modelOut } = params;
+  const { supabase, caseId, claimedGrafts, modelOut, alwaysInsertIfApproved } = params;
 
   // Prefer server-side computed variance for storage consistency.
   const claimed = claimedGrafts ?? modelOut.claimed_grafts;
@@ -201,13 +203,17 @@ async function upsertGraftIntegrityEstimate(params: {
 
   const { data: existing, error: selErr } = await supabase
     .from("graft_integrity_estimates")
-    .select("id")
+    .select("id, auditor_status")
     .eq("case_id", caseId)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
 
   if (selErr) throw new Error(`graft_integrity_estimates select failed: ${selErr.message}`);
+
+  // Never overwrite approved GII; insert new row so prior approved remains patient-facing.
+  const existingApproved = String((existing as any)?.auditor_status ?? "") === "approved";
+  const shouldInsertNew = alwaysInsertIfApproved && existingApproved;
 
   const payload = {
     case_id: caseId,
@@ -231,7 +237,7 @@ async function upsertGraftIntegrityEstimate(params: {
     updated_at: new Date().toISOString(),
   };
 
-  if (existing?.id) {
+  if (existing?.id && !shouldInsertNew) {
     const { error: upErr } = await supabase
       .from("graft_integrity_estimates")
       .update(payload)
@@ -249,9 +255,11 @@ export const runGraftIntegrityEstimate = inngest.createFunction(
     retries: 2,
     concurrency: { limit: 10 },
   },
-  { event: "case/submitted" },
+  [{ event: "case/submitted" }, { event: "case/graft-integrity-only-requested" }],
   async ({ event, step, logger }) => {
-    const { caseId } = event.data as { caseId: string; userId: string };
+    const data = event.data as { caseId: string; userId?: string; alwaysInsertIfApproved?: boolean };
+    const caseId = data.caseId;
+    const alwaysInsertIfApproved = Boolean(data.alwaysInsertIfApproved);
     const supabase = supabaseAdmin();
 
     // 1) Load uploads + summary (same sources as the main audit)
@@ -357,6 +365,7 @@ export const runGraftIntegrityEstimate = inngest.createFunction(
         claimedGrafts,
         modelOut: adjusted as any,
         evidenceSufficiencyScore: evidenceScore,
+        alwaysInsertIfApproved,
       });
     });
 
@@ -433,9 +442,11 @@ export const runAudit = inngest.createFunction(
       });
     },
   },
-  { event: "case/submitted" },
+  [{ event: "case/submitted" }, { event: "case/audit-only-requested" }],
   async ({ event, step, logger }) => {
-    const { caseId, userId } = event.data as { caseId: string; userId: string };
+    const data = event.data as { caseId: string; userId: string };
+    const caseId = data.caseId;
+    const userId = data.userId ?? "";
 
     const supabase = supabaseAdmin();
 
@@ -969,5 +980,140 @@ export const runAudit = inngest.createFunction(
 
     logger.info("Audit pipeline complete", { caseId, nextVersion, pdfPath });
     return { ok: true, version: nextVersion, pdfPath };
+  }
+);
+
+export const runPdfRebuild = inngest.createFunction(
+  {
+    id: "run-pdf-rebuild",
+    retries: 2,
+    concurrency: { limit: 5 },
+  },
+  { event: "case/pdf-rebuild-requested" },
+  async ({ event, step, logger }) => {
+    const { caseId } = event.data as { caseId: string };
+    const supabase = supabaseAdmin();
+
+    const { data: latest } = await supabase
+      .from("reports")
+      .select("version, status")
+      .eq("case_id", caseId)
+      .order("version", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (!latest || String((latest as any)?.status ?? "") !== "complete") {
+      throw new Error(`No complete report found for case ${caseId}`);
+    }
+    const version = Number((latest as any)?.version ?? 0);
+    if (version < 1) throw new Error(`Invalid report version for case ${caseId}`);
+
+    const result = await step.run("rebuild-pdf", async () => {
+      return await renderAndUploadPdfForCase({
+        caseId,
+        version,
+      });
+    });
+
+    logger.info("PDF rebuild complete", { caseId, version });
+    return { ok: true, version, pdfPath: result?.pdfPath };
+  }
+);
+
+export const auditorRerun = inngest.createFunction(
+  {
+    id: "auditor-rerun",
+    retries: 0,
+    concurrency: { limit: 5 },
+  },
+  { event: "auditor/rerun" },
+  async ({ event, step, logger }) => {
+    const data = event.data as {
+      caseId: string;
+      action: string;
+      reason: string;
+      notes: string | null;
+      triggeredBy: string;
+      triggeredRole: string;
+      rerunLogId: string | null;
+      sourceReportVersion: number | null;
+    };
+
+    const { caseId, action, rerunLogId, triggeredBy, sourceReportVersion } = data;
+    const supabase = supabaseAdmin();
+
+    await step.run("mark-processing", async () => {
+      if (rerunLogId) {
+        await supabase
+          .from("audit_rerun_log")
+          .update({ status: "processing" })
+          .eq("id", rerunLogId);
+      }
+    });
+
+    const complete = async (status: "complete" | "failed", targetVersion?: number | null, err?: string) => {
+      if (rerunLogId) {
+        await supabase
+          .from("audit_rerun_log")
+          .update({
+            status,
+            target_report_version: targetVersion ?? null,
+            error: err ?? null,
+          })
+          .eq("id", rerunLogId);
+      }
+    };
+
+    try {
+      switch (action) {
+        case "regenerate_ai_audit": {
+          const result = await step.invoke("invoke-audit", {
+            function: runAudit,
+            data: { caseId, userId: triggeredBy },
+          });
+          const ver = (result as any)?.version;
+          await complete("complete", ver);
+          return { ok: true, action, version: ver };
+        }
+        case "regenerate_graft_integrity": {
+          await step.invoke("invoke-gii", {
+            function: runGraftIntegrityEstimate,
+            data: { caseId, alwaysInsertIfApproved: true },
+          });
+          await complete("complete");
+          return { ok: true, action };
+        }
+        case "rebuild_pdf": {
+          const result = await step.invoke("invoke-pdf", {
+            function: runPdfRebuild,
+            data: { caseId },
+          });
+          const ver = (result as any)?.version;
+          await complete("complete", ver);
+          return { ok: true, action, version: ver };
+        }
+        case "full_reaudit": {
+          await step.invoke("invoke-gii-full", {
+            function: runGraftIntegrityEstimate,
+            data: { caseId, userId: triggeredBy, alwaysInsertIfApproved: true },
+          });
+          const auditResult = await step.invoke("invoke-audit-full", {
+            function: runAudit,
+            data: { caseId, userId: triggeredBy },
+          });
+          const ver = (auditResult as any)?.version;
+          await complete("complete", ver);
+          return { ok: true, action, version: ver };
+        }
+        default:
+          await complete("failed", null, `Unknown action: ${action}`);
+          throw new Error(`Unknown rerun action: ${action}`);
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      logger.error("auditor rerun failed", { caseId, action, error: msg });
+      await complete("failed", null, msg);
+      throw err;
+    }
   }
 );

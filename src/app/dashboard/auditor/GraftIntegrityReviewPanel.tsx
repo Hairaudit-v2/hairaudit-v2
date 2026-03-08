@@ -346,10 +346,13 @@ export default function GraftIntegrityReviewPanel(props: {
         </div>
         {message && (
           <div
-            className={`mt-3 rounded-lg px-3 py-2 text-sm font-medium ${
+            className={`mt-3 flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium ${
               message.type === "success" ? "bg-emerald-50 text-emerald-800" : "bg-rose-50 text-rose-800"
             }`}
           >
+            {message.type === "success" && (
+              <span className="text-emerald-600" aria-hidden>✓</span>
+            )}
             {message.text}
           </div>
         )}

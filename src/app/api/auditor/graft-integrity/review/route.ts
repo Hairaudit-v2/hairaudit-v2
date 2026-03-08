@@ -50,7 +50,7 @@ export async function POST(req: Request) {
     const { data: existing, error: selErr } = await admin
       .from("graft_integrity_estimates")
       .select(
-        "id, case_id, claimed_grafts, estimated_extracted_min, estimated_extracted_max, estimated_implanted_min, estimated_implanted_max, auditor_adjustments"
+        "id, case_id, claimed_grafts, auditor_status, estimated_extracted_min, estimated_extracted_max, estimated_implanted_min, estimated_implanted_max, auditor_adjustments"
       )
       .eq("id", estimateId)
       .maybeSingle();
@@ -59,7 +59,13 @@ export async function POST(req: Request) {
 
     const now = new Date().toISOString();
     const claimed = (existing as any).claimed_grafts as number | null;
+    const prevStatus = String((existing as any).auditor_status ?? "pending");
     const prevAdjustments = ((existing as any).auditor_adjustments ?? {}) as Record<string, unknown>;
+    const prevAuditLog = Array.isArray(prevAdjustments.audit_log) ? prevAdjustments.audit_log : [];
+
+    function appendAuditLog(entry: { action: string; prev_status: string; new_status: string; user_id: string; at: string; prev_values?: Record<string, unknown>; new_values?: Record<string, unknown> }) {
+      return [...prevAuditLog, entry];
+    }
 
     const baseAdjustments: Record<string, unknown> = {
       ...prevAdjustments,
@@ -76,17 +82,44 @@ export async function POST(req: Request) {
 
     if (action === "approve") {
       update.auditor_status = "approved";
-      update.auditor_adjustments = baseAdjustments;
+      update.auditor_adjustments = {
+        ...baseAdjustments,
+        audit_log: appendAuditLog({
+          action: "approve",
+          prev_status: prevStatus,
+          new_status: "approved",
+          user_id: user.id,
+          at: now,
+        }),
+      };
     }
 
     if (action === "needs_more_evidence") {
       update.auditor_status = "needs_more_evidence";
-      update.auditor_adjustments = baseAdjustments;
+      update.auditor_adjustments = {
+        ...baseAdjustments,
+        audit_log: appendAuditLog({
+          action: "needs_more_evidence",
+          prev_status: prevStatus,
+          new_status: "needs_more_evidence",
+          user_id: user.id,
+          at: now,
+        }),
+      };
     }
 
     if (action === "reject") {
       update.auditor_status = "rejected";
-      update.auditor_adjustments = baseAdjustments;
+      update.auditor_adjustments = {
+        ...baseAdjustments,
+        audit_log: appendAuditLog({
+          action: "reject",
+          prev_status: prevStatus,
+          new_status: "rejected",
+          user_id: user.id,
+          at: now,
+        }),
+      };
     }
 
     if (action === "approve_with_overrides") {
@@ -120,8 +153,25 @@ export async function POST(req: Request) {
         implanted: { min: implantedMin, max: implantedMax },
       };
 
+      const prevRanges = {
+        extracted: { min: (existing as any).estimated_extracted_min, max: (existing as any).estimated_extracted_max },
+        implanted: { min: (existing as any).estimated_implanted_min, max: (existing as any).estimated_implanted_max },
+      };
+
       update.auditor_status = "approved";
-      update.auditor_adjustments = { ...baseAdjustments, overrides: overrideRanges };
+      update.auditor_adjustments = {
+        ...baseAdjustments,
+        overrides: overrideRanges,
+        audit_log: appendAuditLog({
+          action: "approve_with_overrides",
+          prev_status: prevStatus,
+          new_status: "approved",
+          user_id: user.id,
+          at: now,
+          prev_values: prevRanges,
+          new_values: overrideRanges,
+        }),
+      };
 
       // Override the stored estimate ranges so patient-facing reads are consistent.
       update.estimated_extracted_min = extractedMin;

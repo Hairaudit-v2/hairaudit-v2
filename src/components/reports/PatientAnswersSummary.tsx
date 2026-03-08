@@ -1,5 +1,19 @@
 "use client";
 
+import { normalizeIntake } from "@/lib/intake/normalizeIntake";
+import { PATIENT_AUDIT_SECTIONS } from "@/lib/patientAuditForm";
+
+function getByPath(obj: Record<string, unknown>, path: string): unknown {
+  if (!path.includes(".")) return obj[path];
+  const parts = path.split(".").filter(Boolean);
+  let cur: unknown = obj;
+  for (const p of parts) {
+    if (!cur || typeof cur !== "object") return undefined;
+    cur = (cur as Record<string, unknown>)[p];
+  }
+  return cur;
+}
+
 /** Displays patient audit highlights for admin/review. Supports v2 and legacy data. */
 export default function PatientAnswersSummary({
   answers,
@@ -9,9 +23,15 @@ export default function PatientAnswersSummary({
   className?: string;
 }) {
   if (!answers || typeof answers !== "object") return null;
-  const a = answers as Record<string, unknown>;
+  const normalized = normalizeIntake(answers);
+  const a = normalized as Record<string, unknown>;
 
-  const fmt = (v: unknown) => (v === null || v === undefined || v === "" ? "Not provided" : String(v));
+  // Temporary: verify normalized payload (remove after debugging)
+  if (typeof window !== "undefined") {
+    console.log("[PatientAnswersSummary] normalized payload:", JSON.stringify(normalized).slice(0, 500) + (JSON.stringify(normalized).length > 500 ? "…" : ""));
+  }
+
+  const fmt = (v: unknown) => (v === null || v === undefined || v === "" ? "—" : String(v));
   const num = (v: unknown) => (typeof v === "number" ? v : v != null ? Number(v) : null);
 
   const countryLabels: Record<string, string> = {
@@ -27,7 +47,7 @@ export default function PatientAnswersSummary({
     per_graft: "Per graft", per_session: "Per session", package: "Package", not_clear: "Not clear",
   };
 
-  const clinic = fmt(a.clinic_name) !== "Not provided" ? `${fmt(a.clinic_name)} (${countryLabels[String(a.clinic_country ?? "")] ?? fmt(a.clinic_country)} / ${fmt(a.clinic_city)})` : "—";
+  const clinic = fmt(a.clinic_name) !== "—" ? `${fmt(a.clinic_name)} (${countryLabels[String(a.clinic_country ?? "")] ?? fmt(a.clinic_country)} / ${fmt(a.clinic_city)})` : "—";
   const procedureDate = fmt(a.procedure_date);
   const procedureType = procedureLabels[String(a.procedure_type ?? "")] ?? fmt(a.procedure_type);
   const monthsLabels: Record<string, string> = {
@@ -44,6 +64,22 @@ export default function PatientAnswersSummary({
   const doctorExtraction = fmt(a.doctor_present_extraction);
   const doctorImplant = fmt(a.doctor_present_implant);
   const graftDisclosed = fmt(a.graft_number_disclosed);
+
+  const advancedSections = PATIENT_AUDIT_SECTIONS.filter((s) => s.advanced);
+  const hasAdvanced = advancedSections.some((sec) =>
+    sec.questions.some((q) => {
+      const v = a[q.id] ?? getByPath(answers as Record<string, unknown>, q.id);
+      return v !== null && v !== undefined && v !== "";
+    })
+  );
+
+  const fmtWithLabels = (qId: string, v: unknown, labels?: Record<string, string>) => {
+    if (v === null || v === undefined || v === "") return "—";
+    if (typeof v === "boolean") return v ? "Yes" : "No";
+    if (Array.isArray(v)) return v.join(", ");
+    if (labels && typeof v === "string") return labels[v] ?? String(v);
+    return String(v);
+  };
 
   return (
     <div className={`rounded-xl border border-slate-200 bg-white p-5 ${className}`}>
@@ -130,6 +166,43 @@ export default function PatientAnswersSummary({
           </div>
         </dl>
       </div>
+
+      {hasAdvanced && (
+        <div className="mt-4 pt-4 border-t border-slate-100">
+          <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+            Advanced forensic (optional)
+          </h4>
+          <div className="space-y-3">
+            {advancedSections.map((sec) => {
+              const rows = sec.questions
+                .map((q) => {
+                  const v = a[q.id] ?? getByPath(answers as Record<string, unknown>, q.id);
+                  if (v === null || v === undefined || v === "") return null;
+                  const labelMap =
+                    q.options?.length
+                      ? Object.fromEntries((q.options ?? []).map((o) => [o.value, o.label]))
+                      : undefined;
+                  return { prompt: q.prompt, value: fmtWithLabels(q.id, v, labelMap) };
+                })
+                .filter(Boolean) as { prompt: string; value: string }[];
+              if (rows.length === 0) return null;
+              return (
+                <div key={sec.id}>
+                  <h5 className="text-xs font-medium text-slate-600 mb-1">{sec.title}</h5>
+                  <dl className="space-y-1 text-sm">
+                    {rows.map((r) => (
+                      <div key={r.prompt} className="flex justify-between gap-2">
+                        <dt className="text-slate-600">{r.prompt}</dt>
+                        <dd className="font-medium">{r.value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
