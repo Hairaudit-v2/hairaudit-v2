@@ -121,6 +121,12 @@ export default function LoginPage() {
             <p className="mt-6 text-center text-xs text-slate-500">
               By signing in, you&apos;ll be redirected to your patient dashboard.
             </p>
+            <p className="mt-2 text-center text-sm text-slate-600">
+              Need auditor access?{" "}
+              <Link href="/login/auditor" className="font-medium text-slate-700 hover:text-slate-900">
+                Auditor login
+              </Link>
+            </p>
           </div>
         </div>
       </main>
