@@ -555,16 +555,18 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     @page { size: A4; margin: 16mm 14mm; }
 
     :root {
-      --ink: #081026;
-      --muted: #4b5c78;
-      --line: #dbe5f4;
-      --line-strong: #b6c6de;
+      --ink: #071229;
+      --muted: #4f6486;
+      --line: #d8e3f3;
+      --line-strong: #b6c9e4;
       --card: #f7faff;
-      --soft: #f2f7ff;
-      --hero: #081a34;
-      --hero2: #0f274a;
-      --card-radius: 14px;
-      --card-padding: 14px;
+      --soft: #f0f6ff;
+      --hero: #061a37;
+      --hero2: #0f2f57;
+      --gold: #d5a43a;
+      --gold-soft: #f6e4b8;
+      --card-radius: 15px;
+      --card-padding: 16px;
       --card-gap: 12px;
     }
 
@@ -582,20 +584,28 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     }
 
     .wrap { max-width: 910px; margin: 0 auto; padding: 0 4px; }
-    .pageBreak { page-break-before: always; }
-    h2 { page-break-after: avoid; }
+    .pageBreak { page-break-before: always; break-before: page; }
+    h2 { page-break-after: avoid; break-after: avoid; }
 
     .hero {
+      position: relative;
       border-radius: 18px;
       border: 1px solid rgba(148, 163, 184, 0.24);
       background:
-        radial-gradient(circle at 8% 20%, rgba(45,212,191,0.20), rgba(45,212,191,0) 42%),
-        radial-gradient(circle at 92% 10%, rgba(251,191,36,0.20), rgba(251,191,36,0) 45%),
+        radial-gradient(circle at 8% 20%, rgba(45,212,191,0.18), rgba(45,212,191,0) 42%),
+        radial-gradient(circle at 92% 10%, rgba(251,191,36,0.22), rgba(251,191,36,0) 45%),
         linear-gradient(140deg, var(--hero) 0%, var(--hero2) 100%);
       color: #edf3ff;
-      padding: 18px;
+      padding: 22px;
       page-break-inside: avoid;
-      box-shadow: 0 18px 36px rgba(2, 12, 35, 0.16);
+      box-shadow: 0 22px 44px rgba(2, 12, 35, 0.18);
+    }
+    .heroTexture {
+      position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
+      background:
+        repeating-linear-gradient(120deg, rgba(148,163,184,0.08) 0, rgba(148,163,184,0.08) 1px, transparent 1px, transparent 22px),
+        radial-gradient(circle at 18% 62%, rgba(148,163,184,0.12) 0, rgba(148,163,184,0) 35%);
+      opacity: .45;
     }
     .topbar { display:flex; justify-content:space-between; gap: 14px; }
     .brand { display:flex; gap: 12px; align-items:flex-start; }
@@ -618,8 +628,8 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       background: rgba(255,255,255,0.06);
       padding: 4px 8px;
     }
-    .title { margin: 0; font-size: 22px; font-weight: 900; letter-spacing: -0.01em; color: #f8fbff; }
-    .subtitle { margin-top: 4px; font-size: 12px; color: #d8e4ff; line-height: 1.45; }
+    .title { margin: 0; font-size: 24px; font-weight: 900; letter-spacing: -0.01em; color: #f8fbff; line-height: 1.15; }
+    .subtitle { margin-top: 5px; font-size: 12px; color: #d8e4ff; line-height: 1.5; max-width: 520px; }
     .kicker { margin-top: 6px; font-size: 11px; color: #b8cef6; font-weight: 700; letter-spacing: .03em; }
 
     .meta {
@@ -635,15 +645,20 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
 
     .section {
       margin-top: 18px;
-      padding: 16px;
+      padding: 18px;
       border: 1px solid var(--line);
       border-radius: var(--card-radius);
       background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
       page-break-inside: avoid;
-      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+      break-inside: avoid;
+      box-shadow: 0 10px 26px rgba(15, 23, 42, 0.045);
     }
-    .sectionHead { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom: 10px; }
-    .sectionHead h2 { margin: 0; font-size: 18px; letter-spacing: -0.01em; }
+    .sectionHead {
+      display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom: 10px;
+      page-break-after: avoid; break-after: avoid;
+    }
+    .sectionHead h2 { margin: 0; font-size: 19px; letter-spacing: -0.01em; line-height: 1.2; }
+    .sectionDivider { height: 1px; margin: 10px 0 12px; background: linear-gradient(90deg, rgba(182,201,228,0.65), rgba(182,201,228,0.08)); }
     .pillRow { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
 
     .pill {
@@ -654,32 +669,33 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     }
     .pill b { color: var(--ink); }
 
-    .execLayout { display:grid; grid-template-columns: 1.1fr 1.4fr; gap: 12px; }
+    .execLayout { display:grid; grid-template-columns: 1.1fr 1.4fr; gap: 14px; }
     .scoreBadge {
-      border: 1px solid rgba(245, 158, 11, 0.35);
-      border-radius: 18px;
-      padding: 14px;
+      border: 1px solid rgba(213, 164, 58, 0.45);
+      border-radius: 20px;
+      padding: 16px;
       background:
-        radial-gradient(circle at 20% 10%, rgba(251, 191, 36, 0.25), rgba(251,191,36,0) 55%),
-        linear-gradient(155deg, #ffffff 0%, #ecf4ff 100%);
-      min-height: 220px;
+        radial-gradient(circle at 20% 10%, rgba(251, 191, 36, 0.28), rgba(251,191,36,0) 55%),
+        linear-gradient(155deg, #ffffff 0%, #ebf3ff 100%);
+      min-height: 250px;
       display:flex;
       flex-direction:column;
       justify-content:space-between;
+      box-shadow: 0 10px 28px rgba(213, 164, 58, 0.12);
     }
     .scoreLabel { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #556685; font-weight: 700; }
     .scoreBubble {
-      width: 150px; height: 150px; border-radius: 999px;
+      width: 180px; height: 180px; border-radius: 999px;
       display:flex; align-items:center; justify-content:center; flex-direction: column;
-      border: 1px solid rgba(148,163,184,0.3);
-      background: radial-gradient(circle at 30% 20%, #ffffff 0%, #e3eefc 100%);
-      box-shadow: inset 0 0 0 4px rgba(255,255,255,0.6), 0 12px 28px rgba(15,23,42,.09);
+      border: 1px solid rgba(213,164,58,0.45);
+      background: radial-gradient(circle at 30% 20%, #ffffff 0%, #e0ecfb 100%);
+      box-shadow: inset 0 0 0 5px rgba(255,255,255,0.7), 0 14px 30px rgba(15,23,42,.11);
     }
-    .scoreValue { font-size: 44px; font-weight: 900; line-height: 1; letter-spacing: -0.03em; }
+    .scoreValue { font-size: 54px; font-weight: 900; line-height: 1; letter-spacing: -0.035em; }
     .scoreSub { font-size: 10px; color: var(--muted); margin-top: 4px; }
     .tierTag {
       margin-top: 10px; display: inline-flex; padding: 7px 12px; border-radius: 999px;
-      border: 1px solid var(--line-strong); font-size: 11px; font-weight: 800;
+      border: 1px solid rgba(213,164,58,.5); font-size: 11px; font-weight: 800; background: var(--gold-soft);
     }
 
     .metricCard, .panelCard { border: 1px solid var(--line); border-radius: 14px; padding: 12px; background:#fff; }
@@ -688,8 +704,11 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     .metricList div { display:flex; justify-content:space-between; gap:10px; font-size: 11px; flex-wrap: wrap; }
     .metricList span { color: var(--muted); }
     .metricList b { color: var(--ink); word-break: break-word; overflow-wrap: break-word; max-width: 65%; text-align: right; }
-    .radarPanel { margin-top: 12px; border: 1px solid var(--line); border-radius: 16px; padding: 12px; background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%); }
-    .radarWrap { margin-top: 8px; display:flex; justify-content:center; page-break-inside: avoid; }
+    .radarPanel {
+      margin-top: 14px; border: 1px solid var(--line); border-radius: 16px; padding: 14px; background: linear-gradient(180deg, #f7fbff 0%, #ffffff 100%);
+      page-break-inside: avoid; break-inside: avoid;
+    }
+    .radarWrap { margin-top: 8px; display:flex; justify-content:center; page-break-inside: avoid; break-inside: avoid; }
     .radarWrap svg { max-width: 100%; height: auto; border-radius: 16px; border: 1px solid rgba(14,165,233,0.2); }
     .infoGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
     .riskStrip { margin-top: 10px; display:flex; gap:8px; flex-wrap:wrap; }
@@ -697,10 +716,10 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     .riskPill.good { background: #ecfdf5; border-color: #a7f3d0; color: #166534; }
     .riskPill.watch { background: #fffbeb; border-color: #fcd34d; color: #92400e; }
     .riskPill.note { background: #eff6ff; border-color: #bfdbfe; color: #1e3a8a; }
-    .summaryCard { margin-top: 10px; border: 1px solid var(--line); border-radius: 14px; padding: 12px; background: #fff; }
+    .summaryCard { margin-top: 12px; border: 1px solid var(--line); border-radius: 14px; padding: 14px; background: #fff; }
 
-    .domainGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; }
-    .domainCard { border: 1px solid var(--line); border-radius: 14px; padding: 12px; background: #fff; page-break-inside: avoid; }
+    .domainGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 10px; }
+    .domainCard { border: 1px solid var(--line); border-radius: 14px; padding: 12px; background: #fff; page-break-inside: avoid; break-inside: avoid; }
     .domainAlt { background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%); }
     .domainTop { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
     .domainTop h3 { margin:0; font-size: 14px; }
@@ -714,22 +733,37 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     .microList { margin: 6px 0 0; padding-left: 17px; }
     .microList li { margin: 4px 0; font-size: 11px; color: #11223a; }
 
-    .forensicBoard { border: 1px solid var(--line); border-radius: 14px; padding: 12px; background: linear-gradient(180deg, #ffffff 0%, #f7faff 100%); }
-    .photoGroup { margin-top: 12px; padding-top: 10px; border-top: 1px dashed #cbd5e1; }
+    .forensicBoard {
+      border: 1px solid var(--line); border-radius: 14px; padding: 14px; background: linear-gradient(180deg, #ffffff 0%, #f7faff 100%);
+      page-break-inside: avoid; break-inside: avoid;
+    }
+    .photoGroup {
+      margin-top: 12px; padding-top: 10px; border-top: 1px dashed #cbd5e1;
+      page-break-inside: avoid; break-inside: avoid;
+    }
     .photoGroup:first-child { margin-top: 0; padding-top: 0; border-top: none; }
     .photoGroupTitle { font-size: 12px; font-weight: 800; text-transform: capitalize; color: #0f1f39; }
-    .forensicGrid { display:grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 8px; }
-    .forensicPhoto { margin:0; border: 1px solid var(--line); border-radius: 12px; overflow:hidden; background:#fff; }
-    .forensicPhoto img { display:block; width:100%; height:170px; object-fit:cover; }
-    .forensicPhoto figcaption { font-size:10px; color: var(--muted); border-top:1px solid var(--line); padding:8px; min-height: 32px; }
+    .forensicGrid { display:grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 8px; }
+    .forensicPhoto {
+      margin:0; border: 1px solid var(--line); border-radius: 12px; overflow:hidden; background:#fff;
+      page-break-inside: avoid; break-inside: avoid;
+    }
+    .forensicPhoto img { display:block; width:100%; height:172px; object-fit:cover; border-bottom: 1px solid #d2dced; }
+    .forensicPhoto figcaption { font-size:10px; color: var(--muted); border-top:1px solid var(--line); padding:9px; min-height: 34px; background: #f9fbff; }
     .limitPanel { margin-top: 12px; border: 1px solid #bfdbfe; border-radius: 12px; padding: 10px; background: #eff6ff; font-size: 11px; color: #1e3a8a; }
 
     .premiumGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-    .premCard { border: 1px solid #d4d4f9; border-radius: 12px; padding: 12px; background: linear-gradient(180deg, #ffffff 0%, #f8f5ff 100%); }
+    .premCard {
+      border: 1px solid #d4d4f9; border-radius: 12px; padding: 12px; background: linear-gradient(180deg, #ffffff 0%, #f8f5ff 100%);
+      page-break-inside: avoid; break-inside: avoid;
+    }
     .premTitle { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: #4338ca; margin-bottom: 6px; }
-    .fingerprintSection { margin-top: 12px; border: 1px solid #bae6fd; border-radius: 14px; padding: 12px; background: linear-gradient(180deg, #ffffff 0%, #f0f9ff 100%); }
+    .fingerprintSection {
+      margin-top: 12px; border: 1px solid #bae6fd; border-radius: 14px; padding: 12px; background: linear-gradient(180deg, #ffffff 0%, #f0f9ff 100%);
+      page-break-inside: avoid; break-inside: avoid;
+    }
     .fpGrid { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
-    .fpCard { border: 1px solid #dbeafe; border-radius: 12px; padding: 10px; background: #fff; }
+    .fpCard { border: 1px solid #dbeafe; border-radius: 12px; padding: 10px; background: #fff; page-break-inside: avoid; break-inside: avoid; }
     .fpHead { display:flex; justify-content:space-between; align-items:center; gap: 8px; }
     .fpTitleWrap { display:flex; align-items:center; gap: 6px; }
     .fpTitleWrap h4 { margin:0; font-size: 12px; }
@@ -744,7 +778,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     .fpDot.active { background: #38bdf8; }
 
     .twoCol { display:grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
-    .listCard { border: 1px solid var(--line); border-radius: var(--card-radius); padding: var(--card-padding); background:#fff; page-break-inside: avoid; }
+    .listCard { border: 1px solid var(--line); border-radius: var(--card-radius); padding: var(--card-padding); background:#fff; page-break-inside: avoid; break-inside: avoid; }
     .listTitle { font-size: 12px; font-weight: 800; margin-bottom: 8px; }
     .listCard ul { margin: 0; padding-left: 18px; }
     .listCard li { font-size: 11px; color: var(--ink); margin: 6px 0; }
@@ -755,6 +789,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     .iconOutlook { color: #6d28d9; }
     .emptyState { font-size: 11px; color: var(--muted); border: 1px dashed #cbd5e1; border-radius: 10px; padding: 10px; background: #fff; }
     .miniText { margin-top: 6px; font-size: 11px; color: var(--ink); line-height: 1.5; }
+    p, li { orphans: 3; widows: 3; }
     .footer {
       margin-top: 18px;
       font-size: 10px;
@@ -773,12 +808,14 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
 
     @media print {
       .wrap { padding: 0; }
-      .hero { padding: 14px; }
+      .hero { padding: 14px; break-inside: avoid; }
       .section { margin-top: 14px; padding: 12px; }
       .execLayout, .domainGrid, .forensicGrid, .infoGrid, .premiumGrid, .fpGrid { grid-template-columns: 1fr; }
       .fpGrid { grid-template-columns: 1fr; }
       .forensicPhoto img { height: 165px; }
       .footer { page-break-inside: avoid; margin-top: 14px; padding-top: 6px; }
+      .sectionDivider { margin: 8px 0 10px; }
+      .domainCard, .listCard, .forensicPhoto, .premCard, .fpCard, .radarPanel, .fingerprintSection, .photoGroup { break-inside: avoid-page; page-break-inside: avoid; }
     }
   </style>
 </head>
@@ -787,6 +824,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
   <div class="wrap">
 
     <div class="hero">
+      <div class="heroTexture"></div>
       <div class="topbar">
         <div class="brand">
           <div class="logoStack">
@@ -821,6 +859,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
           }
         </div>
       </div>
+      <div class="sectionDivider"></div>
 
       <div class="execLayout">
         <div class="scoreBadge">
@@ -881,6 +920,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
         <h2>Section-by-Section Analysis</h2>
         <span class="pill">Clinical intelligence cards</span>
       </div>
+      <div class="sectionDivider"></div>
       <div class="domainGrid">${domainCards}</div>
     </div>
 
@@ -889,6 +929,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
         <h2>Photo Evidence Intelligence</h2>
         <span class="pill">Forensic visual board</span>
       </div>
+      <div class="sectionDivider"></div>
       <div class="forensicBoard">${photoGroups}</div>
       <div class="limitPanel">
         <b>Evidence Limitations:</b>
@@ -905,6 +946,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
         <h2>Findings, Recommendations, and Premium Layers</h2>
         <span class="pill">Conclusive intelligence view</span>
       </div>
+      <div class="sectionDivider"></div>
       ${(graftIntegrityModule || auditorModule) ? `<div class="premiumGrid">${graftIntegrityModule}${auditorModule}</div>` : ""}
       <div class="fingerprintSection">
         <div class="panelTitle">AI Surgical Fingerprint Analysis</div>
