@@ -197,16 +197,19 @@ export default async function ReportHtmlPage({
 
   // Compute rubric score if answers exist (same as print route)
   let computed = summary?.computed ?? null;
-  const answers = summary?.answers ?? summary?.audit_answers ?? summary?.scorecard_answers ?? null;
+  type AuditAnswers = Parameters<typeof scoreAudit>[1];
+  const rawAnswers = summary?.answers ?? summary?.audit_answers ?? summary?.scorecard_answers ?? null;
+  const answers: AuditAnswers | null =
+    rawAnswers && typeof rawAnswers === "object" ? (rawAnswers as AuditAnswers) : null;
+  const auditRubric = rubric as unknown as Parameters<typeof scoreAudit>[0];
   if (answers) {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      computed = scoreAudit(rubric as any, answers);
+      computed = scoreAudit(auditRubric, answers);
     } catch (e) {
       console.error("scoreAudit failed:", e);
     }
   }
-  const comp = computed?.component_scores ?? {};
+  const comp = (computed as { component_scores?: { domains?: Record<string, number>; sections?: Record<string, number> } } | null)?.component_scores ?? {};
   const fallbackDomains = summary?.area_scores ?? undefined;
   const fallbackSections = summary?.section_scores ?? undefined;
   const domains = comp.domains ?? fallbackDomains;
@@ -226,8 +229,8 @@ export default async function ReportHtmlPage({
       notes: summary.notes,
       findings,
       areaScores: {
-        domains: domainsSafe,
-        sections: sectionsSafe,
+        domains: domainsSafe as Record<string, number> | undefined,
+        sections: sectionsSafe as Record<string, number> | undefined,
       },
       forensic: forensic as any,
       images: [],
@@ -548,8 +551,8 @@ export default async function ReportHtmlPage({
               (Object.keys(domains ?? {}).length > 0 || Object.keys(sections ?? {}).length > 0) && (
               <div style={{ marginTop: 16 }}>
                 <ScoreAreaGraph
-                  domains={domainsSafe}
-                  sections={sectionsSafe}
+                  domains={domainsSafe as Record<string, number> | undefined}
+                  sections={sectionsSafe as Record<string, number> | undefined}
                   domainTitles={domainTitles}
                   sectionTitles={sectionTitles}
                   compact
