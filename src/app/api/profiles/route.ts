@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { parseRole } from "@/lib/roles";
 import { isAuditor } from "@/lib/auth/isAuditor";
 
 // GET — fetch current user's profile (role)
@@ -17,10 +16,7 @@ export async function GET() {
     .eq("id", user.id)
     .maybeSingle();
 
-  const parsedRole = parseRole(profile?.role);
-  const role = parsedRole === "auditor" && isAuditor({ profileRole: profile?.role, userEmail: user.email })
-    ? "auditor"
-    : "patient";
+  const role = isAuditor({ profileRole: profile?.role, userEmail: user.email }) ? "auditor" : "patient";
 
   return NextResponse.json({
     role,
