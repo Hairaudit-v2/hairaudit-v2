@@ -5,6 +5,8 @@ import { cookies } from "next/headers";
 import SubmitButton from "./submit-button";
 import DownloadReport from "./download-report";
 import AuditScoreBadge from "@/components/reports/AuditScoreBadge";
+import GraftIntegrityCard from "@/app/dashboard/patient/GraftIntegrityCard";
+import GraftIntegrityReviewPanel from "@/app/dashboard/auditor/GraftIntegrityReviewPanel";
 import DoctorAnswersSummary from "@/components/reports/DoctorAnswersSummary";
 import PatientAnswersSummary from "@/components/reports/PatientAnswersSummary";
 import EvidenceSummary from "@/components/reports/EvidenceSummary";
@@ -57,6 +59,7 @@ export default async function Page({
   try {
     const { data: profile } = await db.from("profiles").select("role").eq("id", user.id).maybeSingle();
     if (profile?.role) role = parseRole(profile.role) || "patient";
+    if (user.email === "auditor@hairaudit.com") role = "auditor";
   } catch {
     /* profiles may not exist / RLS may block */
   }
@@ -116,6 +119,23 @@ export default async function Page({
     .select("id, type, storage_path, created_at")
     .eq("case_id", c.id)
     .order("created_at", { ascending: false });
+
+  // Load latest graft integrity estimate (for auditor review / patient card)
+  let graftIntegrityEstimate: any = null;
+  try {
+    const giiRes = await db
+      .from("graft_integrity_estimates")
+      .select(
+        "id, case_id, claimed_grafts, estimated_extracted_min, estimated_extracted_max, estimated_implanted_min, estimated_implanted_max, variance_claimed_vs_implanted_min_pct, variance_claimed_vs_implanted_max_pct, variance_claimed_vs_extracted_min_pct, variance_claimed_vs_extracted_max_pct, confidence, confidence_label, evidence_sufficiency_score, inputs_used, limitations, flags, ai_notes, auditor_status, auditor_notes, auditor_adjustments, audited_by, audited_at, created_at, updated_at"
+      )
+      .eq("case_id", c.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!giiRes.error) graftIntegrityEstimate = giiRes.data;
+  } catch {
+    /* table may not exist */
+  }
 
   // Try with status/error (requires migration 20250210000004); fallback if columns don't exist
   let reports: { id: string; version: number; pdf_path: string | null; summary: unknown; created_at: string; status?: string; error?: string | null; patient_audit_version?: number; patient_audit_v2?: Record<string, unknown> | null }[] | null = null;
@@ -292,6 +312,23 @@ export default async function Page({
       <div className="mt-6">
         <EvidenceSummary caseRow={c} uploads={uploads ?? []} />
       </div>
+
+      {/* Graft Integrity: auditor sees full review panel; patient sees approved/pending card */}
+      {isAuditor && (
+        <div className="mt-6 rounded-2xl border border-slate-900 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-5">
+          <h2 className="font-semibold text-white mb-4">Graft Integrity Review</h2>
+          <GraftIntegrityReviewPanel
+            cases={[c] as any}
+            initialEstimates={graftIntegrityEstimate ? [graftIntegrityEstimate] : []}
+            emptyMessage="No Graft Integrity estimate generated yet for this case."
+          />
+        </div>
+      )}
+      {isPatientForCase && (
+        <div className="mt-6">
+          <GraftIntegrityCard caseId={c.id} initialEstimate={graftIntegrityEstimate} />
+        </div>
+      )}
 
       {reports && reports.length > 0 && (() => {
         const latest = reports[0];

@@ -95,6 +95,26 @@ export async function POST(req: Request) {
       const implantedMin = toIntOrNull(body?.overrides?.implanted_min);
       const implantedMax = toIntOrNull(body?.overrides?.implanted_max);
 
+      // Validation: min cannot exceed max
+      if (extractedMin != null && extractedMax != null && extractedMin > extractedMax) {
+        return NextResponse.json({ ok: false, error: "Extracted min cannot exceed extracted max" }, { status: 400 });
+      }
+      if (implantedMin != null && implantedMax != null && implantedMin > implantedMax) {
+        return NextResponse.json({ ok: false, error: "Implanted min cannot exceed implanted max" }, { status: 400 });
+      }
+      // Implanted cannot exceed extracted unless auditor provides note (override)
+      const impMax = implantedMax ?? implantedMin;
+      const extMax = extractedMax ?? extractedMin;
+      if (impMax != null && extMax != null && impMax > extMax) {
+        const note = toTextOrNull(body?.internalNotes);
+        if (!note || note.length < 10) {
+          return NextResponse.json({
+            ok: false,
+            error: "Implanted range exceeds extracted range. Please add an internal note explaining the override (min 10 chars).",
+          }, { status: 400 });
+        }
+      }
+
       const overrideRanges = {
         extracted: { min: extractedMin, max: extractedMax },
         implanted: { min: implantedMin, max: implantedMax },

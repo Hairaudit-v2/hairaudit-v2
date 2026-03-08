@@ -34,7 +34,9 @@ export async function POST(req: Request) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json().catch(() => ({}));
-  const role = parseRole(body?.role);
+  let role = parseRole(body?.role);
+  // Never downgrade auditor: auditor@hairaudit.com must resolve as auditor
+  if (user.email === "auditor@hairaudit.com" && body?.role === "auditor") role = "auditor";
 
   const admin = createSupabaseAdminClient();
   const { error } = await admin.from("profiles").upsert(

@@ -21,6 +21,19 @@ export default async function AuditorDashboardPage() {
     .select("id, title, status, created_at")
     .order("created_at", { ascending: false });
 
+  // Load latest report per case for status chips (PDF Ready, Processing)
+  const caseIds = (cases ?? []).map((x) => x.id);
+  const { data: allReports } = await admin
+    .from("reports")
+    .select("case_id, pdf_path, status, created_at")
+    .in("case_id", caseIds.length ? caseIds : ["00000000-0000-0000-0000-000000000000"])
+    .order("created_at", { ascending: false });
+  const reportByCase = new Map<string, { pdf_path: string | null; status?: string }>();
+  for (const r of (allReports ?? []) as any[]) {
+    const cid = String(r.case_id);
+    if (!reportByCase.has(cid)) reportByCase.set(cid, { pdf_path: r.pdf_path, status: r.status });
+  }
+
   const { data: giiRows } = await admin
     .from("graft_integrity_estimates")
     .select(
@@ -89,20 +102,34 @@ export default async function AuditorDashboardPage() {
         </div>
       ) : (
         <ul className="space-y-3">
-          {cases.map((c) => (
-            <li key={c.id}>
-              <Link
-                href={`/cases/${c.id}`}
-                className="block rounded-xl border border-slate-200 bg-white p-4 hover:border-amber-300 hover:shadow-sm transition-all"
-              >
-                <span className="font-medium text-slate-900">{c.title ?? "Untitled case"}</span>
-                <span className="ml-2 text-slate-500 text-sm">— {c.status}</span>
-                <div className="text-xs text-slate-400 mt-2">
-                  Created: {new Date(c.created_at).toLocaleString()}
-                </div>
-              </Link>
-            </li>
-          ))}
+          {cases.map((c) => {
+            const rep = reportByCase.get(c.id);
+            const gii = (giiLatestByCase as Map<string, any>).get(c.id);
+            const hasPdf = !!rep?.pdf_path;
+            const isProcessing = rep?.status === "processing" || (!rep?.pdf_path && rep?.status !== "failed");
+            const giiStatus = gii?.auditor_status ?? (gii ? "pending" : null);
+            return (
+              <li key={c.id}>
+                <Link
+                  href={`/cases/${c.id}`}
+                  className="block rounded-xl border border-slate-200 bg-white p-4 hover:border-amber-300 hover:shadow-sm transition-all"
+                >
+                  <span className="font-medium text-slate-900">{c.title ?? "Untitled case"}</span>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    <span className="inline-flex rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">{c.status}</span>
+                    {hasPdf && <span className="inline-flex rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">PDF Ready</span>}
+                    {isProcessing && !hasPdf && <span className="inline-flex rounded-md bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">Processing</span>}
+                    {giiStatus === "approved" && <span className="inline-flex rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">Graft Integrity Approved</span>}
+                    {giiStatus === "pending" && gii && <span className="inline-flex rounded-md bg-cyan-50 px-2 py-0.5 text-xs font-medium text-cyan-700">Graft Integrity Pending</span>}
+                    {giiStatus === "needs_more_evidence" && <span className="inline-flex rounded-md bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">Needs More Evidence</span>}
+                  </div>
+                  <div className="text-xs text-slate-400 mt-2">
+                    Created: {new Date(c.created_at).toLocaleString()}
+                  </div>
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>

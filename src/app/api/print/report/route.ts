@@ -344,6 +344,41 @@ export async function GET(req: Request) {
       };
     });
 
+  // Load graft integrity for PDF (only approved appears in patient PDF)
+  const { data: giiRow } = await supabase
+    .from("graft_integrity_estimates")
+    .select(
+      "claimed_grafts, estimated_extracted_min, estimated_extracted_max, estimated_implanted_min, estimated_implanted_max, variance_claimed_vs_implanted_min_pct, variance_claimed_vs_implanted_max_pct, confidence, confidence_label, limitations, auditor_status"
+    )
+    .eq("case_id", caseId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const gii = giiRow as any;
+  const graftIntegrity =
+    gii != null
+      ? {
+          auditor_status: (String(gii?.auditor_status ?? "pending") ?? "pending") as "approved" | "pending" | "needs_more_evidence" | "rejected",
+          claimed_grafts: Number.isFinite(Number(gii?.claimed_grafts)) ? Number(gii.claimed_grafts) : null,
+          estimated_extracted: {
+            min: Number.isFinite(Number(gii?.estimated_extracted_min)) ? Number(gii.estimated_extracted_min) : null,
+            max: Number.isFinite(Number(gii?.estimated_extracted_max)) ? Number(gii.estimated_extracted_max) : null,
+          },
+          estimated_implanted: {
+            min: Number.isFinite(Number(gii?.estimated_implanted_min)) ? Number(gii.estimated_implanted_min) : null,
+            max: Number.isFinite(Number(gii?.estimated_implanted_max)) ? Number(gii.estimated_implanted_max) : null,
+          },
+          variance_claimed_vs_implanted_pct: {
+            min: Number.isFinite(Number(gii?.variance_claimed_vs_implanted_min_pct)) ? Number(gii.variance_claimed_vs_implanted_min_pct) : null,
+            max: Number.isFinite(Number(gii?.variance_claimed_vs_implanted_max_pct)) ? Number(gii.variance_claimed_vs_implanted_max_pct) : null,
+          },
+          confidence: clamp01(Number(gii?.confidence ?? 0.45)),
+          confidence_label: (["low", "medium", "high"].includes(String(gii?.confidence_label ?? "")) ? gii.confidence_label : "medium") as "low" | "medium" | "high",
+          limitations: Array.isArray(gii?.limitations) ? gii.limitations : [],
+        }
+      : undefined;
+
   const content = {
     caseId,
     version: Number(latestReport?.version ?? 1),
@@ -375,6 +410,7 @@ export async function GET(req: Request) {
               : undefined,
         }
       : undefined,
+    graftIntegrity: graftIntegrity ?? undefined,
     images: [],
   };
 

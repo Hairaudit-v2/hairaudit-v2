@@ -138,6 +138,41 @@ export async function renderAndUploadPdfForCase(args: {
 
   const forensic = (summary?.forensic_audit ?? summary?.forensic ?? null) as any;
 
+  // Load graft integrity for PDF (only approved appears in patient PDF; addGraftIntegrityIndex handles filtering)
+  let giiRow: any = null;
+  try {
+    const res = await supabase
+    .from("graft_integrity_estimates")
+    .select(
+      "claimed_grafts, estimated_extracted_min, estimated_extracted_max, estimated_implanted_min, estimated_implanted_max, variance_claimed_vs_implanted_min_pct, variance_claimed_vs_implanted_max_pct, confidence, confidence_label, limitations, auditor_status"
+    )
+    .eq("case_id", caseId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+    giiRow = res.data;
+  } catch {
+    /* graft_integrity_estimates may not exist in this environment */
+  }
+
+  const gii = giiRow as any;
+  const graftIntegrity =
+    gii != null
+      ? {
+          auditor_status: (String(gii?.auditor_status ?? "pending") ?? "pending") as "approved" | "pending" | "needs_more_evidence" | "rejected",
+          claimed_grafts: toNum(gii?.claimed_grafts),
+          estimated_extracted: { min: toNum(gii?.estimated_extracted_min), max: toNum(gii?.estimated_extracted_max) },
+          estimated_implanted: { min: toNum(gii?.estimated_implanted_min), max: toNum(gii?.estimated_implanted_max) },
+          variance_claimed_vs_implanted_pct: {
+            min: toNum(gii?.variance_claimed_vs_implanted_min_pct),
+            max: toNum(gii?.variance_claimed_vs_implanted_max_pct),
+          },
+          confidence: clamp(Number(gii?.confidence ?? 0.45), 0, 1),
+          confidence_label: (["low", "medium", "high"].includes(String(gii?.confidence_label ?? "")) ? gii.confidence_label : "medium") as "low" | "medium" | "high",
+          limitations: Array.isArray(gii?.limitations) ? gii.limitations : [],
+        }
+      : undefined;
+
   const overallFromForensic = toNum(forensic?.overall_score);
   const overallFromSummary = toNum(summary?.overall_score ?? summary?.score);
   const overall = overallFromForensic ?? overallFromSummary ?? null;
@@ -216,6 +251,7 @@ export async function renderAndUploadPdfForCase(args: {
           tiers_v1: forensic?.tiers_v1,
         }
       : undefined,
+    graftIntegrity: graftIntegrity ?? undefined,
     images,
   };
 

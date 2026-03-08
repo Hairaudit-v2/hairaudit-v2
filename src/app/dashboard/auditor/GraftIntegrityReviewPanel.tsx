@@ -101,12 +101,15 @@ function computeVariancePct(claimed: number | null, est: number | null): number 
 export default function GraftIntegrityReviewPanel(props: {
   cases: AuditorCaseRow[];
   initialEstimates: AuditorGiiRow[];
+  /** Optional message when no estimates (e.g. "No Graft Integrity estimate generated yet for this case.") */
+  emptyMessage?: string;
 }) {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
 
   const [estimates, setEstimates] = useState<AuditorGiiRow[]>(props.initialEstimates ?? []);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const [internalNotes, setInternalNotes] = useState<Record<string, string>>({});
   const [publicNotes, setPublicNotes] = useState<Record<string, string>>({});
@@ -193,6 +196,7 @@ export default function GraftIntegrityReviewPanel(props: {
 
   async function act(e: AuditorGiiRow, action: "approve" | "needs_more_evidence" | "reject") {
     setBusyId(e.id);
+    setMessage(null);
     try {
       const res = await fetch("/api/auditor/graft-integrity/review", {
         method: "POST",
@@ -206,6 +210,7 @@ export default function GraftIntegrityReviewPanel(props: {
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json?.error ?? "Update failed");
+      setMessage({ type: "success", text: `Saved: ${action.replace(/_/g, " ")}` });
       // Optimistic local patch
       setEstimates((prev) =>
         prev.map((x) =>
@@ -219,6 +224,8 @@ export default function GraftIntegrityReviewPanel(props: {
             : x
         )
       );
+    } catch (err) {
+      setMessage({ type: "error", text: err instanceof Error ? err.message : "Update failed" });
     } finally {
       setBusyId(null);
     }
@@ -226,6 +233,7 @@ export default function GraftIntegrityReviewPanel(props: {
 
   async function approveWithOverrides(e: AuditorGiiRow) {
     setBusyId(e.id);
+    setMessage(null);
     try {
       const extracted_min = overrideExtractedMin[e.id] ? Number(overrideExtractedMin[e.id]) : null;
       const extracted_max = overrideExtractedMax[e.id] ? Number(overrideExtractedMax[e.id]) : null;
@@ -246,6 +254,7 @@ export default function GraftIntegrityReviewPanel(props: {
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json?.error ?? "Override failed");
 
+      setMessage({ type: "success", text: "Approved with overrides saved" });
       const claimed = e.claimed_grafts;
       setEstimates((prev) =>
         prev.map((x) =>
@@ -266,16 +275,19 @@ export default function GraftIntegrityReviewPanel(props: {
             : x
         )
       );
+    } catch (err) {
+      setMessage({ type: "error", text: err instanceof Error ? err.message : "Override failed" });
     } finally {
       setBusyId(null);
     }
   }
 
   if (rows.length === 0) {
+    const msg = props.emptyMessage ?? "No estimates found yet.";
     return (
       <div className="rounded-xl border border-slate-200 bg-white p-6">
         <div className="text-sm font-semibold text-slate-900">Graft Integrity Estimates</div>
-        <div className="mt-1 text-sm text-slate-600">No estimates found yet.</div>
+        <div className="mt-1 text-sm text-slate-600">{msg}</div>
       </div>
     );
   }
@@ -301,6 +313,15 @@ export default function GraftIntegrityReviewPanel(props: {
           </div>
           <div className="text-xs text-slate-500">Live</div>
         </div>
+        {message && (
+          <div
+            className={`mt-3 rounded-lg px-3 py-2 text-sm font-medium ${
+              message.type === "success" ? "bg-emerald-50 text-emerald-800" : "bg-rose-50 text-rose-800"
+            }`}
+          >
+            {message.text}
+          </div>
+        )}
       </div>
 
       {rows.map(({ c, e }) => {

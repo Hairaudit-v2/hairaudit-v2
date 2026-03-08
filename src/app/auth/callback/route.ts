@@ -16,7 +16,9 @@ export async function GET(request: Request) {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const role = parseRole((user.user_metadata as Record<string, unknown>)?.role);
+        let role = parseRole((user.user_metadata as Record<string, unknown>)?.role);
+        // Never downgrade auditor: auditor@hairaudit.com must resolve as auditor
+        if (user.email === "auditor@hairaudit.com") role = "auditor";
         const admin = createSupabaseAdminClient();
         await admin.from("profiles").upsert(
           {

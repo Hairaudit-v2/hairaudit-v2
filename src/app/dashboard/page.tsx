@@ -16,6 +16,8 @@ export default async function DashboardPage() {
     const admin = createSupabaseAdminClient();
     const { data: profile } = await admin.from("profiles").select("role").eq("id", user.id).maybeSingle();
     if (profile?.role) role = parseRole(profile.role);
+    // Never downgrade auditor: profile/email wins for auditor resolution
+    if (user.email === "auditor@hairaudit.com") role = "auditor";
   } catch {
     // profiles table may not exist
   }
