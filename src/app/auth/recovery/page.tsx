@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -12,6 +12,50 @@ export default function RecoveryPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [sessionReady, setSessionReady] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function bootstrapRecoverySession() {
+      // If session already exists, user can update password immediately.
+      const existing = await supabase.auth.getSession();
+      if (existing.data.session) {
+        if (mounted) setSessionReady(true);
+        return;
+      }
+
+      // Support hash-based recovery links: #access_token=...&refresh_token=...&type=recovery
+      const hash = window.location.hash.startsWith("#")
+        ? window.location.hash.slice(1)
+        : window.location.hash;
+      const hashParams = new URLSearchParams(hash);
+      const accessToken = hashParams.get("access_token");
+      const refreshToken = hashParams.get("refresh_token");
+      if (accessToken && refreshToken) {
+        const { error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+        if (error) {
+          if (mounted) setMsg(`❌ ${error.message}`);
+        } else if (mounted) {
+          setSessionReady(true);
+          return;
+        }
+      }
+
+      if (mounted) {
+        setMsg("❌ Recovery session missing or expired. Please request a fresh reset link.");
+        setSessionReady(true);
+      }
+    }
+
+    bootstrapRecoverySession();
+    return () => {
+      mounted = false;
+    };
+  }, [supabase]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -98,10 +142,10 @@ export default function RecoveryPage() {
               </div>
               <button
                 type="submit"
-                disabled={busy}
+                disabled={busy || !sessionReady}
                 className="w-full rounded-lg bg-slate-900 text-white py-2.5 font-semibold hover:bg-slate-800 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                {busy ? "Updating..." : "Update password"}
+                {busy ? "Updating..." : sessionReady ? "Update password" : "Preparing reset session..."}
               </button>
             </form>
 
