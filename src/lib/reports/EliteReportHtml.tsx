@@ -599,14 +599,24 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     }
     .topbar { display:flex; justify-content:space-between; gap: 14px; }
     .brand { display:flex; gap: 12px; align-items:flex-start; }
+    .logoStack { display:flex; align-items:center; gap: 8px; }
     .brandLogo {
-      width: 54px;
-      height: 54px;
+      width: 56px;
+      height: 56px;
       object-fit: contain;
       border-radius: 12px;
       border: 1px solid rgba(226,232,240,0.35);
       background: rgba(255,255,255,0.96);
       padding: 6px;
+    }
+    .fiLogo {
+      width: 172px;
+      height: 48px;
+      object-fit: contain;
+      border-radius: 8px;
+      border: 1px solid rgba(226,232,240,0.20);
+      background: rgba(255,255,255,0.06);
+      padding: 4px 8px;
     }
     .title { margin: 0; font-size: 22px; font-weight: 900; letter-spacing: -0.01em; color: #f8fbff; }
     .subtitle { margin-top: 4px; font-size: 12px; color: #d8e4ff; line-height: 1.45; }
@@ -779,7 +789,10 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     <div class="hero">
       <div class="topbar">
         <div class="brand">
-          <img class="brandLogo" src="/hairaudit-logo.svg" alt="HairAudit logo" />
+          <div class="logoStack">
+            <img class="brandLogo" src="/hairaudit-logo.svg" alt="HairAudit logo" />
+            <img class="fiLogo" src="/follicle-intelligence-logo.svg" alt="Follicle Intelligence logo" />
+          </div>
           <div>
             <h1 class="title">HairAudit AI Surgical Analysis</h1>
             <div class="subtitle">AI-assisted visual review of transplant quality, donor management, implantation patterning, and documentation confidence.</div>
