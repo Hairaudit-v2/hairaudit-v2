@@ -54,18 +54,18 @@ export default function UploadThumbnailGallery({ uploads }: { uploads: UploadRow
 
   if (!uploads || uploads.length === 0) {
     return (
-      <section className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+      <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6">
         <h2 className="text-lg font-semibold text-white">Uploaded Evidence</h2>
-        <p className="mt-2 text-sm text-slate-300/80">No uploads yet.</p>
+        <p className="mt-2 text-sm text-slate-100">No uploads yet.</p>
       </section>
     );
   }
 
   return (
-    <section className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+    <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6">
       <div className="mb-4 flex items-center justify-between gap-3">
         <h2 className="text-lg font-semibold text-white">Uploaded Evidence</h2>
-        <span className="rounded-md border border-white/15 bg-white/10 px-2 py-0.5 text-xs text-slate-300">
+        <span className="rounded-md border border-slate-600 bg-slate-800 px-2 py-0.5 text-xs text-slate-100">
           {uploads.length} files
         </span>
       </div>
@@ -75,10 +75,10 @@ export default function UploadThumbnailGallery({ uploads }: { uploads: UploadRow
           const signedUrl = signed[upload.id];
           const typeLabel = formatType(upload.type);
           return (
-            <article key={upload.id} className="overflow-hidden rounded-xl border border-white/10 bg-slate-900/70">
+            <article key={upload.id} className="overflow-hidden rounded-xl border border-slate-700 bg-slate-950 transition-all hover:-translate-y-0.5 hover:border-cyan-300/30">
               <div className="aspect-square bg-slate-800/70">
                 {signedUrl ? (
-                  <img src={signedUrl} alt={typeLabel} className="h-full w-full object-cover" />
+                  <img src={signedUrl} alt={typeLabel} className="h-full w-full object-cover transition-transform duration-300 hover:scale-[1.02]" />
                 ) : (
                   <div className="flex h-full items-center justify-center px-3 text-center text-xs text-slate-400">
                     Thumbnail unavailable

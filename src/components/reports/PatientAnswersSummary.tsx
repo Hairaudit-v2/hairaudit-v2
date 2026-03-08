@@ -125,15 +125,15 @@ export default function PatientAnswersSummary({
 
   function renderRows(rows: Array<{ label: string; value: string }> | Array<{ prompt: string; value: string }>) {
     if (!rows || rows.length === 0) {
-      return <p className="text-sm text-slate-300/70">No data provided yet.</p>;
+      return <p className="text-sm text-slate-200">No data provided yet.</p>;
     }
     return (
       <dl className="grid gap-2 text-sm">
         {rows.map((row) => {
           const label = "label" in row ? row.label : row.prompt;
           return (
-            <div key={label} className="flex items-start justify-between gap-4 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">
-              <dt className="text-slate-300/80">{label}</dt>
+            <div key={label} className="flex items-start justify-between gap-4 rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-2">
+              <dt className="text-slate-200">{label}</dt>
               <dd className="text-right font-medium text-white">{row.value}</dd>
             </div>
           );
@@ -143,7 +143,7 @@ export default function PatientAnswersSummary({
   }
 
   return (
-    <div className={`rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm ${className}`}>
+    <div className={`rounded-2xl border border-slate-700 bg-slate-900 p-6 ${className}`}>
       <h3 className="mb-4 text-lg font-semibold text-white">Patient Submission Summary</h3>
 
       <div className="mb-4 flex flex-wrap gap-2">
@@ -154,7 +154,7 @@ export default function PatientAnswersSummary({
             className={`rounded-lg border px-3 py-1.5 text-sm transition ${
               activeTab === tab.id
                 ? "border-cyan-300/40 bg-cyan-300/15 text-cyan-100"
-                : "border-white/15 bg-white/5 text-slate-300 hover:bg-white/10"
+                : "border-slate-600 bg-slate-800 text-slate-100 hover:bg-slate-700"
             }`}
           >
             {tab.label}
@@ -182,8 +182,8 @@ export default function PatientAnswersSummary({
       {activeTab === "scores" && renderRows(scoreRows)}
 
       {hasAdvanced && activeTab !== "overview" && (
-        <div className="mt-4 border-t border-white/10 pt-4">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-300">Advanced Forensic Signals</p>
+        <div className="mt-4 border-t border-slate-700 pt-4">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-100">Advanced Forensic Signals</p>
           <div className="space-y-3">
             {advancedSections.map((sec) => {
               const rows = sec.questions
@@ -196,7 +196,7 @@ export default function PatientAnswersSummary({
                 .filter(Boolean) as { prompt: string; value: string }[];
               if (rows.length === 0) return null;
               return (
-                <div key={sec.id} className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
+                <div key={sec.id} className="rounded-lg border border-slate-700 bg-slate-800/80 p-3">
                   <h5 className="mb-2 text-sm font-medium text-white">{sec.title}</h5>
                   {renderRows(rows)}
                 </div>

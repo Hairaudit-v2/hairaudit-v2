@@ -24,6 +24,21 @@ import { tryCreateSupabaseAdminClient } from "@/lib/supabase/admin";
 import { parseRole, USER_ROLES } from "@/lib/roles";
 import { resolveAuditorRole } from "@/lib/auth/isAuditor";
 
+function scoreChipClass(score: number | null | undefined) {
+  if (typeof score !== "number") return "border-slate-300/25 bg-slate-300/10 text-slate-100";
+  if (score >= 85) return "border-emerald-300/40 bg-emerald-300/20 text-emerald-100";
+  if (score >= 70) return "border-lime-300/40 bg-lime-300/20 text-lime-100";
+  if (score >= 55) return "border-amber-300/40 bg-amber-300/20 text-amber-100";
+  return "border-rose-300/40 bg-rose-300/20 text-rose-100";
+}
+
+function barClass(score: number) {
+  if (score >= 85) return "bg-gradient-to-r from-emerald-300 to-lime-300";
+  if (score >= 70) return "bg-gradient-to-r from-cyan-300 to-emerald-300";
+  if (score >= 55) return "bg-gradient-to-r from-amber-300 to-yellow-300";
+  return "bg-gradient-to-r from-rose-300 to-amber-300";
+}
+
 export default async function Page({
   params,
 }: {
@@ -220,10 +235,10 @@ export default async function Page({
         : `/cases/${c.id}`;
 
   return (
-    <div className="mx-auto max-w-[1200px] px-4 pb-10 sm:px-6">
+    <div className="mx-auto mt-4 max-w-[1200px] rounded-3xl border border-slate-800 bg-slate-950 px-4 pb-10 pt-4 shadow-2xl sm:px-6">
       <Link
         href={dashboardPath}
-        className="inline-flex items-center text-sm font-medium text-slate-400 hover:text-slate-200 transition-colors"
+        className="inline-flex items-center text-sm font-medium text-cyan-300 hover:text-cyan-200 transition-colors"
       >
         ← Back to dashboard
       </Link>
@@ -244,27 +259,27 @@ export default async function Page({
 
           <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+              <div className="rounded-xl border border-white/10 bg-white/5 p-3 transition-colors hover:bg-white/10">
                 <p className="text-xs uppercase tracking-wide text-slate-400">Case ID</p>
                 <p className="mt-1 truncate font-mono text-sm text-slate-100">{c.id}</p>
               </div>
-              <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+              <div className="rounded-xl border border-white/10 bg-white/5 p-3 transition-colors hover:bg-white/10">
                 <p className="text-xs uppercase tracking-wide text-slate-400">Clinic</p>
                 <p className="mt-1 text-sm text-slate-100">{clinicLabel}</p>
               </div>
-              <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+              <div className="rounded-xl border border-white/10 bg-white/5 p-3 transition-colors hover:bg-white/10">
                 <p className="text-xs uppercase tracking-wide text-slate-400">Procedure Date</p>
                 <p className="mt-1 text-sm text-slate-100">{procedureDate}</p>
               </div>
-              <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+              <div className="rounded-xl border border-white/10 bg-white/5 p-3 transition-colors hover:bg-white/10">
                 <p className="text-xs uppercase tracking-wide text-slate-400">Months Post-op</p>
                 <p className="mt-1 text-sm text-slate-100">{monthsPostOp}</p>
               </div>
-              <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+              <div className={`rounded-xl border p-3 ${scoreChipClass(typeof reportScore === "number" ? reportScore : null)}`}>
                 <p className="text-xs uppercase tracking-wide text-slate-400">Score</p>
                 <p className="mt-1 text-lg font-semibold text-white">{reportScore ?? "Pending"}</p>
               </div>
-              <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+              <div className="rounded-xl border border-cyan-300/25 bg-cyan-300/10 p-3">
                 <p className="text-xs uppercase tracking-wide text-slate-400">Confidence</p>
                 <p className="mt-1 text-sm font-medium text-cyan-200">{String(confidenceLabel).toUpperCase()}</p>
               </div>
@@ -273,13 +288,13 @@ export default async function Page({
             <div className="grid gap-3 sm:grid-cols-2">
               <Link
                 href={continuePath}
-                className="inline-flex items-center justify-center rounded-xl border border-cyan-300/30 bg-cyan-300/15 px-4 py-3 text-sm font-semibold text-cyan-100 hover:bg-cyan-300/25"
+                className="inline-flex items-center justify-center rounded-xl border border-cyan-300/30 bg-cyan-300/15 px-4 py-3 text-sm font-semibold text-cyan-100 transition-all hover:-translate-y-0.5 hover:bg-cyan-300/25"
               >
                 Continue Questions
               </Link>
               <Link
                 href={uploadEntryPath}
-                className="inline-flex items-center justify-center rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-slate-100 hover:bg-white/15"
+                className="inline-flex items-center justify-center rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-slate-100 transition-all hover:-translate-y-0.5 hover:bg-white/15"
               >
                 Upload Evidence
               </Link>
@@ -311,7 +326,7 @@ export default async function Page({
         </div>
       )}
 
-      <section className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+      <section className="mt-6 rounded-2xl border border-slate-700 bg-slate-900 p-6">
         <h2 className="mb-4 text-lg font-semibold text-white">Contribution Paths</h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {showPatientFlow && (
@@ -346,7 +361,7 @@ export default async function Page({
           <EvidenceSummary caseRow={c} uploads={uploads ?? []} />
           <CompletenessIndexCard ci={completenessIndex} />
         </div>
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+        <div className="rounded-2xl border border-slate-700 bg-slate-900 p-6">
           <h2 className="text-lg font-semibold text-white">Intelligence Dashboard</h2>
           <p className="mt-1 text-sm text-slate-300/80">Domain signal strengths and benchmark readiness.</p>
 
@@ -356,7 +371,7 @@ export default async function Page({
                 const weighted = Math.round(Number((domain as any).weighted_score ?? 0));
                 const confidence = Math.round(Number((domain as any).confidence ?? 0) * 100);
                 return (
-                  <div key={(domain as any).domain_id} className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
+                  <div key={(domain as any).domain_id} className="rounded-lg border border-slate-700 bg-slate-800/80 p-3 transition-colors hover:bg-slate-800">
                     <div className="mb-1 flex items-center justify-between gap-3">
                       <p className="text-sm font-medium text-white">
                         {(domain as any).domain_id} - {(domain as any).title}
@@ -366,7 +381,7 @@ export default async function Page({
                       </span>
                     </div>
                     <div className="h-2 overflow-hidden rounded-full bg-slate-700/70">
-                      <div className="h-full rounded-full bg-gradient-to-r from-cyan-300 to-emerald-300" style={{ width: `${Math.max(5, Math.min(100, weighted))}%` }} />
+                      <div className={`h-full rounded-full ${barClass(weighted)}`} style={{ width: `${Math.max(5, Math.min(100, weighted))}%` }} />
                     </div>
                     <p className="mt-1 text-xs text-slate-300/80">Confidence {confidence}%</p>
                   </div>
@@ -378,13 +393,13 @@ export default async function Page({
           </div>
 
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
+            <div className="rounded-lg border border-slate-700 bg-slate-800/80 p-3">
               <p className="text-xs uppercase tracking-wide text-slate-400">Evidence Confidence Multiplier</p>
               <p className="mt-1 text-lg font-semibold text-cyan-100">
                 {typeof overallScores?.confidence_multiplier === "number" ? overallScores.confidence_multiplier.toFixed(2) : "N/A"}
               </p>
             </div>
-            <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
+            <div className="rounded-lg border border-slate-700 bg-slate-800/80 p-3">
               <p className="text-xs uppercase tracking-wide text-slate-400">Benchmark Eligibility</p>
               <p className={`mt-1 text-sm font-semibold ${benchmark?.eligible ? "text-emerald-200" : "text-slate-200"}`}>
                 {benchmark?.eligible ? "Eligible" : "Not Eligible"}
@@ -463,7 +478,7 @@ export default async function Page({
         );
       })()}
 
-      <section className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+      <section className="mt-6 rounded-2xl border border-slate-700 bg-slate-900 p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-semibold text-white">Latest Report</h2>

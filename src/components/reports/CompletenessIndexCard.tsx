@@ -32,11 +32,11 @@ export default function CompletenessIndexCard({ ci }: { ci: CompletenessIndexV1 
   const verification = Number(ci.breakdown?.verification_evidence?.score ?? 0);
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+    <div className="rounded-2xl border border-slate-700 bg-slate-900 p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="text-lg font-semibold text-white">Completeness Index</h3>
-          <p className="mt-1 text-sm text-slate-300/80">
+          <p className="mt-1 text-sm text-slate-100">
             Documentation completeness score based on submitted doctor photos + structured metadata + precision fields.
           </p>
         </div>
@@ -47,25 +47,25 @@ export default function CompletenessIndexCard({ ci }: { ci: CompletenessIndexV1 
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-4">
-        <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
-          <div className="text-[10px] font-semibold text-slate-400">Photos (0-45)</div>
+        <div className="rounded-xl border border-slate-700 bg-slate-800/80 p-3">
+          <div className="text-[10px] font-semibold text-slate-200">Photos (0-45)</div>
           <div className="text-lg font-bold text-white">{Math.round(photo)}</div>
         </div>
-        <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
-          <div className="text-[10px] font-semibold text-slate-400">Structured (0-35)</div>
+        <div className="rounded-xl border border-slate-700 bg-slate-800/80 p-3">
+          <div className="text-[10px] font-semibold text-slate-200">Structured (0-35)</div>
           <div className="text-lg font-bold text-white">{Math.round(structured)}</div>
         </div>
-        <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
-          <div className="text-[10px] font-semibold text-slate-400">Numeric (0-10)</div>
+        <div className="rounded-xl border border-slate-700 bg-slate-800/80 p-3">
+          <div className="text-[10px] font-semibold text-slate-200">Numeric (0-10)</div>
           <div className="text-lg font-bold text-white">{Math.round(numeric)}</div>
         </div>
-        <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
-          <div className="text-[10px] font-semibold text-slate-400">Verification (0-10)</div>
+        <div className="rounded-xl border border-slate-700 bg-slate-800/80 p-3">
+          <div className="text-[10px] font-semibold text-slate-200">Verification (0-10)</div>
           <div className="text-lg font-bold text-white">{Math.round(verification)}</div>
         </div>
       </div>
 
-      <div className="mt-3 text-xs text-slate-400">
+      <div className="mt-3 text-xs text-slate-200">
         Based on submitted documentation.
       </div>
     </div>

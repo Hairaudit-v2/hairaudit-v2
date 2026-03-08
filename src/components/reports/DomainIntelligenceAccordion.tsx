@@ -61,7 +61,7 @@ export default function DomainIntelligenceAccordion({ domains }: { domains: Doma
   if (!Array.isArray(domains) || domains.length === 0) return null;
 
   return (
-    <section className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+    <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6">
       <div className="mb-4">
         <h2 className="text-lg font-semibold text-white">Domain Intelligence</h2>
         <p className="text-sm text-slate-300/80">SP, DP, GV, IC, DI analysis cards with actionable guidance.</p>
@@ -79,7 +79,7 @@ export default function DomainIntelligenceAccordion({ domains }: { domains: Doma
           return (
             <details
               key={domain.domain_id}
-              className="group rounded-xl border border-white/10 bg-slate-950/70 open:bg-slate-900/70"
+              className="group rounded-xl border border-slate-700 bg-slate-950 transition-colors open:bg-slate-900"
             >
               <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4">
                 <div>
@@ -93,21 +93,22 @@ export default function DomainIntelligenceAccordion({ domains }: { domains: Doma
                   <span className="rounded-md border border-cyan-300/30 bg-cyan-300/10 px-2 py-1 text-xs font-semibold text-cyan-100">
                     Conf {confidence}%
                   </span>
+                  <span className="text-slate-400 transition-transform group-open:rotate-180">⌄</span>
                 </div>
               </summary>
 
-              <div className="border-t border-white/10 px-4 pb-4 pt-3">
+              <div className="border-t border-slate-700 px-4 pb-4 pt-3">
                 <div className="grid gap-3 sm:grid-cols-3">
-                  <div className="rounded-lg border border-white/10 bg-white/5 p-3">
-                    <p className="text-[11px] uppercase tracking-wide text-slate-400">Raw</p>
+                  <div className="rounded-lg border border-slate-700 bg-slate-800/80 p-3">
+                    <p className="text-[11px] uppercase tracking-wide text-slate-200">Raw</p>
                     <p className="mt-1 text-lg font-semibold text-white">{raw}</p>
                   </div>
-                  <div className="rounded-lg border border-white/10 bg-white/5 p-3">
-                    <p className="text-[11px] uppercase tracking-wide text-slate-400">Confidence</p>
+                  <div className="rounded-lg border border-slate-700 bg-slate-800/80 p-3">
+                    <p className="text-[11px] uppercase tracking-wide text-slate-200">Confidence</p>
                     <p className="mt-1 text-lg font-semibold text-white">{confidence}%</p>
                   </div>
-                  <div className="rounded-lg border border-white/10 bg-white/5 p-3">
-                    <p className="text-[11px] uppercase tracking-wide text-slate-400">Evidence Grade</p>
+                  <div className="rounded-lg border border-slate-700 bg-slate-800/80 p-3">
+                    <p className="text-[11px] uppercase tracking-wide text-slate-200">Evidence Grade</p>
                     <p className="mt-1 text-lg font-semibold text-white">{domain.evidence_grade ?? "D"}</p>
                   </div>
                 </div>
@@ -131,7 +132,7 @@ export default function DomainIntelligenceAccordion({ domains }: { domains: Doma
                         <li key={`${domain.domain_id}-limiter-${limiter.text}`} className="flex items-center justify-between gap-3">
                           <span>{limiter.text}</span>
                           {limiter.basis ? (
-                            <span className="rounded border border-white/15 bg-white/5 px-2 py-0.5 text-[11px] text-slate-300">
+                            <span className="rounded border border-slate-600 bg-slate-800 px-2 py-0.5 text-[11px] text-slate-100">
                               {basisLabel(limiter.basis)}
                             </span>
                           ) : null}

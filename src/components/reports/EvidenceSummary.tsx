@@ -52,7 +52,7 @@ export default function EvidenceSummary({
           : "bg-rose-300/20 text-rose-100";
 
   return (
-    <div className={`rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm ${className}`}>
+    <div className={`rounded-2xl border border-slate-700 bg-slate-900 p-6 ${className}`}>
       <h3 className="mb-4 text-lg font-semibold text-white">Photo Evidence Summary</h3>
 
       <div className="space-y-4">
@@ -65,7 +65,7 @@ export default function EvidenceSummary({
                   <span className={`rounded px-2 py-0.5 text-sm font-bold ${scoreClass(patientScore)}`}>
                     {patientScore}
                   </span>
-                  <span className="text-xs text-slate-400">{patientConfidence ?? ""}</span>
+                  <span className="text-xs text-slate-200">{patientConfidence ?? ""}</span>
                 </>
               )}
             </div>
@@ -75,7 +75,7 @@ export default function EvidenceSummary({
                 const ok = n >= def.min;
                 return (
                   <div key={def.key} className="flex justify-between">
-                    <span className="text-slate-300">{def.title}</span>
+                    <span className="text-slate-100">{def.title}</span>
                     <span className={ok ? "text-emerald-300" : "text-amber-300"}>
                       {n} {ok ? "✓" : ""}
                     </span>
@@ -87,7 +87,7 @@ export default function EvidenceSummary({
         )}
 
         {hasDoctor && (
-          <section className={hasPatient ? "pt-4 border-t border-white/10" : ""}>
+          <section className={hasPatient ? "pt-4 border-t border-slate-700" : ""}>
             <div className="flex items-center gap-3 mb-2">
               <h4 className="text-sm font-medium text-slate-200">Doctor photos</h4>
               {doctorScore && (
@@ -95,7 +95,7 @@ export default function EvidenceSummary({
                   <span className={`rounded px-2 py-0.5 text-sm font-bold ${scoreClass(doctorScore)}`}>
                     {doctorScore}
                   </span>
-                  <span className="text-xs text-slate-400">{doctorConfidence ?? ""}</span>
+                  <span className="text-xs text-slate-200">{doctorConfidence ?? ""}</span>
                 </>
               )}
             </div>
@@ -105,7 +105,7 @@ export default function EvidenceSummary({
                 const ok = n >= def.min;
                 return (
                   <div key={def.key} className="flex justify-between">
-                    <span className="text-slate-300">{def.title}</span>
+                    <span className="text-slate-100">{def.title}</span>
                     <span className={ok ? "text-emerald-300" : "text-amber-300"}>
                       {n} {ok ? "✓" : ""}
                     </span>

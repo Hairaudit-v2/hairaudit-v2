@@ -617,7 +617,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
           ${renderRadarSvg({
             labels: radarDisplayLabels,
             values: radar.values,
-            size: 760,
+            size: 840,
             levels: 5,
             overall: radar.overall,
             confidence: radar.confidence,
@@ -679,7 +679,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       --gold: #d5a43a;
       --gold-soft: #f6e4b8;
       --card-radius: 15px;
-      --card-padding: 16px;
+      --card-padding: 20px;
       --card-gap: 12px;
     }
 
@@ -848,7 +848,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     }
     .scoreConfLine { margin-top: 16px; font-size: 11px; color: #2b4a72; line-height: 1.65; max-width: 93%; font-weight: 600; }
     .p1RightCol { display: flex; flex-direction: column; height: 100%; min-height: 520px; }
-    .keyMetricCard { margin-top: 0; }
+    .keyMetricCard { margin-top: 0; margin-bottom: 24px; }
 
     .metricCard, .panelCard { border: 1px solid var(--line); border-radius: 14px; padding: 12px; background:#fff; }
     .metricTitle, .panelTitle { font-size: 12px; color: var(--muted); margin-bottom: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; }
@@ -861,7 +861,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       margin-bottom: 0;
       border: 1px solid #e6edf3;
       border-radius: 12px;
-      padding: 32px;
+      padding: 24px;
       background:
         radial-gradient(circle at 22% 14%, rgba(14,165,233,0.08), rgba(14,165,233,0) 45%),
         linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
@@ -881,7 +881,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       break-inside: avoid;
       min-height: 560px;
       align-items: center;
-      padding: 22px;
+      padding: 26px;
     }
     .radarWrap svg { display: block; margin: 0 auto; max-width: 96%; height: auto; border-radius: 12px; border: 1px solid rgba(14,165,233,0.15); }
     .radarPanel .miniText { margin-top: 20px; margin-bottom: 10px; }
@@ -924,8 +924,8 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     .summaryCard .panelTitle { font-size: 12.5px; color: #385173; margin-bottom: 12px; }
     .summaryCard .miniText { font-size: 13px; line-height: 1.65; max-width: 700px; color: #102543; }
 
-    .domainGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 10px; }
-    .domainCard { border: 1px solid var(--line); border-radius: 14px; padding: 12px; background: #fff; page-break-inside: avoid; break-inside: avoid; }
+    .domainGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 24px; }
+    .domainCard { border: 1px solid var(--line); border-radius: 14px; padding: 20px; background: #fff; page-break-inside: avoid; break-inside: avoid; }
     .domainAlt { background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%); }
     .domainTop { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
     .domainTop h3 { margin:0; font-size: 14px; }
@@ -941,7 +941,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
 
     /* ---------- Visual Evidence Analysis (Photo Evidence) ---------- */
     .evidenceSectionTitle { font-size: 20px; font-weight: 900; letter-spacing: -0.01em; color: var(--ink); margin: 0 0 4px 0; }
-    .evidenceSectionSubtitle { font-size: 12px; color: var(--muted); line-height: 1.5; margin: 0 0 8px 0; }
+    .evidenceSectionSubtitle { font-size: 12px; color: var(--muted); line-height: 1.5; margin: 0 0 12px 0; }
     .forensicBoard {
       position: relative;
       border: 1px solid var(--line-strong);
@@ -956,8 +956,8 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       box-shadow: 0 6px 20px rgba(15,23,42,0.06);
     }
     .evidenceGroup {
-      margin-top: 20px;
-      padding-top: 18px;
+      margin-top: 16px;
+      padding-top: 14px;
       border-top: 1px solid rgba(148,163,184,0.25);
       page-break-inside: avoid;
       break-inside: avoid;
@@ -976,8 +976,8 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     .evidencePhotoGrid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 14px;
-      margin-top: 12px;
+      gap: 12px;
+      margin-top: 10px;
     }
     .evidencePhotoGrid.single { grid-template-columns: 1fr; justify-items: center; max-width: 360px; margin-left: auto; margin-right: auto; }
     .evidencePhotoCard {
@@ -1037,7 +1037,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     .evidenceConfPill.limited { background: #e2e8f0; color: #334155; border-color: #cbd5e1; }
     .evidenceLimitationsPanel {
       margin-top: 20px;
-      padding: 14px 16px;
+      padding: 20px;
       border: 1px solid rgba(148,163,184,0.35);
       border-radius: 12px;
       background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
@@ -1060,16 +1060,16 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
 
     .premiumGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 0; }
     .premCard {
-      border: 1px solid #d4d4f9; border-radius: 12px; padding: 12px; background: linear-gradient(180deg, #ffffff 0%, #f8f5ff 100%);
+      border: 1px solid #d4d4f9; border-radius: 12px; padding: 20px; background: linear-gradient(180deg, #ffffff 0%, #f8f5ff 100%);
       page-break-inside: avoid; break-inside: avoid;
     }
     .premTitle { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: #4338ca; margin-bottom: 6px; }
     .fingerprintSection {
-      margin-top: 12px; border: 1px solid #bae6fd; border-radius: 14px; padding: 12px; background: linear-gradient(180deg, #ffffff 0%, #f0f9ff 100%);
+      margin-top: 12px; border: 1px solid #bae6fd; border-radius: 14px; padding: 20px; background: linear-gradient(180deg, #ffffff 0%, #f0f9ff 100%);
       page-break-inside: avoid; break-inside: avoid;
     }
     .fpGrid { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
-    .fpCard { border: 1px solid #dbeafe; border-radius: 12px; padding: 10px; background: #fff; page-break-inside: avoid; break-inside: avoid; }
+    .fpCard { border: 1px solid #dbeafe; border-radius: 12px; padding: 20px; background: #fff; page-break-inside: avoid; break-inside: avoid; }
     .fpHead { display:flex; justify-content:space-between; align-items:center; gap: 8px; }
     .fpTitleWrap { display:flex; align-items:center; gap: 6px; }
     .fpTitleWrap h4 { margin:0; font-size: 12px; }
@@ -1127,9 +1127,9 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       .scoreBubble { width: 220px; height: 220px; }
       .scoreValue { font-size: 72px; }
       .p1RightCol { min-height: 390px; }
-      .radarPanel { margin-top: 0; padding: 26px; min-height: 390px; }
-      .radarWrap { min-height: 400px; padding: 12px; }
-      .keyMetricCard { margin-top: 0; }
+      .radarPanel { margin-top: 0; padding: 24px; min-height: 390px; }
+      .radarWrap { min-height: 400px; padding: 16px; }
+      .keyMetricCard { margin-top: 0; margin-bottom: 20px; }
       .infoGrid { grid-template-columns: 1fr 1fr; }
       .infoGrid { margin-top: 24px; gap: 16px; }
       .riskStrip { grid-template-columns: 1fr 1fr; margin-top: 22px; gap: 12px; }

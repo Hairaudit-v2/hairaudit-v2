@@ -43,7 +43,7 @@ export default function VersionHistoryDrawer({ reports }: { reports: ReportRow[]
     <>
       <button
         onClick={() => setOpen(true)}
-        className="rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm font-medium text-slate-200 transition hover:bg-white/10"
+        className="rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm font-medium text-slate-200 transition-all hover:-translate-y-0.5 hover:bg-white/10"
       >
         Open Version History
       </button>
@@ -77,7 +77,7 @@ export default function VersionHistoryDrawer({ reports }: { reports: ReportRow[]
                   const processing = !report.pdf_path && report.status !== "failed";
 
                   return (
-                    <div key={report.id} className="rounded-xl border border-white/10 bg-white/5 p-4">
+                    <div key={report.id} className="rounded-xl border border-white/10 bg-white/5 p-4 transition-colors hover:bg-white/10">
                       <div className="mb-2 flex items-center justify-between gap-2">
                         <p className="font-medium text-white">
                           {isLatest ? "Latest Report" : `Report v${report.version}`}
