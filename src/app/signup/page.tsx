@@ -29,7 +29,17 @@ export default function SignUpPage() {
     const appUrl =
       (process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "") || "").trim() ||
       "https://hairaudit.com";
+    if (!process.env.NEXT_PUBLIC_APP_URL) {
+      console.warn("[signup] NEXT_PUBLIC_APP_URL is not set; using fallback domain for email redirect.", {
+        fallback: appUrl,
+      });
+    }
     const emailRedirectTo = `${appUrl}/auth/callback`;
+    console.info("[signup] attempting signup", {
+      role,
+      emailRedirectTo,
+      email: maskEmail(email),
+    });
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -40,6 +50,12 @@ export default function SignUpPage() {
     });
 
     if (error) {
+      console.error("[signup] supabase.auth.signUp failed", {
+        message: error.message,
+        status: (error as { status?: number }).status,
+        emailRedirectTo,
+        email: maskEmail(email),
+      });
       setMsg(`❌ ${error.message}`);
       setBusy(false);
       return;
@@ -48,21 +64,44 @@ export default function SignUpPage() {
     // If email confirmations are enabled in Supabase, signUp() succeeds but returns no session.
     // In that case, the user must click the email link (which hits /auth/callback) before they can be signed in.
     if (!data.session) {
+      console.info("[signup] signup succeeded without session; awaiting email confirmation", {
+        userId: data.user?.id,
+        emailRedirectTo,
+        email: maskEmail(email),
+      });
       setMsg("✅ Check your email to confirm your address, then come back and sign in.");
       setMsgKind("success");
       setBusy(false);
       return;
     }
 
-    await fetch("/api/profiles", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ role }),
-    }).catch(() => {});
+    try {
+      const profileRes = await fetch("/api/profiles", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ role }),
+      });
+      if (!profileRes.ok) {
+        const body = await profileRes.text();
+        console.warn("[signup] profile upsert after signup failed", {
+          status: profileRes.status,
+          body: body.slice(0, 300),
+        });
+      }
+    } catch (profileErr) {
+      console.warn("[signup] profile upsert request after signup threw", { error: profileErr });
+    }
 
     router.push("/dashboard");
     router.refresh();
     setBusy(false);
+  }
+
+  function maskEmail(value: string): string {
+    const [localPart, domain] = value.trim().split("@");
+    if (!localPart || !domain) return value;
+    if (localPart.length <= 2) return `${localPart[0] ?? "*"}*@${domain}`;
+    return `${localPart.slice(0, 2)}***@${domain}`;
   }
 
   return (
