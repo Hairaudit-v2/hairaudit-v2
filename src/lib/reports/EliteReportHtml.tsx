@@ -1,4 +1,5 @@
 import type { ReportViewModel } from "@/lib/pdf/reportBuilder";
+import { buildSurgicalFingerprintSummary } from "@/lib/reports/surgicalFingerprint";
 
 type AreaScoreItem = {
   title: string;
@@ -216,149 +217,261 @@ function renderRadarSvg(opts: {
 }
 
 export function renderEliteReportHtml(vm: EliteReportViewModel): string {
-  const {
-    caseId,
-    generatedAt,
-    version,
-    grade,
-    confidenceLabel,
-    metrics,
-    areaDomains,
-    sectionScores,
-    highlights,
-    risks,
-    radar,
-    photosByCategory,
-    doctorBlockHtml,
-    debugFooter,
-  } = vm;
+  const { caseId, generatedAt, version, metrics, areaDomains, sectionScores, highlights, risks, radar, photosByCategory, doctorBlockHtml, debugFooter } = vm;
+  const overallScore = typeof vm.viewModel.score === "number" && Number.isFinite(vm.viewModel.score) ? vm.viewModel.score : null;
+
+  const viewModelWithConfidence = vm.viewModel as ReportViewModel & {
+    confidencePanel?: { confidenceScore?: number };
+    forensic?: {
+      summary?: string;
+      key_findings?: Array<{
+        title?: string;
+        impact?: string;
+        recommended_next_step?: string;
+        evidence?: Array<{ observation?: string }>;
+      }>;
+      surgical_fingerprint?: {
+        donor_extraction_pattern?: {
+          label?: string;
+          confidence?: "high" | "moderate" | "low";
+          observation?: string;
+          why_it_matters?: string;
+        };
+        recipient_site_distribution?: {
+          label?: string;
+          confidence?: "high" | "moderate" | "low";
+          observation?: string;
+          why_it_matters?: string;
+        };
+        hairline_transition_pattern?: {
+          label?: string;
+          confidence?: "high" | "moderate" | "low";
+          observation?: string;
+          why_it_matters?: string;
+        };
+        density_consistency_signature?: {
+          label?: string;
+          confidence?: "high" | "moderate" | "low";
+          observation?: string;
+          why_it_matters?: string;
+        };
+        direction_angle_coherence?: {
+          label?: string;
+          confidence?: "high" | "moderate" | "low";
+          observation?: string;
+          why_it_matters?: string;
+        };
+      };
+    };
+  };
+  const confidenceNumeric =
+    typeof viewModelWithConfidence.confidencePanel?.confidenceScore === "number"
+      ? viewModelWithConfidence.confidencePanel.confidenceScore
+      : typeof radar?.confidence === "number"
+        ? radar.confidence
+        : null;
+  const confidenceScorePct = confidenceNumeric == null ? "N/A" : `${Math.round(clamp01(confidenceNumeric) * 100)}%`;
+
+  const scoreBand = (() => {
+    if (overallScore == null) return { label: "Review", color: "#F6C46D" };
+    if (overallScore >= 90) return { label: "Platinum", color: "#DDE7F5" };
+    if (overallScore >= 80) return { label: "Gold", color: "#F5E6A7" };
+    if (overallScore >= 70) return { label: "Silver", color: "#E6E6E6" };
+    if (overallScore >= 60) return { label: "Bronze", color: "#E9D0B3" };
+    return { label: "Review", color: "#F6C46D" };
+  })();
+
+  const forensic = viewModelWithConfidence.forensic;
+  const keyFindings = Array.isArray(forensic?.key_findings) ? forensic.key_findings : [];
+  const narrativeText = String(forensic?.summary ?? "").trim();
+  const norm = (s: string) => s.toLowerCase();
+  const average = (nums: number[]) => (nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : null);
+
+  const findScore = (matchers: string[]) => {
+    const domainScores = areaDomains
+      .filter((d) => matchers.some((m) => norm(d.title).includes(m)))
+      .map((d) => d.score);
+    if (domainScores.length) return average(domainScores);
+    const secScores = sectionScores
+      .filter((s) => matchers.some((m) => norm(s.title).includes(m)))
+      .map((s) => s.score);
+    return average(secScores);
+  };
+
+  const domains = [
+    {
+      title: "Donor Management",
+      match: ["donor"],
+      clinical: "Even donor extraction patterns are important to reduce long-term donor thinning or visible patchiness risk.",
+      monitoring: "Monitor donor density and pattern uniformity over the next 6-12 months.",
+    },
+    {
+      title: "Recipient Site Design",
+      match: ["recipient", "hairline", "naturalness", "design"],
+      clinical: "Recipient site design affects frontal naturalness, transition softness, and long-term visual balance.",
+      monitoring: "Track symmetry, transition softness, and zone blending during maturation.",
+    },
+    {
+      title: "Graft Handling",
+      match: ["graft", "hydrat", "viability", "storage", "out-of-body"],
+      clinical: "Graft handling conditions can influence viability and growth consistency.",
+      monitoring: "If concerns persist, request more detailed handling documentation and follow-up context.",
+    },
+    {
+      title: "Implantation Technique",
+      match: ["implant", "placement", "spacing", "angle", "density"],
+      clinical: "Implantation spacing and angle consistency influence achieved density and natural appearance.",
+      monitoring: "Monitor maturation density and pattern consistency in frontal and mid-scalp zones.",
+    },
+    {
+      title: "Documentation Quality",
+      match: ["document", "aftercare", "safety", "evidence", "photo"],
+      clinical: "Documentation quality determines how confidently procedural quality can be interpreted.",
+      monitoring: "Request additional follow-up imagery or records where evidence remains limited.",
+    },
+  ];
+
+  const domainBlocks = domains
+    .map((domain) => {
+      const score = findScore(domain.match);
+      const matchingFindings = keyFindings.filter((f) =>
+        domain.match.some((m) => norm(String(f?.title ?? "")).includes(m) || norm(String(f?.impact ?? "")).includes(m))
+      );
+      const narrative =
+        String(matchingFindings[0]?.impact ?? "").trim() ||
+        (score == null
+          ? "Evidence was insufficient to produce a high-confidence explanatory narrative for this domain."
+          : score >= 80
+            ? "Observed indicators are generally consistent with strong execution in this domain."
+            : score >= 65
+              ? "Observed indicators are mixed, with acceptable features and some uncertainty."
+              : "Observed indicators suggest this domain may require closer clinical follow-up.");
+      const evidence = matchingFindings
+        .flatMap((f) => (Array.isArray(f?.evidence) ? f.evidence : []))
+        .map((e) => String(e?.observation ?? "").trim())
+        .filter(Boolean)
+        .slice(0, 3);
+      const guidance = String(matchingFindings[0]?.recommended_next_step ?? "").trim() || domain.monitoring;
+
+      const scoreWidth = score == null ? 12 : Math.max(5, Math.min(100, Math.round(score)));
+      const scoreClass = score == null ? "low" : score >= 80 ? "high" : score >= 60 ? "medium" : "low";
+      const scoreLabel = score == null ? "Insufficient evidence" : `${Math.round(score)} / 100`;
+
+      return `
+      <div class="domainBlock">
+        <h3>${esc(domain.title)}</h3>
+        <div class="domainScoreRow">
+          <div class="domainScoreText">${esc(scoreLabel)}</div>
+          <div class="areaScoreBar"><div class="areaScoreFill ${scoreClass}" style="width:${scoreWidth}%;"></div></div>
+        </div>
+        <div class="prose">${esc(narrative)}</div>
+        <div class="subhead">Supporting Evidence</div>
+        <ul class="miniList">
+          ${(evidence.length ? evidence : ["Insufficient evidence for detailed supporting observations in this domain."])
+            .map((e) => `<li>${esc(e)}</li>`)
+            .join("")}
+        </ul>
+        <div class="subhead">Clinical Relevance</div>
+        <p class="miniText">${esc(domain.clinical)}</p>
+        <div class="subhead">Monitoring Guidance</div>
+        <p class="miniText">${esc(guidance)}</p>
+      </div>`;
+    })
+    .join("");
 
   const photoCategoryKeys = Object.keys(photosByCategory ?? {});
-  const photoCatsWithItems = photoCategoryKeys.filter(
-    (cat) => (photosByCategory[cat] ?? []).filter((x) => !!x?.signedUrl).length > 0
-  );
+  const photoCatsWithItems = photoCategoryKeys.filter((cat) => (photosByCategory[cat] ?? []).some((x) => !!x?.signedUrl));
+  const allPhotos = photoCatsWithItems.flatMap((cat) => (photosByCategory[cat] ?? []).filter((x) => !!x?.signedUrl));
+  const catLower = photoCatsWithItems.map((x) => x.toLowerCase());
+  const donorViews = catLower.filter((x) => x.includes("donor")).length;
+  const recipientViews = catLower.filter((x) => x.includes("recipient") || x.includes("front") || x.includes("top") || x.includes("crown")).length;
+  const intraViews = catLower.filter((x) => x.includes("intra")).length;
 
-  const photosBlock =
-    photoCatsWithItems.length > 0
-      ? `
-    <div class="section pageBreak">
-      <h2>Case Photos</h2>
-      <div class="subtitle" style="margin-top: 4px;">Grouped by upload category.</div>
-      ${photoCatsWithItems
-        .map((cat) => {
-          const items = (photosByCategory[cat] ?? []).filter((x) => !!x?.signedUrl);
-          if (!items.length) return "";
-          return `
-        <div class="photoCat">
-          <div class="photoCatTitle">${esc(String(cat).replaceAll("_", " "))}</div>
-          <div class="photoGrid">
-            ${items
-              .map(
-                (u) => `
-              <figure class="photo">
-                <img src="${esc(String(u.signedUrl))}" alt="${esc(String(u.label || "photo"))}" />
-                <figcaption>${esc(String(u.label || ""))}</figcaption>
-              </figure>`
-              )
-              .join("")}
-          </div>
-        </div>`;
+  const photoBlock =
+    photoCatsWithItems.length === 0
+      ? `<div class="subtitle">No image groups available.</div>`
+      : photoCatsWithItems
+          .map((cat) => {
+            const items = (photosByCategory[cat] ?? []).filter((x) => !!x?.signedUrl);
+            const confidenceTag = items.length >= 3 ? "High confidence" : items.length === 2 ? "Moderate confidence" : "Low confidence";
+            const observation = cat.toLowerCase().includes("donor")
+              ? "Donor region appears reviewed for extraction distribution and overharvesting pattern signals."
+              : cat.toLowerCase().includes("recipient")
+                ? "Recipient region appears reviewed for spacing consistency and density distribution cues."
+                : cat.toLowerCase().includes("intra")
+                  ? "Intra-operative images provide procedural context where available."
+                  : "Image group contributes contextual pattern evidence.";
+            return `
+            <div class="photoCat">
+              <div class="photoCatTitle">${esc(String(cat).replaceAll("_", " "))}</div>
+              <div class="photoGrid">
+                ${items
+                  .map(
+                    (u) => `
+                  <figure class="photo">
+                    <img src="${esc(String(u.signedUrl))}" alt="${esc(String(u.label || "photo"))}" />
+                    <figcaption>${esc(String(u.label || ""))}</figcaption>
+                  </figure>`
+                  )
+                  .join("")}
+              </div>
+              <p class="miniText"><b>AI Observations:</b> ${esc(observation)} <span class="confTag">${esc(confidenceTag)}</span></p>
+            </div>`;
+          })
+          .join("");
+
+  const patientGuidance = domains.map((d) => d.monitoring).slice(0, 4);
+  const predictiveOutlook =
+    metrics.graftSurvival.toLowerCase().includes("insufficient")
+      ? "Based on currently submitted evidence, graft survival projection remains low-confidence and should be interpreted cautiously."
+      : `Based on available visual density patterns, observed implantation quality appears broadly consistent with a ${esc(metrics.graftSurvival)} graft survival expectation range.`;
+
+  const fingerprintSummary = buildSurgicalFingerprintSummary({
+    areaDomains,
+    sectionScores,
+    findings: keyFindings,
+    highlights,
+    risks,
+    photosByCategory,
+    confidence01: confidenceNumeric,
+    surgicalFingerprint: forensic?.surgical_fingerprint,
+  });
+  const fingerprintCards = fingerprintSummary.cards
+    .map((card) => {
+      const confidenceClass =
+        card.confidence === "high" ? "fpPillHigh" : card.confidence === "moderate" ? "fpPillModerate" : "fpPillLow";
+      const confidenceText = card.confidence.charAt(0).toUpperCase() + card.confidence.slice(1);
+      const stripe = [0, 1, 2, 3, 4]
+        .map((idx) => {
+          const threshold = (idx + 1) * 20;
+          const active = card.strength >= threshold;
+          return `<span class="fpStripDot ${active ? "active" : ""}"></span>`;
         })
-        .join("")}
-    </div>
-      `
-      : "";
-
-  const hasAreaScores = (areaDomains?.length ?? 0) > 0 || (sectionScores?.length ?? 0) > 0;
-  const areaScoresBlock = hasAreaScores
-      ? `
-    <div class="section pageBreak">
-      <h2>Score by Area</h2>
-      <div class="subtitle" style="margin-top: 4px;">Your score for each capture point (out of 5, with level).</div>
-      ${
-        (areaDomains?.length ?? 0) > 0
-          ? `
-      <div class="areaScoreGrid">
-        ${(areaDomains ?? [])
-          .map(
-            (a) => `
-          <div class="areaScoreCard">
-            <div class="areaScoreTitle">${esc(a.title)}</div>
-            <div class="areaScoreBar">
-              <div class="areaScoreFill ${a.level.toLowerCase()}" style="width: ${a.score}%;"></div>
-            </div>
-            <div class="areaScoreMeta">
-              <span>${a.outOf5}/5</span>
-              <b>${esc(a.level)} level</b>
-            </div>
-          </div>`
-          )
-          .join("")}
-      </div>
-        `
-          : `<div class="subtitle" style="margin-top: 8px;">Domain-level scores not available for this report.</div>`
-      }
-
-      ${
-        (sectionScores?.length ?? 0) > 0
-          ? `
-      <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line);">
-        <div style="font-size: 11px; font-weight: 700; color: var(--muted); margin-bottom: 8px;">Detailed section scores</div>
-        <div class="areaScoreGrid" style="grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));">
-          ${(sectionScores ?? [])
-            .map(
-              (a) => `
-            <div class="areaScoreCard">
-              <div class="areaScoreTitle" style="font-size: 11px;">${esc(a.title)}</div>
-              <div class="areaScoreBar">
-                <div class="areaScoreFill ${a.level.toLowerCase()}" style="width: ${a.score}%;"></div>
-              </div>
-              <div class="areaScoreMeta">
-                <span>${a.outOf5}/5</span>
-                <b>${esc(a.level)}</b>
-              </div>
-            </div>`
-            )
-            .join("")}
+        .join("");
+      return `
+      <div class="fpCard">
+        <div class="fpHead">
+          <div class="fpTitleWrap">
+            <span class="fpIcon">${esc(card.icon)}</span>
+            <h3 class="fpTitle">${esc(card.title)}</h3>
+          </div>
+          <span class="fpPill ${confidenceClass}">${esc(confidenceText)}</span>
         </div>
-      </div>
-        `
-          : ""
-      }
-    </div>
-      `
-      : "";
-
-  const narrativeText = (vm.viewModel.forensic?.summary ?? "").toString().trim();
-  const narrativeSummary =
-    narrativeText.length > 0
-      ? `
-    <div class="section pageBreak">
-      <h2>Clinical Narrative</h2>
-      <div class="subtitle" style="margin-top: 4px;">Clinical-grade audit narrative generated from available imagery.</div>
-      <div class="prose">${esc(narrativeText).replaceAll("\n", "<br/>")}</div>
-    </div>
-      `
-      : "";
-
-  const overallScore =
-    typeof vm.viewModel.score === "number" && Number.isFinite(vm.viewModel.score)
-      ? vm.viewModel.score
-      : null;
-  const confidenceScorePct = (() => {
-    const confFromPanel = Number((vm.viewModel as any)?.confidencePanel?.confidenceScore);
-    const confFromRadar = Number(radar?.confidence);
-    const conf = Number.isFinite(confFromPanel) ? confFromPanel : Number.isFinite(confFromRadar) ? confFromRadar : null;
-    if (conf === null) return "N/A";
-    return `${Math.round(clamp01(conf) * 100)}%`;
-  })();
+        <div class="fpLabel">${esc(card.label)}</div>
+        <p class="miniText"><b>AI Observation:</b> ${esc(card.observation)}</p>
+        <p class="miniText"><b>Why It Matters:</b> ${esc(card.whyItMatters)}</p>
+        ${card.limitation ? `<p class="miniText"><b>Limitation:</b> ${esc(card.limitation)}</p>` : ""}
+        <div class="fpStrip" aria-hidden="true">${stripe}</div>
+      </div>`;
+    })
+    .join("");
 
   const radarBlock =
     radar && Array.isArray(radar.labels) && Array.isArray(radar.values) && radar.labels.length >= 3
       ? `
       <div style="margin-top: 12px;">
         <div style="font-size: 12px; font-weight: 800;">Audit Performance Signature</div>
-        <div class="subtitle" style="margin-top: 4px;">“This visual signature represents structural balance across core transplant domains.”</div>
+        <div class="subtitle" style="margin-top: 4px;">Structural balance across core transplant domains.</div>
         <div class="radarWrap">
           ${renderRadarSvg({
             labels: radar.labels,
@@ -369,6 +482,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
             confidence: radar.confidence,
           })}
         </div>
+        <div class="miniText">Primary axes: Donor Management, Recipient Site Design, Graft Handling, Implantation Technique, Documentation Quality.</div>
       </div>
       `
       : "";
@@ -398,7 +512,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     body {
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
       color: var(--ink);
-      background: #fff;
+      background: linear-gradient(180deg, #ffffff 0%, #f3f8ff 100%);
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
     }
@@ -466,7 +580,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       border: 1px solid var(--line);
       border-radius: var(--card-radius);
       padding: var(--card-padding);
-      background: linear-gradient(180deg, #fff 0%, var(--soft) 100%);
+      background: radial-gradient(circle at 25% 20%, #ffffff 0%, #eef6ff 100%);
     }
     .scoreLabel { font-size: 12px; color: var(--muted); }
     .scoreValue { font-size: 42px; font-weight: 900; letter-spacing: -0.03em; line-height: 1; margin-top: 6px; }
@@ -528,11 +642,59 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     .photo { margin: 0; border: 1px solid var(--line); border-radius: var(--card-radius); overflow: hidden; background: #fff; page-break-inside: avoid; }
     .photo img { display:block; width: 100%; height: 170px; object-fit: cover; max-width: 100%; }
     .photo figcaption { padding: 8px 10px; font-size: 10px; color: var(--muted); border-top: 1px solid var(--line); word-break: break-word; overflow-wrap: break-word; min-height: 1.4em; line-height: 1.3; }
+    .domainBlock { border: 1px solid var(--line); border-radius: var(--card-radius); padding: 12px; margin-top: 10px; background: #fff; }
+    .domainBlock h3 { margin: 0 0 8px; font-size: 14px; }
+    .domainScoreRow { display: grid; grid-template-columns: 140px 1fr; gap: 10px; align-items: center; margin-bottom: 8px; }
+    .domainScoreText { font-size: 12px; font-weight: 800; }
+    .subhead { margin-top: 8px; font-size: 11px; font-weight: 800; color: var(--muted); }
+    .miniList { margin: 6px 0 0; padding-left: 18px; }
+    .miniList li { font-size: 11px; margin: 4px 0; }
+    .miniText { margin: 6px 0 0; font-size: 11px; color: var(--ink); line-height: 1.45; }
+    .confTag { margin-left: 8px; font-size: 10px; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; background: #fff; }
+    .execGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+    .bandBadge { display: inline-flex; align-items: center; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--line); font-size: 11px; font-weight: 800; margin-top: 8px; }
+    .limitPanel { margin-top: 12px; border: 1px solid var(--line); border-radius: 12px; padding: 10px; background: #f6fbff; font-size: 11px; }
+    .fingerprintSection {
+      margin-top: 18px;
+      border: 1px solid rgba(56, 189, 248, 0.22);
+      border-radius: 16px;
+      background:
+        radial-gradient(circle at 10% 5%, rgba(125, 211, 252, 0.12), rgba(255,255,255,0) 45%),
+        radial-gradient(circle at 90% 10%, rgba(45, 212, 191, 0.08), rgba(255,255,255,0) 45%),
+        linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+      padding: 14px;
+      page-break-inside: avoid;
+    }
+    .fpGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+    .fpCard {
+      border: 1px solid rgba(148, 163, 184, 0.32);
+      border-radius: 12px;
+      padding: 10px;
+      background: linear-gradient(180deg, #ffffff 0%, #f9fcff 100%);
+      box-shadow: 0 0 0 1px rgba(125, 211, 252, 0.08), 0 8px 24px rgba(15, 23, 42, 0.04);
+    }
+    .fpHead { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .fpTitleWrap { display: flex; align-items: center; gap: 6px; }
+    .fpIcon {
+      width: 20px; height: 20px; border-radius: 999px; border: 1px solid var(--line);
+      display: inline-flex; align-items: center; justify-content: center; font-size: 11px;
+      background: #fff;
+    }
+    .fpTitle { margin: 0; font-size: 12px; font-weight: 800; }
+    .fpLabel { margin-top: 6px; font-size: 12px; font-weight: 700; color: #0f172a; }
+    .fpPill { font-size: 10px; font-weight: 800; border-radius: 999px; padding: 3px 8px; border: 1px solid transparent; }
+    .fpPillHigh { background: #dcfce7; color: #166534; border-color: #86efac; }
+    .fpPillModerate { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
+    .fpPillLow { background: #e2e8f0; color: #334155; border-color: #cbd5e1; }
+    .fpStrip { margin-top: 8px; display: flex; gap: 4px; }
+    .fpStripDot { width: 14px; height: 5px; border-radius: 999px; background: #e2e8f0; display: inline-block; }
+    .fpStripDot.active { background: #38bdf8; }
 
     @media print {
       .wrap { padding: 0; }
       .section { margin-top: 14px; padding: 12px 14px; }
       .topbar { padding: 12px 14px; }
+      .fpGrid { grid-template-columns: 1fr; }
       .photo img { height: 165px; }
       .photoGrid { gap: 8px; }
       .footer { page-break-inside: avoid; margin-top: 14px; padding-top: 6px; }
@@ -547,8 +709,8 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       <div class="brand">
         <img class="brandLogo" src="/hairaudit-logo.svg" alt="HairAudit logo" />
         <div>
-          <h1 class="title">HairAudit™</h1>
-          <div class="subtitle">AI Clinical Hair Transplant Audit</div>
+          <h1 class="title">HairAudit AI Surgical Analysis</h1>
+          <div class="subtitle">AI-assisted visual analysis of hair transplant surgical outcomes and documentation quality.</div>
           <div class="kicker">Powered by Follicle Intelligence</div>
         </div>
       </div>
@@ -556,17 +718,16 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       <div class="meta">
         <div><b>Case ID:</b> <span class="mono">${esc(caseId)}</span></div>
         <div><b>Report version:</b> ${version ? `v${esc(String(version))}` : "—"}</div>
-        <div><b>Confidence score:</b> ${esc(confidenceScorePct)}</div>
+        <div><b>AI confidence level:</b> ${esc(confidenceScorePct)}</div>
         <div><b>Audit date:</b> ${esc(generatedAt)}</div>
       </div>
     </div>
 
     <div class="section">
       <div class="sectionHead">
-        <h2>Clinical Scorecard</h2>
+        <h2>Executive AI Summary</h2>
         <div class="pillRow">
-          <span class="pill">Grade: <b>${esc(String(grade ?? "Needs Review"))}</b></span>
-          <span class="pill">Confidence: <b>${esc(String(confidenceLabel ?? "medium"))}</b></span>
+          <span class="pill">Overall Surgical Quality Score</span>
           ${
             version
               ? `<span class="pill">Report: <b>v${esc(String(version))}</b></span>`
@@ -577,9 +738,10 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
 
       <div class="scoreGrid">
         <div class="scoreCard">
-          <div class="scoreLabel">Overall Score</div>
+          <div class="scoreLabel">AI Score</div>
           <div class="scoreValue">${overallScore === null ? "—" : esc(String(overallScore))}</div>
           <div class="scoreSub">out of 100</div>
+          <div class="bandBadge" style="background:${scoreBand.color};">${esc(scoreBand.label)} band</div>
         </div>
 
         <div class="metricCard">
@@ -591,6 +753,32 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
             <div><span>Implant density</span><b>${esc(metrics.implantationDensity)}</b></div>
             <div><span>Hairline naturalness</span><b>${esc(metrics.hairlineNaturalness)}</b></div>
             <div><span>Donor scar visibility</span><b>${esc(metrics.donorScarVisibility)}</b></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="execGrid">
+        <div class="listCard">
+          <div class="listTitle">Data Integrity Summary</div>
+          <ul>
+            <li>Images analysed: ${allPhotos.length}</li>
+            <li>Donor views: ${donorViews}</li>
+            <li>Recipient views: ${recipientViews}</li>
+            <li>Intra-operative images: ${intraViews}</li>
+          </ul>
+          <div class="miniText">
+            This analysis is generated using a multi-layer visual pattern recognition engine that evaluates donor extraction patterns, recipient site design, graft distribution, and documentation completeness. The confidence score reflects the quality and completeness of the submitted evidence.
+          </div>
+        </div>
+        <div class="listCard">
+          <div class="listTitle">Risk Indicators</div>
+          <ul>
+            <li>✔ Strong indicators: ${highlights.length}</li>
+            <li>⚠ Areas requiring review: ${risks.length}</li>
+            <li>ℹ Limited evidence: ${allPhotos.length === 0 ? 1 : 0}</li>
+          </ul>
+          <div class="miniText">
+            Confidence reflects the amount and clarity of visual evidence available. Higher confidence indicates more comprehensive documentation and clearer imagery.
           </div>
         </div>
       </div>
@@ -624,13 +812,77 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       }
     </div>
 
-    ${areaScoresBlock}
-    ${narrativeSummary}
-    ${photosBlock}
+    <div class="section pageBreak">
+      <h2>Detailed Section Analysis</h2>
+      <div class="subtitle">Why this score was assigned, what it means, and what to monitor.</div>
+      ${domainBlocks}
+    </div>
+
+    <div class="section pageBreak">
+      <h2>Photo Evidence Analysis</h2>
+      <div class="subtitle">Grouped visual evidence with confidence context.</div>
+      ${photoBlock}
+      <div class="limitPanel">
+        <b>Evidence Limitations:</b>
+        ${
+          allPhotos.length === 0
+            ? " Limited evidence was available for visual assessment."
+            : " Limited or missing viewpoints may reduce confidence for graft handling and procedural detail interpretation."
+        }
+      </div>
+    </div>
+
+    <div class="fingerprintSection">
+      <h2>AI Surgical Fingerprint Analysis</h2>
+      <div class="subtitle">Pattern-based visual review of extraction, implantation, spacing, and density consistency.</div>
+      <div class="fpGrid">${fingerprintCards}</div>
+      ${
+        fingerprintSummary.limitedEvidence
+          ? `<div class="limitPanel"><b>Evidence note:</b> Pattern interpretation is limited by available image quality or angle coverage in one or more domains.</div>`
+          : ""
+      }
+    </div>
+
+    <div class="section">
+      <h2>Findings, Risks, and Recommendations</h2>
+      <div class="twoCol">
+        <div class="listCard">
+          <div class="listTitle">Key Positive Indicators</div>
+          ${
+            highlights.length > 0
+              ? `<ul>${highlights.map((x) => `<li class="wrapText">✔ ${esc(String(x))}</li>`).join("")}</ul>`
+              : `<div class="subtitle">No strong indicators identified with high confidence.</div>`
+          }
+        </div>
+        <div class="listCard">
+          <div class="listTitle">Areas Requiring Attention</div>
+          ${
+            risks.length > 0
+              ? `<ul>${risks.map((x) => `<li class="wrapText">⚠ ${esc(String(x))}</li>`).join("")}</ul>`
+              : `<div class="subtitle">No major concerns flagged from current evidence.</div>`
+          }
+        </div>
+      </div>
+      <div class="listCard" style="margin-top:12px;">
+        <div class="listTitle">Patient Guidance</div>
+        <ul>${patientGuidance.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>
+      </div>
+      <div class="listCard" style="margin-top:12px;">
+        <div class="listTitle">Predictive Outlook</div>
+        <div class="miniText">${predictiveOutlook}</div>
+      </div>
+      ${
+        narrativeText.length > 0
+          ? `<div class="listCard" style="margin-top:12px;"><div class="listTitle">Clinical Narrative</div><div class="prose">${esc(narrativeText).replaceAll("\n", "<br/>")}</div></div>`
+          : ""
+      }
+    </div>
+
     ${(vm.viewModel.auditMode === "doctor" || vm.viewModel.auditMode === "auditor") && doctorBlockHtml ? doctorBlockHtml : ""}
 
     <div class="footer">
-      HairAudit is an audit/reporting platform. This report is informational and not a medical diagnosis.
+      This report provides an AI-assisted visual assessment based on the submitted images and available metadata.
+      It does not represent a definitive graft count or medical diagnosis.
       ${typeof debugFooter === "string" && debugFooter.trim().length > 0 ? `<div class="footerDebug">${debugFooter}</div>` : ""}
     </div>
 
