@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -16,6 +16,17 @@ export default function LoginPage() {
     (process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "") || "").trim() ||
     "https://hairaudit.com";
   const redirectTo = `${appUrl}/auth/callback`;
+
+  useEffect(() => {
+    let mounted = true;
+    supabase.auth.getSession().then(({ data }) => {
+      if (!mounted) return;
+      if (data.session) window.location.href = "/dashboard";
+    });
+    return () => {
+      mounted = false;
+    };
+  }, [supabase]);
 
   async function signInWithProvider(provider: "google") {
     setMsg(null);
