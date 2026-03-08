@@ -92,6 +92,10 @@ export function evaluatePdfReadiness(input: PdfReadinessInput): PdfReadinessResu
   return { ready: true };
 }
 
+export function shouldGeneratePdf(input: PdfReadinessInput): PdfReadinessResult {
+  return evaluatePdfReadiness(input);
+}
+
 export function assertPdfReady(input: PdfReadinessInput): void {
   const state = evaluatePdfReadiness(input);
   if (state.ready) return;

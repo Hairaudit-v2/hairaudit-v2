@@ -10,6 +10,7 @@ import { computeDomainScoresV1, computeDoctorAiContextV1 } from "@/lib/benchmark
 import { renderAndUploadPdfForCase } from "@/lib/reports/renderPdfInternal";
 import { buildAuditImageSelection } from "@/lib/photos/classification";
 import { normalizeIntakeFormData, toNestedForApi } from "@/lib/intake/normalizeIntakeFormData";
+import { shouldGeneratePdf } from "@/lib/reports/pdfReadiness";
 
 function supabaseAdmin() {
   return createClient(
@@ -67,6 +68,57 @@ function normalizePatientAnswersForAudit(raw: Record<string, unknown> | null): R
     ...raw,
     ...nested,
   };
+}
+
+type PipelinePhaseStatus = "processing" | "audit_complete" | "pdf_pending" | "pdf_ready" | "failed";
+
+async function setCasePipelineStatus(
+  supabase: ReturnType<typeof supabaseAdmin>,
+  caseId: string,
+  status: PipelinePhaseStatus
+) {
+  const fallbackMap: Record<PipelinePhaseStatus, string> = {
+    processing: "processing",
+    audit_complete: "processing",
+    pdf_pending: "processing",
+    pdf_ready: "complete",
+    failed: "audit_failed",
+  };
+  let res = await supabase.from("cases").update({ status }).eq("id", caseId);
+  if (!res.error) return;
+  const fb = fallbackMap[status];
+  if (fb && fb !== status) {
+    res = await supabase.from("cases").update({ status: fb }).eq("id", caseId);
+  }
+  if (res.error) throw new Error(`cases status update failed (${status}): ${res.error.message}`);
+}
+
+async function setReportPipelineStatus(
+  supabase: ReturnType<typeof supabaseAdmin>,
+  caseId: string,
+  version: number,
+  status: PipelinePhaseStatus,
+  extra?: { error?: string | null; pdf_path?: string | null }
+) {
+  const fallbackMap: Record<PipelinePhaseStatus, string> = {
+    processing: "processing",
+    audit_complete: "processing",
+    pdf_pending: "processing",
+    pdf_ready: "complete",
+    failed: "failed",
+  };
+  const payload = { status, ...(extra ?? {}) } as Record<string, unknown>;
+  let res = await supabase.from("reports").update(payload).eq("case_id", caseId).eq("version", version);
+  if (!res.error) return;
+  const fb = fallbackMap[status];
+  if (fb && fb !== status) {
+    res = await supabase
+      .from("reports")
+      .update({ ...payload, status: fb })
+      .eq("case_id", caseId)
+      .eq("version", version);
+  }
+  if (res.error) throw new Error(`reports status update failed (${status}): ${res.error.message}`);
 }
 
 function classifyEvidenceCoverage(params: {
@@ -410,10 +462,7 @@ export const runAudit = inngest.createFunction(
       const errMsg = error?.message ?? String(error);
 
       await step.run("mark-audit-failed", async () => {
-        await supabase
-          .from("cases")
-          .update({ status: "audit_failed" })
-          .eq("id", caseId);
+        await setCasePipelineStatus(supabase, caseId, "failed");
       });
 
       await step.run("upsert-failed-report", async () => {
@@ -521,12 +570,7 @@ export const runAudit = inngest.createFunction(
 
     // 2) Mark processing (optional but helpful)
     await step.run("mark-processing", async () => {
-      const { error } = await supabase
-        .from("cases")
-        .update({ status: "processing" })
-        .eq("id", caseId);
-
-      if (error) throw new Error(`cases update failed: ${error.message}`);
+      await setCasePipelineStatus(supabase, caseId, "processing");
     });
 
     // 3) Verify uploads
@@ -944,64 +988,118 @@ export const runAudit = inngest.createFunction(
         version: nextVersion,
         pdf_path: pdfPath,
         summary,
-        status: "complete",
+        status: "processing",
         error: null,
       });
 
       if (error) throw new Error(`reports insert failed: ${error.message}`);
     });
 
-    // 11) Build + upload PDF (deterministic: reads report vN summary from DB)
-    await step.run("build-and-upload-pdf", async () => {
-      try {
-        const result = await renderAndUploadPdfForCase({
-          caseId,
-          auditMode: pdfAuditMode,
-          version: nextVersion,
+    // 11) Mark audit completion phase before PDF phase.
+    await step.run("mark-audit-complete-phase", async () => {
+      await setReportPipelineStatus(supabase, caseId, nextVersion, "audit_complete", { error: null });
+      await setCasePipelineStatus(supabase, caseId, "audit_complete");
+    });
+
+    // 12) PDF phase with readiness-aware retry/skip.
+    await step.run("mark-pdf-pending-phase", async () => {
+      await setReportPipelineStatus(supabase, caseId, nextVersion, "pdf_pending", { error: null });
+      await setCasePipelineStatus(supabase, caseId, "pdf_pending");
+    });
+
+    let finalPdfPath: string | null = null;
+    const maxPdfAttempts = 3;
+    for (let attempt = 1; attempt <= maxPdfAttempts; attempt += 1) {
+      const readiness = await step.run(`pdf-readiness-check-${attempt}`, async () => {
+        const [{ data: caseRow }, { data: reportRow }] = await Promise.all([
+          supabase.from("cases").select("status").eq("id", caseId).maybeSingle(),
+          supabase
+            .from("reports")
+            .select("status, summary")
+            .eq("case_id", caseId)
+            .eq("version", nextVersion)
+            .maybeSingle(),
+        ]);
+        const state = shouldGeneratePdf({
+          caseStatus: (caseRow as { status?: string | null } | null)?.status ?? null,
+          reportStatus: (reportRow as { status?: string | null } | null)?.status ?? null,
+          summary: (reportRow as { summary?: unknown } | null)?.summary ?? null,
         });
-        return { pdfPath: String(result.pdfPath ?? pdfPath) };
-      } catch (e: any) {
-        const code = e?.code;
-        const msg = String(e?.message ?? e);
-        if (code === "AUDIT_NOT_READY") {
-          await supabase
-            .from("reports")
-            .update({ status: "processing", error: msg })
-            .eq("case_id", caseId)
-            .eq("version", nextVersion);
-        } else {
-          await supabase
-            .from("reports")
-            .update({ status: "failed", error: msg })
-            .eq("case_id", caseId)
-            .eq("version", nextVersion);
+        logger.info("PDF readiness check", {
+          caseId,
+          attempt,
+          caseStatus: (caseRow as { status?: string | null } | null)?.status ?? null,
+          reportStatus: (reportRow as { status?: string | null } | null)?.status ?? null,
+          ready: state.ready,
+          reason: state.reason ?? null,
+        });
+        return state;
+      });
+
+      if (!readiness.ready) {
+        const msg = `AUDIT_NOT_READY: ${String(readiness.reason ?? "preconditions not met")}`;
+        await step.run(`pdf-readiness-pending-${attempt}`, async () => {
+          await setReportPipelineStatus(supabase, caseId, nextVersion, "pdf_pending", { error: msg });
+        });
+        if (attempt < maxPdfAttempts) {
+          logger.warn("PDF step skipped this attempt due to readiness", { caseId, attempt, reason: readiness.reason });
+          await step.sleep(`wait-for-pdf-readiness-${attempt}`, "20s");
+          continue;
         }
+        logger.warn("PDF phase deferred after max readiness attempts", { caseId, attempts: maxPdfAttempts });
+        break;
+      }
+
+      try {
+        const result = await step.run(`build-and-upload-pdf-${attempt}`, async () => {
+          return await renderAndUploadPdfForCase({
+            caseId,
+            auditMode: pdfAuditMode,
+            version: nextVersion,
+          });
+        });
+        finalPdfPath = String(result.pdfPath ?? pdfPath);
+        break;
+      } catch (e: any) {
+        const code = String(e?.code ?? "");
+        const msg = String(e?.message ?? e);
+        if (code === "AUDIT_NOT_READY" || /AUDIT_NOT_READY/i.test(msg)) {
+          await step.run(`mark-pdf-pending-after-not-ready-${attempt}`, async () => {
+            await setReportPipelineStatus(supabase, caseId, nextVersion, "pdf_pending", { error: msg });
+          });
+          logger.warn("PDF generation returned AUDIT_NOT_READY", { caseId, attempt, message: msg });
+          if (attempt < maxPdfAttempts) {
+            await step.sleep(`wait-after-audit-not-ready-${attempt}`, "20s");
+            continue;
+          }
+          break;
+        }
+        await step.run(`mark-pdf-failed-${attempt}`, async () => {
+          await setReportPipelineStatus(supabase, caseId, nextVersion, "failed", { error: msg });
+          await setCasePipelineStatus(supabase, caseId, "failed");
+        });
         throw e;
       }
+    }
+
+    if (!finalPdfPath) {
+      logger.info("Audit pipeline completed with PDF pending", { caseId, nextVersion });
+      return { ok: true, version: nextVersion, pdfPath: null, pdfStatus: "pending" as const };
+    }
+
+    // 13) Finalize PDF-ready phase.
+    await step.run("finalize-pdf-ready-phase", async () => {
+      await setReportPipelineStatus(supabase, caseId, nextVersion, "pdf_ready", {
+        pdf_path: finalPdfPath,
+        error: null,
+      });
+      await setCasePipelineStatus(supabase, caseId, "pdf_ready");
+      // Keep legacy-compatible terminal state for dashboards that key off "complete".
+      await supabase.from("cases").update({ status: "complete" }).eq("id", caseId);
     });
 
-    // 12) Mark report complete
-    await step.run("finalize-report-row", async () => {
-      const { error } = await supabase
-        .from("reports")
-        .update({ status: "complete", pdf_path: pdfPath, error: null })
-        .eq("case_id", caseId)
-        .eq("version", nextVersion);
-      if (error) throw new Error(`reports finalize failed: ${error.message}`);
-    });
-
-    // 13) Mark case complete
-    await step.run("mark-complete", async () => {
-      const { error } = await supabase
-        .from("cases")
-        .update({ status: "complete" })
-        .eq("id", caseId);
-
-      if (error) throw new Error(`cases complete update failed: ${error.message}`);
-    });
-
-    logger.info("Audit pipeline complete", { caseId, nextVersion, pdfPath });
-    return { ok: true, version: nextVersion, pdfPath };
+    logger.info("Audit pipeline complete", { caseId, nextVersion, pdfPath: finalPdfPath });
+    return { ok: true, version: nextVersion, pdfPath: finalPdfPath, pdfStatus: "ready" as const };
   }
 );
 
@@ -1024,7 +1122,8 @@ export const runPdfRebuild = inngest.createFunction(
       .limit(1)
       .maybeSingle();
 
-    if (!latest || String((latest as any)?.status ?? "") !== "complete") {
+    const latestStatus = String((latest as any)?.status ?? "");
+    if (!latest || (latestStatus !== "complete" && latestStatus !== "pdf_ready")) {
       throw new Error(`No complete report found for case ${caseId}`);
     }
     const version = Number((latest as any)?.version ?? 0);
