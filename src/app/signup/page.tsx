@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import { ROLE_LABELS, USER_ROLES, type UserRole } from "@/lib/roles";
 import SiteHeader from "@/components/SiteHeader";
 
 export default function SignUpPage() {
@@ -13,7 +12,6 @@ export default function SignUpPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<UserRole>("patient");
   const [msg, setMsg] = useState<string | null>(null);
   const [msgKind, setMsgKind] = useState<"error" | "success">("error");
   const [busy, setBusy] = useState(false);
@@ -36,7 +34,6 @@ export default function SignUpPage() {
     }
     const emailRedirectTo = `${appUrl}/auth/callback`;
     console.info("[signup] attempting signup", {
-      role,
       emailRedirectTo,
       email: maskEmail(email),
     });
@@ -44,7 +41,6 @@ export default function SignUpPage() {
       email,
       password,
       options: {
-        data: { role },
         emailRedirectTo,
       },
     });
@@ -79,7 +75,7 @@ export default function SignUpPage() {
       const profileRes = await fetch("/api/profiles", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ role }),
+        body: JSON.stringify({}),
       });
       if (!profileRes.ok) {
         const body = await profileRes.text();
@@ -128,7 +124,7 @@ export default function SignUpPage() {
             </div>
             <h1 className="text-2xl font-bold text-slate-900">Create account</h1>
             <p className="mt-2 text-sm text-slate-600">
-              Choose your role: <strong>Patient</strong> (get feedback on your surgery), <strong>Doctor</strong> (submit cases and review audits), or <strong>Clinic</strong> (submit cases and compare outcomes).
+              Create a patient beta account to start your HairAudit workflow.
             </p>
 
             <form onSubmit={signUp} className="mt-6 space-y-4">
@@ -162,35 +158,6 @@ export default function SignUpPage() {
                   autoComplete="new-password"
                   className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-slate-900 placeholder-slate-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-colors"
                 />
-              </div>
-              <div role="group" aria-labelledby="signup-role-label">
-                <label id="signup-role-label" htmlFor="signup-role-patient" className="block text-sm font-medium text-slate-700 mb-2">
-                  I am a
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {USER_ROLES.map((r) => (
-                    <label
-                      key={r}
-                      htmlFor={`signup-role-${r}`}
-                      className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border cursor-pointer transition-colors ${
-                        role === r
-                          ? "border-amber-500 bg-amber-50 text-amber-900"
-                          : "border-slate-300 hover:border-slate-400"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        id={`signup-role-${r}`}
-                        name="role"
-                        value={r}
-                        checked={role === r}
-                        onChange={() => setRole(r)}
-                        className="sr-only"
-                      />
-                      {ROLE_LABELS[r]}
-                    </label>
-                  ))}
-                </div>
               </div>
               <button
                 type="submit"

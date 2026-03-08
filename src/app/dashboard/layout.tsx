@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import DashboardHeader from "@/components/DashboardHeader";
+import { isBetaAllowedUser } from "@/lib/auth/betaAccess";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,7 @@ export default async function DashboardLayout({
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) redirect("/login");
+  if (!(await isBetaAllowedUser(user))) redirect("/beta-access-message");
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">

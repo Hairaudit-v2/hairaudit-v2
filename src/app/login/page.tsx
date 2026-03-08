@@ -6,25 +6,46 @@ import Image from "next/image";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import SiteHeader from "@/components/SiteHeader";
 
-export default function LoginPage(_props?: {
-  searchParams?: Promise<Record<string, string | string[] | undefined>>;
-}) {
+export default function LoginPage() {
   const supabase = createSupabaseBrowserClient();
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
+  const [busyProvider, setBusyProvider] = useState<"google" | "apple" | "email" | null>(null);
 
-  async function signIn(e: React.FormEvent) {
-    e.preventDefault();
+  const appUrl =
+    (process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "") || "").trim() ||
+    "https://hairaudit.com";
+  const redirectTo = `${appUrl}/auth/callback`;
+
+  async function signInWithProvider(provider: "google" | "apple") {
     setMsg(null);
+    setBusyProvider(provider);
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo },
     });
 
     if (error) setMsg(`❌ ${error.message}`);
-    else window.location.href = "/dashboard";
+    setBusyProvider(null);
+  }
+
+  async function sendMagicLink(e: React.FormEvent) {
+    e.preventDefault();
+    setMsg(null);
+    setBusyProvider("email");
+
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: redirectTo },
+    });
+
+    if (error) {
+      setMsg(`❌ ${error.message}`);
+    } else {
+      setMsg("Check your email for a secure sign-in link.");
+    }
+    setBusyProvider(null);
   }
 
   return (
@@ -33,12 +54,12 @@ export default function LoginPage(_props?: {
 
       <main className="flex-1 flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
-          <a
+          <Link
             href="/"
             className="inline-flex items-center text-sm text-slate-500 hover:text-amber-400 mb-4 transition-colors"
           >
             ← Back to HairAudit
-          </a>
+          </Link>
           <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
             <div className="mb-6 flex justify-center rounded-xl bg-slate-900 px-4 py-3">
               <Image
@@ -51,10 +72,29 @@ export default function LoginPage(_props?: {
             </div>
             <h1 className="text-2xl font-bold text-slate-900">Sign in</h1>
             <p className="mt-2 text-sm text-slate-600">
-              Patients, doctors, and clinics sign in with their own account. You&apos;ll be taken to your dashboard after login.
+              Currently beta testing patient audits. Doctor and clinic audits to follow soon.
             </p>
 
-            <form onSubmit={signIn} className="mt-6 space-y-4">
+            <div className="mt-6 space-y-3">
+              <button
+                type="button"
+                onClick={() => signInWithProvider("google")}
+                disabled={busyProvider !== null}
+                className="w-full rounded-lg border border-slate-300 bg-white text-slate-900 py-2.5 font-semibold hover:bg-slate-50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                Continue with Google
+              </button>
+              <button
+                type="button"
+                onClick={() => signInWithProvider("apple")}
+                disabled={busyProvider !== null}
+                className="w-full rounded-lg border border-slate-300 bg-white text-slate-900 py-2.5 font-semibold hover:bg-slate-50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                Continue with Apple
+              </button>
+            </div>
+
+            <form onSubmit={sendMagicLink} className="mt-6 space-y-4">
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1">
                   Email
@@ -71,27 +111,12 @@ export default function LoginPage(_props?: {
                   placeholder="you@example.com"
                 />
               </div>
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1">
-                  Password
-                </label>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  autoComplete="current-password"
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-slate-900 placeholder-slate-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-colors"
-                  placeholder="••••••••"
-                />
-              </div>
               <button
                 type="submit"
-                className="w-full rounded-lg bg-amber-500 text-slate-900 py-2.5 font-semibold hover:bg-amber-400 transition-colors focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
+                disabled={busyProvider !== null}
+                className="w-full rounded-lg bg-amber-500 text-slate-900 py-2.5 font-semibold hover:bg-amber-400 transition-colors disabled:opacity-60 disabled:cursor-not-allowed focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
               >
-                Sign in
+                Continue with Email
               </button>
             </form>
 
@@ -101,15 +126,8 @@ export default function LoginPage(_props?: {
               </p>
             )}
 
-            <p className="mt-6 text-center text-sm text-slate-600">
-              Don&apos;t have an account?{" "}
-              <Link href="/signup" className="font-medium text-amber-600 hover:text-amber-500">
-                Create account
-              </Link>
-              {" · "}
-              <Link href="/login/auditor" className="font-medium text-slate-600 hover:text-slate-800">
-                Auditor login
-              </Link>
+            <p className="mt-6 text-center text-xs text-slate-500">
+              By signing in, you&apos;ll be redirected to your patient dashboard.
             </p>
           </div>
         </div>

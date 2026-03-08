@@ -303,6 +303,33 @@ export default async function PatientDashboardPage() {
         </div>
       </section>
 
+      <section className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <Link
+          href="/cases"
+          className="rounded-xl border border-slate-200 bg-white px-4 py-4 text-sm font-semibold text-slate-900 hover:border-amber-300 hover:shadow-sm"
+        >
+          Start New Audit
+        </Link>
+        <Link
+          href={nextCase?.id ? `/cases/${nextCase.id}/patient/photos` : "/cases"}
+          className="rounded-xl border border-slate-200 bg-white px-4 py-4 text-sm font-semibold text-slate-900 hover:border-amber-300 hover:shadow-sm"
+        >
+          Upload Photos
+        </Link>
+        <Link
+          href={nextCase?.id ? `/cases/${nextCase.id}/patient/questions` : "/cases"}
+          className="rounded-xl border border-slate-200 bg-white px-4 py-4 text-sm font-semibold text-slate-900 hover:border-amber-300 hover:shadow-sm"
+        >
+          Complete Intake Questions
+        </Link>
+        <Link
+          href="/cases"
+          className="rounded-xl border border-slate-200 bg-white px-4 py-4 text-sm font-semibold text-slate-900 hover:border-amber-300 hover:shadow-sm"
+        >
+          View Previous Reports
+        </Link>
+      </section>
+
       {/* Intelligence gateway surface */}
       <section className="relative mt-8 overflow-hidden rounded-2xl border border-slate-900 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4 sm:p-6">
         <div className="pointer-events-none absolute -top-24 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-emerald-500/10 blur-3xl" />

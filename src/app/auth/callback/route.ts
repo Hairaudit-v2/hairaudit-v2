@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { resolveAuditorRole } from "@/lib/auth/isAuditor";
+import { isAuditor } from "@/lib/auth/isAuditor";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -30,34 +30,29 @@ export async function GET(request: Request) {
       }
       if (user) {
         const admin = createSupabaseAdminClient();
-        const { data: profile, error: profileReadError } = await admin
+        const { data: existingProfile } = await admin
           .from("profiles")
           .select("role")
           .eq("id", user.id)
           .maybeSingle();
-        if (profileReadError) {
-          console.error("[auth/callback] failed reading profile role", {
-            userId: user.id,
-            message: profileReadError.message,
-          });
-        }
-        const role = resolveAuditorRole({
-          profileRole: profile?.role,
-          userMetadataRole: (user.user_metadata as Record<string, unknown>)?.role,
-          userEmail: user.email,
-        });
+        const role = isAuditor({ profileRole: existingProfile?.role, userEmail: user.email })
+          ? "auditor"
+          : "patient";
         const { error: upsertError } = await admin.from("profiles").upsert(
           {
             id: user.id,
             role,
-            updated_at: new Date().toISOString(),
+            email: user.email,
+            name:
+              (user.user_metadata as Record<string, unknown> | undefined)?.full_name ??
+              (user.user_metadata as Record<string, unknown> | undefined)?.name ??
+              null,
           },
           { onConflict: "id" }
         );
         if (upsertError) {
           console.error("[auth/callback] failed upserting profile", {
             userId: user.id,
-            role,
             message: upsertError.message,
           });
         }
@@ -70,5 +65,5 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.redirect(`${origin}/dashboard`); // Redirects to role-specific dashboard
+  return NextResponse.redirect(`${origin}/dashboard`);
 }

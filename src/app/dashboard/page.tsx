@@ -1,41 +1,14 @@
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { parseRole, USER_ROLES } from "@/lib/roles";
-import { resolveAuditorRole } from "@/lib/auth/isAuditor";
+import { getEffectiveUserRole } from "@/lib/auth/betaAccess";
 
 export default async function DashboardPage() {
   const supabase = await createSupabaseAuthServerClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) redirect("/login");
-
-  let role = parseRole((user.user_metadata as Record<string, unknown>)?.role);
-
-  try {
-    const admin = createSupabaseAdminClient();
-    const { data: profile } = await admin.from("profiles").select("role").eq("id", user.id).maybeSingle();
-    role = resolveAuditorRole({
-      profileRole: profile?.role,
-      userMetadataRole: (user.user_metadata as Record<string, unknown>)?.role,
-      userEmail: user.email,
-    });
-  } catch {
-    // profiles table may not exist
-  }
-
-  // In development, allow dev_role cookie to override (for testing all dashboards with one account)
-  if (process.env.NODE_ENV === "development") {
-    const cookieStore = await cookies();
-    const devRole = cookieStore.get("dev_role")?.value;
-    if (devRole && USER_ROLES.includes(devRole as any)) {
-      role = devRole as typeof role;
-    }
-  }
-
-  if (role === "doctor") redirect("/dashboard/doctor");
-  if (role === "clinic") redirect("/dashboard/clinic");
+  const role = await getEffectiveUserRole(user);
   if (role === "auditor") redirect("/dashboard/auditor");
+  if (role !== "patient") redirect("/beta-access-message");
   redirect("/dashboard/patient");
 }
