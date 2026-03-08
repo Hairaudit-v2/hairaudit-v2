@@ -110,7 +110,7 @@ function renderRadarSvg(opts: {
   const height = size;
   const cx = width / 2;
   const cy = height / 2;
-  const padding = n <= 5 ? 136 : n <= 7 ? 120 : 108; // extra room for readable axis titles
+  const padding = n <= 5 ? 126 : n <= 7 ? 114 : 104; // extra room for readable axis titles
   const rMax = Math.max(60, Math.min(width, height) / 2 - padding);
   const angleStep = (2 * Math.PI) / Math.max(1, n);
 
@@ -164,8 +164,8 @@ function renderRadarSvg(opts: {
   const labelElems = labels
     .map((label, i) => {
       const angle = -Math.PI / 2 + i * angleStep;
-      const tx = cx + (rMax + 44) * Math.cos(angle);
-      const ty = cy + (rMax + 44) * Math.sin(angle);
+      const tx = cx + (rMax + 46) * Math.cos(angle);
+      const ty = cy + (rMax + 46) * Math.sin(angle);
       const anchor =
         Math.abs(Math.cos(angle)) < 0.28 ? "middle" : Math.cos(angle) > 0 ? "start" : "end";
       const lines = wrapLabel(label, maxLabelLen);
@@ -432,6 +432,41 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       ${compactStatus("Implantation Pattern Confidence", implantConfidence === "High" ? "good" : implantConfidence === "Moderate" ? "note" : "watch", implantConfidence)}
     </div>
   `;
+  const keyMetricsCard = `
+    <div class="metricCard keyMetricCard">
+      <div class="metricTitle">Key Metrics</div>
+      <div class="metricList">
+        <div><span>Donor quality</span><b>${esc(metrics.donorQuality)}</b></div>
+        <div><span>Survival estimate</span><b>${esc(metrics.graftSurvival)}</b></div>
+        <div><span>Transection risk</span><b>${esc(metrics.transectionRisk)}</b></div>
+        <div><span>Implant density</span><b>${esc(metrics.implantationDensity)}</b></div>
+        <div><span>Hairline naturalness</span><b>${esc(metrics.hairlineNaturalness)}</b></div>
+        <div><span>Donor scar visibility</span><b>${esc(metrics.donorScarVisibility)}</b></div>
+      </div>
+    </div>
+  `;
+  const confidenceIntegrityCards = `
+    <div class="infoGrid evidenceInfoGrid">
+      <div class="panelCard">
+        <div class="panelTitle">AI Confidence</div>
+        <div class="kpiValue">${esc(confidenceScorePct)}</div>
+        <div class="kpiSub">${esc(confidenceBand)} confidence band</div>
+        <div class="miniText">Confidence reflects visual evidence clarity and completeness across submitted documentation.</div>
+      </div>
+      <div class="panelCard">
+        <div class="panelTitle">Data Integrity</div>
+        <div class="kpiValue">${allPhotos.length}</div>
+        <div class="kpiSub">images analyzed</div>
+        <ul class="kpiList">
+          <li>Donor views: ${donorViews}</li>
+          <li>Recipient views: ${recipientViews}</li>
+          <li>Intra-operative images: ${intraViews}</li>
+          <li>Missing categories: ${missingCats.length > 0 ? esc(missingCats.join(", ")) : "None reported"}</li>
+        </ul>
+        <div class="miniText">Evidence completeness: ${allPhotos.length >= 6 ? "sufficient for broader interpretation." : "limited for high-confidence interpretation."}</div>
+      </div>
+    </div>
+  `;
 
   const mapToEvidenceGroup = (rawCat: string): { key: string; title: string; icon: string; order: number } => {
     const lower = rawCat.toLowerCase();
@@ -582,7 +617,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
           ${renderRadarSvg({
             labels: radarDisplayLabels,
             values: radar.values,
-            size: 610,
+            size: 760,
             levels: 5,
             overall: radar.overall,
             confidence: radar.confidence,
@@ -707,7 +742,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     .metaRow:last-child { border-bottom: none; }
 
     .section {
-      margin-top: 18px;
+      margin-top: 28px;
       padding: 18px;
       border: 1px solid var(--line);
       border-radius: var(--card-radius);
@@ -716,13 +751,14 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       break-inside: avoid;
       box-shadow: 0 10px 26px rgba(15, 23, 42, 0.045);
     }
+    .section.pageBreak { margin-top: 0; }
     .p1Section { margin-top: 32px; }
     .sectionHead {
-      display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom: 10px;
+      display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom: 0;
       page-break-after: avoid; break-after: avoid;
     }
     .sectionHead h2 { margin: 0; font-size: 19px; letter-spacing: -0.01em; line-height: 1.2; }
-    .sectionDivider { height: 1px; margin: 10px 0 12px; background: linear-gradient(90deg, rgba(182,201,228,0.65), rgba(182,201,228,0.08)); }
+    .sectionDivider { height: 1px; margin: 0 0 12px; background: linear-gradient(90deg, rgba(182,201,228,0.65), rgba(182,201,228,0.08)); }
     .pillRow { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
 
     .pill {
@@ -733,7 +769,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     }
     .pill b { color: var(--ink); }
 
-    .p1Section .sectionHead { margin-bottom: 12px; }
+    .p1Section .sectionHead { margin-bottom: 0; }
     .p1Section .sectionDivider { margin-bottom: 0; }
     .p1Zone {
       position: relative;
@@ -765,7 +801,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       z-index: 1;
       border: 1px solid rgba(198, 214, 236, 0.6);
       border-radius: 18px;
-      padding: 18px;
+      padding: 20px;
       background:
         radial-gradient(circle at 12% 16%, rgba(148,163,184,0.08), rgba(148,163,184,0) 38%),
         linear-gradient(180deg, rgba(255,255,255,0.84) 0%, rgba(244,250,255,0.88) 100%);
@@ -782,7 +818,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
         radial-gradient(circle at 16% 8%, rgba(251, 191, 36, 0.36), rgba(251,191,36,0) 50%),
         radial-gradient(circle at 88% 18%, rgba(148, 163, 184, 0.24), rgba(148,163,184,0) 48%),
         linear-gradient(155deg, #ffffff 0%, #e6f0ff 100%);
-      min-height: 480px;
+      min-height: 520px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
@@ -811,8 +847,8 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       border: 1px solid rgba(213,164,58,.55); font-size: 11px; font-weight: 800; background: var(--gold-soft);
     }
     .scoreConfLine { margin-top: 16px; font-size: 11px; color: #2b4a72; line-height: 1.65; max-width: 93%; font-weight: 600; }
-    .p1RightCol { display: flex; flex-direction: column; height: 100%; min-height: 480px; }
-    .keyMetricCard { margin-top: 24px; position: relative; z-index: 1; }
+    .p1RightCol { display: flex; flex-direction: column; height: 100%; min-height: 520px; }
+    .keyMetricCard { margin-top: 0; }
 
     .metricCard, .panelCard { border: 1px solid var(--line); border-radius: 14px; padding: 12px; background:#fff; }
     .metricTitle, .panelTitle { font-size: 12px; color: var(--muted); margin-bottom: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; }
@@ -835,7 +871,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       display: flex;
       flex-direction: column;
       justify-content: flex-start;
-      min-height: 480px;
+      min-height: 520px;
     }
     .radarWrap {
       margin-top: 18px;
@@ -843,13 +879,14 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       justify-content: center;
       page-break-inside: avoid;
       break-inside: avoid;
-      min-height: 520px;
+      min-height: 560px;
       align-items: center;
-      padding: 18px;
+      padding: 22px;
     }
-    .radarWrap svg { display: block; margin: 0 auto; max-width: 94%; height: auto; border-radius: 12px; border: 1px solid rgba(14,165,233,0.15); }
+    .radarWrap svg { display: block; margin: 0 auto; max-width: 96%; height: auto; border-radius: 12px; border: 1px solid rgba(14,165,233,0.15); }
     .radarPanel .miniText { margin-top: 20px; margin-bottom: 10px; }
-    .infoGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 26px; align-items: stretch; }
+    .infoGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 24px; align-items: stretch; }
+    .evidenceInfoGrid { margin-top: 20px; }
     .p1Zone .panelCard {
       box-shadow: 0 6px 16px rgba(15,23,42,0.03);
       background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
@@ -866,7 +903,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     .kpiSub { font-size: 11px; color: #4e678b; margin-top: 6px; }
     .kpiList { margin: 11px 0 0; padding-left: 18px; }
     .kpiList li { margin: 3px 0; font-size: 11px; color: #112545; }
-    .riskStrip { margin-top: 22px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+    .riskStrip { margin-top: 22px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
     .riskPill {
       padding: 14px 16px; border-radius: 12px; font-size: 8.5px; border: 1px solid transparent; font-weight: 700;
       display:flex; flex-direction:column; gap:4px;
@@ -904,7 +941,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
 
     /* ---------- Visual Evidence Analysis (Photo Evidence) ---------- */
     .evidenceSectionTitle { font-size: 20px; font-weight: 900; letter-spacing: -0.01em; color: var(--ink); margin: 0 0 4px 0; }
-    .evidenceSectionSubtitle { font-size: 12px; color: var(--muted); line-height: 1.5; margin: 0 0 16px 0; }
+    .evidenceSectionSubtitle { font-size: 12px; color: var(--muted); line-height: 1.5; margin: 0 0 8px 0; }
     .forensicBoard {
       position: relative;
       border: 1px solid var(--line-strong);
@@ -1021,7 +1058,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     .forensicPhoto figcaption { font-size:10px; color: var(--muted); padding:8px 10px; min-height: 32px; background: #f9fbff; border-top: 1px solid rgba(203,213,225,0.5); font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
     .limitPanel { margin-top: 12px; border: 1px solid #bfdbfe; border-radius: 12px; padding: 10px; background: #eff6ff; font-size: 11px; color: #1e3a8a; }
 
-    .premiumGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+    .premiumGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 0; }
     .premCard {
       border: 1px solid #d4d4f9; border-radius: 12px; padding: 12px; background: linear-gradient(180deg, #ffffff 0%, #f8f5ff 100%);
       page-break-inside: avoid; break-inside: avoid;
@@ -1079,6 +1116,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       .wrap { padding: 0; }
       .hero { padding: 24px; break-inside: avoid; }
       .section { margin-top: 14px; padding: 12px; }
+      .section.pageBreak { margin-top: 0; }
       .domainGrid, .forensicGrid, .premiumGrid, .fpGrid { grid-template-columns: 1fr; }
       .fpGrid { grid-template-columns: 1fr; }
       .p1Section { margin-top: 26px; }
@@ -1091,11 +1129,11 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       .p1RightCol { min-height: 390px; }
       .radarPanel { margin-top: 0; padding: 26px; min-height: 390px; }
       .radarWrap { min-height: 400px; padding: 12px; }
-      .keyMetricCard { margin-top: 18px; }
+      .keyMetricCard { margin-top: 0; }
       .infoGrid { grid-template-columns: 1fr 1fr; }
       .infoGrid { margin-top: 24px; gap: 16px; }
       .riskStrip { grid-template-columns: 1fr 1fr; margin-top: 22px; gap: 12px; }
-      .executiveDivider { margin-top: 0; margin-bottom: 18px; }
+      .executiveDivider { margin-top: 24px; margin-bottom: 18px; }
       .forensicPhoto img, .evidencePhotoCard img { height: 140px; }
       .evidenceGroup, .evidenceObsPanel, .evidenceLimitationsPanel, .evidencePhotoCard { break-inside: avoid; page-break-inside: avoid; }
       .evidencePhotoGrid { gap: 10px; }
@@ -1157,40 +1195,6 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
           </div>
           </div>
         </div>
-
-        <div class="metricCard keyMetricCard">
-          <div class="metricTitle">Key Metrics</div>
-          <div class="metricList">
-            <div><span>Donor quality</span><b>${esc(metrics.donorQuality)}</b></div>
-            <div><span>Survival estimate</span><b>${esc(metrics.graftSurvival)}</b></div>
-            <div><span>Transection risk</span><b>${esc(metrics.transectionRisk)}</b></div>
-            <div><span>Implant density</span><b>${esc(metrics.implantationDensity)}</b></div>
-            <div><span>Hairline naturalness</span><b>${esc(metrics.hairlineNaturalness)}</b></div>
-            <div><span>Donor scar visibility</span><b>${esc(metrics.donorScarVisibility)}</b></div>
-          </div>
-        </div>
-
-        <div class="infoGrid">
-          <div class="panelCard">
-            <div class="panelTitle">AI Confidence</div>
-            <div class="kpiValue">${esc(confidenceScorePct)}</div>
-            <div class="kpiSub">${esc(confidenceBand)} confidence band</div>
-            <div class="miniText">Confidence reflects visual evidence clarity and completeness across submitted documentation.</div>
-          </div>
-          <div class="panelCard">
-            <div class="panelTitle">Data Integrity</div>
-            <div class="kpiValue">${allPhotos.length}</div>
-            <div class="kpiSub">images analyzed</div>
-            <ul class="kpiList">
-              <li>Donor views: ${donorViews}</li>
-              <li>Recipient views: ${recipientViews}</li>
-              <li>Intra-operative images: ${intraViews}</li>
-              <li>Missing categories: ${missingCats.length > 0 ? esc(missingCats.join(", ")) : "None reported"}</li>
-            </ul>
-            <div class="miniText">Evidence completeness: ${allPhotos.length >= 6 ? "sufficient for broader interpretation." : "limited for high-confidence interpretation."}</div>
-          </div>
-        </div>
-        ${riskStrip}
       </div>
 
       <div class="executiveDivider"></div>
@@ -1211,6 +1215,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
         <span class="pill">Clinical intelligence cards</span>
       </div>
       <div class="sectionDivider"></div>
+      ${keyMetricsCard}
       <div class="domainGrid">${domainCards}</div>
     </div>
 
@@ -1224,6 +1229,8 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       </div>
       <div class="sectionDivider"></div>
       <div class="forensicBoard">${photoGroups}</div>
+      ${confidenceIntegrityCards}
+      ${riskStrip}
       <div class="evidenceLimitationsPanel">
         <div class="panelLabel">Evidence Limitations</div>
         ${
