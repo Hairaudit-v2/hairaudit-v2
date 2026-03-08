@@ -110,12 +110,12 @@ function renderRadarSvg(opts: {
   const height = size;
   const cx = width / 2;
   const cy = height / 2;
-  const padding = 98; // room for labels, avoid clipping in print
+  const padding = n <= 5 ? 136 : n <= 7 ? 120 : 108; // extra room for readable axis titles
   const rMax = Math.max(60, Math.min(width, height) / 2 - padding);
   const angleStep = (2 * Math.PI) / Math.max(1, n);
 
-  const labelFontSize = n > 8 ? 11 : 13;
-  const maxLabelLen = n > 8 ? 12 : 14;
+  const labelFontSize = n > 8 ? 11 : 14;
+  const maxLabelLen = n > 8 ? 12 : 18;
 
   const pointsFor = (r: number) =>
     Array.from({ length: n }, (_, i) => {
@@ -129,7 +129,7 @@ function renderRadarSvg(opts: {
     const pct = (idx + 1) / levels;
     const r = rMax * pct;
     const opacity = idx === levels - 1 ? 0.14 : 0.09;
-    return `<polygon points="${pointsFor(r)}" fill="none" stroke="rgba(148,163,184,${opacity})" stroke-width="1"/>`;
+    return `<polygon points="${pointsFor(r)}" fill="none" stroke="rgba(148,163,184,${opacity})" stroke-width="1.1"/>`;
   }).join("\n  ");
 
   const spokes = Array.from({ length: n }, (_, i) => {
@@ -151,7 +151,7 @@ function renderRadarSvg(opts: {
   const allZeros = values.every((v) => !Number.isFinite(v) || Number(v) === 0);
   const polygon = allZeros
     ? ""
-    : `<polygon points="${valuePts.map((p) => `${p.x},${p.y}`).join(" ")}" fill="rgba(45,212,191,0.23)" stroke="rgba(45,212,191,0.95)" stroke-width="2"/>`;
+    : `<polygon points="${valuePts.map((p) => `${p.x},${p.y}`).join(" ")}" fill="rgba(45,212,191,0.25)" stroke="rgba(45,212,191,0.96)" stroke-width="2.8"/>`;
   const dots = allZeros
     ? ""
     : valuePts
@@ -164,15 +164,15 @@ function renderRadarSvg(opts: {
   const labelElems = labels
     .map((label, i) => {
       const angle = -Math.PI / 2 + i * angleStep;
-      const tx = cx + (rMax + 30) * Math.cos(angle);
-      const ty = cy + (rMax + 30) * Math.sin(angle);
+      const tx = cx + (rMax + 44) * Math.cos(angle);
+      const ty = cy + (rMax + 44) * Math.sin(angle);
       const anchor =
         Math.abs(Math.cos(angle)) < 0.28 ? "middle" : Math.cos(angle) > 0 ? "start" : "end";
       const lines = wrapLabel(label, maxLabelLen);
       return lines
         .map((line, j) => {
           const dy = (j - (lines.length - 1) / 2) * (labelFontSize + 2);
-          return `<text x="${tx}" y="${ty + dy}" fill="rgba(226,232,240,0.82)" font-size="${labelFontSize}" font-weight="600" font-family="Arial,sans-serif" text-anchor="${anchor}" dominant-baseline="middle">${escapeXml(line)}</text>`;
+          return `<text x="${tx}" y="${ty + dy}" fill="rgba(226,232,240,0.88)" font-size="${labelFontSize}" font-weight="700" font-family="Arial,sans-serif" text-anchor="${anchor}" dominant-baseline="middle">${escapeXml(line)}</text>`;
         })
         .join("\n  ");
     })
@@ -553,6 +553,26 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     })
     .join("");
 
+  const prettyRadarLabel = (label: string): string => {
+    const raw = String(label ?? "").trim();
+    const lower = raw.toLowerCase();
+    if (!raw) return "Domain";
+    if (/surgical planning|planning|recipient site design|recipient design|recipient site/i.test(lower)) {
+      return "Surgical Planning";
+    }
+    if (/donor|preservation|extraction/i.test(lower)) return "Donor Preservation";
+    if (/graft|viability|survival|handling/i.test(lower)) return "Graft Viability";
+    if (/implant|placement|angle|density|technique/i.test(lower)) return "Implantation Control";
+    if (/documentation|evidence|integrity|quality/i.test(lower)) return "Documentation Integrity";
+    return raw
+      .replaceAll("_", " ")
+      .replace(/\s+/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+  };
+  const radarDisplayLabels = Array.isArray(radar?.labels)
+    ? radar!.labels.map((label) => prettyRadarLabel(label))
+    : [];
+
   const radarPanel =
     radar && Array.isArray(radar.labels) && Array.isArray(radar.values) && radar.labels.length >= 3
       ? `
@@ -560,9 +580,9 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
         <div class="panelTitle">Diagnostic Radar Signature</div>
         <div class="radarWrap">
           ${renderRadarSvg({
-            labels: radar.labels,
+            labels: radarDisplayLabels,
             values: radar.values,
-            size: 540,
+            size: 640,
             levels: 5,
             overall: radar.overall,
             confidence: radar.confidence,
@@ -696,7 +716,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       break-inside: avoid;
       box-shadow: 0 10px 26px rgba(15, 23, 42, 0.045);
     }
-    .p1Section { margin-top: 34px; }
+    .p1Section { margin-top: 32px; }
     .sectionHead {
       display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom: 10px;
       page-break-after: avoid; break-after: avoid;
@@ -719,9 +739,10 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       position: relative;
       overflow: hidden;
       margin-top: 32px;
+      margin-bottom: 30px;
       border: 1px solid rgba(182, 201, 228, 0.55);
       border-radius: 18px;
-      padding: 34px;
+      padding: 32px;
       background:
         radial-gradient(circle at 15% 8%, rgba(191,219,254,0.28), rgba(191,219,254,0) 45%),
         radial-gradient(circle at 68% 18%, rgba(14,165,233,0.11), rgba(14,165,233,0) 42%),
@@ -739,7 +760,18 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
         radial-gradient(circle at 70% 20%, rgba(56,189,248,0.10), rgba(56,189,248,0) 36%);
       opacity: .85;
     }
-    .execLayout { position: relative; z-index: 1; display: grid; grid-template-columns: 1.3fr 1fr; gap: 36px; align-items: stretch; }
+    .heroDashboard {
+      position: relative;
+      z-index: 1;
+      border: 1px solid rgba(198, 214, 236, 0.6);
+      border-radius: 18px;
+      padding: 18px;
+      background:
+        radial-gradient(circle at 12% 16%, rgba(148,163,184,0.08), rgba(148,163,184,0) 38%),
+        linear-gradient(180deg, rgba(255,255,255,0.84) 0%, rgba(244,250,255,0.88) 100%);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.92);
+    }
+    .execLayout { position: relative; z-index: 1; display: grid; grid-template-columns: 1.24fr 1fr; gap: 30px; align-items: stretch; }
     .scoreBadge {
       position: relative;
       border: 1px solid rgba(213, 164, 58, 0.45);
@@ -750,7 +782,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
         radial-gradient(circle at 16% 8%, rgba(251, 191, 36, 0.36), rgba(251,191,36,0) 50%),
         radial-gradient(circle at 88% 18%, rgba(148, 163, 184, 0.24), rgba(148,163,184,0) 48%),
         linear-gradient(155deg, #ffffff 0%, #e6f0ff 100%);
-      min-height: 470px;
+      min-height: 480px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
@@ -779,7 +811,8 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       border: 1px solid rgba(213,164,58,.55); font-size: 11px; font-weight: 800; background: var(--gold-soft);
     }
     .scoreConfLine { margin-top: 16px; font-size: 11px; color: #2b4a72; line-height: 1.65; max-width: 93%; font-weight: 600; }
-    .p1RightCol { display:flex; flex-direction:column; gap: 24px; height: 100%; }
+    .p1RightCol { display: flex; flex-direction: column; height: 100%; min-height: 480px; }
+    .keyMetricCard { margin-top: 24px; position: relative; z-index: 1; }
 
     .metricCard, .panelCard { border: 1px solid var(--line); border-radius: 14px; padding: 12px; background:#fff; }
     .metricTitle, .panelTitle { font-size: 12px; color: var(--muted); margin-bottom: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; }
@@ -788,21 +821,34 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     .metricList span { color: var(--muted); }
     .metricList b { color: var(--ink); word-break: break-word; overflow-wrap: break-word; max-width: 65%; text-align: right; }
     .radarPanel {
-      margin-top: 26px;
-      margin-bottom: 10px;
+      margin-top: 0;
+      margin-bottom: 0;
       border: 1px solid #e6edf3;
       border-radius: 12px;
-      padding: 28px;
+      padding: 32px;
       background:
         radial-gradient(circle at 22% 14%, rgba(14,165,233,0.08), rgba(14,165,233,0) 45%),
         linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
       page-break-inside: avoid;
       break-inside: avoid;
       box-shadow: 0 14px 30px rgba(15,23,42,0.08);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      min-height: 480px;
     }
-    .radarWrap { margin-top: 16px; display: flex; justify-content: center; page-break-inside: avoid; break-inside: avoid; min-height: 460px; align-items: center; }
-    .radarWrap svg { max-width: 100%; height: auto; border-radius: 12px; border: 1px solid rgba(14,165,233,0.15); }
-    .radarPanel .miniText { margin-top: 16px; margin-bottom: 8px; }
+    .radarWrap {
+      margin-top: 18px;
+      display: flex;
+      justify-content: center;
+      page-break-inside: avoid;
+      break-inside: avoid;
+      min-height: 520px;
+      align-items: center;
+      padding: 18px;
+    }
+    .radarWrap svg { display: block; margin: 0 auto; max-width: 94%; height: auto; border-radius: 12px; border: 1px solid rgba(14,165,233,0.15); }
+    .radarPanel .miniText { margin-top: 20px; margin-bottom: 10px; }
     .infoGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: 26px; align-items: stretch; }
     .p1Zone .panelCard {
       box-shadow: 0 6px 16px rgba(15,23,42,0.03);
@@ -832,7 +878,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     .riskPill.note { background: #eff6ff; border-color: #bfdbfe; color: #1e3a8a; }
     .executiveDivider {
       border-top: 1px solid #e6edf3;
-      margin-top: 34px;
+      margin-top: 0;
       margin-bottom: 20px;
       height: 0;
       background: none;
@@ -1033,18 +1079,23 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       .wrap { padding: 0; }
       .hero { padding: 24px; break-inside: avoid; }
       .section { margin-top: 14px; padding: 12px; }
-      .execLayout, .domainGrid, .forensicGrid, .infoGrid, .premiumGrid, .fpGrid, .riskStrip { grid-template-columns: 1fr; }
+      .domainGrid, .forensicGrid, .premiumGrid, .fpGrid { grid-template-columns: 1fr; }
       .fpGrid { grid-template-columns: 1fr; }
       .p1Section { margin-top: 26px; }
-      .p1Zone { margin-top: 26px; padding: 22px; }
-      .scoreBadge { min-height: 380px; padding: 24px; }
+      .p1Zone { margin-top: 26px; margin-bottom: 24px; padding: 22px; }
+      .heroDashboard { padding: 14px; }
+      .execLayout { grid-template-columns: 1.18fr 1fr; gap: 24px; }
+      .scoreBadge { min-height: 390px; padding: 24px; }
       .scoreBubble { width: 220px; height: 220px; }
       .scoreValue { font-size: 72px; }
-      .radarPanel { margin-top: 24px; padding: 22px; }
-      .radarWrap { min-height: 360px; }
+      .p1RightCol { min-height: 390px; }
+      .radarPanel { margin-top: 0; padding: 26px; min-height: 390px; }
+      .radarWrap { min-height: 400px; padding: 12px; }
+      .keyMetricCard { margin-top: 18px; }
+      .infoGrid { grid-template-columns: 1fr 1fr; }
       .infoGrid { margin-top: 24px; gap: 16px; }
-      .riskStrip { margin-top: 22px; gap: 12px; }
-      .executiveDivider { margin-top: 28px; margin-bottom: 18px; }
+      .riskStrip { grid-template-columns: 1fr 1fr; margin-top: 22px; gap: 12px; }
+      .executiveDivider { margin-top: 0; margin-bottom: 18px; }
       .forensicPhoto img, .evidencePhotoCard img { height: 140px; }
       .evidenceGroup, .evidenceObsPanel, .evidenceLimitationsPanel, .evidencePhotoCard { break-inside: avoid; page-break-inside: avoid; }
       .evidencePhotoGrid { gap: 10px; }
@@ -1089,7 +1140,8 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       <div class="sectionDivider"></div>
 
       <div class="p1Zone">
-        <div class="execLayout">
+        <div class="heroDashboard">
+          <div class="execLayout">
           <div class="scoreBadge">
             <div class="scoreLabel">Overall Surgical Quality Score</div>
             <div class="scoreBubble">
@@ -1101,18 +1153,20 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
           </div>
 
           <div class="p1RightCol">
-            <div class="metricCard">
-              <div class="metricTitle">Key Metrics</div>
-              <div class="metricList">
-                <div><span>Donor quality</span><b>${esc(metrics.donorQuality)}</b></div>
-                <div><span>Survival estimate</span><b>${esc(metrics.graftSurvival)}</b></div>
-                <div><span>Transection risk</span><b>${esc(metrics.transectionRisk)}</b></div>
-                <div><span>Implant density</span><b>${esc(metrics.implantationDensity)}</b></div>
-                <div><span>Hairline naturalness</span><b>${esc(metrics.hairlineNaturalness)}</b></div>
-                <div><span>Donor scar visibility</span><b>${esc(metrics.donorScarVisibility)}</b></div>
-              </div>
-            </div>
             ${radarPanel}
+          </div>
+          </div>
+        </div>
+
+        <div class="metricCard keyMetricCard">
+          <div class="metricTitle">Key Metrics</div>
+          <div class="metricList">
+            <div><span>Donor quality</span><b>${esc(metrics.donorQuality)}</b></div>
+            <div><span>Survival estimate</span><b>${esc(metrics.graftSurvival)}</b></div>
+            <div><span>Transection risk</span><b>${esc(metrics.transectionRisk)}</b></div>
+            <div><span>Implant density</span><b>${esc(metrics.implantationDensity)}</b></div>
+            <div><span>Hairline naturalness</span><b>${esc(metrics.hairlineNaturalness)}</b></div>
+            <div><span>Donor scar visibility</span><b>${esc(metrics.donorScarVisibility)}</b></div>
           </div>
         </div>
 
