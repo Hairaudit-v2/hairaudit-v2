@@ -9,6 +9,7 @@ import { buildRubricTitles } from "@/lib/audit/rubricTitles";
 import { buildReportViewModel, normalizeAuditMode, type AuditMode } from "@/lib/pdf/reportBuilder";
 import { resolveAuditModeFromCaseAccess } from "@/lib/reports/accessMode";
 import { verifyRenderToken } from "@/lib/reports/internalRenderToken";
+import { applyAuditorOverridesToSummary } from "@/lib/auditor/applyOverrides";
 
 function createSupabaseAdmin() {
   return createClient(
@@ -179,14 +180,16 @@ export default async function ReportHtmlPage({
     .limit(1)
     .maybeSingle();
 
-  const summary = (latestReport?.summary ?? {}) as Summary & {
-    answers?: Record<string, Record<string, { value?: number | boolean | string }>>;
-    audit_answers?: Record<string, Record<string, { value?: number | boolean | string }>>;
-    scorecard_answers?: Record<string, Record<string, { value?: number | boolean | string }>>;
-    computed?: { component_scores?: { domains?: Record<string, number>; sections?: Record<string, number> } };
-    area_scores?: Record<string, number> | null;
-    section_scores?: Record<string, number> | null;
-  };
+  let summary = (latestReport?.summary ?? {}) as Summary & Record<string, unknown>;
+  if (latestReport?.id) {
+    const { data: overrides } = await supabase
+      .from("audit_score_overrides")
+      .select("domain_key, ai_score, ai_weighted_score, manual_score, manual_weighted_score, delta_score")
+      .eq("report_id", latestReport.id);
+    if (Array.isArray(overrides) && overrides.length > 0) {
+      summary = applyAuditorOverridesToSummary(summary as Record<string, unknown>, overrides) as typeof summary;
+    }
+  }
   const findings = Array.isArray(summary.findings) ? summary.findings : (summary.highlights ?? []);
   const forensic = summary.forensic_audit;
   const domainV1 = forensic?.domain_scores_v1?.domains ?? null;

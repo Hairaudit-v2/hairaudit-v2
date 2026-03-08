@@ -119,7 +119,7 @@ export async function POST(req: Request) {
   }
 }
 
-/** DELETE ?caseId=&reportId=&domainKey= — restore AI score (remove override) */
+/** DELETE ?caseId=&reportId=&domainKey= — restore AI score (remove override). Omit domainKey to restore all. */
 export async function DELETE(req: Request) {
   try {
     const supabase = await createSupabaseAuthServerClient();
@@ -137,16 +137,18 @@ export async function DELETE(req: Request) {
     const reportId = searchParams.get("reportId")?.trim();
     const domainKey = searchParams.get("domainKey")?.trim();
 
-    if (!caseId || !reportId || !domainKey) {
-      return NextResponse.json({ ok: false, error: "Missing caseId, reportId, or domainKey" }, { status: 400 });
+    if (!caseId || !reportId) {
+      return NextResponse.json({ ok: false, error: "Missing caseId or reportId" }, { status: 400 });
     }
 
-    const { error } = await admin
+    let query = admin
       .from("audit_score_overrides")
       .delete()
       .eq("case_id", caseId)
-      .eq("report_id", reportId)
-      .eq("domain_key", domainKey);
+      .eq("report_id", reportId);
+    if (domainKey) query = query.eq("domain_key", domainKey);
+
+    const { error } = await query;
 
     if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
     return NextResponse.json({ ok: true });

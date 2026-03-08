@@ -580,6 +580,65 @@ export default function AuditorReviewPanel({
           Preview final report
         </button>
         <button
+          onClick={async () => {
+            try {
+              const res = await fetch("/api/auditor/report-status", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ reportId, action: "approve_final_report" }),
+              });
+              const json = await res.json();
+              if (json.ok) onRefresh?.();
+              else alert(json.error ?? "Failed");
+            } catch (e: any) {
+              alert(e?.message ?? "Failed");
+            }
+          }}
+          className="rounded-lg border border-emerald-300/40 bg-emerald-300/10 px-4 py-2 text-sm font-semibold text-emerald-100 hover:bg-emerald-300/20"
+        >
+          Approve final report
+        </button>
+        <button
+          onClick={async () => {
+            try {
+              const res = await fetch(
+                `/api/auditor/score-overrides?caseId=${caseId}&reportId=${reportId}`,
+                { method: "DELETE" }
+              );
+              const json = await res.json();
+              if (json.ok) {
+                await fetchOverrides();
+                onRefresh?.();
+              } else alert(json.error ?? "Failed");
+            } catch (e: any) {
+              alert(e?.message ?? "Failed");
+            }
+          }}
+          disabled={overrides.length === 0}
+          className="rounded-lg border border-slate-600 bg-slate-800 px-4 py-2 text-sm font-semibold text-slate-200 hover:bg-slate-700 disabled:opacity-50"
+        >
+          Restore all AI values
+        </button>
+        <button
+          onClick={async () => {
+            try {
+              const res = await fetch("/api/auditor/report-status", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ reportId, action: "needs_more_evidence" }),
+              });
+              const json = await res.json();
+              if (json.ok) onRefresh?.();
+              else alert(json.error ?? "Failed");
+            } catch (e: any) {
+              alert(e?.message ?? "Failed");
+            }
+          }}
+          className="rounded-lg border border-amber-300/40 bg-amber-300/10 px-4 py-2 text-sm font-semibold text-amber-100 hover:bg-amber-300/20"
+        >
+          Mark needs more evidence
+        </button>
+        <button
           onClick={onRefresh}
           className="rounded-lg border border-slate-600 bg-slate-800 px-4 py-2 text-sm font-semibold text-slate-200 hover:bg-slate-700"
         >

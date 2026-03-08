@@ -450,7 +450,7 @@ export default async function Page({
 
       {domains.length > 0 && (
         <div className="mt-6">
-          {isAuditor ? (
+          {isAuditor && latestReport ? (
             <AuditorReviewPanel
               caseId={c.id}
               reportId={latestReport.id}

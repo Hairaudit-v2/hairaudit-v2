@@ -501,7 +501,7 @@ export default function ContributionRequestsClient({
               <div><dt className="text-slate-500">Contribution received</dt><dd className="text-slate-200">{fmt(detailRequest.contribution_received_at)}</dd></div>
               <div><dt className="text-slate-500">Completed</dt><dd className="text-slate-200">{fmt(detailRequest.completed_at)}</dd></div>
               <div><dt className="text-slate-500">Benchmark eligible</dt><dd className="text-slate-200">{detailRequest.benchmark_eligible ? "Yes" : "No"}</dd></div>
-              {detailRequest.contribution_payload && typeof detailRequest.contribution_payload === "object" && Object.keys(detailRequest.contribution_payload as object).length > 0 && (
+              {detailRequest.contribution_payload != null && typeof detailRequest.contribution_payload === "object" && Object.keys(detailRequest.contribution_payload as object).length > 0 ? (
                 <div>
                   <dt className="text-slate-500">Contribution summary</dt>
                   <dd className="mt-1 rounded border border-white/10 bg-slate-800/50 p-2 font-mono text-xs text-slate-300">
@@ -509,7 +509,7 @@ export default function ContributionRequestsClient({
                     {(JSON.stringify(detailRequest.contribution_payload).length > 500) ? "…" : ""}
                   </dd>
                 </div>
-              )}
+              ) : null}
             </dl>
             <div className="mt-4 flex gap-2">
               <Link

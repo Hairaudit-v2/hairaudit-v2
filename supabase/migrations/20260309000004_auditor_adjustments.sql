@@ -156,3 +156,52 @@ CREATE POLICY "audit_section_feedback_delete" ON audit_section_feedback
   FOR DELETE USING (
     EXISTS (SELECT 1 FROM profiles p WHERE p.id = auth.uid() AND p.role = 'auditor')
   );
+
+-- Part 6: Audit trail — history of all override changes (who, when, what, previous, new)
+CREATE TABLE IF NOT EXISTS audit_score_override_history (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  override_id UUID REFERENCES audit_score_overrides(id) ON DELETE SET NULL,
+  case_id UUID NOT NULL,
+  report_id UUID NOT NULL,
+  domain_key TEXT NOT NULL,
+  action TEXT NOT NULL CHECK (action IN ('insert', 'update', 'delete')),
+  previous_ai_score NUMERIC(6,2),
+  previous_manual_score NUMERIC(6,2),
+  new_ai_score NUMERIC(6,2),
+  new_manual_score NUMERIC(6,2),
+  changed_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  changed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_override_history_override ON audit_score_override_history(override_id);
+CREATE INDEX IF NOT EXISTS idx_override_history_case ON audit_score_override_history(case_id);
+CREATE INDEX IF NOT EXISTS idx_override_history_changed_at ON audit_score_override_history(changed_at DESC);
+
+COMMENT ON TABLE audit_score_override_history IS 'Audit trail for score override changes; preserves who/when/what/previous/new.';
+
+-- Trigger to log changes (SECURITY DEFINER so trigger can insert into history regardless of RLS)
+CREATE OR REPLACE FUNCTION log_override_history()
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    INSERT INTO audit_score_override_history (override_id, case_id, report_id, domain_key, action, new_ai_score, new_manual_score, changed_by)
+    VALUES (NEW.id, NEW.case_id, NEW.report_id, NEW.domain_key, 'insert', NEW.ai_score, NEW.manual_score, NEW.created_by);
+  ELSIF TG_OP = 'UPDATE' THEN
+    INSERT INTO audit_score_override_history (override_id, case_id, report_id, domain_key, action, previous_ai_score, previous_manual_score, new_ai_score, new_manual_score, changed_by)
+    VALUES (NEW.id, NEW.case_id, NEW.report_id, NEW.domain_key, 'update', OLD.ai_score, OLD.manual_score, NEW.ai_score, NEW.manual_score, NEW.created_by);
+  ELSIF TG_OP = 'DELETE' THEN
+    INSERT INTO audit_score_override_history (override_id, case_id, report_id, domain_key, action, previous_ai_score, previous_manual_score, changed_by)
+    VALUES (OLD.id, OLD.case_id, OLD.report_id, OLD.domain_key, 'delete', OLD.ai_score, OLD.manual_score, OLD.created_by);
+  END IF;
+  RETURN COALESCE(NEW, OLD);
+END;
+$$;
+
+DROP TRIGGER IF EXISTS audit_score_overrides_history_trigger ON audit_score_overrides;
+CREATE TRIGGER audit_score_overrides_history_trigger
+  AFTER INSERT OR UPDATE OR DELETE ON audit_score_overrides
+  FOR EACH ROW EXECUTE FUNCTION log_override_history();
+
+ALTER TABLE audit_score_override_history ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "override_history_auditor_select" ON audit_score_override_history
+  FOR SELECT USING (EXISTS (SELECT 1 FROM profiles p WHERE p.id = auth.uid() AND p.role = 'auditor'));
