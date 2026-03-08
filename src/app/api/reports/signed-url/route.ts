@@ -1,11 +1,16 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { tryCreateSupabaseAdminClient } from "@/lib/supabase/admin";
-import { parseRole } from "@/lib/roles";
+import { canAccessCase } from "@/lib/case-access";
 
 function extractCaseIdFromPath(p: string): string {
-  const parts = p.split("/").filter(Boolean);
+  const raw = String(p ?? "").trim();
+  if (!raw) return "";
+  const normalized = raw.replace(/^https?:\/\/[^/]+/i, "");
+  const parts = normalized.split("/").filter(Boolean);
   if (parts[0] === "cases" && parts[1]) return parts[1];
+  if (parts[0] === "reports" && parts[1]) return parts[1];
+  if (/^[0-9a-fA-F-]{36}$/.test(parts[0] ?? "")) return parts[0] ?? "";
   return parts[0] ?? "";
 }
 
@@ -31,22 +36,22 @@ export async function GET(req: Request) {
     const admin = tryCreateSupabaseAdminClient();
     const db = admin ?? supabaseAuth;
 
-    const { data: c } = await db
+    const { data: c, error: caseErr } = await db
       .from("cases")
       .select("id, user_id, patient_id, doctor_id, clinic_id")
       .eq("id", caseId)
       .maybeSingle();
 
-    const role = parseRole((user.user_metadata as Record<string, unknown>)?.role);
-    const allowed =
-      Boolean(c) &&
-      (c!.user_id === user.id ||
-        c!.patient_id === user.id ||
-        c!.doctor_id === user.id ||
-        c!.clinic_id === user.id ||
-        role === "auditor");
+    if (caseErr) {
+      console.error("[reports/signed-url] case lookup error", { caseId, message: caseErr.message });
+    }
 
-    if (!c || !allowed) {
+    const allowed = await canAccessCase(user.id, c ?? null);
+
+    if (!c) {
+      return NextResponse.json({ error: "Case not found" }, { status: 404 });
+    }
+    if (!allowed) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
