@@ -94,14 +94,14 @@ export default async function PublicClinicProfilePage({
     row.benchmark_eligible_validated_count ?? row.benchmark_eligible_count ?? 0;
 
   const nextMilestone = getNextMilestoneFromProfile({
-    current_award_tier: row.current_award_tier,
+    current_award_tier: row.current_award_tier ?? undefined,
     validated_case_count: validatedCount,
-    average_forensic_score: row.average_forensic_score,
+    average_forensic_score: row.average_forensic_score ?? undefined,
     benchmark_eligible_validated_count: benchmarkValidated,
-    transparency_score: row.transparency_score,
-    documentation_integrity_average: row.documentation_integrity_average,
-    award_progression_paused: row.award_progression_paused,
-    volume_confidence_score: row.volume_confidence_score,
+    transparency_score: row.transparency_score ?? undefined,
+    documentation_integrity_average: row.documentation_integrity_average ?? undefined,
+    award_progression_paused: row.award_progression_paused ?? undefined,
+    volume_confidence_score: row.volume_confidence_score ?? undefined,
   });
 
   const { data: doctors } = await admin
