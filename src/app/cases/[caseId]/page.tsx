@@ -388,7 +388,6 @@ export default async function Page({
       {isPatientForCase && (
         <InviteClinicContributionCard
           caseId={c.id}
-          disabled={Boolean(c.submitted_at) || c.status === "submitted"}
           defaultClinicName={clinicLabel === "Unknown clinic" ? "" : clinicLabel}
           defaultDoctorName={doctorLabel}
         />

@@ -66,6 +66,9 @@ export default function InviteClinicContributionCard({
         Allow HairAudit to contact your clinic or surgeon to request procedural documentation for a more complete forensic
         review of your case.
       </p>
+      <p className="mt-2 text-xs text-cyan-200/90">
+        You can send a contribution request even after your case has been submitted.
+      </p>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <label className="text-sm text-slate-200">
