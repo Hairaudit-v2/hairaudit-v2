@@ -5,23 +5,47 @@ import Link from "next/link";
 const faqs = [
   {
     q: "What does HairAudit do?",
-    a: "HairAudit provides independent, evidence-based audits of hair transplant procedures. We assess surgical quality, donor area integrity, graft handling, implantation accuracy, and likely growth outcomes.",
+    a: "HairAudit provides independent, evidence-based forensic audits of hair transplant procedures. We assess surgical quality, donor area integrity, graft handling, implantation accuracy, and outcome potential using structured scoring and visual evidence analysis. We do not perform procedures or promote clinics.",
   },
   {
     q: "Does HairAudit perform hair transplants?",
-    a: "No. HairAudit does not perform hair transplants and does not promote clinics, surgeons, or products. Our role is to deliver unbiased, independent evaluation.",
+    a: "No. HairAudit does not perform hair transplants and does not promote clinics, surgeons, or products. Our role is to deliver unbiased, independent evaluation only.",
+  },
+  {
+    q: "How do confidence scores work?",
+    a: "Confidence reflects how complete the evidence is for each part of the audit. More complete documentation (e.g. pre-op, donor, recipient, post-op photos and key details) supports higher confidence. Lower confidence does not mean a negative finding — it means we are more limited in what we can conclude. The report states where evidence is strong and where it is limited.",
+  },
+  {
+    q: "What happens if I do not have full documentation?",
+    a: "You can still submit. We analyse what you provide and score confidence by domain. Missing photos or details will be noted and may limit the strength of conclusions in those areas. The report will state what was assessed and what could not be assessed due to missing evidence. In some cases, clinic or doctor contribution can later improve evidence completeness.",
+  },
+  {
+    q: "How is HairAudit different from asking the clinic for an opinion?",
+    a: "A clinic opinion is from the same provider whose work is being evaluated. HairAudit is an independent third party with no financial interest in the outcome. Our audit uses defined criteria and benchmark methodology, not provider self-assessment. That independence can provide a separate reference point for understanding quality and outcome.",
+  },
+  {
+    q: "Can HairAudit help me understand corrective options?",
+    a: "Yes. The report can help structure your thinking about next steps. It identifies strengths and limitations in the procedure and may suggest areas that could be relevant to corrective planning (e.g. density, design, donor capacity). We do not give medical advice or recommend specific treatments; we provide independent forensic context that you and your clinician can use in decisions.",
+  },
+  {
+    q: "Can an audit report be useful if I need independent documentation of concerns?",
+    a: "An audit report can provide independent documentation of what was assessed and what the evidence showed. It may assist in structuring a conversation with a provider or in providing context if you pursue other avenues. We do not give legal advice or guarantee any particular outcome; we deliver a clear, evidence-based record of our analysis that you can use as you see fit.",
+  },
+  {
+    q: "How does HairAudit compare cases or determine benchmark quality?",
+    a: "We use a fixed set of scoring domains and criteria so that cases are assessed consistently. Benchmark quality is determined by how well a case meets defined standards across those domains (e.g. planning, donor preservation, graft handling, implantation, documentation). We do not compare your case to other patients by name; we compare it to the same clinical and evidence standards we apply to all audits.",
   },
   {
     q: "Who can submit a case?",
-    a: "Both patients seeking clarity on their procedure and clinics or surgeons wanting to benchmark quality can submit cases for audit.",
+    a: "During our patient beta, individuals can submit their transplant case for independent forensic review. Clinic and doctor participation will open in later stages of the platform rollout.",
   },
   {
     q: "Is my information kept confidential?",
-    a: "Yes. All submissions are handled confidentially and never shared without consent.",
+    a: "Yes. All submissions are handled confidentially and never shared without your consent.",
   },
   {
     q: "What does the audit report include?",
-    a: "Reports include structured scoring, donor quality assessment, analysis of surgical technique, and actionable findings. Each case is assessed using defined criteria for consistency and transparency.",
+    a: "Reports include a structured scorecard by domain, confidence where relevant, donor and recipient analysis, findings on technique and outcome potential, and corrective-planning context where applicable. Each case is assessed using the same defined criteria for consistency and transparency.",
   },
 ];
 
@@ -48,7 +72,7 @@ export default function FAQPage() {
               href="/signup"
               className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors"
             >
-              Request an Audit
+              Request an Audit (Patient Beta)
             </Link>
           </div>
         </div>

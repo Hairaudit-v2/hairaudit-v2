@@ -116,12 +116,12 @@ const dashboardPreviewBullets = [
 ];
 
 const dashboardMetrics = [
-  { label: "Transparency Participation Rate", value: "78%" },
-  { label: "Audited Cases", value: "14" },
-  { label: "Doctor-Contributed Cases", value: "9" },
-  { label: "Benchmark-Eligible Cases", value: "5" },
-  { label: "Average Validated Score", value: "87" },
-  { label: "Documentation Integrity", value: "High" },
+  { label: "Transparency Participation Rate", value: "—" },
+  { label: "Audited Cases", value: "—" },
+  { label: "Doctor-Contributed Cases", value: "—" },
+  { label: "Benchmark-Eligible Cases", value: "—" },
+  { label: "Average Validated Score", value: "—" },
+  { label: "Documentation Integrity", value: "—" },
 ];
 
 const dashboardImpactItems = [
@@ -134,8 +134,8 @@ const dashboardImpactItems = [
 const dashboardChips = [
   "Verified",
   "Benchmark Active",
-  "Gold Tier",
-  "5 Validated Benchmarks",
+  "Recognition tier",
+  "Validated benchmarks",
 ];
 
 const commercialValueCards = [
@@ -442,10 +442,10 @@ export default function VerifiedSurgeonTransparencyLanding() {
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <h3 className="text-lg font-semibold text-white">
-                        Example Clinic Profile
+                        Example profile layout
                       </h3>
                       <p className="mt-1 text-xs text-slate-500 uppercase tracking-wider">
-                        Evidence-backed recognition profile
+                        Your metrics appear here when you participate
                       </p>
                     </div>
                     <span className="inline-flex items-center rounded-lg border border-cyan-500/40 bg-cyan-500/15 px-3 py-1.5 text-xs font-semibold text-cyan-300">
@@ -489,7 +489,7 @@ export default function VerifiedSurgeonTransparencyLanding() {
                           Current tier
                         </p>
                         <p className="mt-0.5 text-xl font-bold text-amber-400">
-                          Gold
+                          —
                         </p>
                       </div>
                       <div className="text-slate-500">→</div>
@@ -498,13 +498,12 @@ export default function VerifiedSurgeonTransparencyLanding() {
                           Next tier
                         </p>
                         <p className="mt-0.5 text-lg font-semibold text-slate-300">
-                          Platinum
+                          —
                         </p>
                       </div>
                     </div>
                     <p className="mt-4 rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 py-2 text-sm text-cyan-200">
-                      2 more benchmark-eligible validated cases required for
-                      Platinum review
+                      Your next milestone appears here based on validated participation
                     </p>
                   </div>
                 </div>

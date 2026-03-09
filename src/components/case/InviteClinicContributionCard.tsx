@@ -95,7 +95,7 @@ export default function InviteClinicContributionCard({
             className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
             value={clinicEmail}
             onChange={(e) => setClinicEmail(e.target.value)}
-            placeholder="clinic@example.com"
+            placeholder="clinic@yourpractice.com"
             disabled={disabled || submitting}
           />
         </label>
@@ -106,7 +106,7 @@ export default function InviteClinicContributionCard({
             className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
             value={doctorEmail}
             onChange={(e) => setDoctorEmail(e.target.value)}
-            placeholder="doctor@example.com"
+            placeholder="doctor@yourpractice.com"
             disabled={disabled || submitting}
           />
         </label>

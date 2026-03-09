@@ -24,9 +24,9 @@ export default function HowItWorksPage() {
               How it works
             </h1>
             <p className="mt-4 text-slate-600 text-sm sm:text-base">
-              HairAudit follows a clear, step-by-step audit process designed to objectively assess hair
-              transplant quality using clinical evidence and structured review criteria. Our analysis
-              is powered by{" "}
+              HairAudit delivers independent, evidence-based forensic review through a clear, step-by-step
+              process. We assess hair transplant quality using structured criteria and clinical evidence.
+              Our methodology is supported by{" "}
               <Link href="/follicle-intelligence" className="text-amber-600 hover:text-amber-500 font-medium">
                 Follicle Intelligence
               </Link>

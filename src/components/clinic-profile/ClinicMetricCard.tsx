@@ -2,7 +2,7 @@ type ClinicMetricCardProps = {
   label: string;
   value: string | number;
   sub?: string | null;
-  /** When true, show a subtle placeholder style (e.g. "—" or "Coming soon") */
+  /** When true, show a subtle placeholder style (e.g. "—" for missing data) */
   placeholder?: boolean;
 };
 

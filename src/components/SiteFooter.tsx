@@ -8,7 +8,7 @@ export default function SiteFooter() {
           <div>
             <h4 className="font-semibold text-white mb-3">HairAudit</h4>
             <p className="text-sm">
-              Independent, evidence-based audits of hair transplant procedures.
+              Independent, evidence-based forensic audits of hair transplant procedures.
             </p>
           </div>
           <div>
@@ -36,7 +36,7 @@ export default function SiteFooter() {
               </li>
               <li>
                 <Link href="/signup" className="hover:text-amber-400 transition-colors">
-                  Apply for Participation
+                  Request an Audit (Patient Beta)
                 </Link>
               </li>
               <li>
@@ -78,8 +78,9 @@ export default function SiteFooter() {
           </div>
           <div>
             <h4 className="font-semibold text-white mb-3">Contact</h4>
-            <p className="text-sm">1 Main Street</p>
-            <p className="text-sm">New York, NY 11111</p>
+            <p className="text-sm font-medium text-slate-300">HairAudit Global Operations</p>
+            <p className="text-sm">Brisbane, Queensland</p>
+            <p className="text-sm">Australia</p>
             <a
               href="mailto:auditor@hairaudit.com"
               className="text-sm hover:text-amber-400 transition-colors block mt-2"
@@ -91,7 +92,7 @@ export default function SiteFooter() {
         <div className="mt-8 pt-8 border-t border-slate-700 text-center text-sm space-y-1">
           <p>HairAudit — Audit and feedback for hair transplant procedures</p>
           <p className="text-slate-500">
-            Audits powered by{" "}
+            Analysis assisted by{" "}
             <Link href="/follicle-intelligence" className="text-amber-400 hover:text-amber-300 transition-colors font-medium">
               Follicle Intelligence
             </Link>

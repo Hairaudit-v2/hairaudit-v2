@@ -73,7 +73,7 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
               href="/signup"
               className="text-sm font-medium text-slate-300 hover:text-amber-400 transition-colors hidden sm:block"
             >
-              Request an Audit
+              Request an Audit (Beta)
             </Link>
             <Link
               href="/login"
@@ -85,7 +85,7 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
               href="/signup"
               className="text-sm font-medium px-4 py-2 rounded-lg bg-amber-500 text-slate-900 hover:bg-amber-400 transition-colors"
             >
-              Create account
+              Join patient beta
             </Link>
           </nav>
         ) : (
@@ -100,7 +100,7 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
               href="/signup"
               className="text-sm font-medium px-4 py-2 rounded-lg bg-amber-500 text-slate-900 hover:bg-amber-400 transition-colors"
             >
-              Create account
+              Join patient beta
             </Link>
           </nav>
         )}

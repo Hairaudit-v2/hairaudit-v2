@@ -23,11 +23,11 @@ export default function TermsPage() {
           <section>
             <h2 className="text-xl font-semibold text-slate-900 mt-8">2. Description of Services</h2>
             <p>
-              HairAudit provides independent, evidence-based audits of hair transplant procedures. We
-              assess surgical quality, donor area integrity, graft handling, implantation accuracy,
-              and expected growth outcomes. Our services are designed for patients seeking clarity
-              and for clinics or surgeons seeking objective quality benchmarking. HairAudit does not
-              perform hair transplants and does not promote clinics, surgeons, or products.
+              HairAudit provides independent, evidence-based forensic audits of hair transplant
+              procedures. We assess surgical quality, donor area integrity, graft handling,
+              implantation accuracy, and outcome potential. Our services are designed for patients
+              seeking clarity and for clinics or surgeons seeking objective benchmarking. HairAudit
+              does not perform procedures and does not promote clinics, surgeons, or products.
             </p>
           </section>
 

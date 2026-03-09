@@ -16,7 +16,7 @@ export default function PrivacyPage() {
             <h2 className="text-xl font-semibold text-slate-900 mt-8">1. Introduction</h2>
             <p>
               HairAudit (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) operates hairaudit.com and provides
-              independent hair transplant audit services. This Privacy Policy explains how we collect,
+              independent, evidence-based forensic audit services. This Privacy Policy explains how we collect,
               use, store, and protect your personal information when you use our website and services.
             </p>
           </section>

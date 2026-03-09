@@ -15,7 +15,7 @@ const CLINIC_SELECT =
 export const metadata = {
   title: "Clinic directory | HairAudit",
   description:
-    "Explore clinics participating in the HairAudit transparency ecosystem. Evidence-backed profiles built from validated participation and recognised transparency standards.",
+    "Explore clinics in the HairAudit transparency ecosystem. Independent, evidence-based benchmarking; clinic profiles reflect validated participation and recognised transparency standards.",
 };
 
 export default async function ClinicDirectoryPage({
@@ -73,8 +73,8 @@ export default async function ClinicDirectoryPage({
               Explore clinics participating in the HairAudit transparency ecosystem
             </h1>
             <p className="mt-6 text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed">
-              Browse evidence-backed clinic profiles built from validated participation, documented
-              case contribution, and recognised transparency standards.
+              Independent, evidence-based benchmarking. These profiles reflect validated participation,
+              documented case contribution, and recognised transparency standards.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-4">
               <Link

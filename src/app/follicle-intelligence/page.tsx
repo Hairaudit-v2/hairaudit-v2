@@ -47,19 +47,20 @@ export default function FollicleIntelligencePage() {
           <div className="max-w-4xl mx-auto text-center">
             <ScrollReveal delay={0}>
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
-                The Power of Follicle Intelligence
+                Follicle Intelligence
               </h1>
             </ScrollReveal>
             <ScrollReveal delay={0.1}>
               <p className="mt-4 sm:mt-6 text-slate-300 text-base sm:text-lg max-w-2xl mx-auto">
-                HairAudit audits are powered by Follicle Intelligence — advanced technology designed
-                to bring objectivity, consistency, and depth to hair transplant assessment.
+                HairAudit delivers independent, evidence-based forensic audits. Follicle Intelligence
+                supports that methodology with structured analysis, consistent criteria, and depth
+                across donor, graft, and recipient assessment.
               </p>
             </ScrollReveal>
             <ScrollReveal delay={0.2}>
               <p className="mt-2 text-slate-400 text-sm sm:text-base max-w-2xl mx-auto">
-                By combining structured clinical criteria with sophisticated analysis, Follicle
-                Intelligence helps our auditors deliver evidence-based reports you can trust.
+                AI-assisted analysis within an independent review framework — so objectivity and
+                evidence lead, technology supports.
               </p>
             </ScrollReveal>
           </div>
@@ -73,9 +74,9 @@ export default function FollicleIntelligencePage() {
                 What Follicle Intelligence Delivers
               </h2>
               <p className="mt-3 sm:mt-4 text-slate-600 text-center max-w-2xl mx-auto text-sm sm:text-base">
-                Follicle Intelligence powers the analysis behind every HairAudit report. It supports
-                our auditors with structured assessment tools, consistent criteria, and deep
-                analytical capabilities across donor, graft, and recipient areas.
+                Independent, evidence-based review comes first. Follicle Intelligence supports that
+                review with structured assessment tools, consistent criteria, and analytical depth
+                across donor, graft, and recipient areas.
               </p>
             </ScrollReveal>
             <div className="mt-10 sm:mt-14 space-y-6 sm:space-y-8">
@@ -105,7 +106,8 @@ export default function FollicleIntelligencePage() {
               </h2>
               <p className="mt-3 sm:mt-4 text-slate-600 text-center max-w-2xl mx-auto text-sm sm:text-base">
                 Hair transplant quality assessment has historically relied on subjective judgment and
-                inconsistent criteria. Follicle Intelligence changes that.
+                inconsistent criteria. Independent, evidence-based benchmarking — supported by structured
+                analysis — changes that.
               </p>
             </ScrollReveal>
             <div className="mt-10 grid sm:grid-cols-2 gap-4 sm:gap-6">
@@ -131,7 +133,7 @@ export default function FollicleIntelligencePage() {
                 <div className="p-5 rounded-xl bg-white border border-slate-200 shadow-sm">
                   <h3 className="font-semibold text-slate-900">Depth</h3>
                   <p className="mt-2 text-sm text-slate-600">
-                    Beyond surface-level review, Follicle Intelligence supports detailed analysis of
+                    Beyond surface-level review, our methodology supports detailed analysis of
                     donor integrity, graft quality, and implantation precision.
                   </p>
                 </div>
@@ -154,10 +156,10 @@ export default function FollicleIntelligencePage() {
           <div className="max-w-2xl mx-auto text-center">
             <ScrollReveal>
               <h2 className="text-2xl sm:text-3xl font-bold">
-                Experience an Audit Powered by Follicle Intelligence
+                Request an independent forensic audit
               </h2>
               <p className="mt-4 text-slate-300 text-sm sm:text-base">
-                Submit your case for an independent, evidence-based audit.
+                Independent, evidence-based review. Analysis assisted by Follicle Intelligence.
               </p>
               <Link
                 href="/signup"

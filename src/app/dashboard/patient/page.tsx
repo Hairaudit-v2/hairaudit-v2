@@ -448,7 +448,7 @@ export default async function PatientDashboardPage() {
               <section className="rounded-2xl border border-white/10 bg-white/5 p-6">
                 <h2 className="text-sm font-semibold text-white">Graft Integrity Index</h2>
                 <p className="mt-2 text-xs text-slate-300/80">
-                  Coming soon: this feature is still rolling out in your environment.
+                  This feature is rolling out in your environment. Check back soon.
                 </p>
               </section>
             ) : null}

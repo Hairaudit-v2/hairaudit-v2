@@ -15,7 +15,7 @@ export default function DisclaimerPage() {
           <section className="mt-8">
             <h2 className="text-xl font-semibold text-slate-900 mt-8">Medical Disclaimer</h2>
             <p>
-              HairAudit provides independent, evidence-based audits of hair transplant procedures for
+              HairAudit provides independent, evidence-based forensic audits of hair transplant procedures for
               <strong> informational purposes only</strong>. Our audit reports, scores, and findings
               do <strong>not</strong> constitute medical advice, diagnosis, or treatment. They are
               not a substitute for consultation with a qualified healthcare provider or hair
@@ -40,8 +40,8 @@ export default function DisclaimerPage() {
           <section>
             <h2 className="text-xl font-semibold text-slate-900 mt-8">Independence and Objectivity</h2>
             <p>
-              HairAudit does not perform hair transplants and does not promote clinics, surgeons, or
-              products. Our audits are intended to be independent and evidence-based. We have no
+              HairAudit does not perform procedures and does not promote clinics, surgeons, or
+              products. Our audits are independent and evidence-based. We have no
               financial interest in any clinic, surgeon, or procedure we review.
             </p>
           </section>

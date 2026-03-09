@@ -3,71 +3,137 @@ import Image from "next/image";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import ScrollReveal from "@/components/ui/ScrollReveal";
-import ServiceCard from "@/components/ui/ServiceCard";
+import ServiceCard, { type ServiceCardLayer } from "@/components/ui/ServiceCard";
 
-const services = [
+const services: Array<{
+  title: string;
+  shortDesc: string;
+  image?: { src: string; alt: string };
+  images?: { src: string; alt: string }[];
+  layers: ServiceCardLayer;
+  cta?: string;
+  href?: string;
+}> = [
   {
     title: "Patient Hair Transplant Audit",
-    shortDesc: "Independent review of your procedure with donor area, graft placement, and growth analysis.",
-    fullDesc: "Our most comprehensive audit for patients. We analyse your submitted case — pre-op, donor, recipient, and post-op photos — against clinical standards. You receive a structured report with scores, findings, and guidance on what to expect.",
-    bullets: [
-      "Donor area integrity and extraction patterns",
-      "Graft placement and implantation quality",
-      "Hairline design and density assessment",
-      "Likely growth performance and outcome expectations",
-    ],
+    shortDesc: "Independent forensic review of your procedure: donor, graft handling, implantation, and outcome potential.",
     image: { src: "/images/patient-report-sample.jpg", alt: "Patient audit report sample" },
+    layers: {
+      whoItIsFor: "Patients seeking independent review of a transplant result or concern.",
+      whatWeAnalyse: [
+        "Donor extraction pattern and spacing",
+        "Implantation quality and density distribution",
+        "Hairline design and recession handling",
+        "Graft handling and viability signals",
+        "Density and healing evidence from your photos",
+      ],
+      whatYouReceive: [
+        "Forensic audit report with structured scorecard",
+        "Visual evidence analysis across scoring domains",
+        "Corrective planning insights where relevant",
+        "Clear next-step guidance based on findings",
+      ],
+      whyItMatters:
+        "Helps you understand whether the outcome aligns with expected surgical standards and what next step — if any — may be justified.",
+    },
+    cta: "Request an audit",
   },
   {
     title: "Post-Procedure Outcome Analysis",
-    shortDesc: "Assessment of surgical outcomes to identify strengths, risks, and growth factors.",
-    fullDesc: "Focused on outcomes rather than technique alone. We evaluate healing, graft survival indicators, and factors that may influence final density and aesthetic result.",
-    bullets: [
-      "Healing and scarring assessment",
-      "Graft survival indicators",
-      "Density and coverage potential",
-      "Follow-up and corrective planning",
-    ],
+    shortDesc: "Evidence-based assessment of healing, graft survival signals, and outcome potential.",
     image: { src: "/images/patient-feedback.jpg", alt: "Post-procedure outcome analysis" },
+    layers: {
+      whoItIsFor: "Patients who want to understand how their result is tracking and what factors may affect final outcome.",
+      whatWeAnalyse: [
+        "Healing and scarring indicators",
+        "Graft survival and retention signals",
+        "Density and coverage progression",
+        "Factors that may limit or support final result",
+      ],
+      whatYouReceive: [
+        "Outcome-focused forensic report",
+        "Structured assessment of healing and survival evidence",
+        "Density and aesthetic potential assessment",
+        "Follow-up and corrective planning where relevant",
+      ],
+      whyItMatters:
+        "Helps you gauge whether the result is on track, what may be affecting it, and whether further intervention or reassurance is appropriate.",
+    },
+    cta: "Request an audit",
   },
   {
     title: "Donor Area & Extraction Review",
-    shortDesc: "Detailed analysis of donor management, extraction patterns, and potential over-harvesting.",
-    fullDesc: "A specialised audit concentrating on the donor zone. We assess extraction spacing, punch size impact, transection rates, and long-term donor sustainability.",
-    bullets: [
-      "Extraction patterns and spacing",
-      "Donor depletion and over-harvesting risk",
-      "Transection and graft quality markers",
-      "Future procedure capacity",
-    ],
+    shortDesc: "Focused forensic review of donor zone integrity, extraction patterns, and long-term sustainability.",
     image: { src: "/images/donor-area.jpg", alt: "Donor area assessment" },
+    layers: {
+      whoItIsFor: "Patients or referring clinicians who need a clear view of donor management and future capacity.",
+      whatWeAnalyse: [
+        "Extraction pattern and spacing",
+        "Punch impact and transection risk markers",
+        "Donor depletion and over-harvesting risk",
+        "Graft quality and future procedure capacity",
+      ],
+      whatYouReceive: [
+        "Donor-focused forensic report",
+        "Visual evidence analysis of extraction and donor zone",
+        "Structured assessment of sustainability and risk",
+        "Capacity and limitation summary",
+      ],
+      whyItMatters:
+        "Helps you understand donor health, whether extraction was conservative and sustainable, and what future options remain.",
+    },
+    cta: "Request an audit",
   },
   {
     title: "Implantation & Hairline Design Review",
-    shortDesc: "Evaluation of graft angles, density distribution, and hairline design quality.",
-    fullDesc: "Focused on recipient-side quality. We review incision angles, density distribution, hairline design, and overall aesthetic potential.",
-    bullets: [
-      "Incision angles and natural appearance",
-      "Density and distribution uniformity",
-      "Hairline design and recession handling",
-      "Long-term aesthetic outcome",
-    ],
+    shortDesc: "Recipient-side forensic review: angles, density, hairline design, and aesthetic potential.",
     image: { src: "/images/hairline-implantation.jpg", alt: "Hairline and implantation review" },
+    layers: {
+      whoItIsFor: "Patients focused on recipient quality, hairline design, and long-term aesthetic outcome.",
+      whatWeAnalyse: [
+        "Incision angles and natural appearance",
+        "Density and distribution uniformity",
+        "Hairline design and recession handling",
+        "Aesthetic and growth potential",
+      ],
+      whatYouReceive: [
+        "Recipient-side forensic report",
+        "Visual evidence analysis of implantation and hairline",
+        "Structured scorecard for design and density",
+        "Insight into likely aesthetic outcome",
+      ],
+      whyItMatters:
+        "Helps you understand whether implantation and design meet expected standards and what to expect for naturalness and coverage.",
+    },
+    cta: "Request an audit",
   },
   {
     title: "Clinic & Surgeon Benchmark Audits",
-    shortDesc: "Structured audits for clinics and surgeons seeking objective quality benchmarking.",
-    fullDesc: "For practices and surgeons who want independent benchmarking. We provide structured audits of sample cases to support quality improvement and patient transparency.",
-    bullets: [
-      "Benchmark scores against audit criteria",
-      "Strengths and improvement areas",
-      "Consistency across case samples",
-      "Optional ongoing audit programs",
-    ],
+    shortDesc: "Structured external review of documented case performance for transparency and recognition readiness.",
     images: [
       { src: "/images/clinic-feedback.jpg", alt: "Clinic audit sample" },
       { src: "/images/doctors-feedback.jpg", alt: "Surgeon audit sample" },
     ],
+    layers: {
+      whoItIsFor: "Clinics and surgeons seeking structured external review of documented case performance.",
+      whatWeAnalyse: [
+        "Planning and documentation quality",
+        "Donor preservation and extraction discipline",
+        "Graft viability chain and handling",
+        "Implantation consistency and hairline design",
+        "Documentation integrity for benchmark eligibility",
+      ],
+      whatYouReceive: [
+        "Benchmark-oriented case review and scorecard",
+        "Transparency contribution impact on recognition",
+        "Recognition-readiness and next-milestone insight",
+        "Structured feedback for quality improvement",
+      ],
+      whyItMatters:
+        "Helps clinics strengthen transparency, understand benchmark readiness, and support evidence-based recognition in the HairAudit ecosystem.",
+    },
+    cta: "Learn about participation",
+    href: "/verified-surgeon-program",
   },
 ];
 
@@ -82,19 +148,18 @@ export default function ServicesPage() {
           <div className="max-w-4xl mx-auto text-center">
             <ScrollReveal delay={0}>
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
-                Our services
+                Forensic audit services
               </h1>
             </ScrollReveal>
             <ScrollReveal delay={0.1}>
               <p className="mt-4 sm:mt-6 text-slate-300 text-base sm:text-lg max-w-2xl mx-auto">
-                Each audit focuses on surgical quality, donor area management, graft handling,
-                implantation accuracy, and expected growth outcomes.
+                Independent, evidence-based forensic review by type: patient audits, outcome analysis,
+                donor and recipient reviews, and clinic benchmark audits.
               </p>
             </ScrollReveal>
             <ScrollReveal delay={0.2}>
               <p className="mt-2 text-slate-400 text-sm sm:text-base">
-                HairAudit does not perform hair transplants and does not promote clinics or practitioners.
-                Audits powered by{" "}
+                HairAudit does not perform procedures or promote clinics. Methodology supported by{" "}
                 <Link href="/follicle-intelligence" className="text-amber-400 hover:text-amber-300 font-medium">
                   Follicle Intelligence
                 </Link>
@@ -109,10 +174,10 @@ export default function ServicesPage() {
           <div className="max-w-5xl mx-auto">
             <ScrollReveal>
               <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 text-center">
-                What you&apos;ll receive
+                What you receive
               </h2>
               <p className="mt-3 sm:mt-4 text-slate-600 text-center max-w-2xl mx-auto text-sm sm:text-base">
-                Each audit delivers a comprehensive report with structured findings, scores, and expert analysis.
+                Every audit produces a forensic report: structured scorecard, visual evidence analysis, and clear deliverables. Patient reports look like this.
               </p>
             </ScrollReveal>
             <ScrollReveal delay={0.1}>
@@ -125,7 +190,7 @@ export default function ServicesPage() {
                   className="w-full h-auto"
                 />
                 <p className="p-4 sm:p-6 text-sm text-slate-500 bg-slate-50">
-                  Sample patient audit report
+                  Sample patient forensic report
                 </p>
               </div>
             </ScrollReveal>
@@ -137,10 +202,10 @@ export default function ServicesPage() {
           <div className="max-w-6xl mx-auto">
             <ScrollReveal>
               <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 text-center">
-                Explore our audit services
+                Audit types and deliverables
               </h2>
               <p className="mt-3 sm:mt-4 text-slate-600 text-center max-w-2xl mx-auto text-sm sm:text-base">
-                Click a card to reveal more details about each service.
+                Each service has a clear audience, scope, deliverable set, and decision impact. Expand a card for full detail.
               </p>
             </ScrollReveal>
             <div className="mt-10 sm:mt-14 grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
@@ -149,10 +214,11 @@ export default function ServicesPage() {
                   <ServiceCard
                     title={s.title}
                     shortDesc={s.shortDesc}
-                    fullDesc={s.fullDesc}
-                    bullets={s.bullets}
+                    layers={s.layers}
                     image={s.image}
                     images={s.images}
+                    cta={s.cta}
+                    href={s.href}
                   />
                 </ScrollReveal>
               ))}
@@ -164,9 +230,9 @@ export default function ServicesPage() {
         <section className="px-4 sm:px-6 py-12 sm:py-16 bg-slate-900 text-white">
           <div className="max-w-2xl mx-auto text-center">
             <ScrollReveal>
-              <h2 className="text-2xl sm:text-3xl font-bold">Ready to get started?</h2>
+              <h2 className="text-2xl sm:text-3xl font-bold">Request a forensic audit</h2>
               <p className="mt-4 text-slate-300 text-sm sm:text-base">
-                Submit your case for an independent, evidence-based audit.
+                Submit your case for independent forensic review and a structured benchmark report.
               </p>
               <Link
                 href="/signup"

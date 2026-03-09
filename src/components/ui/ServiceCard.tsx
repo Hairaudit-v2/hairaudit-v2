@@ -5,11 +5,20 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 
+export type ServiceCardLayer = {
+  whoItIsFor: string;
+  whatWeAnalyse: string[];
+  whatYouReceive: string[];
+  whyItMatters: string;
+};
+
 type ServiceCardProps = {
   title: string;
   shortDesc: string;
-  fullDesc: string;
+  fullDesc?: string;
   bullets?: string[];
+  /** When set, expanded content shows four-layer structure instead of fullDesc + bullets */
+  layers?: ServiceCardLayer;
   href?: string;
   cta?: string;
   image?: { src: string; alt: string };
@@ -21,6 +30,7 @@ export default function ServiceCard({
   shortDesc,
   fullDesc,
   bullets = [],
+  layers,
   href = "/signup",
   cta = "Request an audit",
   image,
@@ -97,16 +107,53 @@ export default function ServiceCard({
             className="overflow-hidden"
           >
             <div className="px-6 pb-6 sm:px-8 sm:pb-8 pt-0 border-t border-slate-100">
-              <p className="text-slate-600 text-sm sm:text-base mt-4">{fullDesc}</p>
-              {bullets.length > 0 && (
-                <ul className="mt-4 space-y-2">
-                  {bullets.map((b) => (
-                    <li key={b} className="flex gap-2 text-sm sm:text-base text-slate-600">
-                      <span className="text-amber-500 flex-shrink-0">•</span>
-                      {b}
-                    </li>
-                  ))}
-                </ul>
+              {layers ? (
+                <div className="mt-4 space-y-5">
+                  <div>
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">Who it is for</h3>
+                    <p className="mt-1 text-sm text-slate-700">{layers.whoItIsFor}</p>
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">What we analyse</h3>
+                    <ul className="mt-1 space-y-1">
+                      {layers.whatWeAnalyse.map((item) => (
+                        <li key={item} className="flex gap-2 text-sm text-slate-700">
+                          <span className="text-amber-500 flex-shrink-0">—</span>
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">What you receive</h3>
+                    <ul className="mt-1 space-y-1">
+                      {layers.whatYouReceive.map((item) => (
+                        <li key={item} className="flex gap-2 text-sm text-slate-700">
+                          <span className="text-amber-500 flex-shrink-0">—</span>
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">Why it matters</h3>
+                    <p className="mt-1 text-sm text-slate-700">{layers.whyItMatters}</p>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {fullDesc && <p className="text-slate-600 text-sm sm:text-base mt-4">{fullDesc}</p>}
+                  {bullets.length > 0 && (
+                    <ul className="mt-4 space-y-2">
+                      {bullets.map((b) => (
+                        <li key={b} className="flex gap-2 text-sm sm:text-base text-slate-600">
+                          <span className="text-amber-500 flex-shrink-0">•</span>
+                          {b}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </>
               )}
               <Link
                 href={href}

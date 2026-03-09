@@ -5,59 +5,33 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import ServiceCard from "@/components/ui/ServiceCard";
-import Sparkline from "@/components/ui/Sparkline";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export const revalidate = 600;
 
+/** Public homepage metrics. Single source of truth: cases table only. Beta-appropriate and never contradictory. */
 async function getPublicAuditMetrics() {
   try {
     const admin = createSupabaseAdminClient();
 
-    const { count: completedTotal } = await admin
+    const baseFilter = admin
+      .from("cases")
+      .select("id", { count: "exact", head: true });
+
+    const { count: auditsCompleted } = await baseFilter
+      .eq("status", "complete")
+      .eq("is_test", false);
+
+    const { count: casesUnderReview } = await admin
       .from("cases")
       .select("id", { count: "exact", head: true })
-      .eq("status", "complete");
-
-    const days = 30;
-    const start = new Date();
-    start.setHours(0, 0, 0, 0);
-    start.setDate(start.getDate() - (days - 1));
-    const startIso = start.toISOString();
-
-    const { data: reports } = await admin
-      .from("reports")
-      .select("case_id, created_at")
-      .eq("status", "complete")
-      .gte("created_at", startIso)
-      .order("created_at", { ascending: true })
-      // Safety cap: keeps marketing page fast even if volume grows.
-      .limit(5000);
-
-    const dailyCounts = Array.from({ length: days }, () => 0);
-
-    const latestByCase = new Map<string, Date>();
-    for (const r of reports ?? []) {
-      const caseId = String((r as { case_id?: unknown }).case_id ?? "");
-      const d = (r as { created_at?: string | null }).created_at ? new Date((r as { created_at: string }).created_at) : null;
-      if (!caseId || !d || Number.isNaN(d.getTime())) continue;
-      const prev = latestByCase.get(caseId);
-      if (!prev || d > prev) latestByCase.set(caseId, d);
-    }
-
-    for (const [, d] of latestByCase) {
-      const day = new Date(d);
-      day.setHours(0, 0, 0, 0);
-      const idx = Math.floor((day.getTime() - start.getTime()) / (24 * 60 * 60 * 1000));
-      if (idx >= 0 && idx < days) dailyCounts[idx] += 1;
-    }
-
-    const completedLast30 = dailyCounts.reduce((a, b) => a + b, 0);
+      .eq("status", "submitted")
+      .eq("is_test", false);
 
     return {
-      completedTotal: completedTotal ?? 0,
-      completedLast30,
-      dailyCounts,
+      auditsCompleted: auditsCompleted ?? 0,
+      casesUnderReview: casesUnderReview ?? 0,
+      forensicScoringDomains: 5,
     };
   } catch {
     return null;
@@ -86,16 +60,16 @@ export default async function HomePage() {
           </div>
           <div className="relative max-w-4xl mx-auto text-center">
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
-              Independent Hair Transplant Audits
+              Independent Forensic Benchmarking for Hair Transplant Outcomes
             </h1>
             <p className="mt-4 text-lg sm:text-xl text-slate-300">
-              Evidence-based clinical review of surgical quality, technique, and outcomes
+              Evidence-based transplant review through structured visual analysis and benchmark scoring
             </p>
             <p className="mt-6 text-slate-400 max-w-2xl mx-auto">
-              HairAudit provides independent clinical audits of hair transplant and hair restoration
-              procedures worldwide. We assess donor extraction quality, graft handling, implantation
-              technique, hairline design, and likely growth outcomes using structured analysis and
-              medical evidence. Our audits are powered by{" "}
+              HairAudit is the independent layer for hair transplant outcome transparency. We deliver
+              forensic audits of donor extraction, graft handling, implantation technique, and
+              hairline design using structured surgical scoring and visual evidence analysis. Our
+              methodology is supported by{" "}
               <Link href="/follicle-intelligence" className="text-amber-400 hover:text-amber-300 transition-colors font-medium">
                 Follicle Intelligence
               </Link>
@@ -106,7 +80,7 @@ export default async function HomePage() {
                 href="/signup"
                 className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors"
               >
-                Request an Audit
+                Request an Audit (Patient Beta)
               </Link>
               <Link
                 href="/how-it-works"
@@ -133,29 +107,25 @@ export default async function HomePage() {
 
             {metrics && (
               <div className="mt-10 flex justify-center">
-                <div className="w-full max-w-md rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-4">
-                  <div className="flex items-start justify-between gap-6">
-                    <div className="text-left">
-                      <div className="text-xs font-semibold text-slate-200/80">Audits completed</div>
-                      <div className="mt-1 flex items-baseline gap-2">
-                        <div className="text-3xl font-bold text-white">{metrics.completedTotal}</div>
-                        <div className="text-xs text-slate-200/70">total</div>
-                      </div>
-                      <div className="mt-1 text-xs text-slate-200/70">
-                        Last 30 days: <span className="font-medium text-slate-100">{metrics.completedLast30}</span>
-                      </div>
+                <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-5">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-4">
+                    Platform at a glance
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
+                    <div>
+                      <p className="text-2xl sm:text-3xl font-bold text-white tabular-nums">{metrics.auditsCompleted}</p>
+                      <p className="mt-0.5 text-xs text-slate-400">Audits completed</p>
                     </div>
-
-                    <div className="shrink-0 text-right">
-                      <div className="rounded-lg border border-white/10 bg-slate-950/30 p-1">
-                        <Sparkline
-                          values={metrics.dailyCounts}
-                          className="block"
-                          strokeClassName="text-amber-300"
-                          fillClassName="text-amber-200/20"
-                        />
-                      </div>
-                      <div className="mt-1 text-[10px] text-slate-200/60">Last 30 days</div>
+                    <div>
+                      <p className="text-2xl sm:text-3xl font-bold text-white tabular-nums">{metrics.casesUnderReview}</p>
+                      <p className="mt-0.5 text-xs text-slate-400">Cases under review</p>
+                    </div>
+                    <div>
+                      <p className="text-2xl sm:text-3xl font-bold text-white tabular-nums">{metrics.forensicScoringDomains}</p>
+                      <p className="mt-0.5 text-xs text-slate-400">Forensic scoring domains</p>
+                    </div>
+                    <div className="col-span-2 sm:col-span-1 flex flex-col justify-end">
+                      <p className="text-xs text-slate-400">Human-reviewed, structured reports</p>
                     </div>
                   </div>
                 </div>
@@ -169,10 +139,10 @@ export default async function HomePage() {
           <div className="max-w-5xl mx-auto">
             <ScrollReveal>
               <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 text-center">
-                What you&apos;ll receive
+                Your forensic report
               </h2>
               <p className="mt-3 sm:mt-4 text-slate-600 text-center max-w-2xl mx-auto text-sm sm:text-base">
-                Each audit delivers a comprehensive report with structured findings, scores, and expert analysis.
+                Every case receives a benchmark report: structured scores, visual evidence analysis, and outcome transparency across our forensic scoring domains.
               </p>
             </ScrollReveal>
             <ScrollReveal delay={0.1}>
@@ -194,22 +164,22 @@ export default async function HomePage() {
           <div className="max-w-4xl mx-auto">
             <ScrollReveal>
               <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 text-center">
-                Objective, evidence-based clinical assessment
+                The independent benchmark for transplant outcome transparency
               </h2>
             </ScrollReveal>
             <ScrollReveal delay={0.1}>
               <p className="mt-6 text-slate-600 text-center text-sm sm:text-base">
-                HairAudit was created to bring transparency, accountability, and clinical clarity to the
-                hair restoration industry. We provide independent audits of hair transplant procedures
-                by analysing surgical technique, donor area integrity, graft handling, implantation
-                accuracy, and post-operative standards using structured medical review methods.
+                HairAudit was built to establish an independent forensic standard for hair transplant
+                quality. We apply structured visual evidence analysis and benchmark scoring across donor
+                integrity, graft handling, implantation accuracy, and outcome potential — no clinic
+                affiliation, no promotion.
               </p>
             </ScrollReveal>
             <ScrollReveal delay={0.15}>
               <p className="mt-4 text-slate-600 text-center text-sm sm:text-base">
-                HairAudit does not perform hair transplants and does not promote clinics or surgeons.
-                Our role is to deliver unbiased, evidence-based reporting that supports informed patient
-                decisions, corrective planning, and continuous improvement across the industry.
+                We do not perform procedures or promote surgeons. Our role is evidence-based
+                benchmarking: unbiased reporting that supports informed decisions, corrective
+                planning, and outcome transparency for patients and the industry.
               </p>
             </ScrollReveal>
           </div>
@@ -220,11 +190,11 @@ export default async function HomePage() {
           <div className="max-w-6xl mx-auto">
             <ScrollReveal>
               <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 text-center">
-                Our services
+                Forensic review by domain
               </h2>
               <p className="mt-3 sm:mt-4 text-slate-600 text-center max-w-2xl mx-auto text-sm sm:text-base">
-                Each audit focuses on surgical quality, donor area management, graft handling,
-                implantation accuracy, and expected growth outcomes.
+                Structured benchmarking across surgical quality, donor management, graft handling,
+                implantation accuracy, and outcome potential.
               </p>
             </ScrollReveal>
             <div className="mt-10 sm:mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
@@ -295,15 +265,11 @@ export default async function HomePage() {
           <div className="max-w-5xl mx-auto">
             <ScrollReveal>
               <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 text-center">
-                Our audit process
+                From submission to benchmark report
               </h2>
               <p className="mt-3 sm:mt-4 text-slate-600 text-center max-w-2xl mx-auto text-sm sm:text-base">
-                A structured, evidence-based review from submission to report
-              </p>
-              <p className="mt-2 text-slate-600 text-center max-w-2xl mx-auto text-sm sm:text-base">
-                HairAudit follows a clear, step-by-step audit process designed to objectively assess hair
-                transplant quality using clinical evidence and structured review criteria. Our analysis
-                is powered by{" "}
+                Independent forensic review with defined criteria and visual evidence analysis from
+                submission through to your structured report. Analysis is assisted by{" "}
                 <Link href="/follicle-intelligence" className="text-amber-600 hover:text-amber-500 font-medium">
                   Follicle Intelligence
                 </Link>
@@ -312,11 +278,11 @@ export default async function HomePage() {
             </ScrollReveal>
             <div className="mt-10 sm:mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 sm:gap-4">
               {[
-                { step: 1, title: "Submit Case", desc: "Upload photos and case details" },
-                { step: 2, title: "Review & Analysis", desc: "Structured clinical assessment" },
-                { step: 3, title: "Structured Scoring", desc: "Defined criteria and consistency" },
-                { step: 4, title: "Audit Report", desc: "Comprehensive findings" },
-                { step: 5, title: "Guidance & Next Steps", desc: "Expert guidance for successful outcomes" },
+                { step: 1, title: "Submit Case", desc: "Photos and case details" },
+                { step: 2, title: "Forensic Review", desc: "Visual evidence and benchmark analysis" },
+                { step: 3, title: "Structured Scoring", desc: "Defined criteria across domains" },
+                { step: 4, title: "Benchmark Report", desc: "Scores and outcome transparency" },
+                { step: 5, title: "Guidance & Next Steps", desc: "Findings and next steps" },
               ].map(({ step, title, desc }, i) => (
                 <ScrollReveal key={step} delay={i * 0.05}>
                   <div className="text-center p-4 sm:p-0">
@@ -340,56 +306,55 @@ export default async function HomePage() {
           <div className="max-w-2xl mx-auto text-center">
             <ScrollReveal>
               <h2 className="text-2xl sm:text-3xl font-bold">
-                Request an Audit Review
+                Submit for independent forensic review
               </h2>
               <p className="mt-4 text-slate-300 text-sm sm:text-base">
-                Independent, evidence-based review with no clinic promotion or affiliations. Whether you
-                are a patient seeking clarity, or a clinic or surgeon looking to benchmark quality,
-                HairAudit provides an independent pathway to objective clinical insight.
+                No clinic affiliation. Evidence-based benchmark scoring and visual analysis. During
+                patient beta, submit your transplant case for forensic review. Clinic and doctor
+                participation will open in later stages.
               </p>
               <Link
                 href="/signup"
                 className="mt-6 sm:mt-8 inline-flex items-center justify-center px-6 py-3.5 sm:px-8 sm:py-4 rounded-xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors text-base min-h-[44px]"
               >
-                Submit your case
+                Join patient beta
               </Link>
             </ScrollReveal>
           </div>
         </section>
 
-        {/* Why Choose HairAudit */}
+        {/* Why HairAudit */}
         <section className="px-4 sm:px-6 py-12 sm:py-20 bg-slate-50">
           <div className="max-w-5xl mx-auto">
             <ScrollReveal>
               <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 text-center">
-                Why Choose HairAudit
+                Why HairAudit
               </h2>
               <p className="mt-3 sm:mt-4 text-slate-600 text-center max-w-2xl mx-auto text-sm sm:text-base">
-                Independent. Evidence-based. Clinically focused. All submissions are handled
-                confidentially and never shared without consent.
+                Independent first. Evidence-based benchmarking. Submissions are confidential and never shared without consent.
               </p>
             </ScrollReveal>
             <div className="mt-10 sm:mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {[
                 {
-                  title: "Truly Independent",
-                  desc: "We do not perform hair transplants and do not promote clinics, surgeons, or products. Our audits are unbiased and evidence-based.",
+                  title: "Independent",
+                  desc: "We do not perform procedures or promote clinics or surgeons. Forensic benchmarking only — no affiliation, no bias.",
                 },
                 {
-                  title: "Clinically Focused Analysis",
-                  desc: "Reviews are based on surgical technique, donor area integrity, graft handling, implantation accuracy, and expected growth — not testimonials or marketing claims.",
+                  title: "Evidence-based",
+                  desc: "Structured visual evidence analysis and benchmark scoring: donor integrity, graft handling, implantation, outcome potential. Not testimonials or marketing.",
                 },
                 {
-                  title: "Structured Audit Methodology",
-                  desc: "Each case is assessed using defined criteria to ensure consistency, transparency, and medically relevant conclusions.",
+                  title: "Forensic methodology",
+                  desc: "Defined scoring criteria and consistent domains so every case is comparable, transparent, and medically relevant.",
                 },
                 {
-                  title: "Designed for Patients and Professionals",
-                  desc: "Our reports support patients seeking clarity, clinics benchmarking performance, and surgeons committed to improving outcomes.",
+                  title: "Outcome transparency",
+                  desc: "Reports give patients clarity and support corrective planning; they give the industry a shared benchmark for quality.",
                 },
                 {
-                  title: "Global and Procedure-Focused",
-                  desc: "HairAudit operates independently of location and clinic size, focusing solely on the quality of the procedure and its likely outcome.",
+                  title: "Global benchmark standard",
+                  desc: "Location- and clinic-agnostic. We focus solely on procedure quality and outcome potential.",
                 },
               ].map((item, i) => (
                 <ScrollReveal key={item.title} delay={i * 0.05}>
@@ -410,7 +375,7 @@ export default async function HomePage() {
               href="/signup"
               className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3.5 sm:py-3 rounded-xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors min-h-[44px]"
             >
-              Create account
+              Join patient beta
             </Link>
             <Link
               href="/login"

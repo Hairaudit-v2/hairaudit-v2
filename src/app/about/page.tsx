@@ -30,9 +30,9 @@ export default function AboutPage() {
           <ScrollReveal delay={0.15}>
             <p className="mt-6 text-slate-600 text-sm sm:text-base">
             HairAudit was created to bring transparency, accountability, and clinical clarity to the
-            hair restoration industry. We provide independent audits of hair transplant procedures by
-            analysing surgical technique, donor area integrity, graft handling, implantation accuracy,
-            and post-operative standards using structured medical review methods.
+            hair restoration industry. We provide independent, evidence-based forensic audits of hair
+            transplant procedures by analysing surgical technique, donor area integrity, graft handling,
+            implantation accuracy, and post-operative standards using structured review methods.
             </p>
           </ScrollReveal>
           <ScrollReveal delay={0.2}>
@@ -43,9 +43,9 @@ export default function AboutPage() {
           </ScrollReveal>
           <ScrollReveal delay={0.25}>
             <p className="mt-4 text-slate-600 text-sm sm:text-base">
-              HairAudit does not perform hair transplants and does not promote clinics or surgeons. Our
-              role is to deliver unbiased, evidence-based reporting that supports informed patient
-              decisions, corrective planning, and continuous improvement across the industry.
+              HairAudit does not perform procedures or promote clinics or surgeons. Our role is
+              independent, evidence-based benchmarking: unbiased reporting that supports informed
+              decisions, corrective planning, and outcome transparency.
             </p>
           </ScrollReveal>
           <ScrollReveal delay={0.3}>
@@ -54,7 +54,7 @@ export default function AboutPage() {
                 href="/signup"
                 className="inline-flex items-center justify-center px-6 py-3.5 rounded-xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors min-h-[44px]"
               >
-                Request an Audit
+                Request an Audit (Patient Beta)
               </Link>
             </div>
           </ScrollReveal>

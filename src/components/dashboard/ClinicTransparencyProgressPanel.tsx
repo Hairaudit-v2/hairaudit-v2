@@ -68,7 +68,7 @@ export default function ClinicTransparencyProgressPanel({
   // Scaffold: confidence uplift from clinic documentation (not yet available)
   const confidenceUpliftAvailable = false;
   const confidenceUpliftLabel = "Confidence uplift from clinic documentation";
-  const confidenceUpliftValue = confidenceUpliftAvailable ? "—" : "Coming soon";
+  const confidenceUpliftValue = confidenceUpliftAvailable ? "—" : "—";
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white shadow-sm overflow-hidden">
@@ -166,7 +166,7 @@ export default function ClinicTransparencyProgressPanel({
           <MetricCard
             label={confidenceUpliftLabel}
             value={confidenceUpliftValue}
-            sub={confidenceUpliftAvailable ? undefined : "Metric coming soon"}
+            sub={confidenceUpliftAvailable ? undefined : undefined}
           />
           <MetricCard
             label="Cases with doctor input"

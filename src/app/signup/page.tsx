@@ -122,9 +122,12 @@ export default function SignUpPage() {
                 className="h-10 w-auto object-contain"
               />
             </div>
-            <h1 className="text-2xl font-bold text-slate-900">Create account</h1>
+            <h1 className="text-2xl font-bold text-slate-900">Patient Beta Access</h1>
             <p className="mt-2 text-sm text-slate-600">
-              Create a patient beta account to start your HairAudit workflow.
+              HairAudit is currently operating in a controlled patient beta phase. Create an account to submit your transplant case for independent, evidence-based forensic review.
+            </p>
+            <p className="mt-2 text-xs text-slate-500">
+              Clinic and doctor access will open in later stages of the transparency platform rollout.
             </p>
 
             <form onSubmit={signUp} className="mt-6 space-y-4">

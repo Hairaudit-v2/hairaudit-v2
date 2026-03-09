@@ -106,7 +106,7 @@ export default function LoginPage() {
             </div>
             <h1 className="text-2xl font-bold text-slate-900">Sign in</h1>
             <p className="mt-2 text-sm text-slate-600">
-              Currently beta testing patient audits. Doctor and clinic audits to follow soon.
+              Sign in to your patient beta account to request an audit or track your case.
             </p>
 
             <div className="mt-6 space-y-3">
@@ -134,7 +134,7 @@ export default function LoginPage() {
                   required
                   autoComplete="email"
                   className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-slate-900 placeholder-slate-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-colors"
-                  placeholder="you@example.com"
+                  placeholder="your@email.com"
                 />
               </div>
               <div>
