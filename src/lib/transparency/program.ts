@@ -54,6 +54,7 @@ function computeParticipationStatus(rate: number, invitedCount: number) {
 }
 
 export async function refreshClinicTransparencyMetrics(admin: AdminClient, clinicProfileId: string) {
+  console.info("[transparency-refresh] refreshClinicTransparencyMetrics start", { clinicProfileId });
   const { data: requests } = await admin
     .from("case_contribution_requests")
     .select("id, case_id, status")
@@ -241,6 +242,7 @@ export async function refreshClinicTransparencyMetrics(admin: AdminClient, clini
 }
 
 export async function refreshDoctorTransparencyMetrics(admin: AdminClient, doctorProfileId: string) {
+  console.info("[transparency-refresh] refreshDoctorTransparencyMetrics start", { doctorProfileId });
   const { data: requests } = await admin
     .from("case_contribution_requests")
     .select("id, case_id, status")

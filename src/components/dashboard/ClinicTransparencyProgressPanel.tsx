@@ -22,6 +22,8 @@ export type ClinicTransparencyProgressPanelProps = {
   nextMilestone: string | null;
   /** Next tier label, e.g. "SILVER" (from getNextTier). */
   nextTierLabel: string | null;
+  /** Section title (default: "Clinic Transparency Progress"). */
+  title?: string;
 };
 
 function MetricCard({
@@ -48,6 +50,7 @@ export default function ClinicTransparencyProgressPanel({
   profile,
   nextMilestone,
   nextTierLabel,
+  title = "Clinic Transparency Progress",
 }: ClinicTransparencyProgressPanelProps) {
   const p = profile ?? ({} as ClinicTransparencyProfile);
   const audited = Number(p.audited_case_count ?? 0);
@@ -71,7 +74,7 @@ export default function ClinicTransparencyProgressPanel({
     <section className="rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white shadow-sm overflow-hidden">
       <div className="border-b border-slate-200/80 bg-slate-50/60 px-4 py-3">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-600">
-          Clinic Transparency Progress
+          {title}
         </h2>
       </div>
 

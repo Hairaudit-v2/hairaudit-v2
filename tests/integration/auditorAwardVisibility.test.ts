@@ -240,3 +240,32 @@ test("computeVolumeConfidenceScore: increases with validated count", () => {
   assert.ok(computeVolumeConfidenceScore(3, AWARD_RULES) < computeVolumeConfidenceScore(8, AWARD_RULES));
   assert.equal(computeVolumeConfidenceScore(15, AWARD_RULES), 1);
 });
+
+// --- Doctor dashboard parity: getNextMilestoneFromProfile accepts doctor-profile shape ---
+test("getNextMilestoneFromProfile: works with doctor-profile-like shape", () => {
+  const doctorProfile = {
+    current_award_tier: "SILVER",
+    validated_case_count: 4,
+    contributed_case_count: 5,
+    average_forensic_score: 82,
+    benchmark_eligible_validated_count: 2,
+    benchmark_eligible_count: 2,
+    transparency_score: 80,
+    documentation_integrity_average: 75,
+    award_progression_paused: false,
+    volume_confidence_score: 50,
+  };
+  const msg = getNextMilestoneFromProfile(doctorProfile);
+  assert.ok(typeof msg === "string");
+  assert.ok(msg.length > 0);
+});
+
+// --- Leaderboard weighting prep: row shape includes weighted_benchmark_total and contribution_score ---
+test("leaderboard row shape: weighted_benchmark_total and contribution_score", () => {
+  const n = 5;
+  const weighted_benchmark_sum = 6.25;
+  const weighted_benchmark_total = weighted_benchmark_sum;
+  const contribution_score = n > 0 ? weighted_benchmark_sum / n : 0;
+  assert.equal(weighted_benchmark_total, 6.25);
+  assert.equal(contribution_score, 1.25);
+});

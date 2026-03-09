@@ -51,7 +51,7 @@ export default async function ClinicsLeaderboardPage() {
   const { data: reports } = caseIds.length
     ? await admin
         .from("reports")
-        .select("case_id, version, summary, created_at")
+        .select("case_id, version, summary, created_at, counts_for_awards, award_contribution_weight")
         .in("case_id", caseIds)
         .order("version", { ascending: false })
         .limit(6000)
@@ -73,6 +73,8 @@ export default async function ClinicsLeaderboardPage() {
     domain_weighted_sum: Record<string, number>;
     confidence_mult_sum: number;
     grade_counts: Record<string, number>;
+    /** Foundation: sum of award_contribution_weight for benchmark-eligible cases (future weighting). */
+    weighted_benchmark_sum: number;
   };
 
   const aggByClinic = new Map<string, Agg>();
@@ -99,10 +101,13 @@ export default async function ClinicsLeaderboardPage() {
       domain_weighted_sum: {},
       confidence_mult_sum: 0,
       grade_counts: {},
+      weighted_benchmark_sum: 0,
     };
 
     cur.eligible_cases += 1;
     cur.benchmark_score_sum += benchmarkScore;
+    const contribWeight = Number((rep as { award_contribution_weight?: number | null })?.award_contribution_weight);
+    if (Number.isFinite(contribWeight)) cur.weighted_benchmark_sum += contribWeight;
     const confMult = Number(bench?.overall_confidence ?? overall?.confidence_multiplier);
     if (Number.isFinite(confMult)) cur.confidence_mult_sum += clamp01(confMult);
     const grade = String(bench?.confidence_grade ?? overall?.confidence_grade ?? "").trim();
@@ -125,7 +130,15 @@ export default async function ClinicsLeaderboardPage() {
       const grade = Object.entries(a.grade_counts).sort((x, y) => (y[1] ?? 0) - (x[1] ?? 0))[0]?.[0] ?? "—";
       const domainWeightedAvg: Record<string, number> = {};
       for (const id of DOMAIN_ORDER) domainWeightedAvg[id] = (a.domain_weighted_sum[id] ?? 0) / n;
-      return { ...a, benchmark_score_avg: benchAvg, confidence_mult_avg: confAvg, confidence_grade_mode: grade, domainWeightedAvg };
+      return {
+        ...a,
+        benchmark_score_avg: benchAvg,
+        confidence_mult_avg: confAvg,
+        confidence_grade_mode: grade,
+        domainWeightedAvg,
+        weighted_benchmark_total: a.weighted_benchmark_sum,
+        contribution_score: n > 0 ? a.weighted_benchmark_sum / n : 0,
+      };
     })
     .sort((a, b) => b.benchmark_score_avg - a.benchmark_score_avg);
 

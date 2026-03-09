@@ -12,6 +12,7 @@ import { normalizeIntakeFormData, toNestedForApi } from "@/lib/intake/normalizeI
 import { shouldGeneratePdf } from "@/lib/reports/pdfReadiness";
 import { prepareCaseEvidenceManifest } from "@/lib/evidence/prepareCaseEvidence";
 import { computeAuditorReviewEligibility, computeProvisionalFromScore, computeAwardContributionWeight } from "@/lib/auditor/eligibility";
+import { refreshTransparencyMetricsForCase } from "@/lib/transparency/refreshOrchestration";
 
 function supabaseAdmin() {
   return createClient(
@@ -1262,6 +1263,15 @@ export const runAudit = inngest.createFunction(
       await setCasePipelineStatus(supabase, caseId, "pdf_ready");
       // Keep legacy-compatible terminal state for dashboards that key off "complete".
       await supabase.from("cases").update({ status: "complete" }).eq("id", caseId);
+    });
+
+    await step.run("refresh-transparency-metrics", async () => {
+      const result = await refreshTransparencyMetricsForCase(supabase, caseId, {
+        reason: "report_complete",
+        log: (msg, meta) => logger.info(msg, meta ?? {}),
+      });
+      logger.info("Transparency refresh after report complete", { caseId, ...result });
+      return result;
     });
 
     logger.info("Audit pipeline complete", { caseId, nextVersion, pdfPath: finalPdfPath });

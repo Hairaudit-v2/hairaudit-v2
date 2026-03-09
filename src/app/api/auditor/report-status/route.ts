@@ -3,6 +3,7 @@ import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { isAuditor } from "@/lib/auth/isAuditor";
 import { computeAwardContributionWeight } from "@/lib/auditor/eligibility";
+import { refreshTransparencyMetricsForCase } from "@/lib/transparency/refreshOrchestration";
 
 export const runtime = "nodejs";
 
@@ -50,7 +51,7 @@ export async function POST(req: Request) {
 
     const { data: report, error: fetchErr } = await admin
       .from("reports")
-      .select("id, summary, auditor_review_eligibility, provisional_status")
+      .select("id, case_id, summary, auditor_review_eligibility, provisional_status")
       .eq("id", reportId)
       .maybeSingle();
 
@@ -121,6 +122,19 @@ export async function POST(req: Request) {
       .eq("id", reportId);
 
     if (updateErr) return NextResponse.json({ ok: false, error: updateErr.message }, { status: 500 });
+
+    if ((action === "approve_final_report" || action === "reject_provisional") && (report as { case_id?: string }).case_id) {
+      const caseId = String((report as { case_id: string }).case_id);
+      try {
+        await refreshTransparencyMetricsForCase(admin, caseId, {
+          reason: action === "approve_final_report" ? "auditor_validated" : "auditor_rejected",
+          log: (msg, meta) => console.info(msg, meta),
+        });
+      } catch (e) {
+        console.error("[report-status] transparency refresh failed", { caseId, error: (e as Error)?.message });
+      }
+    }
+
     return NextResponse.json({ ok: true });
   } catch (e: any) {
     return NextResponse.json({ ok: false, error: String(e?.message ?? "Server error") }, { status: 500 });

@@ -3,6 +3,11 @@ import { redirect } from "next/navigation";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import CreateCaseButton from "../create-case-button";
+import ClinicTransparencyProgressPanel from "@/components/dashboard/ClinicTransparencyProgressPanel";
+import { getNextMilestoneFromProfile, getNextTier } from "@/lib/transparency/awardRules";
+
+const doctorProfileSelect =
+  "id, linked_user_id, doctor_name, transparency_score, audited_case_count, contributed_case_count, benchmark_eligible_count, average_forensic_score, documentation_integrity_average, current_award_tier, award_progression_paused, volume_confidence_score, validated_case_count, provisional_high_score_count, validated_high_score_count, low_score_case_count, benchmark_eligible_validated_count";
 
 export default async function DoctorDashboardPage() {
   const supabase = await createSupabaseAuthServerClient();
@@ -10,11 +15,41 @@ export default async function DoctorDashboardPage() {
   if (!user) redirect("/login");
 
   const admin = createSupabaseAdminClient();
+  const userEmail = String(user.email ?? "").toLowerCase();
+  const { data: byUserProfile } = await admin
+    .from("doctor_profiles")
+    .select(doctorProfileSelect)
+    .eq("linked_user_id", user.id)
+    .limit(1)
+    .maybeSingle();
+  const { data: byEmailProfile } = !byUserProfile && userEmail
+    ? await admin
+        .from("doctor_profiles")
+        .select(doctorProfileSelect)
+        .eq("doctor_email", userEmail)
+        .limit(1)
+        .maybeSingle()
+    : { data: null as typeof byUserProfile };
+  const doctorProfile = byUserProfile ?? byEmailProfile ?? null;
+
   const { data: cases } = await admin
     .from("cases")
     .select("id, title, status, created_at")
     .eq("doctor_id", user.id)
     .order("created_at", { ascending: false });
+
+  const currentTier = (doctorProfile?.current_award_tier ?? "VERIFIED") as "VERIFIED" | "SILVER" | "GOLD" | "PLATINUM";
+  const nextTier = getNextTier(currentTier);
+  const nextMilestone = getNextMilestoneFromProfile({
+    current_award_tier: doctorProfile?.current_award_tier,
+    validated_case_count: (doctorProfile as { validated_case_count?: number })?.validated_case_count ?? doctorProfile?.contributed_case_count,
+    average_forensic_score: doctorProfile?.average_forensic_score,
+    benchmark_eligible_validated_count: (doctorProfile as { benchmark_eligible_validated_count?: number })?.benchmark_eligible_validated_count ?? doctorProfile?.benchmark_eligible_count,
+    transparency_score: doctorProfile?.transparency_score,
+    documentation_integrity_average: doctorProfile?.documentation_integrity_average,
+    award_progression_paused: (doctorProfile as { award_progression_paused?: boolean })?.award_progression_paused,
+    volume_confidence_score: (doctorProfile as { volume_confidence_score?: number })?.volume_confidence_score,
+  });
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6">
@@ -46,6 +81,15 @@ export default async function DoctorDashboardPage() {
             View doctor leaderboard →
           </Link>
         </div>
+      </div>
+
+      <div className="mb-6">
+        <ClinicTransparencyProgressPanel
+          title="Doctor Transparency Progress"
+          profile={doctorProfile}
+          nextMilestone={nextMilestone}
+          nextTierLabel={nextTier ?? null}
+        />
       </div>
 
       <div className="mb-8">

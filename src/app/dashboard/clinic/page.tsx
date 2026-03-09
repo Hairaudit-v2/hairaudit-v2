@@ -6,6 +6,7 @@ import CreateCaseButton from "../create-case-button";
 import Sparkline from "@/components/ui/Sparkline";
 import { getNextMilestoneFromProfile, getNextTier } from "@/lib/transparency/awardRules";
 import ClinicTransparencyProgressPanel from "@/components/dashboard/ClinicTransparencyProgressPanel";
+import ClinicFeedbackPanel from "@/components/dashboard/ClinicFeedbackPanel";
 
 export default async function ClinicDashboardPage() {
   const supabase = await createSupabaseAuthServerClient();
@@ -184,6 +185,10 @@ export default async function ClinicDashboardPage() {
           nextMilestone={nextMilestone}
           nextTierLabel={nextTier}
         />
+      </div>
+
+      <div className="mb-6">
+        <ClinicFeedbackPanel />
       </div>
 
       <div className="mb-8">
