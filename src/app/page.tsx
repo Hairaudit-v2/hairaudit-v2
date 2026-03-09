@@ -1,257 +1,336 @@
-// HairAudit marketing site (B12 migrated)
+// HairAudit homepage — med-tech standards platform
 import Link from "next/link";
-import Image from "next/image";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import ScrollReveal from "@/components/ui/ScrollReveal";
-import ServiceCard from "@/components/ui/ServiceCard";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export const revalidate = 600;
 
-/** Public homepage metrics. Single source of truth: cases table only. Beta-appropriate and never contradictory. */
-async function getPublicAuditMetrics() {
-  try {
-    const admin = createSupabaseAdminClient();
-
-    const baseFilter = admin
-      .from("cases")
-      .select("id", { count: "exact", head: true });
-
-    const { count: auditsCompleted } = await baseFilter
-      .eq("status", "complete")
-      .eq("is_test", false);
-
-    const { count: casesUnderReview } = await admin
-      .from("cases")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "submitted")
-      .eq("is_test", false);
-
-    return {
-      auditsCompleted: auditsCompleted ?? 0,
-      casesUnderReview: casesUnderReview ?? 0,
-      forensicScoringDomains: 5,
-    };
-  } catch {
-    return null;
-  }
-}
-
-export default async function HomePage() {
-  const metrics = await getPublicAuditMetrics();
+export default function HomePage() {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-[#0a0a0f] text-slate-100">
+      {/* Subtle background gradients — premium dark med-tech */}
+      <div className="fixed inset-0 pointer-events-none" aria-hidden>
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(251,191,36,0.06),transparent)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_80%_60%,rgba(139,92,246,0.05),transparent)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_50%_30%_at_20%_80%,rgba(56,189,248,0.04),transparent)]" />
+      </div>
+
       <SiteHeader />
 
-      <main className="flex-1">
-        {/* Hero */}
-        <section className="bg-slate-900 text-white px-4 sm:px-6 py-12 sm:py-20 lg:py-24 relative overflow-hidden">
-          <div className="absolute inset-0">
-            <Image
-              src="/images/hero.jpg"
-              alt=""
-              fill
-              className="object-cover opacity-30"
-              priority
-              sizes="100vw"
-            />
-            <div className="absolute inset-0 bg-slate-900/80" />
-          </div>
-          <div className="relative max-w-4xl mx-auto text-center">
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
+      <main className="relative flex-1">
+        {/* ——— 1. HERO ——— */}
+        <section className="relative px-4 sm:px-6 py-16 sm:py-20 lg:py-28">
+          <div className="max-w-4xl mx-auto text-center">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold tracking-tight text-white leading-[1.1]">
               Independent Forensic Benchmarking for Hair Transplant Outcomes
             </h1>
-            <p className="mt-4 text-lg sm:text-xl text-slate-300">
-              Evidence-based transplant review through structured visual analysis and benchmark scoring
-            </p>
-            <p className="mt-6 text-slate-400 max-w-2xl mx-auto">
-              HairAudit is the independent layer for hair transplant outcome transparency. We deliver
-              forensic audits of donor extraction, graft handling, implantation technique, and
-              hairline design using structured surgical scoring and visual evidence analysis. Our
-              methodology is supported by{" "}
-              <Link href="/follicle-intelligence" className="text-amber-400 hover:text-amber-300 transition-colors font-medium">
-                Follicle Intelligence
-              </Link>
-              .
+            <p className="mt-6 text-lg sm:text-xl text-slate-400 max-w-3xl mx-auto leading-relaxed">
+              HairAudit provides independent, evidence-based review of transplant outcomes using
+              structured visual evidence analysis, surgical scoring, and benchmark-led methodology.
             </p>
             <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 href="/signup"
-                className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors"
+                className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors shadow-lg shadow-amber-500/20"
               >
-                Request an Audit (Patient Beta)
+                Request an Audit
               </Link>
               <Link
                 href="/how-it-works"
-                className="inline-flex items-center justify-center px-6 py-3 rounded-xl border-2 border-slate-600 text-slate-200 font-semibold hover:border-amber-500 hover:text-amber-400 transition-colors"
+                className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
               >
                 Learn How HairAudit Works
               </Link>
             </div>
-            <div className="mt-6 flex flex-wrap justify-center gap-3">
+            <p className="mt-4">
               <Link
                 href="/clinics"
-                className="text-sm font-medium text-slate-400 hover:text-amber-400 transition-colors"
+                className="text-sm font-medium text-slate-500 hover:text-amber-400 transition-colors"
               >
-                Explore Participating Clinics
+                Explore Participating Clinics →
               </Link>
-              <span className="text-slate-600" aria-hidden>·</span>
-              <Link
-                href="/verified-surgeon-program"
-                className="text-sm font-medium text-slate-400 hover:text-amber-400 transition-colors"
-              >
-                Learn About the Verified Program
-              </Link>
+            </p>
+            {/* Hero support strip — no inflated metrics */}
+            <div className="mt-12 flex flex-wrap justify-center gap-6 sm:gap-8 text-sm text-slate-500">
+              <span className="flex items-center gap-2">
+                <span className="size-1.5 rounded-full bg-amber-500/80" aria-hidden />
+                Independent review
+              </span>
+              <span className="flex items-center gap-2">
+                <span className="size-1.5 rounded-full bg-amber-500/80" aria-hidden />
+                Structured evidence analysis
+              </span>
+              <span className="flex items-center gap-2">
+                <span className="size-1.5 rounded-full bg-amber-500/80" aria-hidden />
+                Human-reviewed outputs
+              </span>
+              <span className="flex items-center gap-2">
+                <span className="size-1.5 rounded-full bg-amber-500/80" aria-hidden />
+                Methodology supported by{" "}
+                <Link href="/follicle-intelligence" className="text-amber-400/90 hover:text-amber-400 transition-colors">
+                  Follicle Intelligence
+                </Link>
+              </span>
             </div>
-
-            {metrics && (
-              <div className="mt-10 flex justify-center">
-                <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-5">
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-4">
-                    Platform at a glance
-                  </p>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
-                    <div>
-                      <p className="text-2xl sm:text-3xl font-bold text-white tabular-nums">{metrics.auditsCompleted}</p>
-                      <p className="mt-0.5 text-xs text-slate-400">Audits completed</p>
-                    </div>
-                    <div>
-                      <p className="text-2xl sm:text-3xl font-bold text-white tabular-nums">{metrics.casesUnderReview}</p>
-                      <p className="mt-0.5 text-xs text-slate-400">Cases under review</p>
-                    </div>
-                    <div>
-                      <p className="text-2xl sm:text-3xl font-bold text-white tabular-nums">{metrics.forensicScoringDomains}</p>
-                      <p className="mt-0.5 text-xs text-slate-400">Forensic scoring domains</p>
-                    </div>
-                    <div className="col-span-2 sm:col-span-1 flex flex-col justify-end">
-                      <p className="text-xs text-slate-400">Human-reviewed, structured reports</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </section>
 
-        {/* Sample Report Preview */}
-        <section className="px-4 sm:px-6 py-12 sm:py-20 bg-white">
-          <div className="max-w-5xl mx-auto">
-            <ScrollReveal>
-              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 text-center">
-                Your forensic report
-              </h2>
-              <p className="mt-3 sm:mt-4 text-slate-600 text-center max-w-2xl mx-auto text-sm sm:text-base">
-                Every case receives a benchmark report: structured scores, visual evidence analysis, and outcome transparency across our forensic scoring domains.
-              </p>
-            </ScrollReveal>
-            <ScrollReveal delay={0.1}>
-              <div className="mt-8 sm:mt-10 max-w-[410px] mx-auto rounded-2xl overflow-hidden border border-slate-200 shadow-lg">
-                <Image
-                  src="/images/patient-report-sample.jpg"
-                  alt="Sample patient audit report"
-                  width={410}
-                  height={273}
-                  className="w-full h-auto"
-                />
-              </div>
-            </ScrollReveal>
-          </div>
-        </section>
-
-        {/* Intro */}
-        <section className="px-4 sm:px-6 py-12 sm:py-20 bg-white">
-          <div className="max-w-4xl mx-auto">
-            <ScrollReveal>
-              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 text-center">
-                The independent benchmark for transplant outcome transparency
-              </h2>
-            </ScrollReveal>
-            <ScrollReveal delay={0.1}>
-              <p className="mt-6 text-slate-600 text-center text-sm sm:text-base">
-                HairAudit was built to establish an independent forensic standard for hair transplant
-                quality. We apply structured visual evidence analysis and benchmark scoring across donor
-                integrity, graft handling, implantation accuracy, and outcome potential — no clinic
-                affiliation, no promotion.
-              </p>
-            </ScrollReveal>
-            <ScrollReveal delay={0.15}>
-              <p className="mt-4 text-slate-600 text-center text-sm sm:text-base">
-                We do not perform procedures or promote surgeons. Our role is evidence-based
-                benchmarking: unbiased reporting that supports informed decisions, corrective
-                planning, and outcome transparency for patients and the industry.
-              </p>
-            </ScrollReveal>
-          </div>
-        </section>
-
-        {/* Services */}
-        <section id="services" className="px-4 sm:px-6 py-12 sm:py-20 bg-slate-50">
+        {/* ——— 2. CATEGORY DEFINING STRIP ——— */}
+        <section className="relative px-4 sm:px-6 py-16 sm:py-20 lg:py-24">
           <div className="max-w-6xl mx-auto">
             <ScrollReveal>
-              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 text-center">
-                Forensic review by domain
+              <p className="text-xs font-semibold uppercase tracking-wider text-amber-400/90">
+                Why HairAudit exists
+              </p>
+              <h2 className="mt-3 text-2xl sm:text-3xl font-bold text-white tracking-tight max-w-2xl">
+                The category-defining layer for transplant outcome transparency.
               </h2>
-              <p className="mt-3 sm:mt-4 text-slate-600 text-center max-w-2xl mx-auto text-sm sm:text-base">
-                Structured benchmarking across surgical quality, donor management, graft handling,
-                implantation accuracy, and outcome potential.
+            </ScrollReveal>
+            <div className="mt-12 grid sm:grid-cols-3 gap-6">
+              {[
+                {
+                  title: "Independent",
+                  desc: "HairAudit does not perform procedures and is designed to review outcomes without provider-side bias.",
+                },
+                {
+                  title: "Evidence-Based",
+                  desc: "Each case is assessed using visual documentation, structured scoring domains, and confidence-aware methodology.",
+                },
+                {
+                  title: "Benchmark-Oriented",
+                  desc: "The platform is being built to support the world's first independent transplant benchmark database.",
+                },
+              ].map((item, i) => (
+                <ScrollReveal key={item.title} delay={i * 0.05}>
+                  <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-6 sm:p-8 hover:border-white/15 transition-colors h-full flex flex-col">
+                    <h3 className="text-lg font-semibold text-white">{item.title}</h3>
+                    <p className="mt-3 text-sm text-slate-400 leading-relaxed flex-1">{item.desc}</p>
+                  </div>
+                </ScrollReveal>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ——— 3. WHO IT IS FOR ——— */}
+        <section className="relative px-4 sm:px-6 py-16 sm:py-20 lg:py-24">
+          <div className="max-w-6xl mx-auto">
+            <ScrollReveal>
+              <p className="text-xs font-semibold uppercase tracking-wider text-amber-400/90">
+                Who it is for
+              </p>
+              <h2 className="mt-3 text-2xl sm:text-3xl font-bold text-white tracking-tight">
+                Built for patients, clinics, surgeons, and the future of benchmarking.
+              </h2>
+            </ScrollReveal>
+            <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[
+                {
+                  who: "Patients",
+                  why: "Get an independent view of your procedure and outcome potential.",
+                  decision: "Helps you understand quality, corrective options, and next steps.",
+                },
+                {
+                  who: "Clinics",
+                  why: "Benchmark your work against structured criteria and transparency standards.",
+                  decision: "Supports quality improvement and evidence-based positioning.",
+                },
+                {
+                  who: "Surgeons / Doctors",
+                  why: "Demonstrate transparency and participate in independent recognition.",
+                  decision: "Helps you stand on documented performance, not marketing alone.",
+                },
+                {
+                  who: "Future benchmark participants",
+                  why: "The ecosystem is evolving toward a global transplant quality standard.",
+                  decision: "Early participation shapes how benchmarks are defined and used.",
+                },
+              ].map((item, i) => (
+                <ScrollReveal key={item.who} delay={i * 0.05}>
+                  <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-6 hover:border-white/15 transition-colors h-full flex flex-col">
+                    <h3 className="text-lg font-semibold text-white">{item.who}</h3>
+                    <p className="mt-2 text-sm text-slate-400 leading-relaxed">{item.why}</p>
+                    <p className="mt-3 text-xs font-medium uppercase tracking-wider text-slate-500">
+                      Decision it supports
+                    </p>
+                    <p className="mt-1 text-sm text-slate-300">{item.decision}</p>
+                  </div>
+                </ScrollReveal>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ——— 4. HOW THE PLATFORM WORKS ——— */}
+        <section id="how-it-works" className="relative px-4 sm:px-6 py-16 sm:py-20 lg:py-24">
+          <div className="max-w-5xl mx-auto">
+            <ScrollReveal>
+              <p className="text-xs font-semibold uppercase tracking-wider text-amber-400/90">
+                How the platform works
+              </p>
+              <h2 className="mt-3 text-2xl sm:text-3xl font-bold text-white tracking-tight">
+                From evidence to report to benchmark.
+              </h2>
+              <p className="mt-4 text-slate-400 max-w-2xl">
+                Platform-led workflow with human review at the core. Analysis is assisted by{" "}
+                <Link href="/follicle-intelligence" className="text-amber-400 hover:text-amber-300 transition-colors font-medium">
+                  Follicle Intelligence
+                </Link>
+                .
               </p>
             </ScrollReveal>
-            <div className="mt-10 sm:mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              <ScrollReveal delay={0}>
-                <ServiceCard
-                  title="Patient Hair Transplant Audit"
-                  shortDesc="Independent review of your procedure with donor area, graft placement, and growth analysis."
-                  fullDesc="Our most comprehensive audit for patients. We analyse your submitted case against clinical standards and deliver a structured report with scores and guidance."
-                  bullets={["Donor area integrity", "Graft placement quality", "Hairline design", "Growth expectations"]}
-                  image={{ src: "/images/patient-report-sample.jpg", alt: "Patient audit report sample" }}
-                />
-              </ScrollReveal>
-              <ScrollReveal delay={0.05}>
-                <ServiceCard
-                  title="Post-Procedure Outcome Analysis"
-                  shortDesc="Assessment of surgical outcomes and growth factors."
-                  fullDesc="Focused on outcomes — healing, graft survival indicators, and factors influencing final density."
-                  bullets={["Healing assessment", "Graft survival", "Density potential", "Follow-up planning"]}
-                  image={{ src: "/images/patient-feedback.jpg", alt: "Post-procedure outcome analysis" }}
-                />
-              </ScrollReveal>
-              <ScrollReveal delay={0.1}>
-                <ServiceCard
-                  title="Donor Area & Extraction Review"
-                  shortDesc="Analysis of extraction patterns and donor sustainability."
-                  fullDesc="Specialised audit of the donor zone — extraction spacing, punch impact, and long-term sustainability."
-                  bullets={["Extraction patterns", "Over-harvesting risk", "Graft quality", "Future capacity"]}
-                  image={{ src: "/images/donor-area.jpg", alt: "Donor area assessment" }}
-                />
-              </ScrollReveal>
-              <ScrollReveal delay={0.15}>
-                <ServiceCard
-                  title="Implantation & Hairline Design Review"
-                  shortDesc="Evaluation of graft angles, density, and hairline design."
-                  fullDesc="Recipient-side quality review — incision angles, density distribution, and aesthetic potential."
-                  bullets={["Incision angles", "Density distribution", "Hairline design", "Aesthetic outcome"]}
-                  image={{ src: "/images/hairline-implantation.jpg", alt: "Hairline and implantation review" }}
-                />
-              </ScrollReveal>
-              <ScrollReveal delay={0.2}>
-                <ServiceCard
-                  title="Clinic & Surgeon Benchmark Audits"
-                  shortDesc="Structured audits for clinics and surgeons seeking benchmarking."
-                  fullDesc="For practices wanting independent benchmarking. We provide structured audits to support quality improvement."
-                  bullets={["Benchmark scores", "Improvement areas", "Case consistency", "Ongoing programs"]}
-                  images={[
-                    { src: "/images/clinic-feedback.jpg", alt: "Clinic audit" },
-                    { src: "/images/doctors-feedback.jpg", alt: "Surgeon audit" },
-                  ]}
-                />
-              </ScrollReveal>
+            <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-5 gap-6">
+              {[
+                { step: 1, title: "Upload case evidence", desc: "Photos and case details submitted for review." },
+                { step: 2, title: "Structured forensic review", desc: "Visual evidence and domain-based analysis." },
+                { step: 3, title: "Scoring and confidence analysis", desc: "Defined criteria and confidence-aware outputs." },
+                { step: 4, title: "Human-reviewed report output", desc: "Structured report with scores and transparency." },
+                { step: 5, title: "Benchmark / recognition pathway", desc: "Where relevant, contribution to benchmarks and recognition." },
+              ].map(({ step, title, desc }, i) => (
+                <ScrollReveal key={step} delay={i * 0.05}>
+                  <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-5 text-center sm:text-left">
+                    <div className="w-10 h-10 rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-400 flex items-center justify-center font-bold text-sm mx-auto sm:mx-0">
+                      {step}
+                    </div>
+                    <h3 className="mt-3 font-semibold text-white text-sm sm:text-base">{title}</h3>
+                    <p className="mt-1.5 text-xs sm:text-sm text-slate-400">{desc}</p>
+                    {i === 4 && (
+                      <Link href="/verified-surgeon-program" className="mt-3 inline-block text-xs font-medium text-amber-400 hover:text-amber-300 transition-colors">
+                        Verified Program →
+                      </Link>
+                    )}
+                  </div>
+                </ScrollReveal>
+              ))}
             </div>
-            <ScrollReveal delay={0.25}>
-              <div className="mt-8 sm:mt-10 text-center">
+            <ScrollReveal delay={0.2}>
+              <div className="mt-8 text-center">
+                <Link
+                  href="/how-it-works"
+                  className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl border border-slate-600 text-slate-300 text-sm font-medium hover:border-amber-500/50 hover:text-amber-400 transition-colors"
+                >
+                  Full process and methodology →
+                </Link>
+              </div>
+            </ScrollReveal>
+          </div>
+        </section>
+
+        {/* ——— 5. PROOF OF METHODOLOGY PREVIEW ——— */}
+        <section className="relative px-4 sm:px-6 py-16 sm:py-20 lg:py-24">
+          <div className="max-w-6xl mx-auto">
+            <ScrollReveal>
+              <p className="text-xs font-semibold uppercase tracking-wider text-amber-400/90">
+                Proof of methodology
+              </p>
+              <h2 className="mt-3 text-2xl sm:text-3xl font-bold text-white tracking-tight">
+                Structured, transparent, and confidence-aware.
+              </h2>
+              <p className="mt-4 text-slate-400 max-w-2xl">
+                Our approach is built on visual evidence review, defined scoring domains, confidence
+                logic, and a benchmark framework. Human review ensures every output is validated.
+              </p>
+            </ScrollReveal>
+            <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {[
+                { label: "Visual evidence review", short: "Documentation and photo-based analysis." },
+                { label: "Structured scoring", short: "Domain-based criteria and consistency." },
+                { label: "Confidence logic", short: "Transparent limits and reliability signals." },
+                { label: "Benchmark framework", short: "Toward a global transplant quality standard." },
+              ].map((item, i) => (
+                <ScrollReveal key={item.label} delay={i * 0.05}>
+                  <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-5 hover:border-white/15 transition-colors">
+                    <h3 className="font-semibold text-white text-sm">{item.label}</h3>
+                    <p className="mt-1.5 text-xs text-slate-400">{item.short}</p>
+                  </div>
+                </ScrollReveal>
+              ))}
+            </div>
+            <ScrollReveal delay={0.15}>
+              <div className="mt-8 flex flex-wrap gap-6">
+                <Link
+                  href="/methodology"
+                  className="inline-flex items-center text-sm font-medium text-amber-400 hover:text-amber-300 transition-colors"
+                >
+                  Read the full methodology →
+                </Link>
+                <Link
+                  href="/sample-report"
+                  className="inline-flex items-center text-sm font-medium text-amber-400 hover:text-amber-300 transition-colors"
+                >
+                  See sample output →
+                </Link>
+              </div>
+            </ScrollReveal>
+          </div>
+        </section>
+
+        {/* ——— 6. SERVICES PREVIEW ——— */}
+        <section id="services" className="relative px-4 sm:px-6 py-16 sm:py-20 lg:py-24">
+          <div className="max-w-6xl mx-auto">
+            <ScrollReveal>
+              <p className="text-xs font-semibold uppercase tracking-wider text-amber-400/90">
+                Audit categories
+              </p>
+              <h2 className="mt-3 text-2xl sm:text-3xl font-bold text-white tracking-tight">
+                Forensic review by domain and use case.
+              </h2>
+            </ScrollReveal>
+            <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[
+                {
+                  title: "Patient Audit",
+                  desc: "Independent review of your procedure: donor, graft handling, implantation, and outcome potential.",
+                  deliverable: "Structured forensic report with scores and next-step guidance.",
+                  href: "/signup",
+                  cta: "Request an Audit",
+                },
+                {
+                  title: "Clinic Benchmark Review",
+                  desc: "Structured audits for clinics seeking independent benchmarking and quality improvement.",
+                  deliverable: "Benchmark scores, improvement areas, and case consistency insight.",
+                  href: "/services",
+                  cta: "Learn more",
+                },
+                {
+                  title: "Surgeon / Transparency Review",
+                  desc: "Recognition through validated participation and documentation within the independent framework.",
+                  deliverable: "Transparency participation, validated metrics, and recognition tiers.",
+                  href: "/verified-surgeon-program",
+                  cta: "Verified Program",
+                },
+                {
+                  title: "Corrective / Outcome Review",
+                  desc: "Assessment of surgical outcomes, healing, graft survival signals, and corrective planning.",
+                  deliverable: "Outcome-focused report and follow-up or corrective guidance where relevant.",
+                  href: "/signup",
+                  cta: "Request an Audit",
+                },
+              ].map((card, i) => (
+                <ScrollReveal key={card.title} delay={i * 0.05}>
+                  <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-6 hover:border-white/15 transition-colors h-full flex flex-col">
+                    <h3 className="text-lg font-semibold text-white">{card.title}</h3>
+                    <p className="mt-2 text-sm text-slate-400 leading-relaxed flex-1">{card.desc}</p>
+                    <p className="mt-4 text-xs font-medium uppercase tracking-wider text-slate-500">
+                      Key deliverable
+                    </p>
+                    <p className="mt-1 text-sm text-slate-300">{card.deliverable}</p>
+                    <Link
+                      href={card.href}
+                      className="mt-5 inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-amber-500/20 border border-amber-500/30 text-amber-400 text-sm font-semibold hover:bg-amber-500/30 transition-colors"
+                    >
+                      {card.cta} →
+                    </Link>
+                  </div>
+                </ScrollReveal>
+              ))}
+            </div>
+            <ScrollReveal delay={0.2}>
+              <div className="mt-10 text-center">
                 <Link
                   href="/services"
-                  className="inline-flex items-center px-6 py-3 rounded-xl border-2 border-amber-500 text-amber-600 font-semibold hover:bg-amber-50 transition-colors"
+                  className="inline-flex items-center text-sm font-medium text-amber-400 hover:text-amber-300 transition-colors"
                 >
                   View all services →
                 </Link>
@@ -260,129 +339,104 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* Audit Process */}
-        <section id="how-it-works" className="px-4 sm:px-6 py-12 sm:py-20 bg-white">
+        {/* ——— 7. CLINICS / VERIFIED PROGRAM PREVIEW ——— */}
+        <section className="relative px-4 sm:px-6 py-16 sm:py-20 lg:py-24">
           <div className="max-w-5xl mx-auto">
             <ScrollReveal>
-              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 text-center">
-                From submission to benchmark report
+              <p className="text-xs font-semibold uppercase tracking-wider text-amber-400/90">
+                Ecosystem
+              </p>
+              <h2 className="mt-3 text-2xl sm:text-3xl font-bold text-white tracking-tight">
+                More than a single report — a transparency standard.
               </h2>
-              <p className="mt-3 sm:mt-4 text-slate-600 text-center max-w-2xl mx-auto text-sm sm:text-base">
-                Independent forensic review with defined criteria and visual evidence analysis from
-                submission through to your structured report. Analysis is assisted by{" "}
-                <Link href="/follicle-intelligence" className="text-amber-600 hover:text-amber-500 font-medium">
-                  Follicle Intelligence
+              <p className="mt-4 text-slate-400 max-w-2xl">
+                Explore participating clinics and the Verified Surgeon Transparency Program. The
+                ecosystem connects patients, clinics, and benchmarks in one independent framework.
+              </p>
+            </ScrollReveal>
+            <div className="mt-12 grid sm:grid-cols-2 gap-6">
+              <ScrollReveal delay={0.05}>
+                <Link
+                  href="/clinics"
+                  className="group block rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-8 hover:border-amber-500/30 hover:bg-white/[0.07] transition-all"
+                >
+                  <h3 className="text-xl font-semibold text-white group-hover:text-amber-400 transition-colors">
+                    Clinics directory
+                  </h3>
+                  <p className="mt-3 text-sm text-slate-400 leading-relaxed">
+                    Browse clinics in the HairAudit transparency ecosystem. Profiles reflect
+                    validated participation, documentation contribution, and recognition tiers.
+                  </p>
+                  <span className="mt-4 inline-flex items-center text-sm font-medium text-amber-400 group-hover:underline">
+                    Explore Participating Clinics →
+                  </span>
                 </Link>
-                .
-              </p>
-            </ScrollReveal>
-            <div className="mt-10 sm:mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 sm:gap-4">
-              {[
-                { step: 1, title: "Submit Case", desc: "Photos and case details" },
-                { step: 2, title: "Forensic Review", desc: "Visual evidence and benchmark analysis" },
-                { step: 3, title: "Structured Scoring", desc: "Defined criteria across domains" },
-                { step: 4, title: "Benchmark Report", desc: "Scores and outcome transparency" },
-                { step: 5, title: "Guidance & Next Steps", desc: "Findings and next steps" },
-              ].map(({ step, title, desc }, i) => (
-                <ScrollReveal key={step} delay={i * 0.05}>
-                  <div className="text-center p-4 sm:p-0">
-                    <div className="w-12 h-12 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-bold mx-auto">
-                      {step}
-                    </div>
-                    <h3 className="mt-3 font-semibold text-slate-900 text-base sm:text-sm">{title}</h3>
-                    <p className="mt-1 text-sm text-slate-600">{desc}</p>
-                    <Link href="/how-it-works" className="mt-2 inline-block text-sm font-medium text-amber-600 hover:text-amber-500">
-                      Learn more →
-                    </Link>
-                  </div>
-                </ScrollReveal>
-              ))}
+              </ScrollReveal>
+              <ScrollReveal delay={0.1}>
+                <Link
+                  href="/verified-surgeon-program"
+                  className="group block rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-8 hover:border-amber-500/30 hover:bg-white/[0.07] transition-all"
+                >
+                  <h3 className="text-xl font-semibold text-white group-hover:text-amber-400 transition-colors">
+                    Verified Surgeon Transparency Program
+                  </h3>
+                  <p className="mt-3 text-sm text-slate-400 leading-relaxed">
+                    Recognition for clinics and surgeons who participate with transparency:
+                    documentation contribution, validated case performance, and consistent standards.
+                  </p>
+                  <span className="mt-4 inline-flex items-center text-sm font-medium text-amber-400 group-hover:underline">
+                    Learn About the Verified Program →
+                  </span>
+                </Link>
+              </ScrollReveal>
             </div>
           </div>
         </section>
 
-        {/* CTA */}
-        <section className="px-4 sm:px-6 py-12 sm:py-20 bg-slate-900 text-white">
-          <div className="max-w-2xl mx-auto text-center">
+        {/* ——— 8. FINAL CTA ——— */}
+        <section className="relative px-4 sm:px-6 py-16 sm:py-20 lg:py-24">
+          <div className="max-w-3xl mx-auto text-center">
             <ScrollReveal>
-              <h2 className="text-2xl sm:text-3xl font-bold">
-                Submit for independent forensic review
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white tracking-tight leading-snug">
+                Independent review for a field that has lacked objective standards.
               </h2>
-              <p className="mt-4 text-slate-300 text-sm sm:text-base">
-                No clinic affiliation. Evidence-based benchmark scoring and visual analysis. During
-                patient beta, submit your transplant case for forensic review. Clinic and doctor
-                participation will open in later stages.
+              <p className="mt-6 text-slate-400 text-sm sm:text-base leading-relaxed">
+                Request an audit, explore participating clinics, or learn how the HairAudit
+                transparency ecosystem works.
               </p>
-              <Link
-                href="/signup"
-                className="mt-6 sm:mt-8 inline-flex items-center justify-center px-6 py-3.5 sm:px-8 sm:py-4 rounded-xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors text-base min-h-[44px]"
-              >
-                Join patient beta
-              </Link>
+              <div className="mt-10 flex flex-col sm:flex-row flex-wrap justify-center gap-4">
+                <Link
+                  href="/signup"
+                  className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors shadow-lg shadow-amber-500/20"
+                >
+                  Request an Audit
+                </Link>
+                <Link
+                  href="/clinics"
+                  className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
+                >
+                  Explore Participating Clinics
+                </Link>
+                <Link
+                  href="/verified-surgeon-program"
+                  className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
+                >
+                  Learn About the Verified Program
+                </Link>
+                <Link
+                  href="/how-it-works"
+                  className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
+                >
+                  Learn How HairAudit Works
+                </Link>
+                <Link
+                  href="/services"
+                  className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
+                >
+                  View Services
+                </Link>
+              </div>
             </ScrollReveal>
-          </div>
-        </section>
-
-        {/* Why HairAudit */}
-        <section className="px-4 sm:px-6 py-12 sm:py-20 bg-slate-50">
-          <div className="max-w-5xl mx-auto">
-            <ScrollReveal>
-              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 text-center">
-                Why HairAudit
-              </h2>
-              <p className="mt-3 sm:mt-4 text-slate-600 text-center max-w-2xl mx-auto text-sm sm:text-base">
-                Independent first. Evidence-based benchmarking. Submissions are confidential and never shared without consent.
-              </p>
-            </ScrollReveal>
-            <div className="mt-10 sm:mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {[
-                {
-                  title: "Independent",
-                  desc: "We do not perform procedures or promote clinics or surgeons. Forensic benchmarking only — no affiliation, no bias.",
-                },
-                {
-                  title: "Evidence-based",
-                  desc: "Structured visual evidence analysis and benchmark scoring: donor integrity, graft handling, implantation, outcome potential. Not testimonials or marketing.",
-                },
-                {
-                  title: "Forensic methodology",
-                  desc: "Defined scoring criteria and consistent domains so every case is comparable, transparent, and medically relevant.",
-                },
-                {
-                  title: "Outcome transparency",
-                  desc: "Reports give patients clarity and support corrective planning; they give the industry a shared benchmark for quality.",
-                },
-                {
-                  title: "Global benchmark standard",
-                  desc: "Location- and clinic-agnostic. We focus solely on procedure quality and outcome potential.",
-                },
-              ].map((item, i) => (
-                <ScrollReveal key={item.title} delay={i * 0.05}>
-                  <div className="p-5 sm:p-6 rounded-xl bg-white border border-slate-200 shadow-sm">
-                    <h3 className="font-semibold text-slate-900 text-base sm:text-lg">{item.title}</h3>
-                    <p className="mt-2 text-sm text-slate-600">{item.desc}</p>
-                  </div>
-                </ScrollReveal>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Final CTA */}
-        <section className="px-4 sm:px-6 py-10 sm:py-12 bg-white border-t border-slate-200">
-          <div className="max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
-            <Link
-              href="/signup"
-              className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3.5 sm:py-3 rounded-xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors min-h-[44px]"
-            >
-              Join patient beta
-            </Link>
-            <Link
-              href="/login"
-              className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3.5 sm:py-3 rounded-xl border-2 border-slate-300 text-slate-700 font-semibold hover:border-amber-400 hover:bg-amber-50/50 transition-colors min-h-[44px]"
-            >
-              Sign in
-            </Link>
           </div>
         </section>
       </main>

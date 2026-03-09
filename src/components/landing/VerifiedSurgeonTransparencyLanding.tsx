@@ -15,9 +15,9 @@ const heroCompareCards = [
   },
   {
     label: "HairAudit Model",
-    title: "Evidence-Based Recognition",
+    title: "Independent, Evidence-Based Recognition",
     description:
-      "Recognition driven by documentation quality, validated case outcomes, and transparency participation.",
+      "Recognition earned through validated participation within HairAudit's independent benchmarking framework — documentation quality, transparency, and consistent case performance.",
     variant: "accent" as const,
   },
 ];
@@ -37,12 +37,12 @@ const whyMattersPillars = [
   {
     title: "Transparency That Builds Trust",
     description:
-      "Clinics that contribute documentation help ensure their work is represented fairly and more completely, while improving audit confidence and benchmark readiness.",
+      "Clinics that contribute documentation are reviewed more fairly and completely within the independent review model, improving audit confidence and benchmark readiness.",
   },
   {
     title: "Recognition Earned Through Evidence",
     description:
-      "Awards are tied to validated performance, documentation quality, and consistency across cases — not marketing claims.",
+      "Awards are tied to validated performance, documentation quality, and consistency across cases within an independent benchmarking framework — not marketing claims.",
   },
 ];
 
@@ -101,8 +101,8 @@ const howItWorksSteps = [
 ];
 
 const whyClinicsJoin = [
-  "Strengthen patient trust with evidence-backed transparency",
-  "Ensure surgical work is reviewed more fairly and completely",
+  "Strengthen patient trust through participation in independent, evidence-based benchmarking",
+  "Ensure surgical work is reviewed more fairly and completely within the framework",
   "Improve benchmark readiness and forensic confidence",
   "Build a recognised profile within the HairAudit ecosystem",
   "Stand apart from clinics relying only on testimonials or marketing claims",
@@ -152,12 +152,12 @@ const commercialValueCards = [
   {
     title: "Clearer Differentiation",
     description:
-      "A recognised HairAudit profile helps distinguish transparent clinics from competitors who rely only on marketing language or selective before-and-after promotion.",
+      "A recognised HairAudit profile distinguishes clinics that participate in independent, evidence-based benchmarking from those relying only on marketing or selective promotion.",
   },
   {
     title: "Long-Term Brand Strength",
     description:
-      "As the HairAudit ecosystem grows, recognised clinics may benefit from stronger profile visibility, greater trust signals, and alignment with an evidence-led quality standard.",
+      "As the ecosystem grows, recognised clinics may benefit from stronger visibility and alignment with an independent, evidence-led quality standard.",
   },
 ];
 
@@ -175,7 +175,7 @@ const faqItems = [
   {
     question: "How are awards determined?",
     answer:
-      "Awards are based on validated case performance, transparency participation, documentation quality, benchmark readiness, and consistency over time. They are not based on testimonials or marketing claims.",
+      "Awards are based on validated case performance, transparency participation, documentation quality, benchmark readiness, and consistency over time within the independent benchmarking framework. They are not based on testimonials or marketing claims.",
   },
   {
     question: "What prevents the system from being gamed?",
@@ -190,7 +190,7 @@ const faqItems = [
   {
     question: "Why would a clinic want to participate?",
     answer:
-      "Participation supports fairer forensic review, improves confidence in documentation-led cases, strengthens profile credibility, and helps clinics stand apart through evidence-based trust rather than pure promotion.",
+      "Participation supports fairer forensic review within an independent review model, improves confidence in documentation-led cases, strengthens profile credibility, and helps clinics stand apart through validated recognition rather than promotion.",
   },
 ];
 
@@ -234,9 +234,9 @@ export default function VerifiedSurgeonTransparencyLanding() {
                   transparency and surgical excellence.
                 </h1>
                 <p className="mt-6 text-lg text-slate-400 max-w-xl leading-relaxed">
-                  Reward clinics and surgeons who contribute evidence, support
-                  fair forensic auditing, and demonstrate consistent standards
-                  through validated case performance.
+                  Recognition for clinics and surgeons who participate with transparency
+                  within an independent benchmarking framework — through documentation
+                  contribution, validated case performance, and consistent standards.
                 </p>
                 <div className="mt-8 flex flex-wrap gap-4">
                   <Link
@@ -262,7 +262,14 @@ export default function VerifiedSurgeonTransparencyLanding() {
                   <Link href="/how-it-works" className="text-cyan-400 hover:text-cyan-300 transition-colors font-medium">
                     Learn How HairAudit Works
                   </Link>
-                  {" — "}step-by-step audit process and transparency ecosystem.
+                  {" — "}step-by-step audit process and transparency ecosystem.{" "}
+                  <Link href="/methodology" className="text-cyan-400 hover:text-cyan-300 transition-colors font-medium">
+                    Methodology
+                  </Link>
+                  {" · "}
+                  <Link href="/sample-report" className="text-cyan-400 hover:text-cyan-300 transition-colors font-medium">
+                    Sample Output
+                  </Link>
                 </p>
               </div>
 
@@ -318,9 +325,9 @@ export default function VerifiedSurgeonTransparencyLanding() {
               framework.
             </h2>
             <p className="mt-6 text-slate-400 text-lg max-w-2xl leading-relaxed">
-              The program is designed to reward clinics that are willing to be
-              measured properly — through contribution, documentation, validated
-              outcomes, and consistency.
+              The program rewards clinics that are willing to be measured within
+              an independent, evidence-based framework — through contribution,
+              documentation, validated outcomes, and consistency.
             </p>
             <div className="mt-12 grid sm:grid-cols-3 gap-6">
               {whyMattersPillars.map((pillar) => (
@@ -350,12 +357,12 @@ export default function VerifiedSurgeonTransparencyLanding() {
               Recognition tiers
             </p>
             <h2 className="mt-3 text-3xl sm:text-4xl font-bold text-white tracking-tight">
-              Awards earned through evidence, not promotion.
+              Recognition earned through validated participation, not promotion.
             </h2>
             <p className="mt-6 text-slate-400 text-lg max-w-2xl leading-relaxed">
-              Awards are tied to validated case contribution, documentation
-              integrity, benchmark readiness, and consistent performance over
-              time.
+              Tiers are tied to validated case contribution, documentation
+              integrity, benchmark readiness, and consistent performance within
+              HairAudit's independent benchmarking framework.
             </p>
             <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {recognitionTiers.map((tier) => (
@@ -422,8 +429,8 @@ export default function VerifiedSurgeonTransparencyLanding() {
                 </h2>
                 <p className="mt-6 text-slate-400 text-lg leading-relaxed">
                   A structured profile built from transparency participation,
-                  validated case performance, documentation integrity, and
-                  benchmark-ready evidence.
+                  validated case performance, and documentation integrity within
+                  the independent benchmarking framework.
                 </p>
                 <ul className="mt-8 space-y-3">
                   {dashboardPreviewBullets.map((bullet) => (
@@ -551,12 +558,12 @@ export default function VerifiedSurgeonTransparencyLanding() {
               Commercial Advantage
             </p>
             <h2 className="mt-3 text-3xl sm:text-4xl font-bold text-white tracking-tight">
-              Why evidence-based recognition matters commercially.
+              Why independent, evidence-based recognition matters commercially.
             </h2>
             <p className="mt-6 text-slate-400 text-lg max-w-2xl leading-relaxed">
-              In a market crowded by testimonials, social proof, and promotional
-              claims, structured transparency creates a stronger and more
-              defensible trust signal.
+              In a market crowded by testimonials and promotional claims,
+              recognition earned through validated participation in an independent
+              benchmarking framework creates a stronger, defensible trust signal.
             </p>
             <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {commercialValueCards.map((card) => (
@@ -607,9 +614,9 @@ export default function VerifiedSurgeonTransparencyLanding() {
                 <p className="text-xs font-semibold uppercase tracking-wider text-cyan-400">
                   Why clinics join
                 </p>
-                <h2 className="mt-3 text-2xl sm:text-3xl font-bold text-white tracking-tight">
-                  A stronger profile built through evidence-backed participation.
-                </h2>
+              <h2 className="mt-3 text-2xl sm:text-3xl font-bold text-white tracking-tight">
+                A stronger profile built through participation in independent benchmarking.
+              </h2>
                 <ul className="mt-8 space-y-3">
                   {whyClinicsJoin.map((item) => (
                     <li
@@ -719,9 +726,9 @@ export default function VerifiedSurgeonTransparencyLanding() {
                 hair restoration.
               </h2>
               <p className="mt-6 text-slate-400 text-lg max-w-2xl mx-auto leading-relaxed">
-                Position your clinic at the forefront of evidence-based trust.
-                Contribute documentation, support complete forensic review, and
-                become eligible for HairAudit recognition tiers.
+                Position your clinic within an independent, evidence-based recognition
+                framework. Contribute documentation, support complete forensic review,
+                and become eligible for HairAudit recognition tiers.
               </p>
               <div className="mt-10 flex flex-wrap justify-center gap-4">
                 <Link

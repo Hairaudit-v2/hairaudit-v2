@@ -25,6 +25,11 @@ export default function SiteFooter() {
                 </Link>
               </li>
               <li>
+                <Link href="/methodology" className="hover:text-amber-400 transition-colors">
+                  Methodology
+                </Link>
+              </li>
+              <li>
                 <Link href="/clinics" className="hover:text-amber-400 transition-colors">
                   Clinics
                 </Link>
@@ -36,7 +41,7 @@ export default function SiteFooter() {
               </li>
               <li>
                 <Link href="/signup" className="hover:text-amber-400 transition-colors">
-                  Request an Audit (Patient Beta)
+                  Request an Audit
                 </Link>
               </li>
               <li>
@@ -47,6 +52,11 @@ export default function SiteFooter() {
               <li>
                 <Link href="/services" className="hover:text-amber-400 transition-colors">
                   Services
+                </Link>
+              </li>
+              <li>
+                <Link href="/sample-report" className="hover:text-amber-400 transition-colors">
+                  Sample Report
                 </Link>
               </li>
               <li>
