@@ -30,8 +30,27 @@ export default function HowItWorksPage() {
               <Link href="/follicle-intelligence" className="text-amber-600 hover:text-amber-500 font-medium">
                 Follicle Intelligence
               </Link>
+              . Clinics can participate and be recognised through validated transparency and
+              documentation contribution —{" "}
+              <Link href="/verified-surgeon-program" className="text-amber-600 hover:text-amber-500 font-medium">
+                learn about the Verified Program
+              </Link>
               .
             </p>
+            <div className="mt-6 flex flex-wrap gap-4">
+              <Link
+                href="/verified-surgeon-program"
+                className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl border-2 border-amber-500/50 text-amber-700 font-medium hover:bg-amber-50 transition-colors text-sm"
+              >
+                Learn About the Verified Program
+              </Link>
+              <Link
+                href="/clinics"
+                className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl border-2 border-slate-300 text-slate-700 font-medium hover:border-slate-400 hover:bg-slate-50 transition-colors text-sm"
+              >
+                Explore Participating Clinics
+              </Link>
+            </div>
           </ScrollReveal>
           <div className="mt-10 sm:mt-12 space-y-8 sm:space-y-10">
             {steps.map(({ step, title, desc, icon }, i) => (
@@ -49,12 +68,18 @@ export default function HowItWorksPage() {
             ))}
           </div>
           <ScrollReveal delay={0.2}>
-            <div className="mt-10 sm:mt-12">
+            <div className="mt-10 sm:mt-12 flex flex-wrap gap-4">
               <Link
                 href="/signup"
                 className="inline-flex items-center justify-center px-6 py-3.5 rounded-xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors min-h-[44px]"
               >
                 Get started
+              </Link>
+              <Link
+                href="/clinics"
+                className="inline-flex items-center justify-center px-6 py-3.5 rounded-xl border-2 border-slate-300 text-slate-700 font-semibold hover:bg-slate-50 transition-colors min-h-[44px]"
+              >
+                Explore Participating Clinics
               </Link>
             </div>
           </ScrollReveal>

@@ -215,6 +215,14 @@ export default function VerifiedSurgeonTransparencyLanding() {
         {/* ——— 1. HERO ——— */}
         <section className="relative px-4 sm:px-6 py-16 sm:py-20 lg:py-28">
           <div className="max-w-7xl mx-auto">
+            <nav className="mb-8" aria-label="Breadcrumb">
+              <Link
+                href="/"
+                className="text-sm text-slate-500 hover:text-slate-300 transition-colors"
+              >
+                ← Home
+              </Link>
+            </nav>
             <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
               {/* Left: badge, headline, CTAs */}
               <div>
@@ -232,10 +240,16 @@ export default function VerifiedSurgeonTransparencyLanding() {
                 </p>
                 <div className="mt-8 flex flex-wrap gap-4">
                   <Link
-                    href="/signup"
+                    href="/clinics"
                     className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl bg-cyan-500 text-slate-950 font-semibold hover:bg-cyan-400 transition-colors shadow-lg shadow-cyan-500/20"
                   >
-                    Apply for Clinic Participation
+                    Explore Participating Clinics
+                  </Link>
+                  <Link
+                    href="/signup"
+                    className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
+                  >
+                    Apply for Participation
                   </Link>
                   <Link
                     href="#recognition-tiers"
@@ -244,6 +258,12 @@ export default function VerifiedSurgeonTransparencyLanding() {
                     View Recognition Criteria
                   </Link>
                 </div>
+                <p className="mt-4 text-sm text-slate-500">
+                  <Link href="/how-it-works" className="text-cyan-400 hover:text-cyan-300 transition-colors font-medium">
+                    Learn How HairAudit Works
+                  </Link>
+                  {" — "}step-by-step audit process and transparency ecosystem.
+                </p>
               </div>
 
               {/* Right: premium info cards + stats */}
@@ -709,13 +729,19 @@ export default function VerifiedSurgeonTransparencyLanding() {
                   href="/signup"
                   className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl bg-cyan-500 text-slate-950 font-semibold hover:bg-cyan-400 transition-colors shadow-lg shadow-cyan-500/20"
                 >
-                  Request Early Participation Access
+                  Apply for Participation
                 </Link>
                 <Link
-                  href="/about"
+                  href="/clinics"
                   className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
                 >
-                  Download Program Overview
+                  Explore Participating Clinics
+                </Link>
+                <Link
+                  href="/how-it-works"
+                  className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
+                >
+                  Learn How HairAudit Works
                 </Link>
               </div>
             </div>

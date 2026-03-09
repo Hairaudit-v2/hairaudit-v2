@@ -26,12 +26,30 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
         </Link>
 
         {variant === "default" ? (
-          <nav className="flex items-center gap-1 sm:gap-4">
+          <nav className="flex items-center gap-1 sm:gap-4" aria-label="Main navigation">
             <Link
               href="/"
               className="text-sm font-medium text-slate-300 hover:text-amber-400 transition-colors hidden sm:block"
             >
               Home
+            </Link>
+            <Link
+              href="/how-it-works"
+              className="text-sm font-medium text-slate-300 hover:text-amber-400 transition-colors hidden sm:block"
+            >
+              How It Works
+            </Link>
+            <Link
+              href="/clinics"
+              className="text-sm font-medium text-slate-300 hover:text-amber-400 transition-colors hidden sm:block"
+            >
+              Clinics
+            </Link>
+            <Link
+              href="/verified-surgeon-program"
+              className="text-sm font-medium text-slate-300 hover:text-amber-400 transition-colors hidden sm:block"
+            >
+              Verified Program
             </Link>
             <Link
               href="/about"
@@ -46,22 +64,10 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
               Services
             </Link>
             <Link
-              href="/how-it-works"
-              className="text-sm font-medium text-slate-300 hover:text-amber-400 transition-colors hidden sm:block"
-            >
-              How It Works
-            </Link>
-            <Link
               href="/follicle-intelligence"
               className="text-sm font-medium text-slate-300 hover:text-amber-400 transition-colors hidden sm:block"
             >
               Follicle Intelligence
-            </Link>
-            <Link
-              href="/verified-surgeon-program"
-              className="text-sm font-medium text-slate-300 hover:text-amber-400 transition-colors hidden sm:block"
-            >
-              Verified Program
             </Link>
             <Link
               href="/signup"

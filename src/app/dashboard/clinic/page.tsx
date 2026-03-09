@@ -7,6 +7,7 @@ import Sparkline from "@/components/ui/Sparkline";
 import { getNextMilestoneFromProfile, getNextTier } from "@/lib/transparency/awardRules";
 import ClinicTransparencyProgressPanel from "@/components/dashboard/ClinicTransparencyProgressPanel";
 import ClinicFeedbackPanel from "@/components/dashboard/ClinicFeedbackPanel";
+import ClinicBadgeWidgetSection from "@/components/dashboard/ClinicBadgeWidgetSection";
 
 export default async function ClinicDashboardPage() {
   const supabase = await createSupabaseAuthServerClient();
@@ -17,7 +18,7 @@ export default async function ClinicDashboardPage() {
   const userEmail = String(user.email ?? "").toLowerCase();
 
   const profileSelect =
-    "id, linked_user_id, clinic_name, clinic_email, transparency_score, audited_case_count, contributed_case_count, benchmark_eligible_count, average_forensic_score, documentation_integrity_average, current_award_tier, award_progression_paused, volume_confidence_score, validated_case_count, provisional_high_score_count, validated_high_score_count, low_score_case_count, benchmark_eligible_validated_count";
+    "id, linked_user_id, clinic_name, clinic_email, transparency_score, audited_case_count, contributed_case_count, benchmark_eligible_count, average_forensic_score, documentation_integrity_average, current_award_tier, award_progression_paused, volume_confidence_score, validated_case_count, provisional_high_score_count, validated_high_score_count, low_score_case_count, benchmark_eligible_validated_count, profile_visible, clinic_slug, participation_status";
   const { data: byUserProfile } = await admin
     .from("clinic_profiles")
     .select(profileSelect)
@@ -120,12 +121,36 @@ export default async function ClinicDashboardPage() {
     volume_confidence_score: (clinicProfile as { volume_confidence_score?: number })?.volume_confidence_score,
   });
 
+  const profileVisible = (clinicProfile as { profile_visible?: boolean })?.profile_visible;
+  const clinicSlug = (clinicProfile as { clinic_slug?: string | null })?.clinic_slug;
+  const publicProfileUrl = profileVisible && clinicSlug
+    ? `${(process.env.NEXT_PUBLIC_APP_URL ?? process.env.SITE_URL ?? "https://hairaudit.com").replace(/\/+$/, "")}/clinics/${clinicSlug}`
+    : null;
+
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Clinic Dashboard</h1>
           <p className="text-slate-600 text-sm mt-1">Submit patient cases for feedback on your doctors&apos; work</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          {publicProfileUrl && (
+            <a
+              href={publicProfileUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center rounded-lg px-3 py-2 text-sm font-semibold bg-cyan-600 text-white hover:bg-cyan-700"
+            >
+              View Public Profile
+            </a>
+          )}
+          <Link
+            href="/clinics"
+            className="inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium border border-slate-300 text-slate-700 hover:bg-slate-50"
+          >
+            Explore Participating Clinics
+          </Link>
         </div>
       </div>
 
@@ -189,6 +214,24 @@ export default async function ClinicDashboardPage() {
 
       <div className="mb-6">
         <ClinicFeedbackPanel />
+      </div>
+
+      <div className="mb-6">
+        <ClinicBadgeWidgetSection
+          eligible={
+            Boolean(
+              (clinicProfile as { profile_visible?: boolean })?.profile_visible &&
+                (clinicProfile as { clinic_slug?: string | null })?.clinic_slug &&
+                clinicProfile?.current_award_tier
+            )
+          }
+          profileUrl={`${(process.env.NEXT_PUBLIC_APP_URL ?? "").replace(/\/+$/, "")}/clinics/${(clinicProfile as { clinic_slug?: string | null })?.clinic_slug ?? ""}`}
+          slug={(clinicProfile as { clinic_slug?: string | null })?.clinic_slug ?? ""}
+          clinicName={clinicProfile?.clinic_name ?? ""}
+          currentAwardTier={clinicProfile?.current_award_tier ?? null}
+          participationStatus={(clinicProfile as { participation_status?: string | null })?.participation_status ?? null}
+          baseUrl={(process.env.NEXT_PUBLIC_APP_URL ?? process.env.SITE_URL ?? "https://hairaudit.com").replace(/\/+$/, "")}
+        />
       </div>
 
       <div className="mb-8">

@@ -15,18 +15,33 @@ export default function SiteFooter() {
             <h4 className="font-semibold text-white mb-3">Quick links</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/faq" className="hover:text-amber-400 transition-colors">
-                  FAQ
-                </Link>
-              </li>
-              <li>
-                <Link href="/signup" className="hover:text-amber-400 transition-colors">
-                  Submit Audit
+                <Link href="/" className="hover:text-amber-400 transition-colors">
+                  Home
                 </Link>
               </li>
               <li>
                 <Link href="/how-it-works" className="hover:text-amber-400 transition-colors">
-                  How it Works
+                  How It Works
+                </Link>
+              </li>
+              <li>
+                <Link href="/clinics" className="hover:text-amber-400 transition-colors">
+                  Clinics
+                </Link>
+              </li>
+              <li>
+                <Link href="/verified-surgeon-program" className="hover:text-amber-400 transition-colors">
+                  Verified Program
+                </Link>
+              </li>
+              <li>
+                <Link href="/signup" className="hover:text-amber-400 transition-colors">
+                  Apply for Participation
+                </Link>
+              </li>
+              <li>
+                <Link href="/faq" className="hover:text-amber-400 transition-colors">
+                  FAQ
                 </Link>
               </li>
               <li>

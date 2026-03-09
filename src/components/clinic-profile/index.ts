@@ -3,3 +3,4 @@ export { default as TransparencyStatusBadge } from "./TransparencyStatusBadge";
 export { default as ClinicMetricCard } from "./ClinicMetricCard";
 export { default as PublicProfileHero } from "./PublicProfileHero";
 export { default as RecognitionPanel } from "./RecognitionPanel";
+export { default as BadgeWidget } from "./BadgeWidget";

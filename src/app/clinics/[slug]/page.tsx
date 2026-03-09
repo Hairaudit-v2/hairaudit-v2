@@ -128,6 +128,15 @@ export default async function PublicClinicProfilePage({
 
       <SiteHeader />
       <main className="relative flex-1">
+        <nav className="relative px-4 sm:px-6 pt-6 pb-0 max-w-4xl mx-auto" aria-label="Breadcrumb">
+          <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-500">
+            <li><Link href="/" className="hover:text-slate-300 transition-colors">Home</Link></li>
+            <li aria-hidden>/</li>
+            <li><Link href="/clinics" className="hover:text-slate-300 transition-colors">Clinics</Link></li>
+            <li aria-hidden>/</li>
+            <li className="text-slate-400 truncate max-w-[200px] sm:max-w-none" aria-current="page">{row.clinic_name}</li>
+          </ol>
+        </nav>
         <PublicProfileHero
           clinicName={row.clinic_name}
           city={row.city}
@@ -287,16 +296,22 @@ export default async function PublicClinicProfilePage({
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-4">
               <Link
-                href="/signup"
-                className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-cyan-500 text-slate-950 font-semibold text-sm hover:bg-cyan-400 transition-colors"
+                href="/clinics"
+                className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl border border-slate-600 text-slate-200 text-sm font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
               >
-                Apply for participation
+                Explore More Clinics
               </Link>
               <Link
                 href="/how-it-works"
                 className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl border border-slate-600 text-slate-200 text-sm font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
               >
-                Learn how HairAudit works
+                Learn How HairAudit Works
+              </Link>
+              <Link
+                href="/signup"
+                className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-cyan-500 text-slate-950 font-semibold text-sm hover:bg-cyan-400 transition-colors"
+              >
+                Apply for Participation
               </Link>
             </div>
           </div>

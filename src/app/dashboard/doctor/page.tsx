@@ -58,6 +58,20 @@ export default async function DoctorDashboardPage() {
           <h1 className="text-2xl font-bold text-slate-900">Doctor Dashboard</h1>
           <p className="text-slate-600 text-sm mt-1">Upload patient details and review your audits</p>
         </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            href="/clinics"
+            className="inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium border border-slate-300 text-slate-700 hover:bg-slate-50"
+          >
+            View Clinics Directory
+          </Link>
+          <Link
+            href="/verified-surgeon-program"
+            className="inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium border border-slate-300 text-slate-700 hover:bg-slate-50"
+          >
+            Learn About the Verified Program
+          </Link>
+        </div>
       </div>
 
       <div className="rounded-xl border border-blue-200 bg-blue-50/80 p-4 mb-6">
@@ -90,6 +104,11 @@ export default async function DoctorDashboardPage() {
           nextMilestone={nextMilestone}
           nextTierLabel={nextTier ?? null}
         />
+        <p className="mt-3 text-sm text-slate-600">
+          <Link href="/verified-surgeon-program" className="font-medium text-cyan-700 hover:text-cyan-800">
+            See how clinic recognition works
+          </Link>
+        </p>
       </div>
 
       <div className="mb-8">

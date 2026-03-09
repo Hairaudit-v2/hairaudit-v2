@@ -112,7 +112,22 @@ export default async function HomePage() {
                 href="/how-it-works"
                 className="inline-flex items-center justify-center px-6 py-3 rounded-xl border-2 border-slate-600 text-slate-200 font-semibold hover:border-amber-500 hover:text-amber-400 transition-colors"
               >
-                How it works
+                Learn How HairAudit Works
+              </Link>
+            </div>
+            <div className="mt-6 flex flex-wrap justify-center gap-3">
+              <Link
+                href="/clinics"
+                className="text-sm font-medium text-slate-400 hover:text-amber-400 transition-colors"
+              >
+                Explore Participating Clinics
+              </Link>
+              <span className="text-slate-600" aria-hidden>·</span>
+              <Link
+                href="/verified-surgeon-program"
+                className="text-sm font-medium text-slate-400 hover:text-amber-400 transition-colors"
+              >
+                Learn About the Verified Program
               </Link>
             </div>
 
