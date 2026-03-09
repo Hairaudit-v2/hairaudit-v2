@@ -58,6 +58,12 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
               Follicle Intelligence
             </Link>
             <Link
+              href="/verified-surgeon-program"
+              className="text-sm font-medium text-slate-300 hover:text-amber-400 transition-colors hidden sm:block"
+            >
+              Verified Program
+            </Link>
+            <Link
               href="/signup"
               className="text-sm font-medium text-slate-300 hover:text-amber-400 transition-colors hidden sm:block"
             >

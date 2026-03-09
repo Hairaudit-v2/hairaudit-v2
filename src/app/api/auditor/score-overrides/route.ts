@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { isAuditor } from "@/lib/auth/isAuditor";
+import { isEligibleForManualReview } from "@/lib/auditor/eligibility";
 
 export const runtime = "nodejs";
 
@@ -18,6 +19,8 @@ const REASON_CATEGORIES = [
 ] as const;
 
 const DOMAIN_KEYS = ["SP", "DP", "GV", "IC", "DI"] as const;
+
+const VISIBILITY_SCOPES = ["internal_only", "included_in_report", "included_in_clinic_feedback"] as const;
 
 /** GET ?caseId=&reportId= — list overrides for a report */
 export async function GET(req: Request) {
@@ -72,8 +75,17 @@ export async function POST(req: Request) {
     const manualScore = Number(body?.manualScore);
     const reasonCategory = String(body?.reasonCategory ?? "").trim();
     const overrideNote = typeof body?.overrideNote === "string" ? body.overrideNote.trim() : null;
+    const visibilityScope = String(body?.visibilityScope ?? "internal_only").trim();
     const aiScore = Number(body?.aiScore);
     const aiWeightedScore = body?.aiWeightedScore != null ? Number(body.aiWeightedScore) : null;
+    if (!VISIBILITY_SCOPES.includes(visibilityScope as any)) {
+      return NextResponse.json({ ok: false, error: "Invalid visibilityScope" }, { status: 400 });
+    }
+
+    const { data: reportRow } = await admin.from("reports").select("auditor_review_eligibility").eq("id", reportId).maybeSingle();
+    if (!reportRow || !isEligibleForManualReview((reportRow as { auditor_review_eligibility?: string }).auditor_review_eligibility)) {
+      return NextResponse.json({ ok: false, error: "Report is not eligible for manual auditor review (score 60–89 or not unlocked)." }, { status: 403 });
+    }
 
     if (!caseId || !reportId || !domainKey) {
       return NextResponse.json({ ok: false, error: "Missing caseId, reportId, or domainKey" }, { status: 400 });
@@ -105,6 +117,7 @@ export async function POST(req: Request) {
       delta_score: deltaScore,
       reason_category: reasonCategory,
       override_note: overrideNote ?? null,
+      visibility_scope: visibilityScope,
       created_by: user.id,
     };
 
@@ -139,6 +152,11 @@ export async function DELETE(req: Request) {
 
     if (!caseId || !reportId) {
       return NextResponse.json({ ok: false, error: "Missing caseId or reportId" }, { status: 400 });
+    }
+
+    const { data: reportRow } = await admin.from("reports").select("auditor_review_eligibility").eq("id", reportId).maybeSingle();
+    if (!reportRow || !isEligibleForManualReview((reportRow as { auditor_review_eligibility?: string }).auditor_review_eligibility)) {
+      return NextResponse.json({ ok: false, error: "Report is not eligible for manual auditor review." }, { status: 403 });
     }
 
     let query = admin

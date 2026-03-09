@@ -79,6 +79,7 @@ type OverrideRow = {
   delta_score: number;
   reason_category: string;
   override_note: string | null;
+  visibility_scope?: string | null;
 };
 
 type FeedbackRow = {
@@ -103,6 +104,8 @@ export default function AuditorReviewPanel({
   domains,
   benchmark,
   overallScores,
+  provisionalStatus,
+  countsForAwards,
   onRefresh,
 }: {
   caseId: string;
@@ -110,6 +113,9 @@ export default function AuditorReviewPanel({
   domains: DomainScoreV1[];
   benchmark?: { eligible?: boolean; reasons?: string[] };
   overallScores?: { performance_score?: number; benchmark_score?: number; confidence_multiplier?: number };
+  /** When score >= 90: show provisional/validated state in sidebar */
+  provisionalStatus?: string | null;
+  countsForAwards?: boolean;
   onRefresh?: () => void;
 }) {
   const [overrides, setOverrides] = useState<OverrideRow[]>([]);
@@ -118,7 +124,7 @@ export default function AuditorReviewPanel({
   const [saving, setSaving] = useState<string | null>(null);
   const [expandedDomain, setExpandedDomain] = useState<string | null>(null);
   const [sectionFeedbackOpen, setSectionFeedbackOpen] = useState<string | null>(null);
-  const [overrideDraft, setOverrideDraft] = useState<Record<string, { manual: number; reason: string; note: string }>>({});
+  const [overrideDraft, setOverrideDraft] = useState<Record<string, { manual: number; reason: string; note: string; visibility?: string }>>({});
 
   const fetchOverrides = useCallback(async () => {
     try {
@@ -199,6 +205,7 @@ export default function AuditorReviewPanel({
           manualScore,
           reasonCategory,
           overrideNote: (draft?.note ?? override?.override_note ?? "") || null,
+          visibilityScope: draft?.visibility ?? override?.visibility_scope ?? "internal_only",
         }),
       });
       const json = await res.json();
@@ -318,6 +325,14 @@ export default function AuditorReviewPanel({
               {benchmark?.eligible ? "Eligible" : "Not eligible"}
             </p>
           </div>
+          {provisionalStatus != null && provisionalStatus !== "none" && (
+            <div className={`rounded-lg border px-3 py-2 ${countsForAwards ? "border-emerald-300/40 bg-emerald-950/40" : "border-amber-300/40 bg-amber-950/40"}`}>
+              <p className="text-[11px] uppercase text-slate-400">Provisional</p>
+              <p className={`font-semibold ${countsForAwards ? "text-emerald-200" : "text-amber-200"}`}>
+                {countsForAwards ? "Validated" : "Pending validation"}
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -446,6 +461,7 @@ export default function AuditorReviewPanel({
                                     manual: v,
                                     reason: prev[domain.domain_id]?.reason ?? "",
                                     note: prev[domain.domain_id]?.note ?? "",
+                                    visibility: prev[domain.domain_id]?.visibility ?? override?.visibility_scope ?? "internal_only",
                                   },
                                 }));
                             }}
@@ -463,6 +479,7 @@ export default function AuditorReviewPanel({
                                   manual: prev[domain.domain_id]?.manual ?? raw,
                                   reason: e.target.value,
                                   note: prev[domain.domain_id]?.note ?? "",
+                                  visibility: prev[domain.domain_id]?.visibility ?? override?.visibility_scope ?? "internal_only",
                                 },
                               }))
                             }
@@ -489,10 +506,35 @@ export default function AuditorReviewPanel({
                                   manual: prev[domain.domain_id]?.manual ?? raw,
                                   reason: prev[domain.domain_id]?.reason ?? "",
                                   note: e.target.value,
+                                  visibility: prev[domain.domain_id]?.visibility ?? override?.visibility_scope ?? "internal_only",
                                 },
                               }))
                             }
                           />
+                        </div>
+                        <div className="min-w-[160px]">
+                          <label className="text-[11px] text-slate-400">Note visibility</label>
+                          <select
+                            className="mt-0.5 w-full rounded border border-slate-600 bg-slate-800 px-2 py-1.5 text-sm text-white"
+                            value={draft?.visibility ?? override?.visibility_scope ?? "internal_only"}
+                            onChange={(e) =>
+                              setOverrideDraft((prev) => ({
+                                ...prev,
+                                [domain.domain_id]: {
+                                  manual: prev[domain.domain_id]?.manual ?? raw,
+                                  reason: prev[domain.domain_id]?.reason ?? "",
+                                  note: prev[domain.domain_id]?.note ?? "",
+                                  visibility: e.target.value,
+                                },
+                              }))
+                            }
+                          >
+                            {VISIBILITY_SCOPES.map((v) => (
+                              <option key={v.value} value={v.value}>
+                                {v.label}
+                              </option>
+                            ))}
+                          </select>
                         </div>
                         <button
                           disabled={saving !== null || !(draft?.reason ?? override?.reason_category)}

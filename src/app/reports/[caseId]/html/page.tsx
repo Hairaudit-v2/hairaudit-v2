@@ -10,6 +10,14 @@ import { buildReportViewModel, normalizeAuditMode, type AuditMode } from "@/lib/
 import { resolveAuditModeFromCaseAccess } from "@/lib/reports/accessMode";
 import { verifyRenderToken } from "@/lib/reports/internalRenderToken";
 import { applyAuditorOverridesToSummary } from "@/lib/auditor/applyOverrides";
+import {
+  filterReportVisibleOverrides,
+  filterReportVisibleSectionFeedback,
+  buildAuditorChangeSummaryLines,
+  buildAuditorNoteForDomain,
+  type OverrideRowWithVisibility,
+  type SectionFeedbackRow,
+} from "@/lib/auditor/visibility";
 
 function createSupabaseAdmin() {
   return createClient(
@@ -181,15 +189,31 @@ export default async function ReportHtmlPage({
     .maybeSingle();
 
   let summary = (latestReport?.summary ?? {}) as Summary & Record<string, unknown>;
+  let reportVisibleOverrides: OverrideRowWithVisibility[] = [];
+  let reportVisibleFeedback: SectionFeedbackRow[] = [];
   if (latestReport?.id) {
-    const { data: overrides } = await supabase
-      .from("audit_score_overrides")
-      .select("domain_key, ai_score, ai_weighted_score, manual_score, manual_weighted_score, delta_score")
-      .eq("report_id", latestReport.id);
-    if (Array.isArray(overrides) && overrides.length > 0) {
-      summary = applyAuditorOverridesToSummary(summary as Record<string, unknown>, overrides) as typeof summary;
+    const [
+      { data: overrides },
+      { data: sectionFeedback },
+    ] = await Promise.all([
+      supabase
+        .from("audit_score_overrides")
+        .select("domain_key, ai_score, ai_weighted_score, manual_score, manual_weighted_score, delta_score, override_note, visibility_scope")
+        .eq("report_id", latestReport.id),
+      supabase
+        .from("audit_section_feedback")
+        .select("section_key, feedback_note, visibility_scope")
+        .eq("report_id", latestReport.id),
+    ]);
+    const overrideRows = (overrides ?? []) as OverrideRowWithVisibility[];
+    if (overrideRows.length > 0) {
+      summary = applyAuditorOverridesToSummary(summary as Record<string, unknown>, overrideRows) as typeof summary;
     }
+    reportVisibleOverrides = filterReportVisibleOverrides(overrideRows);
+    reportVisibleFeedback = filterReportVisibleSectionFeedback((sectionFeedback ?? []) as SectionFeedbackRow[]);
   }
+  const auditorChangeSummaryLines = buildAuditorChangeSummaryLines(reportVisibleOverrides);
+  const hasReportVisibleOverrides = reportVisibleOverrides.length > 0;
   const findings = Array.isArray(summary.findings) ? summary.findings : (summary.highlights ?? []);
   const forensic = summary.forensic_audit;
   const domainV1 = forensic?.domain_scores_v1?.domains ?? null;
@@ -547,6 +571,35 @@ export default async function ReportHtmlPage({
                 </table>
               </div>
             )}
+            {/* Auditor change summary and per-domain notes — only report-visible overrides/feedback */}
+            {hasReportVisibleOverrides && auditorChangeSummaryLines.length > 0 && (
+              <div style={{ marginTop: 16, padding: 12, border: "1px solid #ccc", borderRadius: 10, background: "#fafafa" }}>
+                <div style={{ fontSize: 11, color: "#555", marginBottom: 6 }}>Auditor change summary</div>
+                <ul style={{ margin: 0, paddingLeft: 18 }}>
+                  {auditorChangeSummaryLines.map((line, i) => (
+                    <li key={i} style={{ marginBottom: 4 }}>{line}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {Array.isArray(domainV1) && domainV1.length > 0 && (() => {
+              const domainNotes = domainV1
+                .map((d) => ({ domainId: d.domain_id as string, title: d.title, note: buildAuditorNoteForDomain(d.domain_id as string, reportVisibleOverrides, reportVisibleFeedback) }))
+                .filter((x) => x.note.length > 0);
+              return domainNotes.length > 0 ? (
+                <div style={{ marginTop: 16, padding: 12, border: "1px solid #ccc", borderRadius: 10, background: "#fafafa" }}>
+                  <div style={{ fontSize: 11, color: "#555", marginBottom: 6 }}>Auditor notes</div>
+                  <ul style={{ margin: 0, paddingLeft: 18 }}>
+                    {domainNotes.map((x, i) => (
+                      <li key={i} style={{ marginBottom: 6 }}>
+                        <strong>{x.title ?? x.domainId}</strong>: {x.note}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null;
+            })()}
+
             {(domains || sections) &&
               (Object.keys(domains ?? {}).length > 0 || Object.keys(sections ?? {}).length > 0) && (
               <div style={{ marginTop: 16 }}>

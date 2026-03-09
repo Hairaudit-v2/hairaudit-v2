@@ -4,6 +4,8 @@ import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import CreateCaseButton from "../create-case-button";
 import Sparkline from "@/components/ui/Sparkline";
+import { getNextMilestoneFromProfile, getNextTier } from "@/lib/transparency/awardRules";
+import ClinicTransparencyProgressPanel from "@/components/dashboard/ClinicTransparencyProgressPanel";
 
 export default async function ClinicDashboardPage() {
   const supabase = await createSupabaseAuthServerClient();
@@ -13,20 +15,18 @@ export default async function ClinicDashboardPage() {
   const admin = createSupabaseAdminClient();
   const userEmail = String(user.email ?? "").toLowerCase();
 
+  const profileSelect =
+    "id, linked_user_id, clinic_name, clinic_email, transparency_score, audited_case_count, contributed_case_count, benchmark_eligible_count, average_forensic_score, documentation_integrity_average, current_award_tier, award_progression_paused, volume_confidence_score, validated_case_count, provisional_high_score_count, validated_high_score_count, low_score_case_count, benchmark_eligible_validated_count";
   const { data: byUserProfile } = await admin
     .from("clinic_profiles")
-    .select(
-      "id, linked_user_id, clinic_name, clinic_email, transparency_score, audited_case_count, contributed_case_count, benchmark_eligible_count, average_forensic_score, documentation_integrity_average, current_award_tier"
-    )
+    .select(profileSelect)
     .eq("linked_user_id", user.id)
     .limit(1)
     .maybeSingle();
   const { data: byEmailProfile } = !byUserProfile && userEmail
     ? await admin
         .from("clinic_profiles")
-        .select(
-          "id, linked_user_id, clinic_name, clinic_email, transparency_score, audited_case_count, contributed_case_count, benchmark_eligible_count, average_forensic_score, documentation_integrity_average, current_award_tier"
-        )
+        .select(profileSelect)
         .eq("clinic_email", userEmail)
         .limit(1)
         .maybeSingle()
@@ -41,9 +41,7 @@ export default async function ClinicDashboardPage() {
         clinic_name: `Clinic ${user.id.slice(0, 8)}`,
         clinic_email: userEmail,
       })
-      .select(
-        "id, linked_user_id, clinic_name, clinic_email, transparency_score, audited_case_count, contributed_case_count, benchmark_eligible_count, average_forensic_score, documentation_integrity_average, current_award_tier"
-      )
+      .select(profileSelect)
       .maybeSingle();
     clinicProfile = createdClinicProfile;
   } else if (clinicProfile && !clinicProfile.linked_user_id) {
@@ -108,6 +106,19 @@ export default async function ClinicDashboardPage() {
 
   const completedLast30 = dailyCounts.reduce((a, b) => a + b, 0);
 
+  const currentTier = (clinicProfile?.current_award_tier ?? "VERIFIED") as "VERIFIED" | "SILVER" | "GOLD" | "PLATINUM";
+  const nextTier = getNextTier(currentTier);
+  const nextMilestone = getNextMilestoneFromProfile({
+    current_award_tier: clinicProfile?.current_award_tier,
+    validated_case_count: (clinicProfile as { validated_case_count?: number })?.validated_case_count ?? clinicProfile?.contributed_case_count,
+    average_forensic_score: clinicProfile?.average_forensic_score,
+    benchmark_eligible_validated_count: (clinicProfile as { benchmark_eligible_validated_count?: number })?.benchmark_eligible_validated_count ?? clinicProfile?.benchmark_eligible_count,
+    transparency_score: clinicProfile?.transparency_score,
+    documentation_integrity_average: clinicProfile?.documentation_integrity_average,
+    award_progression_paused: (clinicProfile as { award_progression_paused?: boolean })?.award_progression_paused,
+    volume_confidence_score: (clinicProfile as { volume_confidence_score?: number })?.volume_confidence_score,
+  });
+
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
@@ -167,28 +178,12 @@ export default async function ClinicDashboardPage() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-4 mb-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <div className="text-xs font-semibold text-emerald-700">Clinic Transparency Dashboard</div>
-            <div className="mt-1 text-sm text-emerald-900">
-              Transparency participation rate:{" "}
-              <span className="font-semibold">
-                {Number(clinicProfile?.transparency_score ?? 0).toFixed(1)}%
-              </span>
-            </div>
-          </div>
-          <div className="rounded-lg border border-emerald-300 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-800">
-            Tier: {String(clinicProfile?.current_award_tier ?? "VERIFIED")}
-          </div>
-        </div>
-        <div className="mt-3 grid gap-2 text-xs text-emerald-900 sm:grid-cols-3">
-          <div>Total audited cases: {clinicProfile?.audited_case_count ?? 0}</div>
-          <div>Total doctor-contributed cases: {clinicProfile?.contributed_case_count ?? 0}</div>
-          <div>Benchmark-eligible cases: {clinicProfile?.benchmark_eligible_count ?? 0}</div>
-          <div>Average forensic score: {Number(clinicProfile?.average_forensic_score ?? 0).toFixed(1)}</div>
-          <div>Documentation integrity average: {Number(clinicProfile?.documentation_integrity_average ?? 0).toFixed(1)}</div>
-        </div>
+      <div className="mb-6">
+        <ClinicTransparencyProgressPanel
+          profile={clinicProfile}
+          nextMilestone={nextMilestone}
+          nextTierLabel={nextTier}
+        />
       </div>
 
       <div className="mb-8">

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { isAuditor } from "@/lib/auth/isAuditor";
+import { isEligibleForManualReview } from "@/lib/auditor/eligibility";
 
 export const runtime = "nodejs";
 
@@ -66,6 +67,12 @@ export async function POST(req: Request) {
     if (!caseId || !reportId || !sectionKey || !feedbackNote) {
       return NextResponse.json({ ok: false, error: "Missing caseId, reportId, sectionKey, or feedbackNote" }, { status: 400 });
     }
+
+    const { data: reportRow } = await admin.from("reports").select("auditor_review_eligibility").eq("id", reportId).maybeSingle();
+    if (!reportRow || !isEligibleForManualReview((reportRow as { auditor_review_eligibility?: string }).auditor_review_eligibility)) {
+      return NextResponse.json({ ok: false, error: "Report is not eligible for manual auditor review (score 60–89 or not unlocked)." }, { status: 403 });
+    }
+
     if (!FEEDBACK_TYPES.includes(feedbackType as any)) {
       return NextResponse.json({ ok: false, error: "Invalid feedbackType" }, { status: 400 });
     }

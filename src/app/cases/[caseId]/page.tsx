@@ -162,14 +162,14 @@ export default async function Page({
   }
 
   // Try with status/error and auditor review columns; fallback if columns don't exist
-  let reports: { id: string; version: number; pdf_path: string | null; summary: unknown; created_at: string; status?: string; error?: string | null; patient_audit_version?: number; patient_audit_v2?: Record<string, unknown> | null; auditor_review_eligibility?: string; auditor_review_status?: string; auditor_review_reason?: string | null }[] | null = null;
+  let reports: { id: string; version: number; pdf_path: string | null; summary: unknown; created_at: string; status?: string; error?: string | null; patient_audit_version?: number; patient_audit_v2?: Record<string, unknown> | null; auditor_review_eligibility?: string; auditor_review_status?: string; auditor_review_reason?: string | null; provisional_status?: string; counts_for_awards?: boolean }[] | null = null;
   let repErr: { message: string } | null = null;
   const withStatus = await db
     .from("reports")
-    .select("id, version, pdf_path, summary, created_at, status, error, patient_audit_version, patient_audit_v2, auditor_review_eligibility, auditor_review_status, auditor_review_reason")
+    .select("id, version, pdf_path, summary, created_at, status, error, patient_audit_version, patient_audit_v2, auditor_review_eligibility, auditor_review_status, auditor_review_reason, provisional_status, counts_for_awards")
     .eq("case_id", c.id)
     .order("version", { ascending: false });
-  if (withStatus.error && (String(withStatus.error.message).includes("status") || String(withStatus.error.message).includes("patient_audit") || String(withStatus.error.message).includes("auditor_review") || String(withStatus.error.message).includes("does not exist"))) {
+  if (withStatus.error && (String(withStatus.error.message).includes("status") || String(withStatus.error.message).includes("patient_audit") || String(withStatus.error.message).includes("auditor_review") || String(withStatus.error.message).includes("provisional") || String(withStatus.error.message).includes("does not exist"))) {
     const fallback = await db
       .from("reports")
       .select("id, version, pdf_path, summary, created_at")
@@ -204,6 +204,8 @@ export default async function Page({
 
   const latestReport = reports?.[0] ?? null;
   const auditorReviewEligibility = (latestReport as { auditor_review_eligibility?: string } | null)?.auditor_review_eligibility;
+  const provisionalStatus = (latestReport as { provisional_status?: string } | null)?.provisional_status;
+  const countsForAwards = (latestReport as { counts_for_awards?: boolean } | null)?.counts_for_awards;
   const showAuditorReview = isAuditor && latestReport && isAuditorReviewAvailable(auditorReviewEligibility);
   const latestSummary = (latestReport?.summary as Record<string, unknown>) ?? {};
   const forensic = (latestSummary?.forensic_audit as Record<string, unknown> | null | undefined) ?? null;
@@ -215,6 +217,10 @@ export default async function Page({
     | undefined;
   const completenessIndex = (forensic as any)?.completeness_index_v1 ?? null;
   const reportScore = typeof latestSummary?.score === "number" ? latestSummary.score : overallScores?.performance_score;
+  const scoreNum = typeof reportScore === "number" ? reportScore : Number(overallScores?.performance_score ?? overallScores?.benchmark_score ?? 0);
+  const isHighScore = scoreNum > 90;
+  const isHighScoreProvisional = isHighScore && provisionalStatus === "pending_validation";
+  const isHighScoreValidated = isHighScore && countsForAwards === true && (provisionalStatus === "validated_by_auditor" || provisionalStatus === "validated_by_evidence" || provisionalStatus === "validated_by_consistency");
 
   const reportPatientAnswers =
     latestReport?.patient_audit_version === 2 && latestReport?.patient_audit_v2 && Object.keys(latestReport.patient_audit_v2).length > 0
@@ -295,6 +301,18 @@ export default async function Page({
                 <p className="mt-1 text-sm font-medium text-cyan-200">{String(confidenceLabel).toUpperCase()}</p>
               </div>
             </div>
+            {isHighScoreProvisional && (
+              <div className="mt-3 rounded-xl border border-amber-300/40 bg-amber-950/40 px-4 py-3">
+                <p className="text-sm font-semibold text-amber-100">High Score (Provisional)</p>
+                <p className="mt-1 text-xs text-amber-200/90">Awaiting validation before award contribution.</p>
+              </div>
+            )}
+            {isHighScoreValidated && (
+              <div className="mt-3 rounded-xl border border-emerald-300/40 bg-emerald-950/40 px-4 py-3">
+                <p className="text-sm font-semibold text-emerald-100">High Score (Validated)</p>
+                <p className="mt-1 text-xs text-emerald-200/90">Counts toward clinic awards.</p>
+              </div>
+            )}
 
             <div className="grid gap-3 sm:grid-cols-2">
               <Link
@@ -483,6 +501,8 @@ export default async function Page({
                 domains={domains as any}
                 benchmark={benchmark}
                 overallScores={overallScores}
+                provisionalStatus={provisionalStatus}
+                countsForAwards={countsForAwards}
               />
             </>
           ) : (

@@ -11,7 +11,7 @@ import { renderAndUploadPdfForCase } from "@/lib/reports/renderPdfInternal";
 import { normalizeIntakeFormData, toNestedForApi } from "@/lib/intake/normalizeIntakeFormData";
 import { shouldGeneratePdf } from "@/lib/reports/pdfReadiness";
 import { prepareCaseEvidenceManifest } from "@/lib/evidence/prepareCaseEvidence";
-import { computeAuditorReviewEligibility } from "@/lib/auditor/eligibility";
+import { computeAuditorReviewEligibility, computeProvisionalFromScore, computeAwardContributionWeight } from "@/lib/auditor/eligibility";
 
 function supabaseAdmin() {
   return createClient(
@@ -780,6 +780,8 @@ export const runAudit = inngest.createFunction(
           auditor_review_eligibility: "not_eligible",
           auditor_review_status: "not_requested",
           auditor_review_reason: null,
+          provisional_status: "none",
+          counts_for_awards: false,
           summary: {
             ...existingSummary,
             image_ingestion_stats: imageIngestionStats,
@@ -1132,6 +1134,14 @@ export const runAudit = inngest.createFunction(
 
       const finalAiScore = Number(overall?.performance_score ?? overall?.benchmark_score ?? 0);
       const { eligibility: auditorReviewEligibility, status: auditorReviewStatus, reason: auditorReviewReason } = computeAuditorReviewEligibility(finalAiScore);
+      const { provisional_status: provisionalStatus, counts_for_awards: countsForAwards } = computeProvisionalFromScore(finalAiScore);
+      const benchmarkEligible = Boolean((v1 as any)?.benchmark?.eligible);
+      const awardContributionWeight = computeAwardContributionWeight({
+        score: finalAiScore,
+        provisionalStatus,
+        countsForAwards,
+        benchmarkEligible,
+      });
 
       const { error } = await supabase.from("reports").insert({
         case_id: caseId,
@@ -1143,6 +1153,9 @@ export const runAudit = inngest.createFunction(
         auditor_review_eligibility: auditorReviewEligibility,
         auditor_review_status: auditorReviewStatus,
         auditor_review_reason: auditorReviewReason,
+        provisional_status: provisionalStatus,
+        counts_for_awards: countsForAwards,
+        award_contribution_weight: awardContributionWeight,
       });
 
       if (error) throw new Error(`reports insert failed: ${error.message}`);
