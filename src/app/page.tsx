@@ -3,6 +3,8 @@ import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import ScrollReveal from "@/components/ui/ScrollReveal";
+import RadarScore from "@/components/report-preview/RadarScore";
+import AuditFindingsPreview from "@/components/report-preview/AuditFindingsPreview";
 
 export const revalidate = 600;
 
@@ -266,7 +268,45 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ——— 6. SERVICES PREVIEW ——— */}
+        {/* ——— 6. SAMPLE REPORT PREVIEW ——— */}
+        <section id="sample-report-preview" className="relative px-4 sm:px-6 py-16 sm:py-20 lg:py-24">
+          <div className="max-w-6xl mx-auto">
+            <ScrollReveal>
+              <p className="text-xs font-semibold uppercase tracking-wider text-amber-400/90">
+                Output proof
+              </p>
+              <h2 className="mt-3 text-2xl sm:text-3xl font-bold text-white tracking-tight">
+                Example Audit Report
+              </h2>
+              <p className="mt-4 text-slate-400 max-w-2xl">
+                A demo-safe preview of how HairAudit outputs are structured: domain scoring, evidence
+                strength, findings summary, and next-step considerations.
+              </p>
+            </ScrollReveal>
+
+            <div className="mt-12 grid lg:grid-cols-2 gap-6 lg:gap-8">
+              <ScrollReveal delay={0.05}>
+                <RadarScore />
+              </ScrollReveal>
+              <ScrollReveal delay={0.1}>
+                <AuditFindingsPreview />
+              </ScrollReveal>
+            </div>
+
+            <ScrollReveal delay={0.15}>
+              <div className="mt-10 text-center">
+                <Link
+                  href="/sample-report"
+                  className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl border border-amber-500/40 bg-amber-500/10 text-amber-300 font-semibold hover:bg-amber-500/20 transition-colors"
+                >
+                  View Full Sample Report
+                </Link>
+              </div>
+            </ScrollReveal>
+          </div>
+        </section>
+
+        {/* ——— 7. SERVICES PREVIEW ——— */}
         <section id="services" className="relative px-4 sm:px-6 py-16 sm:py-20 lg:py-24">
           <div className="max-w-6xl mx-auto">
             <ScrollReveal>
@@ -339,7 +379,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ——— 7. CLINICS / VERIFIED PROGRAM PREVIEW ——— */}
+        {/* ——— 8. CLINICS / VERIFIED PROGRAM PREVIEW ——— */}
         <section className="relative px-4 sm:px-6 py-16 sm:py-20 lg:py-24">
           <div className="max-w-5xl mx-auto">
             <ScrollReveal>
@@ -393,7 +433,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ——— 8. FINAL CTA ——— */}
+        {/* ——— 9. FINAL CTA ——— */}
         <section className="relative px-4 sm:px-6 py-16 sm:py-20 lg:py-24">
           <div className="max-w-3xl mx-auto text-center">
             <ScrollReveal>
