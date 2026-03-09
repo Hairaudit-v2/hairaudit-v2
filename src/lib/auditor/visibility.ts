@@ -10,10 +10,13 @@ export type VisibilityScope = (typeof VISIBILITY_SCOPES)[number];
 
 export type OverrideRowWithVisibility = {
   domain_key: string;
+  ai_score: number;
+  ai_weighted_score: number | null;
+  manual_score: number;
+  manual_weighted_score: number | null;
+  delta_score: number;
   override_note: string | null;
   visibility_scope?: string | null;
-  manual_score?: number;
-  ai_score?: number;
   [k: string]: unknown;
 };
 

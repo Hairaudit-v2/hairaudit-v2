@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test:pdf-logic": "tsx --test tests/pdfReadiness.test.ts",
+    "test:integration": "tsx --test tests/integration/auditorAwardVisibility.test.ts",
     "inngest:dev": "npx inngest-cli@latest dev -u http://localhost:3000/api/inngest --no-discovery",
     "seed:patients": "tsx scripts/seedPatientAudits.ts"
   },

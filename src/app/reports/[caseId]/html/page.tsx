@@ -9,7 +9,7 @@ import { buildRubricTitles } from "@/lib/audit/rubricTitles";
 import { buildReportViewModel, normalizeAuditMode, type AuditMode } from "@/lib/pdf/reportBuilder";
 import { resolveAuditModeFromCaseAccess } from "@/lib/reports/accessMode";
 import { verifyRenderToken } from "@/lib/reports/internalRenderToken";
-import { applyAuditorOverridesToSummary } from "@/lib/auditor/applyOverrides";
+import { applyAuditorOverridesToSummary, type OverrideRow } from "@/lib/auditor/applyOverrides";
 import {
   filterReportVisibleOverrides,
   filterReportVisibleSectionFeedback,
@@ -207,7 +207,7 @@ export default async function ReportHtmlPage({
     ]);
     const overrideRows = (overrides ?? []) as OverrideRowWithVisibility[];
     if (overrideRows.length > 0) {
-      summary = applyAuditorOverridesToSummary(summary as Record<string, unknown>, overrideRows) as typeof summary;
+      summary = applyAuditorOverridesToSummary(summary as Record<string, unknown>, overrideRows as OverrideRow[]) as typeof summary;
     }
     reportVisibleOverrides = filterReportVisibleOverrides(overrideRows);
     reportVisibleFeedback = filterReportVisibleSectionFeedback((sectionFeedback ?? []) as SectionFeedbackRow[]);
