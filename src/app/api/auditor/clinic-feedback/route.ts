@@ -45,7 +45,7 @@ export async function GET(req: Request) {
       ] = await Promise.all([
         admin
           .from("audit_score_overrides")
-          .select("domain_key, override_note, visibility_scope, manual_score, ai_score, created_at")
+          .select("domain_key, override_note, visibility_scope, manual_score, ai_score, ai_weighted_score, manual_weighted_score, delta_score, created_at")
           .eq("case_id", caseIdParam)
           .eq("report_id", reportIdParam),
         admin
