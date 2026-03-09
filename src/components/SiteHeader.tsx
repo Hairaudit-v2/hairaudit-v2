@@ -11,22 +11,37 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
 
   return (
     <header className="border-b border-slate-800 bg-slate-900">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16 sm:h-20">
-        <Link href={logoHref} className="flex items-center gap-3 group">
-          {showLogo && (
-            <Image
-              src="/hair-audit-logo-white.png"
-              alt="Hair Audit"
-              width={260}
-              height={80}
-              className="h-16 sm:h-20 w-auto object-contain"
-              priority
-            />
-          )}
-        </Link>
+      <div className="max-w-6xl mx-auto px-5 sm:px-8 flex items-center h-[72px] sm:h-[84px] relative">
+        {showLogo && (
+          <>
+            <Link href={logoHref} className="flex items-center group xl:hidden">
+              <Image
+                src="/hair-audit-logo-white.png"
+                alt="Hair Audit"
+                width={230}
+                height={64}
+                className="h-10 sm:h-12 lg:h-14 w-auto object-contain"
+                priority
+              />
+            </Link>
+            <Link
+              href={logoHref}
+              className="hidden xl:flex items-center group absolute left-1/2 -translate-x-1/2"
+            >
+              <Image
+                src="/hair-audit-logo-white.png"
+                alt="Hair Audit"
+                width={230}
+                height={64}
+                className="h-10 sm:h-12 lg:h-14 w-auto object-contain"
+                priority
+              />
+            </Link>
+          </>
+        )}
 
         {variant === "default" ? (
-          <nav className="flex items-center gap-1 sm:gap-4" aria-label="Main navigation">
+          <nav className="ml-auto flex items-center gap-1 sm:gap-4" aria-label="Main navigation">
             <Link
               href="/"
               className="text-sm font-medium text-slate-300 hover:text-amber-400 transition-colors hidden sm:block"
@@ -95,7 +110,7 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
             </Link>
           </nav>
         ) : (
-          <nav className="flex items-center gap-4">
+          <nav className="ml-auto flex items-center gap-4">
             <Link
               href="/login"
               className="text-sm font-medium text-slate-300 hover:text-amber-400 transition-colors"
