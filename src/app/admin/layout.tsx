@@ -39,6 +39,12 @@ export default async function AdminLayout({
             >
               Contribution Requests
             </Link>
+            <Link
+              href="/admin/auth-health"
+              className="text-sm font-medium text-slate-300 hover:text-cyan-300 transition-colors"
+            >
+              Auth Health
+            </Link>
           </div>
           <span className="text-xs text-slate-500">Admin</span>
         </div>

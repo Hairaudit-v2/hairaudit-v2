@@ -18,6 +18,12 @@ export default function SignUpPage() {
   const [msg, setMsg] = useState<string | null>(null);
   const [msgKind, setMsgKind] = useState<"error" | "success">("error");
   const [busy, setBusy] = useState(false);
+  const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
+  const [resending, setResending] = useState<null | "confirm" | "magic">(null);
+
+  function getAppUrl() {
+    return (process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "") || "").trim() || "https://hairaudit.com";
+  }
 
   async function signUp(e: React.FormEvent) {
     e.preventDefault();
@@ -27,9 +33,7 @@ export default function SignUpPage() {
 
     // IMPORTANT: Prevent localhost leaking into Supabase confirmation emails.
     // If NEXT_PUBLIC_APP_URL is not set, default to production domain.
-    const appUrl =
-      (process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "") || "").trim() ||
-      "https://hairaudit.com";
+    const appUrl = getAppUrl();
     if (!process.env.NEXT_PUBLIC_APP_URL) {
       console.warn("[signup] NEXT_PUBLIC_APP_URL is not set; using fallback domain for email redirect.", {
         fallback: appUrl,
@@ -76,6 +80,7 @@ export default function SignUpPage() {
       });
       setMsg("✅ Check your email to confirm your address, then come back and sign in.");
       setMsgKind("success");
+      setAwaitingConfirmation(true);
       setBusy(false);
       return;
     }
@@ -100,7 +105,63 @@ export default function SignUpPage() {
 
     router.push("/dashboard");
     router.refresh();
+    setAwaitingConfirmation(false);
     setBusy(false);
+  }
+
+  async function resendConfirmationEmail() {
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      setMsgKind("error");
+      setMsg("Enter your email to resend confirmation.");
+      return;
+    }
+    setResending("confirm");
+    setMsg(null);
+    try {
+      const appUrl = getAppUrl();
+      const emailRedirectTo = `${appUrl}/auth/callback?signup_role=${signupRole}`;
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: trimmedEmail,
+        options: { emailRedirectTo },
+      });
+      if (error) throw error;
+      setMsgKind("success");
+      setMsg("✅ Confirmation email resent. If it appears blank, use the magic-link fallback below.");
+    } catch (error: unknown) {
+      setMsgKind("error");
+      setMsg(`❌ ${(error as Error)?.message ?? "Could not resend confirmation email."}`);
+    } finally {
+      setResending(null);
+    }
+  }
+
+  async function sendMagicLinkFallback() {
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      setMsgKind("error");
+      setMsg("Enter your email to receive a magic link.");
+      return;
+    }
+    setResending("magic");
+    setMsg(null);
+    try {
+      const appUrl = getAppUrl();
+      const emailRedirectTo = `${appUrl}/auth/magic-link`;
+      const { error } = await supabase.auth.signInWithOtp({
+        email: trimmedEmail,
+        options: { emailRedirectTo },
+      });
+      if (error) throw error;
+      setMsgKind("success");
+      setMsg("✅ Magic link sent. You can use it to sign in while confirmation email templates are being fixed.");
+    } catch (error: unknown) {
+      setMsgKind("error");
+      setMsg(`❌ ${(error as Error)?.message ?? "Could not send magic link."}`);
+    } finally {
+      setResending(null);
+    }
   }
 
   function maskEmail(value: string): string {
@@ -220,6 +281,31 @@ export default function SignUpPage() {
               >
                 {msg}
               </p>
+            )}
+            {awaitingConfirmation && (
+              <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <p className="text-xs text-slate-600">
+                  Didn&apos;t get a usable confirmation email?
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={resendConfirmationEmail}
+                    disabled={resending !== null}
+                    className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-60"
+                  >
+                    {resending === "confirm" ? "Resending..." : "Resend confirmation"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={sendMagicLinkFallback}
+                    disabled={resending !== null}
+                    className="rounded-md border border-cyan-300 bg-cyan-50 px-3 py-1.5 text-xs font-semibold text-cyan-800 hover:bg-cyan-100 disabled:opacity-60"
+                  >
+                    {resending === "magic" ? "Sending..." : "Send magic link instead"}
+                  </button>
+                </div>
+              </div>
             )}
 
             <p className="mt-6 text-center text-sm text-slate-600">
