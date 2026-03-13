@@ -50,6 +50,11 @@ export default function SiteFooter() {
                 </Link>
               </li>
               <li>
+                <Link href="/community-results" className="hover:text-amber-400 transition-colors">
+                  Community Results
+                </Link>
+              </li>
+              <li>
                 <Link href="/clinics" className="hover:text-amber-400 transition-colors">
                   Clinics
                 </Link>

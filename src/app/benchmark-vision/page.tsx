@@ -302,10 +302,10 @@ export default function BenchmarkVisionPage() {
               </h2>
               <div className="mt-10 flex flex-col sm:flex-row flex-wrap justify-center gap-4">
                 <Link
-                  href="/signup"
+                  href="/request-review"
                   className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors shadow-lg shadow-amber-500/20"
                 >
-                  Request an Audit
+                  Request a Hair Transplant Review
                 </Link>
                 <Link
                   href="/how-it-works"
