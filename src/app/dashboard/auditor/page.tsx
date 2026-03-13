@@ -1,9 +1,26 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { isAuditor } from "@/lib/auth/isAuditor";
 import { isMissingFeatureError } from "@/lib/db/isMissingFeatureError";
 import AuditorDashboardClient from "./AuditorDashboardClient";
+import {
+  getAuditDashboardMode,
+  getAuditKpis,
+  getAuditPriorityBreakdown,
+  getAuditStatusBreakdown,
+  getAuditVolumeSeries,
+  getRecentOperationalAudits,
+  type DashboardRange,
+} from "@/lib/dashboard/auditOperations";
+import AuditKpiCards from "@/components/dashboard/AuditKpiCards";
+import AuditVolumeChart from "@/components/dashboard/AuditVolumeChart";
+import AuditStatusChart from "@/components/dashboard/AuditStatusChart";
+import AuditPriorityChart from "@/components/dashboard/AuditPriorityChart";
+import OperationalAuditsTable from "@/components/dashboard/OperationalAuditsTable";
+
+export const revalidate = 60;
 
 type CaseDashboardRow = {
   id: string;
@@ -51,7 +68,18 @@ type GiiDashboardRow = {
   created_at?: string | null;
 };
 
-export default async function AuditorDashboardPage() {
+function parseRange(value: string | undefined): DashboardRange {
+  if (value === "today" || value === "7d" || value === "30d" || value === "90d") return value;
+  return "7d";
+}
+
+export default async function AuditorDashboardPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ range?: string }> | { range?: string };
+}) {
+  const params = await Promise.resolve(searchParams ?? {});
+  const range = parseRange(params.range);
   const supabase = await createSupabaseAuthServerClient();
   const {
     data: { user },
@@ -216,15 +244,71 @@ export default async function AuditorDashboardPage() {
     audit_type: c.audit_type ?? null,
   }));
 
+  const [kpis, volumeSeries, statusBreakdown, priorityBreakdown, operationalAudits] = await Promise.all([
+    getAuditKpis(range),
+    getAuditVolumeSeries(range),
+    getAuditStatusBreakdown(range),
+    getAuditPriorityBreakdown(range),
+    getRecentOperationalAudits(range),
+  ]);
+  const mode = getAuditDashboardMode();
+
   return (
-    <AuditorDashboardClient
-      cases={casesForClient}
-      reportByCase={Object.fromEntries(reportByCase.entries())}
-      evidenceByCase={Object.fromEntries(evidenceByCase.entries())}
-      giiByCase={Object.fromEntries(giiLatestByCase.entries())}
-      assignedAuditorNameById={Object.fromEntries(assignedAuditorNameById.entries())}
-      clinicNameByCaseId={clinicNameByCaseId}
-      patientNameByCaseId={patientNameByCaseId}
-    />
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-6 py-2">
+      <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900">Live Operations Dashboard</h2>
+            <p className="text-sm text-slate-500">Audit volume, workflow throughput, and backlog risk indicators.</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {(["today", "7d", "30d", "90d"] as const).map((key) => (
+              <Link
+                key={key}
+                href={`/dashboard/auditor?range=${key}`}
+                className={`rounded-full border px-3 py-1.5 text-xs font-medium ${
+                  range === key ? "border-slate-900 bg-slate-900 text-white" : "border-slate-300 text-slate-700 hover:bg-slate-50"
+                }`}
+              >
+                {key}
+              </Link>
+            ))}
+            <span
+              className={`rounded-full border px-2.5 py-1 text-xs font-semibold uppercase tracking-wide ${
+                mode === "demo" ? "border-amber-300 bg-amber-50 text-amber-800" : "border-emerald-300 bg-emerald-50 text-emerald-800"
+              }`}
+            >
+              {mode} mode
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <AuditKpiCards kpis={kpis} />
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <AuditVolumeChart points={volumeSeries} />
+        <div className="space-y-4">
+          <AuditStatusChart breakdown={statusBreakdown} />
+          <AuditPriorityChart breakdown={priorityBreakdown} />
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <OperationalAuditsTable title="Recent Audits" rows={operationalAudits.recentAudits} />
+        <OperationalAuditsTable title="Audits Needing Manual Input" rows={operationalAudits.manualInputAudits} />
+        <OperationalAuditsTable title="Stuck / Failed Audits" rows={operationalAudits.stuckOrFailedAudits} />
+      </div>
+
+      <AuditorDashboardClient
+        cases={casesForClient}
+        reportByCase={Object.fromEntries(reportByCase.entries())}
+        evidenceByCase={Object.fromEntries(evidenceByCase.entries())}
+        giiByCase={Object.fromEntries(giiLatestByCase.entries())}
+        assignedAuditorNameById={Object.fromEntries(assignedAuditorNameById.entries())}
+        clinicNameByCaseId={clinicNameByCaseId}
+        patientNameByCaseId={patientNameByCaseId}
+      />
+    </div>
   );
 }

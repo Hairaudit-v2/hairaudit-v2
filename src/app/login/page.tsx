@@ -12,6 +12,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [busyProvider, setBusyProvider] = useState<"google" | "email" | "password" | null>(null);
+  const [sendingReset, setSendingReset] = useState(false);
 
   const appUrl =
     (process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "") || "").trim() ||
@@ -80,6 +81,27 @@ export default function LoginPage() {
       setMsg("Check your email for a secure sign-in link.");
     }
     setBusyProvider(null);
+  }
+
+  async function sendPasswordReset() {
+    setMsg(null);
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail) {
+      setMsg("Enter your email first so we can send a recovery link.");
+      return;
+    }
+
+    setSendingReset(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
+      redirectTo: `${appUrl}/auth/recovery`,
+    });
+
+    if (error) {
+      setMsg(`❌ ${error.message}`);
+    } else {
+      setMsg("Recovery link sent. Check your email to reset your password.");
+    }
+    setSendingReset(false);
   }
 
   return (
@@ -161,6 +183,16 @@ export default function LoginPage() {
                 Sign in with Email + Password
               </button>
             </form>
+            <p className="mt-3 text-right text-sm text-slate-600">
+              <button
+                type="button"
+                onClick={sendPasswordReset}
+                disabled={busyProvider !== null || sendingReset}
+                className="font-medium text-slate-700 hover:text-slate-900 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {sendingReset ? "Sending recovery link..." : "Lost password?"}
+              </button>
+            </p>
 
             <button
               type="button"
