@@ -196,7 +196,7 @@ export default function ClinicProfileBuilder({
         </div>
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <section id="clinical-stack" className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="text-xl font-semibold text-slate-900">Clinical stack catalog</h2>
         <p className="mt-1 text-sm text-slate-600">
           Add methods, tools, devices, machine details, optional extras, and protocols.

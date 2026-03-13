@@ -1,0 +1,172 @@
+import { redirect } from "next/navigation";
+import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
+import {
+  computeAdvancedCompletionScore,
+  computeProfileCompletionScore,
+  resolveClinicProfileForUser,
+} from "@/lib/clinicPortal";
+import ClinicPortalShell from "@/components/clinic-portal/shell/ClinicPortalShell";
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+export default async function ClinicPortalLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const supabase = await createSupabaseAuthServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const { admin, clinicProfile } = await resolveClinicProfileForUser({
+    userId: user.id,
+    userEmail: String(user.email ?? "").toLowerCase(),
+  });
+
+  if (!clinicProfile) redirect("/dashboard");
+
+  const [{ data: profile }, { data: portalProfile }, { count: capabilityCount }, { count: workspaceCount }, { count: pendingResponses }] =
+    await Promise.all([
+      admin
+        .from("clinic_profiles")
+        .select("clinic_name, current_award_tier, participation_status, profile_visible, transparency_score, benchmark_eligible_count")
+        .eq("id", clinicProfile.id)
+        .maybeSingle(),
+      admin
+        .from("clinic_portal_profiles")
+        .select(
+          "onboarding_completed_steps, onboarding_status, basic_profile, advanced_profile, internal_qa_enabled, clinic_benchmarking_enabled, training_readiness_score"
+        )
+        .eq("clinic_profile_id", clinicProfile.id)
+        .maybeSingle(),
+      admin
+        .from("clinic_capability_catalog")
+        .select("id", { count: "exact", head: true })
+        .eq("clinic_profile_id", clinicProfile.id)
+        .eq("is_active", true),
+      admin
+        .from("clinic_case_workspaces")
+        .select("case_id", { count: "exact", head: true })
+        .eq("clinic_profile_id", clinicProfile.id),
+      admin
+        .from("clinic_case_workspaces")
+        .select("case_id", { count: "exact", head: true })
+        .eq("clinic_profile_id", clinicProfile.id)
+        .eq("clinic_response_status", "pending_response"),
+    ]);
+
+  const basicProfile = asRecord((portalProfile as { basic_profile?: unknown } | null)?.basic_profile);
+  const advancedProfile = asRecord((portalProfile as { advanced_profile?: unknown } | null)?.advanced_profile);
+  const basicCompletion = computeProfileCompletionScore(basicProfile);
+  const advancedCompletion = computeAdvancedCompletionScore(advancedProfile);
+  const completionPercent = Math.round((basicCompletion + advancedCompletion) / 2);
+  const onboardingSteps = Array.isArray((portalProfile as { onboarding_completed_steps?: unknown } | null)?.onboarding_completed_steps)
+    ? ((portalProfile as { onboarding_completed_steps: unknown[] }).onboarding_completed_steps ?? []).length
+    : 0;
+
+  const transparency = Number((profile as { transparency_score?: number | null } | null)?.transparency_score ?? 0);
+  const tier = String((profile as { current_award_tier?: string | null } | null)?.current_award_tier ?? "VERIFIED");
+  const trustStatus =
+    tier === "PLATINUM" || tier === "GOLD"
+      ? "High Trust Recognition"
+      : transparency >= 70
+        ? "Verified Transparency Progress"
+        : "Trust Profile In Development";
+
+  const internalQaReady =
+    Boolean((portalProfile as { internal_qa_enabled?: boolean } | null)?.internal_qa_enabled) ||
+    advancedCompletion >= 70;
+  const publicProfileLive = Boolean((profile as { profile_visible?: boolean | null } | null)?.profile_visible);
+  const benchmarkReady =
+    Boolean((portalProfile as { clinic_benchmarking_enabled?: boolean } | null)?.clinic_benchmarking_enabled) &&
+    (Number((profile as { benchmark_eligible_count?: number | null } | null)?.benchmark_eligible_count ?? 0) > 0 ||
+      Number(workspaceCount ?? 0) >= 3);
+  const trainingReady =
+    Number((portalProfile as { training_readiness_score?: number | null } | null)?.training_readiness_score ?? 0) >= 70 ||
+    (advancedCompletion >= 80 && Number(capabilityCount ?? 0) >= 6);
+
+  const nextAction =
+    onboardingSteps < 5
+      ? {
+          title: "Finish onboarding sequence",
+          description: "Complete the remaining setup steps to unlock full clinic portal workflows.",
+          href: "/dashboard/clinic/onboarding",
+          ctaLabel: "Continue onboarding",
+        }
+      : basicCompletion < 90
+        ? {
+            title: "Complete clinic profile",
+            description: "Strengthen trust and discoverability with a complete profile and capability catalog.",
+            href: "/dashboard/clinic/profile",
+            ctaLabel: "Open profile builder",
+          }
+        : Number(pendingResponses ?? 0) > 0
+          ? {
+              title: "Respond to patient-submitted audits",
+              description: "Pending clinic responses are waiting in your workspaces.",
+              href: "/dashboard/clinic/workspaces",
+              ctaLabel: "Review workspaces",
+            }
+          : Number(workspaceCount ?? 0) === 0
+            ? {
+                title: "Submit your first clinic case",
+                description: "Create a clinic-owned audit to start building benchmark-ready evidence.",
+                href: "/dashboard/clinic/submit-case",
+                ctaLabel: "Submit case",
+              }
+            : {
+                title: "Advance benchmarking readiness",
+                description: "Expand benchmark-eligible cases and maintain high documentation integrity.",
+                href: "/leaderboards/clinics",
+                ctaLabel: "View benchmarks",
+              };
+
+  const clinicName = String((profile as { clinic_name?: string | null } | null)?.clinic_name ?? "Clinic");
+  const avatarLabel = clinicName
+    .split(" ")
+    .map((part) => part[0] ?? "")
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+  const navItems = [
+    { label: "Overview", href: "/dashboard/clinic" },
+    { label: "Onboarding", href: "/dashboard/clinic/onboarding", matchPrefix: "/dashboard/clinic/onboarding" },
+    { label: "Clinic Profile", href: "/dashboard/clinic/profile", matchPrefix: "/dashboard/clinic/profile" },
+    { label: "Workspaces", href: "/dashboard/clinic/workspaces", matchPrefix: "/dashboard/clinic/workspaces" },
+    { label: "Submit Case", href: "/dashboard/clinic/submit-case", matchPrefix: "/dashboard/clinic/submit-case" },
+    { label: "Clinic Cases", href: "/dashboard/clinic/clinic-cases", placeholder: true },
+    { label: "Doctors", href: "/dashboard/clinic/doctors", placeholder: true },
+    { label: "Methods & Devices", href: "/dashboard/clinic/profile#clinical-stack", matchPrefix: "/dashboard/clinic/profile" },
+    { label: "Benchmarking", href: "/dashboard/clinic/benchmarking", placeholder: true },
+    { label: "Training", href: "/dashboard/clinic/training", placeholder: true },
+    { label: "Settings", href: "/dashboard/clinic/settings", placeholder: true },
+  ];
+
+  return (
+    <ClinicPortalShell
+      clinicName={clinicName}
+      trustStatus={trustStatus}
+      avatarLabel={avatarLabel}
+      pendingResponses={Number(pendingResponses ?? 0)}
+      completionPercent={completionPercent}
+      onboardingSteps={onboardingSteps}
+      statusChips={[
+        { label: "Internal QA Ready", ready: internalQaReady },
+        { label: publicProfileLive ? "Public Profile Live" : "Public Profile In Progress", ready: publicProfileLive },
+        { label: "Benchmark Ready", ready: benchmarkReady },
+        { label: "Training Ready", ready: trainingReady },
+      ]}
+      nextAction={nextAction}
+      navItems={navItems}
+    >
+      {children}
+    </ClinicPortalShell>
+  );
+}

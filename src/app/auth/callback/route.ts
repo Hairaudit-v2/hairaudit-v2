@@ -7,6 +7,7 @@ import { parseRole } from "@/lib/roles";
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
+  const signupRole = parseRole(searchParams.get("signup_role"));
 
   if (code) {
     const supabase = await createSupabaseServerClient();
@@ -40,7 +41,7 @@ export async function GET(request: Request) {
         const existingRole = parseRole(existingProfile?.role);
         const role = isAuditor({ profileRole: existingProfile?.role, userEmail: user.email })
           ? "auditor"
-          : (existingProfile?.role ? existingRole : metadataRole);
+          : (existingProfile?.role ? existingRole : (metadataRole === "patient" ? signupRole : metadataRole));
         const { error: upsertError } = await admin.from("profiles").upsert(
           {
             id: user.id,

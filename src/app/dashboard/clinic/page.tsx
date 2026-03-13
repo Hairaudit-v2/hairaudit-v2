@@ -9,6 +9,7 @@ import ClinicTransparencyProgressPanel from "@/components/dashboard/ClinicTransp
 import ClinicFeedbackPanel from "@/components/dashboard/ClinicFeedbackPanel";
 import ClinicBadgeWidgetSection from "@/components/dashboard/ClinicBadgeWidgetSection";
 import { computeAdvancedCompletionScore, computeProfileCompletionScore } from "@/lib/clinicPortal";
+import ClinicSectionHeader from "@/components/clinic-portal/ClinicSectionHeader";
 
 export default async function ClinicDashboardPage() {
   const supabase = await createSupabaseAuthServerClient();
@@ -161,33 +162,25 @@ export default async function ClinicDashboardPage() {
     : null;
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Clinic Intelligence Portal</h1>
-          <p className="text-slate-600 text-sm mt-1">
-            Premium workspace for clinic operations, audit response, QA intelligence, and future benchmarking.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <Link
-            href="/dashboard/clinic/onboarding"
-            className="inline-flex items-center rounded-lg px-3 py-2 text-sm font-semibold bg-slate-900 text-white hover:bg-slate-800"
-          >
-            Continue onboarding
-          </Link>
-          {publicProfileUrl && (
-            <a
-              href={publicProfileUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center rounded-lg px-3 py-2 text-sm font-semibold bg-cyan-600 text-white hover:bg-cyan-700"
-            >
-              View Public Profile
-            </a>
-          )}
-        </div>
-      </div>
+    <div>
+      <ClinicSectionHeader
+        title="Clinic Intelligence Overview"
+        subtitle="Operational performance, trust posture, and strategic actions across your clinic portal."
+        actions={[
+          { href: "/dashboard/clinic/submit-case", label: "Submit Case", variant: "primary" },
+          { href: "/dashboard/clinic/onboarding", label: "Onboarding" },
+        ]}
+      />
+      {publicProfileUrl ? (
+        <a
+          href={publicProfileUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mb-4 inline-flex items-center rounded-lg border border-cyan-300 bg-cyan-50 px-3 py-2 text-sm font-semibold text-cyan-800 hover:bg-cyan-100"
+        >
+          View Public Clinic Profile
+        </a>
+      ) : null}
 
       <div className="grid gap-4 mb-6 md:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-xl border border-slate-200 bg-white p-4">

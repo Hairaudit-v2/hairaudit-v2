@@ -1,7 +1,7 @@
 export const metadata = {
-  title: "Patient Beta Access | HairAudit",
+  title: "Beta Sign Up | HairAudit",
   description:
-    "HairAudit is currently operating in a controlled patient beta phase. Create an account to submit your transplant case for independent forensic review. Clinic and doctor access will open in later stages.",
+    "Create a HairAudit beta account as a patient or clinic. Both patient and clinic experiences are currently in beta testing.",
 };
 
 export default function SignUpLayout({

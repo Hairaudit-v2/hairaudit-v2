@@ -7,11 +7,14 @@ import Image from "next/image";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import SiteHeader from "@/components/SiteHeader";
 
+type SignupRole = "patient" | "clinic";
+
 export default function SignUpPage() {
   const supabase = createSupabaseBrowserClient();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [signupRole, setSignupRole] = useState<SignupRole>("patient");
   const [msg, setMsg] = useState<string | null>(null);
   const [msgKind, setMsgKind] = useState<"error" | "success">("error");
   const [busy, setBusy] = useState(false);
@@ -32,16 +35,20 @@ export default function SignUpPage() {
         fallback: appUrl,
       });
     }
-    const emailRedirectTo = `${appUrl}/auth/callback`;
+    const emailRedirectTo = `${appUrl}/auth/callback?signup_role=${signupRole}`;
     console.info("[signup] attempting signup", {
       emailRedirectTo,
       email: maskEmail(email),
+      signupRole,
     });
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo,
+        data: {
+          role: signupRole,
+        },
       },
     });
 
@@ -51,6 +58,7 @@ export default function SignUpPage() {
         status: (error as { status?: number }).status,
         emailRedirectTo,
         email: maskEmail(email),
+        signupRole,
       });
       setMsg(`❌ ${error.message}`);
       setBusy(false);
@@ -64,6 +72,7 @@ export default function SignUpPage() {
         userId: data.user?.id,
         emailRedirectTo,
         email: maskEmail(email),
+        signupRole,
       });
       setMsg("✅ Check your email to confirm your address, then come back and sign in.");
       setMsgKind("success");
@@ -75,13 +84,14 @@ export default function SignUpPage() {
       const profileRes = await fetch("/api/profiles", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({}),
+        body: JSON.stringify({ role: signupRole }),
       });
       if (!profileRes.ok) {
         const body = await profileRes.text();
         console.warn("[signup] profile upsert after signup failed", {
           status: profileRes.status,
           body: body.slice(0, 300),
+          signupRole,
         });
       }
     } catch (profileErr) {
@@ -122,15 +132,44 @@ export default function SignUpPage() {
                 className="h-10 w-auto object-contain"
               />
             </div>
-            <h1 className="text-2xl font-bold text-slate-900">Patient Beta Access</h1>
+            <h1 className="text-2xl font-bold text-slate-900">Create your HairAudit beta account</h1>
             <p className="mt-2 text-sm text-slate-600">
-              HairAudit is currently operating in a controlled patient beta phase. Create an account to submit your transplant case for independent, evidence-based forensic review.
-            </p>
-            <p className="mt-2 text-xs text-slate-500">
-              Clinic and doctor access will open in later stages of the transparency platform rollout.
+              Choose your account type. Both patient and clinic experiences are currently in beta testing.
             </p>
 
             <form onSubmit={signUp} className="mt-6 space-y-4">
+              <div>
+                <p className="block text-sm font-medium text-slate-700 mb-2">I am signing up as</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSignupRole("patient")}
+                    className={`rounded-lg border px-3 py-2.5 text-sm font-semibold transition-colors ${
+                      signupRole === "patient"
+                        ? "border-amber-500 bg-amber-50 text-amber-800"
+                        : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                    }`}
+                  >
+                    Patient (Beta)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSignupRole("clinic")}
+                    className={`rounded-lg border px-3 py-2.5 text-sm font-semibold transition-colors ${
+                      signupRole === "clinic"
+                        ? "border-cyan-500 bg-cyan-50 text-cyan-800"
+                        : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                    }`}
+                  >
+                    Clinic (Beta)
+                  </button>
+                </div>
+                <p className="mt-2 text-xs text-slate-500">
+                  {signupRole === "clinic"
+                    ? "Clinic beta accounts get access to the Clinic Intelligence Portal and clinic workspaces."
+                    : "Patient beta accounts can submit transplant cases for independent forensic review."}
+                </p>
+              </div>
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1">
                   Email
@@ -167,7 +206,7 @@ export default function SignUpPage() {
                 disabled={busy}
                 className="w-full rounded-lg bg-amber-500 text-slate-900 py-2.5 font-semibold hover:bg-amber-400 transition-colors disabled:opacity-60 disabled:cursor-not-allowed focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
               >
-                {busy ? "Creating…" : "Sign up"}
+                {busy ? "Creating..." : `Sign up as ${signupRole === "clinic" ? "Clinic" : "Patient"}`}
               </button>
             </form>
 

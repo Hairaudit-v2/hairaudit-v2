@@ -128,7 +128,7 @@ export default function LoginPage() {
             </div>
             <h1 className="text-2xl font-bold text-slate-900">Sign in</h1>
             <p className="mt-2 text-sm text-slate-600">
-              Sign in to access your HairAudit workspace, including patient and clinic intelligence experiences.
+              Sign in to access your HairAudit workspace. Patient and clinic experiences are both in beta testing.
             </p>
 
             <div className="mt-6 space-y-3">
@@ -211,6 +211,12 @@ export default function LoginPage() {
 
             <p className="mt-6 text-center text-xs text-slate-500">
               By signing in, you&apos;ll be redirected to your role-based dashboard.
+            </p>
+            <p className="mt-2 text-center text-sm text-slate-600">
+              Need an account?{" "}
+              <Link href="/signup" className="font-medium text-amber-600 hover:text-amber-500">
+                Sign up (Patient Beta or Clinic Beta)
+              </Link>
             </p>
             <p className="mt-2 text-center text-sm text-slate-600">
               Need auditor access?{" "}

@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import {
@@ -7,6 +6,7 @@ import {
   resolveClinicProfileForUser,
 } from "@/lib/clinicPortal";
 import ClinicProfileBuilder from "@/components/clinic-portal/ClinicProfileBuilder";
+import ClinicSectionHeader from "@/components/clinic-portal/ClinicSectionHeader";
 
 function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
@@ -45,21 +45,15 @@ export default async function ClinicProfilePage() {
   const advancedProfile = asRecord((portal as { advanced_profile?: unknown } | null)?.advanced_profile);
 
   return (
-    <div className="mx-auto max-w-6xl px-4 sm:px-6">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Clinic Profile Builder</h1>
-          <p className="mt-1 text-sm text-slate-600">
-            Complete basic and advanced profile data for public trust and internal intelligence.
-          </p>
-        </div>
-        <Link
-          href="/dashboard/clinic"
-          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-        >
-          Back to portal
-        </Link>
-      </div>
+    <div>
+      <ClinicSectionHeader
+        title="Clinic Profile Builder"
+        subtitle="Maintain basic and advanced profile intelligence for trust, QA, and benchmarking."
+        actions={[
+          { href: "/dashboard/clinic/workspaces", label: "Go to Workspaces", variant: "primary" },
+          { href: "/dashboard/clinic", label: "Overview" },
+        ]}
+      />
 
       <ClinicProfileBuilder
         initialBasicProfile={basicProfile}

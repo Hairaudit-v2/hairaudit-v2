@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { resolveClinicProfileForUser } from "@/lib/clinicPortal";
 import ClinicOnboardingFlow from "@/components/clinic-portal/ClinicOnboardingFlow";
+import ClinicSectionHeader from "@/components/clinic-portal/ClinicSectionHeader";
 
 export default async function ClinicOnboardingPage() {
   const supabase = await createSupabaseAuthServerClient();
@@ -29,21 +29,15 @@ export default async function ClinicOnboardingPage() {
       : [];
 
   return (
-    <div className="mx-auto max-w-5xl px-4 sm:px-6">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Clinic Intelligence Onboarding</h1>
-          <p className="mt-1 text-sm text-slate-600">
-            Configure your clinic portal for premium operations, trust, and future readiness.
-          </p>
-        </div>
-        <Link
-          href="/dashboard/clinic"
-          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-        >
-          Back to portal
-        </Link>
-      </div>
+    <div>
+      <ClinicSectionHeader
+        title="Clinic Intelligence Onboarding"
+        subtitle="Configure your portal architecture for trust, operations, and future growth."
+        actions={[
+          { href: "/dashboard/clinic/profile", label: "Open Profile Builder", variant: "primary" },
+          { href: "/dashboard/clinic", label: "Overview" },
+        ]}
+      />
 
       <ClinicOnboardingFlow
         initialCompletedSteps={completedSteps}
