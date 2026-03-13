@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { isAuditor } from "@/lib/auth/isAuditor";
+import { parseRole } from "@/lib/roles";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -35,9 +36,11 @@ export async function GET(request: Request) {
           .select("role")
           .eq("id", user.id)
           .maybeSingle();
+        const metadataRole = parseRole((user.user_metadata as Record<string, unknown> | undefined)?.role);
+        const existingRole = parseRole(existingProfile?.role);
         const role = isAuditor({ profileRole: existingProfile?.role, userEmail: user.email })
           ? "auditor"
-          : "patient";
+          : (existingProfile?.role ? existingRole : metadataRole);
         const { error: upsertError } = await admin.from("profiles").upsert(
           {
             id: user.id,

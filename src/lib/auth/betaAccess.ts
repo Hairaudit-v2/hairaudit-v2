@@ -21,5 +21,5 @@ export async function isPatientUser(user: User): Promise<boolean> {
 
 export async function isBetaAllowedUser(user: User): Promise<boolean> {
   const role = await getEffectiveUserRole(user);
-  return role === "patient" || role === "auditor";
+  return role === "patient" || role === "doctor" || role === "clinic" || role === "auditor";
 }

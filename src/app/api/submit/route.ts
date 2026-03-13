@@ -9,6 +9,7 @@ import {
   computeConfidenceLabel,
   computeEvidenceDetails,
 } from "@/lib/auditPhotoSchemas";
+import { getUserRole } from "@/lib/case-access";
 
 function supabaseAdmin() {
   return createClient(
@@ -37,7 +38,7 @@ export async function POST(req: Request) {
 
     const { data: c, error: caseErr } = await admin
       .from("cases")
-      .select("id,user_id,status,submitted_at")
+      .select("id,user_id,patient_id,doctor_id,clinic_id,audit_type,status,submitted_at")
       .eq("id", caseId)
       .maybeSingle();
 
@@ -47,7 +48,13 @@ export async function POST(req: Request) {
     if (!c) {
       return NextResponse.json({ error: "Case not found" }, { status: 404 });
     }
-    if (c.user_id !== user.id) {
+    const role = await getUserRole(user.id);
+    const isCaseMember =
+      c.user_id === user.id ||
+      c.patient_id === user.id ||
+      c.doctor_id === user.id ||
+      c.clinic_id === user.id;
+    if (!isCaseMember || role === "auditor") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -62,9 +69,16 @@ export async function POST(req: Request) {
 
     const photos = (uploads ?? []).map((u) => ({ type: u.type }));
 
-    if (!canSubmit("patient", photos)) {
+    const submitterType = c.audit_type === "doctor" ? "doctor" : "patient";
+    if (submitterType === "patient" && !canSubmit("patient", photos)) {
       return NextResponse.json(
         { error: "Upload required patient photos first (Current Front, Top, Donor rear). Go to Step 2: Add your photos." },
+        { status: 400 }
+      );
+    }
+    if (submitterType === "doctor" && !canSubmit("doctor", photos)) {
+      return NextResponse.json(
+        { error: "Upload required clinical evidence photos before submission." },
         { status: 400 }
       );
     }
@@ -77,21 +91,21 @@ export async function POST(req: Request) {
       );
     }
 
-    const patientScore = computeEvidenceScore("patient", photos);
-    const patientConfidence = computeConfidenceLabel(patientScore);
-    const patientDetails = computeEvidenceDetails("patient", photos);
+    const patientScore = submitterType === "patient" ? computeEvidenceScore("patient", photos) : null;
+    const patientConfidence = patientScore ? computeConfidenceLabel(patientScore) : null;
+    const patientDetails = submitterType === "patient" ? computeEvidenceDetails("patient", photos) : null;
 
     let doctorScore: EvidenceScore | null = null;
     let doctorConfidence: string | null = null;
     const doctorPhotos = photos.filter((p) => String(p.type ?? "").startsWith("doctor_photo:"));
-    if (doctorPhotos.length > 0) {
+    if (doctorPhotos.length > 0 || submitterType === "doctor") {
       const score: EvidenceScore = computeEvidenceScore("doctor", doctorPhotos);
       doctorScore = score;
       doctorConfidence = computeConfidenceLabel(score);
     }
 
     const evidenceDetails: Record<string, unknown> = {
-      patient: patientDetails,
+      ...(patientDetails ? { patient: patientDetails } : {}),
       ...(doctorScore && {
         doctor: computeEvidenceDetails("doctor", doctorPhotos),
       }),
@@ -107,22 +121,35 @@ export async function POST(req: Request) {
       evidence_score_doctor: doctorScore,
       confidence_label_doctor: doctorConfidence,
       evidence_details: evidenceDetails,
+      submission_channel:
+        c.audit_type === "clinic"
+          ? "clinic_submitted"
+          : c.audit_type === "doctor"
+            ? "doctor_submitted"
+            : "patient_submitted",
     };
 
     const { error: updErr } = await admin
       .from("cases")
       .update(updatePayload)
       .eq("id", caseId)
-      .eq("user_id", user.id)
       .in("status", ["draft", "audit_failed"]);
 
     if (updErr) {
       if (String(updErr.message || "").includes("evidence") || String(updErr.message || "").includes("does not exist")) {
         const { error: fallbackErr } = await admin
           .from("cases")
-          .update({ status: "submitted", submitted_at: now })
+          .update({
+            status: "submitted",
+            submitted_at: now,
+            submission_channel:
+              c.audit_type === "clinic"
+                ? "clinic_submitted"
+                : c.audit_type === "doctor"
+                  ? "doctor_submitted"
+                  : "patient_submitted",
+          })
           .eq("id", caseId)
-          .eq("user_id", user.id)
           .in("status", ["draft", "audit_failed"]);
         if (fallbackErr) return NextResponse.json({ error: fallbackErr.message }, { status: 500 });
       } else {

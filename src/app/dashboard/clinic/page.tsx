@@ -8,6 +8,7 @@ import { getNextMilestoneFromProfile, getNextTier } from "@/lib/transparency/awa
 import ClinicTransparencyProgressPanel from "@/components/dashboard/ClinicTransparencyProgressPanel";
 import ClinicFeedbackPanel from "@/components/dashboard/ClinicFeedbackPanel";
 import ClinicBadgeWidgetSection from "@/components/dashboard/ClinicBadgeWidgetSection";
+import { computeAdvancedCompletionScore, computeProfileCompletionScore } from "@/lib/clinicPortal";
 
 export default async function ClinicDashboardPage() {
   const supabase = await createSupabaseAuthServerClient();
@@ -62,6 +63,38 @@ export default async function ClinicDashboardPage() {
       .eq("clinic_id", user.id)
       .eq("status", "complete"),
   ]);
+
+  const [{ data: portalProfile }, { data: capabilityRows }, { count: workspaceCount }] = await Promise.all([
+    admin
+      .from("clinic_portal_profiles")
+      .select("basic_profile, advanced_profile, onboarding_status, onboarding_completed_steps, portal_mode")
+      .eq("clinic_profile_id", clinicProfile?.id ?? "")
+      .maybeSingle(),
+    admin
+      .from("clinic_capability_catalog")
+      .select("id", { count: "exact" })
+      .eq("clinic_profile_id", clinicProfile?.id ?? "")
+      .eq("is_active", true),
+    admin
+      .from("clinic_case_workspaces")
+      .select("case_id", { count: "exact", head: true })
+      .eq("clinic_profile_id", clinicProfile?.id ?? ""),
+  ]);
+
+  const basicProfile =
+    portalProfile?.basic_profile && typeof portalProfile.basic_profile === "object"
+      ? (portalProfile.basic_profile as Record<string, unknown>)
+      : {};
+  const advancedProfile =
+    portalProfile?.advanced_profile && typeof portalProfile.advanced_profile === "object"
+      ? (portalProfile.advanced_profile as Record<string, unknown>)
+      : {};
+  const basicCompletion = computeProfileCompletionScore(basicProfile);
+  const advancedCompletion = computeAdvancedCompletionScore(advancedProfile);
+  const onboardingSteps = Array.isArray(portalProfile?.onboarding_completed_steps)
+    ? portalProfile?.onboarding_completed_steps.length
+    : 0;
+  const capabilityCount = capabilityRows?.length ?? 0;
 
   // Trend: last 30 days of completions (deduped per case by latest completed report timestamp).
   const days = 30;
@@ -128,13 +161,21 @@ export default async function ClinicDashboardPage() {
     : null;
 
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Clinic Dashboard</h1>
-          <p className="text-slate-600 text-sm mt-1">Submit patient cases for feedback on your doctors&apos; work</p>
+          <h1 className="text-2xl font-bold text-slate-900">Clinic Intelligence Portal</h1>
+          <p className="text-slate-600 text-sm mt-1">
+            Premium workspace for clinic operations, audit response, QA intelligence, and future benchmarking.
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
+          <Link
+            href="/dashboard/clinic/onboarding"
+            className="inline-flex items-center rounded-lg px-3 py-2 text-sm font-semibold bg-slate-900 text-white hover:bg-slate-800"
+          >
+            Continue onboarding
+          </Link>
           {publicProfileUrl && (
             <a
               href={publicProfileUrl}
@@ -145,19 +186,52 @@ export default async function ClinicDashboardPage() {
               View Public Profile
             </a>
           )}
-          <Link
-            href="/clinics"
-            className="inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium border border-slate-300 text-slate-700 hover:bg-slate-50"
-          >
-            Explore Participating Clinics
-          </Link>
         </div>
       </div>
 
-      <div className="rounded-xl border border-amber-200 bg-amber-50/80 p-4 mb-6">
-        <p className="text-sm text-amber-900">
-          Upload patient cases to get feedback on your doctors, nurses, and technicians. Compare outcomes and improve your clinic&apos;s standards.
-        </p>
+      <div className="grid gap-4 mb-6 md:grid-cols-2 xl:grid-cols-4">
+        <div className="rounded-xl border border-slate-200 bg-white p-4">
+          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Onboarding</div>
+          <div className="mt-2 text-2xl font-bold text-slate-900">{onboardingSteps}/5</div>
+          <div className="mt-1 text-xs text-slate-500">
+            Status: {String(portalProfile?.onboarding_status ?? "not_started").replaceAll("_", " ")}
+          </div>
+        </div>
+        <div className="rounded-xl border border-slate-200 bg-white p-4">
+          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Profile Completion</div>
+          <div className="mt-2 text-2xl font-bold text-slate-900">{basicCompletion}%</div>
+          <div className="mt-1 text-xs text-slate-500">Basic profile</div>
+        </div>
+        <div className="rounded-xl border border-slate-200 bg-white p-4">
+          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Advanced Completion</div>
+          <div className="mt-2 text-2xl font-bold text-slate-900">{advancedCompletion}%</div>
+          <div className="mt-1 text-xs text-slate-500">Internal QA readiness</div>
+        </div>
+        <div className="rounded-xl border border-slate-200 bg-white p-4">
+          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Clinical Stack</div>
+          <div className="mt-2 text-2xl font-bold text-slate-900">{capabilityCount}</div>
+          <div className="mt-1 text-xs text-slate-500">methods / tools / devices / protocols</div>
+        </div>
+      </div>
+
+      <div className="grid gap-3 mb-6 md:grid-cols-2 xl:grid-cols-4">
+        <Link href="/dashboard/clinic/profile" className="rounded-xl border border-slate-200 bg-white p-4 hover:border-cyan-300 transition-colors">
+          <div className="text-sm font-semibold text-slate-900">Complete Profile</div>
+          <p className="mt-1 text-xs text-slate-600">Basic + advanced clinic intelligence profile.</p>
+        </Link>
+        <Link href="/dashboard/clinic/workspaces" className="rounded-xl border border-slate-200 bg-white p-4 hover:border-cyan-300 transition-colors">
+          <div className="text-sm font-semibold text-slate-900">Case Workspaces</div>
+          <p className="mt-1 text-xs text-slate-600">Respond to patient audits and manage visibility controls.</p>
+        </Link>
+        <Link href="/dashboard/clinic/submit-case" className="rounded-xl border border-slate-200 bg-white p-4 hover:border-cyan-300 transition-colors">
+          <div className="text-sm font-semibold text-slate-900">Submit Clinic Case</div>
+          <p className="mt-1 text-xs text-slate-600">Create and submit clinic-owned audits with controlled visibility.</p>
+        </Link>
+        <div className="rounded-xl border border-slate-200 bg-white p-4">
+          <div className="text-sm font-semibold text-slate-900">Portal Mode</div>
+          <p className="mt-1 text-xs text-slate-600">{String(portalProfile?.portal_mode ?? "hairaudit_public").replaceAll("_", " ")}</p>
+          <p className="mt-1 text-xs text-slate-500">Ready for training, benchmarking, and white-label layers.</p>
+        </div>
       </div>
 
       <div className="rounded-xl border border-slate-200 bg-white p-4 mb-6">
@@ -185,6 +259,13 @@ export default async function ClinicDashboardPage() {
             <div className="mt-1 text-[10px] text-slate-400">Last 30 days</div>
           </div>
         </div>
+      </div>
+
+      <div className="rounded-xl border border-amber-200 bg-amber-50/80 p-4 mb-6">
+        <p className="text-sm text-amber-900">
+          Submit your own patient cases for auditing, respond to patient-submitted cases, and set each case to public or internal usage.
+          Total configured clinic workspaces: <span className="font-semibold">{workspaceCount ?? 0}</span>.
+        </p>
       </div>
 
       <div className="rounded-xl border border-slate-200 bg-white p-4 mb-6">

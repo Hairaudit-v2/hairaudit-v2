@@ -9,6 +9,8 @@ export default async function DashboardPage() {
   if (!user) redirect("/login");
   const role = await getEffectiveUserRole(user);
   if (role === "auditor") redirect("/dashboard/auditor");
+  if (role === "clinic") redirect("/dashboard/clinic");
+  if (role === "doctor") redirect("/dashboard/doctor");
   if (role !== "patient") redirect("/beta-access-message");
   redirect("/dashboard/patient");
 }

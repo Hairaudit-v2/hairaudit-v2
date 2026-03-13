@@ -128,7 +128,7 @@ export default function LoginPage() {
             </div>
             <h1 className="text-2xl font-bold text-slate-900">Sign in</h1>
             <p className="mt-2 text-sm text-slate-600">
-              Sign in to your patient beta account to request an audit or track your case.
+              Sign in to access your HairAudit workspace, including patient and clinic intelligence experiences.
             </p>
 
             <div className="mt-6 space-y-3">
@@ -210,7 +210,7 @@ export default function LoginPage() {
             )}
 
             <p className="mt-6 text-center text-xs text-slate-500">
-              By signing in, you&apos;ll be redirected to your patient dashboard.
+              By signing in, you&apos;ll be redirected to your role-based dashboard.
             </p>
             <p className="mt-2 text-center text-sm text-slate-600">
               Need auditor access?{" "}

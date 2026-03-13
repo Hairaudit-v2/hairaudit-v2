@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { isAuditor } from "@/lib/auth/isAuditor";
+import { parseRole } from "@/lib/roles";
 
 // GET — fetch current user's profile (role)
 export async function GET() {
@@ -16,7 +17,9 @@ export async function GET() {
     .eq("id", user.id)
     .maybeSingle();
 
-  const role = isAuditor({ profileRole: profile?.role, userEmail: user.email }) ? "auditor" : "patient";
+  const role = isAuditor({ profileRole: profile?.role, userEmail: user.email })
+    ? "auditor"
+    : parseRole(profile?.role);
 
   return NextResponse.json({
     role,
@@ -44,10 +47,10 @@ export async function POST(req: Request) {
 
   const admin = createSupabaseAdminClient();
   const { data: profile } = await admin.from("profiles").select("role").eq("id", user.id).maybeSingle();
-  const role =
-    requestedRole === "auditor" && isAuditor({ profileRole: profile?.role, userEmail: user.email })
-      ? "auditor"
-      : "patient";
+  const requested = parseRole(requestedRole);
+  const role = requested === "auditor"
+    ? (isAuditor({ profileRole: profile?.role, userEmail: user.email }) ? "auditor" : parseRole(profile?.role))
+    : requested;
   const { error } = await admin.from("profiles").upsert(
     {
       id: user.id,

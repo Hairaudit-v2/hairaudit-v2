@@ -150,6 +150,9 @@ export async function POST(req: Request) {
     title: role === "doctor" ? "Doctor audit" : role === "clinic" ? "Clinic audit" : "Patient Audit",
     status: "draft",
     audit_type: role === "doctor" ? "doctor" : role === "clinic" ? "clinic" : "patient",
+    submission_channel:
+      role === "doctor" ? "doctor_submitted" : role === "clinic" ? "clinic_submitted" : "patient_submitted",
+    visibility_scope: role === "patient" ? "public" : "internal",
   };
   if (role === "patient") insertData.patient_id = userData.user.id;
   if (role === "doctor") insertData.doctor_id = userData.user.id;
