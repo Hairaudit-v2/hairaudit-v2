@@ -3,7 +3,7 @@ import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 // DELETE /api/cases/delete?caseId=...
-// Draft-only: lets a patient discard an old draft and start fresh.
+// Draft-only patient delete uses soft-delete fields (no hard delete).
 export async function DELETE(req: Request) {
   try {
     const url = new URL(req.url);
@@ -35,46 +35,23 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: "Only draft cases can be deleted." }, { status: 409 });
     }
 
-    // Load uploads (for storage cleanup).
-    const { data: uploads, error: upErr } = await admin
-      .from("uploads")
-      .select("id, storage_path")
-      .eq("case_id", caseId);
-    if (upErr) return NextResponse.json({ error: upErr.message }, { status: 500 });
+    const now = new Date().toISOString();
+    const { error: delCaseErr } = await admin
+      .from("cases")
+      .update({
+        deleted_at: now,
+        deleted_by: user.id,
+        delete_reason: "Patient discarded draft",
+        archived_at: now,
+        archived_by: user.id,
+        archived_reason: "Patient discarded draft",
+        updated_at: now,
+      })
+      .eq("id", caseId);
 
-    const paths = (uploads ?? [])
-      .map((u) => String(u.storage_path ?? ""))
-      .filter(Boolean);
-
-    // Best-effort storage cleanup (don’t block deletion if some objects are missing).
-    const bucket = "case-files";
-    const storageWarnings: string[] = [];
-    const CHUNK = 50;
-    for (let i = 0; i < paths.length; i += CHUNK) {
-      const chunk = paths.slice(i, i + CHUNK);
-      const { error: storageErr } = await admin.storage.from(bucket).remove(chunk);
-      if (storageErr) storageWarnings.push(storageErr.message);
-    }
-
-    // Delete dependent rows.
-    const { error: delUploadsErr } = await admin.from("uploads").delete().eq("case_id", caseId);
-    if (delUploadsErr) return NextResponse.json({ error: delUploadsErr.message }, { status: 500 });
-
-    try {
-      if (paths.length) {
-        await admin.from("audit_photos").delete().in("storage_path", paths);
-      }
-    } catch {
-      /* audit_photos may not exist */
-    }
-
-    const { error: delReportsErr } = await admin.from("reports").delete().eq("case_id", caseId);
-    if (delReportsErr) return NextResponse.json({ error: delReportsErr.message }, { status: 500 });
-
-    const { error: delCaseErr } = await admin.from("cases").delete().eq("id", caseId);
     if (delCaseErr) return NextResponse.json({ error: delCaseErr.message }, { status: 500 });
 
-    return NextResponse.json({ ok: true, storageWarnings: storageWarnings.length ? storageWarnings : undefined });
+    return NextResponse.json({ ok: true });
   } catch (e: unknown) {
     const errMsg = (e as Error)?.message ?? "Server error";
     return NextResponse.json({ error: errMsg }, { status: 500 });

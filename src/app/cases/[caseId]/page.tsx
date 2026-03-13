@@ -22,6 +22,7 @@ import VersionHistoryDrawer from "@/components/reports/VersionHistoryDrawer";
 import UploadThumbnailGallery from "@/components/reports/UploadThumbnailGallery";
 import LatestReportCard from "@/components/reports/LatestReportCard";
 import InviteClinicContributionCard from "@/components/case/InviteClinicContributionCard";
+import ForensicCaseTimelineViewer from "@/components/reports/ForensicCaseTimelineViewer";
 
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { tryCreateSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -42,6 +43,28 @@ function barClass(score: number) {
   if (score >= 70) return "bg-gradient-to-r from-cyan-300 to-emerald-300";
   if (score >= 55) return "bg-gradient-to-r from-amber-300 to-yellow-300";
   return "bg-gradient-to-r from-rose-300 to-amber-300";
+}
+
+function monthsFromBucket(value: string | null | undefined): number | null {
+  const v = String(value ?? "").trim();
+  if (!v) return null;
+  const map: Record<string, number> = {
+    under_3: 2,
+    "3_6": 4.5,
+    "6_9": 7.5,
+    "9_12": 10.5,
+    "12_plus": 12.5,
+  };
+  return map[v] ?? null;
+}
+
+function monthsFromProcedureDate(value: string | null | undefined): number | null {
+  if (!value) return null;
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return null;
+  const now = new Date();
+  const months = (now.getFullYear() - d.getFullYear()) * 12 + (now.getMonth() - d.getMonth());
+  return Math.max(0, months);
 }
 
 export default async function Page({
@@ -89,12 +112,12 @@ export default async function Page({
     /* profiles may not exist / RLS may block */
   }
 
-  let c: { id: string; title?: string; status?: string; created_at?: string; user_id?: string; submitted_at?: string | null; patient_id?: string | null; doctor_id?: string | null; clinic_id?: string | null; evidence_score_patient?: string | null; confidence_label_patient?: string | null; evidence_score_doctor?: string | null; confidence_label_doctor?: string | null; evidence_details?: Record<string, unknown> | null } | null;
+  let c: { id: string; title?: string; status?: string; created_at?: string; user_id?: string; submitted_at?: string | null; patient_id?: string | null; doctor_id?: string | null; clinic_id?: string | null; audit_type?: "patient" | "doctor" | "clinic" | null; evidence_score_patient?: string | null; confidence_label_patient?: string | null; evidence_score_doctor?: string | null; confidence_label_doctor?: string | null; evidence_details?: Record<string, unknown> | null } | null;
   let caseRes: any;
   try {
     caseRes = await db
       .from("cases")
-      .select("id, title, status, created_at, user_id, submitted_at, patient_id, doctor_id, clinic_id, evidence_score_patient, confidence_label_patient, evidence_score_doctor, confidence_label_doctor, evidence_details")
+      .select("id, title, status, created_at, user_id, submitted_at, patient_id, doctor_id, clinic_id, audit_type, evidence_score_patient, confidence_label_patient, evidence_score_doctor, confidence_label_doctor, evidence_details")
       .eq("id", caseId)
       .maybeSingle();
   } catch (e) {
@@ -102,7 +125,7 @@ export default async function Page({
     throw e;
   }
   if (caseRes.error && String(caseRes.error.message || "").includes("evidence")) {
-    const fallback = await db.from("cases").select("id, title, status, created_at, user_id, submitted_at, patient_id, doctor_id, clinic_id").eq("id", caseId).maybeSingle();
+    const fallback = await db.from("cases").select("id, title, status, created_at, user_id, submitted_at, patient_id, doctor_id, clinic_id, audit_type").eq("id", caseId).maybeSingle();
     c = fallback.data;
   } else {
     c = caseRes.data;
@@ -251,7 +274,41 @@ export default async function Page({
       : "";
   const procedureDate = normalizedPatient?.procedure_date ? String(normalizedPatient.procedure_date) : "Not provided";
   const monthsPostOp = normalizedPatient?.months_since ? (monthLabels[String(normalizedPatient.months_since)] ?? String(normalizedPatient.months_since)) : "Not provided";
+  const monthsSinceSurgery =
+    monthsFromProcedureDate(normalizedPatient?.procedure_date ? String(normalizedPatient.procedure_date) : null) ??
+    monthsFromBucket(normalizedPatient?.months_since ? String(normalizedPatient.months_since) : null);
+  const auditType = c.audit_type ?? (c.clinic_id ? "clinic" : c.doctor_id ? "doctor" : "patient");
   const confidenceLabel = overallScores?.confidence_grade ?? c.confidence_label_doctor ?? c.confidence_label_patient ?? "pending";
+  const giiLimitations: string[] =
+    Array.isArray(graftIntegrityEstimate?.limitations) ? (graftIntegrityEstimate.limitations as string[]) : [];
+  const giiNotes = typeof graftIntegrityEstimate?.auditor_notes === "string" ? (graftIntegrityEstimate.auditor_notes as string) : null;
+  const summaryObservations: Array<{ stage: "preop" | "day0" | "early_healing" | "month_1_3" | "month_4_6" | "month_7_12" | "month_12_plus" | "unknown"; text: string }> = [];
+  const keyFindings = Array.isArray(latestSummary?.key_findings) ? latestSummary.key_findings : [];
+  const redFlags = Array.isArray(latestSummary?.red_flags) ? latestSummary.red_flags : [];
+  const toObs = [...keyFindings, ...redFlags].slice(0, 8);
+  for (const entry of toObs) {
+    const raw = typeof entry === "string" ? entry : typeof entry === "object" && entry && "title" in (entry as Record<string, unknown>) ? String((entry as Record<string, unknown>).title ?? "") : "";
+    const text = raw.trim();
+    if (!text) continue;
+    const lower = text.toLowerCase();
+    const stage =
+      lower.includes("pre-op") || lower.includes("preop")
+        ? "preop"
+        : lower.includes("day 0") || lower.includes("day0") || lower.includes("surgery day")
+          ? "day0"
+          : lower.includes("healing")
+            ? "early_healing"
+            : lower.includes("1 month") || lower.includes("3 month")
+              ? "month_1_3"
+              : lower.includes("4 month") || lower.includes("5 month") || lower.includes("6 month")
+                ? "month_4_6"
+                : lower.includes("7 month") || lower.includes("8 month") || lower.includes("9 month") || lower.includes("10 month") || lower.includes("11 month")
+                  ? "month_7_12"
+                  : lower.includes("12 month") || lower.includes("final")
+                    ? "month_12_plus"
+                    : "unknown";
+    summaryObservations.push({ stage, text });
+  }
 
   const uploadEntryPath = showDoctorFlow
     ? `/cases/${c.id}/doctor/photos`
@@ -354,6 +411,20 @@ export default async function Page({
           </div>
         </div>
       </section>
+
+      {isAuditor && (
+        <ForensicCaseTimelineViewer
+          caseId={c.id}
+          auditType={auditType}
+          procedureDate={normalizedPatient?.procedure_date ? String(normalizedPatient.procedure_date) : null}
+          monthsSinceSurgery={monthsSinceSurgery}
+          confidenceLabel={String(confidenceLabel)}
+          uploads={(uploads ?? []) as Array<{ id: string; type: string; storage_path: string; created_at?: string }>}
+          giiNotes={giiNotes}
+          giiLimitations={giiLimitations}
+          aiObservations={summaryObservations}
+        />
+      )}
 
       {role === "auditor" && c.status === "audit_failed" && (
         <div className="mt-6 p-5 rounded-2xl border border-rose-300/20 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">

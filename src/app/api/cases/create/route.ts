@@ -149,6 +149,7 @@ export async function POST(req: Request) {
     user_id: userData.user.id,
     title: role === "doctor" ? "Doctor audit" : role === "clinic" ? "Clinic audit" : "Patient Audit",
     status: "draft",
+    audit_type: role === "doctor" ? "doctor" : role === "clinic" ? "clinic" : "patient",
   };
   if (role === "patient") insertData.patient_id = userData.user.id;
   if (role === "doctor") insertData.doctor_id = userData.user.id;
