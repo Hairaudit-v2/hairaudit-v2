@@ -40,10 +40,28 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
               How It Works
             </Link>
             <Link
-              href="/methodology"
+              href="/request-review"
               className="text-sm font-medium text-slate-300 hover:text-amber-400 transition-colors hidden sm:block"
             >
-              Methodology
+              Request Review
+            </Link>
+            <Link
+              href="/sample-report"
+              className="text-sm font-medium text-slate-300 hover:text-amber-400 transition-colors hidden sm:block"
+            >
+              Example Report
+            </Link>
+            <Link
+              href="/hair-transplant-problems"
+              className="text-sm font-medium text-slate-300 hover:text-amber-400 transition-colors hidden sm:block"
+            >
+              Problem Guides
+            </Link>
+            <Link
+              href="/rate-my-hair-transplant"
+              className="text-sm font-medium text-slate-300 hover:text-emerald-400 transition-colors hidden sm:block"
+            >
+              Rate My Transplant
             </Link>
             <Link
               href="/clinics"
@@ -52,28 +70,10 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
               Clinics
             </Link>
             <Link
-              href="/verified-surgeon-program"
+              href="/professionals"
               className="text-sm font-medium text-slate-300 hover:text-amber-400 transition-colors hidden sm:block"
             >
-              Verified Program
-            </Link>
-            <Link
-              href="/about"
-              className="text-sm font-medium text-slate-300 hover:text-amber-400 transition-colors hidden sm:block"
-            >
-              About
-            </Link>
-            <Link
-              href="/services"
-              className="text-sm font-medium text-slate-300 hover:text-amber-400 transition-colors hidden sm:block"
-            >
-              Services
-            </Link>
-            <Link
-              href="/follicle-intelligence"
-              className="text-sm font-medium text-slate-300 hover:text-amber-400 transition-colors hidden sm:block"
-            >
-              Follicle Intelligence
+              For Professionals
             </Link>
             <Link
               href="/login"
@@ -82,10 +82,10 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
               Sign in
             </Link>
             <Link
-              href="/signup"
+              href="/request-review"
               className="text-sm font-medium px-4 py-2 rounded-lg bg-amber-500 text-slate-900 hover:bg-amber-400 transition-colors"
             >
-              Request an Audit
+              Request a Hair Transplant Review
             </Link>
           </nav>
         ) : (
@@ -97,10 +97,10 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
               Sign in
             </Link>
             <Link
-              href="/signup"
+              href="/request-review"
               className="text-sm font-medium px-4 py-2 rounded-lg bg-amber-500 text-slate-900 hover:bg-amber-400 transition-colors"
             >
-              Request an Audit
+              Request a Hair Transplant Review
             </Link>
           </nav>
         )}

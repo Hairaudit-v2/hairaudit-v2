@@ -3,6 +3,7 @@ import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import ScrollReveal from "@/components/ui/ScrollReveal";
+import ReviewProcessReassurance from "@/components/seo/ReviewProcessReassurance";
 
 export const metadata = {
   title: "Sample Report | HairAudit",
@@ -25,9 +26,9 @@ const reportPanels = [
   },
   {
     id: "scores",
-    title: "Domain Scores",
+    title: "Your Surgery Score Breakdown",
     content:
-      "Structured scores across defined domains: Surgical Planning & Design, Donor Preservation & Extraction, Graft Handling & Viability, Implantation Consistency & Technique, Documentation Integrity. Each score is accompanied by a short rationale.",
+      "Your report shows a clear score breakdown across key parts of surgery quality. Each score includes a plain-language explanation and the evidence used.",
   },
   {
     id: "confidence",
@@ -201,14 +202,14 @@ export default function SampleReportPage() {
                 Next steps
               </h2>
               <p className="mt-4 text-slate-400 text-sm sm:text-base">
-                Request an audit, learn how the platform works, view services, or explore the broader transparency ecosystem.
+                Request a review, learn how HairAudit works, view services, or explore the broader transparency ecosystem.
               </p>
               <div className="mt-10 flex flex-col sm:flex-row flex-wrap justify-center gap-4">
                 <Link
-                  href="/signup"
+                  href="/request-review"
                   className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors shadow-lg shadow-amber-500/20"
                 >
-                  Request an Audit
+                  Request a Hair Transplant Review
                 </Link>
                 <Link
                   href="/how-it-works"
@@ -235,6 +236,20 @@ export default function SampleReportPage() {
                   Learn About the Verified Program
                 </Link>
               </div>
+              <div className="mt-8 text-left">
+                <ReviewProcessReassurance />
+              </div>
+              <p className="mt-5 text-sm text-slate-400">
+                Many patients only realise something may be wrong months after surgery. HairAudit
+                helps you understand whether your result is normal — or if something went wrong.
+              </p>
+              <p className="mt-5 text-sm text-slate-500">
+                Looking for our technical standards?{" "}
+                <Link href="/professionals" className="text-amber-400 hover:text-amber-300 transition-colors">
+                  Visit For Professionals
+                </Link>
+                .
+              </p>
             </ScrollReveal>
           </div>
         </section>

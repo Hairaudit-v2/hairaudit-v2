@@ -25,13 +25,28 @@ export default function SiteFooter() {
                 </Link>
               </li>
               <li>
-                <Link href="/methodology" className="hover:text-amber-400 transition-colors">
-                  Methodology
+                <Link href="/request-review" className="hover:text-amber-400 transition-colors">
+                  Request Review
                 </Link>
               </li>
               <li>
-                <Link href="/benchmark-vision" className="hover:text-amber-400 transition-colors">
-                  Benchmark Vision
+                <Link href="/sample-report" className="hover:text-amber-400 transition-colors">
+                  Example Report
+                </Link>
+              </li>
+              <li>
+                <Link href="/audit-examples" className="hover:text-amber-400 transition-colors">
+                  Audit Examples
+                </Link>
+              </li>
+              <li>
+                <Link href="/hair-transplant-problems" className="hover:text-amber-400 transition-colors">
+                  Hair Transplant Problems
+                </Link>
+              </li>
+              <li>
+                <Link href="/rate-my-hair-transplant" className="hover:text-amber-400 transition-colors">
+                  Rate My Hair Transplant
                 </Link>
               </li>
               <li>
@@ -40,18 +55,13 @@ export default function SiteFooter() {
                 </Link>
               </li>
               <li>
-                <Link href="/verified-surgeon-program" className="hover:text-amber-400 transition-colors">
-                  Verified Program
+                <Link href="/professionals" className="hover:text-amber-400 transition-colors">
+                  For Professionals
                 </Link>
               </li>
               <li>
-                <Link href="/signup" className="hover:text-amber-400 transition-colors">
-                  Request an Audit
-                </Link>
-              </li>
-              <li>
-                <Link href="/faq" className="hover:text-amber-400 transition-colors">
-                  FAQ
+                <Link href="/benchmark-vision" className="hover:text-amber-400 transition-colors">
+                  Benchmark Vision
                 </Link>
               </li>
               <li>
@@ -60,13 +70,13 @@ export default function SiteFooter() {
                 </Link>
               </li>
               <li>
-                <Link href="/sample-report" className="hover:text-amber-400 transition-colors">
-                  Sample Report
+                <Link href="/methodology" className="hover:text-amber-400 transition-colors">
+                  How We Review Your Surgery
                 </Link>
               </li>
               <li>
-                <Link href="/follicle-intelligence" className="hover:text-amber-400 transition-colors">
-                  Follicle Intelligence
+                <Link href="/request-review" className="hover:text-amber-400 transition-colors">
+                  Request a Hair Transplant Review
                 </Link>
               </li>
             </ul>
