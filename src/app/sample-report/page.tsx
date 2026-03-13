@@ -4,12 +4,15 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import ReviewProcessReassurance from "@/components/seo/ReviewProcessReassurance";
+import { createPageMetadata } from "@/lib/seo/pageMetadata";
+import TrackedLink from "@/components/analytics/TrackedLink";
 
-export const metadata = {
+export const metadata = createPageMetadata({
   title: "Sample Report | HairAudit",
   description:
-    "What a HairAudit output looks like: structured, evidence-based reporting for transplant quality, documentation strength, and next-step considerations. Redacted preview only.",
-};
+    "See a redacted HairAudit report format with structured findings, confidence notes, and next-step guidance.",
+  pathname: "/sample-report",
+});
 
 const reportPanels = [
   {
@@ -202,39 +205,23 @@ export default function SampleReportPage() {
                 Next steps
               </h2>
               <p className="mt-4 text-slate-400 text-sm sm:text-base">
-                Request a review, learn how HairAudit works, view services, or explore the broader transparency ecosystem.
+                Choose your next step: request your review or explore the professional standards pathway.
               </p>
               <div className="mt-10 flex flex-col sm:flex-row flex-wrap justify-center gap-4">
-                <Link
+                <TrackedLink
                   href="/request-review"
+                  eventName="cta_request_review_sample_report"
                   className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors shadow-lg shadow-amber-500/20"
                 >
-                  Request a Hair Transplant Review
-                </Link>
-                <Link
-                  href="/how-it-works"
+                  Request Review
+                </TrackedLink>
+                <TrackedLink
+                  href="/professionals"
+                  eventName="cta_for_professionals_sample_report"
                   className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
                 >
-                  Learn How HairAudit Works
-                </Link>
-                <Link
-                  href="/services"
-                  className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
-                >
-                  View Services
-                </Link>
-                <Link
-                  href="/clinics"
-                  className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
-                >
-                  Explore Participating Clinics
-                </Link>
-                <Link
-                  href="/verified-surgeon-program"
-                  className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
-                >
-                  Learn About the Verified Program
-                </Link>
+                  For Professionals
+                </TrackedLink>
               </div>
               <div className="mt-8 text-left">
                 <ReviewProcessReassurance />
@@ -246,7 +233,7 @@ export default function SampleReportPage() {
               <p className="mt-5 text-sm text-slate-500">
                 Looking for our technical standards?{" "}
                 <Link href="/professionals" className="text-amber-400 hover:text-amber-300 transition-colors">
-                  Visit For Professionals
+                  For Professionals
                 </Link>
                 .
               </p>

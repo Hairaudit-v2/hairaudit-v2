@@ -1,4 +1,12 @@
 import ProfessionalsShell from "@/components/professionals/ProfessionalsShell";
+import { createPageMetadata } from "@/lib/seo/pageMetadata";
+
+export const metadata = createPageMetadata({
+  title: "Evidence Standards | HairAudit",
+  description:
+    "See HairAudit evidence requirements, sufficiency criteria, and confidence interpretation standards.",
+  pathname: "/professionals/evidence-standards",
+});
 
 export default function EvidenceStandardsPage() {
   return (

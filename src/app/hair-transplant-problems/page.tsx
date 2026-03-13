@@ -122,7 +122,7 @@ export default function HairTransplantProblemsHubPage() {
                   href="/request-review"
                   className="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors"
                 >
-                  Request Hair Transplant Review
+                  Request Review
                 </Link>
               </div>
               <ReviewProcessReassurance className="mt-6" />

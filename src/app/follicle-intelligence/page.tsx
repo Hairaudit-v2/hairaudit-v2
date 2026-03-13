@@ -2,6 +2,14 @@ import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import ScrollReveal from "@/components/ui/ScrollReveal";
+import { createPageMetadata } from "@/lib/seo/pageMetadata";
+
+export const metadata = createPageMetadata({
+  title: "Follicle Intelligence | HairAudit",
+  description:
+    "Explore the AI-assisted analysis layer used by HairAudit to support consistent, evidence-based transplant review.",
+  pathname: "/follicle-intelligence",
+});
 
 const capabilities = [
   {

@@ -1,4 +1,12 @@
 import ProfessionalsShell from "@/components/professionals/ProfessionalsShell";
+import { createPageMetadata } from "@/lib/seo/pageMetadata";
+
+export const metadata = createPageMetadata({
+  title: "Auditor Standards | HairAudit",
+  description:
+    "Review HairAudit auditor standards, consistency controls, and oversight pathways for defensible outputs.",
+  pathname: "/professionals/auditor-standards",
+});
 
 export default function AuditorStandardsPage() {
   return (

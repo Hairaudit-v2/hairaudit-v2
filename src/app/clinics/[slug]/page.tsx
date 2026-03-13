@@ -292,26 +292,20 @@ export default async function PublicClinicProfilePage({
               Get involved
             </h2>
             <p className="mt-3 text-slate-400 text-sm max-w-xl mx-auto">
-              For patients: request an audit during our beta. Clinic participation will open in a later phase.
+              Choose your next step based on your pathway: patient review or professional participation.
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-4">
               <Link
-                href="/clinics"
-                className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl border border-slate-600 text-slate-200 text-sm font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
-              >
-                Explore More Clinics
-              </Link>
-              <Link
-                href="/how-it-works"
-                className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl border border-slate-600 text-slate-200 text-sm font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
-              >
-                Learn How HairAudit Works
-              </Link>
-              <Link
-                href="/signup"
+                href="/request-review"
                 className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-cyan-500 text-slate-950 font-semibold text-sm hover:bg-cyan-400 transition-colors"
               >
-                Request an Audit (Patient Beta)
+                Request Review
+              </Link>
+              <Link
+                href="/professionals/apply"
+                className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl border border-slate-600 text-slate-200 text-sm font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
+              >
+                Apply for Participation
               </Link>
             </div>
           </div>

@@ -1,6 +1,14 @@
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import Link from "next/link";
+import { createPageMetadata } from "@/lib/seo/pageMetadata";
+
+export const metadata = createPageMetadata({
+  title: "FAQ | HairAudit",
+  description:
+    "Read common questions about HairAudit reviews, confidence interpretation, privacy, and participation.",
+  pathname: "/faq",
+});
 
 const faqs = [
   {
@@ -37,7 +45,7 @@ const faqs = [
   },
   {
     q: "Who can submit a case?",
-    a: "During our patient beta, individuals can submit their transplant case for independent forensic review. Clinic and doctor participation will open in later stages of the platform rollout.",
+    a: "Patients can request independent review today through the request flow. Professional participation has a separate pathway for clinics, surgeons, partners, and expert stakeholders.",
   },
   {
     q: "Is my information kept confidential?",
@@ -51,28 +59,42 @@ const faqs = [
 
 export default function FAQPage() {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-[#0a0a0f] text-slate-100">
+      <div className="fixed inset-0 pointer-events-none" aria-hidden>
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(251,191,36,0.06),transparent)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_80%_60%,rgba(139,92,246,0.05),transparent)]" />
+      </div>
       <SiteHeader />
 
-      <main className="flex-1 px-4 py-16 sm:py-20">
+      <main className="relative flex-1 px-4 py-16 sm:py-20">
         <div className="max-w-3xl mx-auto">
-          <h1 className="text-3xl sm:text-4xl font-bold text-slate-900">
+          <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
             Frequently Asked Questions
           </h1>
+          <p className="mt-4 text-slate-300">
+            Clear answers for patients and professionals about HairAudit process, confidence, privacy,
+            and participation pathways.
+          </p>
           <div className="mt-12 space-y-6">
             {faqs.map(({ q, a }) => (
-              <div key={q} className="border-b border-slate-200 pb-6">
-                <h2 className="text-lg font-semibold text-slate-900">{q}</h2>
-                <p className="mt-2 text-slate-600">{a}</p>
+              <div key={q} className="rounded-2xl border border-white/10 bg-white/5 p-5">
+                <h2 className="text-lg font-semibold text-white">{q}</h2>
+                <p className="mt-2 text-slate-300">{a}</p>
               </div>
             ))}
           </div>
-          <div className="mt-12">
+          <div className="mt-12 flex flex-col sm:flex-row gap-3">
             <Link
-              href="/signup"
+              href="/request-review"
               className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors"
             >
-              Request an Audit (Patient Beta)
+              Request Review
+            </Link>
+            <Link
+              href="/professionals"
+              className="inline-flex items-center justify-center px-6 py-3 rounded-xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
+            >
+              For Professionals
             </Link>
           </div>
         </div>

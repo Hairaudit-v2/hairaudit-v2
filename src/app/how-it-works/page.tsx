@@ -3,6 +3,14 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import ReviewProcessReassurance from "@/components/seo/ReviewProcessReassurance";
+import { createPageMetadata } from "@/lib/seo/pageMetadata";
+
+export const metadata = createPageMetadata({
+  title: "How It Works | HairAudit",
+  description:
+    "See how HairAudit reviews surgery photos with structured analysis, expert review, and clear reporting.",
+  pathname: "/how-it-works",
+});
 
 export default function HowItWorksPage() {
   return (
@@ -30,13 +38,13 @@ export default function HowItWorksPage() {
                   href="/request-review"
                   className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors shadow-lg shadow-amber-500/20"
                 >
-                  Request a Hair Transplant Review
+                  Request Review
                 </Link>
                 <Link
                   href="/sample-report"
                   className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
                 >
-                  See an Example Report
+                  See Example Report
                 </Link>
               </div>
               <p className="mt-3 text-xs text-amber-300 font-medium">Independent Surgery Assessment</p>
@@ -91,7 +99,7 @@ export default function HowItWorksPage() {
               <p className="mt-5 text-sm text-slate-500">
                 Looking for our technical standards?{" "}
                 <Link href="/professionals" className="text-amber-400 hover:text-amber-300 transition-colors">
-                  Visit For Professionals
+                  For Professionals
                 </Link>
                 .
               </p>
@@ -110,13 +118,10 @@ export default function HowItWorksPage() {
               </p>
               <div className="mt-10 flex flex-col sm:flex-row flex-wrap justify-center gap-4">
                 <Link href="/request-review" className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors shadow-lg shadow-amber-500/20">
-                  Request a Hair Transplant Review
-                </Link>
-                <Link href="/how-it-works" className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors">
-                  Learn How HairAudit Works
+                  Request Review
                 </Link>
                 <Link href="/sample-report" className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors">
-                  See an Example Report
+                  See Example Report
                 </Link>
               </div>
               <div className="max-w-2xl mx-auto mt-6 text-left">
@@ -125,7 +130,7 @@ export default function HowItWorksPage() {
               <p className="mt-5 text-sm text-slate-500">
                 Looking for our technical standards?{" "}
                 <Link href="/professionals" className="text-amber-400 hover:text-amber-300 transition-colors">
-                  Visit For Professionals
+                  For Professionals
                 </Link>
                 .
               </p>

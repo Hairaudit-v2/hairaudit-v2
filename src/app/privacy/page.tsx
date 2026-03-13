@@ -1,6 +1,14 @@
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import Link from "next/link";
+import { createPageMetadata } from "@/lib/seo/pageMetadata";
+
+export const metadata = createPageMetadata({
+  title: "Privacy Policy | HairAudit",
+  description:
+    "Read how HairAudit collects, uses, stores, and protects personal information and case data.",
+  pathname: "/privacy",
+});
 
 export default function PrivacyPage() {
   return (

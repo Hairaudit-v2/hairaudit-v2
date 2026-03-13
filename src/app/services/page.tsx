@@ -4,12 +4,15 @@ import Image from "next/image";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import ScrollReveal from "@/components/ui/ScrollReveal";
+import { createPageMetadata } from "@/lib/seo/pageMetadata";
+import TrackedLink from "@/components/analytics/TrackedLink";
 
-export const metadata = {
+export const metadata = createPageMetadata({
   title: "Services | HairAudit",
   description:
-    "Structured product architecture: Patient Forensic Audit, Corrective Review, Clinic Benchmark Review, and Transparency Participation. Independent, evidence-based audit services.",
-};
+    "Compare HairAudit services for patients, clinics, and professionals with structured outcomes and decision-focused reporting.",
+  pathname: "/services",
+});
 
 const comparisonRows = [
   {
@@ -69,8 +72,8 @@ const serviceBlocks = [
     ],
     whyItMatters:
       "Helps you understand whether the outcome aligns with expected surgical standards and what next step — if any — may be justified. Independence means no provider-side bias.",
-    href: "/signup",
-    cta: "Request an Audit",
+    href: "/request-review",
+    cta: "Request Review",
   },
   {
     id: "corrective",
@@ -93,8 +96,8 @@ const serviceBlocks = [
     ],
     whyItMatters:
       "Helps you gauge whether the result is on track, what may be affecting it, and whether further intervention or reassurance is appropriate. Distinguishes genuine concerns from evidence gaps.",
-    href: "/signup",
-    cta: "Request an Audit",
+    href: "/request-review",
+    cta: "Request Review",
   },
   {
     id: "clinic",
@@ -117,8 +120,8 @@ const serviceBlocks = [
     ],
     whyItMatters:
       "Helps clinics strengthen transparency, understand benchmark readiness, and support evidence-based positioning in the HairAudit ecosystem — without marketing spin.",
-    href: "/verified-surgeon-program",
-    cta: "Learn About Participation",
+    href: "/professionals/apply",
+    cta: "Apply for Participation",
   },
   {
     id: "transparency",
@@ -139,8 +142,8 @@ const serviceBlocks = [
     ],
     whyItMatters:
       "Helps you understand how participation supports recognition, where documentation and consistency can improve, and how you stand within the Verified Program.",
-    href: "/verified-surgeon-program",
-    cta: "Learn About the Verified Program",
+    href: "/professionals/apply",
+    cta: "Apply for Participation",
   },
 ];
 
@@ -197,7 +200,32 @@ export default function ServicesPage() {
               </p>
             </ScrollReveal>
             <div className="mt-10 overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm">
-              <div className="overflow-x-auto">
+              <div className="sm:hidden space-y-3 p-4">
+                {comparisonRows.map((row) => (
+                  <article key={row.id} className="rounded-xl border border-white/10 bg-slate-900/60 p-4">
+                    <h3 className="text-base font-semibold text-white">{row.service}</h3>
+                    <dl className="mt-3 space-y-2 text-sm">
+                      <div>
+                        <dt className="text-[11px] uppercase tracking-wider text-slate-500">Audience</dt>
+                        <dd className="text-slate-300 mt-1">{row.audience}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-[11px] uppercase tracking-wider text-slate-500">Main input</dt>
+                        <dd className="text-slate-300 mt-1">{row.mainInput}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-[11px] uppercase tracking-wider text-slate-500">Main output</dt>
+                        <dd className="text-slate-300 mt-1">{row.mainOutput}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-[11px] uppercase tracking-wider text-slate-500">Main decision supported</dt>
+                        <dd className="text-slate-300 mt-1">{row.mainDecision}</dd>
+                      </div>
+                    </dl>
+                  </article>
+                ))}
+              </div>
+              <div className="hidden sm:block overflow-x-auto">
                 <table className="w-full min-w-[720px] text-left">
                   <thead>
                     <tr className="border-b border-white/10">
@@ -407,33 +435,23 @@ export default function ServicesPage() {
                 Next steps
               </h2>
               <p className="mt-4 text-slate-400 text-sm sm:text-base">
-                Request an audit, learn how the platform works, explore participating clinics, or view recognition pathways.
+                Choose your next step based on your pathway: patient review or professional participation.
               </p>
               <div className="mt-10 flex flex-col sm:flex-row flex-wrap justify-center gap-4">
-                <Link
-                  href="/signup"
+                <TrackedLink
+                  href="/request-review"
+                  eventName="cta_request_review_services"
                   className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors shadow-lg shadow-amber-500/20"
                 >
-                  Request an Audit
-                </Link>
-                <Link
-                  href="/how-it-works"
+                  Request Review
+                </TrackedLink>
+                <TrackedLink
+                  href="/professionals/apply"
+                  eventName="cta_professional_apply_services"
                   className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
                 >
-                  Learn How HairAudit Works
-                </Link>
-                <Link
-                  href="/clinics"
-                  className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
-                >
-                  Explore Participating Clinics
-                </Link>
-                <Link
-                  href="/verified-surgeon-program"
-                  className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
-                >
-                  Learn About the Verified Program
-                </Link>
+                  Apply for Participation
+                </TrackedLink>
               </div>
             </ScrollReveal>
           </div>

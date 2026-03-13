@@ -1,14 +1,17 @@
 import Link from "next/link";
 import ProfessionalsShell from "@/components/professionals/ProfessionalsShell";
 import ScrollReveal from "@/components/ui/ScrollReveal";
+import { createPageMetadata } from "@/lib/seo/pageMetadata";
 
-export const metadata = {
+export const metadata = createPageMetadata({
   title: "For Professionals | HairAudit",
   description:
-    "HairAudit professional standards: methodology, scoring framework, evidence standards, participation, legal documentation, and auditor standards.",
-};
+    "Review HairAudit standards for methodology, scoring, evidence quality, participation, and documentation frameworks.",
+  pathname: "/professionals",
+});
 
 const cards = [
+  { href: "/professionals/apply", title: "Apply for Participation", desc: "Dedicated intake for clinics, surgeons, partners, auditors, and expert stakeholders." },
   { href: "/professionals/methodology", title: "Methodology", desc: "Structured review model, evidence weighting logic, and standardized assessment principles." },
   { href: "/professionals/scoring-framework", title: "Scoring Framework", desc: "Domain definitions, dual patient/technical explanations, and scoring clarity." },
   { href: "/professionals/evidence-standards", title: "Evidence Standards", desc: "Image requirements, sufficiency criteria, confidence grading, and limitations." },

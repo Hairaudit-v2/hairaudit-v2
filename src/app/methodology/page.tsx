@@ -77,7 +77,7 @@ export default function MethodologyPage() {
               <p className="mt-4 text-slate-400">
                 Looking for technical standards, scoring framework, and evidence rules?{" "}
                 <Link href="/professionals" className="text-amber-400 hover:text-amber-300 transition-colors font-medium">
-                  Visit For Professionals
+                  For Professionals
                 </Link>
                 .
               </p>
@@ -99,19 +99,19 @@ export default function MethodologyPage() {
                   href="/request-review"
                   className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors shadow-lg shadow-amber-500/20"
                 >
-                  Request a Hair Transplant Review
+                  Request Review
                 </Link>
                 <Link
                   href="/sample-report"
                   className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
                 >
-                  See an Example Report
+                  See Example Report
                 </Link>
                 <Link
                   href="/how-it-works"
                   className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
                 >
-                  Learn How HairAudit Works
+                  How It Works
                 </Link>
               </div>
               <p className="mt-5 text-sm text-slate-400">

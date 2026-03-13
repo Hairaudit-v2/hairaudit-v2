@@ -83,6 +83,18 @@ export default function RateMyHairTransplantPage() {
             <RateMyHairTransplantClient />
           </ScrollReveal>
 
+          <ScrollReveal delay={0.09}>
+            <section className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-6">
+              <h2 className="text-xl font-semibold text-white">What happens next</h2>
+              <ol className="mt-4 space-y-2 text-slate-300 text-sm">
+                <li>- Submit your photos and timeline details.</li>
+                <li>- We process the case through the HairAudit scoring flow.</li>
+                <li>- Your evidence is assessed with structured quality interpretation.</li>
+                <li>- You receive score and next-step guidance.</li>
+              </ol>
+            </section>
+          </ScrollReveal>
+
           <ScrollReveal delay={0.1}>
             <section className="mt-6 rounded-2xl border border-cyan-300/30 bg-cyan-300/10 p-6">
               <h2 className="text-xl font-semibold text-cyan-100">Share your score with privacy in mind</h2>

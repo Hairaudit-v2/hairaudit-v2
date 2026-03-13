@@ -70,7 +70,7 @@ export default function AuditExamplesPage() {
                   href="/sample-report"
                   className="inline-flex items-center justify-center px-6 py-3 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
                 >
-                  Open Sample Report Page
+                  See Example Report
                 </Link>
               </div>
             </section>
@@ -107,7 +107,7 @@ export default function AuditExamplesPage() {
                     href="/request-review"
                     className="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors"
                   >
-                    Request Hair Transplant Review
+                    Request Review
                   </Link>
                   <Link
                     href="/rate-my-hair-transplant"

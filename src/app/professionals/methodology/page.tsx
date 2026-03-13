@@ -1,4 +1,12 @@
 import ProfessionalsShell from "@/components/professionals/ProfessionalsShell";
+import { createPageMetadata } from "@/lib/seo/pageMetadata";
+
+export const metadata = createPageMetadata({
+  title: "Professional Methodology | HairAudit",
+  description:
+    "Review HairAudit's structured methodology for consistent, evidence-based professional case interpretation.",
+  pathname: "/professionals/methodology",
+});
 
 export default function ProfessionalsMethodologyPage() {
   return (

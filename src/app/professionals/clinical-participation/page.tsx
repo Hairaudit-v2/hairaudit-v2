@@ -1,5 +1,13 @@
 import ProfessionalsShell from "@/components/professionals/ProfessionalsShell";
 import Link from "next/link";
+import { createPageMetadata } from "@/lib/seo/pageMetadata";
+
+export const metadata = createPageMetadata({
+  title: "Clinical Participation | HairAudit",
+  description:
+    "Learn how clinics participate in HairAudit documentation pathways and transparency-focused professional review.",
+  pathname: "/professionals/clinical-participation",
+});
 
 export default function ClinicalParticipationPage() {
   return (
@@ -23,7 +31,7 @@ export default function ClinicalParticipationPage() {
             recognition-readiness over time.
           </p>
           <p className="mt-3">
-            <Link href="/verified-program" className="text-amber-400 hover:text-amber-300 transition-colors">
+            <Link href="/verified-surgeon-program" className="text-amber-400 hover:text-amber-300 transition-colors">
               Learn about the Verified Program →
             </Link>
           </p>

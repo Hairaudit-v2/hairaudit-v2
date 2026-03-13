@@ -4,12 +4,15 @@ import SiteFooter from "@/components/SiteFooter";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import ReviewProcessReassurance from "@/components/seo/ReviewProcessReassurance";
 import MedicalProcedureFaqSchema from "@/components/seo/MedicalProcedureFaqSchema";
+import { createPageMetadata } from "@/lib/seo/pageMetadata";
+import TrackedLink from "@/components/analytics/TrackedLink";
 
-export const metadata = {
+export const metadata = createPageMetadata({
   title: "Request Review | HairAudit",
   description:
     "Request a hair transplant review with secure photo upload, independent assessment, and clear next-step reporting.",
-};
+  pathname: "/request-review",
+});
 
 const requestFaqs = [
   {
@@ -49,7 +52,7 @@ export default function RequestReviewPage() {
         <div className="max-w-4xl mx-auto">
           <ScrollReveal>
             <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
-              Request a Hair Transplant Review
+              Request Review
             </h1>
             <p className="mt-4 text-slate-300 max-w-2xl">
               Send your surgery photos and details for an independent medical review, whether you
@@ -65,6 +68,39 @@ export default function RequestReviewPage() {
               <p className="mt-3 text-sm text-slate-300">
                 They are only used for your HairAudit review and are never shared publicly without permission.
               </p>
+              <div className="mt-4 flex flex-wrap gap-2 text-xs">
+                <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-slate-200">Independent review platform</span>
+                <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-slate-200">Structured review process</span>
+                <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-slate-200">Expert-reviewed findings</span>
+                <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-slate-200">Secure photo handling</span>
+              </div>
+            </div>
+          </ScrollReveal>
+
+          <ScrollReveal delay={0.08}>
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              <div className="rounded-2xl border border-amber-300/25 bg-amber-300/10 p-5">
+                <p className="text-xs uppercase tracking-wider text-amber-200 font-semibold">For Patients</p>
+                <p className="mt-2 text-sm text-amber-50/95">Start your case submission and secure upload.</p>
+                <TrackedLink
+                  href="/signup"
+                  eventName="cta_secure_upload_request_review"
+                  className="mt-4 inline-flex items-center rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-slate-900 hover:bg-amber-400 transition-colors"
+                >
+                  Continue to Secure Upload
+                </TrackedLink>
+              </div>
+              <div className="rounded-2xl border border-cyan-300/25 bg-cyan-300/10 p-5">
+                <p className="text-xs uppercase tracking-wider text-cyan-100 font-semibold">For Clinics / Surgeons</p>
+                <p className="mt-2 text-sm text-cyan-50/95">Use the professional onboarding pathway.</p>
+                <TrackedLink
+                  href="/professionals/apply"
+                  eventName="cta_professional_apply_request_review_split"
+                  className="mt-4 inline-flex items-center rounded-xl border border-slate-500 px-4 py-2.5 text-sm font-medium text-slate-100 hover:bg-white/5 transition-colors"
+                >
+                  Apply for Participation
+                </TrackedLink>
+              </div>
             </div>
           </ScrollReveal>
 
@@ -90,18 +126,32 @@ export default function RequestReviewPage() {
 
           <ScrollReveal delay={0.15}>
             <div className="mt-8 flex flex-col sm:flex-row gap-4">
-              <Link
+              <TrackedLink
                 href="/signup"
+                eventName="cta_secure_upload_request_review"
                 className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors shadow-lg shadow-amber-500/20"
               >
                 Continue to Secure Upload
-              </Link>
-              <Link
+              </TrackedLink>
+              <TrackedLink
                 href="/sample-report"
+                eventName="cta_example_report_request_review"
                 className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
               >
-                See an Example Report
-              </Link>
+                  See Example Report
+              </TrackedLink>
+            </div>
+            <div className="mt-5 rounded-2xl border border-white/10 bg-white/5 p-5">
+              <h2 className="text-base font-semibold text-white">What happens next</h2>
+              <ol className="mt-3 space-y-2 text-sm text-slate-300">
+                <li>- Submit your case details and photos.</li>
+                <li>- We review the evidence through the HairAudit process.</li>
+                <li>- Your case is assessed with structured, confidence-aware findings.</li>
+                <li>- You receive next-step report guidance.</li>
+              </ol>
+              <p className="mt-3 text-xs text-slate-400">
+                Your photos stay private and are never shared without permission.
+              </p>
             </div>
             <ReviewProcessReassurance className="mt-6" />
             <p className="mt-5 text-sm text-slate-400">
@@ -117,7 +167,7 @@ export default function RequestReviewPage() {
             <p className="mt-4 text-sm text-slate-500">
               Looking for our technical standards?{" "}
               <Link href="/professionals" className="text-amber-400 hover:text-amber-300 transition-colors">
-                Visit For Professionals
+                For Professionals
               </Link>
               .
             </p>

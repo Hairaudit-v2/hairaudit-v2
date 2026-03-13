@@ -2,6 +2,7 @@ import Link from "next/link";
 
 const links = [
   { href: "/professionals", label: "Overview" },
+  { href: "/professionals/apply", label: "Apply" },
   { href: "/professionals/methodology", label: "Methodology" },
   { href: "/professionals/scoring-framework", label: "Scoring Framework" },
   { href: "/professionals/evidence-standards", label: "Evidence Standards" },
@@ -57,6 +58,10 @@ export default function ProfessionalsShell({
           Looking for the patient overview?{" "}
           <Link href="/how-it-works" className="text-amber-400 hover:text-amber-300 transition-colors">
             Return to How It Works
+          </Link>
+          {" · "}
+          <Link href="/professionals/apply" className="text-cyan-300 hover:text-cyan-200 transition-colors">
+            Apply for Participation
           </Link>
           .
         </p>

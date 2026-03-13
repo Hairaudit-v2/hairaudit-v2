@@ -1,6 +1,14 @@
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import Link from "next/link";
+import { createPageMetadata } from "@/lib/seo/pageMetadata";
+
+export const metadata = createPageMetadata({
+  title: "Disclaimer | HairAudit",
+  description:
+    "Read HairAudit medical, legal, and liability disclaimers for independent forensic review outputs.",
+  pathname: "/disclaimer",
+});
 
 export default function DisclaimerPage() {
   return (

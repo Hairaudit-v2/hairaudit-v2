@@ -4,8 +4,16 @@ import SiteFooter from "@/components/SiteFooter";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import HairAuditScoreVisual from "@/components/seo/HairAuditScoreVisual";
 import ReviewProcessReassurance from "@/components/seo/ReviewProcessReassurance";
+import { createPageMetadata } from "@/lib/seo/pageMetadata";
+import TrackedLink from "@/components/analytics/TrackedLink";
 
 export const revalidate = 600;
+export const metadata = createPageMetadata({
+  title: "HairAudit",
+  description:
+    "Independent hair transplant review with structured evidence, clear findings, and patient-friendly reporting.",
+  pathname: "/",
+});
 
 export default function HomePage() {
   return (
@@ -29,18 +37,20 @@ export default function HomePage() {
                 Independent experts review your surgery and explain your results.
               </p>
               <div className="mt-9 flex flex-col sm:flex-row gap-4 justify-center">
-                <Link
+                <TrackedLink
                   href="/request-review"
+                  eventName="cta_request_review_hero"
                   className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors shadow-lg shadow-amber-500/20"
                 >
-                  Request a Hair Transplant Review
-                </Link>
-                <Link
+                  Request Review
+                </TrackedLink>
+                <TrackedLink
                   href="/sample-report"
+                  eventName="cta_example_report_hero"
                   className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
                 >
-                  See an Example Report
-                </Link>
+                  See Example Report
+                </TrackedLink>
               </div>
               <p className="mt-3 text-xs text-amber-300 font-medium">Independent Surgery Assessment</p>
               <p className="mt-3 text-sm text-slate-500">
@@ -53,6 +63,37 @@ export default function HomePage() {
                 Many patients only realise something may be wrong months after surgery. HairAudit
                 helps you understand whether your result is normal — or if something went wrong.
               </p>
+            </ScrollReveal>
+          </div>
+        </section>
+
+        <section className="relative px-4 sm:px-6 pb-8 sm:pb-12">
+          <div className="max-w-4xl mx-auto">
+            <ScrollReveal delay={0.05}>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+                  <p className="text-xs uppercase tracking-wider text-amber-300 font-semibold">For Patients</p>
+                  <p className="mt-2 text-sm text-slate-300">Need clarity on your transplant outcome?</p>
+                  <TrackedLink
+                    href="/request-review"
+                    eventName="cta_request_review_home_split"
+                    className="mt-4 inline-flex items-center rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-slate-900 hover:bg-amber-400 transition-colors"
+                  >
+                    Request Review
+                  </TrackedLink>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+                  <p className="text-xs uppercase tracking-wider text-cyan-300 font-semibold">For Clinics / Surgeons</p>
+                  <p className="mt-2 text-sm text-slate-300">Join a professional transparency pathway.</p>
+                  <TrackedLink
+                    href="/professionals/apply"
+                    eventName="cta_professional_apply_home_split"
+                    className="mt-4 inline-flex items-center rounded-xl border border-slate-600 px-4 py-2.5 text-sm font-medium text-slate-100 hover:bg-white/5 transition-colors"
+                  >
+                    Apply for Participation
+                  </TrackedLink>
+                </div>
+              </div>
             </ScrollReveal>
           </div>
         </section>
@@ -182,7 +223,7 @@ export default function HomePage() {
               <p className="mt-6 text-sm text-slate-500">
                 Looking for our technical standards?{" "}
                 <Link href="/professionals" className="text-amber-400 hover:text-amber-300 transition-colors">
-                  Visit For Professionals
+                  For Professionals
                 </Link>
                 .
               </p>

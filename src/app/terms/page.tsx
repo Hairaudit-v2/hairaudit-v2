@@ -1,6 +1,14 @@
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import Link from "next/link";
+import { createPageMetadata } from "@/lib/seo/pageMetadata";
+
+export const metadata = createPageMetadata({
+  title: "Terms of Use | HairAudit",
+  description:
+    "Review HairAudit terms governing platform usage, account responsibilities, and service limitations.",
+  pathname: "/terms",
+});
 
 export default function TermsPage() {
   return (

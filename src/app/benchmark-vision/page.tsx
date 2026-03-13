@@ -64,7 +64,7 @@ export default function BenchmarkVisionPage() {
                   href="/how-it-works"
                   className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
                 >
-                  Learn How HairAudit Works
+                  How It Works
                 </Link>
                 <Link
                   href="/clinics"
@@ -250,7 +250,7 @@ export default function BenchmarkVisionPage() {
                 ))}
               </ul>
               <Link
-                href="/verified-program"
+                href="/verified-surgeon-program"
                 className="mt-6 inline-flex items-center text-sm font-medium text-amber-400 hover:text-amber-300 transition-colors"
               >
                 Learn about the Verified Program →
@@ -305,13 +305,13 @@ export default function BenchmarkVisionPage() {
                   href="/request-review"
                   className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors shadow-lg shadow-amber-500/20"
                 >
-                  Request a Hair Transplant Review
+                  Request Review
                 </Link>
                 <Link
                   href="/how-it-works"
                   className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
                 >
-                  Learn How HairAudit Works
+                  How It Works
                 </Link>
                 <Link
                   href="/clinics"

@@ -1,4 +1,12 @@
 import ProfessionalsShell from "@/components/professionals/ProfessionalsShell";
+import { createPageMetadata } from "@/lib/seo/pageMetadata";
+
+export const metadata = createPageMetadata({
+  title: "Legal Documentation | HairAudit",
+  description:
+    "Understand HairAudit legal documentation context, evidence limits, and structured reporting standards.",
+  pathname: "/professionals/legal-documentation",
+});
 
 export default function LegalDocumentationPage() {
   return (

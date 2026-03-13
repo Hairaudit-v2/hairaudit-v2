@@ -1,4 +1,12 @@
 import ProfessionalsShell from "@/components/professionals/ProfessionalsShell";
+import { createPageMetadata } from "@/lib/seo/pageMetadata";
+
+export const metadata = createPageMetadata({
+  title: "Scoring Framework | HairAudit",
+  description:
+    "Understand HairAudit's scoring domains and evidence-led framework for consistent professional review.",
+  pathname: "/professionals/scoring-framework",
+});
 
 const domains = [
   {

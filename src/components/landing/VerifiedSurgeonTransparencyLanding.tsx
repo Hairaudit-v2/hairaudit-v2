@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import TrackedLink from "@/components/analytics/TrackedLink";
 
 // ——— Data (easy to edit) ———
 
@@ -239,28 +240,23 @@ export default function VerifiedSurgeonTransparencyLanding() {
                   contribution, validated case performance, and consistent standards.
                 </p>
                 <div className="mt-8 flex flex-wrap gap-4">
-                  <Link
-                    href="/clinics"
+                  <TrackedLink
+                    href="/professionals/apply"
+                    eventName="cta_professional_apply_verified_program"
                     className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl bg-cyan-500 text-slate-950 font-semibold hover:bg-cyan-400 transition-colors shadow-lg shadow-cyan-500/20"
                   >
-                    Explore Participating Clinics
-                  </Link>
-                  <Link
-                    href="/signup"
-                    className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
-                  >
                     Apply for Participation
-                  </Link>
+                  </TrackedLink>
                   <Link
-                    href="#recognition-tiers"
+                    href="/clinics"
                     className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
                   >
-                    View Recognition Criteria
+                    Explore Participating Clinics
                   </Link>
                 </div>
                 <p className="mt-4 text-sm text-slate-500">
                   <Link href="/how-it-works" className="text-cyan-400 hover:text-cyan-300 transition-colors font-medium">
-                    Learn How HairAudit Works
+                    How It Works
                   </Link>
                   {" — "}step-by-step audit process and transparency ecosystem.{" "}
                   <Link href="/methodology" className="text-cyan-400 hover:text-cyan-300 transition-colors font-medium">
@@ -731,23 +727,18 @@ export default function VerifiedSurgeonTransparencyLanding() {
                 and become eligible for HairAudit recognition tiers.
               </p>
               <div className="mt-10 flex flex-wrap justify-center gap-4">
-                <Link
-                  href="/signup"
+                <TrackedLink
+                  href="/professionals/apply"
+                  eventName="cta_professional_apply_verified_program"
                   className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl bg-cyan-500 text-slate-950 font-semibold hover:bg-cyan-400 transition-colors shadow-lg shadow-cyan-500/20"
                 >
                   Apply for Participation
-                </Link>
+                </TrackedLink>
                 <Link
                   href="/clinics"
                   className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
                 >
                   Explore Participating Clinics
-                </Link>
-                <Link
-                  href="/how-it-works"
-                  className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
-                >
-                  Learn How HairAudit Works
                 </Link>
               </div>
             </div>
