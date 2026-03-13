@@ -27,6 +27,7 @@ import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { tryCreateSupabaseAdminClient } from "@/lib/supabase/admin";
 import { parseRole, USER_ROLES } from "@/lib/roles";
 import { resolveAuditorRole } from "@/lib/auth/isAuditor";
+import { isMissingFeatureError } from "@/lib/db/isMissingFeatureError";
 
 function scoreChipClass(score: number | null | undefined) {
   if (typeof score !== "number") return "border-slate-300/25 bg-slate-300/10 text-slate-100";
@@ -147,15 +148,29 @@ export default async function Page({
   // Optional feature: graft integrity must never break case page
   let graftIntegrityEstimate: any = null;
   try {
-    const giiRes = await db
+    const giiSelectWithEvidence =
+      "id, case_id, claimed_grafts, estimated_extracted_min, estimated_extracted_max, estimated_implanted_min, estimated_implanted_max, variance_claimed_vs_implanted_min_pct, variance_claimed_vs_implanted_max_pct, variance_claimed_vs_extracted_min_pct, variance_claimed_vs_extracted_max_pct, confidence, confidence_label, evidence_sufficiency_score, inputs_used, limitations, flags, ai_notes, auditor_status, auditor_notes, auditor_adjustments, audited_by, audited_at, created_at, updated_at";
+    const giiSelectFallback =
+      "id, case_id, claimed_grafts, estimated_extracted_min, estimated_extracted_max, estimated_implanted_min, estimated_implanted_max, variance_claimed_vs_implanted_min_pct, variance_claimed_vs_implanted_max_pct, variance_claimed_vs_extracted_min_pct, variance_claimed_vs_extracted_max_pct, confidence, confidence_label, inputs_used, limitations, flags, ai_notes, auditor_status, auditor_notes, auditor_adjustments, audited_by, audited_at, created_at, updated_at";
+
+    let giiRes = await db
       .from("graft_integrity_estimates")
-      .select(
-        "id, case_id, claimed_grafts, estimated_extracted_min, estimated_extracted_max, estimated_implanted_min, estimated_implanted_max, variance_claimed_vs_implanted_min_pct, variance_claimed_vs_implanted_max_pct, variance_claimed_vs_extracted_min_pct, variance_claimed_vs_extracted_max_pct, confidence, confidence_label, evidence_sufficiency_score, inputs_used, limitations, flags, ai_notes, auditor_status, auditor_notes, auditor_adjustments, audited_by, audited_at, created_at, updated_at"
-      )
+      .select(giiSelectWithEvidence)
       .eq("case_id", c.id)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
+
+    if (giiRes.error && isMissingFeatureError(giiRes.error)) {
+      giiRes = await db
+        .from("graft_integrity_estimates")
+        .select(giiSelectFallback)
+        .eq("case_id", c.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+    }
+
     if (!giiRes.error) graftIntegrityEstimate = giiRes.data;
   } catch {
     /* table may not exist */

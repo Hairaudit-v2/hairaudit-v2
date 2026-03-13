@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { isMissingFeatureError } from "@/lib/db/isMissingFeatureError";
 
 type AuditorStatus = "pending" | "approved" | "rejected" | "needs_more_evidence";
 type ConfidenceLabel = "low" | "medium" | "high";
@@ -105,6 +106,10 @@ export default function GraftIntegrityReviewPanel(props: {
   emptyMessage?: string;
 }) {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
+  const giiSelectWithEvidence =
+    "id, case_id, claimed_grafts, estimated_extracted_min, estimated_extracted_max, estimated_implanted_min, estimated_implanted_max, variance_claimed_vs_implanted_min_pct, variance_claimed_vs_implanted_max_pct, variance_claimed_vs_extracted_min_pct, variance_claimed_vs_extracted_max_pct, confidence, confidence_label, evidence_sufficiency_score, inputs_used, limitations, flags, ai_notes, auditor_status, auditor_notes, auditor_adjustments, audited_by, audited_at, created_at, updated_at";
+  const giiSelectFallback =
+    "id, case_id, claimed_grafts, estimated_extracted_min, estimated_extracted_max, estimated_implanted_min, estimated_implanted_max, variance_claimed_vs_implanted_min_pct, variance_claimed_vs_implanted_max_pct, variance_claimed_vs_extracted_min_pct, variance_claimed_vs_extracted_max_pct, confidence, confidence_label, inputs_used, limitations, flags, ai_notes, auditor_status, auditor_notes, auditor_adjustments, audited_by, audited_at, created_at, updated_at";
 
   const [estimates, setEstimates] = useState<AuditorGiiRow[]>(props.initialEstimates ?? []);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -122,17 +127,30 @@ export default function GraftIntegrityReviewPanel(props: {
 
   const [thumbs, setThumbs] = useState<Record<string, string | null>>({});
 
+  async function loadLatestEstimates() {
+    let res = await supabase
+      .from("graft_integrity_estimates")
+      .select(giiSelectWithEvidence)
+      .order("created_at", { ascending: false })
+      .limit(200);
+
+    if (res.error && isMissingFeatureError(res.error)) {
+      res = await supabase
+        .from("graft_integrity_estimates")
+        .select(giiSelectFallback)
+        .order("created_at", { ascending: false })
+        .limit(200);
+    }
+
+    if (res.error) return null;
+    return Array.isArray(res.data) ? (res.data as AuditorGiiRow[]) : [];
+  }
+
   useEffect(() => {
     const channel = supabase
       .channel("gii-auditor")
       .on("postgres_changes", { event: "*", schema: "public", table: "graft_integrity_estimates" }, async () => {
-        const { data } = await supabase
-          .from("graft_integrity_estimates")
-          .select(
-            "id, case_id, claimed_grafts, estimated_extracted_min, estimated_extracted_max, estimated_implanted_min, estimated_implanted_max, variance_claimed_vs_implanted_min_pct, variance_claimed_vs_implanted_max_pct, variance_claimed_vs_extracted_min_pct, variance_claimed_vs_extracted_max_pct, confidence, confidence_label, evidence_sufficiency_score, inputs_used, limitations, flags, ai_notes, auditor_status, auditor_notes, auditor_adjustments, audited_by, audited_at, created_at, updated_at"
-          )
-          .order("created_at", { ascending: false })
-          .limit(200);
+        const data = await loadLatestEstimates();
         if (!Array.isArray(data)) return;
         // Keep the latest row per case_id
         const byCase = new Map<string, AuditorGiiRow>();

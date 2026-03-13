@@ -70,16 +70,29 @@ export default async function AuditorDashboardPage() {
   // Optional feature: must never crash the dashboard if table is missing or query errors
   let giiLatestByCase = new Map<string, any>();
   let giiUnavailable = false;
+  const giiSelectWithEvidence =
+    "id, case_id, claimed_grafts, estimated_extracted_min, estimated_extracted_max, estimated_implanted_min, estimated_implanted_max, variance_claimed_vs_implanted_min_pct, variance_claimed_vs_implanted_max_pct, variance_claimed_vs_extracted_min_pct, variance_claimed_vs_extracted_max_pct, confidence, confidence_label, evidence_sufficiency_score, inputs_used, limitations, flags, ai_notes, auditor_status, auditor_notes, auditor_adjustments, audited_by, audited_at, created_at, updated_at";
+  const giiSelectFallback =
+    "id, case_id, claimed_grafts, estimated_extracted_min, estimated_extracted_max, estimated_implanted_min, estimated_implanted_max, variance_claimed_vs_implanted_min_pct, variance_claimed_vs_implanted_max_pct, variance_claimed_vs_extracted_min_pct, variance_claimed_vs_extracted_max_pct, confidence, confidence_label, inputs_used, limitations, flags, ai_notes, auditor_status, auditor_notes, auditor_adjustments, audited_by, audited_at, created_at, updated_at";
   try {
-    const giiRes = await admin
+    let giiRes = await admin
       .from("graft_integrity_estimates")
-      .select(
-        "id, case_id, claimed_grafts, estimated_extracted_min, estimated_extracted_max, estimated_implanted_min, estimated_implanted_max, variance_claimed_vs_implanted_min_pct, variance_claimed_vs_implanted_max_pct, variance_claimed_vs_extracted_min_pct, variance_claimed_vs_extracted_max_pct, confidence, confidence_label, evidence_sufficiency_score, inputs_used, limitations, flags, ai_notes, auditor_status, auditor_notes, auditor_adjustments, audited_by, audited_at, created_at, updated_at"
-      )
+      .select(giiSelectWithEvidence)
       .order("created_at", { ascending: false })
       .limit(200);
-    if (giiRes.error && isMissingFeatureError(giiRes.error)) giiUnavailable = true;
-    else if (!giiRes.error) {
+
+    // Backward compatibility: if evidence_sufficiency_score column is not deployed, retry without it.
+    if (giiRes.error && isMissingFeatureError(giiRes.error)) {
+      giiRes = await admin
+        .from("graft_integrity_estimates")
+        .select(giiSelectFallback)
+        .order("created_at", { ascending: false })
+        .limit(200);
+    }
+
+    if (giiRes.error && isMissingFeatureError(giiRes.error)) {
+      giiUnavailable = true;
+    } else if (!giiRes.error) {
       for (const r of (giiRes.data ?? []) as any[]) {
         const cid = String(r.case_id);
         if (!giiLatestByCase.has(cid)) giiLatestByCase.set(cid, r);
