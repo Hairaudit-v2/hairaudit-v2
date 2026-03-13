@@ -186,7 +186,7 @@ function CaseRowView({
   const labels = flagLabels(row.flags);
   const evidenceMissing = row.evidence?.missing_categories?.length ?? 0;
   const evidenceScore = row.evidence?.quality_score ?? row.gii?.evidence_sufficiency_score ?? null;
-  const caseLabel = row.base.title ?? row.id.slice(0, 8);
+  const caseLabel = row.base.title ?? row.base.id.slice(0, 8);
 
   return (
     <tr className="border-b border-slate-200 align-top">
