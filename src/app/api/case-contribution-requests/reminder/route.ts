@@ -31,7 +31,9 @@ export async function POST(req: Request) {
     const admin = createSupabaseAdminClient();
     const { data: requestRow } = await admin
       .from("case_contribution_requests")
-      .select("id, case_id, recipient_emails, clinic_name_snapshot, doctor_name_snapshot, reminder_count")
+      .select(
+        "id, case_id, recipient_emails, clinic_name_snapshot, doctor_name_snapshot, clinic_email_snapshot, doctor_email_snapshot, reminder_count"
+      )
       .eq("id", requestId)
       .maybeSingle();
     if (!requestRow) return NextResponse.json({ error: "Request not found." }, { status: 404 });
@@ -39,22 +41,42 @@ export async function POST(req: Request) {
     const recipients = Array.isArray(requestRow.recipient_emails)
       ? requestRow.recipient_emails.map((x) => String(x ?? "").trim()).filter(Boolean)
       : [];
+    const fallbackRecipients = [requestRow.clinic_email_snapshot, requestRow.doctor_email_snapshot]
+      .map((x) => String(x ?? "").trim())
+      .filter(Boolean);
+    const finalRecipients = Array.from(new Set([...recipients, ...fallbackRecipients]));
+    if (!finalRecipients.length) {
+      return NextResponse.json(
+        { error: "No recipient emails found for this contribution request." },
+        { status: 400 }
+      );
+    }
     const sendResult =
       reminderType === "final"
         ? await sendFinalCourtesyContributionEmail({
-            to: recipients,
+            to: finalRecipients,
             caseId: requestRow.case_id,
             contributionUrl,
             clinicName: requestRow.clinic_name_snapshot,
             doctorName: requestRow.doctor_name_snapshot,
           })
         : await sendReminderContributionEmail({
-            to: recipients,
+            to: finalRecipients,
             caseId: requestRow.case_id,
             contributionUrl,
             clinicName: requestRow.clinic_name_snapshot,
             doctorName: requestRow.doctor_name_snapshot,
           });
+
+    if (!sendResult) {
+      return NextResponse.json(
+        {
+          error:
+            "Reminder could not be delivered. Verify RESEND_API_KEY and NOTIFICATION_FROM_EMAIL, then retry.",
+        },
+        { status: 502 }
+      );
+    }
 
     await admin
       .from("case_contribution_requests")
@@ -69,7 +91,7 @@ export async function POST(req: Request) {
       })
       .eq("id", requestId);
 
-    return NextResponse.json({ ok: sendResult });
+    return NextResponse.json({ ok: true });
   } catch (e: unknown) {
     const errMsg = (e as Error)?.message ?? "Server error";
     console.error("case-contribution-requests/reminder POST:", errMsg, e);

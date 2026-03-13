@@ -148,6 +148,7 @@ export default function ContributionRequestsClient({
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json?.error ?? "Resend failed");
+      if (json?.ok !== true) throw new Error(json?.error ?? "Resend failed");
       window.location.reload();
     } catch (e) {
       alert((e as Error)?.message ?? "Resend failed");
