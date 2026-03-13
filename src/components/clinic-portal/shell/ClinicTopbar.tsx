@@ -14,29 +14,35 @@ const PAGE_META: Record<
 > = {
   "/dashboard/clinic": {
     title: "Overview",
-    subtitle: "Your trust posture, completion trajectory, and clinic intelligence activity.",
+    subtitle: "Track trust posture, completion momentum, and commercial readiness signals.",
     primaryAction: { href: "/dashboard/clinic/submit-case", label: "Submit Case" },
     secondaryAction: { href: "/leaderboards/clinics", label: "View Benchmarking" },
   },
   "/dashboard/clinic/onboarding": {
     title: "Onboarding",
-    subtitle: "Complete portal setup for public audits, internal QA, and future modules.",
+    subtitle: "Complete identity and operating setup to unlock higher-trust workflows.",
     primaryAction: { href: "/dashboard/clinic/profile", label: "Open Profile Builder" },
   },
   "/dashboard/clinic/profile": {
     title: "Clinic Profile",
-    subtitle: "Maintain your premium clinic profile, methods, devices, and protocol stack.",
+    subtitle: "Build a premium profile that improves discoverability and verified credibility.",
     primaryAction: { href: "/dashboard/clinic/workspaces", label: "Go to Workspaces" },
     secondaryAction: { href: "/dashboard/clinic/profile#clinical-stack", label: "Methods & Devices" },
   },
+  "/dashboard/clinic/public-preview": {
+    title: "Public Preview",
+    subtitle: "Preview your future public clinic presentation and close trust gaps before publishing.",
+    primaryAction: { href: "/dashboard/clinic/profile", label: "Improve Profile" },
+    secondaryAction: { href: "/dashboard/clinic/doctors", label: "Update Doctors" },
+  },
   "/dashboard/clinic/workspaces": {
     title: "Workspaces",
-    subtitle: "Respond to patient submissions and control internal/public visibility.",
+    subtitle: "Action patient-submitted cases and govern internal/public intelligence visibility.",
     primaryAction: { href: "/dashboard/clinic/submit-case", label: "Create New Case" },
   },
   "/dashboard/clinic/submit-case": {
     title: "Submit Case",
-    subtitle: "Launch clinic-submitted audit workflows with high-quality evidence trails.",
+    subtitle: "Launch high-integrity clinic cases for quality control and trust growth.",
     primaryAction: { href: "/dashboard/clinic/workspaces", label: "Manage Workspaces" },
   },
   "/dashboard/clinic/clinic-cases": {

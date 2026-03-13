@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import ClinicConversionPanel from "@/components/clinic-portal/ClinicConversionPanel";
 
 type CapabilityItem = {
   id: string;
@@ -70,6 +71,13 @@ export default function ClinicProfileBuilder({
       items: capabilities.filter((c) => c.capability_type === type.value),
     }));
   }, [capabilities]);
+  const readinessStates = [
+    { label: "Basic Profile Complete", ready: basicCompletion >= 90 },
+    { label: "Enhanced Trust Profile", ready: advancedCompletion >= 70 },
+    { label: "Benchmark Ready", ready: advancedCompletion >= 80 && capabilities.length >= 6 },
+    { label: "Public Listing In Progress", ready: basicCompletion >= 80 },
+    { label: "Training Ready", ready: advancedCompletion >= 80 },
+  ];
 
   async function saveProfiles(nextBasic: Record<string, unknown>, nextAdvanced: Record<string, unknown>) {
     setSaving(true);
@@ -141,6 +149,21 @@ export default function ClinicProfileBuilder({
 
   return (
     <div className="space-y-6">
+      <ClinicConversionPanel
+        title="Profile trust conversion guidance"
+        subtitle="A complete clinic identity plus deep procedural metadata improves attribution quality and reinforces medical credibility."
+        nextActions={[
+          basicCompletion < 90
+            ? { label: "Complete your clinic identity", href: "/dashboard/clinic/profile" }
+            : { label: "Prepare your public profile", href: "/dashboard/clinic/profile" },
+          capabilities.length < 6
+            ? { label: "Add your surgical methods", href: "/dashboard/clinic/profile#clinical-stack" }
+            : { label: "Upload devices and technology", href: "/dashboard/clinic/profile#clinical-stack" },
+          { label: "Respond to patient-submitted cases", href: "/dashboard/clinic/workspaces" },
+        ]}
+        readinessStates={readinessStates}
+      />
+
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="text-xl font-semibold text-slate-900">Basic clinic profile</h2>
         <p className="mt-1 text-sm text-slate-600">This powers your trust posture and profile discoverability.</p>
@@ -234,7 +257,9 @@ export default function ClinicProfileBuilder({
             <div key={group.value} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{group.label}</p>
               {group.items.length === 0 ? (
-                <p className="mt-2 text-xs text-slate-500">No items yet.</p>
+                <p className="mt-2 text-xs text-slate-500">
+                  No entries yet. Add structured details here to strengthen profile trust and improve benchmark-readiness.
+                </p>
               ) : (
                 <ul className="mt-2 space-y-2">
                   {group.items.map((item) => (

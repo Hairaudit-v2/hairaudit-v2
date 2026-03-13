@@ -60,6 +60,16 @@ export default function ClinicOnboardingFlow({
     () => Math.round((completedSteps.length / STEPS.length) * 100),
     [completedSteps.length]
   );
+  const nextPrompt =
+    !completedSteps.includes("foundation")
+      ? "Complete your clinic identity"
+      : !completedSteps.includes("clinical_stack")
+        ? "Add your surgical methods"
+        : !completedSteps.includes("audit_workspaces")
+          ? "Respond to patient-submitted cases"
+          : !completedSteps.includes("visibility_controls")
+            ? "Prepare your public profile"
+            : "Submit your first internal case";
 
   async function persist(nextSteps: string[], nextStep: string, nextMode: string) {
     setSaving(true);
@@ -108,12 +118,17 @@ export default function ClinicOnboardingFlow({
         <div>
           <h2 className="text-xl font-semibold text-slate-900">Clinic onboarding roadmap</h2>
           <p className="mt-1 text-sm text-slate-600">
-            Build your portal in phases for immediate value and future extensibility.
+            Build your portal in phases to increase clinical trust, operational clarity, and future benchmark readiness.
           </p>
         </div>
         <div className="rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-2 text-sm font-semibold text-cyan-900">
           {completionPct}% complete
         </div>
+      </div>
+
+      <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Next best action</p>
+        <p className="mt-1 text-sm font-semibold text-slate-900">{nextPrompt}</p>
       </div>
 
       <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200">
@@ -150,6 +165,53 @@ export default function ClinicOnboardingFlow({
       </div>
 
       <div className="mt-6">
+        <div className="mb-3 flex flex-wrap gap-2">
+          <span
+            className={`rounded-full border px-2 py-1 text-[11px] font-semibold uppercase tracking-wide ${
+              completedSteps.includes("foundation")
+                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                : "border-amber-200 bg-amber-50 text-amber-700"
+            }`}
+          >
+            Basic Profile Complete
+          </span>
+          <span
+            className={`rounded-full border px-2 py-1 text-[11px] font-semibold uppercase tracking-wide ${
+              completedSteps.includes("clinical_stack")
+                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                : "border-amber-200 bg-amber-50 text-amber-700"
+            }`}
+          >
+            Enhanced Trust Profile
+          </span>
+          <span
+            className={`rounded-full border px-2 py-1 text-[11px] font-semibold uppercase tracking-wide ${
+              completedSteps.includes("activation")
+                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                : "border-amber-200 bg-amber-50 text-amber-700"
+            }`}
+          >
+            Benchmark Ready
+          </span>
+          <span
+            className={`rounded-full border px-2 py-1 text-[11px] font-semibold uppercase tracking-wide ${
+              completedSteps.includes("visibility_controls")
+                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                : "border-amber-200 bg-amber-50 text-amber-700"
+            }`}
+          >
+            Public Listing In Progress
+          </span>
+          <span
+            className={`rounded-full border px-2 py-1 text-[11px] font-semibold uppercase tracking-wide ${
+              completedSteps.includes("activation")
+                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                : "border-amber-200 bg-amber-50 text-amber-700"
+            }`}
+          >
+            Training Ready
+          </span>
+        </div>
         <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Primary operating mode</p>
         <div className="mt-2 grid gap-2 sm:grid-cols-2">
           {PORTAL_MODES.map((mode) => (
@@ -169,7 +231,7 @@ export default function ClinicOnboardingFlow({
         </div>
       </div>
 
-      <p className="mt-4 text-xs text-slate-500">{saving ? "Saving..." : message}</p>
+      <p className="mt-4 text-xs text-slate-500">{saving ? "Saving trust progression..." : message}</p>
       <p className="mt-1 text-xs text-slate-400">Current step: {currentStep.replaceAll("_", " ")}</p>
     </section>
   );

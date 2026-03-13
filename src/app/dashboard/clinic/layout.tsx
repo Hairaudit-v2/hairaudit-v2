@@ -94,38 +94,52 @@ export default async function ClinicPortalLayout({
   const nextAction =
     onboardingSteps < 5
       ? {
-          title: "Finish onboarding sequence",
-          description: "Complete the remaining setup steps to unlock full clinic portal workflows.",
+          title: "Complete your clinic identity",
+          description: "Finish onboarding foundations to unlock trust-building workflows across the portal.",
           href: "/dashboard/clinic/onboarding",
           ctaLabel: "Continue onboarding",
         }
-      : basicCompletion < 90
+      : capabilityCount < 4
         ? {
-            title: "Complete clinic profile",
-            description: "Strengthen trust and discoverability with a complete profile and capability catalog.",
-            href: "/dashboard/clinic/profile",
-            ctaLabel: "Open profile builder",
+            title: "Add your surgical methods",
+            description: "Document your clinical approach to improve profile credibility and attribution quality.",
+            href: "/dashboard/clinic/profile#clinical-stack",
+            ctaLabel: "Add methods",
           }
-        : Number(pendingResponses ?? 0) > 0
+        : capabilityCount < 8
           ? {
-              title: "Respond to patient-submitted audits",
-              description: "Pending clinic responses are waiting in your workspaces.",
-              href: "/dashboard/clinic/workspaces",
-              ctaLabel: "Review workspaces",
+              title: "Upload devices and technology",
+              description: "Expand your technology stack for stronger operational trust and benchmark preparation.",
+              href: "/dashboard/clinic/profile#clinical-stack",
+              ctaLabel: "Add devices",
             }
-          : Number(workspaceCount ?? 0) === 0
+          : Number(pendingResponses ?? 0) > 0
             ? {
-                title: "Submit your first clinic case",
-                description: "Create a clinic-owned audit to start building benchmark-ready evidence.",
-                href: "/dashboard/clinic/submit-case",
-                ctaLabel: "Submit case",
+                title: "Respond to patient-submitted cases",
+                description: "Action pending responses to protect trust velocity and care transparency.",
+                href: "/dashboard/clinic/workspaces",
+                ctaLabel: "Open workspaces",
               }
-            : {
-                title: "Advance benchmarking readiness",
-                description: "Expand benchmark-eligible cases and maintain high documentation integrity.",
-                href: "/leaderboards/clinics",
-                ctaLabel: "View benchmarks",
-              };
+            : Number(workspaceCount ?? 0) === 0
+              ? {
+                  title: "Submit your first internal case",
+                  description: "Create an internal case to establish your quality-control baseline.",
+                  href: "/dashboard/clinic/submit-case",
+                  ctaLabel: "Submit case",
+                }
+              : !publicProfileLive
+                ? {
+                    title: "Prepare your public profile",
+                    description: "Convert your operational data into verified public-facing credibility assets.",
+                    href: "/dashboard/clinic/profile",
+                    ctaLabel: "Prepare listing",
+                  }
+                : {
+                    title: "Advance benchmarking readiness",
+                    description: "Scale benchmark-eligible evidence and sustain documentation integrity.",
+                    href: "/leaderboards/clinics",
+                    ctaLabel: "View benchmarks",
+                  };
 
   const clinicName = String((profile as { clinic_name?: string | null } | null)?.clinic_name ?? "Clinic");
   const avatarLabel = clinicName
@@ -139,10 +153,11 @@ export default async function ClinicPortalLayout({
     { label: "Overview", href: "/dashboard/clinic" },
     { label: "Onboarding", href: "/dashboard/clinic/onboarding", matchPrefix: "/dashboard/clinic/onboarding" },
     { label: "Clinic Profile", href: "/dashboard/clinic/profile", matchPrefix: "/dashboard/clinic/profile" },
+    { label: "Public Preview", href: "/dashboard/clinic/public-preview", matchPrefix: "/dashboard/clinic/public-preview" },
     { label: "Workspaces", href: "/dashboard/clinic/workspaces", matchPrefix: "/dashboard/clinic/workspaces" },
     { label: "Submit Case", href: "/dashboard/clinic/submit-case", matchPrefix: "/dashboard/clinic/submit-case" },
-    { label: "Clinic Cases", href: "/dashboard/clinic/clinic-cases", placeholder: true },
-    { label: "Doctors", href: "/dashboard/clinic/doctors", placeholder: true },
+    { label: "Clinic Cases", href: "/dashboard/clinic/clinic-cases", matchPrefix: "/dashboard/clinic/clinic-cases" },
+    { label: "Doctors", href: "/dashboard/clinic/doctors", matchPrefix: "/dashboard/clinic/doctors" },
     { label: "Methods & Devices", href: "/dashboard/clinic/profile#clinical-stack", matchPrefix: "/dashboard/clinic/profile" },
     { label: "Benchmarking", href: "/dashboard/clinic/benchmarking", placeholder: true },
     { label: "Training", href: "/dashboard/clinic/training", placeholder: true },
@@ -158,10 +173,12 @@ export default async function ClinicPortalLayout({
       completionPercent={completionPercent}
       onboardingSteps={onboardingSteps}
       statusChips={[
-        { label: "Internal QA Ready", ready: internalQaReady },
-        { label: publicProfileLive ? "Public Profile Live" : "Public Profile In Progress", ready: publicProfileLive },
+        { label: "Basic Profile Complete", ready: basicCompletion >= 90 },
+        { label: "Enhanced Trust Profile", ready: advancedCompletion >= 70 || transparency >= 70 },
         { label: "Benchmark Ready", ready: benchmarkReady },
+        { label: publicProfileLive ? "Public Listing Active" : "Public Listing In Progress", ready: publicProfileLive },
         { label: "Training Ready", ready: trainingReady },
+        { label: "Internal QA Ready", ready: internalQaReady },
       ]}
       nextAction={nextAction}
       navItems={navItems}

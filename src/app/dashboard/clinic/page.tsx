@@ -10,6 +10,7 @@ import ClinicFeedbackPanel from "@/components/dashboard/ClinicFeedbackPanel";
 import ClinicBadgeWidgetSection from "@/components/dashboard/ClinicBadgeWidgetSection";
 import { computeAdvancedCompletionScore, computeProfileCompletionScore } from "@/lib/clinicPortal";
 import ClinicSectionHeader from "@/components/clinic-portal/ClinicSectionHeader";
+import ClinicConversionPanel from "@/components/clinic-portal/ClinicConversionPanel";
 
 export default async function ClinicDashboardPage() {
   const supabase = await createSupabaseAuthServerClient();
@@ -160,27 +161,44 @@ export default async function ClinicDashboardPage() {
   const publicProfileUrl = profileVisible && clinicSlug
     ? `${(process.env.NEXT_PUBLIC_APP_URL ?? process.env.SITE_URL ?? "https://hairaudit.com").replace(/\/+$/, "")}/clinics/${clinicSlug}`
     : null;
+  const conversionActions = [
+    onboardingSteps < 5 ? { label: "Complete your clinic identity", href: "/dashboard/clinic/onboarding" } : null,
+    capabilityCount < 4 ? { label: "Add your surgical methods", href: "/dashboard/clinic/profile#clinical-stack" } : null,
+    capabilityCount < 8 ? { label: "Upload devices and technology", href: "/dashboard/clinic/profile#clinical-stack" } : null,
+    Number(workspaceCount ?? 0) === 0
+      ? { label: "Submit your first internal case", href: "/dashboard/clinic/submit-case" }
+      : { label: "Respond to patient-submitted cases", href: "/dashboard/clinic/workspaces" },
+    !profileVisible ? { label: "Prepare your public profile", href: "/dashboard/clinic/profile" } : null,
+  ].filter(Boolean) as Array<{ label: string; href: string }>;
+  const readinessStates = [
+    { label: "Basic Profile Complete", ready: basicCompletion >= 90 },
+    { label: "Enhanced Trust Profile", ready: advancedCompletion >= 70 || Number(clinicProfile?.transparency_score ?? 0) >= 70 },
+    { label: "Benchmark Ready", ready: Number(clinicProfile?.benchmark_eligible_count ?? 0) > 0 || Number(workspaceCount ?? 0) >= 3 },
+    { label: profileVisible ? "Public Listing Active" : "Public Listing In Progress", ready: Boolean(profileVisible) },
+    { label: "Training Ready", ready: advancedCompletion >= 80 && capabilityCount >= 6 },
+  ];
 
   return (
     <div>
       <ClinicSectionHeader
         title="Clinic Intelligence Overview"
-        subtitle="Operational performance, trust posture, and strategic actions across your clinic portal."
+        subtitle="Operational trust, clinical quality signals, and commercial readiness across your clinic intelligence workspace."
         actions={[
           { href: "/dashboard/clinic/submit-case", label: "Submit Case", variant: "primary" },
           { href: "/dashboard/clinic/onboarding", label: "Onboarding" },
         ]}
       />
-      {publicProfileUrl ? (
-        <a
-          href={publicProfileUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mb-4 inline-flex items-center rounded-lg border border-cyan-300 bg-cyan-50 px-3 py-2 text-sm font-semibold text-cyan-800 hover:bg-cyan-100"
-        >
-          View Public Clinic Profile
-        </a>
-      ) : null}
+
+      <div className="mb-6">
+        <ClinicConversionPanel
+          title="Grow trust and completion momentum"
+          subtitle="Clinics that complete identity, methods, and case evidence are better positioned for patient confidence and verified visibility."
+          nextActions={conversionActions.slice(0, 5)}
+          readinessStates={readinessStates}
+          teaserHref={publicProfileUrl ?? "/dashboard/clinic/profile"}
+          teaserCtaLabel={publicProfileUrl ? "View public profile" : "Prepare public listing"}
+        />
+      </div>
 
       <div className="grid gap-4 mb-6 md:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-xl border border-slate-200 bg-white p-4">
@@ -191,14 +209,14 @@ export default async function ClinicDashboardPage() {
           </div>
         </div>
         <div className="rounded-xl border border-slate-200 bg-white p-4">
-          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Profile Completion</div>
+          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Basic Profile Complete</div>
           <div className="mt-2 text-2xl font-bold text-slate-900">{basicCompletion}%</div>
-          <div className="mt-1 text-xs text-slate-500">Basic profile</div>
+          <div className="mt-1 text-xs text-slate-500">Identity and credibility baseline</div>
         </div>
         <div className="rounded-xl border border-slate-200 bg-white p-4">
-          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Advanced Completion</div>
+          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Enhanced Trust Profile</div>
           <div className="mt-2 text-2xl font-bold text-slate-900">{advancedCompletion}%</div>
-          <div className="mt-1 text-xs text-slate-500">Internal QA readiness</div>
+          <div className="mt-1 text-xs text-slate-500">QA depth, protocol maturity, and readiness</div>
         </div>
         <div className="rounded-xl border border-slate-200 bg-white p-4">
           <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Clinical Stack</div>
@@ -256,7 +274,7 @@ export default async function ClinicDashboardPage() {
 
       <div className="rounded-xl border border-amber-200 bg-amber-50/80 p-4 mb-6">
         <p className="text-sm text-amber-900">
-          Submit your own patient cases for auditing, respond to patient-submitted cases, and set each case to public or internal usage.
+          Convert operational work into measurable trust: submit internal cases, respond quickly to patient-submitted cases, and set each case to public or internal usage.
           Total configured clinic workspaces: <span className="font-semibold">{workspaceCount ?? 0}</span>.
         </p>
       </div>
@@ -315,7 +333,12 @@ export default async function ClinicDashboardPage() {
       <h2 className="text-lg font-semibold text-slate-900 mt-8 mb-3">Our audit submissions</h2>
       {(!cases || cases.length === 0) ? (
         <div className="rounded-xl border border-slate-200 bg-white p-8 text-center">
-          <p className="text-slate-600">No cases yet. Create one to submit a patient case for audit.</p>
+          <p className="text-slate-700 font-semibold">
+            Start your clinic evidence runway with your first submitted case.
+          </p>
+          <p className="mt-1 text-sm text-slate-600">
+            Clinics with attributable internal cases build stronger quality-control data and future benchmarking leverage.
+          </p>
           <CreateCaseButton />
         </div>
       ) : (

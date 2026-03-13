@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import ClinicConversionPanel from "@/components/clinic-portal/ClinicConversionPanel";
 
 type WorkspaceItem = {
   caseId: string;
@@ -23,6 +24,9 @@ export default function ClinicWorkspacePanel() {
   const [loading, setLoading] = useState(true);
   const [savingCaseId, setSavingCaseId] = useState<string | null>(null);
   const [message, setMessage] = useState<string>("");
+  const pendingResponses = items.filter((item) => item.clinicResponseStatus === "pending_response").length;
+  const publicCases = items.filter((item) => item.visibilityScope === "public").length;
+  const trainingCount = items.filter((item) => item.trainingFlag).length;
 
   useEffect(() => {
     let cancelled = false;
@@ -87,13 +91,34 @@ export default function ClinicWorkspacePanel() {
     <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
       <h2 className="text-xl font-semibold text-slate-900">Clinic case workspaces</h2>
       <p className="mt-1 text-sm text-slate-600">
-        Respond to patient-submitted audits, set public/internal visibility, and mark training or benchmark intent.
+        Respond to patient-submitted audits, control public/internal visibility, and convert daily operations into quality intelligence.
       </p>
+
+      <div className="mt-4">
+        <ClinicConversionPanel
+          title="Workspace trust conversion"
+          subtitle="Action speed and evidence governance in workspaces directly influence patient trust and operational credibility."
+          nextActions={[
+            pendingResponses > 0
+              ? { label: "Respond to patient-submitted cases", href: "/dashboard/clinic/workspaces" }
+              : { label: "Submit your first internal case", href: "/dashboard/clinic/submit-case" },
+            { label: "Prepare your public profile", href: "/dashboard/clinic/profile" },
+            { label: "Upload devices and technology", href: "/dashboard/clinic/profile#clinical-stack" },
+          ]}
+          readinessStates={[
+            { label: "Basic Profile Complete", ready: items.length > 0 },
+            { label: "Enhanced Trust Profile", ready: pendingResponses === 0 && items.length > 0 },
+            { label: "Benchmark Ready", ready: items.some((item) => item.benchmarkInclude) },
+            { label: "Public Listing In Progress", ready: publicCases > 0 },
+            { label: "Training Ready", ready: trainingCount > 0 },
+          ]}
+        />
+      </div>
 
       <div className="mt-4 space-y-4">
         {items.length === 0 ? (
           <p className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-            No clinic-linked cases yet.
+            No clinic-linked cases yet. Start with a clinic-submitted case to create your internal QA baseline, then respond to patient-submitted audits to strengthen public trust signals.
           </p>
         ) : (
           items.map((item) => (
