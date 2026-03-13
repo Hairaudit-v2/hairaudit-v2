@@ -128,22 +128,27 @@ export default function GraftIntegrityReviewPanel(props: {
   const [thumbs, setThumbs] = useState<Record<string, string | null>>({});
 
   async function loadLatestEstimates() {
-    let res = await supabase
+    const primaryRes = await supabase
       .from("graft_integrity_estimates")
       .select(giiSelectWithEvidence)
       .order("created_at", { ascending: false })
       .limit(200);
 
-    if (res.error && isMissingFeatureError(res.error)) {
-      res = await supabase
+    if (!primaryRes.error) {
+      return Array.isArray(primaryRes.data) ? (primaryRes.data as AuditorGiiRow[]) : [];
+    }
+
+    if (isMissingFeatureError(primaryRes.error)) {
+      const fallbackRes = await supabase
         .from("graft_integrity_estimates")
         .select(giiSelectFallback)
         .order("created_at", { ascending: false })
         .limit(200);
+      if (fallbackRes.error) return null;
+      return Array.isArray(fallbackRes.data) ? (fallbackRes.data as AuditorGiiRow[]) : [];
     }
 
-    if (res.error) return null;
-    return Array.isArray(res.data) ? (res.data as AuditorGiiRow[]) : [];
+    return null;
   }
 
   useEffect(() => {

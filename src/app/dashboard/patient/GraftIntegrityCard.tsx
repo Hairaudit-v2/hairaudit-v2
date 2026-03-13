@@ -96,7 +96,7 @@ export default function GraftIntegrityCard(props: {
     "id, case_id, claimed_grafts, estimated_extracted_min, estimated_extracted_max, estimated_implanted_min, estimated_implanted_max, variance_claimed_vs_implanted_min_pct, variance_claimed_vs_implanted_max_pct, variance_claimed_vs_extracted_min_pct, variance_claimed_vs_extracted_max_pct, confidence, confidence_label, limitations, flags, ai_notes, auditor_status, auditor_notes, auditor_adjustments, inputs_used, created_at, updated_at";
 
   async function loadLatestEstimate(caseIdValue: string) {
-    let res = await supabase
+    const primaryRes = await supabase
       .from("graft_integrity_estimates")
       .select(giiSelectWithEvidence)
       .eq("case_id", caseIdValue)
@@ -104,17 +104,22 @@ export default function GraftIntegrityCard(props: {
       .limit(1)
       .maybeSingle();
 
-    if (res.error && isMissingFeatureError(res.error)) {
-      res = await supabase
+    if (!primaryRes.error) {
+      return primaryRes;
+    }
+
+    if (isMissingFeatureError(primaryRes.error)) {
+      const fallbackRes = await supabase
         .from("graft_integrity_estimates")
         .select(giiSelectFallback)
         .eq("case_id", caseIdValue)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
+      return fallbackRes;
     }
 
-    return res;
+    return primaryRes;
   }
 
   useEffect(() => {

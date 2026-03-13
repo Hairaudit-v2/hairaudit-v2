@@ -176,7 +176,7 @@ export default async function Page({
     const giiSelectFallback =
       "id, case_id, claimed_grafts, estimated_extracted_min, estimated_extracted_max, estimated_implanted_min, estimated_implanted_max, variance_claimed_vs_implanted_min_pct, variance_claimed_vs_implanted_max_pct, variance_claimed_vs_extracted_min_pct, variance_claimed_vs_extracted_max_pct, confidence, confidence_label, inputs_used, limitations, flags, ai_notes, auditor_status, auditor_notes, auditor_adjustments, audited_by, audited_at, created_at, updated_at";
 
-    let giiRes = await db
+    const primaryRes = await db
       .from("graft_integrity_estimates")
       .select(giiSelectWithEvidence)
       .eq("case_id", c.id)
@@ -184,17 +184,18 @@ export default async function Page({
       .limit(1)
       .maybeSingle();
 
-    if (giiRes.error && isMissingFeatureError(giiRes.error)) {
-      giiRes = await db
+    if (!primaryRes.error) {
+      graftIntegrityEstimate = primaryRes.data;
+    } else if (isMissingFeatureError(primaryRes.error)) {
+      const fallbackRes = await db
         .from("graft_integrity_estimates")
         .select(giiSelectFallback)
         .eq("case_id", c.id)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
+      if (!fallbackRes.error) graftIntegrityEstimate = fallbackRes.data;
     }
-
-    if (!giiRes.error) graftIntegrityEstimate = giiRes.data;
   } catch {
     /* table may not exist */
   }

@@ -172,7 +172,23 @@ export async function POST(req: Request) {
       await admin.from("cases").update({ status: "clinic_request_sent" }).eq("id", caseId);
       currentStatus = "clinic_request_sent";
     } else {
+      await admin
+        .from("case_contribution_requests")
+        .update({
+          status: "clinic_request_pending",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", requestRow?.id ?? "");
       await admin.from("cases").update({ status: "clinic_request_pending" }).eq("id", caseId);
+
+      return NextResponse.json(
+        {
+          error:
+            "Contribution request was saved, but email delivery failed. Please verify email settings and retry from admin reminders.",
+          requestId: requestRow?.id ?? null,
+        },
+        { status: 502 }
+      );
     }
 
     if (requestRow?.id) {

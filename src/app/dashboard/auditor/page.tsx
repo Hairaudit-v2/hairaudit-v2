@@ -63,7 +63,7 @@ export default async function AuditorDashboardPage() {
   const { data: profile } = await admin.from("profiles").select("role").eq("id", user.id).maybeSingle();
   if (!isAuditor({ profileRole: profile?.role, userEmail: user.email })) redirect("/login/auditor");
 
-  let casesRes = await admin
+  const primaryCasesRes = await admin
     .from("cases")
     .select(
       "id, title, status, created_at, updated_at, submitted_at, audit_type, patient_id, doctor_id, clinic_id, assigned_auditor_id, auditor_last_edited_at, archived_at, archived_by, archived_reason, deleted_at"
@@ -71,13 +71,16 @@ export default async function AuditorDashboardPage() {
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
 
-  if (casesRes.error && isMissingFeatureError(casesRes.error)) {
-    casesRes = await admin
+  let cases: CaseDashboardRow[] = [];
+  if (!primaryCasesRes.error) {
+    cases = (primaryCasesRes.data ?? []) as CaseDashboardRow[];
+  } else if (isMissingFeatureError(primaryCasesRes.error)) {
+    const fallbackCasesRes = await admin
       .from("cases")
       .select("id, title, status, created_at, updated_at, submitted_at, patient_id, doctor_id, clinic_id")
       .order("created_at", { ascending: false });
+    cases = (fallbackCasesRes.data ?? []) as CaseDashboardRow[];
   }
-  const cases = (casesRes.data ?? []) as CaseDashboardRow[];
 
   const caseIds = (cases ?? []).map((x) => String(x.id));
 
@@ -143,24 +146,29 @@ export default async function AuditorDashboardPage() {
   const giiSelectFallback =
     "id, case_id, claimed_grafts, estimated_extracted_min, estimated_extracted_max, estimated_implanted_min, estimated_implanted_max, variance_claimed_vs_implanted_min_pct, variance_claimed_vs_implanted_max_pct, variance_claimed_vs_extracted_min_pct, variance_claimed_vs_extracted_max_pct, confidence, confidence_label, inputs_used, limitations, flags, ai_notes, auditor_status, auditor_notes, auditor_adjustments, audited_by, audited_at, created_at, updated_at";
   try {
-    let giiRes = await admin
+    const primaryRes = await admin
       .from("graft_integrity_estimates")
       .select(giiSelectWithEvidence)
       .order("created_at", { ascending: false })
       .limit(200);
 
-    if (giiRes.error && isMissingFeatureError(giiRes.error)) {
-      giiRes = await admin
+    if (!primaryRes.error) {
+      for (const r of (primaryRes.data ?? []) as GiiDashboardRow[]) {
+        const cid = String(r.case_id);
+        if (!giiLatestByCase.has(cid)) giiLatestByCase.set(cid, r);
+      }
+    } else if (isMissingFeatureError(primaryRes.error)) {
+      const fallbackRes = await admin
         .from("graft_integrity_estimates")
         .select(giiSelectFallback)
         .order("created_at", { ascending: false })
         .limit(200);
-    }
 
-    if (!giiRes.error) {
-      for (const r of (giiRes.data ?? []) as GiiDashboardRow[]) {
-        const cid = String(r.case_id);
-        if (!giiLatestByCase.has(cid)) giiLatestByCase.set(cid, r);
+      if (!fallbackRes.error) {
+        for (const r of (fallbackRes.data ?? []) as GiiDashboardRow[]) {
+          const cid = String(r.case_id);
+          if (!giiLatestByCase.has(cid)) giiLatestByCase.set(cid, r);
+        }
       }
     }
   } catch {
@@ -203,10 +211,14 @@ export default async function AuditorDashboardPage() {
     if (c.clinic_id) clinicNameByCaseId[cid] = clinicNameByUserId.get(String(c.clinic_id)) ?? "";
     if (c.patient_id) patientNameByCaseId[cid] = patientNameByUserId.get(String(c.patient_id)) ?? "";
   }
+  const casesForClient = cases.map((c) => ({
+    ...c,
+    audit_type: c.audit_type ?? null,
+  }));
 
   return (
     <AuditorDashboardClient
-      cases={cases}
+      cases={casesForClient}
       reportByCase={Object.fromEntries(reportByCase.entries())}
       evidenceByCase={Object.fromEntries(evidenceByCase.entries())}
       giiByCase={Object.fromEntries(giiLatestByCase.entries())}
