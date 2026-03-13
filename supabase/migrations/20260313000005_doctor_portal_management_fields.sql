@@ -12,7 +12,7 @@ ALTER TABLE doctor_profiles
   ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE,
   ADD COLUMN IF NOT EXISTS archived_at TIMESTAMPTZ,
   ADD COLUMN IF NOT EXISTS clinic_role TEXT NOT NULL DEFAULT 'doctor'
-    CHECK (clinic_role IN ('owner', 'admin', 'lead_surgeon', 'surgeon', 'assistant', 'coordinator', 'other')),
+    CHECK (clinic_role IN ('owner', 'admin', 'doctor', 'lead_surgeon', 'surgeon', 'assistant', 'coordinator', 'other')),
   ADD COLUMN IF NOT EXISTS case_permissions JSONB NOT NULL DEFAULT '{"can_assign_cases": true, "can_edit_case_details": true}'::jsonb,
   ADD COLUMN IF NOT EXISTS can_respond_audits BOOLEAN NOT NULL DEFAULT TRUE,
   ADD COLUMN IF NOT EXISTS can_submit_cases BOOLEAN NOT NULL DEFAULT TRUE,

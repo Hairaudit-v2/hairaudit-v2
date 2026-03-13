@@ -66,6 +66,9 @@ export default async function ClinicPortalLayout({
   const basicCompletion = computeProfileCompletionScore(basicProfile);
   const advancedCompletion = computeAdvancedCompletionScore(advancedProfile);
   const completionPercent = Math.round((basicCompletion + advancedCompletion) / 2);
+  const capabilityTotal = Number(capabilityCount ?? 0);
+  const workspaceTotal = Number(workspaceCount ?? 0);
+  const pendingResponsesTotal = Number(pendingResponses ?? 0);
   const onboardingSteps = Array.isArray((portalProfile as { onboarding_completed_steps?: unknown } | null)?.onboarding_completed_steps)
     ? ((portalProfile as { onboarding_completed_steps: unknown[] }).onboarding_completed_steps ?? []).length
     : 0;
@@ -86,10 +89,10 @@ export default async function ClinicPortalLayout({
   const benchmarkReady =
     Boolean((portalProfile as { clinic_benchmarking_enabled?: boolean } | null)?.clinic_benchmarking_enabled) &&
     (Number((profile as { benchmark_eligible_count?: number | null } | null)?.benchmark_eligible_count ?? 0) > 0 ||
-      Number(workspaceCount ?? 0) >= 3);
+      workspaceTotal >= 3);
   const trainingReady =
     Number((portalProfile as { training_readiness_score?: number | null } | null)?.training_readiness_score ?? 0) >= 70 ||
-    (advancedCompletion >= 80 && Number(capabilityCount ?? 0) >= 6);
+    (advancedCompletion >= 80 && capabilityTotal >= 6);
 
   const nextAction =
     onboardingSteps < 5
@@ -99,28 +102,28 @@ export default async function ClinicPortalLayout({
           href: "/dashboard/clinic/onboarding",
           ctaLabel: "Continue onboarding",
         }
-      : capabilityCount < 4
+      : capabilityTotal < 4
         ? {
             title: "Add your surgical methods",
             description: "Document your clinical approach to improve profile credibility and attribution quality.",
             href: "/dashboard/clinic/profile#clinical-stack",
             ctaLabel: "Add methods",
           }
-        : capabilityCount < 8
+        : capabilityTotal < 8
           ? {
               title: "Upload devices and technology",
               description: "Expand your technology stack for stronger operational trust and benchmark preparation.",
               href: "/dashboard/clinic/profile#clinical-stack",
               ctaLabel: "Add devices",
             }
-          : Number(pendingResponses ?? 0) > 0
+          : pendingResponsesTotal > 0
             ? {
                 title: "Respond to patient-submitted cases",
                 description: "Action pending responses to protect trust velocity and care transparency.",
                 href: "/dashboard/clinic/workspaces",
                 ctaLabel: "Open workspaces",
               }
-            : Number(workspaceCount ?? 0) === 0
+            : workspaceTotal === 0
               ? {
                   title: "Submit your first internal case",
                   description: "Create an internal case to establish your quality-control baseline.",
@@ -169,7 +172,7 @@ export default async function ClinicPortalLayout({
       clinicName={clinicName}
       trustStatus={trustStatus}
       avatarLabel={avatarLabel}
-      pendingResponses={Number(pendingResponses ?? 0)}
+      pendingResponses={pendingResponsesTotal}
       completionPercent={completionPercent}
       onboardingSteps={onboardingSteps}
       statusChips={[

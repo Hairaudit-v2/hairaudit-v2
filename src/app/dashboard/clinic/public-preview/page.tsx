@@ -155,7 +155,7 @@ export default async function ClinicPublicPreviewPage() {
     { label: "Training Ready", ready: trainingReadiness },
   ];
 
-  const trustMetrics = [
+  const trustMetrics: Array<{ label: string; value: string; tone?: "default" | "success" | "warning" }> = [
     { label: "Trust tier", value: tier, tone: tier === "GOLD" || tier === "PLATINUM" ? "success" : "default" as const },
     { label: "Transparency", value: `${transparency}%`, tone: transparency >= 70 ? "success" as const : "warning" as const },
     { label: "Profile completion", value: `${Math.round((basicCompletion + advancedCompletion) / 2)}%` },
