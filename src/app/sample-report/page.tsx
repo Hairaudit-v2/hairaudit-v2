@@ -414,37 +414,6 @@ export default function SampleReportPage() {
         <section className="px-4 sm:px-6 py-14 sm:py-18">
           <div className="mx-auto max-w-6xl">
             <ScrollReveal>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200/90">Annotated evidence</p>
-              <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white sm:text-4xl">Forensic-style image review</h2>
-            </ScrollReveal>
-            <div className="mt-8 grid gap-5 lg:grid-cols-3">
-              {["Hairline Zone", "Recipient Density", "Donor Region"].map((panel, idx) => (
-                <ScrollReveal key={panel} delay={idx * 0.05}>
-                  <article className="relative overflow-hidden rounded-2xl border border-white/12 bg-slate-900/70 p-4 shadow-xl shadow-black/35">
-                    <div className="relative h-56 overflow-hidden rounded-xl border border-white/10 bg-[radial-gradient(circle_at_20%_20%,rgba(148,163,184,0.35),transparent_40%),radial-gradient(circle_at_80%_70%,rgba(56,189,248,0.22),transparent_45%),linear-gradient(120deg,#1f2937,#0f172a)]">
-                      <div className="absolute left-5 top-8 h-16 w-24 rounded-full border border-rose-200/80 bg-rose-300/15" />
-                      <div className="absolute right-8 top-20 h-14 w-20 rounded-full border border-cyan-200/80 bg-cyan-300/15" />
-                      <div className="absolute bottom-10 left-12 h-10 w-16 rounded-full border border-amber-200/80 bg-amber-300/15" />
-                      <div className="absolute left-9 top-14 h-px w-16 rotate-[20deg] bg-cyan-200/70" />
-                      <div className="absolute right-10 top-12 h-px w-14 -rotate-[25deg] bg-rose-200/70" />
-                      <div className="absolute left-3 top-3 rounded-md border border-white/20 bg-black/45 px-2 py-1 text-[10px] uppercase tracking-wider text-white">
-                        Zone map overlay
-                      </div>
-                    </div>
-                    <h3 className="mt-4 text-base font-semibold text-white">{panel}</h3>
-                    <p className="mt-2 text-sm text-slate-300">
-                      Region-specific evidence labels identify shape irregularity, density variance, and extraction concentration.
-                    </p>
-                  </article>
-                </ScrollReveal>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="px-4 sm:px-6 py-14 sm:py-18">
-          <div className="mx-auto max-w-6xl">
-            <ScrollReveal>
               <h2 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">Sample Findings</h2>
             </ScrollReveal>
             <div className="mt-8 grid gap-5 lg:grid-cols-3">
