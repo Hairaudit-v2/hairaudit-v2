@@ -17,7 +17,30 @@ export type TrainingDomain =
   | "graft_handling"
   | "repair_planning"
   | "afro_hair_surgery"
-  | "biologics";
+  | "biologics"
+  | "advanced_case_documentation";
+
+export type PerformanceDomainCode = "SP" | "DP" | "GV" | "IC" | "DI";
+
+export type PerformanceDomainMetric = {
+  code: PerformanceDomainCode;
+  label: string;
+  trainingDomain: TrainingDomain;
+  score: number;
+  trendDelta: number;
+  platformAverage: number;
+  percentile: number;
+};
+
+export type DoctorPerformanceTimelinePoint = {
+  caseId: string;
+  submittedAt: string;
+  procedureType: string;
+  clinic: string;
+  caseTypeLabel: string;
+  auditScore: number;
+  domainScores: Record<PerformanceDomainCode, number>;
+};
 
 export type DoctorDefaultSurgicalProfile = {
   extraction: {
@@ -68,7 +91,15 @@ export type DoctorDefaultSurgicalProfile = {
   };
 };
 
-export type DoctorCaseOverride = Partial<DoctorDefaultSurgicalProfile>;
+type DeepPartial<T> = {
+  [K in keyof T]?: T[K] extends Array<infer U>
+    ? Array<DeepPartial<U>>
+    : T[K] extends object
+      ? DeepPartial<T[K]>
+      : T[K];
+};
+
+export type DoctorCaseOverride = DeepPartial<DoctorDefaultSurgicalProfile>;
 
 export type DoctorProfileDemo = {
   id: string;
@@ -95,6 +126,11 @@ export type DoctorCaseDemo = {
   weakDomains: TrainingDomain[];
   strengthDomains: TrainingDomain[];
   domainScores: Partial<Record<TrainingDomain, number>>;
+  performanceDomainScores: Partial<Record<PerformanceDomainCode, number>>;
+  evidenceCompleteness: number;
+  surgicalMetadataCompleteness: number;
+  donorExtractionPattern: string;
+  implantationMetric: string;
   copiedFromCaseId?: string;
 };
 
@@ -106,6 +142,12 @@ export type TrainingModule = {
   locked: boolean;
   premium: boolean;
   estMinutes: number;
+};
+
+export type DomainTrainingIntelligence = {
+  weakestDomain: PerformanceDomainCode | null;
+  weakDomains: PerformanceDomainCode[];
+  recommendedModules: TrainingModule[];
 };
 
 export const VISIBILITY_OPTIONS: Array<{
@@ -236,6 +278,17 @@ export const doctorCasesDemo: DoctorCaseDemo[] = [
       graft_handling: 72,
       repair_planning: 79,
     },
+    performanceDomainScores: {
+      SP: 79,
+      DP: 88,
+      GV: 72,
+      IC: 91,
+      DI: 84,
+    },
+    evidenceCompleteness: 86,
+    surgicalMetadataCompleteness: 83,
+    donorExtractionPattern: "Diffuse safe-zone spread",
+    implantationMetric: "High consistency with zonal angle control",
   },
   {
     id: "dc_002",
@@ -257,6 +310,17 @@ export const doctorCasesDemo: DoctorCaseDemo[] = [
       graft_handling: 81,
       repair_planning: 64,
     },
+    performanceDomainScores: {
+      SP: 64,
+      DP: 66,
+      GV: 81,
+      IC: 78,
+      DI: 73,
+    },
+    evidenceCompleteness: 74,
+    surgicalMetadataCompleteness: 71,
+    donorExtractionPattern: "Conservative posterior-first extraction",
+    implantationMetric: "Variable frontal density consistency",
   },
   {
     id: "dc_003",
@@ -278,6 +342,17 @@ export const doctorCasesDemo: DoctorCaseDemo[] = [
       afro_hair_surgery: 63,
       graft_handling: 75,
     },
+    performanceDomainScores: {
+      SP: 71,
+      DP: 82,
+      GV: 75,
+      IC: 68,
+      DI: 69,
+    },
+    evidenceCompleteness: 79,
+    surgicalMetadataCompleteness: 76,
+    donorExtractionPattern: "Afro curl-aware staggered extraction",
+    implantationMetric: "Inconsistent angle uniformity in temple transitions",
   },
   {
     id: "dc_004",
@@ -299,6 +374,49 @@ export const doctorCasesDemo: DoctorCaseDemo[] = [
       graft_handling: 84,
       repair_planning: 80,
     },
+    performanceDomainScores: {
+      SP: 80,
+      DP: 83,
+      GV: 84,
+      IC: 86,
+      DI: 82,
+    },
+    evidenceCompleteness: 88,
+    surgicalMetadataCompleteness: 85,
+    donorExtractionPattern: "Balanced rear-lateral zoning",
+    implantationMetric: "Strong implantation consistency across crown spiral",
+  },
+  {
+    id: "dc_005",
+    patientReference: "HA-DR-2144",
+    title: "High-density frontal refinement",
+    caseType: "Hairline / frontal",
+    surgeryDate: "2026-03-11",
+    status: "COMPLETED",
+    score: 89,
+    visibility: "INTERNAL",
+    needsInput: false,
+    internalNotesPending: false,
+    createdAt: "2026-03-11T11:30:00Z",
+    weakDomains: [],
+    strengthDomains: ["implantation_precision", "graft_handling", "donor_management"],
+    domainScores: {
+      donor_management: 88,
+      implantation_precision: 92,
+      graft_handling: 84,
+      repair_planning: 86,
+    },
+    performanceDomainScores: {
+      SP: 86,
+      DP: 88,
+      GV: 84,
+      IC: 92,
+      DI: 85,
+    },
+    evidenceCompleteness: 91,
+    surgicalMetadataCompleteness: 90,
+    donorExtractionPattern: "Density-preserving micro-zonal extraction",
+    implantationMetric: "Elite frontal and mid-scalp implantation consistency",
   },
 ];
 
@@ -328,6 +446,63 @@ export const auditCompletionPipelineDemo = [
   { stage: "In Review", value: 14, color: "amber" },
   { stage: "Completed", value: 11, color: "emerald" },
   { stage: "Public Live", value: 7, color: "violet" },
+];
+
+export const doctorPerformanceTimelineDemo: DoctorPerformanceTimelinePoint[] = [
+  {
+    caseId: "dc_001",
+    submittedAt: "2025-07-12",
+    procedureType: "Hairline",
+    clinic: "North Bosphorus Hair Center",
+    caseTypeLabel: "First surgery",
+    auditScore: 72,
+    domainScores: { SP: 68, DP: 74, GV: 70, IC: 73, DI: 69 },
+  },
+  {
+    caseId: "dc_002",
+    submittedAt: "2025-09-18",
+    procedureType: "Repair",
+    clinic: "North Bosphorus Hair Center",
+    caseTypeLabel: "Repair",
+    auditScore: 75,
+    domainScores: { SP: 71, DP: 76, GV: 73, IC: 76, DI: 70 },
+  },
+  {
+    caseId: "dc_003",
+    submittedAt: "2025-11-02",
+    procedureType: "Crown",
+    clinic: "Istanbul Hair Institute",
+    caseTypeLabel: "Crown",
+    auditScore: 78,
+    domainScores: { SP: 74, DP: 78, GV: 76, IC: 79, DI: 72 },
+  },
+  {
+    caseId: "dc_004",
+    submittedAt: "2026-01-14",
+    procedureType: "Afro",
+    clinic: "Istanbul Hair Institute",
+    caseTypeLabel: "Afro",
+    auditScore: 80,
+    domainScores: { SP: 76, DP: 79, GV: 78, IC: 81, DI: 74 },
+  },
+  {
+    caseId: "dc_005",
+    submittedAt: "2026-02-20",
+    procedureType: "Hairline",
+    clinic: "North Bosphorus Hair Center",
+    caseTypeLabel: "Diffuse",
+    auditScore: 83,
+    domainScores: { SP: 80, DP: 82, GV: 80, IC: 84, DI: 77 },
+  },
+  {
+    caseId: "dc_006",
+    submittedAt: "2026-03-08",
+    procedureType: "Repair",
+    clinic: "North Bosphorus Hair Center",
+    caseTypeLabel: "FUT-to-FUE",
+    auditScore: 86,
+    domainScores: { SP: 83, DP: 85, GV: 82, IC: 87, DI: 81 },
+  },
 ];
 
 export const trainingModulesDemo: TrainingModule[] = [
@@ -385,7 +560,48 @@ export const trainingModulesDemo: TrainingModule[] = [
     premium: false,
     estMinutes: 15,
   },
+  {
+    id: "tm_007",
+    title: "Advanced case documentation and forensic evidence standards",
+    domain: "advanced_case_documentation",
+    level: "advanced",
+    locked: false,
+    premium: true,
+    estMinutes: 28,
+  },
 ];
+
+export const DOMAIN_LABELS: Record<PerformanceDomainCode, string> = {
+  SP: "Surgical Planning",
+  DP: "Donor Preservation",
+  GV: "Graft Viability",
+  IC: "Implantation Consistency",
+  DI: "Documentation Integrity",
+};
+
+export function mapPerformanceDomainToTrainingDomain(code: PerformanceDomainCode): TrainingDomain {
+  if (code === "SP") return "repair_planning";
+  if (code === "DP") return "donor_management";
+  if (code === "GV") return "graft_handling";
+  if (code === "IC") return "implantation_precision";
+  return "advanced_case_documentation";
+}
+
+const domainTrendSeed: Record<PerformanceDomainCode, number> = {
+  SP: 3,
+  DP: 5,
+  GV: -2,
+  IC: 4,
+  DI: 6,
+};
+
+const domainPlatformAverageSeed: Record<PerformanceDomainCode, number> = {
+  SP: 69,
+  DP: 72,
+  GV: 74,
+  IC: 76,
+  DI: 71,
+};
 
 export function mergeCaseSettings(
   defaults: DoctorDefaultSurgicalProfile,
@@ -494,4 +710,69 @@ export function getRecommendedModulesFromCases(cases: DoctorCaseDemo[]): Trainin
     .sort((a, b) => b[1] - a[1])
     .slice(0, 3)
     .map(([domain]) => domain);
+}
+
+export function getPerformanceDomains(): PerformanceDomainMetric[] {
+  const scoreMap = {
+    SP: strengthDistributionDemo.find((d) => d.domain === "Repair planning")?.value ?? 0,
+    DP: strengthDistributionDemo.find((d) => d.domain === "Donor management")?.value ?? 0,
+    GV: strengthDistributionDemo.find((d) => d.domain === "Graft handling")?.value ?? 0,
+    IC: strengthDistributionDemo.find((d) => d.domain === "Implantation precision")?.value ?? 0,
+    DI: strengthDistributionDemo.find((d) => d.domain === "Documentation quality")?.value ?? 0,
+  } satisfies Record<PerformanceDomainCode, number>;
+
+  const defs: Array<{
+    code: PerformanceDomainCode;
+    label: string;
+    trainingDomain: TrainingDomain;
+  }> = [
+    { code: "SP", label: "Surgical Planning", trainingDomain: "repair_planning" },
+    { code: "DP", label: "Donor Preservation", trainingDomain: "donor_management" },
+    { code: "GV", label: "Graft Viability", trainingDomain: "graft_handling" },
+    { code: "IC", label: "Implantation Consistency", trainingDomain: "implantation_precision" },
+    { code: "DI", label: "Documentation Integrity", trainingDomain: "advanced_case_documentation" },
+  ];
+
+  return defs.map((item) => {
+    const score = scoreMap[item.code];
+    const avg = domainPlatformAverageSeed[item.code];
+    const percentile = Math.max(1, Math.min(99, Math.round(50 + (score - avg) * 2.2)));
+    return {
+      ...item,
+      score,
+      trendDelta: domainTrendSeed[item.code],
+      platformAverage: avg,
+      percentile,
+    };
+  });
+}
+
+export function getTrainingIntelligenceFromDomainScores(
+  domainScores: Partial<Record<PerformanceDomainCode, number>>,
+  threshold = 75
+): DomainTrainingIntelligence {
+  const present = (Object.entries(domainScores) as Array<[PerformanceDomainCode, number]>).filter(
+    ([, score]) => Number.isFinite(score)
+  );
+  if (present.length === 0) {
+    return { weakestDomain: null, weakDomains: [], recommendedModules: [] };
+  }
+
+  const weakDomains = present
+    .filter(([, score]) => score < threshold)
+    .sort((a, b) => a[1] - b[1])
+    .map(([code]) => code);
+  const weakestDomain = weakDomains[0] ?? null;
+
+  const recommendedModules = trainingModulesDemo.filter((module) =>
+    weakDomains
+      .map((code) => mapPerformanceDomainToTrainingDomain(code))
+      .includes(module.domain)
+  );
+
+  return {
+    weakestDomain,
+    weakDomains,
+    recommendedModules,
+  };
 }

@@ -6,12 +6,16 @@ import Sparkline from "@/components/ui/Sparkline";
 import {
   auditCompletionPipelineDemo,
   casesOverTimeDemo,
+  DOMAIN_LABELS,
   doctorProfileDemo,
+  doctorPerformanceTimelineDemo,
   createSubmissionSnapshot,
   defaultSurgicalProfileDemo,
   doctorCasesDemo,
   getDefaultProfileCompletion,
+  getPerformanceDomains,
   getRecommendedModulesFromCases,
+  getTrainingIntelligenceFromDomainScores,
   resolveCaseSettingsFromLayers,
   outcomesByStatusDemo,
   previousCaseOverrideTemplates,
@@ -24,10 +28,17 @@ import {
   type DoctorCaseOverride,
   type DoctorDefaultSurgicalProfile,
   type DoctorReportVisibility,
+  type PerformanceDomainCode,
+  type PerformanceDomainMetric,
   type TrainingDomain,
 } from "@/lib/doctorPortal/demoData";
 
 type KpiStat = { label: string; value: string; detail?: string };
+type CaseReadinessResult = {
+  percentage: number;
+  missingEvidence: string[];
+  suggestions: string[];
+};
 
 function cardClassName(extra?: string) {
   return `rounded-2xl border border-slate-200/80 bg-white/95 p-4 shadow-[0_8px_24px_-18px_rgba(15,23,42,0.35)] ${extra ?? ""}`;
@@ -237,6 +248,369 @@ export function DoctorAuditCompletionPipeline() {
   );
 }
 
+function DomainRadarChart({ domains }: { domains: PerformanceDomainMetric[] }) {
+  const size = 260;
+  const center = size / 2;
+  const radius = 92;
+  const angleStep = (Math.PI * 2) / domains.length;
+  const levels = [20, 40, 60, 80, 100];
+
+  const points = domains
+    .map((domain, index) => {
+      const angle = -Math.PI / 2 + index * angleStep;
+      const r = (domain.score / 100) * radius;
+      const x = center + Math.cos(angle) * r;
+      const y = center + Math.sin(angle) * r;
+      return `${x.toFixed(2)},${y.toFixed(2)}`;
+    })
+    .join(" ");
+
+  return (
+    <div className="flex justify-center">
+      <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size} role="img" aria-label="Performance domains radar">
+        {levels.map((level) => {
+          const r = (level / 100) * radius;
+          const poly = domains
+            .map((_, index) => {
+              const angle = -Math.PI / 2 + index * angleStep;
+              const x = center + Math.cos(angle) * r;
+              const y = center + Math.sin(angle) * r;
+              return `${x.toFixed(2)},${y.toFixed(2)}`;
+            })
+            .join(" ");
+          return <polygon key={level} points={poly} fill="none" stroke="rgb(226 232 240)" strokeWidth="1" />;
+        })}
+
+        {domains.map((domain, index) => {
+          const angle = -Math.PI / 2 + index * angleStep;
+          const x = center + Math.cos(angle) * radius;
+          const y = center + Math.sin(angle) * radius;
+          const tx = center + Math.cos(angle) * (radius + 16);
+          const ty = center + Math.sin(angle) * (radius + 16);
+          return (
+            <g key={domain.code}>
+              <line x1={center} y1={center} x2={x} y2={y} stroke="rgb(226 232 240)" strokeWidth="1" />
+              <text x={tx} y={ty} textAnchor="middle" dominantBaseline="middle" fontSize="10" fill="rgb(71 85 105)" fontWeight="700">
+                {domain.code}
+              </text>
+            </g>
+          );
+        })}
+
+        <polygon points={points} fill="rgba(6, 182, 212, 0.20)" stroke="rgb(8 145 178)" strokeWidth="2" />
+      </svg>
+    </div>
+  );
+}
+
+function DomainScoreCard({ domain }: { domain: PerformanceDomainMetric }) {
+  const trendPositive = domain.trendDelta >= 0;
+  const trendLabel = `${trendPositive ? "+" : ""}${domain.trendDelta}`;
+  return (
+    <article className="rounded-xl border border-slate-200 bg-white p-3">
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+          {domain.code} - {domain.label}
+        </p>
+        <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${trendPositive ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-800"}`}>
+          {trendLabel}
+        </span>
+      </div>
+      <p className="mt-2 text-2xl font-bold text-slate-900">{domain.score}</p>
+      <p className="text-xs text-slate-600">Percentile: {domain.percentile}th</p>
+      <p className="text-xs text-slate-500">Platform avg: {domain.platformAverage}</p>
+    </article>
+  );
+}
+
+export function DoctorPerformanceDomains() {
+  const domains = getPerformanceDomains();
+  const weakest = [...domains].sort((a, b) => a.score - b.score)[0];
+  const recModule = trainingModulesDemo.find((module) => module.domain === weakest.trainingDomain) ?? null;
+
+  return (
+    <section className={cardClassName("border-cyan-100 bg-gradient-to-br from-white via-cyan-50/25 to-white")}>
+      <SectionTitle
+        title="Performance Domains"
+        subtitle="Five-core domain performance to reinforce improvement, consistency, and credibility."
+      />
+      <div className="grid gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
+        <section className="rounded-xl border border-slate-200 bg-white p-3">
+          <DomainRadarChart domains={domains} />
+        </section>
+        <section>
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {domains.map((domain) => (
+              <DomainScoreCard key={domain.code} domain={domain} />
+            ))}
+          </div>
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
+            <article className="rounded-xl border border-amber-200 bg-amber-50 p-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-amber-800">Weakest domain highlight</p>
+              <p className="mt-1 text-sm font-semibold text-slate-900">
+                {weakest.code} - {weakest.label}
+              </p>
+              <p className="text-xs text-slate-700">
+                Score {weakest.score}, currently {weakest.percentile}th percentile. Prioritize this to improve consistency and visibility readiness.
+              </p>
+            </article>
+            <article className="rounded-xl border border-violet-200 bg-violet-50 p-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-violet-800">Recommended training module</p>
+              {recModule ? (
+                <>
+                  <p className="mt-1 text-sm font-semibold text-slate-900">{recModule.title}</p>
+                  <p className="text-xs text-slate-700">
+                    {recModule.level} - {recModule.estMinutes} min
+                  </p>
+                </>
+              ) : (
+                <p className="mt-1 text-xs text-slate-700">No direct module mapped yet for this domain.</p>
+              )}
+            </article>
+          </div>
+        </section>
+      </div>
+    </section>
+  );
+}
+
+function buildLinePath(
+  points: Array<{ x: number; y: number }>
+) {
+  return points
+    .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`)
+    .join(" ");
+}
+
+export function DoctorPerformanceTimeline() {
+  const [procedureFilter, setProcedureFilter] = useState("ALL");
+  const [clinicFilter, setClinicFilter] = useState("ALL");
+  const [dateRange, setDateRange] = useState("ALL");
+
+  const filtered = useMemo(() => {
+    const now = new Date("2026-03-14");
+    const points = doctorPerformanceTimelineDemo.filter((point) => {
+      if (procedureFilter !== "ALL" && point.procedureType !== procedureFilter) return false;
+      if (clinicFilter !== "ALL" && point.clinic !== clinicFilter) return false;
+      if (dateRange !== "ALL") {
+        const d = new Date(point.submittedAt);
+        const months = dateRange === "6M" ? 6 : dateRange === "12M" ? 12 : 999;
+        const threshold = new Date(now);
+        threshold.setMonth(threshold.getMonth() - months);
+        if (d < threshold) return false;
+      }
+      return true;
+    });
+    return [...points].sort((a, b) => new Date(a.submittedAt).getTime() - new Date(b.submittedAt).getTime());
+  }, [procedureFilter, clinicFilter, dateRange]);
+
+  const width = 760;
+  const height = 280;
+  const padding = 36;
+  const innerWidth = width - padding * 2;
+  const innerHeight = height - padding * 2;
+
+  const domainColor: Record<PerformanceDomainCode, string> = {
+    SP: "#0891b2",
+    DP: "#059669",
+    GV: "#7c3aed",
+    IC: "#d97706",
+    DI: "#475569",
+  };
+
+  const plot = useMemo(() => {
+    if (filtered.length === 0) return null;
+    const n = filtered.length;
+    const xStep = n <= 1 ? 0 : innerWidth / (n - 1);
+    const toY = (value: number) => padding + (1 - value / 100) * innerHeight;
+
+    const auditPoints = filtered.map((point, idx) => ({
+      x: padding + idx * xStep,
+      y: toY(point.auditScore),
+      label: point.caseTypeLabel,
+      date: point.submittedAt,
+    }));
+    const domainPoints = (["SP", "DP", "GV", "IC", "DI"] as PerformanceDomainCode[]).reduce(
+      (acc, code) => {
+        acc[code] = filtered.map((point, idx) => ({
+          x: padding + idx * xStep,
+          y: toY(point.domainScores[code]),
+        }));
+        return acc;
+      },
+      {} as Record<PerformanceDomainCode, Array<{ x: number; y: number }>>
+    );
+    return { auditPoints, domainPoints };
+  }, [filtered, innerHeight, innerWidth]);
+
+  const avgScore =
+    filtered.reduce((sum, point) => sum + point.auditScore, 0) /
+    Math.max(filtered.length, 1);
+
+  return (
+    <section className={cardClassName()}>
+      <SectionTitle
+        title="Doctor Performance Timeline"
+        subtitle="Track case submissions, audit scores, and domain evolution over time."
+      />
+      <div className="grid gap-2 md:grid-cols-3">
+        <TextSelect
+          label="Procedure type"
+          value={procedureFilter}
+          onChange={setProcedureFilter}
+          options={["ALL", ...Array.from(new Set(doctorPerformanceTimelineDemo.map((point) => point.procedureType)))]}
+        />
+        <TextSelect
+          label="Clinic"
+          value={clinicFilter}
+          onChange={setClinicFilter}
+          options={["ALL", ...Array.from(new Set(doctorPerformanceTimelineDemo.map((point) => point.clinic)))]}
+        />
+        <TextSelect
+          label="Date range"
+          value={dateRange}
+          onChange={setDateRange}
+          options={["ALL", "6M", "12M"]}
+        />
+      </div>
+
+      <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+        {plot ? (
+          <div className="overflow-x-auto">
+            <svg viewBox={`0 0 ${width} ${height}`} width={width} height={height} role="img" aria-label="Doctor performance timeline graph">
+              {[20, 40, 60, 80, 100].map((tick) => {
+                const y = padding + (1 - tick / 100) * innerHeight;
+                return (
+                  <g key={tick}>
+                    <line x1={padding} y1={y} x2={width - padding} y2={y} stroke="#e2e8f0" strokeWidth="1" />
+                    <text x={8} y={y + 4} fontSize="10" fill="#64748b">
+                      {tick}
+                    </text>
+                  </g>
+                );
+              })}
+
+              {(Object.keys(plot.domainPoints) as PerformanceDomainCode[]).map((code) => (
+                <path
+                  key={code}
+                  d={buildLinePath(plot.domainPoints[code])}
+                  fill="none"
+                  stroke={domainColor[code]}
+                  strokeWidth="1.8"
+                  opacity="0.85"
+                />
+              ))}
+
+              <path d={buildLinePath(plot.auditPoints)} fill="none" stroke="#0f172a" strokeWidth="2.8" />
+              {plot.auditPoints.map((point, idx) => (
+                <g key={idx}>
+                  <circle cx={point.x} cy={point.y} r={3.2} fill="#0f172a" />
+                  <text x={point.x} y={height - 10} textAnchor="middle" fontSize="10" fill="#475569">
+                    {new Date(point.date).toLocaleDateString("en-GB", { month: "short", year: "2-digit" })}
+                  </text>
+                </g>
+              ))}
+            </svg>
+          </div>
+        ) : (
+          <div className="rounded-lg border border-dashed border-slate-300 bg-white px-4 py-6 text-center text-sm text-slate-600">
+            No timeline data for current filters.
+          </div>
+        )}
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700">
+          Avg audit score: {Math.round(avgScore)}%
+        </span>
+        {(Object.keys(domainColor) as PerformanceDomainCode[]).map((code) => (
+          <span key={code} className="inline-flex items-center rounded-full border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700">
+            <span className="mr-1.5 inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: domainColor[code] }} />
+            {code}
+          </span>
+        ))}
+        <span className="rounded-full border border-slate-300 bg-slate-900 px-2 py-1 text-xs font-semibold text-white">Audit score line</span>
+      </div>
+    </section>
+  );
+}
+
+export function DoctorPublicReputationPanel({ cases = doctorCasesDemo }: { cases?: DoctorCaseDemo[] }) {
+  const publicCases = cases.filter((caseItem) => caseItem.visibility !== "INTERNAL");
+  const publicReportCount = publicCases.length;
+  const publicScoreValues = publicCases.map((caseItem) => caseItem.score).filter((score): score is number => typeof score === "number");
+  const publicAverage = Math.round(
+    publicScoreValues.reduce((sum, score) => sum + score, 0) / Math.max(publicScoreValues.length, 1)
+  );
+
+  // Mock metrics for commercial/discoverability motivation layer.
+  const rankingPercentile = 88;
+  const estimatedProfileViews = 1240;
+  const discoverabilityScore = 81;
+
+  const publishCandidates = cases.filter(
+    (caseItem) => (caseItem.score ?? 0) > 85 && caseItem.visibility !== "PUBLIC_LIVE"
+  );
+
+  return (
+    <section className={cardClassName("border-violet-200 bg-gradient-to-br from-white via-violet-50/35 to-white")}>
+      <SectionTitle
+        title="Public Reputation"
+        subtitle="Translate high-quality audit outcomes into public trust and discoverability growth."
+      />
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        <article className="rounded-xl border border-slate-200 bg-white p-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Public audit reports</p>
+          <p className="mt-1 text-2xl font-bold text-slate-900">{publicReportCount}</p>
+        </article>
+        <article className="rounded-xl border border-slate-200 bg-white p-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Public average score</p>
+          <p className="mt-1 text-2xl font-bold text-slate-900">{publicAverage}%</p>
+        </article>
+        <article className="rounded-xl border border-slate-200 bg-white p-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Ranking percentile</p>
+          <p className="mt-1 text-2xl font-bold text-slate-900">{rankingPercentile}th</p>
+        </article>
+        <article className="rounded-xl border border-slate-200 bg-white p-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Estimated profile views</p>
+          <p className="mt-1 text-2xl font-bold text-slate-900">{estimatedProfileViews.toLocaleString()}</p>
+        </article>
+        <article className="rounded-xl border border-slate-200 bg-white p-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Discoverability score</p>
+          <p className="mt-1 text-2xl font-bold text-slate-900">{discoverabilityScore}</p>
+        </article>
+      </div>
+
+      <div className="mt-3 rounded-xl border border-violet-200 bg-violet-50 p-3">
+        {publishCandidates.length > 0 ? (
+          <>
+            <p className="text-xs font-semibold uppercase tracking-wide text-violet-800">Public visibility opportunity</p>
+            <p className="mt-1 text-sm text-slate-800">
+              <span className="font-semibold">{publishCandidates[0].title}</span> scored{" "}
+              <span className="font-semibold">{publishCandidates[0].score}%</span>. Make this report public to strengthen your trust signal.
+            </p>
+            <div className="mt-2">
+              <Link
+                href="/dashboard/doctor/reports"
+                className="inline-flex rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800"
+              >
+                Make this report public
+              </Link>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="text-xs font-semibold uppercase tracking-wide text-violet-800">Visibility guidance</p>
+            <p className="mt-1 text-sm text-slate-700">
+              When a report exceeds 85, publish it to compound long-term credibility and discovery momentum.
+            </p>
+          </>
+        )}
+      </div>
+    </section>
+  );
+}
+
 export function DoctorRecentCases({ cases = doctorCasesDemo }: { cases?: DoctorCaseDemo[] }) {
   return (
     <section className={cardClassName()}>
@@ -275,14 +649,55 @@ function domainLabel(domain: TrainingDomain) {
 }
 
 export function DoctorTrainingRecommendations({
-  fromDomains = getRecommendedModulesFromCases(doctorCasesDemo),
+  fromCases = doctorCasesDemo,
+  threshold = 75,
 }: {
-  fromDomains?: TrainingDomain[];
+  fromCases?: DoctorCaseDemo[];
+  threshold?: number;
 }) {
-  const modules = trainingModulesDemo.filter((m) => fromDomains.includes(m.domain));
+  const averagedScores = fromCases.reduce(
+    (acc, caseItem) => {
+      (Object.entries(caseItem.performanceDomainScores) as Array<[PerformanceDomainCode, number]>).forEach(
+        ([code, score]) => {
+          acc.totals[code] = (acc.totals[code] ?? 0) + score;
+          acc.counts[code] = (acc.counts[code] ?? 0) + 1;
+        }
+      );
+      return acc;
+    },
+    {
+      totals: {} as Partial<Record<PerformanceDomainCode, number>>,
+      counts: {} as Partial<Record<PerformanceDomainCode, number>>,
+    }
+  );
+
+  const averageDomainScores = (Object.keys(DOMAIN_LABELS) as PerformanceDomainCode[]).reduce(
+    (acc, code) => {
+      const total = averagedScores.totals[code] ?? 0;
+      const count = averagedScores.counts[code] ?? 0;
+      if (count > 0) acc[code] = Math.round(total / count);
+      return acc;
+    },
+    {} as Partial<Record<PerformanceDomainCode, number>>
+  );
+
+  const intelligence = getTrainingIntelligenceFromDomainScores(averageDomainScores, threshold);
+  const modules = intelligence.recommendedModules;
+
   return (
     <section className={cardClassName()}>
-      <SectionTitle title="Recommended Training" subtitle="Generated from weak audit domains and pending input patterns." />
+      <SectionTitle title="Recommended Training" subtitle="Generated from domain scores below threshold and mapped to improvement modules." />
+      {intelligence.weakestDomain ? (
+        <div className="mb-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2">
+          <p className="text-xs font-semibold uppercase tracking-wide text-amber-800">Weakest domain</p>
+          <p className="mt-1 text-sm font-semibold text-slate-900">
+            {intelligence.weakestDomain} - {DOMAIN_LABELS[intelligence.weakestDomain]}
+          </p>
+          <p className="text-xs text-slate-700">
+            Prioritize modules in this domain first to improve next-report quality trajectory.
+          </p>
+        </div>
+      ) : null}
       <div className="grid gap-3 md:grid-cols-2">
         {modules.map((module) => (
           <article key={module.id} className="rounded-xl border border-slate-200 p-3">
@@ -303,6 +718,9 @@ export function DoctorTrainingRecommendations({
           </article>
         ))}
       </div>
+      {modules.length === 0 ? (
+        <p className="text-sm text-slate-700">No below-threshold domains detected. Continue consistency and consider advanced modules.</p>
+      ) : null}
       <div className="mt-3">
         <Link href="/dashboard/doctor/training" className="text-sm font-semibold text-cyan-700 hover:text-cyan-800">
           Open training portal
@@ -393,6 +811,9 @@ export function DoctorPortalHome() {
       </section>
 
       <DoctorQuickStats stats={stats} />
+      <DoctorPublicReputationPanel />
+      <DoctorPerformanceDomains />
+      <DoctorPerformanceTimeline />
       <section className={cardClassName("border-cyan-100 bg-gradient-to-br from-white via-cyan-50/25 to-white")}>
         <SectionTitle
           title="Clinical Intelligence Layer"
@@ -940,6 +1361,61 @@ export function UploadEvidenceGrid({
   );
 }
 
+export function CaseReadinessMeter({ readiness }: { readiness: CaseReadinessResult }) {
+  const pct = readiness.percentage;
+  const toneClass =
+    pct >= 85
+      ? "border-emerald-200 bg-emerald-50"
+      : pct >= 70
+        ? "border-cyan-200 bg-cyan-50"
+        : "border-amber-200 bg-amber-50";
+  const textTone =
+    pct >= 85 ? "text-emerald-900" : pct >= 70 ? "text-cyan-900" : "text-amber-900";
+
+  return (
+    <section className={`rounded-xl border px-3 py-3 ${toneClass}`}>
+      <div className="flex items-center justify-between">
+        <p className={`text-sm font-semibold ${textTone}`}>Case readiness</p>
+        <p className={`text-xl font-bold ${textTone}`}>{pct}%</p>
+      </div>
+      <div className="mt-2 h-2 rounded-full bg-white/70">
+        <div className="h-2 rounded-full bg-slate-900" style={{ width: `${pct}%` }} />
+      </div>
+
+      <div className="mt-3 grid gap-3 md:grid-cols-2">
+        <div>
+          <p className={`text-xs font-semibold uppercase tracking-wide ${textTone}`}>Missing evidence</p>
+          {readiness.missingEvidence.length === 0 ? (
+            <p className="mt-1 text-xs text-slate-700">No critical gaps detected.</p>
+          ) : (
+            <ul className="mt-1 space-y-1">
+              {readiness.missingEvidence.map((item) => (
+                <li key={item} className="text-xs text-slate-700">
+                  - {item}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+        <div>
+          <p className={`text-xs font-semibold uppercase tracking-wide ${textTone}`}>Improve readiness</p>
+          {readiness.suggestions.length === 0 ? (
+            <p className="mt-1 text-xs text-slate-700">Submission is high quality and audit-ready.</p>
+          ) : (
+            <ul className="mt-1 space-y-1">
+              {readiness.suggestions.map((item) => (
+                <li key={item} className="text-xs text-slate-700">
+                  - {item}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export function DoctorUploadWizard() {
   const [step, setStep] = useState(1);
   const [visibility, setVisibility] = useState<DoctorReportVisibility>("PUBLIC_PENDING_REVIEW");
@@ -974,6 +1450,84 @@ export function DoctorUploadWizard() {
     customOverrides,
     previousCaseId: selectedPreviousCaseId,
   });
+
+  const readiness = useMemo<CaseReadinessResult>(() => {
+    const totalOptional = evidenceCategories.filter((c) => !c.required).length;
+    const optionalUploaded = evidenceCategories.filter((c) => !c.required && uploaded[c.key]).length;
+
+    const metadataChecks = [
+      patientRef.trim().length > 0,
+      surgeryDate.trim().length > 0,
+      clinicLocation.trim().length > 0,
+      caseCategory.trim().length > 0,
+      Boolean(visibility),
+      resolvedSettings.extraction.extractionMethod.trim().length > 0,
+      resolvedSettings.graftHolding.holdingSolution.trim().length > 0,
+      resolvedSettings.implantation.implantationTechnique.trim().length > 0,
+      resolvedSettings.workflow.assistantCount.trim().length > 0,
+      resolvedSettings.postOp.followUpCadence.trim().length > 0,
+    ];
+    const metadataComplete =
+      metadataChecks.filter(Boolean).length / Math.max(metadataChecks.length, 1);
+
+    const donorPresenceChecks = ["donor_rear", "donor_lr", "intra_donor"];
+    const donorPresence =
+      donorPresenceChecks.filter((key) => Boolean(uploaded[key])).length / donorPresenceChecks.length;
+
+    const followUpKeys = ["healed"];
+    const followUpPresence = followUpKeys.some((key) => Boolean(uploaded[key])) ? 1 : 0;
+
+    const requiredScore = requiredUploaded / Math.max(requiredTotal, 1);
+    const optionalScore = optionalUploaded / Math.max(totalOptional, 1);
+
+    const percentage = Math.round(
+      100 *
+        (0.5 * requiredScore +
+          0.15 * optionalScore +
+          0.2 * metadataComplete +
+          0.1 * donorPresence +
+          0.05 * followUpPresence)
+    );
+
+    const missingEvidence: string[] = [];
+    for (const cat of evidenceCategories.filter((c) => c.required)) {
+      if (!uploaded[cat.key]) missingEvidence.push(cat.label);
+    }
+    if (donorPresence < 1) {
+      donorPresenceChecks
+        .filter((key) => !uploaded[key])
+        .forEach((key) => {
+          const label = evidenceCategories.find((c) => c.key === key)?.label;
+          if (label && !missingEvidence.includes(label)) missingEvidence.push(label);
+        });
+    }
+    if (!followUpPresence) {
+      missingEvidence.push("Healed follow-up");
+    }
+
+    const suggestions: string[] = [];
+    if (requiredScore < 1) suggestions.push("Complete all required photo categories before submission.");
+    if (donorPresence < 1) suggestions.push("Add full donor documentation set (rear, left/right, intra-op donor).");
+    if (!followUpPresence) suggestions.push("Upload at least one healed follow-up image to strengthen longitudinal quality scoring.");
+    if (metadataComplete < 1) suggestions.push("Fill remaining structured surgical metadata fields for more accurate audit interpretation.");
+    if (optionalScore < 0.4) suggestions.push("Consider adding optional macro/trichoscopy evidence for higher confidence scoring.");
+
+    return {
+      percentage: Math.max(0, Math.min(100, percentage)),
+      missingEvidence,
+      suggestions,
+    };
+  }, [
+    uploaded,
+    requiredUploaded,
+    requiredTotal,
+    patientRef,
+    surgeryDate,
+    clinicLocation,
+    caseCategory,
+    visibility,
+    resolvedSettings,
+  ]);
 
   function stepLabel(num: number) {
     if (num === 1) return "Case basics";
@@ -1172,6 +1726,9 @@ export function DoctorUploadWizard() {
                 requiredUploaded={requiredUploaded}
                 requiredTotal={requiredTotal}
               />
+              <div className="mt-3">
+                <CaseReadinessMeter readiness={readiness} />
+              </div>
               <label className="mt-3 flex items-start gap-2 text-sm text-slate-700">
                 <input type="checkbox" className="mt-1" />
                 <span>I confirm this case is de-identified and accurately reflects surgical settings.</span>
@@ -1216,6 +1773,8 @@ export function DoctorReportsTable() {
   const [dateFilter, setDateFilter] = useState<string>("ALL");
   const [showMoreFilters, setShowMoreFilters] = useState(false);
   const [visibilityOverrides, setVisibilityOverrides] = useState<Record<string, DoctorReportVisibility>>({});
+  const [compareLeftId, setCompareLeftId] = useState<string>(doctorCasesDemo[0]?.id ?? "");
+  const [compareRightId, setCompareRightId] = useState<string>(doctorCasesDemo[1]?.id ?? doctorCasesDemo[0]?.id ?? "");
 
   const resolvedVisibility = (caseId: string, fallback: DoctorReportVisibility) => visibilityOverrides[caseId] ?? fallback;
 
@@ -1264,6 +1823,32 @@ export function DoctorReportsTable() {
   const publicReadyCount = filtered.filter((c) => (c.score ?? 0) >= 80 && c.visibilityResolved !== "PUBLIC_LIVE").length;
   const weakDomainSet = new Set<TrainingDomain>(filtered.flatMap((c) => c.weakDomains));
   const trainingPriorityModules = trainingModulesDemo.filter((m) => weakDomainSet.has(m.domain)).slice(0, 4);
+  const comparisonPool = filtered.length >= 2 ? filtered : withResolvedVisibility;
+  const leftCase = comparisonPool.find((c) => c.id === compareLeftId) ?? comparisonPool[0] ?? null;
+  const rightCase =
+    comparisonPool.find((c) => c.id === compareRightId) ??
+    comparisonPool.find((c) => c.id !== leftCase?.id) ??
+    comparisonPool[0] ??
+    null;
+
+  const comparisonDeltas =
+    leftCase && rightCase
+      ? {
+          auditScore: (rightCase.score ?? 0) - (leftCase.score ?? 0),
+          evidenceCompleteness: rightCase.evidenceCompleteness - leftCase.evidenceCompleteness,
+          surgicalMetadataCompleteness:
+            rightCase.surgicalMetadataCompleteness - leftCase.surgicalMetadataCompleteness,
+          domain: (Object.keys(DOMAIN_LABELS) as PerformanceDomainCode[]).reduce(
+            (acc, code) => {
+              acc[code] =
+                (rightCase.performanceDomainScores[code] ?? 0) -
+                (leftCase.performanceDomainScores[code] ?? 0);
+              return acc;
+            },
+            {} as Record<PerformanceDomainCode, number>
+          ),
+        }
+      : null;
 
   const recommendVisibility = (score: number | null): DoctorReportVisibility => {
     if (score === null) return "INTERNAL";
@@ -1346,6 +1931,137 @@ export function DoctorReportsTable() {
         ) : null}
       </section>
 
+      <section className={cardClassName("border-cyan-200 bg-cyan-50/40")}>
+        <SectionTitle
+          title="Case Comparison Tool"
+          subtitle="Compare two historical cases side-by-side to learn what drives stronger outcomes."
+        />
+        <div className="grid gap-2 md:grid-cols-2">
+          <TextSelect
+            label="Case A"
+            value={leftCase?.id ?? ""}
+            onChange={setCompareLeftId}
+            options={comparisonPool.map((c) => c.id)}
+          />
+          <TextSelect
+            label="Case B"
+            value={rightCase?.id ?? ""}
+            onChange={setCompareRightId}
+            options={comparisonPool.map((c) => c.id)}
+          />
+        </div>
+
+        {leftCase && rightCase ? (
+          <div className="mt-3 space-y-3">
+            {comparisonDeltas ? (
+              <section className="rounded-xl border border-slate-200 bg-white p-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Delta overview (Case B vs Case A)</p>
+                <div className="mt-2 grid gap-2 sm:grid-cols-3">
+                  {[
+                    { label: "Audit score", value: comparisonDeltas.auditScore, suffix: " pts" },
+                    { label: "Evidence completeness", value: comparisonDeltas.evidenceCompleteness, suffix: "%" },
+                    {
+                      label: "Surgical metadata",
+                      value: comparisonDeltas.surgicalMetadataCompleteness,
+                      suffix: "%",
+                    },
+                  ].map((item) => {
+                    const positive = item.value >= 0;
+                    return (
+                      <article key={item.label} className="rounded-lg border border-slate-200 bg-slate-50 p-2">
+                        <p className="text-[11px] uppercase tracking-wide text-slate-500">{item.label}</p>
+                        <p
+                          className={`text-base font-bold ${
+                            positive ? "text-emerald-700" : "text-amber-800"
+                          }`}
+                        >
+                          {positive ? "+" : ""}
+                          {item.value}
+                          {item.suffix}
+                        </p>
+                      </article>
+                    );
+                  })}
+                </div>
+                <div className="mt-2 grid gap-2 sm:grid-cols-5">
+                  {(Object.keys(DOMAIN_LABELS) as PerformanceDomainCode[]).map((code) => {
+                    const value = comparisonDeltas.domain[code];
+                    const positive = value >= 0;
+                    return (
+                      <article key={code} className="rounded-lg border border-slate-200 bg-white p-2">
+                        <p className="text-[11px] uppercase tracking-wide text-slate-500">{code}</p>
+                        <p
+                          className={`text-sm font-bold ${
+                            positive ? "text-emerald-700" : "text-amber-800"
+                          }`}
+                        >
+                          {positive ? "+" : ""}
+                          {value}
+                        </p>
+                      </article>
+                    );
+                  })}
+                </div>
+              </section>
+            ) : null}
+
+            <div className="grid gap-3 lg:grid-cols-2">
+            {[leftCase, rightCase].map((caseItem, idx) => (
+              <article key={caseItem.id} className="rounded-xl border border-slate-200 bg-white p-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  {idx === 0 ? "Case A" : "Case B"} - {caseItem.title}
+                </p>
+                <p className="mt-1 text-xs text-slate-600">
+                  {caseItem.caseType} - {caseItem.surgeryDate} - {caseItem.patientReference}
+                </p>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-2">
+                    <p className="text-[11px] uppercase tracking-wide text-slate-500">Audit score</p>
+                    <p className="text-lg font-bold text-slate-900">{caseItem.score ?? "—"}%</p>
+                  </div>
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-2">
+                    <p className="text-[11px] uppercase tracking-wide text-slate-500">Evidence completeness</p>
+                    <p className="text-lg font-bold text-slate-900">{caseItem.evidenceCompleteness}%</p>
+                  </div>
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-2">
+                    <p className="text-[11px] uppercase tracking-wide text-slate-500">Surgical metadata</p>
+                    <p className="text-lg font-bold text-slate-900">{caseItem.surgicalMetadataCompleteness}%</p>
+                  </div>
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-2">
+                    <p className="text-[11px] uppercase tracking-wide text-slate-500">Visibility</p>
+                    <p className="text-sm font-semibold text-slate-900">{(caseItem.visibilityResolved ?? caseItem.visibility).replaceAll("_", " ")}</p>
+                  </div>
+                </div>
+                <div className="mt-3 rounded-lg border border-slate-200 p-2">
+                  <p className="text-[11px] uppercase tracking-wide text-slate-500">Donor extraction pattern</p>
+                  <p className="text-sm text-slate-800">{caseItem.donorExtractionPattern}</p>
+                </div>
+                <div className="mt-2 rounded-lg border border-slate-200 p-2">
+                  <p className="text-[11px] uppercase tracking-wide text-slate-500">Implantation metric</p>
+                  <p className="text-sm text-slate-800">{caseItem.implantationMetric}</p>
+                </div>
+                <div className="mt-2 rounded-lg border border-slate-200 p-2">
+                  <p className="text-[11px] uppercase tracking-wide text-slate-500">Domain scores</p>
+                  <div className="mt-1 grid gap-1 sm:grid-cols-2">
+                    {(Object.keys(DOMAIN_LABELS) as PerformanceDomainCode[]).map((code) => (
+                      <p key={code} className="text-xs text-slate-700">
+                        {code} ({DOMAIN_LABELS[code]}):{" "}
+                        <span className="font-semibold">{caseItem.performanceDomainScores[code] ?? "—"}</span>
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              </article>
+            ))}
+            </div>
+          </div>
+        ) : (
+          <div className="mt-3 rounded-lg border border-dashed border-slate-300 bg-white px-4 py-6 text-sm text-slate-600">
+            At least two cases are required to compare.
+          </div>
+        )}
+      </section>
+
       <section className={cardClassName()}>
         <SectionTitle title="Report Previews" subtitle="Visibility progression is an earned trust signal tied to report quality." />
         {filtered.length === 0 ? (
@@ -1412,6 +2128,30 @@ export function DoctorReportsTable() {
                     </section>
                   </div>
 
+                  {(() => {
+                    const caseTraining = getTrainingIntelligenceFromDomainScores(c.performanceDomainScores, 75);
+                    if (caseTraining.recommendedModules.length === 0) return null;
+                    return (
+                      <div className="mt-3 rounded-lg border border-violet-200 bg-violet-50 p-3">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-violet-800">
+                          Recommended training (domain-linked)
+                        </p>
+                        {caseTraining.weakestDomain ? (
+                          <p className="mt-1 text-xs text-slate-700">
+                            Weakest: {caseTraining.weakestDomain} - {DOMAIN_LABELS[caseTraining.weakestDomain]}
+                          </p>
+                        ) : null}
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {caseTraining.recommendedModules.slice(0, 3).map((module) => (
+                            <span key={module.id} className="rounded-full border border-violet-200 bg-white px-2 py-1 text-xs font-medium text-violet-900">
+                              {module.title}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
+
                   <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
                     <p className="text-xs text-slate-700">
                       {canPromote
@@ -1475,7 +2215,7 @@ export function DoctorReportsTable() {
           </div>
         )}
       </section>
-      <DoctorTrainingRecommendations />
+      <DoctorTrainingRecommendations fromCases={filtered} />
     </div>
   );
 }
