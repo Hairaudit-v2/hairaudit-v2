@@ -11,11 +11,82 @@ The model stays two-tier:
 Machine-readable config source:
 
 - `src/lib/audit/masterSurgicalMetadata.ts`
+- `src/config/auditSchema.ts` (workflow metadata, copy-forward/default/follow-up grouping)
 
 Form field-set sources:
 
 - Doctor: `src/lib/doctorAuditForm.ts`, validation: `src/lib/doctorAuditSchema.ts`
 - Clinic: `src/lib/clinicAuditForm.ts`, validation: `src/lib/clinicAuditSchema.ts`
+
+---
+
+## Stable fields that should auto-carry forward on follow-up audits
+
+Exported as `caseStableFields` in `src/config/auditSchema.ts`.
+
+These fields are treated as stable surgical context and inherited from the original surgery record:
+
+- case identity/context: `submission_type`, `audit_type`, `case_id`, `clinic_name`, `clinic_branch`, `doctor_name`, `country_jurisdiction`, `surgery_date`, `multi_day_flag`, `procedure_day_breakdown`
+- baseline and diagnosis context: `patient_age_bracket`, `patient_sex`, `ethnicity_hair_background`, `hair_type_curl_pattern`, `hair_calibre_category`, `primary_diagnosis`, `secondary_diagnosis`, `hair_loss_scale_used`, `hair_loss_grade`, `hair_loss_stability`
+- planning and donor baseline: `planned_graft_count`, `actual_graft_count`, `zones_planned`, `donor_quality_rating`, `donor_density_rating`, `safe_donor_zone_assessed`, `estimated_donor_capacity`, `donor_density_per_cm2`, `avg_hairs_per_graft`
+- extraction/recipient/implantation protocol: `extraction_method`, `extraction_devices_used`, `extraction_technique`, `punch_sizes_used`, `punch_types_used`, `holding_solutions_used`, `recipient_sites_created_by`, `site_creation_method`, `implantation_method`, `implantation_devices_used`, `implanted_by`
+- intra-op/post-op protocol defaults captured on initial surgery: `intraoperative_adjuncts_used`, `intraop_prp_used`, `intraop_exosomes_used`, `exosome_type`, `partial_transection_used`, `postoperative_treatments_included`, `postoperative_treatments_recommended`, `follow_up_plan_documented`
+
+For this group, schema metadata flags are set to:
+
+- `isCaseStable: true`
+- `canInheritFromOriginalCase: true`
+- `lockAfterInitialSurgerySave: true`
+
+---
+
+## Doctor/Clinic default fields that should prefill automatically
+
+Exported as:
+
+- `doctorDefaultFields` (doctor default surgical profile)
+- `clinicDefaultFields` (clinic default protocol profile)
+
+Both groups are editable per case and support exception-based entry:
+
+- “Use saved defaults”
+- “Only update what changed”
+
+Common defaultable examples:
+
+- operational intent: `requested_by`, `review_purpose`, `additional_operators`
+- extraction protocol: `extraction_method`, `extraction_devices_used`, `primary_extraction_device`, `extraction_technique`, `punch_sizes_used`, `punch_types_used`, `punch_manufacturers_used`, `punch_motion`, `motor_speed_rpm`
+- graft handling/implant protocol: `holding_solutions_used`, `primary_holding_solution`, `temperature_controlled_storage`, `sorting_performed`, `recipient_sites_created_by`, `site_creation_method`, `implantation_method`, `implantation_devices_used`, `primary_implantation_device`, `implanted_by`
+- adjunctive and aftercare protocol: `intraoperative_adjuncts_used`, `intraop_prp_used`, `intraop_exosomes_used`, `postoperative_treatments_included`, `postoperative_treatments_recommended`, `finasteride_recommended`, `minoxidil_recommended`, `donor_recovery_protocol_included`, `postoperative_protocol_notes`
+
+For this group, schema metadata flags are set to:
+
+- `isDefaultable: true`
+- `canPrefillFromDoctorDefault: true` (doctor defaults)
+- `canPrefillFromClinicDefault: true` (clinic defaults)
+
+---
+
+## Follow-up-only fields that must be updated each review
+
+Exported as `followupOnlyFields` in `src/config/auditSchema.ts`.
+
+These are explicitly fresh-entry fields for every follow-up audit:
+
+- review-stage outcomes: `outcome_audit_stage`, `growth_outcome_category`, `donor_healing_category`, `patient_satisfaction_category`, `corrective_surgery_likely`, `outcome_notes`
+- forensic review deltas: `review_concern_categories`, `claimed_evidenced_discrepancy`, `incomplete_records_flag`, `case_complexity_rating`, `auditor_confidence_level`, `forensic_notes`
+- follow-up evidence uploads: `img_followup_front`, `img_followup_top`, `img_followup_crown`, `img_followup_donor`, `img_trichoscopy`
+
+For this group, schema metadata flags are set to:
+
+- `isFollowupOnly: true`
+- `canInheritFromOriginalCase: false`
+
+Recommended follow-up UX framing:
+
+- “Copy from previous case”
+- “Inherited from original surgery record”
+- “Add advanced data to improve confidence and benchmarking”
 
 ---
 

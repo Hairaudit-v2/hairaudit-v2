@@ -22,12 +22,14 @@ export default function QuestionField({
   onChange,
   allAnswers,
   locked,
+  readOnly = false,
 }: {
   question: FormQuestion;
   value: unknown;
   onChange: (v: string | number | string[] | boolean | null) => void;
   allAnswers: Record<string, unknown>;
   locked: boolean;
+  readOnly?: boolean;
 }) {
   const dep = question.dependsOn;
   let show = true;
@@ -48,6 +50,7 @@ export default function QuestionField({
   if (!show) return null;
 
   const fieldId = `audit-${question.id}`;
+  const isDisabled = locked || readOnly;
   const baseClass = "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 disabled:opacity-60 disabled:bg-gray-100";
   const opts = question.options ?? [];
   const primaryControlId = question.type === "checkbox" ? `${fieldId}-${opts[0]?.value ?? "0"}` : fieldId;
@@ -64,7 +67,7 @@ export default function QuestionField({
             placeholder={question.placeholder}
             value={(value as string) ?? ""}
             onChange={(e) => onChange(e.target.value || null)}
-            disabled={locked}
+            disabled={isDisabled}
             autoComplete="off"
           />
         );
@@ -77,7 +80,7 @@ export default function QuestionField({
             placeholder={question.placeholder}
             value={(value as string) ?? ""}
             onChange={(e) => onChange(e.target.value || null)}
-            disabled={locked}
+            disabled={isDisabled}
           />
         );
       case "number":
@@ -93,7 +96,7 @@ export default function QuestionField({
               if (v === "") onChange(null);
               else onChange(Number(v));
             }}
-            disabled={locked}
+            disabled={isDisabled}
           />
         );
       case "date":
@@ -105,7 +108,7 @@ export default function QuestionField({
             className={baseClass}
             value={(value as string) ?? ""}
             onChange={(e) => onChange(e.target.value || null)}
-            disabled={locked}
+            disabled={isDisabled}
           />
         );
       case "rating": {
@@ -120,7 +123,7 @@ export default function QuestionField({
                 type="button"
                 id={n === min ? fieldId : undefined}
                 name={question.id}
-                disabled={locked}
+                disabled={isDisabled}
                 onClick={() => onChange(n)}
                 className={`w-10 h-10 rounded-lg border text-sm font-medium transition-colors ${
                   num === n ? "border-amber-500 bg-amber-50 text-amber-800" : "border-gray-300 hover:bg-gray-50"
@@ -140,7 +143,7 @@ export default function QuestionField({
             className={baseClass}
             value={(value as string) ?? ""}
             onChange={(e) => onChange(e.target.value || null)}
-            disabled={locked}
+            disabled={isDisabled}
           >
             <option value="">— Select —</option>
             {opts.map((o) => (
@@ -160,7 +163,7 @@ export default function QuestionField({
                   value={v}
                   checked={(value as string) === v}
                   onChange={() => onChange(v)}
-                  disabled={locked}
+                  disabled={isDisabled}
                   className="rounded-full"
                 />
                 <span className="text-sm capitalize">{v}</span>
@@ -184,7 +187,7 @@ export default function QuestionField({
                     const next = e.target.checked ? [...selected, o.value] : selected.filter((x) => x !== o.value);
                     onChange(next.length ? next : null);
                   }}
-                  disabled={locked}
+                  disabled={isDisabled}
                   className="rounded"
                 />
                 <span className="text-sm">{o.label}</span>
@@ -204,6 +207,9 @@ export default function QuestionField({
         {question.prompt}
         {question.required && <span className="text-amber-600 ml-1">*</span>}
       </label>
+      {readOnly && !locked && (
+        <p className="text-xs text-slate-500 mb-2">Inherited from original surgery record</p>
+      )}
       {question.help && <p className="text-xs text-gray-500 mb-2">{question.help}</p>}
       {render()}
     </div>

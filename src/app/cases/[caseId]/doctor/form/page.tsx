@@ -5,8 +5,16 @@ import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { canAccessCase } from "@/lib/case-access";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
-export default async function DoctorFormPage({ params }: { params: Promise<{ caseId: string }> }) {
+export default async function DoctorFormPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ caseId: string }>;
+  searchParams: Promise<{ followup?: string }>;
+}) {
   const { caseId } = await params;
+  const resolvedSearch = await searchParams;
+  const isFollowupAudit = resolvedSearch.followup === "1" || resolvedSearch.followup === "true";
   const supabase = await createSupabaseAuthServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
@@ -43,6 +51,7 @@ export default async function DoctorFormPage({ params }: { params: Promise<{ cas
         }}
         primaryCtaHref={`/cases/${caseId}/doctor/photos`}
         primaryCtaLabel="Add your photos →"
+        isFollowupAudit={isFollowupAudit}
       />
     </div>
   );
