@@ -62,6 +62,7 @@ import {
   VISIBLE_TRANSECTION_ON_TRAY_OPTIONS,
   GRAFT_TISSUE_QUALITY_CONCERN_OPTIONS,
 } from "./audit/masterSurgicalMetadata";
+import { FIELD_PROVENANCE_VALUES } from "./audit/fieldProvenance";
 
 const submissionTypeValues = SUBMISSION_TYPE_OPTIONS.map((o) => o.value) as [string, ...string[]];
 const auditDepthTypeValues = AUDIT_DEPTH_TYPE_OPTIONS.map((o) => o.value) as [string, ...string[]];
@@ -276,6 +277,7 @@ export const clinicAuditSchema = z
     auditor_confidence_level: z.enum(auditorConfidenceLevelValues).optional(),
     forensic_notes: z.string().optional(),
     surgeon_vs_technician_split_notes: z.string().optional(),
+    field_provenance: z.record(z.string(), z.enum(FIELD_PROVENANCE_VALUES)).optional(),
   })
   .refine(
     (d) => d.procedure_type.includes(d.primary_procedure_type),

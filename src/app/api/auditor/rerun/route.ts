@@ -6,7 +6,17 @@ import { inngest } from "@/lib/inngest/client";
 
 export const runtime = "nodejs";
 
-const ACTION_TYPES = ["regenerate_ai_audit", "regenerate_graft_integrity", "rebuild_pdf", "full_reaudit"] as const;
+const ACTION_TYPES = [
+  "regenerate_ai_audit",
+  "regenerate_scoring",
+  "regenerate_graft_integrity",
+  "regenerate_evidence_analysis",
+  "rebuild_pdf",
+  "regenerate_report_generation",
+  "full_reaudit",
+  "full_reaudit_latest_submission",
+  "full_reaudit_with_followup_linkage",
+] as const;
 const REASONS = [
   "new_uploads",
   "new_doctor_data",
@@ -18,6 +28,14 @@ const REASONS = [
 
 type ActionType = (typeof ACTION_TYPES)[number];
 type Reason = (typeof REASONS)[number];
+
+function normalizeAction(action: ActionType): "regenerate_ai_audit" | "regenerate_graft_integrity" | "rebuild_pdf" | "full_reaudit" {
+  if (action === "regenerate_scoring") return "regenerate_ai_audit";
+  if (action === "regenerate_evidence_analysis") return "regenerate_graft_integrity";
+  if (action === "regenerate_report_generation") return "rebuild_pdf";
+  if (action === "full_reaudit_latest_submission" || action === "full_reaudit_with_followup_linkage") return "full_reaudit";
+  return action;
+}
 
 export async function GET(req: Request) {
   try {
@@ -43,7 +61,18 @@ export async function GET(req: Request) {
       .limit(50);
 
     if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
-    return NextResponse.json({ ok: true, items: data ?? [] });
+    let tracking: Record<string, unknown> | null = null;
+    try {
+      const trackingRes = await admin
+        .from("cases")
+        .select("rerun_count, last_rerun_at, last_rerun_by, processing_log")
+        .eq("id", caseId)
+        .maybeSingle();
+      tracking = (trackingRes.data ?? null) as Record<string, unknown> | null;
+    } catch {
+      tracking = null;
+    }
+    return NextResponse.json({ ok: true, items: data ?? [], tracking: tracking ?? null });
   } catch (e: unknown) {
     return NextResponse.json(
       { ok: false, error: e instanceof Error ? e.message : "Server error" },
@@ -74,8 +103,20 @@ export async function POST(req: Request) {
     if (!ACTION_TYPES.includes(action)) return NextResponse.json({ ok: false, error: "Invalid action" }, { status: 400 });
     if (!REASONS.includes(reason)) return NextResponse.json({ ok: false, error: "Invalid reason" }, { status: 400 });
 
-    const { data: c } = await admin.from("cases").select("id").eq("id", caseId).maybeSingle();
+    let c: Record<string, unknown> | null = null;
+    try {
+      const withTracking = await admin
+        .from("cases")
+        .select("id, rerun_count, processing_log")
+        .eq("id", caseId)
+        .maybeSingle();
+      c = (withTracking.data ?? null) as Record<string, unknown> | null;
+    } catch {
+      const fallback = await admin.from("cases").select("id").eq("id", caseId).maybeSingle();
+      c = (fallback.data ?? null) as Record<string, unknown> | null;
+    }
     if (!c) return NextResponse.json({ ok: false, error: "Case not found" }, { status: 404 });
+    const normalizedAction = normalizeAction(action);
 
     const { data: latestReport } = await admin
       .from("reports")
@@ -90,7 +131,7 @@ export async function POST(req: Request) {
       .from("audit_rerun_log")
       .insert({
         case_id: caseId,
-        action_type: action,
+        action_type: normalizedAction,
         triggered_by: user.id,
         triggered_role: "auditor",
         reason,
@@ -104,11 +145,39 @@ export async function POST(req: Request) {
 
     if (logErr) return NextResponse.json({ ok: false, error: logErr.message }, { status: 500 });
 
+    const now = new Date().toISOString();
+    const existingLog = Array.isArray((c as Record<string, unknown>).processing_log)
+      ? ((c as Record<string, unknown>).processing_log as unknown[])
+      : [];
+    try {
+      await admin
+        .from("cases")
+        .update({
+          rerun_count: Number((c as Record<string, unknown>).rerun_count ?? 0) + 1,
+          last_rerun_at: now,
+          last_rerun_by: user.id,
+          processing_log: [
+            ...existingLog,
+            {
+              at: now,
+              action: normalizedAction,
+              requested_action: action,
+              reason,
+              rerun_log_id: logRow?.id ?? null,
+              by: user.id,
+            },
+          ],
+        })
+        .eq("id", caseId);
+    } catch {
+      // Tracking columns may not exist in older environments.
+    }
+
     await inngest.send({
       name: "auditor/rerun",
       data: {
         caseId,
-        action,
+        action: normalizedAction,
         reason,
         notes,
         triggeredBy: user.id,

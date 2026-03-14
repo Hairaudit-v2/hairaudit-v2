@@ -4,9 +4,14 @@ import { useState, useEffect, useCallback } from "react";
 
 const ACTION_LABELS: Record<string, string> = {
   regenerate_ai_audit: "Regenerate AI Audit",
+  regenerate_scoring: "Rerun Scoring",
   regenerate_graft_integrity: "Regenerate Graft Integrity",
+  regenerate_evidence_analysis: "Rerun Evidence Analysis",
   rebuild_pdf: "Rebuild PDF",
+  regenerate_report_generation: "Regenerate Report",
   full_reaudit: "Run Full Re-audit",
+  full_reaudit_latest_submission: "Full Re-audit (Latest Submission)",
+  full_reaudit_with_followup_linkage: "Full Re-audit (Original + Follow-up Linkage)",
 };
 
 const REASON_LABELS: Record<string, string> = {
@@ -35,6 +40,13 @@ type RerunItem = {
   created_at: string;
 };
 
+type RerunTracking = {
+  rerun_count?: number | null;
+  last_rerun_at?: string | null;
+  last_rerun_by?: string | null;
+  processing_log?: unknown[] | null;
+};
+
 export default function AuditorRerunPanel({ caseId, latestReportVersion }: { caseId: string; latestReportVersion?: number }) {
   const [items, setItems] = useState<RerunItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,6 +56,7 @@ export default function AuditorRerunPanel({ caseId, latestReportVersion }: { cas
   const [reason, setReason] = useState<string>("");
   const [notes, setNotes] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [tracking, setTracking] = useState<RerunTracking | null>(null);
 
   const fetchHistory = useCallback(async () => {
     try {
@@ -51,6 +64,7 @@ export default function AuditorRerunPanel({ caseId, latestReportVersion }: { cas
       const json = await res.json();
       if (!json.ok) throw new Error(json.error ?? "Failed to load");
       setItems(json.items ?? []);
+      setTracking((json.tracking ?? null) as RerunTracking | null);
     } catch (e: unknown) {
       setItems([]);
       setError(e instanceof Error ? e.message : "Failed to load rerun history");
@@ -101,6 +115,11 @@ export default function AuditorRerunPanel({ caseId, latestReportVersion }: { cas
           <h2 className="font-semibold text-white">Auditor Rerun</h2>
           {latestReportVersion != null && (
             <p className="text-xs text-slate-400 mt-0.5">Latest report: v{latestReportVersion}</p>
+          )}
+          {tracking && (
+            <p className="text-xs text-slate-400 mt-0.5">
+              rerun_count: {Number(tracking.rerun_count ?? 0)} · last_rerun_at: {tracking.last_rerun_at ? new Date(tracking.last_rerun_at).toLocaleString() : "—"}
+            </p>
           )}
         </div>
         {!showForm ? (

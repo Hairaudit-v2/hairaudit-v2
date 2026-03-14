@@ -35,7 +35,7 @@ export type AuditPriorityBreakdown = {
 export type OperationalAuditRow = {
   id: string;
   title: string;
-  auditType: "patient" | "doctor" | "clinic";
+  auditType: "patient" | "doctor" | "clinic" | "internal";
   status: string;
   createdAt: string;
   updatedAt: string;

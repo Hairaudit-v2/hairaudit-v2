@@ -4,6 +4,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { canAccessCase } from "@/lib/case-access";
 import { mapLegacyDoctorAnswers } from "@/lib/doctorAuditSchema";
 import { computeDoctorAiContextV1 } from "@/lib/benchmarks/domainScoring";
+import { mergeFieldProvenance } from "@/lib/audit/fieldProvenance";
 
 // GET ?caseId=... — applies backward compat mapping for legacy field names
 export async function GET(req: Request) {
@@ -77,7 +78,13 @@ export async function POST(req: Request) {
 
   const currentSummary = (existing?.summary ?? {}) as Record<string, unknown>;
   const currentDoctor = (currentSummary.doctor_answers ?? {}) as Record<string, unknown>;
-  const doctorAnswers = { ...currentDoctor, ...incomingClean } as Record<string, unknown>;
+  const provenance = mergeFieldProvenance({
+    previousAnswers: currentDoctor,
+    incomingAnswers: incomingClean,
+    previousProvenance: currentDoctor.field_provenance,
+    incomingProvenance: incomingClean.field_provenance,
+  });
+  const doctorAnswers = { ...currentDoctor, ...incomingClean, field_provenance: provenance } as Record<string, unknown>;
 
   // Compute completeness/confidence context continuously on save (best-effort).
   try {

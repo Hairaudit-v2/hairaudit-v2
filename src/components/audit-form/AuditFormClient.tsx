@@ -91,6 +91,7 @@ export default function AuditFormClient({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null);
+  const [fieldProvenance, setFieldProvenance] = useState<Record<string, string>>({});
   const [workflowNotice, setWorkflowNotice] = useState<string | null>(null);
   const [onlyEditChanged, setOnlyEditChanged] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState<Record<string, boolean>>({});
@@ -129,6 +130,14 @@ export default function AuditFormClient({
     }
   }, []);
 
+  const withProvenance = useCallback(
+    (base: Record<string, unknown>) => ({
+      ...base,
+      field_provenance: fieldProvenance,
+    }),
+    [fieldProvenance]
+  );
+
   const load = useCallback(async () => {
     const res = await fetch(loadUrl);
     const json = await res.json().catch(() => ({}));
@@ -139,6 +148,10 @@ export default function AuditFormClient({
 
     if (hasLoadedAnswers) {
       setAnswers(loaded as Record<string, unknown>);
+      const loadedProvenance = loaded?.field_provenance;
+      if (loadedProvenance && typeof loadedProvenance === "object" && !Array.isArray(loadedProvenance)) {
+        setFieldProvenance(loadedProvenance as Record<string, string>);
+      }
     } else if (workflowActor) {
       const defaults = readStorageObject(defaultsStorageKey);
       if (defaults) {
@@ -159,6 +172,16 @@ export default function AuditFormClient({
 
   const update = (id: string, value: string | number | string[] | boolean | null) => {
     hasEditedRef.current = true;
+    setFieldProvenance((prev) => {
+      const prevTag = prev[id];
+      const nextTag =
+        prevTag === "prefilled_from_doctor_default" ||
+        prevTag === "prefilled_from_clinic_default" ||
+        prevTag === "inherited_from_original_case"
+          ? "edited_after_prefill"
+          : "entered_manually";
+      return { ...prev, [id]: nextTag };
+    });
     setAnswers((prev) => ({ ...prev, [id]: value }));
   };
 
@@ -167,17 +190,18 @@ export default function AuditFormClient({
     setMessage(null);
     setSaving(true);
     try {
+      const payloadWithProvenance = withProvenance(payload);
       const res = await fetch(saveUrl, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ [payloadKey]: payload }),
+        body: JSON.stringify({ [payloadKey]: payloadWithProvenance }),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json?.error ?? "Save failed");
       if (lastCaseStorageKey && typeof window !== "undefined") {
         window.localStorage.setItem(
           lastCaseStorageKey,
-          JSON.stringify({ caseId, savedAt: new Date().toISOString(), answers: payload })
+          JSON.stringify({ caseId, savedAt: new Date().toISOString(), answers: payloadWithProvenance })
         );
       }
       setMessage({ type: "ok", text: "Saved" });
@@ -199,17 +223,18 @@ export default function AuditFormClient({
     }
     setSaving(true);
     try {
+      const payloadWithProvenance = withProvenance(answers);
       const res = await fetch(saveUrl, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ [payloadKey]: answers }),
+        body: JSON.stringify({ [payloadKey]: payloadWithProvenance }),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json?.error ?? "Save failed");
       if (lastCaseStorageKey && typeof window !== "undefined") {
         window.localStorage.setItem(
           lastCaseStorageKey,
-          JSON.stringify({ caseId, savedAt: new Date().toISOString(), answers })
+          JSON.stringify({ caseId, savedAt: new Date().toISOString(), answers: payloadWithProvenance })
         );
       }
       router.push(href);
@@ -234,6 +259,12 @@ export default function AuditFormClient({
     }
     hasEditedRef.current = true;
     baselineRef.current = prefill;
+    setFieldProvenance((prev) => {
+      const next = { ...prev };
+      const tag = workflowActor === "doctor" ? "prefilled_from_doctor_default" : "prefilled_from_clinic_default";
+      for (const key of Object.keys(prefill)) next[key] = tag;
+      return next;
+    });
     setAnswers((prev) => ({ ...prev, ...prefill }));
     setWorkflowNotice("Applied saved defaults. Only edit what changed.");
   };
@@ -260,6 +291,11 @@ export default function AuditFormClient({
       }
       hasEditedRef.current = true;
       baselineRef.current = prefill;
+      setFieldProvenance((prev) => {
+        const next = { ...prev };
+        for (const key of Object.keys(prefill)) next[key] = "inherited_from_original_case";
+        return next;
+      });
       setAnswers((prev) => ({ ...prev, ...prefill }));
       setWorkflowNotice("Copied reusable data from previous case. Only edit what changed.");
     } catch {

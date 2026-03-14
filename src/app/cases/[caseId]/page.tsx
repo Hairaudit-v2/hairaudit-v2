@@ -112,12 +112,12 @@ export default async function Page({
     /* profiles may not exist / RLS may block */
   }
 
-  let c: { id: string; title?: string; status?: string; created_at?: string; user_id?: string; submitted_at?: string | null; patient_id?: string | null; doctor_id?: string | null; clinic_id?: string | null; audit_type?: "patient" | "doctor" | "clinic" | null; evidence_score_patient?: string | null; confidence_label_patient?: string | null; evidence_score_doctor?: string | null; confidence_label_doctor?: string | null; evidence_details?: Record<string, unknown> | null } | null;
+  let c: { id: string; title?: string; status?: string; created_at?: string; user_id?: string; submitted_at?: string | null; patient_id?: string | null; doctor_id?: string | null; clinic_id?: string | null; audit_type?: "patient" | "doctor" | "clinic" | null; submission_channel?: string | null; visibility_scope?: string | null; rerun_count?: number | null; last_rerun_at?: string | null; last_rerun_by?: string | null; evidence_score_patient?: string | null; confidence_label_patient?: string | null; evidence_score_doctor?: string | null; confidence_label_doctor?: string | null; evidence_details?: Record<string, unknown> | null } | null;
   let caseRes: any;
   try {
     caseRes = await db
       .from("cases")
-      .select("id, title, status, created_at, user_id, submitted_at, patient_id, doctor_id, clinic_id, audit_type, evidence_score_patient, confidence_label_patient, evidence_score_doctor, confidence_label_doctor, evidence_details")
+      .select("id, title, status, created_at, user_id, submitted_at, patient_id, doctor_id, clinic_id, audit_type, submission_channel, visibility_scope, rerun_count, last_rerun_at, last_rerun_by, evidence_score_patient, confidence_label_patient, evidence_score_doctor, confidence_label_doctor, evidence_details")
       .eq("id", caseId)
       .maybeSingle();
   } catch (e) {
@@ -125,7 +125,7 @@ export default async function Page({
     throw e;
   }
   if (caseRes.error && String(caseRes.error.message || "").includes("evidence")) {
-    const fallback = await db.from("cases").select("id, title, status, created_at, user_id, submitted_at, patient_id, doctor_id, clinic_id, audit_type").eq("id", caseId).maybeSingle();
+    const fallback = await db.from("cases").select("id, title, status, created_at, user_id, submitted_at, patient_id, doctor_id, clinic_id, audit_type, submission_channel, visibility_scope").eq("id", caseId).maybeSingle();
     c = fallback.data;
   } else {
     c = caseRes.data;
@@ -242,11 +242,19 @@ export default async function Page({
           : "border-white/10 bg-white/5 text-slate-200/80";
 
   const latestReport = reports?.[0] ?? null;
+  const previousReport = reports?.[1] ?? null;
   const auditorReviewEligibility = (latestReport as { auditor_review_eligibility?: string } | null)?.auditor_review_eligibility;
   const provisionalStatus = (latestReport as { provisional_status?: string } | null)?.provisional_status;
   const countsForAwards = (latestReport as { counts_for_awards?: boolean } | null)?.counts_for_awards;
   const showAuditorReview = isAuditor && latestReport && isAuditorReviewAvailable(auditorReviewEligibility);
   const latestSummary = (latestReport?.summary as Record<string, unknown>) ?? {};
+  const previousSummary = (previousReport?.summary as Record<string, unknown>) ?? {};
+  const latestDoctorAnswers = (latestSummary?.doctor_answers as Record<string, unknown> | undefined) ?? null;
+  const latestClinicAnswers = (latestSummary?.clinic_answers as Record<string, unknown> | undefined) ?? null;
+  const previousDoctorAnswers = (previousSummary?.doctor_answers as Record<string, unknown> | undefined) ?? null;
+  const previousClinicAnswers = (previousSummary?.clinic_answers as Record<string, unknown> | undefined) ?? null;
+  const latestStructuredAnswers = latestDoctorAnswers ?? latestClinicAnswers;
+  const previousStructuredAnswers = previousDoctorAnswers ?? previousClinicAnswers;
   const forensic = (latestSummary?.forensic_audit as Record<string, unknown> | null | undefined) ?? null;
   const domainV1 = forensic && typeof forensic === "object" ? ((forensic as any).domain_scores_v1 as { domains?: unknown[] } | null | undefined) : null;
   const domains = Array.isArray(domainV1?.domains) ? (domainV1?.domains as any[]) : [];
@@ -279,6 +287,16 @@ export default async function Page({
     monthsFromProcedureDate(normalizedPatient?.procedure_date ? String(normalizedPatient.procedure_date) : null) ??
     monthsFromBucket(normalizedPatient?.months_since ? String(normalizedPatient.months_since) : null);
   const auditType = c.audit_type ?? (c.clinic_id ? "clinic" : c.doctor_id ? "doctor" : "patient");
+  const auditSource =
+    c.visibility_scope === "internal" || c.submission_channel === "imported"
+      ? "internal"
+      : c.submission_channel === "doctor_submitted"
+        ? "doctor"
+        : c.submission_channel === "clinic_submitted"
+          ? "clinic"
+          : c.submission_channel === "patient_submitted"
+            ? "patient"
+            : auditType;
   const confidenceLabel = overallScores?.confidence_grade ?? c.confidence_label_doctor ?? c.confidence_label_patient ?? "pending";
   const giiLimitations: string[] =
     Array.isArray(graftIntegrityEstimate?.limitations) ? (graftIntegrityEstimate.limitations as string[]) : [];
@@ -323,6 +341,68 @@ export default async function Page({
       : showClinicFlow
         ? `/cases/${c.id}/clinic/form`
         : `/cases/${c.id}`;
+  const priorityEvidence = {
+    preopDonor: (uploads ?? []).filter((u) => String((u as { type?: string }).type ?? "").includes("img_preop_donor_rear")).length,
+    postopDonor: (uploads ?? []).filter((u) => String((u as { type?: string }).type ?? "").includes("img_immediate_postop_donor")).length,
+    postopRecipient: (uploads ?? []).filter((u) => String((u as { type?: string }).type ?? "").includes("img_immediate_postop_recipient")).length,
+    graftTrayCloseup: (uploads ?? []).filter((u) => String((u as { type?: string }).type ?? "").includes("img_graft_tray_closeup")).length,
+    followup: (uploads ?? []).filter((u) => {
+      const t = String((u as { type?: string }).type ?? "");
+      return t.includes("img_followup_front") || t.includes("img_followup_top") || t.includes("img_followup_crown") || t.includes("img_followup_donor");
+    }).length,
+  };
+  const changedFieldsOnly = (() => {
+    if (!latestStructuredAnswers || !previousStructuredAnswers) return [] as string[];
+    const keys = new Set<string>([
+      ...Object.keys(previousStructuredAnswers),
+      ...Object.keys(latestStructuredAnswers),
+    ]);
+    const changed: string[] = [];
+    for (const key of keys) {
+      if (key === "field_provenance") continue;
+      const a = previousStructuredAnswers[key];
+      const b = latestStructuredAnswers[key];
+      const aa = Array.isArray(a) ? [...a].sort() : a;
+      const bb = Array.isArray(b) ? [...b].sort() : b;
+      if (JSON.stringify(aa ?? null) !== JSON.stringify(bb ?? null)) changed.push(key);
+    }
+    return changed.slice(0, 40);
+  })();
+  const completenessScoreNum =
+    typeof (completenessIndex as { score?: number } | null)?.score === "number"
+      ? Number((completenessIndex as { score?: number }).score)
+      : typeof (completenessIndex as { completeness_score?: number } | null)?.completeness_score === "number"
+        ? Number((completenessIndex as { completeness_score?: number }).completeness_score)
+        : null;
+  const evidenceScoreNum =
+    c.evidence_score_doctor != null
+      ? Number(c.evidence_score_doctor)
+      : c.evidence_score_patient != null
+        ? Number(c.evidence_score_patient)
+        : null;
+  const confidenceEstimateNum =
+    typeof overallScores?.confidence_multiplier === "number"
+      ? Math.round(overallScores.confidence_multiplier * 100)
+      : null;
+  const technicalDataSufficiency =
+    priorityEvidence.graftTrayCloseup > 0 && priorityEvidence.postopRecipient > 0 && priorityEvidence.postopDonor > 0
+      ? "high"
+      : priorityEvidence.postopRecipient > 0 || priorityEvidence.postopDonor > 0
+        ? "medium"
+        : "low";
+  const manualAuditReadinessScore = (() => {
+    const parts = [completenessScoreNum, evidenceScoreNum, confidenceEstimateNum].filter(
+      (v): v is number => typeof v === "number" && !Number.isNaN(v)
+    );
+    if (!parts.length) return null;
+    return Math.round(parts.reduce((a, b) => a + b, 0) / parts.length);
+  })();
+  const missingCriticalEvidenceFlags = [
+    priorityEvidence.preopDonor === 0 ? "missing_preop_donor" : null,
+    priorityEvidence.postopDonor === 0 ? "missing_immediate_postop_donor" : null,
+    priorityEvidence.postopRecipient === 0 ? "missing_immediate_postop_recipient" : null,
+    priorityEvidence.graftTrayCloseup === 0 ? "missing_graft_tray_closeup" : null,
+  ].filter((v): v is string => !!v);
 
   return (
     <div className="mx-auto mt-4 max-w-[1200px] rounded-3xl border border-slate-800 bg-slate-950 px-4 pb-10 pt-4 shadow-2xl sm:px-6">
@@ -356,6 +436,10 @@ export default async function Page({
               <div className="rounded-xl border border-white/10 bg-white/5 p-3 transition-colors hover:bg-white/10">
                 <p className="text-xs uppercase tracking-wide text-slate-400">Clinic</p>
                 <p className="mt-1 text-sm text-slate-100">{clinicLabel}</p>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-white/5 p-3 transition-colors hover:bg-white/10">
+                <p className="text-xs uppercase tracking-wide text-slate-400">Audit Source</p>
+                <p className="mt-1 text-sm text-slate-100 capitalize">{auditSource}</p>
               </div>
               <div className="rounded-xl border border-white/10 bg-white/5 p-3 transition-colors hover:bg-white/10">
                 <p className="text-xs uppercase tracking-wide text-slate-400">Procedure Date</p>
@@ -408,6 +492,11 @@ export default async function Page({
                 <p className="mb-2 text-xs uppercase tracking-wide text-slate-400">Download Report</p>
                 {latestReport?.pdf_path ? <DownloadReport pdfPath={latestReport.pdf_path} /> : <p className="text-xs text-slate-300/70">No PDF yet.</p>}
               </div>
+              <div className="rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm">
+                <p className="mb-1 text-xs uppercase tracking-wide text-slate-400">Rerun Tracking</p>
+                <p className="text-xs text-slate-200">rerun_count: {Number(c.rerun_count ?? 0)}</p>
+                <p className="text-xs text-slate-300/80">last_rerun_at: {c.last_rerun_at ? new Date(c.last_rerun_at).toLocaleString() : "—"}</p>
+              </div>
             </div>
           </div>
         </div>
@@ -425,6 +514,39 @@ export default async function Page({
           giiLimitations={giiLimitations}
           aiObservations={summaryObservations}
         />
+      )}
+
+      {isAuditor && (
+        <section className="mt-6 grid gap-4 lg:grid-cols-2">
+          <div className="rounded-2xl border border-slate-700 bg-slate-900 p-5">
+            <h2 className="text-base font-semibold text-white">Evidence Priority Panel</h2>
+            <p className="mt-1 text-xs text-slate-400">High-value evidence coverage for manual readiness.</p>
+            <dl className="mt-3 space-y-2 text-sm">
+              <div className="flex justify-between text-slate-200"><dt>Pre-op donor</dt><dd>{priorityEvidence.preopDonor}</dd></div>
+              <div className="flex justify-between text-slate-200"><dt>Immediate post-op donor</dt><dd>{priorityEvidence.postopDonor}</dd></div>
+              <div className="flex justify-between text-slate-200"><dt>Immediate post-op recipient</dt><dd>{priorityEvidence.postopRecipient}</dd></div>
+              <div className="flex justify-between text-slate-200"><dt>Graft tray close-up images</dt><dd>{priorityEvidence.graftTrayCloseup}</dd></div>
+              <div className="flex justify-between text-slate-200"><dt>Follow-up front/top/crown/donor</dt><dd>{priorityEvidence.followup}</dd></div>
+            </dl>
+          </div>
+          <div className="rounded-2xl border border-slate-700 bg-slate-900 p-5">
+            <h2 className="text-base font-semibold text-white">Follow-up Delta View</h2>
+            <p className="mt-1 text-xs text-slate-400">Original surgery baseline versus latest follow-up submission.</p>
+            <p className="mt-3 text-sm text-slate-200">Changed fields: {changedFieldsOnly.length}</p>
+            {changedFieldsOnly.length > 0 ? (
+              <div className="mt-2 max-h-40 overflow-y-auto rounded-lg border border-slate-700 p-2 text-xs text-slate-300">
+                {changedFieldsOnly.map((field) => (
+                  <div key={field} className="border-b border-slate-800 py-1 last:border-b-0">
+                    {field}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-2 text-xs text-slate-400">No explicit field deltas detected between latest and prior report versions.</p>
+            )}
+            <p className="mt-3 text-xs text-slate-400">Inherited baseline fields are reflected by field provenance tags in submission summaries.</p>
+          </div>
+        </section>
       )}
 
       {role === "auditor" && c.status === "audit_failed" && (
@@ -488,6 +610,16 @@ export default async function Page({
         <div className="rounded-2xl border border-slate-700 bg-slate-900 p-6">
           <h2 className="text-lg font-semibold text-white">Intelligence Dashboard</h2>
           <p className="mt-1 text-sm text-slate-300/80">Domain signal strengths and benchmark readiness.</p>
+          <div className="mt-4 grid gap-2 sm:grid-cols-2">
+            <div className="rounded-lg border border-slate-700 bg-slate-800/80 p-2 text-xs text-slate-200">Data completeness score: {completenessScoreNum ?? "N/A"}</div>
+            <div className="rounded-lg border border-slate-700 bg-slate-800/80 p-2 text-xs text-slate-200">Evidence score: {evidenceScoreNum ?? "N/A"}</div>
+            <div className="rounded-lg border border-slate-700 bg-slate-800/80 p-2 text-xs text-slate-200">Technical data sufficiency: {technicalDataSufficiency}</div>
+            <div className="rounded-lg border border-slate-700 bg-slate-800/80 p-2 text-xs text-slate-200">Manual audit readiness score: {manualAuditReadinessScore ?? "N/A"}</div>
+            <div className="rounded-lg border border-slate-700 bg-slate-800/80 p-2 text-xs text-slate-200">Confidence estimate: {confidenceEstimateNum != null ? `${confidenceEstimateNum}%` : String(confidenceLabel).toUpperCase()}</div>
+            <div className="rounded-lg border border-slate-700 bg-slate-800/80 p-2 text-xs text-slate-200">
+              Missing critical evidence flags: {missingCriticalEvidenceFlags.length ? missingCriticalEvidenceFlags.join(", ") : "none"}
+            </div>
+          </div>
 
           <div className="mt-4 space-y-3">
             {domains.length > 0 ? (
@@ -607,6 +739,7 @@ export default async function Page({
         const summary = latest?.summary as Record<string, unknown> | undefined;
         const raw = summary?.doctor_answers as Record<string, unknown> | undefined;
         const doctorAnswers = raw ? mapLegacyDoctorAnswers(raw) : null;
+        const clinicAnswers = (summary?.clinic_answers as Record<string, unknown> | undefined) ?? null;
         const scoring = (raw as any)?.scoring ?? null;
         const scoringVersion = (raw as any)?.scoring_version ?? null;
         const scoringGeneratedAt = (raw as any)?.scoring_generated_at ?? null;
@@ -617,12 +750,26 @@ export default async function Page({
             ? r.patient_audit_v2
             : (summary?.patient_answers as Record<string, unknown> | undefined) ?? null;
         const hasDoctor = doctorAnswers && Object.keys(doctorAnswers).length > 0;
+        const hasClinic = clinicAnswers && Object.keys(clinicAnswers).length > 0;
         const hasPatient = patientAnswers && Object.keys(patientAnswers).length > 0;
         return (
           <>
             {hasDoctor && (
               <div className="mt-6">
-                <DoctorAnswersSummary answers={doctorAnswers!} />
+                <DoctorAnswersSummary
+                  answers={doctorAnswers!}
+                  baselineAnswers={previousDoctorAnswers}
+                  title="Doctor Submission Summary"
+                />
+              </div>
+            )}
+            {hasClinic && (
+              <div className="mt-6">
+                <DoctorAnswersSummary
+                  answers={clinicAnswers!}
+                  baselineAnswers={previousClinicAnswers}
+                  title="Clinic Submission Summary"
+                />
               </div>
             )}
             {(scoring && typeof scoring === "object") && (

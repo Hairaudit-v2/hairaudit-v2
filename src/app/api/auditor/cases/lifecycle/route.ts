@@ -5,7 +5,14 @@ import { isAuditor } from "@/lib/auth/isAuditor";
 
 export const runtime = "nodejs";
 
-type Action = "mark_in_progress" | "request_more_information" | "archive" | "delete";
+type Action =
+  | "mark_in_progress"
+  | "mark_needs_manual_review"
+  | "request_more_information"
+  | "escalate_second_reviewer"
+  | "suppress_public_visibility"
+  | "archive"
+  | "delete";
 
 export async function POST(req: Request) {
   try {
@@ -26,7 +33,17 @@ export async function POST(req: Request) {
     const action = String(body?.action ?? "").trim() as Action;
     const reason = String(body?.reason ?? "").trim();
     if (!caseId) return NextResponse.json({ ok: false, error: "Missing caseId" }, { status: 400 });
-    if (!["mark_in_progress", "request_more_information", "archive", "delete"].includes(action)) {
+    if (
+      ![
+        "mark_in_progress",
+        "mark_needs_manual_review",
+        "request_more_information",
+        "escalate_second_reviewer",
+        "suppress_public_visibility",
+        "archive",
+        "delete",
+      ].includes(action)
+    ) {
       return NextResponse.json({ ok: false, error: "Invalid action" }, { status: 400 });
     }
 
@@ -73,6 +90,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: true });
     }
 
+    if (action === "suppress_public_visibility") {
+      const { error: updErr } = await admin
+        .from("cases")
+        .update({
+          visibility_scope: "internal",
+          auditor_last_edited_at: now,
+          updated_at: now,
+        })
+        .eq("id", caseId)
+        .is("deleted_at", null);
+      if (updErr) return NextResponse.json({ ok: false, error: updErr.message }, { status: 500 });
+      return NextResponse.json({ ok: true });
+    }
+
     if (action === "delete") {
       if (!reason) {
         return NextResponse.json({ ok: false, error: "Delete reason is required." }, { status: 400 });
@@ -107,14 +138,24 @@ export async function POST(req: Request) {
 
     const summary = (latestReport.summary ?? {}) as Record<string, unknown>;
     const auditorReview = (summary.auditor_review ?? {}) as Record<string, unknown>;
+    const shouldRequestMoreInfo = action === "request_more_information";
     const nextSummary = {
       ...summary,
       auditor_review: {
         ...auditorReview,
-        needs_more_evidence: true,
-        needs_more_evidence_at: now,
-        needs_more_evidence_by: user.id,
-        needs_more_evidence_reason: reason || "Auditor requested more information.",
+        needs_more_evidence: shouldRequestMoreInfo ? true : Boolean(auditorReview?.needs_more_evidence),
+        needs_more_evidence_at:
+          shouldRequestMoreInfo ? now : (auditorReview?.needs_more_evidence_at as string | null | undefined) ?? null,
+        needs_more_evidence_by:
+          shouldRequestMoreInfo ? user.id : (auditorReview?.needs_more_evidence_by as string | null | undefined) ?? null,
+        needs_more_evidence_reason:
+          shouldRequestMoreInfo
+            ? reason || "Auditor requested more information."
+            : (auditorReview?.needs_more_evidence_reason as string | null | undefined) ?? null,
+        needs_manual_review: action === "mark_needs_manual_review" ? true : auditorReview?.needs_manual_review,
+        escalated_second_reviewer: action === "escalate_second_reviewer" ? true : auditorReview?.escalated_second_reviewer,
+        escalated_second_reviewer_at:
+          action === "escalate_second_reviewer" ? now : (auditorReview?.escalated_second_reviewer_at as string | null | undefined) ?? null,
       },
     };
 

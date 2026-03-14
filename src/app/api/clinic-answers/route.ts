@@ -3,6 +3,7 @@ import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { canAccessCase } from "@/lib/case-access";
 import { validateClinicAnswers } from "@/lib/clinicAuditSchema";
+import { mergeFieldProvenance } from "@/lib/audit/fieldProvenance";
 
 // GET ?caseId=...
 export async function GET(req: Request) {
@@ -59,7 +60,8 @@ export async function POST(req: Request) {
   if (!clinicAnswers || typeof clinicAnswers !== "object") {
     return NextResponse.json({ error: "Missing clinicAnswers" }, { status: 400 });
   }
-  const validationError = validateClinicAnswers(clinicAnswers as Record<string, unknown>);
+  const incomingRecord = clinicAnswers as Record<string, unknown>;
+  const validationError = validateClinicAnswers(incomingRecord);
   if (validationError) {
     return NextResponse.json({ error: validationError }, { status: 400 });
   }
@@ -73,7 +75,15 @@ export async function POST(req: Request) {
     .maybeSingle();
 
   const currentSummary = (existing?.summary ?? {}) as Record<string, unknown>;
-  const nextSummary = { ...currentSummary, clinic_answers: clinicAnswers };
+  const currentClinic = (currentSummary.clinic_answers ?? {}) as Record<string, unknown>;
+  const provenance = mergeFieldProvenance({
+    previousAnswers: currentClinic,
+    incomingAnswers: incomingRecord,
+    previousProvenance: currentClinic.field_provenance,
+    incomingProvenance: incomingRecord.field_provenance,
+  });
+  const mergedClinicAnswers = { ...currentClinic, ...incomingRecord, field_provenance: provenance };
+  const nextSummary = { ...currentSummary, clinic_answers: mergedClinicAnswers };
 
   if (existing) {
     await admin.from("reports").update({ summary: nextSummary }).eq("id", existing.id);

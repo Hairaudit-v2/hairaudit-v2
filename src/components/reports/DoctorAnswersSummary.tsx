@@ -1,88 +1,103 @@
 "use client";
 
-/** Displays key doctor audit fields prominently for admin/review */
+import { CLINIC_AUDIT_SECTIONS } from "@/lib/clinicAuditForm";
+import { DOCTOR_AUDIT_SECTIONS } from "@/lib/doctorAuditForm";
+
+type ProvenanceValue =
+  | "entered_manually"
+  | "prefilled_from_doctor_default"
+  | "prefilled_from_clinic_default"
+  | "inherited_from_original_case"
+  | "edited_after_prefill"
+  | "confirmed_by_submitter";
+
+function formatValue(value: unknown): string {
+  if (value === null || value === undefined || value === "") return "—";
+  if (Array.isArray(value)) return value.join(", ");
+  if (typeof value === "boolean") return value ? "Yes" : "No";
+  return String(value);
+}
+
+function provenanceLabel(value: string | undefined): string | null {
+  const labels: Record<ProvenanceValue, string> = {
+    entered_manually: "entered manually",
+    prefilled_from_doctor_default: "prefilled from doctor default",
+    prefilled_from_clinic_default: "prefilled from clinic default",
+    inherited_from_original_case: "inherited from original surgery record",
+    edited_after_prefill: "edited after prefill",
+    confirmed_by_submitter: "confirmed by submitter",
+  };
+  if (!value) return null;
+  return labels[value as ProvenanceValue] ?? value;
+}
+
 export default function DoctorAnswersSummary({
   answers,
   className = "",
+  title = "Doctor / Clinic Submission Summary",
+  baselineAnswers = null,
 }: {
   answers: Record<string, unknown> | null | undefined;
   className?: string;
+  title?: string;
+  baselineAnswers?: Record<string, unknown> | null;
 }) {
   if (!answers || typeof answers !== "object") return null;
   const a = answers as Record<string, unknown>;
+  const fieldProvenance = (a.field_provenance as Record<string, string> | undefined) ?? {};
 
-  const fmt = (v: unknown) => (v === null || v === undefined || v === "" ? "—" : String(v));
-  const label = (m: Record<string, string>, v: unknown) => m[fmt(v)] ?? fmt(v);
+  const labelByField = new Map<string, string>();
+  const allSections = [...DOCTOR_AUDIT_SECTIONS, ...CLINIC_AUDIT_SECTIONS];
+  for (const section of allSections) {
+    for (const question of section.questions) {
+      if (!labelByField.has(question.id)) labelByField.set(question.id, question.prompt);
+    }
+  }
 
-  const procedureLabels: Record<string, string> = {
-    fue_manual: "FUE (Manual)",
-    fue_motorized: "FUE (Motorized)",
-    fue_robotic: "FUE (Robotic)",
-    fut: "FUT",
-    combined: "Combined FUT + FUE",
-  };
+  const hiddenKeys = new Set(["field_provenance", "ai_context", "scoring", "scoring_version", "scoring_generated_at"]);
+  const entries = Object.entries(a).filter(([key, value]) => {
+    if (hiddenKeys.has(key)) return false;
+    return value !== undefined && value !== null && value !== "";
+  });
 
   return (
     <div className={`rounded-xl border border-slate-200 bg-white p-5 ${className}`}>
-      <h3 className="font-semibold text-slate-900 mb-4">Doctor / Clinic Submission Summary</h3>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
-            Procedure & Grafts
-          </h4>
-          <dl className="space-y-1 text-sm">
-            <div className="flex justify-between gap-2">
-              <dt className="text-slate-600">Procedure type</dt>
-              <dd className="font-medium">{label(procedureLabels, a.procedureType)}</dd>
-            </div>
-            <div className="flex justify-between gap-2">
-              <dt className="text-slate-600">Grafts extracted</dt>
-              <dd className="font-medium">{fmt(a.totalGraftsExtracted)}</dd>
-            </div>
-            <div className="flex justify-between gap-2">
-              <dt className="text-slate-600">Grafts implanted</dt>
-              <dd className="font-medium">{fmt(a.totalGraftsImplanted)}</dd>
-            </div>
+      <h3 className="font-semibold text-slate-900 mb-4">{title}</h3>
+      {entries.length === 0 ? (
+        <p className="text-sm text-slate-500">No submitted values yet.</p>
+      ) : (
+        <div className="max-h-[520px] overflow-y-auto">
+          <dl className="space-y-2 text-sm">
+            {entries.map(([key, value]) => {
+              const label = labelByField.get(key) ?? key;
+              const provenance = provenanceLabel(fieldProvenance[key]);
+              const baseline = baselineAnswers?.[key];
+              const changed =
+                baseline !== undefined &&
+                JSON.stringify(Array.isArray(baseline) ? [...(baseline as unknown[])].sort() : baseline) !==
+                  JSON.stringify(Array.isArray(value) ? [...value].sort() : value);
+              return (
+                <div key={key} className="rounded-md border border-slate-100 px-3 py-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <dt className="text-slate-700">{label}</dt>
+                    {provenance && (
+                      <span className="rounded border border-slate-300 px-1.5 py-0.5 text-[10px] text-slate-600">
+                        {provenance}
+                      </span>
+                    )}
+                  </div>
+                  <dd className="mt-1 font-medium text-slate-900">{formatValue(value)}</dd>
+                  {changed && (
+                    <p className="mt-1 text-[11px] text-amber-700">Changed in latest follow-up submission</p>
+                  )}
+                </div>
+              );
+            })}
           </dl>
         </div>
-        <div>
-          <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
-            Personnel & Preservation
-          </h4>
-          <dl className="space-y-1 text-sm">
-            <div className="flex justify-between gap-2">
-              <dt className="text-slate-600">Extraction by</dt>
-              <dd className="font-medium capitalize">{fmt(a.extractionPerformedBy)}</dd>
-            </div>
-            <div className="flex justify-between gap-2">
-              <dt className="text-slate-600">Implantation by</dt>
-              <dd className="font-medium capitalize">{fmt(a.implantationPerformedBy)}</dd>
-            </div>
-            <div className="flex justify-between gap-2">
-              <dt className="text-slate-600">Holding solution</dt>
-              <dd className="font-medium">{label({ saline: "Saline", hypothermic: "Hypothermic", atp_enhanced: "ATP-enhanced", other: "Other" }, a.holdingSolution)}</dd>
-            </div>
-          </dl>
-        </div>
-      </div>
-      <div className="mt-4 pt-4 border-t border-slate-100">
-        <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
-          Implantation
-        </h4>
-        <dl className="space-y-1 text-sm">
-          <div className="flex justify-between gap-2">
-            <dt className="text-slate-600">Recipient tool</dt>
-            <dd className="font-medium">{label({ steel_blade: "Steel blade", sapphire_blade: "Sapphire blade", needle: "Needle", implanter_pen: "Implanter pen", mixed: "Mixed" }, a.recipientTool)}</dd>
-          </div>
-          <div className="flex justify-between gap-2">
-            <dt className="text-slate-600">Implantation method</dt>
-            <dd className="font-medium">{label({ forceps: "Forceps", premade_slits_forceps: "Pre-made slits + forceps", implanter: "Implanter" }, a.implantationMethod)}</dd>
-          </div>
-        </dl>
-      </div>
-      <div className="mt-4 pt-4 border-t border-slate-100 flex justify-between items-center text-sm">
-        <span className="text-slate-600">Doctor</span>
-        <span className="font-medium">{fmt(a.doctorName) || fmt((a as any).doctor_name)}</span>
+      )}
+      <div className="mt-4 border-t border-slate-100 pt-3 text-xs text-slate-500">
+        Field provenance helps auditors distinguish manual entries, default-prefilled values, inherited baseline values, and post-prefill edits.
       </div>
     </div>
   );

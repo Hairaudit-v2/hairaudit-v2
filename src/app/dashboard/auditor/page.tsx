@@ -30,6 +30,8 @@ type CaseDashboardRow = {
   updated_at?: string | null;
   submitted_at?: string | null;
   audit_type?: "patient" | "doctor" | "clinic" | null;
+  submission_channel?: string | null;
+  visibility_scope?: string | null;
   patient_id?: string | null;
   doctor_id?: string | null;
   clinic_id?: string | null;
@@ -95,13 +97,14 @@ export default async function AuditorDashboardPage({
     .from("cases")
     .select(
       "id, title, status, created_at, updated_at, submitted_at, audit_type, patient_id, doctor_id, clinic_id, assigned_auditor_id, auditor_last_edited_at, archived_at, archived_by, archived_reason, deleted_at"
+      + ", submission_channel, visibility_scope"
     )
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
 
   let cases: CaseDashboardRow[] = [];
   if (!primaryCasesRes.error) {
-    cases = (primaryCasesRes.data ?? []) as CaseDashboardRow[];
+    cases = ((primaryCasesRes.data ?? []) as unknown) as CaseDashboardRow[];
   } else if (isMissingFeatureError(primaryCasesRes.error)) {
     const fallbackCasesRes = await admin
       .from("cases")

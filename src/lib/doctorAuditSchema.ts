@@ -67,6 +67,7 @@ import {
   PUNCH_MOTION_OPTIONS,
   TEMPERATURE_CONTROLLED_STORAGE_OPTIONS,
 } from "./audit/masterSurgicalMetadata";
+import { FIELD_PROVENANCE_VALUES } from "./audit/fieldProvenance";
 
 // Procedure types for conditional logic
 export const PROCEDURE_TYPE_FUE = ["fue_manual", "fue_motorized", "fue_robotic", "combined"] as const;
@@ -381,6 +382,7 @@ export const doctorAuditSchema = z
     estimatedGraftSurvivalPercent: z.number().min(0).max(100).optional(),
     overallCaseSuccessRating: z.coerce.number().min(1).max(5),
     notesOptional: z.string().optional(),
+    field_provenance: z.record(z.string(), z.enum(FIELD_PROVENANCE_VALUES)).optional(),
   })
   .refine(
     (d) => d.procedure_type.includes(d.primary_procedure_type),
