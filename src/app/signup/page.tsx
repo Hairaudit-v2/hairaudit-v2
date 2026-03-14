@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import SiteHeader from "@/components/SiteHeader";
+import { HA_HOME } from "@/config/platform-links";
 
 type SignupRole = "patient" | "doctor" | "clinic";
 
@@ -22,7 +23,7 @@ export default function SignUpPage() {
   const [resending, setResending] = useState<null | "confirm" | "magic">(null);
 
   function getAppUrl() {
-    return (process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "") || "").trim() || "https://hairaudit.com";
+    return (process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "") || "").trim() || HA_HOME;
   }
 
   async function signUp(e: React.FormEvent) {

@@ -6,6 +6,7 @@ import SiteFooter from "@/components/SiteFooter";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import { createPageMetadata } from "@/lib/seo/pageMetadata";
 import TrackedLink from "@/components/analytics/TrackedLink";
+import { FI_HOME } from "@/config/platform-links";
 
 export const metadata = createPageMetadata({
   title: "Services | HairAudit",
@@ -176,9 +177,14 @@ export default function ServicesPage() {
               </p>
               <p className="mt-4 text-sm text-slate-500">
                 Methodology supported by{" "}
-                <Link href="/follicle-intelligence" className="text-amber-400 hover:text-amber-300 font-medium transition-colors">
+                <a
+                  href={FI_HOME}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-amber-400 hover:text-amber-300 font-medium transition-colors"
+                >
                   Follicle Intelligence
-                </Link>
+                </a>
                 . HairAudit does not perform procedures or promote clinics.
               </p>
             </ScrollReveal>

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { canAccessCase } from "@/lib/case-access";
+import { validateClinicAnswers } from "@/lib/clinicAuditSchema";
 
 // GET ?caseId=...
 export async function GET(req: Request) {
@@ -57,6 +58,10 @@ export async function POST(req: Request) {
   const clinicAnswers = body?.clinicAnswers;
   if (!clinicAnswers || typeof clinicAnswers !== "object") {
     return NextResponse.json({ error: "Missing clinicAnswers" }, { status: 400 });
+  }
+  const validationError = validateClinicAnswers(clinicAnswers as Record<string, unknown>);
+  if (validationError) {
+    return NextResponse.json({ error: validationError }, { status: 400 });
   }
 
   const { data: existing } = await admin

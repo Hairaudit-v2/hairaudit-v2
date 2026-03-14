@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import SiteHeader from "@/components/SiteHeader";
+import { HA_HOME } from "@/config/platform-links";
 
 const AUDITOR_EMAIL = "auditor@hairaudit.com";
 
@@ -59,7 +60,7 @@ export default function AuditorLoginPage() {
 
     const appUrl =
       (process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "") || "").trim() ||
-      "https://hairaudit.com";
+      HA_HOME;
     const { error } = await supabase.auth.resetPasswordForEmail(AUDITOR_EMAIL, {
       redirectTo: `${appUrl}/auth/recovery`,
     });

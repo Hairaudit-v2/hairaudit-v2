@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { SITE_URL } from "@/lib/constants";
 
 const PUBLIC_ROUTES = [
   "/",
@@ -34,7 +35,7 @@ const PUBLIC_ROUTES = [
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl =
-    (process.env.NEXT_PUBLIC_APP_URL ?? process.env.SITE_URL ?? "https://hairaudit.com").replace(
+    (process.env.NEXT_PUBLIC_APP_URL ?? process.env.SITE_URL ?? SITE_URL).replace(
       /\/+$/,
       ""
     );

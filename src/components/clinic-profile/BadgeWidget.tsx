@@ -26,7 +26,7 @@ type BadgeWidgetProps = {
   style?: "dark" | "light";
   /** If true, wrap in link to profile; if false, render static (e.g. iframe). */
   linkToProfile?: boolean;
-  /** Base URL for profile link (e.g. https://hairaudit.com). Omit when linkToProfile is false and same-origin. */
+  /** Base URL for profile link (e.g. https://www.hairaudit.com). Omit when linkToProfile is false and same-origin. */
   baseUrl?: string;
 };
 

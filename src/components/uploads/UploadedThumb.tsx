@@ -14,6 +14,11 @@ export default function UploadedThumb({
 }) {
   const [url, setUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const meta = (upload?.metadata ?? {}) as Record<string, unknown>;
+  const mime = String(meta.mime ?? "").toLowerCase();
+  const path = String(upload?.storage_path ?? "").toLowerCase();
+  const isImageByExt = [".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp", ".heic", ".heif"].some((ext) => path.endsWith(ext));
+  const isImage = mime ? mime.startsWith("image/") : isImageByExt;
 
   useEffect(() => {
     let alive = true;
@@ -51,15 +56,24 @@ export default function UploadedThumb({
   return (
     <div className="rounded-lg border p-2">
       <div className="aspect-square w-full overflow-hidden rounded-md bg-gray-100">
-        {url ? (
+        {url ? isImage ? (
           <img src={url} alt="upload" className="h-full w-full object-cover" />
+        ) : (
+          <a
+            href={url}
+            target="_blank"
+            rel="noreferrer"
+            className="flex h-full w-full items-center justify-center p-2 text-center text-xs text-slate-700 hover:underline"
+          >
+            Open file
+          </a>
         ) : (
           <div className="p-2 text-xs text-gray-500">Loading…</div>
         )}
       </div>
 
       <div className="mt-2 flex items-center justify-between">
-        <span className="text-xs text-gray-600">Image</span>
+        <span className="text-xs text-gray-600">{isImage ? "Image" : "File"}</span>
         <button
           onClick={del}
           disabled={busy || locked}

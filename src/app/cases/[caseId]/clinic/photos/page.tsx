@@ -37,8 +37,8 @@ export default async function ClinicPhotosPage({ params }: { params: Promise<{ c
         <Link href={`/cases/${caseId}/clinic/form`} className="text-sm text-gray-600 hover:underline">← Back to Clinic Form</Link>
         <Link href={`/cases/${caseId}`} className="text-sm text-gray-600 hover:underline">Case overview</Link>
       </div>
-      <h1 className="text-2xl font-bold mb-2">Clinic — Visual Documentation</h1>
-      <p className="text-gray-600 mb-8">Facilities, equipment, and procedure images (optional).</p>
+      <h1 className="text-2xl font-bold mb-2">Clinic — Image & Evidence Uploads</h1>
+      <p className="text-gray-600 mb-8">Upload standardized baseline, intra-op/follow-up images, and optional forensic files.</p>
 
       <CategoryPhotoUpload
         caseId={caseId}

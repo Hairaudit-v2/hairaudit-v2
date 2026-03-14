@@ -7,6 +7,22 @@ type CategoryDef = { key: string; title: string; required?: boolean; help?: stri
 
 type UploadRow = { id: string; type: string; storage_path: string; metadata: unknown; created_at: string };
 
+function acceptsFile(file: File, accept: string): boolean {
+  if (!accept || accept === "*/*") return true;
+  const mime = file.type?.toLowerCase() ?? "";
+  const dotExt = `.${(file.name.split(".").pop() ?? "").toLowerCase()}`;
+  const tokens = accept
+    .split(",")
+    .map((t) => t.trim().toLowerCase())
+    .filter(Boolean);
+  return tokens.some((token) => {
+    if (token === "*/*") return true;
+    if (token.endsWith("/*")) return mime.startsWith(token.slice(0, -1));
+    if (token.startsWith(".")) return dotExt === token;
+    return mime === token;
+  });
+}
+
 export default function CategoryPhotoUpload({
   caseId,
   initialUploads,
@@ -86,8 +102,9 @@ export default function CategoryPhotoUpload({
             onDrop={(e) => {
               if (isLocked) return;
               e.preventDefault();
-              const files = Array.from(e.dataTransfer.files).filter((f) => f.type.startsWith("image/") || f.type.startsWith("video/"));
-              uploadFiles(cat.key, files.slice(0, cat.maxFiles));
+              const files = Array.from(e.dataTransfer.files).filter((f) => acceptsFile(f, cat.accept));
+              const remaining = Math.max(0, cat.maxFiles - (uploadsByCategory[cat.key]?.length ?? 0));
+              uploadFiles(cat.key, files.slice(0, remaining));
             }}
           >
             <div className="flex justify-between items-center">
@@ -102,7 +119,12 @@ export default function CategoryPhotoUpload({
                   accept={cat.accept}
                   multiple
                   disabled={isLocked || !!busyCats[cat.key]}
-                  onChange={(e) => uploadFiles(cat.key, Array.from(e.target.files ?? []))}
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files ?? []).filter((f) => acceptsFile(f, cat.accept));
+                    const remaining = Math.max(0, cat.maxFiles - (uploadsByCategory[cat.key]?.length ?? 0));
+                    uploadFiles(cat.key, files.slice(0, remaining));
+                    e.target.value = "";
+                  }}
                 />
               </label>
             </div>

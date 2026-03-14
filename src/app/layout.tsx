@@ -1,12 +1,14 @@
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { logAuthEnvHealthOnce } from "@/lib/auth/validateAuthEnv";
 import RecoveryHashRouter from "@/components/RecoveryHashRouter";
 import MainContentTarget from "@/components/a11y/MainContentTarget";
 import type { Metadata } from "next";
+import { SITE_URL } from "@/lib/constants";
 
 const metadataBaseUrl =
-  (process.env.NEXT_PUBLIC_APP_URL ?? process.env.SITE_URL ?? "https://hairaudit.com").replace(
+  (process.env.NEXT_PUBLIC_APP_URL ?? process.env.SITE_URL ?? SITE_URL).replace(
     /\/+$/,
     ""
   );
@@ -54,6 +56,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <MainContentTarget />
         <RecoveryHashRouter />
         {children}
+        <Analytics />
         <SpeedInsights />
       </body>
     </html>

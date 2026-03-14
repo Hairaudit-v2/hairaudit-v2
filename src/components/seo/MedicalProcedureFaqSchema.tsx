@@ -1,3 +1,5 @@
+import { HA_HOME } from "@/config/platform-links";
+
 type FAQItem = {
   question: string;
   answer: string;
@@ -25,7 +27,7 @@ export default function MedicalProcedureFaqSchema({
     recognizingAuthority: {
       "@type": "Organization",
       name: "HairAudit",
-      url: "https://hairaudit.com",
+      url: HA_HOME,
     },
   };
 

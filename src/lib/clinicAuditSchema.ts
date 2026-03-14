@@ -1,6 +1,3 @@
-// Doctor Audit Form schema — validation + backward compat mapping
-// Target: 6–8 min completion, conditional FUE/FUT sections
-
 import { z } from "zod";
 import {
   SUBMISSION_TYPE_OPTIONS,
@@ -31,10 +28,20 @@ import {
   DONOR_DENSITY_RATING_OPTIONS,
   ESTIMATED_DONOR_CAPACITY_OPTIONS,
   OVERHARVESTING_SIGN_OPTIONS,
+  EXTRACTION_METHOD_OPTIONS,
+  EXTRACTION_TECHNIQUE_OPTIONS,
+  EXTRACTION_OPERATOR_OPTIONS,
+  TRANSECTION_CATEGORY_OPTIONS,
+  RECIPIENT_SITES_CREATED_BY_OPTIONS,
+  SITE_CREATION_METHOD_OPTIONS,
+  SLIT_ORIENTATION_OPTIONS,
+  SITE_INSTRUMENT_SIZE_OPTIONS,
+  HAIRLINE_DIRECTION_QUALITY_OPTIONS,
   EXTRACTION_DEVICE_OPTIONS,
   PUNCH_SIZE_OPTIONS,
   PUNCH_TYPE_OPTIONS,
   PUNCH_MANUFACTURER_OPTIONS,
+  PUNCH_MOTION_OPTIONS,
   HOLDING_SOLUTION_OPTIONS,
   IMPLANTATION_DEVICE_OPTIONS,
   IMPLANTATION_METHOD_OPTIONS,
@@ -54,25 +61,8 @@ import {
   GRAFT_SORTING_METHOD_OPTIONS,
   VISIBLE_TRANSECTION_ON_TRAY_OPTIONS,
   GRAFT_TISSUE_QUALITY_CONCERN_OPTIONS,
-  EXTRACTION_METHOD_OPTIONS,
-  EXTRACTION_TECHNIQUE_OPTIONS,
-  EXTRACTION_OPERATOR_OPTIONS,
-  TRANSECTION_CATEGORY_OPTIONS,
-  RECIPIENT_SITES_CREATED_BY_OPTIONS,
-  SITE_CREATION_METHOD_OPTIONS,
-  SLIT_ORIENTATION_OPTIONS,
-  SITE_INSTRUMENT_SIZE_OPTIONS,
-  HAIRLINE_DIRECTION_QUALITY_OPTIONS,
-  OUT_OF_BODY_TIME_CATEGORY_OPTIONS,
-  PUNCH_MOTION_OPTIONS,
-  TEMPERATURE_CONTROLLED_STORAGE_OPTIONS,
 } from "./audit/masterSurgicalMetadata";
 
-// Procedure types for conditional logic
-export const PROCEDURE_TYPE_FUE = ["fue_manual", "fue_motorized", "fue_robotic", "combined"] as const;
-export const PROCEDURE_TYPE_FUT = ["fut", "combined"] as const;
-
-const extractionDeviceValues = EXTRACTION_DEVICE_OPTIONS.map((o) => o.value) as [string, ...string[]];
 const submissionTypeValues = SUBMISSION_TYPE_OPTIONS.map((o) => o.value) as [string, ...string[]];
 const auditDepthTypeValues = AUDIT_DEPTH_TYPE_OPTIONS.map((o) => o.value) as [string, ...string[]];
 const requestedByValues = REQUESTED_BY_OPTIONS.map((o) => o.value) as [string, ...string[]];
@@ -101,9 +91,20 @@ const donorQualityRatingValues = DONOR_QUALITY_RATING_OPTIONS.map((o) => o.value
 const donorDensityRatingValues = DONOR_DENSITY_RATING_OPTIONS.map((o) => o.value) as [string, ...string[]];
 const estimatedDonorCapacityValues = ESTIMATED_DONOR_CAPACITY_OPTIONS.map((o) => o.value) as [string, ...string[]];
 const overharvestingSignValues = OVERHARVESTING_SIGN_OPTIONS.map((o) => o.value) as [string, ...string[]];
+const extractionMethodValues = EXTRACTION_METHOD_OPTIONS.map((o) => o.value) as [string, ...string[]];
+const extractionTechniqueValues = EXTRACTION_TECHNIQUE_OPTIONS.map((o) => o.value) as [string, ...string[]];
+const extractionOperatorValues = EXTRACTION_OPERATOR_OPTIONS.map((o) => o.value) as [string, ...string[]];
+const transectionCategoryValues = TRANSECTION_CATEGORY_OPTIONS.map((o) => o.value) as [string, ...string[]];
+const recipientSitesCreatedByValues = RECIPIENT_SITES_CREATED_BY_OPTIONS.map((o) => o.value) as [string, ...string[]];
+const siteCreationMethodValues = SITE_CREATION_METHOD_OPTIONS.map((o) => o.value) as [string, ...string[]];
+const slitOrientationValues = SLIT_ORIENTATION_OPTIONS.map((o) => o.value) as [string, ...string[]];
+const siteInstrumentSizeValues = SITE_INSTRUMENT_SIZE_OPTIONS.map((o) => o.value) as [string, ...string[]];
+const hairlineDirectionQualityValues = HAIRLINE_DIRECTION_QUALITY_OPTIONS.map((o) => o.value) as [string, ...string[]];
+const extractionDeviceValues = EXTRACTION_DEVICE_OPTIONS.map((o) => o.value) as [string, ...string[]];
 const punchSizeValues = PUNCH_SIZE_OPTIONS.map((o) => o.value) as [string, ...string[]];
 const punchTypeValues = PUNCH_TYPE_OPTIONS.map((o) => o.value) as [string, ...string[]];
 const punchManufacturerValues = PUNCH_MANUFACTURER_OPTIONS.map((o) => o.value) as [string, ...string[]];
+const punchMotionValues = PUNCH_MOTION_OPTIONS.map((o) => o.value) as [string, ...string[]];
 const holdingSolutionValues = HOLDING_SOLUTION_OPTIONS.map((o) => o.value) as [string, ...string[]];
 const implantationDeviceValues = IMPLANTATION_DEVICE_OPTIONS.map((o) => o.value) as [string, ...string[]];
 const implantationMethodValues = IMPLANTATION_METHOD_OPTIONS.map((o) => o.value) as [string, ...string[]];
@@ -123,32 +124,9 @@ const graftTrayQualityRatingValues = GRAFT_TRAY_QUALITY_RATING_OPTIONS.map((o) =
 const graftSortingMethodValues = GRAFT_SORTING_METHOD_OPTIONS.map((o) => o.value) as [string, ...string[]];
 const visibleTransectionOnTrayValues = VISIBLE_TRANSECTION_ON_TRAY_OPTIONS.map((o) => o.value) as [string, ...string[]];
 const graftTissueQualityConcernValues = GRAFT_TISSUE_QUALITY_CONCERN_OPTIONS.map((o) => o.value) as [string, ...string[]];
-const extractionMethodValues = EXTRACTION_METHOD_OPTIONS.map((o) => o.value) as [string, ...string[]];
-const extractionTechniqueValues = EXTRACTION_TECHNIQUE_OPTIONS.map((o) => o.value) as [string, ...string[]];
-const extractionOperatorValues = EXTRACTION_OPERATOR_OPTIONS.map((o) => o.value) as [string, ...string[]];
-const transectionCategoryValues = TRANSECTION_CATEGORY_OPTIONS.map((o) => o.value) as [string, ...string[]];
-const recipientSitesCreatedByValues = RECIPIENT_SITES_CREATED_BY_OPTIONS.map((o) => o.value) as [string, ...string[]];
-const siteCreationMethodValues = SITE_CREATION_METHOD_OPTIONS.map((o) => o.value) as [string, ...string[]];
-const slitOrientationValues = SLIT_ORIENTATION_OPTIONS.map((o) => o.value) as [string, ...string[]];
-const siteInstrumentSizeValues = SITE_INSTRUMENT_SIZE_OPTIONS.map((o) => o.value) as [string, ...string[]];
-const hairlineDirectionQualityValues = HAIRLINE_DIRECTION_QUALITY_OPTIONS.map((o) => o.value) as [string, ...string[]];
-const outOfBodyTimeCategoryValues = OUT_OF_BODY_TIME_CATEGORY_OPTIONS.map((o) => o.value) as [string, ...string[]];
-const punchMotionValues = PUNCH_MOTION_OPTIONS.map((o) => o.value) as [string, ...string[]];
-const temperatureStorageValues = TEMPERATURE_CONTROLLED_STORAGE_OPTIONS.map((o) => o.value) as [string, ...string[]];
 
-export const doctorAuditSchema = z
+export const clinicAuditSchema = z
   .object({
-    // Section 1: Doctor & Clinic Profile
-    doctorName: z.string().min(1, "Required"),
-    clinicName: z.string().min(1, "Required"),
-    clinicLocation: z.string().min(1, "Required"),
-    medicalDegree: z.string().min(1, "Required"),
-    yearsPerformingHairTransplants: z.coerce.number().min(0).max(60),
-    percentPracticeHairTransplant: z.enum(["lt25", "25_50", "50_75", "75_100"]),
-    memberships: z.array(z.string()).optional(),
-    otherMembershipText: z.string().optional(),
-
-    // Section 2: Case Identity & Submission Context
     submission_type: z.enum(submissionTypeValues),
     audit_type: z.enum(auditDepthTypeValues),
     case_id: z.string().min(1, "Required"),
@@ -167,7 +145,6 @@ export const doctorAuditSchema = z
     additional_operators_details: z.string().optional(),
     procedure_day_breakdown: z.string().optional(),
 
-    // Section 4: Procedure Type & Areas Treated
     procedure_type: z.array(z.enum(procedureTypeValues)).min(1, "Select at least one procedure type"),
     primary_procedure_type: z.enum(procedureTypeValues),
     areas_treated: z.array(z.enum(areasTreatedValues)).min(1, "Select at least one treated area"),
@@ -177,7 +154,6 @@ export const doctorAuditSchema = z
     beard_donor_used: z.enum(yesNoValues).optional(),
     body_donor_used: z.enum(yesNoValues).optional(),
 
-    // Section 6: Patient Baseline
     patient_age_bracket: z.enum(patientAgeBracketValues),
     patient_sex: z.enum(patientSexValues),
     ethnicity_hair_background: z.array(z.enum(ethnicityHairBackgroundValues)).optional(),
@@ -187,7 +163,6 @@ export const doctorAuditSchema = z
     hair_colour: z.enum(hairColourValues).optional(),
     skin_hair_contrast: z.enum(skinHairContrastValues).optional(),
 
-    // Section 8: Diagnosis & Hair Loss Pattern
     primary_diagnosis: z.enum(primaryDiagnosisValues),
     secondary_diagnosis: z.array(z.enum(secondaryDiagnosisValues)).optional(),
     hair_loss_scale_used: z.enum(hairLossScaleValues),
@@ -198,7 +173,6 @@ export const doctorAuditSchema = z
     dupa_retrograde_flag: z.enum(yesNoValues).optional(),
     scalp_condition_flags: z.array(z.enum(scalpConditionFlagValues)).optional(),
 
-    // Section 10: Pre-Operative Planning
     planned_graft_count: z.coerce.number().int().min(0).max(50000),
     actual_graft_count: z.coerce.number().int().min(0).max(50000),
     estimated_hair_count: z.coerce.number().int().min(0).max(100000).optional(),
@@ -209,7 +183,6 @@ export const doctorAuditSchema = z
     risk_counselling_documented: z.enum(yesNoValues).optional(),
     candidate_suitability_rating: z.enum(candidateSuitabilityValues).optional(),
 
-    // Section 12: Donor Assessment
     donor_quality_rating: z.enum(donorQualityRatingValues),
     donor_density_rating: z.enum(donorDensityRatingValues),
     estimated_donor_capacity: z.enum(estimatedDonorCapacityValues).optional(),
@@ -222,29 +195,19 @@ export const doctorAuditSchema = z
     overharvesting_signs: z.array(z.enum(overharvestingSignValues)).optional(),
     donor_mapping_notes: z.string().optional(),
 
-    // Section 14: Patient Profile
-    patientAge: z.coerce.number().min(10).max(100),
-    patientGender: z.enum(["male", "female", "other"]),
-    hairLossClassification: z.enum([
-      "norwood_1", "norwood_2", "norwood_3", "norwood_4", "norwood_5", "norwood_6", "norwood_7",
-      "ludwig_1", "ludwig_2", "ludwig_3", "diffuse", "other"
-    ]),
-    hairLossOtherText: z.string().optional(),
-    donorDensityMeasuredPreOp: z.enum(["yes_trichoscopy", "yes_visual", "no"]),
-    preOpDensityFuPerCm2: z.number().min(0).max(200).optional(),
-
-    // Section 5: Procedure Overview
-    procedureType: z.enum(["fue_manual", "fue_motorized", "fue_robotic", "fut", "combined"]),
-    totalGraftsExtracted: z.coerce.number().min(1).max(10000),
-    totalGraftsImplanted: z.coerce.number().min(1).max(10000),
-    extractionPerformedBy: z.enum(["doctor", "nurse", "technician", "mixed"]),
-    implantationPerformedBy: z.enum(["doctor", "nurse", "technician", "mixed"]),
-
-    // Section 6: Basic surgical metadata (required, multi-select where applicable)
     extraction_method: z.array(z.enum(extractionMethodValues)).min(1, "Select at least one extraction method"),
     extraction_devices_used: z.array(z.enum(extractionDeviceValues)).min(1, "Select at least one extraction device"),
     extraction_technique: z.array(z.enum(extractionTechniqueValues)).min(1, "Select at least one extraction technique"),
     extraction_operator: z.enum(extractionOperatorValues),
+    recipient_sites_created_by: z.enum(recipientSitesCreatedByValues),
+    site_creation_method: z.array(z.enum(siteCreationMethodValues)).min(1, "Select at least one site creation method"),
+    slit_orientation: z.enum(slitOrientationValues).optional(),
+    site_instrument_sizes_used: z.array(z.enum(siteInstrumentSizeValues)).optional(),
+    dense_packing_attempted: z.enum(yesNoValues).optional(),
+    hairline_direction_quality: z.enum(hairlineDirectionQualityValues).optional(),
+    angle_direction_notes: z.string().optional(),
+    native_hair_protection_strategy: z.string().optional(),
+    extraction_experience_years: z.coerce.number().min(0).max(60).optional(),
     punch_sizes_used: z.array(z.enum(punchSizeValues)).min(1, "Select at least one punch size"),
     punch_types_used: z.array(z.enum(punchTypeValues)).min(1, "Select at least one punch type"),
     holding_solutions_used: z.array(z.enum(holdingSolutionValues)).min(1, "Select at least one holding solution"),
@@ -253,6 +216,7 @@ export const doctorAuditSchema = z
     implantation_method: z.array(z.enum(implantationMethodValues)).min(1, "Select at least one implantation method"),
     implantation_devices_used: z.array(z.enum(implantationDeviceValues)).min(1, "Select at least one implantation device"),
     implanted_by: z.enum(implantedByValues),
+    intraoperative_adjuncts_used: z.array(z.enum(intraopAdjunctValues)).optional(),
     postoperative_treatments_included: z
       .array(z.enum(postopTreatmentValues))
       .min(1, "Select at least one included post-op treatment"),
@@ -263,81 +227,14 @@ export const doctorAuditSchema = z
     outcome_audit_stage: z.enum(outcomeAuditStageValues).optional(),
     growth_outcome_category: z.enum(growthOutcomeCategoryValues).optional(),
     donor_healing_category: z.enum(donorHealingCategoryValues).optional(),
-
-    // Section 7: FUE (required if FUE)
-    fuePunchType: z.string().optional(),
-    fuePunchDiameterRangeMm: z.string().optional(),
-    fuePunchMovement: z.string().optional(),
-    fueDepthControl: z.string().optional(),
-    fueDocumentedTransectionRatePercent: z.number().min(0).max(100).optional(),
-
-    // Section 8: FUT (required if FUT)
-    futBladeType: z.string().optional(),
-    futClosureTechnique: z.string().optional(),
-    futMicroscopicDissectionUsed: z.string().optional(),
-
-    // Section 9: Graft Handling
-    holdingSolution: z.enum(["saline", "hypothermic", "atp_enhanced", "other"]),
-    holdingSolutionOtherText: z.string().optional(),
-    temperatureControlled: z.enum(["ice_bowl", "measured_digital", "no_control"]),
-    outOfBodyTimeLogged: z.enum(["no", "estimated", "digitally_logged"]),
-    avgOutOfBodyTimeHours: z.number().min(0).max(24).optional(),
-    microscopeStationsUsed: z.enum(["0", "1_2", "3_4", "5_plus"]),
-    microscopeType: z.enum(["basic_stereo", "high_end_stereo"]).optional(),
-
-    // Section 10: Recipient Site & Implantation
-    recipientTool: z.enum(["steel_blade", "sapphire_blade", "needle", "implanter_pen", "mixed"]),
-    implantationMethod: z.enum(["forceps", "premade_slits_forceps", "implanter"]),
-    recipient_sites_created_by: z.enum(recipientSitesCreatedByValues),
-    site_creation_method: z.array(z.enum(siteCreationMethodValues)).min(1, "Select at least one site creation method"),
-    slit_orientation: z.enum(slitOrientationValues).optional(),
-    site_instrument_sizes_used: z.array(z.enum(siteInstrumentSizeValues)).optional(),
-    dense_packing_attempted: z.enum(["yes", "no"]).optional(),
-    densePackingAttempted: z.enum(["yes", "no"]).optional(), // legacy compatibility
-    hairline_direction_quality: z.enum(hairlineDirectionQualityValues).optional(),
-    angle_direction_notes: z.string().optional(),
-    native_hair_protection_strategy: z.string().optional(),
-    implanterType: z.string().optional(),
-    implanterOtherText: z.string().optional(),
-
-    // Section 11: Donor Management
-    donorMappingMethod: z.enum(["visual_only", "measured_zones", "density_mapped_grid"]),
-    percentExtractionPerZoneControlled: z.enum(["yes", "no"]),
-    postOpDonorDensityMeasured: z.enum(["yes", "no"]).optional(),
-
-    // Section 12: Sterility & Safety
-    sterilizationProtocol: z.array(z.string()).min(1, "At least one sterilization method required"),
-    graftCountDoubleVerified: z.enum(["yes", "no"]),
-    intraOpComplications: z.string().optional(),
-    complicationsOtherText: z.string().optional(),
-
-    // Section 13: Cost
-    totalProcedureCostUsd: z.coerce.number().min(0).max(500000),
-    costModel: z.enum(["per_graft", "per_session", "package"]),
-    includedInCost: z.array(z.string()).optional(),
-
-    // Section 14: Post-Op Protocol
-    dhtManagementRecommended: z.enum(["yes", "no"]),
-    prpPostOpUsed: z.enum(["yes", "no"]),
-    followUpScheduleStandardized: z.enum(["yes", "no"]),
-    photoDocumentationRequired12Month: z.enum(["yes", "no"]),
-
-    // Section 15: Advanced / Forensic
     primary_extraction_device: z.enum(extractionDeviceValues).optional(),
-    extraction_experience_years: z.coerce.number().min(0).max(60).optional(),
     primary_punch_size: z.enum(punchSizeValues).optional(),
     primary_punch_type: z.enum(punchTypeValues).optional(),
     punch_manufacturers_used: z.array(z.enum(punchManufacturerValues)).optional(),
+    punch_motion: z.array(z.enum(punchMotionValues)).optional(),
+    motor_speed_rpm: z.coerce.number().min(0).max(12000).optional(),
     primary_holding_solution: z.enum(holdingSolutionValues).optional(),
     primary_implantation_device: z.enum(implantationDeviceValues).optional(),
-    implantation_time_minutes: z.coerce.number().min(0).max(1440).optional(),
-    singles_reserved_for_hairline: z.enum(yesNoValues).optional(),
-    intraoperative_adjuncts_used: z.array(z.enum(intraopAdjunctValues)).optional(),
-    intraop_prp_used: z.enum(yesNoValues).optional(),
-    intraop_exosomes_used: z.enum(yesNoValues).optional(),
-    exosome_type: z.enum(exosomeTypeValues).optional(),
-    partial_transection_used: z.enum(yesNoValues).optional(),
-    intraop_adjunct_notes: z.string().optional(),
     extraction_device_change_notes: z.string().optional(),
     punch_size_change_notes: z.string().optional(),
     punch_type_change_notes: z.string().optional(),
@@ -351,9 +248,21 @@ export const doctorAuditSchema = z
     graft_tissue_quality_concern: z.array(z.enum(graftTissueQualityConcernValues)).optional(),
     microscopic_graft_review_available: z.enum(yesNoValues).optional(),
     implantation_device_notes: z.string().optional(),
+    postoperative_protocol_notes: z.string().optional(),
+    reason_for_intraoperative_changes: z.string().optional(),
+    transection_category: z.enum(transectionCategoryValues).optional(),
+    transection_rate_percent: z.coerce.number().min(0).max(100).optional(),
+    buried_graft_rate_percent: z.coerce.number().min(0).max(100).optional(),
+    extraction_time_minutes: z.coerce.number().min(0).max(1440).optional(),
+    implantation_time_minutes: z.coerce.number().min(0).max(1440).optional(),
+    singles_reserved_for_hairline: z.enum(yesNoValues).optional(),
     popping_issues_observed: z.enum(yesNoValues).optional(),
     implant_depth_consistency: z.enum(implantDepthConsistencyValues).optional(),
-    postoperative_protocol_notes: z.string().optional(),
+    intraop_prp_used: z.enum(yesNoValues).optional(),
+    intraop_exosomes_used: z.enum(yesNoValues).optional(),
+    exosome_type: z.enum(exosomeTypeValues).optional(),
+    partial_transection_used: z.enum(yesNoValues).optional(),
+    intraop_adjunct_notes: z.string().optional(),
     finasteride_recommended: z.enum(yesNoValues).optional(),
     minoxidil_recommended: z.enum(yesNoValues).optional(),
     donor_recovery_protocol_included: z.enum(yesNoValues).optional(),
@@ -366,21 +275,7 @@ export const doctorAuditSchema = z
     case_complexity_rating: z.enum(caseComplexityRatingValues).optional(),
     auditor_confidence_level: z.enum(auditorConfidenceLevelValues).optional(),
     forensic_notes: z.string().optional(),
-    reason_for_intraoperative_changes: z.string().optional(),
-    motor_speed_rpm: z.coerce.number().min(0).max(12000).optional(),
-    punch_motion: z.array(z.enum(punchMotionValues)).optional(),
-    transection_category: z.enum(transectionCategoryValues).optional(),
-    transection_rate_percent: z.coerce.number().min(0).max(100).optional(),
-    buried_graft_rate_percent: z.coerce.number().min(0).max(100).optional(),
-    extraction_time_minutes: z.coerce.number().min(0).max(1440).optional(),
-    out_of_body_time_category: z.enum(outOfBodyTimeCategoryValues).optional(),
-    temperature_controlled_storage: z.enum(temperatureStorageValues).optional(),
     surgeon_vs_technician_split_notes: z.string().optional(),
-
-    // Section 16: Doctor Self-Assessment
-    estimatedGraftSurvivalPercent: z.number().min(0).max(100).optional(),
-    overallCaseSuccessRating: z.coerce.number().min(1).max(5),
-    notesOptional: z.string().optional(),
   })
   .refine(
     (d) => d.procedure_type.includes(d.primary_procedure_type),
@@ -390,118 +285,14 @@ export const doctorAuditSchema = z
     (d) => !d.primary_area_treated || d.areas_treated.includes(d.primary_area_treated),
     { message: "Primary area treated must be included in areas treated selections", path: ["primary_area_treated"] }
   )
-  .refine(
-    (d) => {
-      const pt = d.procedureType;
-      const isFue = PROCEDURE_TYPE_FUE.includes(pt as (typeof PROCEDURE_TYPE_FUE)[number]);
-      const isFut = PROCEDURE_TYPE_FUT.includes(pt as (typeof PROCEDURE_TYPE_FUT)[number]);
-      if (isFue && (!d.fuePunchType || !d.fuePunchDiameterRangeMm || !d.fuePunchMovement || !d.fueDepthControl))
-        return false;
-      if (isFut && (!d.futBladeType || !d.futClosureTechnique || !d.futMicroscopicDissectionUsed)) return false;
-      return true;
-    },
-    { message: "FUE/FUT-specific fields are required based on procedure type" }
-  )
-  .refine(
-    (d) => {
-      const needsImplanter =
-        d.recipientTool === "implanter_pen" || d.implantationMethod === "implanter";
-      if (needsImplanter && !d.implanterType) return false;
-      return true;
-    },
-    { message: "Implanter type is required when using implanter pen or implanter method" }
-  )
-  .refine(
-    (d) => {
-      if (d.holdingSolution === "other" && !d.holdingSolutionOtherText) return false;
-      return true;
-    },
-    { message: "Please specify holding solution when Other is selected" }
-  );
+  .passthrough();
 
-export type DoctorAuditFormData = z.infer<typeof doctorAuditSchema>;
-
-/** Validate doctor answers; returns first error message or null if valid */
-export function validateDoctorAnswers(data: Record<string, unknown>): string | null {
-  const parsed = doctorAuditSchema.safeParse(data);
+export function validateClinicAnswers(data: Record<string, unknown>): string | null {
+  const parsed = clinicAuditSchema.safeParse(data);
   if (parsed.success) return null;
-  const issues = (parsed as { error: { issues?: Array<{ path: (string | number)[]; message: string }> } }).error?.issues ?? [];
+  const issues = (parsed as { error: { issues?: Array<{ path: (string | number)[]; message: string }> } }).error
+    ?.issues ?? [];
   const first = issues[0];
   const path = first?.path ? String((first.path as string[]).join(".")) : "";
   return first ? (path ? `${path}: ${first.message}` : first.message) : "Validation failed";
-}
-
-/** Map legacy doctor_answers keys to new schema keys for backward compatibility */
-export function mapLegacyDoctorAnswers(legacy: Record<string, unknown> | null): Record<string, unknown> {
-  if (!legacy || typeof legacy !== "object") return {};
-  const m: Record<string, unknown> = {};
-  const map: Record<string, string> = {
-    doctor_name: "doctorName",
-    practice_name: "clinicName",
-    practice_location: "clinicLocation",
-    medical_degree: "medicalDegree",
-    years_experience: "yearsPerformingHairTransplants",
-    patient_age: "patientAge",
-    patient_gender: "patientGender",
-    hair_loss_pattern: "hairLossClassification",
-    medical_history: "notesOptional",
-    technique: "procedureType",
-    grafts_extracted: "totalGraftsExtracted",
-    grafts_implanted: "totalGraftsImplanted",
-    extraction_performed_by: "extractionPerformedBy",
-    preparation_performed_by: "notesOptional", // merge into notes
-    implantation_performed_by: "implantationPerformedBy",
-    total_cost: "totalProcedureCostUsd",
-    cost_inclusions: "includedInCost",
-    success_rating: "overallCaseSuccessRating",
-    additional_comments: "notesOptional",
-  };
-  const techniqueMap: Record<string, string> = {
-    fue: "fue_manual",
-    fut: "fut",
-    dhi: "fue_motorized",
-    robotic: "fue_robotic",
-  };
-  const notesParts: string[] = [];
-  for (const [oldKey, val] of Object.entries(legacy)) {
-    if (val === null || val === undefined) continue;
-    if (oldKey === "preparation_performed_by" || oldKey === "additional_comments") {
-      if (typeof val === "string" && val.trim()) notesParts.push(val);
-      continue;
-    }
-    const newKey = map[oldKey] ?? oldKey;
-    let v = val;
-    if (oldKey === "technique" && typeof val === "string") v = techniqueMap[val] ?? val;
-    if (oldKey === "extraction_performed_by" || oldKey === "implantation_performed_by") {
-      const s = String(val).toLowerCase();
-      if (s.includes("doctor") && !s.includes("nurse") && !s.includes("technician")) v = "doctor";
-      else if (s.includes("nurse") && !s.includes("technician")) v = "nurse";
-      else if (s.includes("technician") && !s.includes("nurse")) v = "technician";
-      else v = "mixed";
-    }
-    if (oldKey === "total_cost" && typeof val === "string") {
-      const num = parseFloat(String(val).replace(/[^0-9.]/g, ""));
-      v = Number.isFinite(num) ? num : val;
-    }
-    if (oldKey === "hair_loss_pattern" && typeof val === "string") {
-      const hlMap: Record<string, string> = {
-        norwood_1: "norwood_1", norwood_2: "norwood_2", norwood_3: "norwood_3",
-        norwood_4: "norwood_4", norwood_5: "norwood_5", norwood_6: "norwood_6",
-        ludwig_1: "ludwig_1", ludwig_2: "ludwig_2", ludwig_3: "ludwig_3",
-        diffuse: "diffuse", other: "other",
-      };
-      v = hlMap[val] ?? val;
-    }
-    if (oldKey === "cost_inclusions" && Array.isArray(val)) {
-      const incMap: Record<string, string> = {
-        consultation: "consultation", prp: "prp", procedure: "procedure",
-        anesthesia: "anaesthesia", facility: "facility", postop_care: "follow_up",
-        medications: "medications", other: "other",
-      };
-      v = val.map((x) => incMap[String(x)] ?? x);
-    }
-    m[newKey] = v;
-  }
-  if (notesParts.length) m.notesOptional = notesParts.join("\n\n");
-  return m;
 }

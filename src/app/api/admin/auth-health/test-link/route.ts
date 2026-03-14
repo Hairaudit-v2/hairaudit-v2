@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { isAuditor } from "@/lib/auth/isAuditor";
+import { SITE_URL } from "@/lib/constants";
 
 type LinkCheckResult = {
   id: string;
@@ -15,7 +16,7 @@ function getBaseUrl() {
   return (
     String(process.env.NEXT_PUBLIC_APP_URL ?? "").trim().replace(/\/+$/, "") ||
     String(process.env.SITE_URL ?? "").trim().replace(/\/+$/, "") ||
-    "https://hairaudit.com"
+    SITE_URL
   );
 }
 

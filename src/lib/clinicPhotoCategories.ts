@@ -1,9 +1,48 @@
-// Clinic form: Facilities, Equipment, Procedure
+// Clinic upload definitions aligned to audit image evidence schema
 
 export const CLINIC_PHOTO_CATEGORIES = [
-  { key: "facilities", title: "Clinic Facilities Images", required: false, help: "Operating rooms, recovery areas", tips: [], accept: "image/*", maxFiles: 10, minFiles: 0 },
-  { key: "equipment", title: "Equipment Images", required: false, help: "Hair transplant equipment", tips: [], accept: "image/*", maxFiles: 6, minFiles: 0 },
-  { key: "procedure", title: "Procedure Images/Videos", required: false, help: "Sample procedure documentation", tips: [], accept: "image/*,video/*", maxFiles: 6, minFiles: 0 },
+  { key: "img_preop_front", title: "Pre-op Front", required: true, help: "Essential baseline", tips: [], accept: "image/*", maxFiles: 3, minFiles: 1 },
+  { key: "img_preop_left", title: "Pre-op Left", required: true, help: "Essential baseline", tips: [], accept: "image/*", maxFiles: 2, minFiles: 1 },
+  { key: "img_preop_right", title: "Pre-op Right", required: true, help: "Essential baseline", tips: [], accept: "image/*", maxFiles: 2, minFiles: 1 },
+  { key: "img_preop_top", title: "Pre-op Top", required: true, help: "Essential baseline", tips: [], accept: "image/*", maxFiles: 3, minFiles: 1 },
+  { key: "img_preop_crown", title: "Pre-op Crown", required: false, help: "Required if crown is involved", tips: [], accept: "image/*", maxFiles: 3, minFiles: 0 },
+  { key: "img_preop_donor_rear", title: "Pre-op Donor Rear", required: true, help: "Essential donor baseline", tips: [], accept: "image/*", maxFiles: 3, minFiles: 1 },
+  { key: "img_preop_donor_sides", title: "Pre-op Donor Sides", required: false, help: "Stronger donor mapping", tips: [], accept: "image/*", maxFiles: 4, minFiles: 0 },
+  { key: "img_marking_design", title: "Marking / Design Images", required: false, help: "Useful for design audit", tips: [], accept: "image/*", maxFiles: 4, minFiles: 0 },
+  { key: "img_immediate_postop_recipient", title: "Immediate Post-op Recipient", required: true, help: "Essential technical audit image", tips: [], accept: "image/*", maxFiles: 4, minFiles: 1 },
+  { key: "img_immediate_postop_donor", title: "Immediate Post-op Donor", required: true, help: "Essential donor trauma audit", tips: [], accept: "image/*", maxFiles: 4, minFiles: 1 },
+  { key: "img_intraop_extraction", title: "Intra-op Extraction Images", required: false, help: "Valuable for forensic audit", tips: [], accept: "image/*", maxFiles: 6, minFiles: 0 },
+  { key: "img_graft_inspection", title: "Graft Inspection Images", required: false, help: "Valuable for forensic audit", tips: [], accept: "image/*", maxFiles: 6, minFiles: 0 },
+  { key: "img_graft_tray_overview", title: "Graft Tray Overview Images", required: false, help: "Shows tray organisation, hydration, density, and sorting quality", tips: [], accept: "image/*", maxFiles: 4, minFiles: 0 },
+  { key: "img_graft_tray_closeup", title: "Graft Tray Close-Up Images", required: false, help: "Shows graft integrity, transection, tissue burden, and dehydration risk", tips: [], accept: "image/*", maxFiles: 8, minFiles: 0 },
+  { key: "img_graft_microscopy", title: "Microscopic Graft Images", required: false, help: "Supports forensic audit, certification, and technical training review", tips: [], accept: "image/*", maxFiles: 10, minFiles: 0 },
+  { key: "img_site_creation", title: "Site Creation Images", required: false, help: "Strong training value", tips: [], accept: "image/*", maxFiles: 6, minFiles: 0 },
+  { key: "img_implantation_stage", title: "Implantation Stage Images", required: false, help: "Strong training value", tips: [], accept: "image/*", maxFiles: 6, minFiles: 0 },
+  { key: "img_followup_front", title: "Follow-up Front", required: false, help: "Needed for outcome review", tips: [], accept: "image/*", maxFiles: 3, minFiles: 0 },
+  { key: "img_followup_top", title: "Follow-up Top", required: false, help: "Needed for outcome review", tips: [], accept: "image/*", maxFiles: 3, minFiles: 0 },
+  { key: "img_followup_crown", title: "Follow-up Crown", required: false, help: "Needed if crown assessed", tips: [], accept: "image/*", maxFiles: 3, minFiles: 0 },
+  { key: "img_followup_donor", title: "Follow-up Donor", required: false, help: "Needed for donor healing review", tips: [], accept: "image/*", maxFiles: 3, minFiles: 0 },
+  { key: "img_trichoscopy", title: "Trichoscopy Images", required: false, help: "Premium forensic data", tips: [], accept: "image/*", maxFiles: 10, minFiles: 0 },
+  {
+    key: "file_operative_notes",
+    title: "Operative Notes Upload",
+    required: false,
+    help: "Strong forensic support",
+    tips: [],
+    accept: ".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    maxFiles: 1,
+    minFiles: 0,
+  },
+  {
+    key: "file_case_records",
+    title: "Consent / Case Records",
+    required: false,
+    help: "Supporting evidence documents",
+    tips: [],
+    accept: ".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    maxFiles: 1,
+    minFiles: 0,
+  },
 ] as const;
 
 export type ClinicPhotoCategory = (typeof CLINIC_PHOTO_CATEGORIES)[number]["key"];

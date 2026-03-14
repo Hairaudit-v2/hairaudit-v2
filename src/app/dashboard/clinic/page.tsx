@@ -11,6 +11,7 @@ import ClinicBadgeWidgetSection from "@/components/dashboard/ClinicBadgeWidgetSe
 import { computeAdvancedCompletionScore, computeProfileCompletionScore } from "@/lib/clinicPortal";
 import ClinicSectionHeader from "@/components/clinic-portal/ClinicSectionHeader";
 import ClinicConversionPanel from "@/components/clinic-portal/ClinicConversionPanel";
+import { SITE_URL } from "@/lib/constants";
 
 export default async function ClinicDashboardPage() {
   const supabase = await createSupabaseAuthServerClient();
@@ -159,7 +160,7 @@ export default async function ClinicDashboardPage() {
   const profileVisible = (clinicProfile as { profile_visible?: boolean })?.profile_visible;
   const clinicSlug = (clinicProfile as { clinic_slug?: string | null })?.clinic_slug;
   const publicProfileUrl = profileVisible && clinicSlug
-    ? `${(process.env.NEXT_PUBLIC_APP_URL ?? process.env.SITE_URL ?? "https://hairaudit.com").replace(/\/+$/, "")}/clinics/${clinicSlug}`
+    ? `${(process.env.NEXT_PUBLIC_APP_URL ?? process.env.SITE_URL ?? SITE_URL).replace(/\/+$/, "")}/clinics/${clinicSlug}`
     : null;
   const conversionActions = [
     onboardingSteps < 5 ? { label: "Complete your clinic identity", href: "/dashboard/clinic/onboarding" } : null,
@@ -317,12 +318,12 @@ export default async function ClinicDashboardPage() {
                 clinicProfile?.current_award_tier
             )
           }
-          profileUrl={`${(process.env.NEXT_PUBLIC_APP_URL ?? "").replace(/\/+$/, "")}/clinics/${(clinicProfile as { clinic_slug?: string | null })?.clinic_slug ?? ""}`}
+          profileUrl={`${(process.env.NEXT_PUBLIC_APP_URL ?? SITE_URL).replace(/\/+$/, "")}/clinics/${(clinicProfile as { clinic_slug?: string | null })?.clinic_slug ?? ""}`}
           slug={(clinicProfile as { clinic_slug?: string | null })?.clinic_slug ?? ""}
           clinicName={clinicProfile?.clinic_name ?? ""}
           currentAwardTier={clinicProfile?.current_award_tier ?? null}
           participationStatus={(clinicProfile as { participation_status?: string | null })?.participation_status ?? null}
-          baseUrl={(process.env.NEXT_PUBLIC_APP_URL ?? process.env.SITE_URL ?? "https://hairaudit.com").replace(/\/+$/, "")}
+          baseUrl={(process.env.NEXT_PUBLIC_APP_URL ?? process.env.SITE_URL ?? SITE_URL).replace(/\/+$/, "")}
         />
       </div>
 

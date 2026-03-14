@@ -1,11 +1,14 @@
 import Link from "next/link";
 import TrackedLink from "@/components/analytics/TrackedLink";
+import { FI_HOME } from "@/config/platform-links";
+import CrossPlatformLink from "@/components/platform/CrossPlatformLink";
+import { PLATFORM_ECOSYSTEM } from "@/lib/constants/platform";
 
 export default function SiteFooter() {
   return (
     <footer className="border-t border-slate-700 bg-slate-900 text-slate-400">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-8">
           <div className="lg:col-span-1">
             <h4 className="font-semibold text-white mb-3">HairAudit</h4>
             <p className="text-sm leading-relaxed">
@@ -96,14 +99,38 @@ export default function SiteFooter() {
               </li>
             </ul>
           </div>
+          <div>
+            <h4 className="font-semibold text-white mb-3">Platform Ecosystem</h4>
+            <ul className="space-y-2 text-sm">
+              {PLATFORM_ECOSYSTEM.map((platform) => (
+                <li key={platform.key}>
+                  <a
+                    href={platform.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex flex-col py-1 hover:text-amber-400 transition-colors"
+                  >
+                    <span className="font-medium text-slate-200">{platform.name}</span>
+                    <span className="text-xs text-slate-500">{platform.subtitle}</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
+        <CrossPlatformLink mode="hairAudit" className="mt-8" />
         <div className="mt-8 pt-8 border-t border-slate-700 text-center text-sm space-y-1">
           <p>HairAudit — Audit and feedback for hair transplant procedures</p>
           <p className="text-slate-500">
             Analysis assisted by{" "}
-            <Link href="/follicle-intelligence" className="text-amber-400 hover:text-amber-300 transition-colors font-medium">
+            <a
+              href={FI_HOME}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-amber-400 hover:text-amber-300 transition-colors font-medium"
+            >
               Follicle Intelligence
-            </Link>
+            </a>
           </p>
         </div>
       </div>

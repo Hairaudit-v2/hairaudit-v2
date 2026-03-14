@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import TrackedLink from "@/components/analytics/TrackedLink";
+import { FI_HOME, HA_HOME } from "@/config/platform-links";
 
 type SiteHeaderProps = {
   variant?: "default" | "minimal";
@@ -26,6 +27,10 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
     { href: "/clinics", label: "Clinics" },
     { href: "/professionals", label: "For Professionals" },
   ];
+  const [ecosystemNavItem, setEcosystemNavItem] = useState({
+    href: FI_HOME,
+    label: "Powered by Follicle Intelligence",
+  });
   const navLinkClass =
     "flex items-center leading-none text-[13px] xl:text-sm font-medium tracking-[0.01em] text-slate-300 hover:text-amber-300 transition-colors whitespace-nowrap";
   const utilityLinkClass =
@@ -34,6 +39,17 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    const hostname = window.location.hostname.toLowerCase();
+    const isFollicleDomain = hostname.includes("follicleintelligence");
+
+    setEcosystemNavItem(
+      isFollicleDomain
+        ? { href: HA_HOME, label: "Explore HairAudit" }
+        : { href: FI_HOME, label: "Powered by Follicle Intelligence" }
+    );
+  }, []);
 
   useEffect(() => {
     if (!mobileMenuOpen) {
@@ -122,6 +138,9 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
                   {item.label}
                 </Link>
               ))}
+              <a href={ecosystemNavItem.href} target="_blank" rel="noopener noreferrer" className={navLinkClass}>
+                {ecosystemNavItem.label}
+              </a>
             </div>
             <div className="hidden lg:flex ml-6 lg:ml-8 items-center gap-x-4">
               <Link
@@ -218,6 +237,14 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
                   {item.label}
                 </Link>
               ))}
+              <a
+                href={ecosystemNavItem.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block rounded-lg border border-slate-800 px-3 py-2.5 text-sm font-medium text-slate-200 hover:border-slate-700 hover:bg-slate-800"
+              >
+                {ecosystemNavItem.label}
+              </a>
             </div>
             <div className="mt-6 space-y-3 border-t border-slate-800 pt-5">
               <Link

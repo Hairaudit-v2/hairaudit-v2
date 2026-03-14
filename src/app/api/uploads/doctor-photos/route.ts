@@ -7,6 +7,23 @@ import { DOCTOR_PHOTO_CATEGORIES } from "@/lib/doctorPhotoCategories";
 export const runtime = "nodejs";
 
 const VALID_CATEGORIES = new Set(DOCTOR_PHOTO_CATEGORIES.map((c) => c.key));
+const CATEGORY_MAP = new Map(DOCTOR_PHOTO_CATEGORIES.map((c) => [c.key, c] as const));
+
+function acceptsFile(file: File, accept: string): boolean {
+  if (!accept || accept === "*/*") return true;
+  const mime = (file.type || "").toLowerCase();
+  const dotExt = `.${(file.name.split(".").pop() || "").toLowerCase()}`;
+  const tokens = accept
+    .split(",")
+    .map((t) => t.trim().toLowerCase())
+    .filter(Boolean);
+  return tokens.some((token) => {
+    if (token === "*/*") return true;
+    if (token.endsWith("/*")) return mime.startsWith(token.slice(0, -1));
+    if (token.startsWith(".")) return dotExt === token;
+    return mime === token;
+  });
+}
 
 function safeName(name: string) {
   return name.replace(/[^a-zA-Z0-9._-]/g, "_");
@@ -22,8 +39,16 @@ export async function POST(req: Request) {
     if (!caseId || !category || !files.length) {
       return NextResponse.json({ ok: false, error: "Missing caseId, category, or files" }, { status: 400 });
     }
-    if (!VALID_CATEGORIES.has(category as "pre_procedure" | "surgery" | "post_procedure")) {
+    if (!VALID_CATEGORIES.has(category)) {
       return NextResponse.json({ ok: false, error: "Invalid category" }, { status: 400 });
+    }
+    const def = CATEGORY_MAP.get(category);
+    if (!def) {
+      return NextResponse.json({ ok: false, error: "Category config not found" }, { status: 400 });
+    }
+    const validFiles = files.filter((f) => f instanceof File && acceptsFile(f, def.accept)).slice(0, def.maxFiles);
+    if (!validFiles.length) {
+      return NextResponse.json({ ok: false, error: "No valid files for this category" }, { status: 400 });
     }
 
     const auth = await createSupabaseAuthServerClient();
@@ -42,7 +67,7 @@ export async function POST(req: Request) {
     const bucket = process.env.CASE_FILES_BUCKET || "case-files";
     const saved: unknown[] = [];
 
-    for (const f of files) {
+    for (const f of validFiles) {
       if (!(f instanceof File)) continue;
       const storagePath = `cases/${caseId}/doctor/${category}/${Date.now()}-${safeName(f.name || "upload.jpg")}`;
       const buffer = Buffer.from(await f.arrayBuffer());
@@ -60,7 +85,7 @@ export async function POST(req: Request) {
           user_id: userId,
           type: `doctor_photo:${category}`,
           storage_path: storagePath,
-          metadata: { category, original_name: f.name },
+          metadata: { category, original_name: f.name, mime: f.type, size: f.size },
         })
         .select("id, case_id, type, storage_path, metadata, created_at")
         .maybeSingle();

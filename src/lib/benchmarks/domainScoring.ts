@@ -77,6 +77,7 @@ export type ConfidenceModelV1 = {
     structured_metadata_completion: number; // 0–1
     missing_day0_recipient: boolean;
     missing_day0_donor: boolean;
+    graft_tray_closeup_present: boolean;
     missing_holdingSolution: boolean;
     missing_graftCountImplanted: boolean;
     missing_technique_critical_block: boolean;
@@ -202,10 +203,11 @@ function computeConfidenceModelV1(params: {
 
   const photosAll = (params.uploads ?? []).map((u) => ({ type: String(u.type ?? "") }));
   const doctorCounts = buildCountsByKey(photosAll, "doctor");
-  const day0RecipientOk = Number(doctorCounts["day0_recipient"] ?? 0) >= (DOCTOR_PHOTO_SCHEMA.find((d) => d.key === "day0_recipient")?.min ?? 1);
-  const day0DonorOk = Number(doctorCounts["day0_donor"] ?? 0) >= (DOCTOR_PHOTO_SCHEMA.find((d) => d.key === "day0_donor")?.min ?? 1);
+  const day0RecipientOk = Number(doctorCounts["img_immediate_postop_recipient"] ?? 0) >= (DOCTOR_PHOTO_SCHEMA.find((d) => d.key === "img_immediate_postop_recipient")?.min ?? 1);
+  const day0DonorOk = Number(doctorCounts["img_immediate_postop_donor"] ?? 0) >= (DOCTOR_PHOTO_SCHEMA.find((d) => d.key === "img_immediate_postop_donor")?.min ?? 1);
   const missingDay0Recipient = !day0RecipientOk;
   const missingDay0Donor = !day0DonorOk;
+  const graftTrayCloseupPresent = Number(doctorCounts["img_graft_tray_closeup"] ?? 0) > 0;
 
   const mapped = params.doctorAnswersRaw ? mapLegacyDoctorAnswers(params.doctorAnswersRaw) : {};
   const answers = (mapped ?? {}) as Record<string, unknown>;
@@ -256,7 +258,8 @@ function computeConfidenceModelV1(params: {
   const penalties: Array<{ id: string; amount: number; reason: string }> = [];
   const addPenalty = (id: string, amount: number, reason: string) => penalties.push({ id, amount, reason });
 
-  if (missingDay0Recipient || missingDay0Donor) addPenalty("missing_day0_evidence", 0.10, "Missing day0_recipient or day0_donor.");
+  if (missingDay0Recipient || missingDay0Donor) addPenalty("missing_day0_evidence", 0.10, "Missing img_immediate_postop_recipient or img_immediate_postop_donor.");
+  if (!graftTrayCloseupPresent) addPenalty("missing_graft_tray_closeup", 0.04, "Missing img_graft_tray_closeup high-value forensic evidence.");
   if (missingHoldingSolution) addPenalty("missing_holdingSolution", 0.05, "Missing holdingSolution.");
   if (missingGraftCountImplanted) addPenalty("missing_graftCountImplanted", 0.05, "Missing graftCountImplanted (totalGraftsImplanted).");
   if (missingTechniqueCriticalBlock) addPenalty("missing_technique_block", 0.08, "Missing technique-critical conditional block (FUE/FUT/implanter).");
@@ -276,6 +279,7 @@ function computeConfidenceModelV1(params: {
       structured_metadata_completion: Math.round(structured01 * 1000) / 1000,
       missing_day0_recipient: missingDay0Recipient,
       missing_day0_donor: missingDay0Donor,
+      graft_tray_closeup_present: graftTrayCloseupPresent,
       missing_holdingSolution: missingHoldingSolution,
       missing_graftCountImplanted: missingGraftCountImplanted,
       missing_technique_critical_block: missingTechniqueCriticalBlock,
@@ -305,9 +309,9 @@ function domainEvidenceFactorV1(params: {
 
   if (params.domainId === "SP") {
     return scoreFromFlags([
-      hasPhoto("preop_front"),
-      hasPhoto("preop_top"),
-      hasPhoto("preop_crown"),
+      hasPhoto("img_preop_front"),
+      hasPhoto("img_preop_top"),
+      hasPhoto("img_preop_crown"),
       has("totalGraftsImplanted"),
       has("densePackingAttempted"),
       has("procedureType"),
@@ -324,8 +328,8 @@ function domainEvidenceFactorV1(params: {
         ? has("futBladeType") && has("futClosureTechnique") && has("futMicroscopicDissectionUsed")
         : has("procedureType");
     return scoreFromFlags([
-      hasPhoto("preop_donor_rear"),
-      hasPhoto("day0_donor"),
+      hasPhoto("img_preop_donor_rear"),
+      hasPhoto("img_immediate_postop_donor"),
       has("donorMappingMethod"),
       has("percentExtractionPerZoneControlled"),
       techniqueBlockOk,
@@ -343,12 +347,12 @@ function domainEvidenceFactorV1(params: {
   }
 
   if (params.domainId === "IC") {
-    const intraopPresent = Number(doctorCounts["intraop"] ?? 0) > 0;
+    const intraopPresent = Number(doctorCounts["img_intraop_extraction"] ?? 0) > 0;
     const implanterUsed =
       String((a as any).recipientTool ?? "") === "implanter_pen" ||
       String((a as any).implantationMethod ?? "") === "implanter";
     return scoreFromFlags([
-      hasPhoto("day0_recipient"),
+      hasPhoto("img_immediate_postop_recipient"),
       intraopPresent,
       has("implantationMethod"),
       has("recipientTool"),
@@ -369,13 +373,18 @@ function requiredPhotoSetComplete(uploads: UploadRow[]): boolean {
 function intraopPresent(uploads: UploadRow[]): boolean {
   const photosAll = (uploads ?? []).map((u) => ({ type: String(u.type ?? "") }));
   const counts = buildCountsByKey(photosAll, "doctor");
-  return Number(counts["intraop"] ?? 0) > 0;
+  return Number(counts["img_intraop_extraction"] ?? 0) > 0;
 }
 
 function postopDay0to3Present(uploads: UploadRow[]): boolean {
   const photosAll = (uploads ?? []).map((u) => ({ type: String(u.type ?? "") }));
   const counts = buildCountsByKey(photosAll, "doctor");
-  return Number(counts["postop_day0_3"] ?? 0) > 0;
+  return (
+    Number(counts["img_followup_front"] ?? 0) > 0 ||
+    Number(counts["img_followup_top"] ?? 0) > 0 ||
+    Number(counts["img_followup_crown"] ?? 0) > 0 ||
+    Number(counts["img_followup_donor"] ?? 0) > 0
+  );
 }
 
 function computeTiersV1(params: {
@@ -411,8 +420,8 @@ function computeTiersV1(params: {
     title: "Award Eligibility",
     eligible: award,
     reasons: award
-      ? ["Completeness ≥ 92, grade A, intraop present, and follow-up evidence present (postop_day0_3 placeholder)."]
-      : ["Requires completeness ≥ 92, grade A, intraop, and follow-up evidence (postop_day0_3)."],
+      ? ["Completeness ≥ 92, grade A, intra-op evidence present, and follow-up evidence present."]
+      : ["Requires completeness ≥ 92, grade A, intra-op evidence, and follow-up evidence."],
   });
 
   return tiers;
@@ -463,7 +472,7 @@ function protocolOpportunitiesForDomain(domainId: DomainId): Array<{
         name: "Safe-zone mapping + density-mapped grid planning",
         indication: "When donor limitations or long-term preservation risk is a concern.",
         expected_benefit_domain: "DP",
-        documentation_required: ["doctor_answers:donorMappingMethod", "doctor_answers:percentExtractionPerZoneControlled", "doctor_photo:preop_donor_rear"],
+        documentation_required: ["doctor_answers:donorMappingMethod", "doctor_answers:percentExtractionPerZoneControlled", "doctor_photo:img_preop_donor_rear"],
       },
       {
         name: "Punch parameter standardization (diameter/movement/depth control)",
@@ -479,13 +488,13 @@ function protocolOpportunitiesForDomain(domainId: DomainId): Array<{
         name: "Implantation workflow standardization (implanter vs forceps) + team role clarity",
         indication: "When implantation is mixed-role or technique varies within the case.",
         expected_benefit_domain: "IC",
-        documentation_required: ["doctor_answers:implantationMethod", "doctor_answers:implantationPerformedBy", "doctor_photo:day0_recipient"],
+        documentation_required: ["doctor_answers:implantationMethod", "doctor_answers:implantationPerformedBy", "doctor_photo:img_immediate_postop_recipient"],
       },
       {
         name: "Angle/direction QA checklist for recipient placement",
         indication: "When intra-op or day0 photos are available and directional consistency is assessable.",
         expected_benefit_domain: "IC",
-        documentation_required: ["doctor_photo:intraop", "doctor_photo:day0_recipient"],
+        documentation_required: ["doctor_photo:img_intraop_extraction", "doctor_photo:img_immediate_postop_recipient"],
       },
     ];
   }
@@ -495,7 +504,7 @@ function protocolOpportunitiesForDomain(domainId: DomainId): Array<{
         name: "Zone-based density targets + graft distribution plan template",
         indication: "When planning artifacts are not attached or density targets are not explicit.",
         expected_benefit_domain: "SP",
-        documentation_required: ["doctor_answers:totalGraftsImplanted", "doctor_photo:preop_front", "doctor_photo:preop_top"],
+        documentation_required: ["doctor_answers:totalGraftsImplanted", "doctor_photo:img_preop_front", "doctor_photo:img_preop_top"],
       },
     ];
   }
@@ -576,9 +585,14 @@ function computeCompletenessIndexDoctorV1(params: {
   }
   const avgDone = doneValues.length ? doneValues.reduce((a, b) => a + b, 0) / doneValues.length : 0;
   const photoBase = 45 * avgDone;
-  const intraopPresent = Number(doctorCounts["intraop"] ?? 0) > 0;
-  const postopPresent = Number(doctorCounts["postop_day0_3"] ?? 0) > 0;
-  const photoBonus = (intraopPresent ? 2 : 0) + (postopPresent ? 1 : 0); // future follow-up bonus reserved for later
+  const intraopPresent = Number(doctorCounts["img_intraop_extraction"] ?? 0) > 0;
+  const postopPresent =
+    Number(doctorCounts["img_followup_front"] ?? 0) > 0 ||
+    Number(doctorCounts["img_followup_top"] ?? 0) > 0 ||
+    Number(doctorCounts["img_followup_crown"] ?? 0) > 0 ||
+    Number(doctorCounts["img_followup_donor"] ?? 0) > 0;
+  const graftTrayCloseupPresent = Number(doctorCounts["img_graft_tray_closeup"] ?? 0) > 0;
+  const photoBonus = (intraopPresent ? 2 : 0) + (postopPresent ? 1 : 0) + (graftTrayCloseupPresent ? 1 : 0);
   const photoScore = Math.max(0, Math.min(45, Math.round((photoBase + photoBonus) * 10) / 10));
 
   // Parse doctor answers (mapped for backward compat)
@@ -690,8 +704,8 @@ function computeCompletenessIndexDoctorV1(params: {
   const graftCountVerified = String((answers as any).graftCountDoubleVerified ?? "").toLowerCase() === "yes";
   const p_graft = graftCountVerified ? 6 : 0;
   const p_intra = intraopPresent ? 2 : 0;
-  const day0DonorOk = Number(doctorCounts["day0_donor"] ?? 0) >= (DOCTOR_PHOTO_SCHEMA.find((d) => d.key === "day0_donor")?.min ?? 1);
-  const day0RecipientOk = Number(doctorCounts["day0_recipient"] ?? 0) >= (DOCTOR_PHOTO_SCHEMA.find((d) => d.key === "day0_recipient")?.min ?? 1);
+  const day0DonorOk = Number(doctorCounts["img_immediate_postop_donor"] ?? 0) >= (DOCTOR_PHOTO_SCHEMA.find((d) => d.key === "img_immediate_postop_donor")?.min ?? 1);
+  const day0RecipientOk = Number(doctorCounts["img_immediate_postop_recipient"] ?? 0) >= (DOCTOR_PHOTO_SCHEMA.find((d) => d.key === "img_immediate_postop_recipient")?.min ?? 1);
   const p_day0 = day0DonorOk && day0RecipientOk ? 2 : 0;
   const verificationScore = Math.min(10, p_graft + p_intra + p_day0);
 
@@ -840,6 +854,7 @@ function improvementTemplates(params: {
   missingPatientKeys: string[];
   doctorAnswersIssues: string[];
   viewCoverageFactor: number;
+  graftTrayCloseupPresent: boolean;
 }): Array<{ priority: 1 | 2 | 3 | 4 | 5; action: string; why: string; evidence_needed: string[] }> {
   const out: Array<{ priority: 1 | 2 | 3 | 4 | 5; action: string; why: string; evidence_needed: string[] }> = [];
   const { domainId } = params;
@@ -867,7 +882,16 @@ function improvementTemplates(params: {
       priority: 3,
       action: "Add clearer close-ups for day-of donor/recipient to improve view classification and technique evidence.",
       why: "Based on submitted documentation, unclear/unknown views limit angle/direction and extraction-pattern assessment.",
-      evidence_needed: ["doctor_photo:day0_donor", "doctor_photo:day0_recipient"],
+      evidence_needed: ["doctor_photo:img_immediate_postop_donor", "doctor_photo:img_immediate_postop_recipient"],
+    });
+  }
+
+  if (!params.graftTrayCloseupPresent) {
+    add({
+      priority: 1,
+      action: "Add graft tray close-up images as high-value forensic evidence.",
+      why: "Based on submitted documentation, graft tray close-ups provide high-value evidence for graft integrity, transection visibility, tissue burden, and dehydration risk.",
+      evidence_needed: ["doctor_photo:img_graft_tray_closeup"],
     });
   }
 
@@ -885,7 +909,7 @@ function improvementTemplates(params: {
       priority: 2,
       action: "Include donor marking evidence and extraction-pattern documentation (safe-zone mapping + distribution).",
       why: "Based on submitted documentation, donor preservation scoring depends on clear planning evidence and donor-area views.",
-      evidence_needed: ["doctor_answers:donorMappingMethod", "doctor_answers:percentExtractionPerZoneControlled", "doctor_photo:preop_donor_rear"],
+      evidence_needed: ["doctor_answers:donorMappingMethod", "doctor_answers:percentExtractionPerZoneControlled", "doctor_photo:img_preop_donor_rear"],
     });
   }
 
@@ -894,7 +918,7 @@ function improvementTemplates(params: {
       priority: 2,
       action: "Attach planning documentation: density targets by zone, recipient plan/zones, and graft distribution plan.",
       why: "Based on submitted documentation, planning/design scoring is evidence-weighted and cannot be inferred reliably without explicit planning artifacts.",
-      evidence_needed: ["doctor_answers:totalGraftsImplanted", "doctor_photo:preop_front", "doctor_photo:preop_top"],
+      evidence_needed: ["doctor_answers:totalGraftsImplanted", "doctor_photo:img_preop_front", "doctor_photo:img_preop_top"],
     });
   }
 
@@ -903,7 +927,7 @@ function improvementTemplates(params: {
       priority: 2,
       action: "Provide intra-op/day0 recipient close-ups showing placement pattern and directionality evidence where available.",
       why: "Based on submitted documentation, implantation consistency requires visual evidence for spacing and directional alignment.",
-      evidence_needed: ["doctor_photo:day0_recipient", "doctor_photo:intraop"],
+      evidence_needed: ["doctor_photo:img_immediate_postop_recipient", "doctor_photo:img_intraop_extraction"],
     });
   }
 
@@ -957,6 +981,7 @@ export function computeDomainScoresV1(params: {
   const photosAll = (params.uploads ?? []).map((u) => ({ type: String(u.type ?? "") }));
   const doctorCounts = buildCountsByKey(photosAll, "doctor");
   const patientCounts = buildCountsByKey(photosAll, "patient");
+  const graftTrayCloseupPresent = Number(doctorCounts["img_graft_tray_closeup"] ?? 0) > 0;
   const missingDoctorKeys = DOCTOR_REQUIRED_KEYS.filter((k) => (doctorCounts[k] ?? 0) < 1);
   const missingPatientKeys = PATIENT_REQUIRED_KEYS.filter((k) => (patientCounts[k] ?? 0) < 1);
 
@@ -1040,6 +1065,7 @@ export function computeDomainScoresV1(params: {
       missingPatientKeys,
       doctorAnswersIssues: isPatientOnly ? [] : doctorIssues,
       viewCoverageFactor: viewFactor,
+      graftTrayCloseupPresent,
     });
 
     const top_drivers = (drivers.length ? drivers : []).slice(0, 3);

@@ -4,6 +4,7 @@
  * If RESEND_API_KEY is missing, logs to console instead.
  */
 
+import { SITE_URL } from "@/lib/constants";
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const FROM_EMAIL = process.env.NOTIFICATION_FROM_EMAIL ?? "noreply@hairaudit.com";
 const AUDITOR_EMAIL = process.env.AUDITOR_NOTIFICATION_EMAIL ?? "auditor@hairaudit.com";
@@ -54,7 +55,7 @@ export async function sendEmail({ to, subject, html, text }: SendEmailParams): P
 export async function notifyPatientAuditFailed(caseId: string, patientEmail: string, errorMessage: string): Promise<boolean> {
   const dashboardUrl = process.env.NEXT_PUBLIC_APP_URL
     ? `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`
-    : "https://hairaudit.com/dashboard";
+    : `${SITE_URL}/dashboard`;
 
   return sendEmail({
     to: patientEmail,
@@ -73,7 +74,7 @@ export async function notifyPatientAuditFailed(caseId: string, patientEmail: str
 export async function notifyAuditorAuditFailed(caseId: string, errorMessage: string): Promise<boolean> {
   const casesUrl = process.env.NEXT_PUBLIC_APP_URL
     ? `${process.env.NEXT_PUBLIC_APP_URL}/cases/${caseId}`
-    : `https://hairaudit.com/cases/${caseId}`;
+    : `${SITE_URL}/cases/${caseId}`;
 
   return sendEmail({
     to: AUDITOR_EMAIL,

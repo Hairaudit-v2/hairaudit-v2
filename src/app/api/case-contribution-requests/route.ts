@@ -4,6 +4,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { inngest } from "@/lib/inngest/client";
 import { generateContributionToken, hashContributionToken } from "@/lib/transparency/contributionTokens";
 import { sendInitialContributionRequestEmail } from "@/lib/transparency/emails";
+import { SITE_URL } from "@/lib/constants";
 
 function clean(v: unknown) {
   return String(v ?? "").trim();
@@ -142,7 +143,7 @@ export async function POST(req: Request) {
 
     if (reqErr) return NextResponse.json({ error: reqErr.message }, { status: 500 });
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://hairaudit.com";
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? SITE_URL;
     const contributionUrl = `${baseUrl}/contribute/${token}`;
     await admin
       .from("case_contribution_requests")

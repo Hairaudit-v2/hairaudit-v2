@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import AuditFormClient from "@/components/audit-form/AuditFormClient";
 import { CLINIC_AUDIT_SECTIONS } from "@/lib/clinicAuditForm";
+import { validateClinicAnswers } from "@/lib/clinicAuditSchema";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { canAccessCase } from "@/lib/case-access";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -49,6 +50,7 @@ export default async function ClinicFormPage({ params }: { params: Promise<{ cas
         }}
         primaryCtaHref={`/cases/${caseId}/clinic/photos`}
         primaryCtaLabel="Add your photos →"
+        validate={validateClinicAnswers}
       />
     </div>
   );

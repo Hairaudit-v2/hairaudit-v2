@@ -2,7 +2,9 @@ import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import ScrollReveal from "@/components/ui/ScrollReveal";
+import CrossPlatformLink from "@/components/platform/CrossPlatformLink";
 import { createPageMetadata } from "@/lib/seo/pageMetadata";
+import { HA_HOME } from "@/config/platform-links";
 
 export const metadata = createPageMetadata({
   title: "Follicle Intelligence | HairAudit",
@@ -70,6 +72,11 @@ export default function FollicleIntelligencePage() {
                 AI-assisted analysis within an independent review framework — so objectivity and
                 evidence lead, technology supports.
               </p>
+            </ScrollReveal>
+            <ScrollReveal delay={0.3}>
+              <div className="mt-8 max-w-xl mx-auto text-left">
+                <CrossPlatformLink mode="follicleIntelligence" />
+              </div>
             </ScrollReveal>
           </div>
         </section>
@@ -170,7 +177,9 @@ export default function FollicleIntelligencePage() {
                 Independent, evidence-based review. Analysis assisted by Follicle Intelligence.
               </p>
               <Link
-                href="/signup"
+                href={`${HA_HOME}/signup`}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="mt-6 sm:mt-8 inline-flex items-center justify-center px-6 py-3.5 sm:px-8 sm:py-4 rounded-xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors text-base"
               >
                 Submit your case

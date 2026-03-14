@@ -1,3 +1,5 @@
+import { SITE_URL } from "@/lib/constants";
+
 export type HealthLevel = "pass" | "warn" | "fail";
 
 export type AuthHealthCheck = {
@@ -15,7 +17,7 @@ function asClean(value: string | undefined | null): string {
 function appBaseUrl() {
   const nextPublic = asClean(process.env.NEXT_PUBLIC_APP_URL).replace(/\/+$/, "");
   const site = asClean(process.env.SITE_URL).replace(/\/+$/, "");
-  return nextPublic || site || "https://hairaudit.com";
+  return nextPublic || site || SITE_URL;
 }
 
 export function runAuthConfigHealthChecks(): {

@@ -40,6 +40,7 @@ export default function AuditFormClient({
   photosNav,
   primaryCtaHref,
   primaryCtaLabel,
+  validate,
 }: {
   caseId: string;
   caseStatus: string;
@@ -59,6 +60,7 @@ export default function AuditFormClient({
   /** When provided (e.g. photos page), the main footer CTA saves and navigates here instead of backHref */
   primaryCtaHref?: string;
   primaryCtaLabel?: string;
+  validate?: (answers: Record<string, unknown>) => string | null;
 }) {
   const [answers, setAnswers] = useState<Record<string, unknown>>({});
   const [loading, setLoading] = useState(true);
@@ -107,6 +109,13 @@ export default function AuditFormClient({
 
   const goToPhotos = async (href: string) => {
     setMessage(null);
+    if (validate) {
+      const err = validate(answers);
+      if (err) {
+        setMessage({ type: "err", text: err });
+        return;
+      }
+    }
     setSaving(true);
     try {
       const res = await fetch(saveUrl, {

@@ -26,6 +26,28 @@ function getMaxForKey(st: SubmitterType, key: string): number {
   return def?.max ?? 6;
 }
 
+function getAcceptForKey(st: SubmitterType, key: string): string {
+  const schema = st === "doctor" ? DOCTOR_PHOTO_SCHEMA : PATIENT_PHOTO_SCHEMA;
+  const def = schema.find((c) => c.key === key);
+  return def?.accept ?? "image/*";
+}
+
+function acceptsFile(file: File, accept: string): boolean {
+  if (!accept || accept === "*/*") return true;
+  const mime = (file.type || "").toLowerCase();
+  const dotExt = `.${(file.name.split(".").pop() || "").toLowerCase()}`;
+  const tokens = accept
+    .split(",")
+    .map((t) => t.trim().toLowerCase())
+    .filter(Boolean);
+  return tokens.some((token) => {
+    if (token === "*/*") return true;
+    if (token.endsWith("/*")) return mime.startsWith(token.slice(0, -1));
+    if (token.startsWith(".")) return dotExt === token;
+    return mime === token;
+  });
+}
+
 export async function POST(req: Request) {
   try {
     const form = await req.formData();
@@ -83,7 +105,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: "Case user_id or UPLOAD_SYSTEM_USER_ID required" }, { status: 400 });
 
     const maxFiles = getMaxForKey(st, category);
-    const toUpload = files.slice(0, maxFiles).filter((f) => f instanceof File);
+    const accepted = getAcceptForKey(st, category);
+    const toUpload = files
+      .filter((f) => f instanceof File && acceptsFile(f, accepted))
+      .slice(0, maxFiles);
+    if (!toUpload.length) {
+      return NextResponse.json({ ok: false, error: "No valid files for this category" }, { status: 400 });
+    }
     const saved: { id: string; type: string; storage_path: string; metadata: unknown; created_at: string }[] = [];
 
     for (const f of toUpload) {

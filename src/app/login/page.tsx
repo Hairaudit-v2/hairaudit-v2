@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import SiteHeader from "@/components/SiteHeader";
+import { HA_HOME } from "@/config/platform-links";
 
 export default function LoginPage() {
   const supabase = createSupabaseBrowserClient();
@@ -16,7 +17,7 @@ export default function LoginPage() {
 
   const appUrl =
     (process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "") || "").trim() ||
-    "https://hairaudit.com";
+    HA_HOME;
   const oauthRedirectTo = `${appUrl}/auth/callback`;
   const magicLinkRedirectTo = `${appUrl}/auth/magic-link`;
 

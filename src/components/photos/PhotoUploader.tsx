@@ -26,6 +26,22 @@ type UploadRow = {
   created_at: string;
 };
 
+function acceptsFile(file: File, accept: string): boolean {
+  if (!accept || accept === "*/*") return true;
+  const mime = file.type?.toLowerCase() ?? "";
+  const dotExt = `.${(file.name.split(".").pop() ?? "").toLowerCase()}`;
+  const tokens = accept
+    .split(",")
+    .map((t) => t.trim().toLowerCase())
+    .filter(Boolean);
+  return tokens.some((token) => {
+    if (token === "*/*") return true;
+    if (token.endsWith("/*")) return mime.startsWith(token.slice(0, -1));
+    if (token.startsWith(".")) return dotExt === token;
+    return mime === token;
+  });
+}
+
 function categoryFromType(type: string, prefix: string): string | null {
   if (!type?.startsWith(`${prefix}:`)) return null;
   return type.slice(prefix.length + 1);
@@ -201,6 +217,7 @@ export default function PhotoUploader({
               required={def.required}
               min={def.min}
               max={def.max}
+              accept={def.accept ?? "image/*"}
               existing={uploadsByCategory[def.key] ?? []}
               busy={!!busyCats[def.key]}
               locked={isLocked}
@@ -299,6 +316,7 @@ function PhotoCategoryCard({
   required,
   min,
   max,
+  accept,
   existing,
   busy,
   locked,
@@ -314,6 +332,7 @@ function PhotoCategoryCard({
   required: boolean;
   min: number;
   max: number;
+  accept: string;
   existing: UploadRow[];
   busy: boolean;
   locked: boolean;
@@ -376,9 +395,7 @@ function PhotoCategoryCard({
           if (locked) return;
           e.preventDefault();
           setDrag(false);
-          const files = Array.from(e.dataTransfer.files).filter((f) =>
-            f.type.startsWith("image/")
-          );
+          const files = Array.from(e.dataTransfer.files).filter((f) => acceptsFile(f, accept));
           onUpload(files.slice(0, max - existing.length));
         }}
       >
@@ -397,7 +414,7 @@ function PhotoCategoryCard({
               id={`audit-photo-${category}`}
               type="file"
               className="hidden"
-              accept="image/*"
+              accept={accept}
               multiple
               disabled={locked || busy}
               onChange={(e) => {

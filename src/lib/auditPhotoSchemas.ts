@@ -16,11 +16,34 @@ export type ConfidenceLabel = "High" | "Medium" | "Low" | "Very Low";
 /* ----- Re-export schemas (single source of truth from photoSchemas) ----- */
 
 export const DOCTOR_REQUIRED_KEYS = [
-  "preop_front", "preop_left", "preop_right", "preop_top",
-  "preop_crown", "preop_donor_rear", "day0_recipient", "day0_donor",
+  "img_preop_front",
+  "img_preop_left",
+  "img_preop_right",
+  "img_preop_top",
+  "img_preop_donor_rear",
+  "img_immediate_postop_recipient",
+  "img_immediate_postop_donor",
 ] as const;
 
-export const DOCTOR_OPTIONAL_KEYS = ["intraop", "postop_day0_3"] as const;
+export const DOCTOR_OPTIONAL_KEYS = [
+  "img_preop_crown",
+  "img_preop_donor_sides",
+  "img_marking_design",
+  "img_intraop_extraction",
+  "img_graft_inspection",
+  "img_graft_tray_overview",
+  "img_graft_tray_closeup",
+  "img_graft_microscopy",
+  "img_site_creation",
+  "img_implantation_stage",
+  "img_followup_front",
+  "img_followup_top",
+  "img_followup_crown",
+  "img_followup_donor",
+  "img_trichoscopy",
+  "file_operative_notes",
+  "file_case_records",
+] as const;
 
 export const DOCTOR_PHOTO_SCHEMA = DOCTOR_SCHEMA;
 
@@ -96,10 +119,21 @@ function normalizeToPatientKey(key: string): PatientPhotoKey | null {
 }
 
 const DOCTOR_LEGACY_MAP: Record<string, DoctorPhotoKey | null> = {
-  pre_procedure: "preop_front",
-  surgery: "intraop",
-  post_procedure: "postop_day0_3",
-  postop_day0: "postop_day0_3",
+  pre_procedure: "img_preop_front",
+  surgery: "img_intraop_extraction",
+  post_procedure: "img_immediate_postop_recipient",
+  postop_day0: "img_immediate_postop_recipient",
+  preop_front: "img_preop_front",
+  preop_left: "img_preop_left",
+  preop_right: "img_preop_right",
+  preop_top: "img_preop_top",
+  preop_crown: "img_preop_crown",
+  preop_donor_rear: "img_preop_donor_rear",
+  img_graft_tray: "img_graft_tray_closeup",
+  day0_recipient: "img_immediate_postop_recipient",
+  day0_donor: "img_immediate_postop_donor",
+  intraop: "img_intraop_extraction",
+  postop_day0_3: "img_immediate_postop_recipient",
 };
 
 function normalizeToDoctorKey(key: string): DoctorPhotoKey | null {

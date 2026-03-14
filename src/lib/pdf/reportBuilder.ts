@@ -4,6 +4,7 @@
  */
 
 import type PDFKit from "pdfkit";
+import { HA_HOME } from "@/config/platform-links";
 
 // Brand colours (from globals.css)
 const SLATE_900 = "#0f172a";
@@ -1396,7 +1397,7 @@ export async function buildAuditReportPdf(
   doc.moveDown(2);
   doc.fillColor(SLATE_400).fontSize(9);
   doc.text("— HairAudit. Professional hair transplant audit and feedback.", MARGIN, doc.y);
-  doc.text("https://hairaudit.com", MARGIN, doc.y + 14);
+  doc.text(HA_HOME, MARGIN, doc.y + 14);
   const sha = process.env.VERCEL_GIT_COMMIT_SHA ? String(process.env.VERCEL_GIT_COMMIT_SHA).slice(0, 7) : "";
   if (sha) {
     doc.text(`Build: ${sha}`, MARGIN, doc.y + 28);
