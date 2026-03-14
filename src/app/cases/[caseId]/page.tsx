@@ -11,6 +11,8 @@ import DoctorAnswersSummary from "@/components/reports/DoctorAnswersSummary";
 import PatientAnswersSummary from "@/components/reports/PatientAnswersSummary";
 import EvidenceSummary from "@/components/reports/EvidenceSummary";
 import CompletenessIndexCard from "@/components/reports/CompletenessIndexCard";
+import CaseReadinessCard from "@/components/reports/CaseReadinessCard";
+import { getCompletedCategories, getRequiredKeys } from "@/lib/auditPhotoSchemas";
 import DoctorScoringNarrativeCard from "@/components/reports/DoctorScoringNarrativeCard";
 import { mapLegacyDoctorAnswers } from "@/lib/doctorAuditSchema";
 import { normalizeIntakeFormData } from "@/lib/intake/normalizeIntakeFormData";
@@ -404,6 +406,18 @@ export default async function Page({
     priorityEvidence.graftTrayCloseup === 0 ? "missing_graft_tray_closeup" : null,
   ].filter((v): v is string => !!v);
 
+  const photoUploads = (uploads ?? []).map((u) => ({ type: (u as { type?: string }).type ?? "" }));
+  const doctorCompleted = getCompletedCategories("doctor", photoUploads);
+  const patientCompleted = getCompletedCategories("patient", photoUploads);
+  const missingDoctorRequired = [...getRequiredKeys("doctor")].filter((k) => !doctorCompleted.has(k));
+  const missingPatientRequired = [...getRequiredKeys("patient")].filter((k) => !patientCompleted.has(k));
+  const missingRequiredPhotoCategories =
+    showDoctorFlow && (uploads ?? []).some((u) => String((u as { type?: string }).type ?? "").startsWith("doctor_photo:"))
+      ? missingDoctorRequired
+      : missingPatientRequired.length > 0
+        ? missingPatientRequired
+        : missingDoctorRequired;
+
   return (
     <div className="mx-auto mt-4 max-w-[1200px] rounded-3xl border border-slate-800 bg-slate-950 px-4 pb-10 pt-4 shadow-2xl sm:px-6">
       <Link
@@ -605,6 +619,13 @@ export default async function Page({
       <section className="mt-6 grid gap-6 lg:grid-cols-2">
         <div className="grid gap-6">
           <EvidenceSummary caseRow={c} uploads={uploads ?? []} />
+          <CaseReadinessCard
+            hasDoctorAnswers={!!latestDoctorAnswers && Object.keys(latestDoctorAnswers).filter((k) => k !== "field_provenance").length > 0}
+            hasClinicAnswers={!!latestClinicAnswers && Object.keys(latestClinicAnswers).filter((k) => k !== "field_provenance").length > 0}
+            missingRequiredPhotoCategories={missingRequiredPhotoCategories}
+            submitterType={showDoctorFlow ? "doctor" : "patient"}
+            fieldProvenance={(latestDoctorAnswers?.field_provenance as Record<string, string> | undefined) ?? null}
+          />
           <CompletenessIndexCard ci={completenessIndex} />
         </div>
         <div className="rounded-2xl border border-slate-700 bg-slate-900 p-6">

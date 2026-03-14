@@ -1,3 +1,8 @@
+/**
+ * Legacy doctor upload API. Canonical flow: use POST /api/uploads/audit-photos with
+ * submitterType=doctor and category=img_* keys (see auditPhotoSchemas / photoSchemas).
+ * This route is kept for backward compatibility and uses the same img_* category set.
+ */
 import { NextResponse } from "next/server";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { canAccessCase } from "@/lib/case-access";
@@ -96,7 +101,9 @@ export async function POST(req: Request) {
       if (row) saved.push(row);
     }
 
-    return NextResponse.json({ ok: true, savedCount: saved.length, saved });
+    const res = NextResponse.json({ ok: true, savedCount: saved.length, saved });
+    res.headers.set("X-Deprecated", "Use POST /api/uploads/audit-photos with submitterType=doctor and category (img_*) instead.");
+    return res;
   } catch (e: unknown) {
     console.error("doctor-photos:", e);
     return NextResponse.json({ ok: false, error: (e as Error)?.message ?? "Server error" }, { status: 500 });

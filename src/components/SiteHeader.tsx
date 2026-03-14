@@ -122,16 +122,24 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
   return (
     <header className="border-b border-slate-800 bg-slate-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 flex items-center justify-between h-20">
-        <Link href={logoHref} className="flex items-center group">
+        <Link href={logoHref} className="flex items-center gap-2 group">
           {showLogo && (
-            <Image
-              src="/hair-audit-logo-white.png"
-              alt="Hair Audit"
-              width={230}
-              height={64}
-              className="h-8 sm:h-10 w-auto object-contain"
-              priority
-            />
+            <>
+              <Image
+                src="/hair-audit-logo-white.png"
+                alt="Hair Audit"
+                width={230}
+                height={64}
+                className="h-8 sm:h-10 w-auto object-contain"
+                priority
+              />
+              <span
+                className="rounded px-1.5 py-0.5 text-[10px] sm:text-xs font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/40"
+                aria-label="Beta"
+              >
+                Beta
+              </span>
+            </>
           )}
         </Link>
 

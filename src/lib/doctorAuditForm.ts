@@ -660,19 +660,6 @@ export const DOCTOR_AUDIT_SECTIONS: SectionDef[] = [
     title: "15. Procedure Overview",
     questions: [
       {
-        id: "procedureType",
-        prompt: "Procedure Type",
-        type: "select",
-        required: true,
-        options: [
-          { value: "fue_manual", label: "FUE (Manual)" },
-          { value: "fue_motorized", label: "FUE (Motorized)" },
-          { value: "fue_robotic", label: "FUE (Robotic)" },
-          { value: "fut", label: "FUT" },
-          { value: "combined", label: "Combined FUT + FUE" },
-        ],
-      },
-      {
         id: "totalGraftsExtracted",
         prompt: "Total Grafts Extracted",
         type: "number",
@@ -862,7 +849,7 @@ export const DOCTOR_AUDIT_SECTIONS: SectionDef[] = [
   {
     id: "fue_details",
     title: "17. Donor Extraction Details (FUE Only)",
-    showWhen: { questionId: "procedureType", oneOf: [...PROCEDURE_TYPE_FUE] },
+    showWhen: { questionId: "primary_procedure_type", oneOf: [...PROCEDURE_TYPE_FUE] },
     questions: [
       {
         id: "fuePunchType",
@@ -924,7 +911,7 @@ export const DOCTOR_AUDIT_SECTIONS: SectionDef[] = [
   {
     id: "fut_details",
     title: "18. FUT Details (FUT Only)",
-    showWhen: { questionId: "procedureType", oneOf: [...PROCEDURE_TYPE_FUT] },
+    showWhen: { questionId: "primary_procedure_type", oneOf: [...PROCEDURE_TYPE_FUT] },
     questions: [
       {
         id: "futBladeType",

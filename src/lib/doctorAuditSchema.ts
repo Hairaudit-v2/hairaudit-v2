@@ -234,8 +234,8 @@ export const doctorAuditSchema = z
     donorDensityMeasuredPreOp: z.enum(["yes_trichoscopy", "yes_visual", "no"]),
     preOpDensityFuPerCm2: z.number().min(0).max(200).optional(),
 
-    // Section 5: Procedure Overview
-    procedureType: z.enum(["fue_manual", "fue_motorized", "fue_robotic", "fut", "combined"]),
+    // Section 5: Procedure Overview (procedure type is canonical in section 4: procedure_type + primary_procedure_type)
+    procedureType: z.enum(["fue_manual", "fue_motorized", "fue_robotic", "fut", "combined"]).optional(),
     totalGraftsExtracted: z.coerce.number().min(1).max(10000),
     totalGraftsImplanted: z.coerce.number().min(1).max(10000),
     extractionPerformedBy: z.enum(["doctor", "nurse", "technician", "mixed"]),
@@ -394,15 +394,15 @@ export const doctorAuditSchema = z
   )
   .refine(
     (d) => {
-      const pt = d.procedureType;
-      const isFue = PROCEDURE_TYPE_FUE.includes(pt as (typeof PROCEDURE_TYPE_FUE)[number]);
-      const isFut = PROCEDURE_TYPE_FUT.includes(pt as (typeof PROCEDURE_TYPE_FUT)[number]);
+      const pt = d.primary_procedure_type ?? (d as { procedureType?: string }).procedureType;
+      const isFue = pt && PROCEDURE_TYPE_FUE.includes(pt as (typeof PROCEDURE_TYPE_FUE)[number]);
+      const isFut = pt && PROCEDURE_TYPE_FUT.includes(pt as (typeof PROCEDURE_TYPE_FUT)[number]);
       if (isFue && (!d.fuePunchType || !d.fuePunchDiameterRangeMm || !d.fuePunchMovement || !d.fueDepthControl))
         return false;
       if (isFut && (!d.futBladeType || !d.futClosureTechnique || !d.futMicroscopicDissectionUsed)) return false;
       return true;
     },
-    { message: "FUE/FUT-specific fields are required based on procedure type" }
+    { message: "FUE/FUT-specific fields are required based on primary procedure type" }
   )
   .refine(
     (d) => {
@@ -431,6 +431,96 @@ export function validateDoctorAnswers(data: Record<string, unknown>): string | n
   const first = issues[0];
   const path = first?.path ? String((first.path as string[]).join(".")) : "";
   return first ? (path ? `${path}: ${first.message}` : first.message) : "Validation failed";
+}
+
+/** Canonical camel -> snake mapping for storage. UI may send camelCase; we persist snake_case. */
+const CAMEL_TO_SNAKE: Record<string, string> = {
+  doctorName: "doctor_name",
+  clinicName: "clinic_name",
+  clinicLocation: "clinic_location",
+  medicalDegree: "medical_degree",
+  yearsPerformingHairTransplants: "years_performing_hair_transplants",
+  percentPracticeHairTransplant: "percent_practice_hair_transplant",
+  otherMembershipText: "other_membership_text",
+  procedureType: "primary_procedure_type",
+  totalGraftsExtracted: "total_grafts_extracted",
+  totalGraftsImplanted: "total_grafts_implanted",
+  extractionPerformedBy: "extraction_performed_by",
+  implantationPerformedBy: "implantation_performed_by",
+  holdingSolution: "primary_holding_solution",
+  holdingSolutionOtherText: "holding_solution_other_text",
+  temperatureControlled: "temperature_controlled_storage",
+  outOfBodyTimeLogged: "out_of_body_time_logged",
+  avgOutOfBodyTimeHours: "avg_out_of_body_time_hours",
+  microscopeStationsUsed: "microscope_stations_used",
+  microscopeType: "microscope_type",
+  recipientTool: "recipient_tool",
+  implantationMethod: "implantation_method",
+  densePackingAttempted: "dense_packing_attempted",
+  implanterType: "implanter_type",
+  implanterOtherText: "implanter_other_text",
+  donorMappingMethod: "donor_mapping_method",
+  percentExtractionPerZoneControlled: "percent_extraction_per_zone_controlled",
+  postOpDonorDensityMeasured: "post_op_donor_density_measured",
+  totalProcedureCostUsd: "total_procedure_cost_usd",
+  costModel: "cost_model",
+  includedInCost: "included_in_cost",
+  dhtManagementRecommended: "dht_management_recommended",
+  prpPostOpUsed: "prp_post_op_used",
+  followUpScheduleStandardized: "follow_up_schedule_standardized",
+  photoDocumentationRequired12Month: "photo_documentation_required_12_month",
+  estimatedGraftSurvivalPercent: "estimated_graft_survival_percent",
+  overallCaseSuccessRating: "overall_case_success_rating",
+  notesOptional: "notes_optional",
+  intraOpComplications: "intra_op_complications",
+  complicationsOtherText: "complications_other_text",
+  fuePunchType: "fue_punch_type",
+  fuePunchDiameterRangeMm: "fue_punch_diameter_range_mm",
+  fuePunchMovement: "fue_punch_movement",
+  fueDepthControl: "fue_depth_control",
+  fueDocumentedTransectionRatePercent: "fue_documented_transection_rate_percent",
+  futBladeType: "fut_blade_type",
+  futClosureTechnique: "fut_closure_technique",
+  futMicroscopicDissectionUsed: "fut_microscopic_dissection_used",
+};
+
+/** Normalize doctor answers to snake_case for storage. Preserves field_provenance and unknown keys. */
+export function normalizeDoctorAnswersToSnake(data: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(data)) {
+    if (value === undefined) continue;
+    if (key === "field_provenance") {
+      out[key] = value;
+      continue;
+    }
+    const snake = CAMEL_TO_SNAKE[key];
+    if (snake) {
+      out[snake] = value;
+    } else {
+      out[key] = value;
+    }
+  }
+  return out;
+}
+
+const SNAKE_TO_CAMEL_FOR_FORM: Record<string, string> = Object.fromEntries(
+  Object.entries(CAMEL_TO_SNAKE).map(([camel, snake]) => [snake, camel])
+);
+
+/** Map stored (snake_case) doctor_answers back to form-expected keys for GET. */
+export function mapStoredDoctorAnswersToForm(stored: Record<string, unknown> | null): Record<string, unknown> {
+  if (!stored || typeof stored !== "object") return {};
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(stored)) {
+    if (value === undefined) continue;
+    const camel = SNAKE_TO_CAMEL_FOR_FORM[key];
+    if (camel) {
+      out[camel] = value;
+    } else {
+      out[key] = value;
+    }
+  }
+  return out;
 }
 
 /** Map legacy doctor_answers keys to new schema keys for backward compatibility */

@@ -252,7 +252,10 @@ function CaseRowView({
         )}
       </td>
       <td className="px-3 py-3 text-sm text-slate-700">{pct(row.gii?.confidence)}</td>
-      <td className="px-3 py-3 text-sm text-slate-700">
+      <td
+        className="px-3 py-3 text-sm text-slate-700"
+        title={evidenceMissing > 0 && Array.isArray(row.evidence?.missing_categories) ? `Missing: ${(row.evidence.missing_categories as string[]).join(", ")}` : undefined}
+      >
         {typeof evidenceScore === "number" ? Math.round(evidenceScore) : "—"}
         {evidenceMissing > 0 ? ` (${evidenceMissing} missing)` : ""}
       </td>

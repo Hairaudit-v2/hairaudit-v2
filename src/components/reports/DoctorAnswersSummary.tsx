@@ -96,6 +96,23 @@ export default function DoctorAnswersSummary({
           </dl>
         </div>
       )}
+      {Object.keys(fieldProvenance).length > 0 && (() => {
+        const fromDefaults = Object.values(fieldProvenance).filter((v) => v === "prefilled_from_doctor_default" || v === "prefilled_from_clinic_default").length;
+        const edited = Object.values(fieldProvenance).filter((v) => v === "edited_after_prefill").length;
+        const manual = Object.values(fieldProvenance).filter((v) => v === "entered_manually" || v === "confirmed_by_submitter").length;
+        const inherited = Object.values(fieldProvenance).filter((v) => v === "inherited_from_original_case").length;
+        const defaultCount = fromDefaults + inherited;
+        const overrideCount = edited + manual;
+        const parts = [fromDefaults && `${fromDefaults} from defaults`, edited && `${edited} edited after prefill`, manual && `${manual} manual`, inherited && `${inherited} inherited`].filter(Boolean);
+        return (
+          <div className="mt-4 border-t border-slate-100 pt-3">
+            <p className="text-xs font-medium text-slate-600">Provenance summary</p>
+            <p className="mt-1 text-xs text-slate-500">
+              {parts.length ? `${parts.join(", ")}. Default vs override: ${defaultCount} from defaults, ${overrideCount} overridden or manual.` : "No provenance tags."}
+            </p>
+          </div>
+        );
+      })()}
       <div className="mt-4 border-t border-slate-100 pt-3 text-xs text-slate-500">
         Field provenance helps auditors distinguish manual entries, default-prefilled values, inherited baseline values, and post-prefill edits.
       </div>

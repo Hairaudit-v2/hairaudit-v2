@@ -4,6 +4,7 @@ import "./globals.css";
 import { logAuthEnvHealthOnce } from "@/lib/auth/validateAuthEnv";
 import RecoveryHashRouter from "@/components/RecoveryHashRouter";
 import MainContentTarget from "@/components/a11y/MainContentTarget";
+import BetaBanner from "@/components/BetaBanner";
 import type { Metadata } from "next";
 import { SITE_URL } from "@/lib/constants";
 
@@ -53,6 +54,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <a href="#main-content" className="skip-link">
           Skip to main content
         </a>
+        <BetaBanner />
         <MainContentTarget />
         <RecoveryHashRouter />
         {children}

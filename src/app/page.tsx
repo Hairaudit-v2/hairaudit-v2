@@ -4,6 +4,7 @@ import SiteFooter from "@/components/SiteFooter";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import HairAuditScoreVisual from "@/components/seo/HairAuditScoreVisual";
 import ReviewProcessReassurance from "@/components/seo/ReviewProcessReassurance";
+import BetaStats from "@/components/BetaStats";
 import { createPageMetadata } from "@/lib/seo/pageMetadata";
 import TrackedLink from "@/components/analytics/TrackedLink";
 
@@ -205,6 +206,37 @@ export default function HomePage() {
                   </div>
                 </div>
                 <HairAuditScoreVisual score={89} label="Strong quality validation" />
+              </div>
+            </ScrollReveal>
+          </div>
+        </section>
+
+        <section className="relative px-4 sm:px-6 py-16 sm:py-20" id="public-beta">
+          <div className="max-w-5xl mx-auto">
+            <ScrollReveal>
+              <h2 className="text-2xl sm:text-3xl font-bold text-white">Public Beta Program</h2>
+              <p className="mt-4 text-slate-300 max-w-3xl">
+                HairAudit is running a public beta to refine our Follicle Intelligence™ scoring system
+                with real cases and professional feedback.
+              </p>
+              <ul className="mt-6 space-y-3 text-slate-300">
+                {[
+                  "Audits are free during the beta period.",
+                  "Every case gets AI analysis plus manual verification; scores are monitored and corrected when needed.",
+                  "Clinics and surgeons in the program receive free access and early placement in rankings.",
+                  "Beta participants help refine the global scoring system for everyone.",
+                ].map((item) => (
+                  <li key={item} className="flex gap-3">
+                    <span className="text-amber-400 shrink-0">–</span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-8">
+                <p className="text-xs uppercase tracking-wider text-amber-300/90 font-semibold mb-4">
+                  Beta at a glance
+                </p>
+                <BetaStats />
               </div>
             </ScrollReveal>
           </div>

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { canAccessCase } from "@/lib/case-access";
-import { mapLegacyDoctorAnswers } from "@/lib/doctorAuditSchema";
+import { mapLegacyDoctorAnswers, mapStoredDoctorAnswersToForm, normalizeDoctorAnswersToSnake, validateDoctorAnswers } from "@/lib/doctorAuditSchema";
 import { computeDoctorAiContextV1 } from "@/lib/benchmarks/domainScoring";
 import { mergeFieldProvenance } from "@/lib/audit/fieldProvenance";
 
@@ -30,8 +30,21 @@ export async function GET(req: Request) {
     .maybeSingle();
 
   const raw = (report?.summary as Record<string, unknown>)?.doctor_answers ?? null;
-  const doctorAnswers = raw ? mapLegacyDoctorAnswers(raw as Record<string, unknown>) : null;
-  return NextResponse.json({ doctorAnswers: doctorAnswers || raw });
+  const legacy = raw ? mapLegacyDoctorAnswers(raw as Record<string, unknown>) : {};
+  const fromStored = raw ? mapStoredDoctorAnswersToForm(raw as Record<string, unknown>) : {};
+  const forForm = raw ? { ...legacy, ...fromStored } : null;
+  if (forForm && typeof forForm === "object") {
+    const stored = raw as Record<string, unknown>;
+    const pt =
+      stored.primary_procedure_type ?? stored.procedureType
+      ?? (forForm as Record<string, unknown>).primary_procedure_type
+      ?? (forForm as Record<string, unknown>).procedureType;
+    if (pt !== undefined && pt !== null && pt !== "") {
+      (forForm as Record<string, unknown>).primary_procedure_type = pt;
+      (forForm as Record<string, unknown>).procedureType = pt;
+    }
+  }
+  return NextResponse.json({ doctorAnswers: forForm || raw });
 }
 
 // POST ?caseId=...
@@ -68,6 +81,13 @@ export async function POST(req: Request) {
   delete (incomingClean as any).ai_context;
   delete (incomingClean as any).scoring;
 
+  const validationError = validateDoctorAnswers(incomingClean);
+  if (validationError) {
+    return NextResponse.json({ error: validationError }, { status: 400 });
+  }
+
+  const incomingNormalized = normalizeDoctorAnswersToSnake(incomingClean);
+
   const { data: existing } = await admin
     .from("reports")
     .select("id, version, summary")
@@ -80,11 +100,11 @@ export async function POST(req: Request) {
   const currentDoctor = (currentSummary.doctor_answers ?? {}) as Record<string, unknown>;
   const provenance = mergeFieldProvenance({
     previousAnswers: currentDoctor,
-    incomingAnswers: incomingClean,
-    previousProvenance: currentDoctor.field_provenance,
-    incomingProvenance: incomingClean.field_provenance,
+    incomingAnswers: incomingNormalized,
+    previousProvenance: currentDoctor.field_provenance as Record<string, string> | undefined,
+    incomingProvenance: (incomingNormalized.field_provenance as Record<string, string>) ?? undefined,
   });
-  const doctorAnswers = { ...currentDoctor, ...incomingClean, field_provenance: provenance } as Record<string, unknown>;
+  const doctorAnswers = { ...currentDoctor, ...incomingNormalized, field_provenance: provenance } as Record<string, unknown>;
 
   // Compute completeness/confidence context continuously on save (best-effort).
   try {

@@ -2,14 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 
-const doctorNav = [
-  { href: "/dashboard/doctor", label: "Overview" },
-  { href: "/dashboard/doctor/upload", label: "Upload" },
-  { href: "/dashboard/doctor/defaults", label: "Defaults" },
-  { href: "/dashboard/doctor/reports", label: "Reports" },
-  { href: "/dashboard/doctor/training", label: "Training" },
-  { href: "/dashboard/doctor/public-profile", label: "Public Profile" },
-];
+// Production nav: case-based flow only. No demo modules (Upload, Defaults, Reports, Training, Public Profile).
+const doctorNav = [{ href: "/dashboard/doctor", label: "Overview" }];
 
 export default async function DoctorDashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createSupabaseAuthServerClient();

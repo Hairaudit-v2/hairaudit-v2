@@ -214,9 +214,9 @@ function computeConfidenceModelV1(params: {
   const missingHoldingSolution = !hasNonEmpty((answers as any).holdingSolution);
   const missingGraftCountImplanted = !hasNonEmpty((answers as any).totalGraftsImplanted);
 
-  const procedureType = String((answers as any).procedureType ?? "");
-  const isFue = ["fue_manual", "fue_motorized", "fue_robotic", "combined"].includes(procedureType);
-  const isFut = ["fut", "combined"].includes(procedureType);
+  const procedure = String((answers as any).primary_procedure_type ?? (answers as any).procedureType ?? "");
+  const isFue = ["fue_manual", "fue_motorized", "fue_robotic", "combined"].includes(procedure);
+  const isFut = ["fut", "combined"].includes(procedure);
   const implanterUsed =
     String((answers as any).recipientTool ?? "") === "implanter_pen" ||
     String((answers as any).implantationMethod ?? "") === "implanter";
@@ -299,6 +299,7 @@ function domainEvidenceFactorV1(params: {
   const a = (mapped ?? {}) as Record<string, unknown>;
 
   const has = (k: string) => hasNonEmpty((a as any)[k]);
+  const hasProcedure = () => hasNonEmpty((a as any).primary_procedure_type) || hasNonEmpty((a as any).procedureType);
   const hasPhoto = (k: string) => Number(doctorCounts[k] ?? 0) >= (DOCTOR_PHOTO_SCHEMA.find((d) => d.key === k)?.min ?? 1);
 
   const scoreFromFlags = (flags: Array<boolean>) => {
@@ -314,19 +315,19 @@ function domainEvidenceFactorV1(params: {
       hasPhoto("img_preop_crown"),
       has("totalGraftsImplanted"),
       has("densePackingAttempted"),
-      has("procedureType"),
+      hasProcedure(),
     ]);
   }
 
   if (params.domainId === "DP") {
-    const procedureType = String((a as any).procedureType ?? "");
-    const isFue = ["fue_manual", "fue_motorized", "fue_robotic", "combined"].includes(procedureType);
-    const isFut = ["fut", "combined"].includes(procedureType);
+    const procedure = String((a as any).primary_procedure_type ?? (a as any).procedureType ?? "");
+    const isFue = ["fue_manual", "fue_motorized", "fue_robotic", "combined"].includes(procedure);
+    const isFut = ["fut", "combined"].includes(procedure);
     const techniqueBlockOk = isFue
       ? has("fuePunchType") && has("fuePunchDiameterRangeMm") && has("fuePunchMovement") && has("fueDepthControl")
       : isFut
         ? has("futBladeType") && has("futClosureTechnique") && has("futMicroscopicDissectionUsed")
-        : has("procedureType");
+        : hasProcedure();
     return scoreFromFlags([
       hasPhoto("img_preop_donor_rear"),
       hasPhoto("img_immediate_postop_donor"),
@@ -599,9 +600,9 @@ function computeCompletenessIndexDoctorV1(params: {
   const doctorAnswersMapped = params.doctorAnswersRaw ? mapLegacyDoctorAnswers(params.doctorAnswersRaw) : {};
   const answers = (doctorAnswersMapped ?? {}) as Record<string, unknown>;
 
-  const procedureType = String((answers as any).procedureType ?? "");
-  const isFue = ["fue_manual", "fue_motorized", "fue_robotic", "combined"].includes(procedureType);
-  const isFut = ["fut", "combined"].includes(procedureType);
+  const procedure = String((answers as any).primary_procedure_type ?? (answers as any).procedureType ?? "");
+  const isFue = ["fue_manual", "fue_motorized", "fue_robotic", "combined"].includes(procedure);
+  const isFut = ["fut", "combined"].includes(procedure);
   const implanterUsed =
     String((answers as any).recipientTool ?? "") === "implanter_pen" ||
     String((answers as any).implantationMethod ?? "") === "implanter";
@@ -609,7 +610,7 @@ function computeCompletenessIndexDoctorV1(params: {
   // 2.2 Structured metadata (0–35)
   // We align requested conceptual keys to existing doctor form fields where possible.
   const requiredKeys: string[] = [
-    "procedureType", // extractionMethod proxy
+    "primary_procedure_type", // canonical; procedureType accepted for backward compat
     "implantationMethod",
     "holdingSolution",
     "totalGraftsExtracted", // graftCountPlanned proxy
@@ -631,7 +632,7 @@ function computeCompletenessIndexDoctorV1(params: {
 
   // Treat incision timing as a single requirement: either of the two keys counts.
   const structuredGroups: Array<{ id: string; keys: string[]; anyOf?: boolean }> = [
-    { id: "procedureType", keys: ["procedureType"] },
+    { id: "procedureType", keys: ["primary_procedure_type", "procedureType"], anyOf: true },
     { id: "implantationMethod", keys: ["implantationMethod"] },
     { id: "holdingSolution", keys: ["holdingSolution"] },
     { id: "totalGraftsExtracted", keys: ["totalGraftsExtracted"] },
