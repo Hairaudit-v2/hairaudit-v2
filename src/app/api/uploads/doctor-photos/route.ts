@@ -6,8 +6,10 @@ import { DOCTOR_PHOTO_CATEGORIES } from "@/lib/doctorPhotoCategories";
 
 export const runtime = "nodejs";
 
-const VALID_CATEGORIES = new Set(DOCTOR_PHOTO_CATEGORIES.map((c) => c.key));
-const CATEGORY_MAP = new Map(DOCTOR_PHOTO_CATEGORIES.map((c) => [c.key, c] as const));
+const VALID_CATEGORIES: ReadonlySet<string> = new Set(DOCTOR_PHOTO_CATEGORIES.map((c) => c.key));
+const CATEGORY_MAP: ReadonlyMap<string, (typeof DOCTOR_PHOTO_CATEGORIES)[number]> = new Map(
+  DOCTOR_PHOTO_CATEGORIES.map((c) => [c.key, c] as const)
+);
 
 function acceptsFile(file: File, accept: string): boolean {
   if (!accept || accept === "*/*") return true;

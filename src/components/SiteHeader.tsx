@@ -12,6 +12,11 @@ type SiteHeaderProps = {
   showLogo?: boolean;
 };
 
+type EcosystemNavItem = {
+  href: string;
+  label: string;
+};
+
 export default function SiteHeader({ variant = "default", showLogo = true }: SiteHeaderProps) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -27,7 +32,7 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
     { href: "/clinics", label: "Clinics" },
     { href: "/professionals", label: "For Professionals" },
   ];
-  const [ecosystemNavItem, setEcosystemNavItem] = useState({
+  const [ecosystemNavItem, setEcosystemNavItem] = useState<EcosystemNavItem>({
     href: FI_HOME,
     label: "Powered by Follicle Intelligence",
   });
