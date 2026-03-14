@@ -48,6 +48,31 @@ const advancedFields = [
   { key: "patient_followup_protocol", label: "Patient follow-up protocol" },
 ];
 
+const advancedSelectOptions: Record<string, string[]> = {
+  surgical_team_size: ["2-4", "5-8", "9-12", "12+"],
+  avg_cases_per_month: ["<20", "20-50", "51-100", "100+"],
+  qa_protocol: ["Daily checklist", "Weekly QA huddle", "Case-level QA signoff", "Multilayer QA board"],
+  training_program: ["Internal mentorship", "Weekly cadaver lab", "Quarterly competency review", "Hybrid external training"],
+  internal_audit_frequency: ["Per case", "Weekly", "Bi-weekly", "Monthly"],
+  patient_followup_protocol: ["Day 1 / Week 1 / Month 1 / Month 6 / Month 12", "Week 1 / Month 1 / Month 3 / Month 6 / Month 12", "Custom protocol"],
+};
+
+const profileDefaults = {
+  basic: {
+    tagline: "Evidence-led hair restoration with structured quality controls",
+    year_established: "2015",
+    website: "https://",
+  },
+  advanced: {
+    surgical_team_size: "5-8",
+    avg_cases_per_month: "51-100",
+    qa_protocol: "Case-level QA signoff",
+    training_program: "Internal mentorship",
+    internal_audit_frequency: "Weekly",
+    patient_followup_protocol: "Day 1 / Week 1 / Month 1 / Month 6 / Month 12",
+  },
+};
+
 export default function ClinicProfileBuilder({
   initialBasicProfile,
   initialAdvancedProfile,
@@ -129,6 +154,12 @@ export default function ClinicProfileBuilder({
     }
   }
 
+  function applyProfileDefaults() {
+    setBasicProfile((prev) => ({ ...profileDefaults.basic, ...prev }));
+    setAdvancedProfile((prev) => ({ ...profileDefaults.advanced, ...prev }));
+    setMessage("Applied repeat-friendly defaults. Review and save.");
+  }
+
   async function deleteCapability(id: string) {
     setSaving(true);
     setMessage("");
@@ -167,6 +198,18 @@ export default function ClinicProfileBuilder({
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="text-xl font-semibold text-slate-900">Basic clinic profile</h2>
         <p className="mt-1 text-sm text-slate-600">This powers your trust posture and profile discoverability.</p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={applyProfileDefaults}
+            className="rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-xs font-semibold text-cyan-800 hover:bg-cyan-100"
+          >
+            Apply standard clinic defaults
+          </button>
+          <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-600">
+            Save once, then edit only what changed
+          </span>
+        </div>
         <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
           <span>Completion</span>
           <span>{basicCompletion}%</span>
@@ -203,20 +246,74 @@ export default function ClinicProfileBuilder({
         </div>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          {advancedFields.map((field) => (
-            <label key={field.key} className="block text-sm text-slate-700">
-              {field.label}
-              <textarea
-                value={String(advancedProfile[field.key] ?? "")}
+          {advancedFields
+            .filter((field) => !["primary_machine_stack", "sterilization_protocol"].includes(field.key))
+            .map((field) => {
+              const options = advancedSelectOptions[field.key];
+              if (options) {
+                return (
+                  <label key={field.key} className="block text-sm text-slate-700">
+                    {field.label}
+                    <select
+                      value={String(advancedProfile[field.key] ?? "")}
+                      onChange={(event) =>
+                        setAdvancedProfile((prev) => ({ ...prev, [field.key]: event.target.value }))
+                      }
+                      className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+                    >
+                      <option value="">Select...</option>
+                      {options.map((opt) => (
+                        <option key={opt} value={opt}>
+                          {opt}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                );
+              }
+
+              return (
+                <label key={field.key} className="block text-sm text-slate-700">
+                  {field.label}
+                  <input
+                    value={String(advancedProfile[field.key] ?? "")}
+                    onChange={(event) =>
+                      setAdvancedProfile((prev) => ({ ...prev, [field.key]: event.target.value }))
+                    }
+                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+                  />
+                </label>
+              );
+            })}
+        </div>
+
+        <details className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3">
+          <summary className="cursor-pointer text-sm font-semibold text-slate-900">Advanced metadata (optional)</summary>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <label className="block text-sm text-slate-700">
+              Primary machine stack
+              <input
+                value={String(advancedProfile.primary_machine_stack ?? "")}
                 onChange={(event) =>
-                  setAdvancedProfile((prev) => ({ ...prev, [field.key]: event.target.value }))
+                  setAdvancedProfile((prev) => ({ ...prev, primary_machine_stack: event.target.value }))
                 }
-                rows={3}
                 className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+                placeholder="e.g. Choi + sapphire + cooling chain"
               />
             </label>
-          ))}
-        </div>
+            <label className="block text-sm text-slate-700">
+              Sterilization protocol
+              <input
+                value={String(advancedProfile.sterilization_protocol ?? "")}
+                onChange={(event) =>
+                  setAdvancedProfile((prev) => ({ ...prev, sterilization_protocol: event.target.value }))
+                }
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+                placeholder="e.g. WHO checklist + dual verification"
+              />
+            </label>
+          </div>
+        </details>
       </section>
 
       <section id="clinical-stack" className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">

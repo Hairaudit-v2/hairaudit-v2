@@ -24,6 +24,12 @@ export default function ClinicWorkspacePanel() {
   const [loading, setLoading] = useState(true);
   const [savingCaseId, setSavingCaseId] = useState<string | null>(null);
   const [message, setMessage] = useState<string>("");
+  const [defaultWorkspace, setDefaultWorkspace] = useState({
+    visibilityScope: "internal",
+    clinicResponseStatus: "responded",
+    trainingFlag: false,
+    benchmarkInclude: true,
+  });
   const pendingResponses = items.filter((item) => item.clinicResponseStatus === "pending_response").length;
   const publicCases = items.filter((item) => item.visibilityScope === "public").length;
   const trainingCount = items.filter((item) => item.trainingFlag).length;
@@ -79,6 +85,19 @@ export default function ClinicWorkspacePanel() {
     setItems((prev) => prev.map((item) => (item.caseId === caseId ? { ...item, ...patch } : item)));
   }
 
+  function applyDefaultsToAll() {
+    setItems((prev) =>
+      prev.map((item) => ({
+        ...item,
+        visibilityScope: defaultWorkspace.visibilityScope,
+        clinicResponseStatus: defaultWorkspace.clinicResponseStatus,
+        trainingFlag: defaultWorkspace.trainingFlag,
+        benchmarkInclude: defaultWorkspace.benchmarkInclude,
+      }))
+    );
+    setMessage("Applied workspace defaults to all loaded cases. Review and save affected cases.");
+  }
+
   if (loading) {
     return (
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -116,6 +135,64 @@ export default function ClinicWorkspacePanel() {
       </div>
 
       <div className="mt-4 space-y-4">
+        <section className="rounded-xl border border-cyan-200 bg-cyan-50 p-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-cyan-900">Workspace defaults</p>
+          <p className="mt-1 text-xs text-cyan-900/80">Set your typical workspace controls once, then apply across repeat case handling.</p>
+          <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            <label className="text-xs text-slate-700">
+              Visibility default
+              <select
+                value={defaultWorkspace.visibilityScope}
+                onChange={(event) =>
+                  setDefaultWorkspace((prev) => ({ ...prev, visibilityScope: event.target.value }))
+                }
+                className="mt-1 w-full rounded-lg border border-slate-300 px-2 py-2 text-sm"
+              >
+                <option value="internal">Internal only</option>
+                <option value="public">Public</option>
+              </select>
+            </label>
+            <label className="text-xs text-slate-700">
+              Response default
+              <select
+                value={defaultWorkspace.clinicResponseStatus}
+                onChange={(event) =>
+                  setDefaultWorkspace((prev) => ({ ...prev, clinicResponseStatus: event.target.value }))
+                }
+                className="mt-1 w-full rounded-lg border border-slate-300 px-2 py-2 text-sm"
+              >
+                <option value="not_requested">Not requested</option>
+                <option value="pending_response">Pending response</option>
+                <option value="responded">Responded</option>
+              </select>
+            </label>
+            <label className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-2 text-xs text-slate-700">
+              <input
+                type="checkbox"
+                checked={defaultWorkspace.trainingFlag}
+                onChange={(event) => setDefaultWorkspace((prev) => ({ ...prev, trainingFlag: event.target.checked }))}
+              />
+              Default include in training
+            </label>
+            <label className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-2 text-xs text-slate-700">
+              <input
+                type="checkbox"
+                checked={defaultWorkspace.benchmarkInclude}
+                onChange={(event) => setDefaultWorkspace((prev) => ({ ...prev, benchmarkInclude: event.target.checked }))}
+              />
+              Default include in benchmark
+            </label>
+          </div>
+          <div className="mt-2">
+            <button
+              type="button"
+              onClick={applyDefaultsToAll}
+              className="rounded-lg border border-cyan-300 bg-white px-3 py-1.5 text-xs font-semibold text-cyan-800 hover:bg-cyan-100"
+            >
+              Apply defaults to loaded cases
+            </button>
+          </div>
+        </section>
         {items.length === 0 ? (
           <p className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
             No clinic-linked cases yet. Start with a clinic-submitted case to create your internal QA baseline, then respond to patient-submitted audits to strengthen public trust signals.
@@ -139,34 +216,54 @@ export default function ClinicWorkspacePanel() {
               </div>
 
               <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <label className="text-xs text-slate-600">
-                  Visibility
-                  <select
-                    value={item.visibilityScope}
-                    onChange={(event) => updateItem(item.caseId, { visibilityScope: event.target.value })}
-                    className="mt-1 w-full rounded-lg border border-slate-300 px-2 py-2 text-sm"
-                  >
-                    <option value="internal">Internal only</option>
-                    <option value="public">Public</option>
-                  </select>
-                </label>
+                <div className="rounded-lg border border-slate-200 bg-white p-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Visibility</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {[
+                      { value: "internal", label: "Internal" },
+                      { value: "public", label: "Public" },
+                    ].map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => updateItem(item.caseId, { visibilityScope: opt.value })}
+                        className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${
+                          item.visibilityScope === opt.value
+                            ? "border-cyan-300 bg-cyan-50 text-cyan-800"
+                            : "border-slate-300 bg-white text-slate-700"
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-                <label className="text-xs text-slate-600">
-                  Response status
-                  <select
-                    value={item.clinicResponseStatus}
-                    onChange={(event) =>
-                      updateItem(item.caseId, { clinicResponseStatus: event.target.value })
-                    }
-                    className="mt-1 w-full rounded-lg border border-slate-300 px-2 py-2 text-sm"
-                  >
-                    <option value="not_requested">Not requested</option>
-                    <option value="pending_response">Pending response</option>
-                    <option value="responded">Responded</option>
-                  </select>
-                </label>
+                <div className="rounded-lg border border-slate-200 bg-white p-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Response</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {[
+                      { value: "not_requested", label: "Not requested" },
+                      { value: "pending_response", label: "Pending" },
+                      { value: "responded", label: "Responded" },
+                    ].map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => updateItem(item.caseId, { clinicResponseStatus: opt.value })}
+                        className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${
+                          item.clinicResponseStatus === opt.value
+                            ? "border-cyan-300 bg-cyan-50 text-cyan-800"
+                            : "border-slate-300 bg-white text-slate-700"
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-                <label className="flex items-center gap-2 text-xs text-slate-700">
+                <label className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-2 text-xs text-slate-700">
                   <input
                     type="checkbox"
                     checked={item.trainingFlag}
@@ -175,7 +272,7 @@ export default function ClinicWorkspacePanel() {
                   Include in training
                 </label>
 
-                <label className="flex items-center gap-2 text-xs text-slate-700">
+                <label className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-2 text-xs text-slate-700">
                   <input
                     type="checkbox"
                     checked={item.benchmarkInclude}
@@ -185,18 +282,21 @@ export default function ClinicWorkspacePanel() {
                 </label>
               </div>
 
-              <label className="mt-3 block text-xs text-slate-600">
-                Clinic response summary
-                <textarea
-                  rows={3}
-                  value={item.clinicResponseSummary}
-                  onChange={(event) =>
-                    updateItem(item.caseId, { clinicResponseSummary: event.target.value })
-                  }
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                  placeholder="How your clinic interprets this case and what process improvements were actioned."
-                />
-              </label>
+              <details className="mt-3 rounded-lg border border-slate-200 bg-white p-2">
+                <summary className="cursor-pointer text-xs font-semibold text-slate-700">Advanced metadata (optional)</summary>
+                <label className="mt-2 block text-xs text-slate-600">
+                  Clinic response summary
+                  <textarea
+                    rows={3}
+                    value={item.clinicResponseSummary}
+                    onChange={(event) =>
+                      updateItem(item.caseId, { clinicResponseSummary: event.target.value })
+                    }
+                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    placeholder="Only add detailed free text when needed."
+                  />
+                </label>
+              </details>
 
               <div className="mt-3 flex justify-end">
                 <button

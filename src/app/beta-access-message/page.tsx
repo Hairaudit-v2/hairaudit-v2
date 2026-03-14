@@ -7,15 +7,15 @@ export default function BetaAccessMessagePage() {
       <SiteHeader variant="minimal" />
       <main className="flex-1 flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-          <h1 className="text-3xl font-bold text-slate-900">Patient Beta Access</h1>
+          <h1 className="text-3xl font-bold text-slate-900">Beta Access Notice</h1>
           <p className="mt-6 text-slate-700">
-            HairAudit is currently operating in a controlled patient beta phase.
+            HairAudit beta currently supports patient, doctor, and clinic workspaces.
           </p>
           <p className="mt-3 text-slate-700">
-            During beta, individuals can submit transplant cases for independent forensic review while the full clinic and doctor participation layers are being finalised.
+            If you are seeing this page, your current account role is not yet enabled for the active beta access list.
           </p>
           <p className="mt-3 text-slate-700">
-            Clinic and doctor access will open in later stages of the transparency platform rollout.
+            Sign in with an approved Patient, Doctor, or Clinic beta account to continue.
           </p>
           <div className="mt-8">
             <Link

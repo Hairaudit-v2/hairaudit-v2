@@ -1,7 +1,7 @@
 export const metadata = {
-  title: "Patient Beta Access | HairAudit",
+  title: "Beta Access Notice | HairAudit",
   description:
-    "HairAudit is currently operating in a controlled patient beta phase. During beta, individuals can submit transplant cases for independent forensic review. Clinic and doctor access will open in later stages.",
+    "HairAudit beta currently supports patient, doctor, and clinic experiences. This page appears when an account role is not enabled for beta access.",
   robots: {
     index: false,
     follow: false,

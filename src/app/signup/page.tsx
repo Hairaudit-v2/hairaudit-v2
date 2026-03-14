@@ -7,7 +7,7 @@ import Image from "next/image";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import SiteHeader from "@/components/SiteHeader";
 
-type SignupRole = "patient" | "clinic";
+type SignupRole = "patient" | "doctor" | "clinic";
 
 export default function SignUpPage() {
   const supabase = createSupabaseBrowserClient();
@@ -195,13 +195,13 @@ export default function SignUpPage() {
             </div>
             <h1 className="text-2xl font-bold text-slate-900">Create your HairAudit beta account</h1>
             <p className="mt-2 text-sm text-slate-600">
-              Choose your account type. Both patient and clinic experiences are currently in beta testing.
+              Choose your account type. Patient, doctor, and clinic experiences are currently in beta testing.
             </p>
 
             <form onSubmit={signUp} className="mt-6 space-y-4">
               <div>
                 <p className="block text-sm font-medium text-slate-700 mb-2">I am signing up as</p>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <button
                     type="button"
                     onClick={() => setSignupRole("patient")}
@@ -212,6 +212,17 @@ export default function SignUpPage() {
                     }`}
                   >
                     Patient (Beta)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSignupRole("doctor")}
+                    className={`rounded-lg border px-3 py-2.5 text-sm font-semibold transition-colors ${
+                      signupRole === "doctor"
+                        ? "border-violet-500 bg-violet-50 text-violet-800"
+                        : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                    }`}
+                  >
+                    Doctor (Beta)
                   </button>
                   <button
                     type="button"
@@ -228,7 +239,9 @@ export default function SignUpPage() {
                 <p className="mt-2 text-xs text-slate-500">
                   {signupRole === "clinic"
                     ? "Clinic beta accounts get access to the Clinic Intelligence Portal and clinic workspaces."
-                    : "Patient beta accounts can submit transplant cases for independent forensic review."}
+                    : signupRole === "doctor"
+                      ? "Doctor beta accounts get access to the Doctor Portal, defaults-first upload flow, and report visibility controls."
+                      : "Patient beta accounts can submit transplant cases for independent forensic review."}
                 </p>
               </div>
               <div>
@@ -267,7 +280,11 @@ export default function SignUpPage() {
                 disabled={busy}
                 className="w-full rounded-lg bg-amber-500 text-slate-900 py-2.5 font-semibold hover:bg-amber-400 transition-colors disabled:opacity-60 disabled:cursor-not-allowed focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
               >
-                {busy ? "Creating..." : `Sign up as ${signupRole === "clinic" ? "Clinic" : "Patient"}`}
+                {busy
+                  ? "Creating..."
+                  : `Sign up as ${
+                      signupRole === "clinic" ? "Clinic" : signupRole === "doctor" ? "Doctor" : "Patient"
+                    }`}
               </button>
             </form>
 
