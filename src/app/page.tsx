@@ -5,6 +5,7 @@ import ScrollReveal from "@/components/ui/ScrollReveal";
 import HairAuditScoreVisual from "@/components/seo/HairAuditScoreVisual";
 import ReviewProcessReassurance from "@/components/seo/ReviewProcessReassurance";
 import BetaStats from "@/components/BetaStats";
+import HairEcosystemSection from "@/components/HairEcosystemSection";
 import { createPageMetadata } from "@/lib/seo/pageMetadata";
 import TrackedLink from "@/components/analytics/TrackedLink";
 
@@ -103,6 +104,9 @@ export default function HomePage() {
           <div className="max-w-4xl mx-auto">
             <ScrollReveal>
               <h2 className="text-2xl sm:text-3xl font-bold text-white">What HairAudit Looks At</h2>
+              <p className="mt-4 text-slate-300 max-w-3xl">
+                HairAudit helps patients evaluate surgeons and procedures using meaningful clinical categories — not marketing. We assess both the appearance of the result and the quality of the surgical work.
+              </p>
               <ul className="mt-6 grid sm:grid-cols-2 gap-3 text-slate-300">
                 {[
                   "Hairline design",
@@ -143,6 +147,89 @@ export default function HomePage() {
                 </ScrollReveal>
               ))}
             </div>
+          </div>
+        </section>
+
+        <section className="relative px-4 sm:px-6 py-16 sm:py-20">
+          <div className="max-w-5xl mx-auto">
+            <ScrollReveal>
+              <p className="text-slate-300 max-w-2xl">
+                Not sure whether surgery is the right next step? Hair Longevity Institute helps patients understand the biology behind hair loss first.
+              </p>
+              <p className="mt-3 text-slate-400 text-sm max-w-2xl">
+                Not everyone considering surgery is yet ready for surgery. HLI helps patients understand biological drivers, treatment response, stabilisation strategy, and readiness for long-term planning.
+              </p>
+            </ScrollReveal>
+          </div>
+        </section>
+
+        <ScrollReveal delay={0.05}>
+          <HairEcosystemSection
+            site="hairaudit"
+            eyebrow="Connected platforms"
+            benefitStatement="Together, these platforms help patients understand hair biology, evaluate surgical options, and make more informed decisions with greater transparency."
+          />
+        </ScrollReveal>
+
+        <section className="relative px-4 sm:px-6 py-16 sm:py-20">
+          <div className="max-w-4xl mx-auto">
+            <ScrollReveal>
+              <h2 className="text-2xl sm:text-3xl font-bold text-white">Evaluating Surgeons Beyond Marketing</h2>
+              <p className="mt-4 text-slate-300 max-w-3xl">
+                HairAudit aims to help patients evaluate surgeons using evidence-based categories that matter for outcomes and safety, including:
+              </p>
+              <ul className="mt-6 grid sm:grid-cols-2 gap-3 text-slate-300">
+                {[
+                  "Donor extraction quality",
+                  "Implantation naturalness",
+                  "Repair case capability",
+                  "Consistency of outcomes",
+                  "Clinic transparency",
+                  "Geography and local availability",
+                  "Indicative cost ranges",
+                  "Special expertise (e.g. Afro hair, female hairlines, crown work, repair)",
+                ].map((item) => (
+                  <li key={item} className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm">
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-6 text-slate-400 text-sm">
+                This is clinical intelligence for decision-making — independent of clinic marketing.
+              </p>
+            </ScrollReveal>
+          </div>
+        </section>
+
+        <section className="relative px-4 sm:px-6 py-16 sm:py-20">
+          <div className="max-w-4xl mx-auto">
+            <ScrollReveal>
+              <h2 className="text-2xl sm:text-3xl font-bold text-white">Future Surgeon Discovery</h2>
+              <p className="mt-4 text-slate-300 max-w-3xl">
+                Future surgeon discovery categories may include:
+              </p>
+              <ul className="mt-6 grid sm:grid-cols-2 gap-3 text-slate-400 text-sm">
+                {[
+                  "Local area / country",
+                  "Cost range",
+                  "Extraction quality",
+                  "Implantation quality",
+                  "Repair expertise",
+                  "Afro hair",
+                  "Female hairlines",
+                  "Crown restoration",
+                  "High-density work",
+                  "Donor management quality",
+                ].map((item) => (
+                  <li key={item} className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-6 text-slate-500 text-sm">
+                These categories are under development to support evidence-based discovery — not marketing claims.
+              </p>
+            </ScrollReveal>
           </div>
         </section>
 

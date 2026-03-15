@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import TrackedLink from "@/components/analytics/TrackedLink";
+import HairEcosystemNav from "@/components/HairEcosystemNav";
 import { FI_HOME, HA_HOME } from "@/config/platform-links";
 
 type SiteHeaderProps = {
@@ -120,7 +121,9 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
   }, [mobileMenuOpen]);
 
   return (
-    <header className="border-b border-slate-800 bg-slate-900">
+    <>
+      <HairEcosystemNav currentSite="hairaudit" />
+      <header className="border-b border-slate-800 bg-slate-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 flex items-center justify-between h-20">
         <Link href={logoHref} className="flex items-center gap-2 group">
           {showLogo && (
@@ -278,5 +281,6 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
         </div>
       )}
     </header>
+    </>
   );
 }
