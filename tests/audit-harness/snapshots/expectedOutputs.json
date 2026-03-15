@@ -3,7 +3,16 @@
     "readinessResult": "pass",
     "missingCategories": [],
     "manifestStatus": "ready",
-    "manifestCategoriesRecognized": [],
+    "manifestCategoriesRecognized": [
+      "day0_donor",
+      "day0_recipient",
+      "preop_crown",
+      "preop_donor_rear",
+      "preop_front",
+      "preop_left",
+      "preop_right",
+      "preop_top"
+    ],
     "validationResult": "pass",
     "scoringEligibility": "eligible"
   },
@@ -11,7 +20,15 @@
     "readinessResult": "pass",
     "missingCategories": [],
     "manifestStatus": "ready",
-    "manifestCategoriesRecognized": [],
+    "manifestCategoriesRecognized": [
+      "postop_healed",
+      "postop_healed_donor",
+      "preop_donor_rear",
+      "preop_front",
+      "preop_left",
+      "preop_right",
+      "preop_top"
+    ],
     "validationResult": "pass",
     "scoringEligibility": "eligible"
   },
@@ -19,7 +36,15 @@
     "readinessResult": "pass",
     "missingCategories": [],
     "manifestStatus": "ready",
-    "manifestCategoriesRecognized": [],
+    "manifestCategoriesRecognized": [
+      "postop_healed",
+      "postop_healed_donor",
+      "preop_donor_rear",
+      "preop_front",
+      "preop_left",
+      "preop_right",
+      "preop_top"
+    ],
     "validationResult": "pass",
     "scoringEligibility": "eligible"
   }

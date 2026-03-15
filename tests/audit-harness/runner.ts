@@ -31,7 +31,7 @@ import {
   validateDoctorAnswersHarness,
   validateClinicAnswersHarness,
 } from "./helpers/assertions";
-import type { ScenarioDefinition } from "./types/scenario";
+import type { ScenarioDefinition, ScenarioClassification, PassReason } from "./types/scenario";
 import { patientScenarios } from "./scenarios/patient.scenarios";
 import { doctorScenarios } from "./scenarios/doctor.scenarios";
 import { clinicScenarios } from "./scenarios/clinic.scenarios";
@@ -86,6 +86,10 @@ export interface ScenarioResult {
   scoringEligibility: string;
   /** Auditor-facing snapshot: case status, missing evidence, report presence */
   auditorVisibilityResult: Record<string, unknown>;
+  /** Classification for display: gold, negative-readiness, legacy, etc. */
+  scenarioClassification: ScenarioClassification;
+  /** Short expected outcome / pass reason for table display */
+  passReason: PassReason;
   assertions: {
     caseCreated?: boolean;
     answersStored?: boolean;
@@ -154,6 +158,34 @@ function deriveActualOutcome(
   else if (scoringEligible) labels.push("scoring_eligible");
   else labels.push("scoring_not_asserted");
   return labels.join(", ");
+}
+
+function getScenarioClassification(scenario: ScenarioDefinition): ScenarioClassification {
+  const { meta, expectations, legacyUploads } = scenario;
+  if (meta.id.endsWith(".gold") || meta.id === "patient.complete-fue") return "gold";
+  if (meta.legacyAliases || (legacyUploads?.length ?? 0) > 0) return "legacy";
+  const nameLower = (meta.name ?? "").toLowerCase();
+  const idLower = (meta.id ?? "").toLowerCase();
+  if (
+    (idLower.includes("procedure") || nameLower.includes("procedure") || nameLower.includes("normaliz")) &&
+    expectations.readinessPass === true
+  )
+    return "normalization";
+  if (meta.provenance) return "provenance";
+  if (expectations.readinessPass === false) return "negative-readiness";
+  if (expectations.expectedMissingFields?.length) return "negative-validation";
+  return "positive";
+}
+
+function getPassReason(scenario: ScenarioDefinition): PassReason {
+  const e = scenario.expectations;
+  if (e.readinessPass === false) return "expected readiness fail";
+  if (e.expectedMissingFields?.length) return "expected validation fail";
+  if (e.scoringBlocked) return "expected score blocked";
+  if (scenario.meta.legacyAliases || (scenario.legacyUploads?.length ?? 0) > 0) return "expected legacy normalization";
+  if (scenario.meta.provenance) return "expected provenance";
+  if (e.readinessPass === true && !e.scoringBlocked) return "expected full pass";
+  return "other";
 }
 
 async function runScenario(
@@ -313,6 +345,8 @@ async function runScenario(
     scoringResult: scoringBlocked ? "blocked" : scoringEligible ? "eligible" : "not_asserted",
     scoringEligibility: scoringBlocked ? "blocked" : scoringEligible ? "eligible" : "not_asserted",
     auditorVisibilityResult,
+    scenarioClassification: getScenarioClassification(scenario),
+    passReason: getPassReason(scenario),
     assertions,
     details: {
       expectedReadinessPass: scenario.expectations.readinessPass,
@@ -367,26 +401,52 @@ function buildMarkdownSummary(output: Awaited<ReturnType<typeof runHarness>>): s
     `**Run:** ${new Date().toISOString()}`,
     `**Total:** ${output.summary.total} | **Passed:** ${output.summary.passed} | **Failed:** ${output.summary.failed}`,
     "",
-    "## Results",
+    "## Summary table",
     "",
+    "| Scenario | Class | Expected | Type | Val | Manifest | Readiness | Score | Result |",
+    "|----------|-------|----------|------|-----|----------|-----------|-------|--------|",
   ];
+  for (const r of output.results) {
+    const manifestShort = r.manifestStatus === "ready" ? "ready" : r.manifestStatus === "incomplete" ? "incomplete" : "—";
+    const scoreVal = r.scoringEligibility === "eligible" ? "Y" : r.scoringEligibility === "blocked" ? "N" : "—";
+    const expectedShort =
+      r.passReason === "expected full pass"
+        ? "full pass"
+        : r.passReason === "expected readiness fail"
+          ? "readiness fail"
+          : r.passReason === "expected validation fail"
+            ? "validation fail"
+            : r.passReason === "expected score blocked"
+              ? "score blocked"
+              : r.passReason === "expected legacy normalization"
+                ? "legacy ok"
+                : r.passReason === "expected provenance"
+                  ? "provenance"
+                  : r.passReason ?? "—";
+    md.push(
+      `| ${r.scenarioId} | ${r.scenarioClassification ?? "—"} | ${expectedShort} | ${r.submissionType} | ${r.validationResult} | ${manifestShort} | ${r.readinessResult} | ${scoreVal} | ${r.passed ? "PASS" : "FAIL"} |`
+    );
+  }
+  md.push("");
+  md.push("## Results (detail)");
+  md.push("");
   for (const r of output.results) {
     md.push(`### ${r.scenarioId} — ${r.scenarioName}`);
     md.push(`| Field | Value |`);
     md.push(`|-------|-------|`);
-    md.push(`| **Pass/Fail** | ${r.passed ? "PASS" : "FAIL"} |`);
-    md.push(`| **Scenario name** | ${r.scenarioName} |`);
+    md.push(`| **Result** | ${r.passed ? "PASS" : "FAIL"} |`);
+    md.push(`| **Classification** | ${r.scenarioClassification ?? "—"} |`);
+    md.push(`| **Pass reason** | ${r.passReason ?? "—"} |`);
     md.push(`| **Submission type** | ${r.submissionType} |`);
     md.push(`| **Procedure type** | ${r.procedureType ?? "—"} |`);
-    md.push(`| **Validation result** | ${r.validationResult} |`);
+    md.push(`| **Validation** | ${r.validationResult} |`);
+    md.push(`| **Manifest** | ${r.manifestStatus} |`);
+    md.push(`| **Readiness** | ${r.readinessResult} |`);
+    md.push(`| **Score** | ${r.scoringEligibility} |`);
     md.push(`| **Expected outcome** | ${r.expectedOutcome} |`);
     md.push(`| **Actual outcome** | ${r.actualOutcome} |`);
-    md.push(`| **Readiness result** | ${r.readinessResult} |`);
     md.push(`| **Missing fields** | ${r.missingFields.length ? r.missingFields.join(", ") : "—"} |`);
     md.push(`| **Missing categories** | ${r.missingCategories.length ? r.missingCategories.join(", ") : "—"} |`);
-    md.push(`| **Manifest status** | ${r.manifestStatus} |`);
-    md.push(`| **Scoring eligibility** | ${r.scoringEligibility} |`);
-    md.push(`| **Auditor visibility result** | ${JSON.stringify(r.auditorVisibilityResult)} |`);
     md.push(`| **Duration** | ${r.durationMs}ms |`);
     if (r.errors.length) {
       md.push("");

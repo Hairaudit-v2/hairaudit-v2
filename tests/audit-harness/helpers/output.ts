@@ -44,13 +44,13 @@ export function printScenarioStart(scenarioId: string, scenarioName: string): vo
   console.log(chalk.cyan("▶"), chalk.bold(scenarioId), chalk.dim("—"), scenarioName);
 }
 
-/** Compact one-line state: validation | manifest | readiness | scoreEligible */
+/** Compact one-line state: validation | manifest | readiness | score */
 function compactStateLine(r: ScenarioResult): string {
   const v = r.validationResult === "pass" ? "pass" : "fail";
-  const m = r.manifestStatus === "ready" ? "ready" : r.manifestStatus;
+  const m = r.manifestStatus === "ready" ? "ready" : r.manifestStatus.slice(0, 8);
   const re = r.readinessResult === "pass" ? "pass" : "fail";
-  const s = r.scoringEligibility === "eligible" ? "yes" : r.scoringEligibility === "blocked" ? "no" : "—";
-  return `validation=${v} | manifest=${m} | readiness=${re} | scoreEligible=${s}`;
+  const s = r.scoringEligibility === "eligible" ? "Y" : r.scoringEligibility === "blocked" ? "N" : "—";
+  return `val=${v} manifest=${m} readiness=${re} score=${s}`;
 }
 
 export function printScenarioSuccess(r: ScenarioResult): void {
@@ -70,28 +70,49 @@ export function printScenarioFailure(r: ScenarioResult): void {
   console.log("");
 }
 
+/** Short label for pass reason (one line, no wrap). */
+function shortPassReason(passReason: string): string {
+  const map: Record<string, string> = {
+    "expected full pass": "full pass",
+    "expected readiness fail": "readiness fail",
+    "expected validation fail": "validation fail",
+    "expected score blocked": "score blocked",
+    "expected legacy normalization": "legacy ok",
+    "expected provenance": "provenance",
+    "other": "—",
+  };
+  return map[passReason] ?? passReason.slice(0, 14);
+}
+
+/** Fixed-width pass/fail for table. */
+function v(val: string): string {
+  return val === "pass" ? "pass" : "fail";
+}
+function score(s: string): string {
+  return s === "eligible" ? "Y" : s === "blocked" ? "N" : "—";
+}
+
 export function printSummaryTable(results: ScenarioResult[]): void {
-  const head = [
-    "Scenario",
-    "Type",
-    "Validation",
-    "Manifest",
-    "Readiness",
-    "Score Eligible",
-    "Result",
-  ];
+  const head = ["Scenario", "Class", "Expected", "Type", "Val", "Manifest", "Readiness", "Score", "Result"];
   const table = new Table({
     head: head.map((h) => chalk.bold(h)),
     style: { head: [], border: ["grey"] },
+    colWidths: [28, 18, 16, 8, 5, 8, 8, 5, 6],
   });
+  const maxScenarioLen = 26;
   for (const r of results) {
+    const scenarioCell =
+      r.scenarioId.length > maxScenarioLen ? r.scenarioId.slice(0, maxScenarioLen - 1) + "…" : r.scenarioId;
+    const manifestShort = r.manifestStatus === "ready" ? "ready" : r.manifestStatus === "incomplete" ? "incompl" : "—";
     table.push([
-      r.scenarioId,
+      scenarioCell,
+      r.scenarioClassification ?? "—",
+      shortPassReason(r.passReason ?? "other"),
       r.submissionType,
-      r.validationResult,
-      r.manifestStatus,
-      r.readinessResult,
-      r.scoringEligibility === "eligible" ? "yes" : r.scoringEligibility === "blocked" ? "no" : "—",
+      v(r.validationResult),
+      manifestShort,
+      v(r.readinessResult),
+      score(r.scoringEligibility),
       r.passed ? chalk.green("PASS") : chalk.red("FAIL"),
     ]);
   }

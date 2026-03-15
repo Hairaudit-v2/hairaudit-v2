@@ -9,6 +9,26 @@ export type ProcedureType = "fue" | "fut" | "combined" | "dhi" | "robotic" | "no
 /** Which image categories to attach (category key → optional path to file; empty path = use default fixture) */
 export type ImageMapping = Record<string, string | true>;
 
+/** Scenario classification for summary display (positive vs negative, gold, legacy, etc.). */
+export type ScenarioClassification =
+  | "gold"
+  | "negative-readiness"
+  | "negative-validation"
+  | "legacy"
+  | "provenance"
+  | "normalization"
+  | "positive";
+
+/** Short "why this scenario passes" / expected outcome for table display. */
+export type PassReason =
+  | "expected full pass"
+  | "expected readiness fail"
+  | "expected validation fail"
+  | "expected score blocked"
+  | "expected legacy normalization"
+  | "expected provenance"
+  | "other";
+
 export interface ScenarioMeta {
   id: string;
   name: string;

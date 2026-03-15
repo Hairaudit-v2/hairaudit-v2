@@ -118,9 +118,9 @@ export const clinicScenarios: ScenarioDefinition[] = [
   {
     meta: {
       id: "clinic.partial-form",
-      name: "Clinic partial form case",
+      name: "Clinic partial form (expected validation fail, readiness pass)",
       submissionType: "clinic",
-      description: "Validation/readiness fail as expected.",
+      description: "Partial form; expected validation fail, photo readiness pass.",
     },
     answers: { primary_procedure_type: "fue_manual" },
     imageMapping: Object.fromEntries(CLINIC_REQUIRED_IMG.map((k) => [k, true])),

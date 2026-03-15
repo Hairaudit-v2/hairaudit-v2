@@ -44,10 +44,10 @@ export const doctorScenarios: ScenarioDefinition[] = [
   {
     meta: {
       id: "doctor.complete-fue",
-      name: "Complete doctor FUE case (required images + answers)",
+      name: "Complete doctor FUE (required images; minimal answers)",
       submissionType: "doctor",
       procedureType: "fue",
-      description: "Happy path: all required doctor photo categories; scoring eligible.",
+      description: "All required doctor photo categories; scoring eligible. Minimal answers may fail full schema validation.",
     },
     answers: createMinimalDoctorAnswersFue(),
     imageMapping: Object.fromEntries(DOCTOR_REQUIRED_IMG.map((k) => [k, true])),
