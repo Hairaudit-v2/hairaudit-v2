@@ -5,9 +5,9 @@
 import { z } from "zod";
 import { PATIENT_PHOTO_SCHEMA as PATIENT_SCHEMA, DOCTOR_PHOTO_SCHEMA as DOCTOR_SCHEMA } from "./photoSchemas";
 
-export type SubmitterType = "doctor" | "patient";
+export type SubmitterType = "doctor" | "patient" | "clinic";
 
-export const SUBMITTER_TYPES = ["doctor", "patient"] as const;
+export const SUBMITTER_TYPES = ["doctor", "patient", "clinic"] as const;
 export const SubmitterTypeSchema = z.enum(SUBMITTER_TYPES);
 
 export type EvidenceScore = "A" | "B" | "C" | "D";
@@ -74,7 +74,7 @@ export type PhotoRecord = {
   storage_path?: string;
 };
 
-/** From uploads.type (patient_photo:X or doctor_photo:X) or audit_photos rows */
+/** From uploads.type (patient_photo:X, doctor_photo:X, or clinic_photo:X) or audit_photos rows */
 export function parsePhotoKey(typeOrRow: string | { type?: string } | { photo_key: string; submitter_type?: string }): { submitterType: SubmitterType; key: string } | null {
   if (typeof typeOrRow === "object") {
     if ("photo_key" in typeOrRow && typeOrRow.photo_key) {
@@ -86,11 +86,14 @@ export function parsePhotoKey(typeOrRow: string | { type?: string } | { photo_ke
       return { submitterType: "patient", key: t.slice("patient_photo:".length) };
     if (t.startsWith("doctor_photo:"))
       return { submitterType: "doctor", key: t.slice("doctor_photo:".length) };
+    if (t.startsWith("clinic_photo:"))
+      return { submitterType: "clinic", key: t.slice("clinic_photo:".length) };
     return null;
   }
   const t = String(typeOrRow ?? "");
   if (t.startsWith("patient_photo:")) return { submitterType: "patient", key: t.slice("patient_photo:".length) };
   if (t.startsWith("doctor_photo:")) return { submitterType: "doctor", key: t.slice("doctor_photo:".length) };
+  if (t.startsWith("clinic_photo:")) return { submitterType: "clinic", key: t.slice("clinic_photo:".length) };
   return null;
 }
 
@@ -144,6 +147,11 @@ function normalizeToDoctorKey(key: string): DoctorPhotoKey | null {
   return null;
 }
 
+/** Clinic uses same category schema as doctor (img_* keys). */
+function submitterUsesDoctorSchema(st: SubmitterType): boolean {
+  return st === "doctor" || st === "clinic";
+}
+
 /** Build counts by key for a submitter from photo records */
 export function buildCountsByKey(
   photos: Array<{ type?: string; photo_key?: string; submitter_type?: string }>,
@@ -168,7 +176,7 @@ export function getCompletedCategories(
   submitterType: SubmitterType,
   photos: Array<{ type?: string; photo_key?: string; submitter_type?: string }>
 ): Set<string> {
-  const schema = submitterType === "doctor" ? DOCTOR_PHOTO_SCHEMA : PATIENT_PHOTO_SCHEMA;
+  const schema = submitterUsesDoctorSchema(submitterType) ? DOCTOR_PHOTO_SCHEMA : PATIENT_PHOTO_SCHEMA;
   const counts = buildCountsByKey(photos, submitterType);
   const completed = new Set<string>();
   for (const def of schema) {
@@ -184,11 +192,11 @@ export function computeEvidenceScore(
   photos: Array<{ type?: string; photo_key?: string; submitter_type?: string }>
 ): EvidenceScore {
   const completed = getCompletedCategories(submitterType, photos);
-  const required = submitterType === "doctor"
+  const required = submitterUsesDoctorSchema(submitterType)
     ? [...DOCTOR_REQUIRED_KEYS]
     : [...PATIENT_REQUIRED_KEYS];
 
-  if (submitterType === "doctor") {
+  if (submitterUsesDoctorSchema(submitterType)) {
     const missingRequired = required.filter((k) => !completed.has(k));
     if (missingRequired.length === 0) return "A";
     if (missingRequired.length <= 2) return "B";
@@ -236,7 +244,7 @@ export function computeEvidenceDetails(
   computedAt: string;
 } {
   const completed = getCompletedCategories(submitterType, photos);
-  const required = submitterType === "doctor"
+  const required = submitterUsesDoctorSchema(submitterType)
     ? [...DOCTOR_REQUIRED_KEYS]
     : [...PATIENT_REQUIRED_KEYS];
   const missingRequired = required.filter((k) => !completed.has(k));
@@ -251,9 +259,9 @@ export function computeEvidenceDetails(
   };
 }
 
-/** Get required keys for a submitter */
+/** Get required keys for a submitter (clinic uses same as doctor) */
 export function getRequiredKeys(st: SubmitterType): readonly string[] {
-  return st === "doctor" ? DOCTOR_REQUIRED_KEYS : PATIENT_REQUIRED_KEYS;
+  return submitterUsesDoctorSchema(st) ? DOCTOR_REQUIRED_KEYS : PATIENT_REQUIRED_KEYS;
 }
 
 /** Normalize raw key to schema key for display (exported for UI) */
@@ -262,6 +270,8 @@ export function normalizeKeyForDisplay(key: string, submitterType: SubmitterType
     ? normalizeToPatientKey(key)
     : normalizeToDoctorKey(key);
 }
+
+export { submitterUsesDoctorSchema };
 
 /** Check if all required categories are satisfied for submitter */
 export function canSubmit(

@@ -69,7 +69,7 @@ export async function POST(req: Request) {
 
     const photos = (uploads ?? []).map((u) => ({ type: u.type }));
 
-    const submitterType = c.audit_type === "doctor" ? "doctor" : "patient";
+    const submitterType = c.audit_type === "doctor" ? "doctor" : c.audit_type === "clinic" ? "clinic" : "patient";
     if (submitterType === "patient" && !canSubmit("patient", photos)) {
       return NextResponse.json(
         { error: "Upload required patient photos first (Current Front, Top, Donor rear). Go to Step 2: Add your photos." },
@@ -79,6 +79,12 @@ export async function POST(req: Request) {
     if (submitterType === "doctor" && !canSubmit("doctor", photos)) {
       return NextResponse.json(
         { error: "Upload required clinical evidence photos before submission." },
+        { status: 400 }
+      );
+    }
+    if (submitterType === "clinic" && !canSubmit("clinic", photos)) {
+      return NextResponse.json(
+        { error: "Upload required clinic evidence photos before submission (same categories as doctor audit)." },
         { status: 400 }
       );
     }
@@ -104,10 +110,22 @@ export async function POST(req: Request) {
       doctorConfidence = computeConfidenceLabel(score);
     }
 
+    let clinicScore: EvidenceScore | null = null;
+    let clinicConfidence: string | null = null;
+    const clinicPhotos = photos.filter((p) => String(p.type ?? "").startsWith("clinic_photo:"));
+    if (clinicPhotos.length > 0 || submitterType === "clinic") {
+      const score: EvidenceScore = computeEvidenceScore("clinic", clinicPhotos);
+      clinicScore = score;
+      clinicConfidence = computeConfidenceLabel(score);
+    }
+
     const evidenceDetails: Record<string, unknown> = {
       ...(patientDetails ? { patient: patientDetails } : {}),
       ...(doctorScore && {
         doctor: computeEvidenceDetails("doctor", doctorPhotos),
+      }),
+      ...(clinicScore && {
+        clinic: computeEvidenceDetails("clinic", clinicPhotos),
       }),
     };
 

@@ -1,0 +1,26 @@
+{
+  "patient.complete-fue": {
+    "readinessResult": "pass",
+    "missingCategories": [],
+    "manifestStatus": "ready",
+    "manifestCategoriesRecognized": [],
+    "validationResult": "pass",
+    "scoringEligibility": "eligible"
+  },
+  "doctor.gold": {
+    "readinessResult": "pass",
+    "missingCategories": [],
+    "manifestStatus": "ready",
+    "manifestCategoriesRecognized": [],
+    "validationResult": "pass",
+    "scoringEligibility": "eligible"
+  },
+  "clinic.gold": {
+    "readinessResult": "pass",
+    "missingCategories": [],
+    "manifestStatus": "ready",
+    "manifestCategoriesRecognized": [],
+    "validationResult": "pass",
+    "scoringEligibility": "eligible"
+  }
+}
