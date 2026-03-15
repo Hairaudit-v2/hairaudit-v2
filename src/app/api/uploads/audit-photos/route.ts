@@ -14,6 +14,7 @@ export const runtime = "nodejs";
 const VALID_KEYS: Record<SubmitterType, Set<string>> = {
   doctor: new Set(DOCTOR_PHOTO_SCHEMA.map((c) => c.key)),
   patient: new Set(PATIENT_PHOTO_SCHEMA.map((c) => c.key)),
+  clinic: new Set(DOCTOR_PHOTO_SCHEMA.map((c) => c.key)),
 };
 
 function safeName(name: string) {
@@ -21,13 +22,13 @@ function safeName(name: string) {
 }
 
 function getMaxForKey(st: SubmitterType, key: string): number {
-  const schema = st === "doctor" ? DOCTOR_PHOTO_SCHEMA : PATIENT_PHOTO_SCHEMA;
+  const schema = st === "patient" ? PATIENT_PHOTO_SCHEMA : DOCTOR_PHOTO_SCHEMA;
   const def = schema.find((c) => c.key === key);
   return def?.max ?? 6;
 }
 
 function getAcceptForKey(st: SubmitterType, key: string): string {
-  const schema = st === "doctor" ? DOCTOR_PHOTO_SCHEMA : PATIENT_PHOTO_SCHEMA;
+  const schema = st === "patient" ? PATIENT_PHOTO_SCHEMA : DOCTOR_PHOTO_SCHEMA;
   const def = schema.find((c) => c.key === key);
   return def?.accept ?? "image/*";
 }
@@ -58,8 +59,8 @@ export async function POST(req: Request) {
 
     if (!caseId)
       return NextResponse.json({ ok: false, error: "Missing caseId" }, { status: 400 });
-    if (!submitterType || !["doctor", "patient"].includes(submitterType))
-      return NextResponse.json({ ok: false, error: "Missing or invalid submitterType (doctor|patient)" }, { status: 400 });
+    if (!submitterType || !["doctor", "patient", "clinic"].includes(submitterType))
+      return NextResponse.json({ ok: false, error: "Missing or invalid submitterType (doctor|patient|clinic)" }, { status: 400 });
     if (!category)
       return NextResponse.json({ ok: false, error: "Missing category" }, { status: 400 });
 
