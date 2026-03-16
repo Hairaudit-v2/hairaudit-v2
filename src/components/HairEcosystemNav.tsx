@@ -21,7 +21,7 @@ const ECOSYSTEM_LINKS = [
   {
     id: "follicleintelligence" as const,
     label: "Follicle Intelligence",
-    href: "https://follicleintelligence.com",
+    href: "https://follicleintelligence.ai",
   },
 ] as const;
 

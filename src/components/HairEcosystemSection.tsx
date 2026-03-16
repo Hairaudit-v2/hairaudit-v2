@@ -29,7 +29,7 @@ const PLATFORMS: Array<{
     id: "follicleintelligence",
     name: "Follicle Intelligence",
     description: "Analysis engine powering both platforms. Structured, evidence-based assessment of donor, graft, and recipient quality.",
-    href: "https://follicleintelligence.com",
+    href: "https://follicleintelligence.ai",
   },
 ];
 

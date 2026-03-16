@@ -1,7 +1,7 @@
 export const PLATFORM = {
   FI_NAME: "Follicle Intelligence",
   HA_NAME: "HairAudit",
-  FI_URL: "https://www.follicleintelligence.com",
+  FI_URL: "https://www.follicleintelligence.ai",
   HA_URL: "https://www.hairaudit.com",
 } as const;
 
