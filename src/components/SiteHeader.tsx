@@ -9,7 +9,7 @@ import HairEcosystemNav from "@/components/HairEcosystemNav";
 import { FI_HOME, HA_HOME } from "@/config/platform-links";
 
 type SiteHeaderProps = {
-  variant?: "default" | "minimal";
+  variant?: "default" | "minimal" | "light";
   showLogo?: boolean;
 };
 
@@ -37,10 +37,13 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
     href: FI_HOME,
     label: "Powered by Follicle Intelligence",
   });
+  const isLight = variant === "light";
   const navLinkClass =
-    "flex items-center leading-none text-[13px] xl:text-sm font-medium tracking-[0.01em] text-slate-300 hover:text-amber-300 transition-colors whitespace-nowrap";
+    "flex items-center leading-none text-[13px] xl:text-sm font-medium tracking-[0.01em] whitespace-nowrap transition-colors " +
+    (isLight ? "text-slate-600 hover:text-amber-700" : "text-slate-300 hover:text-amber-300");
   const utilityLinkClass =
-    "flex items-center leading-none text-[13px] xl:text-sm font-medium tracking-[0.01em] text-slate-300 hover:text-amber-300 transition-colors";
+    "flex items-center leading-none text-[13px] xl:text-sm font-medium tracking-[0.01em] transition-colors " +
+    (isLight ? "text-slate-600 hover:text-amber-700" : "text-slate-300 hover:text-amber-300");
 
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -122,22 +125,43 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
 
   return (
     <>
-      <HairEcosystemNav currentSite="hairaudit" />
-      <header className="border-b border-slate-800 bg-slate-900">
+      {!isLight && <HairEcosystemNav currentSite="hairaudit" />}
+      <header
+        className={
+          isLight
+            ? "border-b border-slate-200 bg-white"
+            : "border-b border-slate-800 bg-slate-900"
+        }
+      >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 flex items-center justify-between h-20">
         <Link href={logoHref} className="flex items-center gap-2 group">
           {showLogo && (
             <>
-              <Image
-                src="/hair-audit-logo-white.png"
-                alt="Hair Audit"
-                width={230}
-                height={64}
-                className="h-8 sm:h-10 w-auto object-contain"
-                priority
-              />
+              {isLight ? (
+                <Image
+                  src="/hairaudit-logo.svg"
+                  alt="Hair Audit"
+                  width={140}
+                  height={40}
+                  className="h-8 sm:h-9 w-auto object-contain"
+                  priority
+                />
+              ) : (
+                <Image
+                  src="/hair-audit-logo-white.png"
+                  alt="Hair Audit"
+                  width={230}
+                  height={64}
+                  className="h-8 sm:h-10 w-auto object-contain"
+                  priority
+                />
+              )}
               <span
-                className="rounded px-1.5 py-0.5 text-[10px] sm:text-xs font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/40"
+                className={
+                  isLight
+                    ? "rounded px-1.5 py-0.5 text-[10px] sm:text-xs font-bold uppercase tracking-wider bg-amber-500/15 text-amber-800 border border-amber-500/30"
+                    : "rounded px-1.5 py-0.5 text-[10px] sm:text-xs font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/40"
+                }
                 aria-label="Beta"
               >
                 Beta
@@ -146,7 +170,7 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
           )}
         </Link>
 
-        {variant === "default" ? (
+        {variant === "default" || variant === "light" ? (
           <nav className="flex items-center" aria-label="Main navigation">
             <div className="hidden lg:flex items-center gap-x-8">
               {navItems.map((item) => (
@@ -168,7 +192,7 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
               <TrackedLink
                 href="/request-review"
                 eventName="cta_request_review_header"
-                className="flex items-center leading-none text-[13px] xl:text-sm font-semibold tracking-[0.01em] px-4 py-2 rounded-lg bg-amber-500 text-slate-900 hover:bg-amber-400 transition-colors"
+                className="flex items-center leading-none text-[13px] xl:text-sm font-semibold tracking-[0.01em] px-4 py-2 rounded-lg bg-amber-500 text-slate-900 hover:bg-amber-600 transition-colors border border-amber-600/20"
               >
                 Request Review
               </TrackedLink>
@@ -177,13 +201,13 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
               <TrackedLink
                 href="/request-review"
                 eventName="cta_request_review_header"
-                className="inline-flex items-center justify-center rounded-lg bg-amber-500 px-3 py-2 text-xs font-semibold text-slate-900 hover:bg-amber-400 transition-colors"
+                className="inline-flex items-center justify-center rounded-lg bg-amber-500 px-3 py-2 text-xs font-semibold text-slate-900 hover:bg-amber-600 transition-colors"
               >
                 Request Review
               </TrackedLink>
               <button
                 type="button"
-                className="inline-flex items-center gap-2 rounded-lg border border-slate-700 px-3 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
+                className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 ${isLight ? "border-slate-300 text-slate-700 hover:bg-slate-50" : "border-slate-700 text-slate-200 hover:bg-slate-800"}`}
                 aria-expanded={mobileMenuOpen}
                 aria-controls="mobile-site-menu"
                 aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
@@ -216,11 +240,11 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
           </nav>
         )}
       </div>
-      {variant === "default" && mobileMenuOpen && (
+      {(variant === "default" || variant === "light") && mobileMenuOpen && (
         <div className="lg:hidden fixed inset-0 z-50">
           <button
             type="button"
-            className="absolute inset-0 bg-slate-950/75"
+            className={`absolute inset-0 ${isLight ? "bg-slate-900/20" : "bg-slate-950/75"}`}
             aria-label="Close menu overlay"
             onClick={() => setMobileMenuOpen(false)}
           />
@@ -231,14 +255,14 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
             aria-modal="true"
             aria-label="Mobile site navigation"
             tabIndex={-1}
-            className="absolute right-0 top-0 h-full w-full max-w-xs border-l border-slate-700 bg-slate-900 p-5 shadow-2xl"
+            className={`absolute right-0 top-0 h-full w-full max-w-xs border-l p-5 ${isLight ? "border-slate-200 bg-white" : "border-slate-700 bg-slate-900 shadow-2xl"}`}
           >
             <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold tracking-wide text-slate-300">Navigation</p>
+              <p className={`text-sm font-semibold tracking-wide ${isLight ? "text-slate-700" : "text-slate-300"}`}>Navigation</p>
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
-                className="rounded-md border border-slate-700 px-2.5 py-1.5 text-sm text-slate-200 hover:bg-slate-800"
+                className={`rounded-md border px-2.5 py-1.5 text-sm ${isLight ? "border-slate-300 text-slate-700 hover:bg-slate-50" : "border-slate-700 text-slate-200 hover:bg-slate-800"}`}
               >
                 Close
               </button>
@@ -248,7 +272,7 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="block rounded-lg border border-slate-800 px-3 py-2.5 text-sm font-medium text-slate-200 hover:border-slate-700 hover:bg-slate-800"
+                  className={`block rounded-lg border px-3 py-2.5 text-sm font-medium ${isLight ? "border-slate-200 text-slate-700 hover:bg-slate-50" : "border-slate-800 text-slate-200 hover:border-slate-700 hover:bg-slate-800"}`}
                 >
                   {item.label}
                 </Link>
@@ -257,22 +281,22 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
                 href={ecosystemNavItem.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block rounded-lg border border-slate-800 px-3 py-2.5 text-sm font-medium text-slate-200 hover:border-slate-700 hover:bg-slate-800"
+                className={`block rounded-lg border px-3 py-2.5 text-sm font-medium ${isLight ? "border-slate-200 text-slate-700 hover:bg-slate-50" : "border-slate-800 text-slate-200 hover:border-slate-700 hover:bg-slate-800"}`}
               >
                 {ecosystemNavItem.label}
               </a>
             </div>
-            <div className="mt-6 space-y-3 border-t border-slate-800 pt-5">
+            <div className={`mt-6 space-y-3 border-t pt-5 ${isLight ? "border-slate-200" : "border-slate-800"}`}>
               <Link
                 href="/login"
-                className="block rounded-lg border border-slate-700 px-3 py-2.5 text-center text-sm font-medium text-slate-200 hover:bg-slate-800"
+                className={`block rounded-lg border px-3 py-2.5 text-center text-sm font-medium ${isLight ? "border-slate-300 text-slate-700 hover:bg-slate-50" : "border-slate-700 text-slate-200 hover:bg-slate-800"}`}
               >
                 Sign In
               </Link>
               <TrackedLink
                 href="/request-review"
                 eventName="cta_request_review_header"
-                className="block rounded-lg bg-amber-500 px-3 py-2.5 text-center text-sm font-semibold text-slate-900 hover:bg-amber-400"
+                className="block rounded-lg bg-amber-500 px-3 py-2.5 text-center text-sm font-semibold text-slate-900 hover:bg-amber-600"
               >
                 Request Review
               </TrackedLink>

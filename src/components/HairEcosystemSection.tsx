@@ -3,118 +3,142 @@ import type { HairEcosystemSite } from "@/components/HairEcosystemNav";
 type HairEcosystemSectionProps = {
   site: HairEcosystemSite;
   eyebrow?: string;
-  benefitStatement?: string;
   className?: string;
+  theme?: "dark" | "light";
 };
 
 const PLATFORMS: Array<{
   id: HairEcosystemSite;
   name: string;
-  description: string;
+  tagline: string;
   href: string;
 }> = [
   {
     id: "hli",
     name: "Hair Longevity Institute",
-    description: "Biology-first optimisation and treatment planning. Understand drivers of hair loss, treatment response, and long-term planning before considering surgery.",
+    tagline: "Treatment pathway.",
     href: "https://hairlongevityinstitute.com",
   },
   {
     id: "hairaudit",
     name: "HairAudit",
-    description: "Surgical transparency platform. Evaluate procedures, surgeons, clinic quality, donor handling, implantation quality, and outcomes with independent, evidence-based review.",
+    tagline: "Surgical truth and audit.",
     href: "https://hairaudit.com",
   },
   {
     id: "follicleintelligence",
     name: "Follicle Intelligence",
-    description: "Analysis engine powering both platforms. Structured, evidence-based assessment of donor, graft, and recipient quality.",
+    tagline: "Analysis engine.",
     href: "https://follicleintelligence.ai",
   },
 ];
 
-const DEFAULT_EYEBROW = "Connected platforms";
-const DEFAULT_BENEFIT =
-  "Together, these platforms help patients understand hair biology, evaluate surgical options, and make more informed decisions with greater transparency.";
+const DEFAULT_EYEBROW = "Hair Intelligence ecosystem";
 
 export default function HairEcosystemSection({
   site,
   eyebrow = DEFAULT_EYEBROW,
-  benefitStatement = DEFAULT_BENEFIT,
   className = "",
+  theme = "dark",
 }: HairEcosystemSectionProps) {
+  const isLight = theme === "light";
+  const order = ["hli", "follicleintelligence", "hairaudit"] as const;
+  const ordered = order.map((id) => PLATFORMS.find((p) => p.id === id)!);
+
   return (
     <section
       aria-labelledby="ecosystem-heading"
-      className={`relative px-4 sm:px-6 py-16 sm:py-20 ${className}`.trim()}
+      className={`relative px-4 sm:px-6 py-20 sm:py-24 border-t ${isLight ? "border-slate-200 bg-neutral-50" : ""} ${className}`.trim()}
     >
-      <div className="max-w-5xl mx-auto">
-        <p className="text-xs uppercase tracking-widest text-slate-500 font-medium">
+      <div className="max-w-3xl mx-auto">
+        <p className={`text-xs uppercase tracking-widest font-medium ${isLight ? "text-slate-500" : "text-slate-500"}`}>
           {eyebrow}
         </p>
-        <h2 id="ecosystem-heading" className="mt-2 text-xl sm:text-2xl font-bold text-white sr-only">
+        <h2 id="ecosystem-heading" className="mt-2 text-xl sm:text-2xl font-bold sr-only">
           Hair Intelligence Ecosystem
         </h2>
-        <p className="mt-4 text-slate-300 text-sm sm:text-base max-w-3xl">
-          {benefitStatement}
-        </p>
-        <div className="mt-8 grid sm:grid-cols-3 gap-4">
-          {PLATFORMS.map((platform) => {
+
+        {/* Simple diagram: three nodes, FI in centre */}
+        <div className="mt-8 flex flex-col items-center gap-6 sm:flex-row sm:justify-center sm:gap-4">
+          {ordered.map((platform, index) => {
             const isCurrent = site === platform.id;
             const isExternal = !isCurrent;
+            const isCenter = platform.id === "follicleintelligence";
             const cardClass =
-              "rounded-xl border p-5 sm:p-6 flex flex-col " +
-              (isCurrent
-                ? "border-amber-500/40 bg-amber-500/5"
-                : "border-white/10 bg-white/5 hover:border-white/15 transition-colors");
+              "rounded-xl border w-full sm:w-[140px] flex-shrink-0 p-4 text-center transition-colors " +
+              (isLight
+                ? isCurrent
+                  ? "border-amber-500/40 bg-amber-500/5"
+                  : "border-slate-200 bg-white"
+                : isCurrent
+                  ? "border-amber-500/40 bg-amber-500/5"
+                  : "border-white/10 bg-white/5");
 
             const content = (
               <>
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold text-white text-base">
-                    {platform.name}
-                  </span>
-                  {isCurrent && (
-                    <span
-                      className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-amber-200 bg-amber-500/20 border border-amber-500/30"
-                      aria-hidden
-                    >
-                      Current
-                    </span>
-                  )}
-                </div>
-                <p className="mt-3 text-sm text-slate-400 leading-relaxed">
-                  {platform.description}
+                <p className={`text-sm font-semibold ${isLight ? "text-slate-900" : "text-white"}`}>
+                  {platform.name}
                 </p>
+                <p className={`mt-1 text-xs ${isLight ? "text-slate-600" : "text-slate-400"}`}>
+                  {platform.tagline}
+                </p>
+                {isCurrent && (
+                  <span
+                    className={`mt-2 inline-block rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider ${isLight ? "text-amber-800 bg-amber-500/20" : "text-amber-200 bg-amber-500/20"}`}
+                    aria-hidden
+                  >
+                    You are here
+                  </span>
+                )}
                 {isExternal && (
-                  <span className="mt-4 text-xs font-medium text-amber-300/90">
-                    Visit {platform.name} →
+                  <span className={`mt-2 inline-block text-[10px] font-medium ${isLight ? "text-amber-700" : "text-amber-400/90"}`}>
+                    Visit →
                   </span>
                 )}
               </>
             );
 
-            if (isCurrent) {
-              return (
-                <div key={platform.id} className={cardClass} aria-current="page">
-                  {content}
-                </div>
-              );
-            }
+            const card = (
+              <div className={`flex h-full flex-col items-center justify-center ${cardClass}`}>
+                {content}
+              </div>
+            );
 
             return (
-              <a
-                key={platform.id}
-                href={platform.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={cardClass}
-              >
-                {content}
-              </a>
+              <div key={platform.id} className="flex items-center gap-2 sm:gap-0">
+                {index > 0 && (
+                  <span
+                    className="hidden flex-shrink-0 sm:block sm:w-8"
+                    aria-hidden
+                  >
+                    <svg viewBox="0 0 32 24" className="w-8 h-6 text-slate-400" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                      <path d="M2 12h20M20 8l4 4-4 4" />
+                    </svg>
+                  </span>
+                )}
+                {isExternal ? (
+                  <a
+                    href={platform.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex h-full w-full sm:w-[140px] flex-shrink-0 flex-col items-center justify-center rounded-xl border p-4 text-center transition-colors hover:border-amber-500/30"
+                  >
+                    {content}
+                  </a>
+                ) : (
+                  <div className="w-full sm:w-[140px]" aria-current="page">
+                    {card}
+                  </div>
+                )}
+              </div>
             );
           })}
         </div>
+
+        {/* One line: how they connect */}
+        <p className={`mt-6 text-center text-sm ${isLight ? "text-slate-500" : "text-slate-400"}`}>
+          Follicle Intelligence powers analysis for both Hair Longevity Institute and HairAudit.
+        </p>
       </div>
     </section>
   );
