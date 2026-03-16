@@ -2,6 +2,7 @@ import Link from "next/link";
 import TrackedLink from "@/components/analytics/TrackedLink";
 import { FI_HOME } from "@/config/platform-links";
 import CrossPlatformLink from "@/components/platform/CrossPlatformLink";
+import SurgicalEcosystemFooterBand from "@/components/SurgicalEcosystemFooterBand";
 import { PLATFORM_ECOSYSTEM } from "@/lib/constants/platform";
 
 export default function SiteFooter() {
@@ -134,6 +135,7 @@ export default function SiteFooter() {
           </p>
         </div>
       </div>
+      <SurgicalEcosystemFooterBand />
     </footer>
   );
 }

@@ -6,6 +6,7 @@ import HairAuditScoreVisual from "@/components/seo/HairAuditScoreVisual";
 import ReviewProcessReassurance from "@/components/seo/ReviewProcessReassurance";
 import BetaStats from "@/components/BetaStats";
 import HairEcosystemSection from "@/components/HairEcosystemSection";
+import SurgicalIntelligenceEcosystemSection from "@/components/SurgicalIntelligenceEcosystemSection";
 import { createPageMetadata } from "@/lib/seo/pageMetadata";
 import TrackedLink from "@/components/analytics/TrackedLink";
 
@@ -149,6 +150,10 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+
+        <ScrollReveal delay={0.05}>
+          <SurgicalIntelligenceEcosystemSection />
+        </ScrollReveal>
 
         <section className="relative px-4 sm:px-6 py-16 sm:py-20">
           <div className="max-w-5xl mx-auto">
