@@ -2,8 +2,8 @@ import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import ScrollReveal from "@/components/ui/ScrollReveal";
-import HairEcosystemSection from "@/components/HairEcosystemSection";
 import SampleAuditReportSection from "@/components/landing/SampleAuditReportSection";
+import HairIntelligenceEcosystemSection from "@/components/landing/HairIntelligenceEcosystemSection";
 import { createPageMetadata } from "@/lib/seo/pageMetadata";
 import TrackedLink from "@/components/analytics/TrackedLink";
 
@@ -123,6 +123,9 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* Ecosystem — after value prop, before product/detail; dark premium block */}
+        <HairIntelligenceEcosystemSection />
+
         {/* Sample Audit Report — preview of what you get */}
         <SampleAuditReportSection theme="light" showCta={true} />
 
@@ -167,11 +170,6 @@ export default function HomePage() {
             </ScrollReveal>
           </div>
         </section>
-
-        {/* 6. Ecosystem */}
-        <ScrollReveal delay={0.05}>
-          <HairEcosystemSection site="hairaudit" theme="light" eyebrow="Ecosystem" />
-        </ScrollReveal>
 
         {/* 7. Authority */}
         <section className="relative px-4 sm:px-6 py-20 sm:py-24 border-t border-slate-200 bg-white">
