@@ -137,9 +137,9 @@ export default function HomePage() {
 
         {/* 3. Ecosystem — canonical shared GlobalHairIntelligenceSection (single instance) */}
         <GlobalHairIntelligenceSection
-          variant="hli"
-          heading="Global Hair Intelligence Network"
-          description="A connected system for biology, treatment, and surgical transparency."
+          variant="hairaudit"
+          heading="Part of the Global Hair Intelligence Network"
+          description="HairAudit sits within a connected global system linking hair biology, treatment planning, surgical transparency, and AI-driven analysis."
           size="hero"
           theme="light"
         />
