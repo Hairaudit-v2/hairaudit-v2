@@ -1,5 +1,7 @@
 "use client";
 
+import { PLATFORM } from "@/lib/constants/platform";
+
 export type HairEcosystemSite = "hli" | "hairaudit" | "follicleintelligence";
 
 type HairEcosystemNavProps = {
@@ -11,17 +13,17 @@ const ECOSYSTEM_LINKS = [
   {
     id: "hli" as const,
     label: "Hair Longevity Institute",
-    href: "https://hairlongevityinstitute.com",
+    href: PLATFORM.HLI_URL,
   },
   {
     id: "hairaudit" as const,
     label: "HairAudit",
-    href: "https://hairaudit.com",
+    href: PLATFORM.HA_URL,
   },
   {
     id: "follicleintelligence" as const,
     label: "Follicle Intelligence",
-    href: "https://follicleintelligence.ai",
+    href: PLATFORM.FI_URL,
   },
 ] as const;
 

@@ -3,7 +3,7 @@ export const PLATFORM = {
   HA_NAME: "HairAudit",
   HLI_NAME: "Hair Longevity Institute",
   IIOHR_NAME: "IIOHR",
-  FI_URL: "https://www.follicleintelligence.ai",
+  FI_URL: "https://follicleintelligence.ai",
   HA_URL: "https://www.hairaudit.com",
   HLI_URL: "https://hairlongevityinstitute.com",
   /** Update when IIOHR public site is available */

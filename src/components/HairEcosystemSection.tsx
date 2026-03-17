@@ -1,4 +1,5 @@
 import type { HairEcosystemSite } from "@/components/HairEcosystemNav";
+import { PLATFORM } from "@/lib/constants/platform";
 
 type HairEcosystemSectionProps = {
   site: HairEcosystemSite;
@@ -17,19 +18,19 @@ const PLATFORMS: Array<{
     id: "hli",
     name: "Hair Longevity Institute",
     tagline: "Treatment pathway.",
-    href: "https://hairlongevityinstitute.com",
+    href: PLATFORM.HLI_URL,
   },
   {
     id: "hairaudit",
     name: "HairAudit",
     tagline: "Surgical truth and audit.",
-    href: "https://hairaudit.com",
+    href: PLATFORM.HA_URL,
   },
   {
     id: "follicleintelligence",
     name: "Follicle Intelligence",
     tagline: "Analysis engine.",
-    href: "https://follicleintelligence.ai",
+    href: PLATFORM.FI_URL,
   },
 ];
 
