@@ -2,12 +2,14 @@ import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import ScrollReveal from "@/components/ui/ScrollReveal";
+import { createPageMetadata } from "@/lib/seo/pageMetadata";
 
-export const metadata = {
+export const metadata = createPageMetadata({
   title: "How We Review Your Surgery | HairAudit",
   description:
     "Simple overview of how HairAudit reviews surgery photos and builds an independent, evidence-based report.",
-};
+  pathname: "/methodology",
+});
 
 export default function MethodologyPage() {
   return (

@@ -4,6 +4,7 @@ import SiteFooter from "@/components/SiteFooter";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import ReviewProcessReassurance from "@/components/seo/ReviewProcessReassurance";
 import MedicalProcedureFaqSchema from "@/components/seo/MedicalProcedureFaqSchema";
+import { createPageMetadata } from "@/lib/seo/pageMetadata";
 import { patientIssueLibrary } from "@/lib/patientEducationIssues";
 
 const faqs = [
@@ -24,11 +25,12 @@ const faqs = [
   },
 ];
 
-export const metadata = {
+export const metadata = createPageMetadata({
   title: "Audit Examples | HairAudit",
   description:
     "Explore educational audit examples, report sections, and patient concern guides to understand HairAudit methodology and trust signals.",
-};
+  pathname: "/audit-examples",
+});
 
 export default function AuditExamplesPage() {
   return (

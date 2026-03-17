@@ -138,6 +138,7 @@ export default function PatientPhotoUpload({ caseId }: { caseId: string }) {
                       {u.signedUrl ? (
                         <img
                           src={u.signedUrl}
+                          alt=""
                           style={{ width: 120, height: 120, objectFit: "cover", borderRadius: 10 }}
                         />
                       ) : (

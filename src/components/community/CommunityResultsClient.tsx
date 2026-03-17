@@ -68,7 +68,7 @@ export default function CommunityResultsClient() {
             {thumb ? (
               <img
                 src={thumb}
-                alt="Community case preview"
+                alt="Case result thumbnail"
                 className="h-36 w-full rounded-xl object-cover border border-white/10"
               />
             ) : (

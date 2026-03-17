@@ -259,7 +259,7 @@ export default function RateMyHairTransplantClient() {
             <img
               key={`${src}-${i}`}
               src={src}
-              alt={`Uploaded preview ${i + 1}`}
+              alt=""
               className="h-28 w-full rounded-xl object-cover border border-white/10"
             />
           ))}

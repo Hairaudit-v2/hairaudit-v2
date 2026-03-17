@@ -57,7 +57,7 @@ export default function UploadedThumb({
     <div className="rounded-lg border p-2">
       <div className="aspect-square w-full overflow-hidden rounded-md bg-gray-100">
         {url ? isImage ? (
-          <img src={url} alt="upload" className="h-full w-full object-cover" />
+          <img src={url} alt="Case evidence thumbnail" className="h-full w-full object-cover" />
         ) : (
           <a
             href={url}

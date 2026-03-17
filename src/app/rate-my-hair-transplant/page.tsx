@@ -7,6 +7,7 @@ import ReviewProcessReassurance from "@/components/seo/ReviewProcessReassurance"
 import MedicalProcedureFaqSchema from "@/components/seo/MedicalProcedureFaqSchema";
 import { validationFunnelPages } from "@/lib/validationFunnelPages";
 import RateMyHairTransplantClient from "@/components/community/RateMyHairTransplantClient";
+import { createPageMetadata } from "@/lib/seo/pageMetadata";
 
 const faqs = [
   {
@@ -26,11 +27,12 @@ const faqs = [
   },
 ];
 
-export const metadata = {
+export const metadata = createPageMetadata({
   title: "How Good Is My Hair Transplant? | HairAudit",
   description:
     "Get an independent HairAudit quality score to validate your hair transplant result with structured, evidence-based review.",
-};
+  pathname: "/rate-my-hair-transplant",
+});
 
 export default function RateMyHairTransplantPage() {
   return (

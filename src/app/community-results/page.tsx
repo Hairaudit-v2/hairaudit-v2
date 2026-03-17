@@ -3,12 +3,14 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import CommunityResultsClient from "@/components/community/CommunityResultsClient";
+import { createPageMetadata } from "@/lib/seo/pageMetadata";
 
-export const metadata = {
+export const metadata = createPageMetadata({
   title: "Community Results | HairAudit",
   description:
     "Browse anonymous hair transplant score results shared by patients in the HairAudit community.",
-};
+  pathname: "/community-results",
+});
 
 export default function CommunityResultsPage() {
   return (

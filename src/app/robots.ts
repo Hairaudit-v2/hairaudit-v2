@@ -16,6 +16,7 @@ export default function robots(): MetadataRoute.Robots {
         disallow: [
           "/beta-access-message",
           "/request-audit",
+          "/sample-audit",
           "/verified-program",
           "/admin/",
           "/dashboard/",

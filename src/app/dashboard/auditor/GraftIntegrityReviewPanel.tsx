@@ -487,7 +487,7 @@ export default function GraftIntegrityReviewPanel(props: {
                           <div key={k} className="aspect-square overflow-hidden rounded-md border border-slate-200 bg-slate-50">
                             {thumbs[k] ? (
                               // eslint-disable-next-line @next/next/no-img-element
-                              <img src={thumbs[k] as string} alt="Donor thumbnail" className="h-full w-full object-cover" />
+                              <img src={thumbs[k] as string} alt={k.replace(/^img_/, "").replace(/_/g, " ")} className="h-full w-full object-cover" />
                             ) : (
                               <div className="h-full w-full animate-pulse bg-slate-100" />
                             )}
@@ -507,7 +507,7 @@ export default function GraftIntegrityReviewPanel(props: {
                           <div key={k} className="aspect-square overflow-hidden rounded-md border border-slate-200 bg-slate-50">
                             {thumbs[k] ? (
                               // eslint-disable-next-line @next/next/no-img-element
-                              <img src={thumbs[k] as string} alt="Recipient thumbnail" className="h-full w-full object-cover" />
+                              <img src={thumbs[k] as string} alt={k.replace(/^img_/, "").replace(/_/g, " ")} className="h-full w-full object-cover" />
                             ) : (
                               <div className="h-full w-full animate-pulse bg-slate-100" />
                             )}

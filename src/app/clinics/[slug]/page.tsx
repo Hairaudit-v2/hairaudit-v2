@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { createPageMetadata } from "@/lib/seo/pageMetadata";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import {
@@ -47,6 +48,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  const pathname = `/clinics/${slug}`;
   const admin = createSupabaseAdminClient();
   const { data } = await admin
     .from("clinic_profiles")
@@ -55,19 +57,27 @@ export async function generateMetadata({
     .eq("profile_visible", true)
     .maybeSingle();
 
-  if (!data) return { title: "Clinic not found | HairAudit" };
+  if (!data) {
+    return createPageMetadata({
+      title: "Clinic not found | HairAudit",
+      description: "This clinic profile could not be found.",
+      pathname,
+    });
+  }
 
   const row = data as { clinic_name?: string; current_award_tier?: string; city?: string; country?: string };
+  const clinicName = row.clinic_name ?? "Clinic";
   const title = [row.clinic_name, "HairAudit profile"].filter(Boolean).join(" — ");
   const location = [row.city, row.country].filter(Boolean).join(", ");
   const description = location
-    ? `${row.clinic_name} — ${row.current_award_tier ?? "Verified"} recognition. Evidence-backed transparency profile. ${location}.`
-    : `${row.clinic_name} — HairAudit evidence-backed transparency profile.`;
+    ? `${clinicName} — ${row.current_award_tier ?? "Verified"} recognition. Evidence-backed transparency profile. ${location}.`
+    : `${clinicName} — HairAudit evidence-backed transparency profile.`;
 
-  return {
+  return createPageMetadata({
     title,
     description,
-  };
+    pathname,
+  });
 }
 
 export default async function PublicClinicProfilePage({

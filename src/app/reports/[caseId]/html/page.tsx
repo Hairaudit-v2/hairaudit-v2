@@ -352,7 +352,7 @@ export default async function ReportHtmlPage({
                   {signedImages.map((img) => (
                     <div className="imgCard" key={img.id}>
                       {img.signedUrl ? (
-                        <img src={img.signedUrl} alt={img.storage_path} />
+                        <img src={img.signedUrl} alt={img.type ? img.type.replace(/^patient_photo:|^doctor_photo:|^clinic_photo:/, "").replace(/_/g, " ") : "Case evidence image"} />
                       ) : (
                         <div className="muted">Image URL unavailable</div>
                       )}

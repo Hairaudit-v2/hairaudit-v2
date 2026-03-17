@@ -8,15 +8,17 @@ import ClinicDirectoryFilters from "@/components/clinics/ClinicDirectoryFilters"
 import type { ClinicDirectoryItem } from "@/components/clinics/ClinicDirectoryCard";
 import { filterAndSortDirectory } from "@/lib/clinics/directoryFilters";
 import type { DirectoryClinicRow } from "@/lib/clinics/directoryFilters";
+import { createPageMetadata } from "@/lib/seo/pageMetadata";
 
 const CLINIC_SELECT =
   "clinic_slug, clinic_name, country, city, participation_status, current_award_tier, transparency_score, audited_case_count, contributed_case_count, benchmark_eligible_count, benchmark_eligible_validated_count, average_forensic_score, documentation_integrity_average, award_progression_paused";
 
-export const metadata = {
+export const metadata = createPageMetadata({
   title: "Clinic directory | HairAudit",
   description:
     "Explore clinics in the HairAudit transparency ecosystem. Independent, evidence-based benchmarking; clinic profiles reflect validated participation and recognised transparency standards.",
-};
+  pathname: "/clinics",
+});
 
 export default async function ClinicDirectoryPage({
   searchParams,

@@ -402,7 +402,7 @@ export default function ForensicCaseTimelineViewer(props: {
                   <article key={item.upload.id} className="overflow-hidden rounded-lg border border-slate-700 bg-slate-950">
                     <div className="aspect-square bg-slate-800/70">
                       {signedUrls[item.upload.id] ? (
-                        <img src={signedUrls[item.upload.id] as string} alt={item.upload.type} className="h-full w-full object-cover" />
+                        <img src={signedUrls[item.upload.id] as string} alt={item.upload.type.replace(/^patient_photo:|^doctor_photo:|^clinic_photo:/, "").replace(/_/g, " ")} className="h-full w-full object-cover" />
                       ) : (
                         <div className="flex h-full items-center justify-center text-xs text-slate-500">Preview unavailable</div>
                       )}

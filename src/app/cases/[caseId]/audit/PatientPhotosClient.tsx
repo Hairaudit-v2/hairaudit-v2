@@ -142,7 +142,7 @@ export default function PatientPhotosClient({ caseId }: { caseId: string }) {
               <img
                 key={i}
                 src={src}
-                alt="preview"
+                alt=""
                 style={{ width: "100%", borderRadius: 12, border: "1px solid #eee" }}
               />
             ))}

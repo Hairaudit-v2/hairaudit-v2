@@ -2,12 +2,14 @@ import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import ScrollReveal from "@/components/ui/ScrollReveal";
+import { createPageMetadata } from "@/lib/seo/pageMetadata";
 
-export const metadata = {
+export const metadata = createPageMetadata({
   title: "Benchmark Vision | HairAudit",
   description:
     "HairAudit benchmark vision: building independent infrastructure that may support structured transplant outcome benchmarking over time.",
-};
+  pathname: "/benchmark-vision",
+});
 
 const enablementCards = [
   {

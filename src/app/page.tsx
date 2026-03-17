@@ -6,6 +6,7 @@ import TrackedLink from "@/components/analytics/TrackedLink";
 import GlobalHairIntelligenceSection from "@/components/ecosystem/GlobalHairIntelligenceSection";
 import { StepIcons } from "@/components/ui/StepIcons";
 import { createPageMetadata } from "@/lib/seo/pageMetadata";
+import OrganizationWebSiteSchema from "@/components/seo/OrganizationWebSiteSchema";
 
 export const revalidate = 600;
 export const metadata = createPageMetadata({
@@ -66,6 +67,7 @@ const WHO_IT_FOR_ITEMS = [
 export default function HomePage() {
   return (
     <div className="min-h-screen flex flex-col bg-slate-900 text-slate-100">
+      <OrganizationWebSiteSchema />
       <SiteHeader />
 
       <main id="main-content" className="relative flex-1">

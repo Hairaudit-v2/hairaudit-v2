@@ -1,15 +1,15 @@
-import type { Metadata } from "next";
-import SampleReportPage from "@/app/sample-report/page";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "Sample Audit Report | HairAudit",
-  description:
-    "Preview a premium HairAudit forensic-style report with score breakdowns, image evidence analysis, findings, and correction guidance.",
+export const metadata = {
+  robots: {
+    index: false,
+    follow: false,
+  },
   alternates: {
-    canonical: "/sample-audit",
+    canonical: "/sample-report",
   },
 };
 
-export default function SampleAuditPage() {
-  return <SampleReportPage />;
+export default function SampleAuditAliasPage() {
+  redirect("/sample-report");
 }

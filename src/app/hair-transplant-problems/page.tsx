@@ -4,6 +4,7 @@ import SiteFooter from "@/components/SiteFooter";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import ReviewProcessReassurance from "@/components/seo/ReviewProcessReassurance";
 import MedicalProcedureFaqSchema from "@/components/seo/MedicalProcedureFaqSchema";
+import { createPageMetadata } from "@/lib/seo/pageMetadata";
 import { patientIssueLibrary } from "@/lib/patientEducationIssues";
 
 const faqs = [
@@ -24,11 +25,12 @@ const faqs = [
   },
 ];
 
-export const metadata = {
+export const metadata = createPageMetadata({
   title: "Hair Transplant Problems | HairAudit",
   description:
     "SEO hub covering common hair transplant problems, warning signs, and when to request an independent HairAudit review.",
-};
+  pathname: "/hair-transplant-problems",
+});
 
 export default function HairTransplantProblemsHubPage() {
   return (

@@ -2,6 +2,7 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import Link from "next/link";
 import { createPageMetadata } from "@/lib/seo/pageMetadata";
+import FaqPageSchema from "@/components/seo/FaqPageSchema";
 
 export const metadata = createPageMetadata({
   title: "FAQ | HairAudit",
@@ -60,6 +61,7 @@ const faqs = [
 export default function FAQPage() {
   return (
     <div className="min-h-screen flex flex-col bg-[#0a0a0f] text-slate-100">
+      <FaqPageSchema faqs={faqs.map(({ q, a }) => ({ question: q, answer: a }))} />
       <div className="fixed inset-0 pointer-events-none" aria-hidden>
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(251,191,36,0.06),transparent)]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_80%_60%,rgba(139,92,246,0.05),transparent)]" />
