@@ -135,13 +135,13 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* 3. Ecosystem — core brand statement, elevated light block */}
+        {/* 3. Ecosystem — canonical shared GlobalHairIntelligenceSection (single instance) */}
         <GlobalHairIntelligenceSection
-          variant="hairaudit"
-          theme="light"
+          variant="hli"
+          heading="Global Hair Intelligence Network"
+          description="A connected system for biology, treatment, and surgical transparency."
           size="hero"
-          heading="Part of the Global Hair Intelligence Network"
-          description="HairAudit sits within a connected global system linking hair biology, treatment planning, surgical transparency, and AI-driven analysis."
+          theme="light"
         />
 
         {/* 4. What You Get */}
