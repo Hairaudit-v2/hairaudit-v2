@@ -6,8 +6,7 @@ export const PLATFORM = {
   FI_URL: "https://follicleintelligence.ai",
   HA_URL: "https://www.hairaudit.com",
   HLI_URL: "https://hairlongevityinstitute.com",
-  /** Update when IIOHR public site is available */
-  IIOHR_URL: "https://iiohr.org",
+  IIOHR_URL: "https://iiohr.com",
 } as const;
 
 /** Footer band: Part of the Surgical Intelligence Ecosystem™ — same order and labels across all platforms */
