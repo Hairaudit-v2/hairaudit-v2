@@ -3,7 +3,7 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import TrackedLink from "@/components/analytics/TrackedLink";
-import GlobalHairEcosystemSection from "@/components/landing/GlobalHairEcosystemSection";
+import GlobalHairIntelligenceSection from "@/components/ecosystem/GlobalHairIntelligenceSection";
 import { StepIcons } from "@/components/ui/StepIcons";
 import { createPageMetadata } from "@/lib/seo/pageMetadata";
 
@@ -135,8 +135,16 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* 3. What You Get */}
-        <section className="relative px-4 sm:px-6 py-20 sm:py-24 border-t border-slate-700/60 bg-slate-800/30">
+        {/* 3. Ecosystem — core brand statement, elevated light block */}
+        <GlobalHairIntelligenceSection
+          variant="hairaudit"
+          size="hero"
+          heading="Part of the Global Hair Intelligence Network"
+          description="HairAudit sits within a connected global system linking hair biology, treatment planning, surgical transparency, and AI-driven analysis."
+        />
+
+        {/* 4. What You Get */}
+        <section className="relative px-4 sm:px-6 py-20 sm:py-24 bg-slate-800/30">
           <div className="max-w-4xl mx-auto">
             <ScrollReveal>
               <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
@@ -160,8 +168,8 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* 4. Sample Report teaser */}
-        <section className="relative px-4 sm:px-6 py-20 sm:py-24 border-t border-slate-700/60">
+        {/* 5. Sample Report teaser */}
+        <section className="relative px-4 sm:px-6 py-20 sm:py-24">
           <div className="max-w-3xl mx-auto">
             <ScrollReveal>
               <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
@@ -201,36 +209,27 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* 5. Why HairAudit Matters */}
-        <section className="relative px-4 sm:px-6 py-20 sm:py-24 border-t border-slate-700/60 bg-slate-800/30">
+        {/* 6. Why HairAudit Matters — tightened */}
+        <section className="relative px-4 sm:px-6 py-20 sm:py-24 bg-slate-800/30">
           <div className="max-w-3xl mx-auto">
             <ScrollReveal>
               <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
                 Why HairAudit Matters
               </h2>
-              <div className="mt-6 space-y-5 text-slate-300 leading-relaxed text-lg">
+              <div className="mt-6 space-y-4 text-slate-300 leading-relaxed text-lg">
                 <p>
-                  Hair transplants are often judged by appearance alone — but what looks acceptable on the surface may hide poor surgical technique underneath.
-                </p>
-                <p>
-                  HairAudit was created to bring transparency to the industry.
-                </p>
-                <p>
-                  We assess what most patients cannot see: how grafts were extracted, how the donor area was managed, and whether the work meets real clinical standards.
+                  Results are often judged by appearance alone — but what looks acceptable can hide poor technique. HairAudit assesses what most patients cannot see: how grafts were extracted, how the donor was managed, and whether the work meets real clinical standards.
                 </p>
                 <p className="text-slate-200 font-medium">
-                  This is not a sales tool. This is an independent verification of your results.
+                  Not a sales tool. Independent verification of your results.
                 </p>
               </div>
             </ScrollReveal>
           </div>
         </section>
 
-        {/* 6. The Global Hair Intelligence Ecosystem */}
-        <GlobalHairEcosystemSection />
-
         {/* 7. Who It's For */}
-        <section className="relative px-4 sm:px-6 py-20 sm:py-24 border-t border-slate-700/60">
+        <section className="relative px-4 sm:px-6 py-20 sm:py-24">
           <div className="max-w-3xl mx-auto">
             <ScrollReveal>
               <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
@@ -252,7 +251,7 @@ export default function HomePage() {
         </section>
 
         {/* 8. Trust / privacy */}
-        <section className="relative px-4 sm:px-6 py-16 sm:py-20 border-t border-slate-700/60 bg-slate-800/30">
+        <section className="relative px-4 sm:px-6 py-16 sm:py-20 bg-slate-800/30">
           <div className="max-w-2xl mx-auto">
             <ScrollReveal>
               <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
