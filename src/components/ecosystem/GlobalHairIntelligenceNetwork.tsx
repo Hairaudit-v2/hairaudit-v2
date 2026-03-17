@@ -15,6 +15,8 @@ export type GlobalHairIntelligenceNetworkProps = {
   nodeLinks?: Partial<NodeLinks>;
   /** Visual theme for nodes. "light" for soft light section background. */
   theme?: "light" | "dark";
+  /** When true, show a background behind the diagram (e.g. boxed SVG). Default false. */
+  showBackground?: boolean;
   /** Optional class for the wrapper. */
   className?: string;
 };
@@ -28,10 +30,13 @@ const motionConfig = {
   transition: { duration: 0.35, ease: "easeOut" as const },
 };
 
+const DEBUG_VISIBILITY = false;
+
 export default function GlobalHairIntelligenceNetwork({
   variant,
   nodeLinks: nodeLinksOverride,
   theme = "light",
+  showBackground = false,
   className = "",
 }: GlobalHairIntelligenceNetworkProps) {
   const reduceMotion = useReducedMotion();
@@ -65,19 +70,24 @@ export default function GlobalHairIntelligenceNetwork({
     ? "border-slate-200 bg-white"
     : "border-white/20 bg-white/[0.06]";
 
+  const wrapperClass =
+    `relative w-full min-h-[320px] overflow-visible ${className}`.trim() +
+    (DEBUG_VISIBILITY ? " border-4 border-red-500 bg-amber-100" : "");
+
   return (
-    <div className={`relative w-full ${className}`.trim()}>
+    <div className={wrapperClass}>
       <motion.div
-        className="relative min-h-[280px] sm:min-h-[260px] flex flex-col items-center justify-center"
+        className="relative min-h-[300px] sm:min-h-[280px] flex flex-col items-center justify-center w-full"
         variants={containerVariants}
-        initial={animate ? "hidden" : undefined}
+        initial="visible"
         whileInView={animate ? "visible" : undefined}
-        viewport={{ once: true, margin: "-24px 0px" }}
+        viewport={{ once: true, margin: "50px 0px", amount: 0.01 }}
       >
         {/* Center node: Follicle Intelligence */}
         <motion.div
           className="relative z-10 flex justify-center mb-6 sm:mb-4"
           variants={itemVariants}
+          initial="visible"
         >
           <NodeCard
             id={CENTER_ID}
@@ -98,6 +108,7 @@ export default function GlobalHairIntelligenceNetwork({
               key={id}
               className="flex justify-center"
               variants={itemVariants}
+              initial="visible"
             >
               <NodeCard
                 id={id}
