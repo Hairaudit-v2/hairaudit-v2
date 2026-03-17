@@ -138,9 +138,7 @@ export default function HomePage() {
         {/* 3. Ecosystem — core brand statement, elevated light block */}
         <GlobalHairIntelligenceSection
           variant="hairaudit"
-          highlightNode="hairaudit"
           theme="light"
-          showBackground={false}
           size="hero"
           heading="Part of the Global Hair Intelligence Network"
           description="HairAudit sits within a connected global system linking hair biology, treatment planning, surgical transparency, and AI-driven analysis."
