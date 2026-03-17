@@ -51,8 +51,9 @@ export default function GlobalHairIntelligenceNetwork({
       <EcosystemDiagramAnimated
         currentSite={currentSite}
         theme={theme}
+        static
         hideSupportingCopy
-        className="!py-0 !px-0 !border-0"
+        className="!py-0 !px-0 !border-0 !bg-transparent"
       />
     </div>
   );
