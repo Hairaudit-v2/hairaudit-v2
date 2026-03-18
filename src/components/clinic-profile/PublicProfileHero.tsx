@@ -1,5 +1,5 @@
 import Link from "next/link";
-import AwardTierBadge from "./AwardTierBadge";
+import CertificationBadge from "./CertificationBadge";
 import TransparencyStatusBadge from "./TransparencyStatusBadge";
 import type { AwardTier } from "@/lib/transparency/awardRules";
 
@@ -24,7 +24,7 @@ export default function PublicProfileHero({
     <header className="relative px-4 sm:px-6 py-16 sm:py-24">
       <div className="max-w-4xl mx-auto">
         <div className="flex flex-wrap items-center gap-3 mb-4">
-          <AwardTierBadge tier={(currentAwardTier ?? "VERIFIED") as AwardTier} />
+          <CertificationBadge tier={(currentAwardTier ?? "VERIFIED") as AwardTier} variant="full" />
           <TransparencyStatusBadge participationStatus={participationStatus} />
         </div>
         <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white">

@@ -1,4 +1,4 @@
-import AwardTierBadge from "./AwardTierBadge";
+import CertificationBadge from "./CertificationBadge";
 import type { AwardTier } from "@/lib/transparency/awardRules";
 
 type RecognitionPanelProps = {
@@ -23,9 +23,9 @@ export default function RecognitionPanel({
       </h2>
       <div className="mt-4 flex flex-wrap items-center gap-4">
         <div>
-          <p className="text-xs text-slate-500">Current tier</p>
+          <p className="text-xs text-slate-500">Certification level</p>
           <div className="mt-1">
-            <AwardTierBadge tier={tier} />
+            <CertificationBadge tier={tier} variant="full" />
           </div>
         </div>
         {isActive && (

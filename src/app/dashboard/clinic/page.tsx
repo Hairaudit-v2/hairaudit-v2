@@ -13,6 +13,8 @@ import ClinicSectionHeader from "@/components/clinic-portal/ClinicSectionHeader"
 import ClinicConversionPanel from "@/components/clinic-portal/ClinicConversionPanel";
 import ClinicProgressGuidancePanel from "@/components/dashboard/ClinicProgressGuidancePanel";
 import ParticipationStatusBanner from "@/components/dashboard/ParticipationStatusBanner";
+import CaseAuditModeSelect from "@/components/clinic-portal/CaseAuditModeSelect";
+import ClinicPerformanceDashboard from "@/components/clinic-portal/ClinicPerformanceDashboard";
 import { SITE_URL } from "@/lib/constants";
 import { BENCHMARKING_GLOBAL_STANDARDS } from "@/lib/benchmarkingCopy";
 
@@ -60,7 +62,7 @@ export default async function ClinicDashboardPage() {
   const [{ data: cases }, { count: completedTotal }] = await Promise.all([
     admin
       .from("cases")
-      .select("id, title, status, created_at")
+      .select("id, title, status, created_at, audit_mode, visibility_scope")
       .eq("clinic_id", user.id)
       .order("created_at", { ascending: false }),
     admin
@@ -146,6 +148,13 @@ export default async function ClinicDashboardPage() {
   }
 
   const completedLast30 = dailyCounts.reduce((a, b) => a + b, 0);
+
+  const caseList = cases ?? [];
+  const publicCaseCount = caseList.filter(
+    (c) => (c as { visibility_scope?: string | null; audit_mode?: string | null }).visibility_scope === "public" ||
+      (c as { visibility_scope?: string | null; audit_mode?: string | null }).audit_mode === "public"
+  ).length;
+  const privateCaseCount = caseList.length - publicCaseCount;
 
   const currentTier = (clinicProfile?.current_award_tier ?? "VERIFIED") as "VERIFIED" | "SILVER" | "GOLD" | "PLATINUM";
   const nextTier = getNextTier(currentTier);
@@ -275,6 +284,18 @@ export default async function ClinicDashboardPage() {
         </div>
       </div>
 
+      <ClinicPerformanceDashboard
+        totalCases={caseList.length}
+        completedCases={completedTotal ?? 0}
+        averageScore={clinicProfile?.average_forensic_score ?? null}
+        documentationIntegrityAverage={clinicProfile?.documentation_integrity_average ?? null}
+        donorManagementScore={null}
+        graftSurvivalIndicator={null}
+        publicCaseCount={publicCaseCount}
+        privateCaseCount={privateCaseCount}
+        currentAwardTier={clinicProfile?.current_award_tier ?? null}
+      />
+
       <div className="rounded-xl border border-slate-200 bg-white p-4 mb-6">
         <div className="flex items-start justify-between gap-6">
           <div>
@@ -374,20 +395,24 @@ export default async function ClinicDashboardPage() {
         </div>
       ) : (
         <ul className="space-y-3">
-          {cases.map((c) => (
-            <li key={c.id}>
-              <Link
-                href={`/cases/${c.id}`}
-                className="block rounded-xl border border-slate-200 bg-white p-4 hover:border-amber-300 hover:shadow-sm transition-all"
-              >
-                <span className="font-medium text-slate-900">{c.title ?? "Patient audit"}</span>
-                <span className="ml-2 text-slate-500 text-sm">— {c.status}</span>
-                <div className="text-xs text-slate-400 mt-2">
-                  Created: {new Date(c.created_at).toLocaleString()}
+          {cases.map((c) => {
+            const raw = c as { id: string; title?: string; status?: string; created_at?: string; audit_mode?: string | null; visibility_scope?: string | null };
+            const auditMode = (raw.audit_mode === "public" || raw.visibility_scope === "public" ? "public" : "internal") as "internal" | "public";
+            return (
+              <li key={c.id}>
+                <div className="rounded-xl border border-slate-200 bg-white p-4 hover:border-amber-300 transition-all">
+                  <Link href={`/cases/${c.id}`} className="block">
+                    <span className="font-medium text-slate-900">{c.title ?? "Patient audit"}</span>
+                    <span className="ml-2 text-slate-500 text-sm">— {c.status}</span>
+                    <div className="text-xs text-slate-400 mt-2">
+                      Created: {new Date(c.created_at).toLocaleString()}
+                    </div>
+                  </Link>
+                  <CaseAuditModeSelect caseId={c.id} currentMode={auditMode} />
                 </div>
-              </Link>
-            </li>
-          ))}
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>
