@@ -113,27 +113,31 @@ function buildSvg(input: RadarChartRenderInput): string {
       const y = cy + r * Math.sin(angle);
       return `${x},${y}`;
     });
-    return `<polygon points="${pts.join(" ")}" fill="none" stroke="rgba(148,163,184,${pct === 100 ? 0.12 : pct === 75 ? 0.1 : pct === 50 ? 0.09 : 0.085})" stroke-width="1"/>`;
+    const opacity = pct === 100 ? 0.2 : pct === 75 ? 0.16 : pct === 50 ? 0.14 : 0.12;
+    return `<polygon points="${pts.join(" ")}" fill="none" stroke="rgba(148,163,184,${opacity})" stroke-width="1"/>`;
   });
 
   const axisLines = ordered.map((_, i) => {
     const angle = -Math.PI / 2 + i * angleStep;
     const x = cx + rMax * Math.cos(angle);
     const y = cy + rMax * Math.sin(angle);
-    return `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>`;
+    return `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="rgba(255,255,255,0.22)" stroke-width="1"/>`;
   });
 
-  const labelFontSize = n > 8 ? (n > 10 ? 9 : 10) : 12;
+  // Readable labels for PDF/print: larger font, high-contrast solid color
+  const labelFontSize = n > 8 ? (n > 10 ? 11 : 13) : 15;
   const maxLabelLen = n > 8 ? 12 : 14;
+  const labelColor = "#f1f5f9";
+  const labelDist = rMax + 28;
   const labelElems = ordered.map((ax, i) => {
     const angle = -Math.PI / 2 + i * angleStep;
-    const tx = cx + (rMax + 24) * Math.cos(angle);
-    const ty = cy + (rMax + 24) * Math.sin(angle);
+    const tx = cx + labelDist * Math.cos(angle);
+    const ty = cy + labelDist * Math.sin(angle);
     const lines = wrapLabel(ax.label, maxLabelLen);
     const anchor = Math.abs(Math.cos(angle)) < 0.3 ? "middle" : angle > 0 ? "start" : "end";
     return lines.map((line, j) => {
       const dy = (j - (lines.length - 1) / 2) * (labelFontSize + 2);
-      return `<text x="${tx}" y="${ty + dy}" fill="#cbd5e1" font-size="${labelFontSize}" font-weight="500" font-family="Arial,sans-serif" text-anchor="${anchor}" dominant-baseline="middle">${escapeXml(line)}</text>`;
+      return `<text x="${tx}" y="${ty + dy}" fill="${labelColor}" font-size="${labelFontSize}" font-weight="700" font-family="Arial,sans-serif" text-anchor="${anchor}" dominant-baseline="middle">${escapeXml(line)}</text>`;
     }).join("\n    ");
   });
 
@@ -143,18 +147,23 @@ function buildSvg(input: RadarChartRenderInput): string {
 
   if (n === 0 || values.every((v) => v === 0)) {
     return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
-  <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#081225"/><stop offset="1" stop-color="#042a2a"/></linearGradient></defs>
+  <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#06101c"/><stop offset="1" stop-color="#031f1f"/></linearGradient></defs>
   <rect width="100%" height="100%" fill="url(#bg)"/>
-  <text x="${cx}" y="${cy}" fill="#cbd5e1" font-size="18" font-weight="600" font-family="Arial" text-anchor="middle" dominant-baseline="middle">Section score breakdown unavailable</text>
+  <text x="${cx}" y="${cy}" fill="#e2e8f0" font-size="18" font-weight="700" font-family="Arial" text-anchor="middle" dominant-baseline="middle">Section score breakdown unavailable</text>
 </svg>`;
   }
 
+  // Dark overlay behind center for score/confidence readability; toned-down glow
+  const centerR = Math.min(width, height) * 0.12;
+  const scoreFontSize = Math.round(height * 0.14);
+  const confFontSize = Math.max(12, Math.round(height * 0.032));
+
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#081225"/><stop offset="1" stop-color="#042a2a"/></linearGradient>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#06101c"/><stop offset="1" stop-color="#031f1f"/></linearGradient>
     <radialGradient id="glow" cx="50%" cy="50%" r="55%">
-      <stop offset="0" stop-color="rgba(45,212,191,0.1)"/>
-      <stop offset="0.6" stop-color="rgba(251,191,36,0.05)"/>
+      <stop offset="0" stop-color="rgba(45,212,191,0.06)"/>
+      <stop offset="0.6" stop-color="rgba(251,191,36,0.03)"/>
       <stop offset="1" stop-color="rgba(0,0,0,0)"/>
     </radialGradient>
   </defs>
@@ -167,8 +176,9 @@ function buildSvg(input: RadarChartRenderInput): string {
     const [x, y] = polyPoints[i].split(",").map(Number);
     return `<circle cx="${x}" cy="${y}" r="3" fill="rgba(251,191,36,0.95)" stroke="#0b1226" stroke-width="1"/>`;
   }).join("\n  ")}
-  <text x="${cx}" y="${cy - 6}" fill="rgba(226,232,240,0.11)" font-size="${Math.round(height * 0.16)}" font-weight="800" font-family="Arial" text-anchor="middle" dominant-baseline="middle">${Math.round(overall)}</text>
-  <text x="${cx}" y="${cy + Math.round(height * 0.1)}" fill="rgba(226,232,240,0.86)" font-size="${Math.round(height * 0.035)}" font-weight="600" font-family="Arial" text-anchor="middle" dominant-baseline="middle">Confidence: ${conf} (${confPct}%)</text>
+  <circle cx="${cx}" cy="${cy}" r="${centerR}" fill="rgba(0,0,0,0.35)"/>
+  <text x="${cx}" y="${cy - 4}" fill="#f1f5f9" font-size="${scoreFontSize}" font-weight="800" font-family="Arial" text-anchor="middle" dominant-baseline="middle">${Math.round(overall)}</text>
+  <text x="${cx}" y="${cy + Math.round(height * 0.1)}" fill="#e2e8f0" font-size="${confFontSize}" font-weight="700" font-family="Arial" text-anchor="middle" dominant-baseline="middle">Confidence: ${conf} (${confPct}%)</text>
   ${labelElems.join("\n  ")}
 </svg>`;
 }
@@ -180,7 +190,7 @@ export async function renderRadarChartPng(input: RadarChartRenderInput): Promise
   const height = Math.max(280, Math.floor(input.height ?? 520));
 
   const svg = buildSvg(input);
-  const png = await svg2png(svg, { width, height, backgroundColor: "#081225" });
+  const png = await svg2png(svg, { width, height, backgroundColor: "#06101c" });
 
   return { buffer: Buffer.from(png), width, height };
 }

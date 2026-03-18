@@ -114,7 +114,8 @@ function renderRadarSvg(opts: {
   const rMax = Math.max(60, Math.min(width, height) / 2 - padding);
   const angleStep = (2 * Math.PI) / Math.max(1, n);
 
-  const labelFontSize = n > 8 ? 11 : 14;
+  // Larger, readable labels for PDF/print (WCAG AA contrast)
+  const labelFontSize = n > 8 ? 14 : 18;
   const maxLabelLen = n > 8 ? 12 : 18;
 
   const pointsFor = (r: number) =>
@@ -128,7 +129,7 @@ function renderRadarSvg(opts: {
   const ringPolys = Array.from({ length: levels }, (_, idx) => {
     const pct = (idx + 1) / levels;
     const r = rMax * pct;
-    const opacity = idx === levels - 1 ? 0.14 : 0.09;
+    const opacity = idx === levels - 1 ? 0.2 : 0.12;
     return `<polygon points="${pointsFor(r)}" fill="none" stroke="rgba(148,163,184,${opacity})" stroke-width="1.1"/>`;
   }).join("\n  ");
 
@@ -136,7 +137,7 @@ function renderRadarSvg(opts: {
     const angle = -Math.PI / 2 + i * angleStep;
     const x = cx + rMax * Math.cos(angle);
     const y = cy + rMax * Math.sin(angle);
-    return `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>`;
+    return `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>`;
   }).join("\n  ");
 
   const valuePts = values.map((raw, i) => {
@@ -161,18 +162,21 @@ function renderRadarSvg(opts: {
         )
         .join("\n  ");
 
+  // Labels: high-contrast, solid color, sharp (no glow) — readable in PDF/print
+  const labelColor = "#f1f5f9";
   const labelElems = labels
     .map((label, i) => {
       const angle = -Math.PI / 2 + i * angleStep;
-      const tx = cx + (rMax + 46) * Math.cos(angle);
-      const ty = cy + (rMax + 46) * Math.sin(angle);
+      const labelDist = rMax + 38;
+      const tx = cx + labelDist * Math.cos(angle);
+      const ty = cy + labelDist * Math.sin(angle);
       const anchor =
         Math.abs(Math.cos(angle)) < 0.28 ? "middle" : Math.cos(angle) > 0 ? "start" : "end";
       const lines = wrapLabel(label, maxLabelLen);
       return lines
         .map((line, j) => {
-          const dy = (j - (lines.length - 1) / 2) * (labelFontSize + 2);
-          return `<text x="${tx}" y="${ty + dy}" fill="rgba(226,232,240,0.88)" font-size="${labelFontSize}" font-weight="700" font-family="Arial,sans-serif" text-anchor="${anchor}" dominant-baseline="middle">${escapeXml(line)}</text>`;
+          const dy = (j - (lines.length - 1) / 2) * (labelFontSize + 3);
+          return `<text x="${tx}" y="${ty + dy}" fill="${labelColor}" font-size="${labelFontSize}" font-weight="700" font-family="Arial,sans-serif" text-anchor="${anchor}" dominant-baseline="middle">${escapeXml(line)}</text>`;
         })
         .join("\n  ");
     })
@@ -182,15 +186,20 @@ function renderRadarSvg(opts: {
   const conf01 = clamp01(opts.confidence);
   const confPct = Math.round(conf01 * 100);
 
+  // Dark overlay behind center text for strong contrast (no wash-out from glow)
+  const centerRadius = Math.round(Math.min(width, height) * 0.14);
+  const scoreFontSize = Math.round(height * 0.2);
+  const confFontSize = Math.max(14, Math.round(height * 0.045));
+
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" style="overflow:visible">
   <defs>
     <linearGradient id="eliteRadarBg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#081225"/>
-      <stop offset="1" stop-color="#042a2a"/>
+      <stop offset="0" stop-color="#06101c"/>
+      <stop offset="1" stop-color="#031f1f"/>
     </linearGradient>
     <radialGradient id="eliteRadarGlow" cx="50%" cy="45%" r="60%">
-      <stop offset="0" stop-color="rgba(45,212,191,0.10)"/>
-      <stop offset="0.55" stop-color="rgba(251,191,36,0.06)"/>
+      <stop offset="0" stop-color="rgba(45,212,191,0.06)"/>
+      <stop offset="0.55" stop-color="rgba(251,191,36,0.03)"/>
       <stop offset="1" stop-color="rgba(0,0,0,0)"/>
     </radialGradient>
   </defs>
@@ -203,14 +212,11 @@ function renderRadarSvg(opts: {
   ${polygon}
   ${dots}
 
-  <text x="${cx}" y="${cy - 4}" fill="rgba(226,232,240,0.32)" font-size="${Math.round(
-    height * 0.24
-  )}" font-weight="800" font-family="Arial,sans-serif" text-anchor="middle" dominant-baseline="middle">${overall}</text>
-  <text x="${cx}" y="${cy + Math.round(height * 0.095)}" fill="rgba(226,232,240,0.88)" font-size="${Math.round(
-    height * 0.052
-  )}" font-weight="700" font-family="Arial,sans-serif" text-anchor="middle" dominant-baseline="middle">Confidence: ${confPct}%</text>
-  ${allZeros ? `<text x="${cx}" y="${cy + Math.round(height * 0.16)}" fill="rgba(226,232,240,0.6)" font-size="11" font-weight="600" font-family="Arial,sans-serif" text-anchor="middle" dominant-baseline="middle">Performance data will populate as sections are scored</text>` : ""}
-  <text x="${cx}" y="${height - 14}" fill="rgba(226,232,240,0.72)" font-size="11" font-weight="600" font-family="Arial,sans-serif" text-anchor="middle" dominant-baseline="middle">Audit Performance Signature</text>
+  <circle cx="${cx}" cy="${cy}" r="${centerRadius}" fill="rgba(0,0,0,0.35)"/>
+  <text x="${cx}" y="${cy - 4}" fill="#f1f5f9" font-size="${scoreFontSize}" font-weight="800" font-family="Arial,sans-serif" text-anchor="middle" dominant-baseline="middle">${overall}</text>
+  <text x="${cx}" y="${cy + Math.round(height * 0.095)}" fill="#e2e8f0" font-size="${confFontSize}" font-weight="700" font-family="Arial,sans-serif" text-anchor="middle" dominant-baseline="middle">Confidence: ${confPct}%</text>
+  ${allZeros ? `<text x="${cx}" y="${cy + Math.round(height * 0.16)}" fill="#cbd5e1" font-size="12" font-weight="600" font-family="Arial,sans-serif" text-anchor="middle" dominant-baseline="middle">Performance data will populate as sections are scored</text>` : ""}
+  <text x="${cx}" y="${height - 14}" fill="#cbd5e1" font-size="12" font-weight="700" font-family="Arial,sans-serif" text-anchor="middle" dominant-baseline="middle">Audit Performance Signature</text>
 
   ${labelElems}
 </svg>`;
