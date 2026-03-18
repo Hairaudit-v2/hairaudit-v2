@@ -174,11 +174,11 @@ export default function SampleReportPage() {
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <TrackedLink
-                  href="#inside-report"
+                  href="/demo-report"
                   eventName="cta_view_sample_audit_hero"
                   className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-cyan-300 via-sky-300 to-indigo-300 px-6 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/25 transition hover:scale-[1.01]"
                 >
-                  View Sample Audit
+                  View Sample Report
                 </TrackedLink>
                 <TrackedLink
                   href="/request-review"

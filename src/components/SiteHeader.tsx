@@ -29,6 +29,7 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
     { href: "/how-it-works", label: "How It Works" },
     { href: "/request-review", label: "Request Review" },
     { href: "/sample-report", label: "Example Report" },
+    { href: "/demo-report", label: "Sample Report" },
     { href: "/clinics", label: "Clinics" },
     { href: "/professionals", label: "For Professionals" },
   ];

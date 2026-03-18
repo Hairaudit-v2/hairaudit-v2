@@ -8,12 +8,15 @@ export async function generateReportPdfFromUrl(url: string): Promise<Buffer> {
     // best-effort: allow relative URLs in dev, but still enforce route shape below
   }
   const path = parsed ? parsed.pathname : url;
-  if (!String(path).includes("/api/print/report")) {
+  const isDemoReport = String(path).includes("/api/print/demo-report");
+  const isEliteReport = String(path).includes("/api/print/report");
+
+  if (!isDemoReport && !isEliteReport) {
     throw new Error(
-      `PDF render refused: non-print URL. Expected '/api/print/report', got '${String(path)}'`
+      `PDF render refused: non-print URL. Expected '/api/print/report' or '/api/print/demo-report', got '${String(path)}'`
     );
   }
-  if (parsed) {
+  if (parsed && isEliteReport) {
     const caseId = parsed.searchParams.get("caseId");
     const auditMode = parsed.searchParams.get("auditMode");
     const token = parsed.searchParams.get("token");
@@ -70,9 +73,9 @@ export async function generateReportPdfFromUrl(url: string): Promise<Buffer> {
   });
 
   const templateHeader = preflight.headers.get("x-report-template");
-  if (templateHeader !== "elite") {
+  if (templateHeader !== "elite" && templateHeader !== "demo") {
     throw new Error(
-      `PDF preflight refused: expected X-Report-Template=elite but got '${templateHeader ?? "null"}'.`
+      `PDF preflight refused: expected X-Report-Template=elite or demo but got '${templateHeader ?? "null"}'.`
     );
   }
 
