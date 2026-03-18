@@ -76,48 +76,85 @@ export async function generateReportPdfFromUrl(url: string): Promise<Buffer> {
     );
   }
 
-  const browser = isServerless
-    ? await (async () => {
-        const [{ chromium }, chromiumPack] = await Promise.all([
-          import("playwright-core"),
-          import("@sparticuz/chromium"),
-        ]);
-        const executablePath = await chromiumPack.default.executablePath();
-        return chromium.launch({
-          args: chromiumPack.default.args,
-          executablePath,
-          headless: true,
-        });
-      })()
-    : await (async () => {
-        const { chromium } = await import("playwright");
-        return chromium.launch({ headless: true });
-      })();
+  const runPdf = async (): Promise<Buffer> => {
+    const browser = isServerless
+      ? await (async () => {
+          const [{ chromium }, chromiumPack] = await Promise.all([
+            import("playwright-core"),
+            import("@sparticuz/chromium"),
+          ]);
+          const executablePath = await chromiumPack.default.executablePath();
+          return chromium.launch({
+            args: chromiumPack.default.args,
+            executablePath,
+            headless: true,
+          });
+        })()
+      : await (async () => {
+          const { chromium } = await import("playwright");
+          return chromium.launch({ headless: true });
+        })();
+
+    let context: Awaited<ReturnType<Awaited<typeof browser>["newContext"]>> | null = null;
+    try {
+      context = await browser.newContext({
+        extraHTTPHeaders,
+        defaultNavigationTimeout: 25000,
+      });
+      const page = await context.newPage();
+
+      // Use "load" instead of "networkidle" to avoid long waits that can cause
+      // serverless timeouts and "Target closed" when page.pdf() runs.
+      await page.goto(url, { waitUntil: "load", timeout: 25000 });
+
+      // Short wait for main content so PDF isn't blank (fonts/layout)
+      await page.locator("body .wrap").first().waitFor({ state: "visible", timeout: 8000 }).catch(() => {});
+
+      // Guardrail: never upload a PDF of Vercel auth/login gates.
+      const gateText = (await page.locator("body").innerText().catch(() => "")).slice(0, 4000);
+      const looksLikeGate =
+        /vercel|authentication required|password protected|login|sign in/i.test(gateText) &&
+        !/hairaudit report|professional hair transplant audit report/i.test(gateText);
+      if (looksLikeGate) {
+        throw new Error("PDF render blocked by authentication gate (likely Vercel protection).");
+      }
+
+      await page.emulateMedia({ media: "print" });
+
+      const pdf = await page.pdf({
+        format: "A4",
+        printBackground: true,
+        margin: { top: "16mm", right: "14mm", bottom: "16mm", left: "14mm" },
+        timeout: 30000,
+      });
+
+      return Buffer.from(pdf);
+    } finally {
+      if (context) {
+        try {
+          await context.close();
+        } catch {
+          // ignore if already closed
+        }
+      }
+      try {
+        await browser.close();
+      } catch {
+        // ignore if already closed (e.g. process killed)
+      }
+    }
+  };
 
   try {
-    const context = await browser.newContext({ extraHTTPHeaders });
-    const page = await context.newPage();
-    await page.goto(url, { waitUntil: "networkidle" });
-
-    // Guardrail: never upload a PDF of Vercel auth/login gates.
-    const gateText = (await page.locator("body").innerText().catch(() => "")).slice(0, 4000);
-    const looksLikeGate =
-      /vercel|authentication required|password protected|login|sign in/i.test(gateText) &&
-      !/hairaudit report|professional hair transplant audit report/i.test(gateText);
-    if (looksLikeGate) {
-      throw new Error("PDF render blocked by authentication gate (likely Vercel protection).");
+    return await runPdf();
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    const isTargetClosed =
+      /target.*closed|context or browser has been closed|browser has been closed/i.test(msg);
+    if (isTargetClosed) {
+      console.warn("[PDF] Target closed, retrying once:", msg);
+      return await runPdf();
     }
-
-    await page.emulateMedia({ media: "print" });
-
-    const pdf = await page.pdf({
-      format: "A4",
-      printBackground: true,
-      margin: { top: "16mm", right: "14mm", bottom: "16mm", left: "14mm" },
-    });
-
-    return Buffer.from(pdf);
-  } finally {
-    await browser.close();
+    throw err;
   }
 }

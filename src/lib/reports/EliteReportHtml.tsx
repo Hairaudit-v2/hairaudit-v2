@@ -613,17 +613,19 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       ? `
       <div class="radarPanel">
         <div class="panelTitle">Diagnostic Radar Signature</div>
-        <div class="radarWrap">
-          ${renderRadarSvg({
-            labels: radarDisplayLabels,
-            values: radar.values,
-            size: 960,
-            levels: 5,
-            overall: radar.overall,
-            confidence: radar.confidence,
-          })}
+        <div class="radarCluster">
+          <div class="radarWrap">
+            ${renderRadarSvg({
+              labels: radarDisplayLabels,
+              values: radar.values,
+              size: 1000,
+              levels: 5,
+              overall: radar.overall,
+              confidence: radar.confidence,
+            })}
+          </div>
         </div>
-        <div class="miniText">Balanced performance signatures indicate consistency across key transplant domains.</div>
+        <p class="miniText radarSupport">Balanced performance signatures indicate consistency across key transplant domains.</p>
       </div>`
       : `<div class="radarPanel"><div class="emptyState">Radar signature unavailable for this report.</div></div>`;
 
@@ -852,7 +854,14 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
 
     .metricCard, .panelCard { border: 1px solid var(--line); border-radius: 14px; padding: 12px; background:#fff; }
     .metricTitle, .panelTitle { font-size: 12px; color: var(--muted); margin-bottom: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; }
-    .radarPanel .panelTitle { font-size: 14px; letter-spacing: .06em; margin-bottom: 6px; color: #2b4a72; }
+    .radarPanel .panelTitle {
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: .05em;
+      margin-bottom: 4px;
+      color: #1e3a5f;
+      text-transform: uppercase;
+    }
     .metricList { display:grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; }
     .metricList div { display:flex; justify-content:space-between; gap:10px; font-size: 11px; flex-wrap: wrap; }
     .metricList span { color: var(--muted); }
@@ -862,7 +871,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       margin-bottom: 0;
       border: 1px solid #e6edf3;
       border-radius: 12px;
-      padding: 22px;
+      padding: 16px 20px 18px;
       background:
         radial-gradient(circle at 22% 14%, rgba(14,165,233,0.08), rgba(14,165,233,0) 45%),
         linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
@@ -874,18 +883,39 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       justify-content: flex-start;
       min-height: 520px;
     }
+    .radarPanel .radarCluster {
+      flex: 1 1 0;
+      min-height: 320px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
     .radarWrap {
-      margin-top: 10px;
+      margin-top: 4px;
+      flex: 1 1 0;
+      min-height: 0;
       display: flex;
       justify-content: center;
+      align-items: center;
       page-break-inside: avoid;
       break-inside: avoid;
-      min-height: 500px;
-      align-items: center;
-      padding: 14px 18px;
+      padding: 6px 10px;
     }
-    .radarWrap svg { display: block; margin: 0 auto; max-width: 98%; height: auto; border-radius: 12px; border: 1px solid rgba(14,165,233,0.15); }
-    .radarPanel .miniText { margin-top: 12px; margin-bottom: 8px; }
+    .radarWrap svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: 12px;
+      border: 1px solid rgba(14,165,233,0.15);
+    }
+    .radarPanel .radarSupport {
+      margin-top: 10px;
+      margin-bottom: 0;
+      flex-shrink: 0;
+    }
     .infoGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 24px; align-items: stretch; }
     .evidenceInfoGrid { margin-top: 20px; }
     .p1Zone .panelCard {
@@ -1128,8 +1158,11 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       .scoreBubble { width: 220px; height: 220px; }
       .scoreValue { font-size: 72px; }
       .p1RightCol { min-height: 390px; }
-      .radarPanel { margin-top: 0; padding: 20px; min-height: 390px; }
-      .radarWrap { min-height: 380px; padding: 12px 16px; margin-top: 8px; }
+      .radarPanel { margin-top: 0; padding: 14px 18px 16px; min-height: 390px; }
+      .radarPanel .panelTitle { margin-bottom: 3px; }
+      .radarPanel .radarCluster { min-height: 260px; }
+      .radarWrap { padding: 4px 8px; margin-top: 2px; }
+      .radarPanel .radarSupport { margin-top: 8px; }
       .keyMetricCard { margin-top: 0; margin-bottom: 20px; }
       .infoGrid { grid-template-columns: 1fr 1fr; }
       .infoGrid { margin-top: 24px; gap: 16px; }
