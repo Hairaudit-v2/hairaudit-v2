@@ -3,7 +3,10 @@ import Link from "next/link";
 type CaseNotFoundRecoveryProps = {
   /** Where a generic dashboard link should point (role-aware if available). */
   dashboardHref: string;
-  /** Where to send users who want to start a new assessment. Defaults to dashboardHref. */
+  /**
+   * Safe route for "Start new assessment" — must NOT trigger case create.
+   * Should be dashboard so user can start a new audit from there. Defaults to dashboardHref.
+   */
   startNewHref?: string;
   /** Whether to show the optional "View your existing cases" affordance. */
   showExistingCasesLink?: boolean;
@@ -17,7 +20,8 @@ export default function CaseNotFoundRecovery({
   showExistingCasesLink,
   existingCasesHref,
 }: CaseNotFoundRecoveryProps) {
-  const startHref = startNewHref ?? dashboardHref;
+  // Both actions go to safe routes only; never trigger create from this page.
+  const safeStartHref = startNewHref ?? dashboardHref;
   const existingHref = existingCasesHref ?? dashboardHref;
 
   return (
@@ -35,23 +39,25 @@ export default function CaseNotFoundRecovery({
             <div>
               <h1 className="text-2xl font-semibold text-white sm:text-3xl">No case found</h1>
               <p className="mt-2 text-sm text-slate-300/85 sm:text-base">
-                We couldn&apos;t find a case linked to this page. You can start a new assessment or return to your dashboard.
+                We couldn&apos;t find a case linked to this page. The assessment may not have been created successfully. Return to your dashboard and try starting a new audit from there.
               </p>
             </div>
 
             <div className="mt-4 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
               <Link
-                href={startHref}
+                href={safeStartHref}
                 className="inline-flex items-center justify-center rounded-xl border border-cyan-300/40 bg-cyan-300/20 px-4 py-2.5 text-sm font-semibold text-cyan-50 shadow-sm transition hover:-translate-y-0.5 hover:bg-cyan-300/30"
-              >
-                Start new assessment
-              </Link>
-              <Link
-                href={dashboardHref}
-                className="inline-flex items-center justify-center rounded-xl border border-slate-600/70 bg-slate-900/70 px-4 py-2.5 text-sm font-semibold text-slate-100 transition hover:-translate-y-0.5 hover:bg-slate-800/80"
               >
                 Go to dashboard
               </Link>
+              {showExistingCasesLink && (
+                <Link
+                  href={existingHref}
+                  className="inline-flex items-center justify-center rounded-xl border border-slate-600/70 bg-slate-900/70 px-4 py-2.5 text-sm font-semibold text-slate-100 transition hover:-translate-y-0.5 hover:bg-slate-800/80"
+                >
+                  View your existing cases
+                </Link>
+              )}
             </div>
 
             {showExistingCasesLink && (

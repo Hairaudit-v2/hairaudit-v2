@@ -157,6 +157,7 @@ export default async function Page({
     console.error("[case_not_found] case overview", {
       caseId,
       userId: user.id,
+      usedAdminForSelect: !!admin,
     });
 
     let hasOtherCases = false;

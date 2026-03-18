@@ -60,6 +60,9 @@ export default function CreateCaseButton({
         return;
       }
 
+      if (process.env.NODE_ENV === "development") {
+        console.info("[CreateCaseButton] redirect target id", { caseId });
+      }
       router.push(`/cases/${caseId}`);
       router.refresh();
     } finally {

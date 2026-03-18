@@ -70,6 +70,13 @@ export async function POST() {
   if (role === "doctor") insertData.doctor_id = userId;
   if (role === "clinic") insertData.clinic_id = userId;
 
+  console.info(LOG_PREFIX, "insert payload summary", {
+    userId,
+    role: role ?? "unknown",
+    audit_type: insertData.audit_type,
+    has_user_id: true,
+  });
+
   // 3) Insert and get inserted row id explicitly
   let supabaseAdmin;
   try {
@@ -89,7 +96,12 @@ export async function POST() {
     .single();
 
   if (insertError) {
-    console.error(LOG_PREFIX, "insert failed", { userId, error: insertError.message, code: insertError.code });
+    console.error(LOG_PREFIX, "insert failed", {
+      userId,
+      error: insertError.message,
+      code: insertError.code,
+      insertPayloadSummary: { role: role ?? "unknown", audit_type: insertData.audit_type },
+    });
     return NextResponse.json(
       { ok: false, error: insertError.message },
       { status: 500 }
@@ -98,7 +110,7 @@ export async function POST() {
 
   const insertedId = insertResult?.id;
   if (insertedId == null || String(insertedId).trim() === "") {
-    console.error(LOG_PREFIX, "insert returned no id", { userId, insertResult });
+    console.error(LOG_PREFIX, "insert returned no id", { userId, insertResult, insertPayloadSummary: { role: role ?? "unknown" } });
     return NextResponse.json(
       { ok: false, error: "Case was not created; please try again." },
       { status: 500 }
@@ -130,6 +142,6 @@ export async function POST() {
     );
   }
 
-  console.info(LOG_PREFIX, "success", { caseId, userId });
+  console.info(LOG_PREFIX, "success; returned case id (redirect target)", { caseId, userId });
   return NextResponse.json({ ok: true, caseId });
 }
