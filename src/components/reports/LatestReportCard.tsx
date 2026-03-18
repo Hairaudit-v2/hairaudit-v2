@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import ReportShareButton from "./ReportShareButton";
+import { REPORT_USE_HINT_CONTEXT } from "@/lib/reportSharingCopy";
 
 type LatestReport = {
   id: string;
@@ -19,7 +21,9 @@ function scoreChip(score?: number) {
   return "border-rose-300/40 bg-rose-300/15 text-rose-100";
 }
 
-export default function LatestReportCard({ report }: { report: LatestReport | null }) {
+type Props = { report: LatestReport | null; caseId?: string | null };
+
+export default function LatestReportCard({ report, caseId }: Props) {
   const [busy, setBusy] = useState(false);
 
   async function openPdf() {
@@ -54,22 +58,24 @@ export default function LatestReportCard({ report }: { report: LatestReport | nu
         </span>
       </div>
       <p className="text-xs text-slate-400">{new Date(report.created_at).toLocaleString()}</p>
-      <div className="mt-3 flex gap-2">
+      <div className="mt-3 flex flex-wrap items-center gap-2">
         <button
           onClick={openPdf}
           disabled={!report.pdf_path || busy}
           className="rounded-md border border-cyan-300/30 bg-cyan-300/15 px-3 py-1.5 text-xs font-medium text-cyan-100 disabled:opacity-50"
         >
-          {busy ? "Opening..." : "Download"}
+          {busy ? "Opening..." : "Download PDF"}
         </button>
         <button
           onClick={openPdf}
           disabled={!report.pdf_path || busy}
           className="rounded-md border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-medium text-slate-100 disabled:opacity-50"
         >
-          View
+          View Report
         </button>
+        <ReportShareButton caseId={caseId} variant="compact" />
       </div>
+      <p className="mt-2 text-xs text-slate-400/80">{REPORT_USE_HINT_CONTEXT}</p>
     </div>
   );
 }

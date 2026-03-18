@@ -3,7 +3,9 @@ import { redirect } from "next/navigation";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import DownloadReport from "@/app/cases/[caseId]/download-report";
+import ReportShareButton from "@/components/reports/ReportShareButton";
 import { BENCHMARKING_GLOBAL_STANDARDS } from "@/lib/benchmarkingCopy";
+import { REPORT_USE_HINT } from "@/lib/reportSharingCopy";
 
 export default async function PatientReportsPage() {
   const supabase = await createSupabaseAuthServerClient();
@@ -104,15 +106,19 @@ export default async function PatientReportsPage() {
                       </div>
 
                       {isReportReady && (
-                        <div className="mt-4 flex flex-wrap items-center gap-3">
-                          <Link
-                            href={`/cases/${c.id}`}
-                            className="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-950 bg-gradient-to-r from-cyan-300 to-emerald-300 hover:from-cyan-200 hover:to-emerald-200 transition-colors shadow-sm"
-                          >
-                            View Report
-                          </Link>
-                          <DownloadReport pdfPath={pdfPath} label="Download PDF" />
-                        </div>
+                        <>
+                          <div className="mt-4 flex flex-wrap items-center gap-3">
+                            <Link
+                              href={`/cases/${c.id}`}
+                              className="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-950 bg-gradient-to-r from-cyan-300 to-emerald-300 hover:from-cyan-200 hover:to-emerald-200 transition-colors shadow-sm"
+                            >
+                              View Report
+                            </Link>
+                            <DownloadReport pdfPath={pdfPath} label="Download PDF" />
+                            <ReportShareButton caseId={c.id} variant="default" />
+                          </div>
+                          <p className="mt-2 text-xs text-slate-400/90">{REPORT_USE_HINT}</p>
+                        </>
                       )}
                     </div>
                   </div>

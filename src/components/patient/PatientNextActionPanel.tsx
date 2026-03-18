@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import DownloadReport from "@/app/cases/[caseId]/download-report";
+import ReportShareButton from "@/components/reports/ReportShareButton";
 import { CONTACT_EMAIL } from "@/lib/constants";
+import { REPORT_USE_HINT } from "@/lib/reportSharingCopy";
 
 export type PatientNextActionVariant = "dashboard" | "case";
 
@@ -141,7 +143,9 @@ export default function PatientNextActionPanel({
             View Report
           </Link>
           <DownloadReport pdfPath={pdfPath} label="Download PDF" />
+          <ReportShareButton caseId={caseId} variant={compact ? "compact" : "default"} />
         </div>
+        <p className={compact ? "mt-2 text-xs text-slate-400/90" : "mt-3 text-xs text-slate-400/90"}>{REPORT_USE_HINT}</p>
       </div>
     );
   }
@@ -162,6 +166,7 @@ export default function PatientNextActionPanel({
         <p className={compact ? "mt-1 text-sm font-semibold text-white" : "mt-2 text-base font-semibold text-white"}>
           Your audit is complete
         </p>
+        <p className={compact ? "mt-1.5 text-xs text-slate-400/90" : "mt-2 text-xs text-slate-400/90"}>{REPORT_USE_HINT}</p>
         <div className={compact ? "mt-2" : "mt-4"}>
           <Link
             href={caseHref}

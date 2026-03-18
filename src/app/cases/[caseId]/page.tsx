@@ -845,7 +845,7 @@ export default async function Page({
           {reports && reports.length > 0 && <VersionHistoryDrawer reports={reports as any} />}
         </div>
         <div className="mt-4">
-          <LatestReportCard report={latestReport as any} />
+          <LatestReportCard report={latestReport as any} caseId={c.id} />
         </div>
       </section>
 
