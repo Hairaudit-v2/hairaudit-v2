@@ -27,6 +27,7 @@ import InviteClinicContributionCard from "@/components/case/InviteClinicContribu
 import ForensicCaseTimelineViewer from "@/components/reports/ForensicCaseTimelineViewer";
 import PatientNextActionPanel from "@/components/patient/PatientNextActionPanel";
 import { BENCHMARKING_GLOBAL_STANDARDS } from "@/lib/benchmarkingCopy";
+import CaseNotFoundRecovery from "@/components/case/CaseNotFoundRecovery";
 
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { tryCreateSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -142,17 +143,46 @@ export default async function Page({
       c!.doctor_id === user.id ||
       c!.clinic_id === user.id ||
       role === "auditor");
-  if (!c || !allowed) {
+
+  const dashboardPath =
+    role === "doctor"
+      ? "/dashboard/doctor"
+      : role === "clinic"
+        ? "/dashboard/clinic"
+        : role === "auditor"
+          ? "/dashboard/auditor"
+          : "/dashboard/patient";
+
+  if (!c) {
+    console.error("[case_not_found] case overview", {
+      caseId,
+      userId: user.id,
+    });
+
+    let hasOtherCases = false;
+    try {
+      const { data: otherCases } = await db
+        .from("cases")
+        .select("id")
+        .or(`patient_id.eq.${user.id},and(user_id.eq.${user.id},patient_id.is.null)`)
+        .limit(1);
+      hasOtherCases = (otherCases ?? []).length > 0;
+    } catch {
+      // If this check fails, we still want to render the recovery UI.
+    }
+
     return (
-      <div className="max-w-3xl mx-auto px-4 sm:px-6">
-        <div className="rounded-xl border border-slate-200 bg-white p-8 text-center">
-          <p className="font-semibold text-slate-900">Case not found.</p>
-          <Link href="/dashboard" className="mt-4 inline-block text-amber-600 hover:text-amber-500 font-medium">
-            ← Back to dashboard
-          </Link>
-        </div>
-      </div>
+      <CaseNotFoundRecovery
+        dashboardHref={dashboardPath}
+        startNewHref={dashboardPath}
+        showExistingCasesLink={hasOtherCases}
+        existingCasesHref="/dashboard/patient"
+      />
     );
+  }
+
+  if (!allowed) {
+    redirect(dashboardPath);
   }
 
   // In development, allow dev_role cookie to override
@@ -163,8 +193,6 @@ export default async function Page({
       role = devRole as typeof role;
     }
   }
-
-  const dashboardPath = role === "doctor" ? "/dashboard/doctor" : role === "clinic" ? "/dashboard/clinic" : role === "auditor" ? "/dashboard/auditor" : "/dashboard/patient";
 
   const { data: uploads, error: upErr } = await db
     .from("uploads")

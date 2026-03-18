@@ -357,7 +357,7 @@ export default async function ClinicDashboardPage() {
       </div>
 
       <div className="mb-8">
-        <CreateCaseButton />
+        <CreateCaseButton dashboardHref="/dashboard/clinic" />
       </div>
 
       <h2 className="text-lg font-semibold text-slate-900 mt-8 mb-3">Submitted Cases</h2>
@@ -370,7 +370,7 @@ export default async function ClinicDashboardPage() {
           <p className="mt-1 text-sm text-slate-600">
             Clinics with attributable submitted cases build stronger quality-control data and future benchmarking leverage.
           </p>
-          <CreateCaseButton />
+          <CreateCaseButton dashboardHref="/dashboard/clinic" />
         </div>
       ) : (
         <ul className="space-y-3">

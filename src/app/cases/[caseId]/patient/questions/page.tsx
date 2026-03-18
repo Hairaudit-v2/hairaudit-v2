@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import PatientAuditFormClient from "./PatientAuditFormClient";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
+import CaseNotFoundRecovery from "@/components/case/CaseNotFoundRecovery";
 
 export default async function Page({
   params,
@@ -10,7 +11,9 @@ export default async function Page({
 }) {
   const { caseId } = await params;
   const supabase = await createSupabaseAuthServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
   const { data: c } = await supabase
@@ -19,8 +22,16 @@ export default async function Page({
     .eq("id", caseId)
     .maybeSingle();
 
-  const allowed = !!c && (c.user_id === user.id || c.patient_id === user.id);
-  if (!allowed) redirect("/dashboard");
+  if (!c) {
+    console.error("[case_not_found] patient questions", {
+      caseId,
+      userId: user.id,
+    });
+    return <CaseNotFoundRecovery dashboardHref="/dashboard/patient" startNewHref="/dashboard/patient" showExistingCasesLink existingCasesHref="/dashboard/patient" />;
+  }
+
+  const allowed = c.user_id === user.id || c.patient_id === user.id;
+  if (!allowed) redirect("/dashboard/patient");
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
@@ -36,9 +47,7 @@ export default async function Page({
         <div className="pointer-events-none absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-emerald-500/10 blur-3xl" />
 
         <div className="relative">
-          <h1 className="text-2xl sm:text-3xl font-semibold text-white">
-            Intelligence Questions
-          </h1>
+          <h1 className="text-2xl sm:text-3xl font-semibold text-white">Intelligence Questions</h1>
           <p className="mt-2 text-sm sm:text-base text-slate-200/70 max-w-2xl">
             These inputs unlock deeper forensic analysis across donor safety, graft viability, healing course, and aesthetic balance.
           </p>
@@ -50,12 +59,9 @@ export default async function Page({
       </section>
 
       <div className="mt-6">
-        <PatientAuditFormClient
-          caseId={caseId}
-          caseStatus={c.status ?? "draft"}
-          submittedAt={c.submitted_at}
-        />
+        <PatientAuditFormClient caseId={caseId} caseStatus={c.status ?? "draft"} submittedAt={c.submitted_at} />
       </div>
     </div>
   );
 }
+

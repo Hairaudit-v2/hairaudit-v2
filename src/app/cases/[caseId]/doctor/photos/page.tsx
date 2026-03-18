@@ -5,11 +5,14 @@ import SubmitButton from "../../submit-button";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { canAccessCase } from "@/lib/case-access";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import CaseNotFoundRecovery from "@/components/case/CaseNotFoundRecovery";
 
 export default async function DoctorPhotosPage({ params }: { params: Promise<{ caseId: string }> }) {
   const { caseId } = await params;
   const supabase = await createSupabaseAuthServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
   const admin = createSupabaseAdminClient();
@@ -19,8 +22,16 @@ export default async function DoctorPhotosPage({ params }: { params: Promise<{ c
     .eq("id", caseId)
     .maybeSingle();
 
+  if (!c) {
+    console.error("[case_not_found] doctor photos", {
+      caseId,
+      userId: user.id,
+    });
+    return <CaseNotFoundRecovery dashboardHref="/dashboard/doctor" startNewHref="/dashboard/doctor" />;
+  }
+
   const allowed = await canAccessCase(user.id, c);
-  if (!c || !allowed) redirect("/dashboard");
+  if (!allowed) redirect("/dashboard/doctor");
 
   const { data: uploads } = await admin
     .from("uploads")
@@ -33,8 +44,12 @@ export default async function DoctorPhotosPage({ params }: { params: Promise<{ c
   return (
     <div className="max-w-4xl mx-auto p-6">
       <div className="mb-6 flex items-center justify-between">
-        <Link href={`/cases/${caseId}/doctor/form`} className="text-sm text-gray-600 hover:underline">← Back to Doctor Form</Link>
-        <Link href={`/cases/${caseId}`} className="text-sm text-gray-600 hover:underline">Case overview</Link>
+        <Link href={`/cases/${caseId}/doctor/form`} className="text-sm text-gray-600 hover:underline">
+          ← Back to Doctor Form
+        </Link>
+        <Link href={`/cases/${caseId}`} className="text-sm text-gray-600 hover:underline">
+          Case overview
+        </Link>
       </div>
 
       <PhotoUploader
@@ -54,3 +69,4 @@ export default async function DoctorPhotosPage({ params }: { params: Promise<{ c
     </div>
   );
 }
+

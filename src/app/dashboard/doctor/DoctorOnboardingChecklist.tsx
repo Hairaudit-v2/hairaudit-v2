@@ -61,7 +61,7 @@ export default function DoctorOnboardingChecklist({
               {!step.done && (
                 <div className="mt-1.5">
                   {step.id === "create_case" ? (
-                    <CreateCaseButton variant="premium" className="!text-sm" />
+                    <CreateCaseButton variant="premium" className="!text-sm" dashboardHref="/dashboard/doctor" />
                   ) : (
                     <Link
                       href={step.href}

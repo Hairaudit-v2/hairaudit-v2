@@ -4,6 +4,7 @@ import DoctorAuditFormClient from "@/components/audit-form/DoctorAuditFormClient
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { canAccessCase } from "@/lib/case-access";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import CaseNotFoundRecovery from "@/components/case/CaseNotFoundRecovery";
 
 export default async function DoctorFormPage({
   params,
@@ -16,7 +17,9 @@ export default async function DoctorFormPage({
   const resolvedSearch = await searchParams;
   const isFollowupAudit = resolvedSearch.followup === "1" || resolvedSearch.followup === "true";
   const supabase = await createSupabaseAuthServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
   const admin = createSupabaseAdminClient();
@@ -26,13 +29,23 @@ export default async function DoctorFormPage({
     .eq("id", caseId)
     .maybeSingle();
 
+  if (!c) {
+    console.error("[case_not_found] doctor form", {
+      caseId,
+      userId: user.id,
+    });
+    return <CaseNotFoundRecovery dashboardHref="/dashboard/doctor" startNewHref="/dashboard/doctor" />;
+  }
+
   const allowed = await canAccessCase(user.id, c);
-  if (!c || !allowed) redirect("/dashboard");
+  if (!allowed) redirect("/dashboard/doctor");
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
       <div className="mb-6">
-        <Link href={`/cases/${caseId}`} className="text-sm text-gray-600 hover:underline">← Back to case</Link>
+        <Link href={`/cases/${caseId}`} className="text-sm text-gray-600 hover:underline">
+          ← Back to case
+        </Link>
       </div>
       <h1 className="text-2xl font-bold mb-2">Surgery Submission / Case Audit</h1>
       <p className="text-gray-600 mb-8">Target 6–8 minutes. Complete as the treating physician.</p>
@@ -56,3 +69,4 @@ export default async function DoctorFormPage({
     </div>
   );
 }
+

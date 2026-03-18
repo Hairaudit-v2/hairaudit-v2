@@ -77,7 +77,7 @@ export default function DoctorParticipationSummaryCard({
       )}
 
       <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-slate-100 pt-4">
-        <CreateCaseButton variant="premium" label="Submit another case" />
+        <CreateCaseButton variant="premium" label="Submit another case" dashboardHref="/dashboard/doctor" />
         <Link
           href="#your-cases"
           className="inline-flex items-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"

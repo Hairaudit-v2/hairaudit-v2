@@ -43,7 +43,7 @@ export default function ClinicSubmitCasePage() {
           <li>4. Set visibility strategy: internal QA intelligence or public trust asset.</li>
         </ol>
         <div className="mt-6 flex flex-wrap items-center gap-3">
-          <CreateCaseButton variant="premium" />
+          <CreateCaseButton variant="premium" dashboardHref="/dashboard/clinic" />
           <Link
             href="/dashboard/clinic/workspaces"
             className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"

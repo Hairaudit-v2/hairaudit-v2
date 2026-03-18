@@ -88,7 +88,7 @@ export default function DoctorDashboardProduction({
         </p>
         <p className="mt-1 text-xs text-slate-500">{BENCHMARKING_GLOBAL_STANDARDS}</p>
         <div className="mt-4">
-          <CreateCaseButton variant="premium" />
+          <CreateCaseButton variant="premium" dashboardHref="/dashboard/doctor" />
         </div>
       </section>
 
@@ -101,7 +101,7 @@ export default function DoctorDashboardProduction({
               Create a case to start the doctor audit flow (form + photos).
             </p>
             <div className="mt-4">
-              <CreateCaseButton />
+              <CreateCaseButton dashboardHref="/dashboard/doctor" />
             </div>
           </div>
         ) : (

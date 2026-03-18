@@ -1,152 +1,64 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { cookies } from "next/headers";
+import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
-function parseCookieHeader(cookieHeader: string | null) {
-  const out: Record<string, string> = {};
-  if (!cookieHeader) return out;
+const LOG_PREFIX = "[api/cases/create]";
 
-  const parts = cookieHeader.split(/;\s*/);
-  for (const part of parts) {
-    const idx = part.indexOf("=");
-    if (idx === -1) continue;
-    const k = part.slice(0, idx).trim();
-    const v = part.slice(idx + 1).trim();
-    out[k] = v;
-  }
-  return out;
-}
-
-function base64UrlToString(input: string) {
-  // base64url -> base64
-  let s = input.replace(/-/g, "+").replace(/_/g, "/");
-  // pad
-  while (s.length % 4) s += "=";
-  return Buffer.from(s, "base64").toString("utf8");
-}
-
-function decodeAuthCookieValue(raw: string) {
-  // Try raw JSON first
+export async function POST() {
+  // 1) Auth: use same server cookie session as case page (avoids "case not found" right after login)
+  let supabaseAuth;
   try {
-    return JSON.parse(raw);
-  } catch {}
-
-  // Try URL-decoded JSON
-  try {
-    const u = decodeURIComponent(raw);
-    return JSON.parse(u);
-  } catch {}
-
-  // Supabase sometimes prefixes base64 values
-  const noPrefix = raw.startsWith("base64-") ? raw.slice("base64-".length) : raw;
-
-  // Try base64url JSON
-  try {
-    const decoded = base64UrlToString(noPrefix);
-    return JSON.parse(decoded);
-  } catch {}
-
-  // Try base64 (non-url) JSON
-  try {
-    const decoded = Buffer.from(noPrefix, "base64").toString("utf8");
-    return JSON.parse(decoded);
-  } catch {}
-
-  return null;
-}
-
-function findSupabaseAuthPayload(cookiesObj: Record<string, string>) {
-  // We’re looking for sb-<ref>-auth-token OR chunked sb-<ref>-auth-token.0/.1/.2...
-  // Find all cookie names containing "-auth-token"
-  const names = Object.keys(cookiesObj).filter((n) => n.includes("-auth-token"));
-
-  if (names.length === 0) return null;
-
-  // Prefer chunked forms if present
-  // Group by base name (strip .<number> suffix)
-  const groups: Record<string, { name: string; idx: number; val: string }[]> = {};
-  for (const name of names) {
-    const m = name.match(/^(.*-auth-token)(?:\.(\d+))?$/);
-    if (!m) continue;
-    const base = m[1];
-    const idx = m[2] ? Number(m[2]) : -1;
-    groups[base] = groups[base] || [];
-    groups[base].push({ name, idx, val: cookiesObj[name] });
-  }
-
-  // Choose the group that looks like Supabase (sb-...-auth-token)
-  const bases = Object.keys(groups).sort((a, b) => {
-    const aScore = a.startsWith("sb-") ? 1 : 0;
-    const bScore = b.startsWith("sb-") ? 1 : 0;
-    return bScore - aScore;
-  });
-
-  for (const base of bases) {
-    const parts = groups[base].slice().sort((a, b) => a.idx - b.idx);
-    // If idx == -1, it’s a single cookie; keep as-is
-    const combined =
-      parts.length === 1 && parts[0].idx === -1
-        ? parts[0].val
-        : parts.map((p) => p.val).join("");
-
-    const payload = decodeAuthCookieValue(combined);
-    if (payload?.access_token) {
-      return { baseName: base, payload };
-    }
-  }
-
-  return null;
-}
-
-export async function POST(req: Request) {
-  // 1) Read cookies from request header (works reliably in Next 16 route handlers)
-  const cookieHeader = req.headers.get("cookie");
-  const cookieMap = parseCookieHeader(cookieHeader);
-
-  const found = findSupabaseAuthPayload(cookieMap);
-
-  if (!found) {
+    supabaseAuth = await createSupabaseAuthServerClient();
+  } catch (e) {
+    console.error(LOG_PREFIX, "createSupabaseAuthServerClient failed", { error: e });
     return NextResponse.json(
-      { ok: false, error: "Not authenticated (no usable Supabase auth cookie found)" },
+      { ok: false, error: "Auth unavailable" },
+      { status: 500 }
+    );
+  }
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabaseAuth.auth.getUser();
+
+  if (userError) {
+    console.error(LOG_PREFIX, "getUser error", { error: userError.message, code: userError.code });
+    return NextResponse.json(
+      { ok: false, error: "Invalid session" },
       { status: 401 }
     );
   }
 
-  const accessToken = found.payload.access_token as string;
-
-  // 2) Admin client
-  const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { persistSession: false } }
-  );
-
-  // 3) Validate user from token
-  const { data: userData, error: userErr } = await supabaseAdmin.auth.getUser(accessToken);
-
-  if (userErr || !userData.user) {
+  if (!user) {
+    console.error(LOG_PREFIX, "no user in session");
     return NextResponse.json(
-      { ok: false, error: "Invalid session (token rejected by Supabase)" },
+      { ok: false, error: "Not authenticated" },
       { status: 401 }
     );
   }
 
-  // 4) Get user role for case linking
-  let role = (userData.user.user_metadata as Record<string, unknown>)?.role as string | undefined;
+  const userId = user.id;
+  console.info(LOG_PREFIX, "authenticated user", { userId });
+
+  // 2) Role for case linking
+  let role = (user.user_metadata as Record<string, unknown>)?.role as string | undefined;
   try {
-    const { data: profile } = await supabaseAdmin.from("profiles").select("role").eq("id", userData.user.id).maybeSingle();
+    const admin = createSupabaseAdminClient();
+    const { data: profile } = await admin.from("profiles").select("role").eq("id", userId).maybeSingle();
     if (profile?.role) role = profile.role as string;
-  } catch { /* profiles may not exist */ }
-
-  // In development, allow dev_role cookie to override
+  } catch {
+    /* profiles may not exist */
+  }
   if (process.env.NODE_ENV === "development") {
-    const devRole = cookieMap.dev_role;
-    if (devRole && ["patient", "doctor", "clinic", "auditor"].includes(devRole)) {
-      role = devRole;
-    }
+    const cookieStore = await cookies();
+    const devRole = cookieStore.get("dev_role")?.value;
+    if (devRole && ["patient", "doctor", "clinic", "auditor"].includes(devRole)) role = devRole;
   }
 
   const insertData: Record<string, unknown> = {
-    user_id: userData.user.id,
+    user_id: userId,
     title: role === "doctor" ? "Doctor audit" : role === "clinic" ? "Clinic audit" : "Patient Audit",
     status: "draft",
     audit_type: role === "doctor" ? "doctor" : role === "clinic" ? "clinic" : "patient",
@@ -154,21 +66,70 @@ export async function POST(req: Request) {
       role === "doctor" ? "doctor_submitted" : role === "clinic" ? "clinic_submitted" : "patient_submitted",
     visibility_scope: role === "patient" ? "public" : "internal",
   };
-  if (role === "patient") insertData.patient_id = userData.user.id;
-  if (role === "doctor") insertData.doctor_id = userData.user.id;
-  if (role === "clinic") insertData.clinic_id = userData.user.id;
+  if (role === "patient") insertData.patient_id = userId;
+  if (role === "doctor") insertData.doctor_id = userId;
+  if (role === "clinic") insertData.clinic_id = userId;
 
-  // 5) Insert case row
-  const { data, error } = await supabaseAdmin
+  // 3) Insert and get inserted row id explicitly
+  let supabaseAdmin;
+  try {
+    supabaseAdmin = createSupabaseAdminClient();
+  } catch (e) {
+    console.error(LOG_PREFIX, "createSupabaseAdminClient failed", { userId, error: e });
+    return NextResponse.json(
+      { ok: false, error: "Server configuration error" },
+      { status: 500 }
+    );
+  }
+
+  const { data: insertResult, error: insertError } = await supabaseAdmin
     .from("cases")
     .insert(insertData)
     .select("id")
     .single();
 
-  if (error) {
-    return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+  if (insertError) {
+    console.error(LOG_PREFIX, "insert failed", { userId, error: insertError.message, code: insertError.code });
+    return NextResponse.json(
+      { ok: false, error: insertError.message },
+      { status: 500 }
+    );
   }
 
-  return NextResponse.json({ ok: true, caseId: data.id });
-}
+  const insertedId = insertResult?.id;
+  if (insertedId == null || String(insertedId).trim() === "") {
+    console.error(LOG_PREFIX, "insert returned no id", { userId, insertResult });
+    return NextResponse.json(
+      { ok: false, error: "Case was not created; please try again." },
+      { status: 500 }
+    );
+  }
 
+  const caseId = String(insertedId);
+
+  // 4) Post-insert verification: ensure row exists and user_id matches
+  const { data: verifyRow, error: verifyError } = await supabaseAdmin
+    .from("cases")
+    .select("id, user_id")
+    .eq("id", caseId)
+    .maybeSingle();
+
+  if (verifyError) {
+    console.error(LOG_PREFIX, "post-insert verify query failed", { caseId, userId, error: verifyError.message });
+    return NextResponse.json(
+      { ok: false, error: "Case creation could not be verified; please try again." },
+      { status: 500 }
+    );
+  }
+
+  if (!verifyRow || verifyRow.user_id !== userId) {
+    console.error(LOG_PREFIX, "post-insert verify mismatch or missing row", { caseId, userId, verifyRow });
+    return NextResponse.json(
+      { ok: false, error: "Case creation could not be verified; please try again." },
+      { status: 500 }
+    );
+  }
+
+  console.info(LOG_PREFIX, "success", { caseId, userId });
+  return NextResponse.json({ ok: true, caseId });
+}

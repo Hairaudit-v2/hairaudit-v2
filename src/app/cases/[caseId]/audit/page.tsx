@@ -10,6 +10,7 @@ import ManualAuditFinalize from "./ManualAuditFinalize";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { canAccessCase, getUserRole } from "@/lib/case-access";
+import CaseNotFoundRecovery from "@/components/case/CaseNotFoundRecovery";
 
 type PageProps = { params: Promise<{ caseId: string }> };
 
@@ -20,7 +21,9 @@ export default async function AuditPage({ params }: PageProps) {
   const { caseId } = await params;
 
   const supabase = await createSupabaseAuthServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
   const admin = createSupabaseAdminClient();
@@ -30,7 +33,16 @@ export default async function AuditPage({ params }: PageProps) {
     .eq("id", caseId)
     .maybeSingle();
   const allowed = await canAccessCase(user.id, c ?? null);
-  if (!c || !allowed) redirect("/dashboard");
+
+  if (!c) {
+    console.error("[case_not_found] manual audit", {
+      caseId,
+      userId: user.id,
+    });
+    return <CaseNotFoundRecovery dashboardHref="/dashboard/auditor" startNewHref="/dashboard/auditor" />;
+  }
+
+  if (!allowed) redirect("/dashboard/auditor");
 
   const role = await getUserRole(user.id);
   const isAuditor = role === "auditor" || user.email === AUDITOR_EMAIL;
@@ -45,7 +57,9 @@ export default async function AuditPage({ params }: PageProps) {
     return (
       <div className="max-w-3xl mx-auto p-6">
         <h1 className="text-2xl font-bold">Audit Form</h1>
-        <p>Could not find section <b>{SECTION_ID}</b> in the rubric JSON.</p>
+        <p>
+          Could not find section <b>{SECTION_ID}</b> in the rubric JSON.
+        </p>
       </div>
     );
   }
@@ -62,7 +76,9 @@ export default async function AuditPage({ params }: PageProps) {
         <>
           <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
             <p className="text-sm text-amber-900">
-              <strong>You can complete the manual audit without uploading any photos.</strong> Enter a score (0–100), notes, and key findings below, then click &quot;Finalize report&quot;. The photo sections further down are optional (for adding or reviewing evidence).
+              <strong>You can complete the manual audit without uploading any photos.</strong> Enter a score (0–100),
+              notes, and key findings below, then click &quot;Finalize report&quot;. The photo sections further down are optional
+              (for adding or reviewing evidence).
             </p>
           </div>
           <ManualAuditFinalize caseId={caseId} />
@@ -80,3 +96,4 @@ export default async function AuditPage({ params }: PageProps) {
     </div>
   );
 }
+
