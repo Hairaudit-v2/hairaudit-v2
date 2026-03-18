@@ -9,7 +9,7 @@ export default function BetaAccessMessagePage() {
         <div className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
           <h1 className="text-3xl font-bold text-slate-900">Beta Access Notice</h1>
           <p className="mt-6 text-slate-700">
-            HairAudit beta currently supports patient, doctor, and clinic workspaces.
+            HairAudit beta currently supports patient, doctor, and clinic experiences (e.g. Invited Contributions and Submitted Cases for clinics).
           </p>
           <p className="mt-3 text-slate-700">
             If you are seeing this page, your current account role is not yet enabled for the active beta access list.

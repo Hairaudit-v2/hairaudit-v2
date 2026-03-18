@@ -239,7 +239,7 @@ export default function SignUpPage() {
                 </div>
                 <p className="mt-2 text-xs text-slate-500">
                   {signupRole === "clinic"
-                    ? "Clinic beta accounts get access to the Clinic Intelligence Portal and clinic workspaces."
+                    ? "Clinic beta accounts get access to the Clinic Intelligence Portal (Invited Contributions and Submitted Cases)."
                     : signupRole === "doctor"
                       ? "Doctor beta accounts get access to the Doctor Portal, defaults-first upload flow, and report visibility controls."
                       : "Patient beta accounts can submit transplant cases for independent forensic review."}

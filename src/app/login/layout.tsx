@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 export const metadata = {
   title: "Sign in | HairAudit",
   description:
-    "Sign in to your HairAudit beta account to request an audit or manage your workspace. Patient, doctor, and clinic experiences are currently in beta testing.",
+    "Sign in to your HairAudit beta account to request an audit or manage your cases. Patient, doctor, and clinic experiences are currently in beta testing.",
 };
 
 export default function LoginLayout({

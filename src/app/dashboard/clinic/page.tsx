@@ -8,9 +8,10 @@ import { getNextMilestoneFromProfile, getNextTier } from "@/lib/transparency/awa
 import ClinicTransparencyProgressPanel from "@/components/dashboard/ClinicTransparencyProgressPanel";
 import ClinicFeedbackPanel from "@/components/dashboard/ClinicFeedbackPanel";
 import ClinicBadgeWidgetSection from "@/components/dashboard/ClinicBadgeWidgetSection";
-import { computeAdvancedCompletionScore, computeProfileCompletionScore } from "@/lib/clinicPortal";
+import { buildClinicProgressSteps, computeAdvancedCompletionScore, computeProfileCompletionScore } from "@/lib/clinicPortal";
 import ClinicSectionHeader from "@/components/clinic-portal/ClinicSectionHeader";
 import ClinicConversionPanel from "@/components/clinic-portal/ClinicConversionPanel";
+import ClinicProgressGuidancePanel from "@/components/dashboard/ClinicProgressGuidancePanel";
 import ParticipationStatusBanner from "@/components/dashboard/ParticipationStatusBanner";
 import { SITE_URL } from "@/lib/constants";
 
@@ -180,6 +181,16 @@ export default async function ClinicDashboardPage() {
     { label: "Training Ready", ready: advancedCompletion >= 80 && capabilityCount >= 6 },
   ];
 
+  const progressSteps = buildClinicProgressSteps({
+    onboardingSteps,
+    basicCompletion,
+    capabilityCount,
+    submittedCasesCount: cases?.length ?? 0,
+    completedCasesCount: completedTotal ?? 0,
+    benchmarkEligibleCount: Number(clinicProfile?.benchmark_eligible_count ?? 0),
+    profileVisible: Boolean(profileVisible),
+  });
+
   return (
     <div>
       <ClinicSectionHeader
@@ -195,6 +206,14 @@ export default async function ClinicDashboardPage() {
         <ParticipationStatusBanner
           status={((clinicProfile as { participation_approval_status?: string })?.participation_approval_status as "not_started" | "pending_review" | "approved" | "more_info_required") ?? "not_started"}
           role="clinic"
+        />
+      </div>
+
+      <div className="mb-6">
+        <ClinicProgressGuidancePanel
+          steps={progressSteps}
+          title="Your next steps"
+          subtitle="Actions that improve profile completeness, benchmarking readiness, and public visibility."
         />
       </div>
 

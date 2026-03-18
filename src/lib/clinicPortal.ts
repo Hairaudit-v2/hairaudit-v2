@@ -130,3 +130,99 @@ export async function resolveClinicProfileForUser(params: {
 
   return { admin, clinicProfile };
 }
+
+/** Inputs used to build clinic progress guidance (all from existing product state). */
+export type ClinicProgressInputs = {
+  onboardingSteps: number;
+  basicCompletion: number;
+  capabilityCount: number;
+  submittedCasesCount: number;
+  completedCasesCount: number;
+  benchmarkEligibleCount: number;
+  profileVisible: boolean;
+};
+
+export type ClinicProgressStep = {
+  id: string;
+  message: string;
+  href: string;
+  detail: string;
+};
+
+/**
+ * Builds an ordered list of next-step guidance items from real clinic data.
+ * Uses the same thresholds as dashboard readiness (no new ranking logic).
+ * Order: profile/onboarding → clinical stack → first case → benchmarking → public profile.
+ */
+export function buildClinicProgressSteps(inputs: ClinicProgressInputs): ClinicProgressStep[] {
+  const steps: ClinicProgressStep[] = [];
+  const {
+    onboardingSteps,
+    basicCompletion,
+    capabilityCount,
+    submittedCasesCount,
+    completedCasesCount,
+    benchmarkEligibleCount,
+    profileVisible,
+  } = inputs;
+
+  if (onboardingSteps < 5) {
+    steps.push({
+      id: "onboarding",
+      message: "Complete your clinic profile",
+      href: "/dashboard/clinic/onboarding",
+      detail: `Onboarding ${onboardingSteps}/5 steps done. Finish identity and setup.`,
+    });
+  }
+
+  if (basicCompletion < 90 && onboardingSteps >= 5) {
+    steps.push({
+      id: "basic_profile",
+      message: "Complete your clinic profile",
+      href: "/dashboard/clinic/profile",
+      detail: `Basic profile at ${basicCompletion}%. Add tagline, location, contact, and website.`,
+    });
+  }
+
+  if (capabilityCount < 4) {
+    steps.push({
+      id: "clinical_stack",
+      message: "Add your clinical stack",
+      href: "/dashboard/clinic/profile#clinical-stack",
+      detail: `${capabilityCount} items added. Add methods, tools, and devices for credibility.`,
+    });
+  }
+
+  if (submittedCasesCount === 0) {
+    steps.push({
+      id: "first_case",
+      message: "Submit your first case",
+      href: "/dashboard/clinic/submit-case",
+      detail: "Submitted Cases build your evidence base and help you qualify for benchmarking.",
+    });
+  }
+
+  if (
+    completedCasesCount >= 1 &&
+    benchmarkEligibleCount === 0 &&
+    !steps.some((s) => s.id === "first_case")
+  ) {
+    steps.push({
+      id: "validated_cases",
+      message: "Increase validated cases to improve benchmarking visibility",
+      href: "/dashboard/clinic/submit-case",
+      detail: "More completed, high-quality cases help your clinic appear on leaderboards.",
+    });
+  }
+
+  if (!profileVisible) {
+    steps.push({
+      id: "public_profile",
+      message: "Prepare your public profile",
+      href: "/dashboard/clinic/profile",
+      detail: "Enable your public listing so patients can find and trust your clinic.",
+    });
+  }
+
+  return steps;
+}

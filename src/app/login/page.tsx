@@ -129,7 +129,7 @@ export default function LoginPage() {
             </div>
             <h1 className="text-2xl font-bold text-slate-900">Sign in</h1>
             <p className="mt-2 text-sm text-slate-600">
-              Sign in to access your HairAudit workspace. Patient, doctor, and clinic experiences are all in beta testing.
+              Sign in to access your HairAudit account. Patient, doctor, and clinic experiences are all in beta testing.
             </p>
 
             <div className="mt-6 space-y-3">
