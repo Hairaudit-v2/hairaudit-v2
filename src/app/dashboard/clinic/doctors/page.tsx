@@ -22,7 +22,7 @@ export default async function DoctorsPage() {
     userId: user.id,
     userEmail: String(user.email ?? "").toLowerCase(),
   });
-  if (!clinicProfile) redirect("/dashboard");
+  if (!clinicProfile) redirect("/dashboard/clinic");
 
   const [{ data: rows }, { data: portal }] = await Promise.all([
     admin

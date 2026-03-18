@@ -234,14 +234,28 @@ export default async function Page({
   const showClinicFlow = isAuditor || isClinicForCase;
 
   const status = String(c.status ?? "draft");
+  const hasReportPdf = !!(reports?.[0] as { pdf_path?: string } | null)?.pdf_path;
+  const isCompleteWithReport = status === "complete" && hasReportPdf;
+  const isProcessing = status === "submitted" || status === "processing";
+  const statusDisplayLabel = isCompleteWithReport
+    ? "Report Ready"
+    : isProcessing
+      ? "Processing"
+      : status === "audit_failed"
+        ? "Audit failed"
+        : status === "complete"
+          ? "Complete"
+          : status.replaceAll("_", " ");
   const statusPill =
-    status === "complete"
-      ? "border-emerald-300/20 bg-emerald-300/10 text-emerald-200"
-      : status === "submitted"
-        ? "border-cyan-300/20 bg-cyan-300/10 text-cyan-200"
-        : status === "audit_failed"
-          ? "border-rose-300/20 bg-rose-300/10 text-rose-200"
-          : "border-white/10 bg-white/5 text-slate-200/80";
+    isCompleteWithReport
+      ? "border-emerald-400/30 bg-emerald-400/15 text-emerald-100"
+      : status === "complete"
+        ? "border-emerald-300/20 bg-emerald-300/10 text-emerald-200"
+        : status === "submitted" || status === "processing"
+          ? "border-cyan-300/20 bg-cyan-300/10 text-cyan-200"
+          : status === "audit_failed"
+            ? "border-rose-300/20 bg-rose-300/10 text-rose-200"
+            : "border-white/10 bg-white/5 text-slate-200/80";
 
   const latestReport = reports?.[0] ?? null;
   const previousReport = reports?.[1] ?? null;
@@ -437,7 +451,7 @@ export default async function Page({
               <h1 className="mt-2 text-2xl font-semibold text-white">{c.title ?? "Untitled case"}</h1>
             </div>
             <span className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold uppercase ${statusPill}`}>
-              {status.replaceAll("_", " ")}
+              {statusDisplayLabel}
             </span>
           </div>
 
@@ -496,7 +510,7 @@ export default async function Page({
                 href={uploadEntryPath}
                 className="inline-flex items-center justify-center rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-slate-100 transition-all hover:-translate-y-0.5 hover:bg-white/15"
               >
-                Upload Evidence
+                {showPatientFlow ? "Upload Photos" : "Upload Evidence"}
               </Link>
               <div className="rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm">
                 <p className="mb-1 text-xs uppercase tracking-wide text-slate-400">Run Audit</p>
