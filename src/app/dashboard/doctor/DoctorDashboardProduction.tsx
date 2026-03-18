@@ -4,6 +4,7 @@ import Link from "next/link";
 import CreateCaseButton from "../create-case-button";
 import DoctorOnboardingChecklist, { type OnboardingStep } from "./DoctorOnboardingChecklist";
 import ParticipationStatusBanner, { type ParticipationApprovalStatus } from "@/components/dashboard/ParticipationStatusBanner";
+import DoctorParticipationSummaryCard, { type ParticipationSummary } from "./DoctorParticipationSummaryCard";
 
 type CaseRow = {
   id: string;
@@ -18,10 +19,12 @@ export default function DoctorDashboardProduction({
   cases,
   caseIdsWithUploads = [],
   participationApprovalStatus = "not_started",
+  participationSummary = { casesSubmittedCount: 0, reportsCompletedCount: 0, benchmarkReadyCount: 0 },
 }: {
   cases: CaseRow[];
   caseIdsWithUploads?: string[];
   participationApprovalStatus?: ParticipationApprovalStatus;
+  participationSummary?: ParticipationSummary;
 }) {
   const hasCase = cases.length > 0;
   const firstCase = cases[0] ?? null;
@@ -71,6 +74,11 @@ export default function DoctorDashboardProduction({
       {showOnboarding && (
         <DoctorOnboardingChecklist steps={steps} showWhyItMatters />
       )}
+
+      <DoctorParticipationSummaryCard
+        participationSummary={participationSummary}
+        participationApprovalStatus={participationApprovalStatus}
+      />
 
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h1 className="text-xl font-semibold text-slate-900">Doctor workspace</h1>

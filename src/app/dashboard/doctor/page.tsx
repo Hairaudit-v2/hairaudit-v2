@@ -36,11 +36,44 @@ export default async function DoctorDashboardPage() {
 
   const participationApprovalStatus = (doctorProfile?.participation_approval_status as "not_started" | "pending_review" | "approved" | "more_info_required") ?? "not_started";
 
+  const casesSubmittedCount = caseList.filter(
+    (c) => c.submitted_at != null || String(c.status ?? "") === "submitted"
+  ).length;
+
+  let reportsCompletedCount = 0;
+  let benchmarkReadyCount = 0;
+  if (caseIds.length > 0) {
+    const { data: reportRows } = await admin
+      .from("reports")
+      .select("case_id, version, status, counts_for_awards")
+      .in("case_id", caseIds)
+      .eq("status", "complete")
+      .order("version", { ascending: false });
+    const byCase = new Map<string, { version: number; counts_for_awards: boolean | null }>();
+    for (const r of reportRows ?? []) {
+      const cid = String(r.case_id ?? "");
+      if (!cid || byCase.has(cid)) continue;
+      byCase.set(cid, {
+        version: Number(r.version ?? 0),
+        counts_for_awards: (r as { counts_for_awards?: boolean | null }).counts_for_awards ?? null,
+      });
+    }
+    reportsCompletedCount = byCase.size;
+    benchmarkReadyCount = [...byCase.values()].filter((v) => v.counts_for_awards === true).length;
+  }
+
+  const participationSummary = {
+    casesSubmittedCount,
+    reportsCompletedCount,
+    benchmarkReadyCount,
+  };
+
   return (
     <DoctorDashboardProduction
       cases={caseList}
       caseIdsWithUploads={caseIdsWithUploads}
       participationApprovalStatus={participationApprovalStatus}
+      participationSummary={participationSummary}
     />
   );
 }
