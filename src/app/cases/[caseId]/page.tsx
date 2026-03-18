@@ -117,6 +117,13 @@ export default async function Page({
     /* profiles may not exist / RLS may block */
   }
 
+  const usedAdmin = !!admin;
+  const LOG_PREFIX = "[cases/page]";
+
+  // Minimal columns needed for ownership and draft display; safe if newer columns are missing.
+  const CASE_SELECT_MINIMAL =
+    "id, title, status, created_at, user_id, submitted_at, patient_id, doctor_id, clinic_id, audit_type, submission_channel, visibility_scope";
+
   let c: { id: string; title?: string; status?: string; created_at?: string; user_id?: string; submitted_at?: string | null; patient_id?: string | null; doctor_id?: string | null; clinic_id?: string | null; audit_type?: "patient" | "doctor" | "clinic" | null; submission_channel?: string | null; visibility_scope?: string | null; rerun_count?: number | null; last_rerun_at?: string | null; last_rerun_by?: string | null; evidence_score_patient?: string | null; confidence_label_patient?: string | null; evidence_score_doctor?: string | null; confidence_label_doctor?: string | null; evidence_details?: Record<string, unknown> | null } | null;
   let caseRes: any;
   try {
@@ -126,15 +133,47 @@ export default async function Page({
       .eq("id", caseId)
       .maybeSingle();
   } catch (e) {
-    console.error("[cases/page] cases select threw", { caseId, error: e });
+    console.error(LOG_PREFIX, "cases select threw", { caseId, userId: user.id, role, usedAdmin, error: e });
     throw e;
   }
-  if (caseRes.error && String(caseRes.error.message || "").includes("evidence")) {
-    const fallback = await db.from("cases").select("id, title, status, created_at, user_id, submitted_at, patient_id, doctor_id, clinic_id, audit_type, submission_channel, visibility_scope").eq("id", caseId).maybeSingle();
-    c = fallback.data;
+
+  if (caseRes.error) {
+    console.warn(LOG_PREFIX, "cases select error; trying minimal fallback", {
+      caseId,
+      userId: user.id,
+      role,
+      usedAdmin,
+      queryError: caseRes.error.message,
+      queryCode: caseRes.error.code,
+    });
+    const fallback = await db
+      .from("cases")
+      .select(CASE_SELECT_MINIMAL)
+      .eq("id", caseId)
+      .maybeSingle();
+    if (fallback.error) {
+      console.error(LOG_PREFIX, "minimal fallback also failed", {
+        caseId,
+        userId: user.id,
+        usedAdmin,
+        fallbackError: fallback.error.message,
+      });
+    }
+    c = fallback.data ?? null;
   } else {
     c = caseRes.data;
   }
+
+  console.info(LOG_PREFIX, "case load result", {
+    caseId,
+    userId: user.id,
+    role,
+    usedAdmin,
+    hasCase: !!c,
+    caseUserId: c?.user_id,
+    casePatientId: c?.patient_id,
+    caseStatus: c?.status,
+  });
 
   const allowed =
     Boolean(c) &&
@@ -157,7 +196,10 @@ export default async function Page({
     console.error("[case_not_found] case overview", {
       caseId,
       userId: user.id,
-      usedAdminForSelect: !!admin,
+      role,
+      usedAdmin,
+      queryError: caseRes?.error?.message ?? null,
+      queryCode: caseRes?.error?.code ?? null,
     });
 
     let hasOtherCases = false;
