@@ -11,6 +11,7 @@ import ClinicBadgeWidgetSection from "@/components/dashboard/ClinicBadgeWidgetSe
 import { computeAdvancedCompletionScore, computeProfileCompletionScore } from "@/lib/clinicPortal";
 import ClinicSectionHeader from "@/components/clinic-portal/ClinicSectionHeader";
 import ClinicConversionPanel from "@/components/clinic-portal/ClinicConversionPanel";
+import ParticipationStatusBanner from "@/components/dashboard/ParticipationStatusBanner";
 import { SITE_URL } from "@/lib/constants";
 
 export default async function ClinicDashboardPage() {
@@ -22,7 +23,7 @@ export default async function ClinicDashboardPage() {
   const userEmail = String(user.email ?? "").toLowerCase();
 
   const profileSelect =
-    "id, linked_user_id, clinic_name, clinic_email, transparency_score, audited_case_count, contributed_case_count, benchmark_eligible_count, average_forensic_score, documentation_integrity_average, current_award_tier, award_progression_paused, volume_confidence_score, validated_case_count, provisional_high_score_count, validated_high_score_count, low_score_case_count, benchmark_eligible_validated_count, profile_visible, clinic_slug, participation_status";
+    "id, linked_user_id, clinic_name, clinic_email, transparency_score, audited_case_count, contributed_case_count, benchmark_eligible_count, average_forensic_score, documentation_integrity_average, current_award_tier, award_progression_paused, volume_confidence_score, validated_case_count, provisional_high_score_count, validated_high_score_count, low_score_case_count, benchmark_eligible_validated_count, profile_visible, clinic_slug, participation_status, participation_approval_status";
   const { data: byUserProfile } = await admin
     .from("clinic_profiles")
     .select(profileSelect)
@@ -189,6 +190,13 @@ export default async function ClinicDashboardPage() {
           { href: "/dashboard/clinic/onboarding", label: "Onboarding" },
         ]}
       />
+
+      <div className="mb-6">
+        <ParticipationStatusBanner
+          status={((clinicProfile as { participation_approval_status?: string })?.participation_approval_status as "not_started" | "pending_review" | "approved" | "more_info_required") ?? "not_started"}
+          role="clinic"
+        />
+      </div>
 
       <div className="mb-6">
         <ClinicConversionPanel

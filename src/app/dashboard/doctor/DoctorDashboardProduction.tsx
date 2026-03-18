@@ -2,21 +2,76 @@
 
 import Link from "next/link";
 import CreateCaseButton from "../create-case-button";
+import DoctorOnboardingChecklist, { type OnboardingStep } from "./DoctorOnboardingChecklist";
+import ParticipationStatusBanner, { type ParticipationApprovalStatus } from "@/components/dashboard/ParticipationStatusBanner";
 
 type CaseRow = {
   id: string;
   title: string | null;
   status: string | null;
   created_at: string;
+  submitted_at?: string | null;
+  evidence_score_doctor?: string | null;
 };
 
 export default function DoctorDashboardProduction({
   cases,
+  caseIdsWithUploads = [],
+  participationApprovalStatus = "not_started",
 }: {
   cases: CaseRow[];
+  caseIdsWithUploads?: string[];
+  participationApprovalStatus?: ParticipationApprovalStatus;
 }) {
+  const hasCase = cases.length > 0;
+  const firstCase = cases[0] ?? null;
+  const firstCaseId = firstCase?.id ?? null;
+  const hasEvidence = caseIdsWithUploads.length > 0;
+  const hasSubmission = cases.some(
+    (c) => c.submitted_at != null || String(c.status ?? "") === "submitted"
+  );
+
+  const steps: OnboardingStep[] = [
+    {
+      id: "create_case",
+      label: "Create your first case",
+      done: hasCase,
+      href: "",
+      cta: "Create new audit case",
+    },
+    {
+      id: "upload_evidence",
+      label: "Upload supporting evidence",
+      done: hasEvidence,
+      href: firstCaseId ? `/cases/${firstCaseId}/doctor/photos` : "/dashboard/doctor",
+      cta: firstCaseId ? "Add photos to your case" : "Create a case first",
+    },
+    {
+      id: "complete_submission",
+      label: "Complete your first submission",
+      done: hasSubmission,
+      href: firstCaseId ? `/cases/${firstCaseId}` : "/dashboard/doctor",
+      cta: firstCaseId ? "Open case and submit for audit" : "Create a case first",
+    },
+    {
+      id: "learn_benchmarking",
+      label: "Learn how benchmarking works",
+      done: hasSubmission,
+      href: "/leaderboards/doctors",
+      cta: "View doctor leaderboards and benchmarks",
+    },
+  ];
+
+  const showOnboarding = !hasSubmission || !hasCase || !hasEvidence;
+
   return (
     <div className="space-y-6">
+      <ParticipationStatusBanner status={participationApprovalStatus} role="doctor" />
+
+      {showOnboarding && (
+        <DoctorOnboardingChecklist steps={steps} showWhyItMatters />
+      )}
+
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h1 className="text-xl font-semibold text-slate-900">Doctor workspace</h1>
         <p className="mt-1 text-sm text-slate-600">
