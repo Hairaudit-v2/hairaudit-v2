@@ -381,8 +381,8 @@ export default function ServicesPage() {
               <p className="mt-4 text-slate-400 max-w-2xl">
                 Every audit produces a structured deliverable. The format is designed to be
                 defensible, confidence-aware, and decision-oriented.{" "}
-                <Link href="/sample-report" className="text-amber-400 hover:text-amber-300 font-medium transition-colors">
-                  View the sample report preview
+<Link href="/demo-report" className="text-amber-400 hover:text-amber-300 font-medium transition-colors">
+                View the sample report preview
                 </Link>
                 .
               </p>

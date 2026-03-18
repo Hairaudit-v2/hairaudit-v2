@@ -263,7 +263,7 @@ export default function VerifiedSurgeonTransparencyLanding() {
                     Methodology
                   </Link>
                   {" · "}
-                  <Link href="/sample-report" className="text-cyan-400 hover:text-cyan-300 transition-colors font-medium">
+                  <Link href="/demo-report" className="text-cyan-400 hover:text-cyan-300 transition-colors font-medium">
                     Sample Output
                   </Link>
                 </p>

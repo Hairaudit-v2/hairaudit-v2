@@ -41,7 +41,7 @@ export default function HowItWorksPage() {
                   Request Review
                 </Link>
                 <Link
-                  href="/sample-report"
+                  href="/demo-report"
                   className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
                 >
                   See Example Report
@@ -120,7 +120,7 @@ export default function HowItWorksPage() {
                 <Link href="/request-review" className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors shadow-lg shadow-amber-500/20">
                   Request Review
                 </Link>
-                <Link href="/sample-report" className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors">
+                <Link href="/demo-report" className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors">
                   See Example Report
                 </Link>
               </div>

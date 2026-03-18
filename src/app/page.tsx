@@ -93,7 +93,7 @@ export default function HomePage() {
                   Start My Audit
                 </TrackedLink>
                 <Link
-                  href="/sample-report"
+                  href="/demo-report"
                   className="inline-flex items-center justify-center px-8 py-4 rounded-2xl border-2 border-slate-500 text-slate-200 font-medium hover:border-amber-500/50 hover:text-amber-400 transition-colors"
                 >
                   View Sample Report
@@ -201,7 +201,7 @@ export default function HomePage() {
               </ul>
               <div className="mt-10">
                 <TrackedLink
-                  href="/sample-report"
+                  href="/demo-report"
                   eventName="cta_view_sample_report_teaser"
                   className="inline-flex items-center justify-center px-8 py-4 rounded-2xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors border border-amber-400/50"
                 >

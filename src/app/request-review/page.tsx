@@ -134,7 +134,7 @@ export default function RequestReviewPage() {
                 Continue to Secure Upload
               </TrackedLink>
               <TrackedLink
-                href="/sample-report"
+                href="/demo-report"
                 eventName="cta_example_report_request_review"
                 className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
               >

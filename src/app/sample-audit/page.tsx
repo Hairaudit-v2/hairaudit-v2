@@ -6,10 +6,10 @@ export const metadata = {
     follow: false,
   },
   alternates: {
-    canonical: "/sample-report",
+    canonical: "/demo-report",
   },
 };
 
 export default function SampleAuditAliasPage() {
-  redirect("/sample-report");
+  redirect("/demo-report");
 }

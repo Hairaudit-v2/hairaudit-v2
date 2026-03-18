@@ -56,8 +56,8 @@ export default function SiteFooter({ theme = "default" }: SiteFooterProps) {
                 </TrackedLink>
               </li>
               <li>
-                <Link href="/sample-report" className={linkClass}>
-                  Example Report
+                <Link href="/demo-report" className={linkClass}>
+                  Sample Report
                 </Link>
               </li>
               <li>

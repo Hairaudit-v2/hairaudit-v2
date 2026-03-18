@@ -69,7 +69,7 @@ export default function AuditExamplesPage() {
               </p>
               <div className="mt-5">
                 <Link
-                  href="/sample-report"
+                  href="/demo-report"
                   className="inline-flex items-center justify-center px-6 py-3 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
                 >
                   See Example Report

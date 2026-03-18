@@ -342,7 +342,7 @@ export default function SampleAuditReportSection({
                   Get Your Surgery Audited
                 </TrackedLink>
                 <Link
-                  href="/sample-report"
+                  href="/demo-report"
                   className={`inline-flex items-center justify-center px-8 py-4 rounded-2xl border-2 ${isLight ? "border-slate-300 text-slate-700 hover:bg-slate-50" : "border-white/20 text-slate-200 hover:bg-white/10"} transition-colors font-medium`}
                 >
                   View full sample report

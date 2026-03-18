@@ -180,7 +180,7 @@ export default function BenchmarkVisionPage() {
                   Services
                 </Link>{" "}
                 and{" "}
-                <Link href="/sample-report" className="text-amber-400 hover:text-amber-300 font-medium transition-colors">
+                <Link href="/demo-report" className="text-amber-400 hover:text-amber-300 font-medium transition-colors">
                   Sample Report
                 </Link>
                 .
