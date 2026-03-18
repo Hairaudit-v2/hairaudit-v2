@@ -203,11 +203,11 @@ function renderRadarSvg(opts: {
   ${polygon}
   ${dots}
 
-  <text x="${cx}" y="${cy - 6}" fill="rgba(226,232,240,0.12)" font-size="${Math.round(
-    height * 0.18
+  <text x="${cx}" y="${cy - 6}" fill="rgba(226,232,240,0.32)" font-size="${Math.round(
+    height * 0.24
   )}" font-weight="800" font-family="Arial,sans-serif" text-anchor="middle" dominant-baseline="middle">${overall}</text>
   <text x="${cx}" y="${cy + Math.round(height * 0.11)}" fill="rgba(226,232,240,0.88)" font-size="${Math.round(
-    height * 0.04
+    height * 0.052
   )}" font-weight="700" font-family="Arial,sans-serif" text-anchor="middle" dominant-baseline="middle">Confidence: ${confPct}%</text>
   ${allZeros ? `<text x="${cx}" y="${cy + Math.round(height * 0.18)}" fill="rgba(226,232,240,0.6)" font-size="11" font-weight="600" font-family="Arial,sans-serif" text-anchor="middle" dominant-baseline="middle">Performance data will populate as sections are scored</text>` : ""}
   <text x="${cx}" y="${height - 18}" fill="rgba(226,232,240,0.72)" font-size="11" font-weight="600" font-family="Arial,sans-serif" text-anchor="middle" dominant-baseline="middle">Audit Performance Signature</text>
@@ -617,7 +617,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
           ${renderRadarSvg({
             labels: radarDisplayLabels,
             values: radar.values,
-            size: 840,
+            size: 960,
             levels: 5,
             overall: radar.overall,
             confidence: radar.confidence,
@@ -807,7 +807,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
         linear-gradient(180deg, rgba(255,255,255,0.84) 0%, rgba(244,250,255,0.88) 100%);
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.92);
     }
-    .execLayout { position: relative; z-index: 1; display: grid; grid-template-columns: 1.24fr 1fr; gap: 26px; align-items: stretch; }
+    .execLayout { position: relative; z-index: 1; display: grid; grid-template-columns: 1.18fr 1.12fr; gap: 26px; align-items: stretch; }
     .scoreBadge {
       position: relative;
       border: 1px solid rgba(213, 164, 58, 0.45);
@@ -852,6 +852,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
 
     .metricCard, .panelCard { border: 1px solid var(--line); border-radius: 14px; padding: 12px; background:#fff; }
     .metricTitle, .panelTitle { font-size: 12px; color: var(--muted); margin-bottom: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; }
+    .radarPanel .panelTitle { font-size: 14px; letter-spacing: .06em; margin-bottom: 6px; color: #2b4a72; }
     .metricList { display:grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; }
     .metricList div { display:flex; justify-content:space-between; gap:10px; font-size: 11px; flex-wrap: wrap; }
     .metricList span { color: var(--muted); }
@@ -861,7 +862,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       margin-bottom: 0;
       border: 1px solid #e6edf3;
       border-radius: 12px;
-      padding: 24px;
+      padding: 22px;
       background:
         radial-gradient(circle at 22% 14%, rgba(14,165,233,0.08), rgba(14,165,233,0) 45%),
         linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
@@ -874,17 +875,17 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       min-height: 520px;
     }
     .radarWrap {
-      margin-top: 18px;
+      margin-top: 10px;
       display: flex;
       justify-content: center;
       page-break-inside: avoid;
       break-inside: avoid;
-      min-height: 560px;
+      min-height: 500px;
       align-items: center;
-      padding: 26px;
+      padding: 14px 18px;
     }
-    .radarWrap svg { display: block; margin: 0 auto; max-width: 96%; height: auto; border-radius: 12px; border: 1px solid rgba(14,165,233,0.15); }
-    .radarPanel .miniText { margin-top: 20px; margin-bottom: 10px; }
+    .radarWrap svg { display: block; margin: 0 auto; max-width: 98%; height: auto; border-radius: 12px; border: 1px solid rgba(14,165,233,0.15); }
+    .radarPanel .miniText { margin-top: 12px; margin-bottom: 8px; }
     .infoGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 24px; align-items: stretch; }
     .evidenceInfoGrid { margin-top: 20px; }
     .p1Zone .panelCard {
@@ -1122,13 +1123,13 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       .p1Section { margin-top: 26px; }
       .p1Zone { margin-top: 26px; margin-bottom: 24px; padding: 22px; }
       .heroDashboard { padding: 14px; }
-      .execLayout { grid-template-columns: 1.18fr 1fr; gap: 24px; }
+      .execLayout { grid-template-columns: 1.15fr 1.08fr; gap: 24px; }
       .scoreBadge { min-height: 390px; padding: 24px; }
       .scoreBubble { width: 220px; height: 220px; }
       .scoreValue { font-size: 72px; }
       .p1RightCol { min-height: 390px; }
-      .radarPanel { margin-top: 0; padding: 24px; min-height: 390px; }
-      .radarWrap { min-height: 400px; padding: 16px; }
+      .radarPanel { margin-top: 0; padding: 20px; min-height: 390px; }
+      .radarWrap { min-height: 380px; padding: 12px 16px; margin-top: 8px; }
       .keyMetricCard { margin-top: 0; margin-bottom: 20px; }
       .infoGrid { grid-template-columns: 1fr 1fr; }
       .infoGrid { margin-top: 24px; gap: 16px; }
