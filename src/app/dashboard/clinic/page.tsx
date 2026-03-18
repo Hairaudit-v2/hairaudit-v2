@@ -14,6 +14,7 @@ import ClinicConversionPanel from "@/components/clinic-portal/ClinicConversionPa
 import ClinicProgressGuidancePanel from "@/components/dashboard/ClinicProgressGuidancePanel";
 import ParticipationStatusBanner from "@/components/dashboard/ParticipationStatusBanner";
 import { SITE_URL } from "@/lib/constants";
+import { BENCHMARKING_GLOBAL_STANDARDS } from "@/lib/benchmarkingCopy";
 
 export default async function ClinicDashboardPage() {
   const supabase = await createSupabaseAuthServerClient();
@@ -201,6 +202,7 @@ export default async function ClinicDashboardPage() {
           { href: "/dashboard/clinic/onboarding", label: "Onboarding" },
         ]}
       />
+      <p className="mb-6 text-xs text-slate-500">{BENCHMARKING_GLOBAL_STANDARDS}</p>
 
       <div className="mb-6">
         <ParticipationStatusBanner

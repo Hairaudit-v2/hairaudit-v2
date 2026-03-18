@@ -592,8 +592,9 @@ function addHeader(doc: PDFKit.PDFDocument, logoBuffer?: Buffer) {
   doc.fontSize(H1_SIZE).font("Helvetica-Bold");
   doc.text("HairAudit", x, 28, { width: 300 });
   doc.fontSize(11).font("Helvetica");
-  doc.fillColor(SLATE_400);
-  doc.text("Professional Hair Transplant Audit Report", x, 55);
+  doc.text("Clinical Audit Report", x, 55);
+  doc.fontSize(META_SIZE).fillColor(SLATE_400);
+  doc.text("Independent surgical assessment · Generated using structured evaluation protocols", x, 68);
   doc.restore();
   doc.moveDown(3.6);
 }
@@ -1396,11 +1397,12 @@ export async function buildAuditReportPdf(
   // Footer
   doc.moveDown(2);
   doc.fillColor(SLATE_400).fontSize(9);
-  doc.text("— HairAudit. Professional hair transplant audit and feedback.", MARGIN, doc.y);
-  doc.text(HA_HOME, MARGIN, doc.y + 14);
+  doc.text("HairAudit — advancing transparency in hair restoration.", MARGIN, doc.y);
+  doc.text("This report is informational and not a medical diagnosis.", MARGIN, doc.y + 12);
+  doc.text(HA_HOME, MARGIN, doc.y + 24);
   const sha = process.env.VERCEL_GIT_COMMIT_SHA ? String(process.env.VERCEL_GIT_COMMIT_SHA).slice(0, 7) : "";
   if (sha) {
-    doc.text(`Build: ${sha}`, MARGIN, doc.y + 28);
+    doc.text(`Build: ${sha}`, MARGIN, doc.y + 36);
   }
 
   const pdfDebugEnabled = String(process.env.PDF_DEBUG ?? "").toLowerCase() === "true";

@@ -27,6 +27,12 @@ export default function ClinicProgressGuidancePanel({
         <p className="mt-3 rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm font-medium text-emerald-800">
           You’re in good shape. Keep submitting cases and responding to Invited Contributions to strengthen your visibility.
         </p>
+        <div className="mt-3 rounded-lg border border-emerald-200/60 bg-white/60 px-3 py-2">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-emerald-700">Why this matters</p>
+          <p className="mt-1 text-xs text-emerald-800/90">
+            Profile completeness and validated cases improve your public visibility and ranking credibility on HairAudit.
+          </p>
+        </div>
       </section>
     );
   }
@@ -53,6 +59,11 @@ export default function ClinicProgressGuidancePanel({
                 {step.message}
               </Link>
               <p className="mt-0.5 text-xs text-slate-500">{step.detail}</p>
+              {step.outcome && (
+                <p className="mt-1 text-xs font-medium text-cyan-700">
+                  → {step.outcome}
+                </p>
+              )}
             </div>
             <Link
               href={step.href}
@@ -63,6 +74,17 @@ export default function ClinicProgressGuidancePanel({
           </li>
         ))}
       </ol>
+
+      <div className="mt-5 rounded-xl border border-slate-100 bg-slate-50/80 px-4 py-3">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+          Why this matters
+        </p>
+        <ul className="mt-2 space-y-1.5 text-sm text-slate-600">
+          <li>• Complete your profile → improves public visibility and how patients find you.</li>
+          <li>• Submit more cases → increases benchmarking eligibility and leaderboard potential.</li>
+          <li>• Validate cases → strengthens ranking credibility and verified recognition.</li>
+        </ul>
+      </div>
     </section>
   );
 }

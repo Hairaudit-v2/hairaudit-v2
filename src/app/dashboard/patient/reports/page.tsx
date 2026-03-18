@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import DownloadReport from "@/app/cases/[caseId]/download-report";
+import { BENCHMARKING_GLOBAL_STANDARDS } from "@/lib/benchmarkingCopy";
 
 export default async function PatientReportsPage() {
   const supabase = await createSupabaseAuthServerClient();
@@ -53,6 +54,7 @@ export default async function PatientReportsPage() {
             <p className="mt-1 text-sm text-slate-200/70">
               Your completed audit reports. View or download each report below.
             </p>
+            <p className="mt-1 text-xs text-slate-400/90">{BENCHMARKING_GLOBAL_STANDARDS}</p>
           </div>
         </div>
 

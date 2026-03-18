@@ -147,6 +147,8 @@ export type ClinicProgressStep = {
   message: string;
   href: string;
   detail: string;
+  /** Short cause-effect outcome for benchmarking/visibility (descriptive only). */
+  outcome?: string;
 };
 
 /**
@@ -172,6 +174,7 @@ export function buildClinicProgressSteps(inputs: ClinicProgressInputs): ClinicPr
       message: "Complete your clinic profile",
       href: "/dashboard/clinic/onboarding",
       detail: `Onboarding ${onboardingSteps}/5 steps done. Finish identity and setup.`,
+      outcome: "Improves public visibility and trust.",
     });
   }
 
@@ -181,6 +184,7 @@ export function buildClinicProgressSteps(inputs: ClinicProgressInputs): ClinicPr
       message: "Complete your clinic profile",
       href: "/dashboard/clinic/profile",
       detail: `Basic profile at ${basicCompletion}%. Add tagline, location, contact, and website.`,
+      outcome: "Improves public visibility.",
     });
   }
 
@@ -190,6 +194,7 @@ export function buildClinicProgressSteps(inputs: ClinicProgressInputs): ClinicPr
       message: "Add your clinical stack",
       href: "/dashboard/clinic/profile#clinical-stack",
       detail: `${capabilityCount} items added. Add methods, tools, and devices for credibility.`,
+      outcome: "Strengthens profile credibility for patients and rankings.",
     });
   }
 
@@ -199,6 +204,7 @@ export function buildClinicProgressSteps(inputs: ClinicProgressInputs): ClinicPr
       message: "Submit your first case",
       href: "/dashboard/clinic/submit-case",
       detail: "Submitted Cases build your evidence base and help you qualify for benchmarking.",
+      outcome: "Increases benchmarking eligibility.",
     });
   }
 
@@ -212,6 +218,7 @@ export function buildClinicProgressSteps(inputs: ClinicProgressInputs): ClinicPr
       message: "Increase validated cases to improve benchmarking visibility",
       href: "/dashboard/clinic/submit-case",
       detail: "More completed, high-quality cases help your clinic appear on leaderboards.",
+      outcome: "Increases benchmarking eligibility and strengthens ranking credibility.",
     });
   }
 
@@ -221,6 +228,7 @@ export function buildClinicProgressSteps(inputs: ClinicProgressInputs): ClinicPr
       message: "Prepare your public profile",
       href: "/dashboard/clinic/profile",
       detail: "Enable your public listing so patients can find and trust your clinic.",
+      outcome: "Improves public visibility.",
     });
   }
 

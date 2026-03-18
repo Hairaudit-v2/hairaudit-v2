@@ -99,32 +99,71 @@ export type NotifyPatientReportReadyParams = {
 /**
  * Send "Your HairAudit report is ready" email when a case successfully completes.
  * Call only after report is complete and PDF is available; use idempotency (e.g. report_ready_email_sent_at) to avoid duplicates.
+ * Template drives return visits with a clear CTA to the case page and reinforces premium positioning.
  */
 export async function notifyPatientReportReady({
   to,
   caseId,
   firstName,
 }: NotifyPatientReportReadyParams): Promise<boolean> {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? SITE_URL;
+  const baseUrl = (process.env.NEXT_PUBLIC_APP_URL ?? SITE_URL).replace(/\/+$/, "");
   const dashboardUrl = `${baseUrl}/dashboard/patient`;
-  const caseUrl = `${baseUrl}/cases/${escapeHtml(caseId)}`;
+  const caseUrl = caseId ? `${baseUrl}/cases/${escapeHtml(caseId)}` : dashboardUrl;
+  const ctaUrl = caseUrl;
 
   const greeting = firstName && String(firstName).trim() ? `Hi ${escapeHtml(String(firstName).trim())},` : "Hi,";
-  const caseLine =
-    caseId ? `<p><strong>Case reference:</strong> ${escapeHtml(caseId)}</p>` : "";
+
+  const reportReadyEmailHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your HairAudit report is ready</title>
+</head>
+<body style="margin:0; padding:0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 16px; line-height: 1.5; color: #1a1a1a; background-color: #f5f5f5;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f5f5f5;">
+    <tr>
+      <td style="padding: 24px 16px;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width: 560px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+          <tr>
+            <td style="padding: 32px 24px;">
+              <p style="margin: 0 0 24px 0; font-size: 15px; color: #4b5563;">${greeting}</p>
+              <h1 style="margin: 0 0 16px 0; font-size: 22px; font-weight: 700; color: #111827; line-height: 1.3;">Your HairAudit report is ready</h1>
+              <p style="margin: 0 0 20px 0; font-size: 15px; color: #374151;">Your review is complete. Your report includes your case summary, audit findings, and clear next steps — all in one secure place.</p>
+              <p style="margin: 0 0 24px 0; font-size: 13px; color: #6b7280; font-style: italic;">Benchmarked against global surgical standards.</p>
+              <table role="presentation" cellspacing="0" cellpadding="0" style="margin: 0 0 24px 0;">
+                <tr>
+                  <td style="border-radius: 6px; background-color: #059669;">
+                    <a href="${ctaUrl}" target="_blank" rel="noopener noreferrer" style="display: inline-block; padding: 14px 28px; font-size: 16px; font-weight: 600; color: #ffffff; text-decoration: none;">View Your Report</a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin: 0 0 8px 0; font-size: 13px; color: #9ca3af;">If the button doesn’t work, copy and paste this link into your browser:</p>
+              <p style="margin: 0 0 24px 0; font-size: 13px; color: #059669; word-break: break-all;"><a href="${ctaUrl}" style="color: #059669;">${ctaUrl}</a></p>
+              <p style="margin: 0; font-size: 13px; color: #6b7280;">— HairAudit</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+  const reportReadyEmailText =
+    `${greeting}\n\n` +
+    `Your HairAudit report is ready\n\n` +
+    `Your review is complete. Your report includes your case summary, audit findings, and clear next steps — all in one secure place.\n\n` +
+    `Benchmarked against global surgical standards.\n\n` +
+    `View Your Report: ${ctaUrl}\n\n` +
+    `— HairAudit`;
 
   return sendEmail({
     to,
     subject: "Your HairAudit report is ready",
-    html: `
-      <p>${greeting}</p>
-      <p>Your review has been completed and your report is now available securely in your HairAudit dashboard.</p>
-      ${caseLine}
-      <p>You can view and download your report from your dashboard.</p>
-      <p><a href="${dashboardUrl}">Go to Dashboard</a></p>
-      <p>Or open your case directly: <a href="${caseUrl}">View case &amp; report</a></p>
-      <p>— HairAudit</p>
-    `,
+    html: reportReadyEmailHtml,
+    text: reportReadyEmailText,
   });
 }
 

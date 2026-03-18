@@ -25,6 +25,8 @@ import UploadThumbnailGallery from "@/components/reports/UploadThumbnailGallery"
 import LatestReportCard from "@/components/reports/LatestReportCard";
 import InviteClinicContributionCard from "@/components/case/InviteClinicContributionCard";
 import ForensicCaseTimelineViewer from "@/components/reports/ForensicCaseTimelineViewer";
+import PatientNextActionPanel from "@/components/patient/PatientNextActionPanel";
+import { BENCHMARKING_GLOBAL_STANDARDS } from "@/lib/benchmarkingCopy";
 
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { tryCreateSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -455,6 +457,15 @@ export default async function Page({
             </span>
           </div>
 
+          {showPatientFlow && (
+            <PatientNextActionPanel
+              status={status}
+              caseId={c.id}
+              pdfPath={(latestReport as { pdf_path?: string } | null)?.pdf_path}
+              variant="case"
+            />
+          )}
+
           <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               <div className="rounded-xl border border-white/10 bg-white/5 p-3 transition-colors hover:bg-white/10">
@@ -828,6 +839,7 @@ export default async function Page({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-semibold text-white">Latest Report</h2>
+            <p className="mt-0.5 text-xs text-slate-400">{BENCHMARKING_GLOBAL_STANDARDS}</p>
             {repErr && <p className="text-sm text-rose-300">{repErr.message}</p>}
           </div>
           {reports && reports.length > 0 && <VersionHistoryDrawer reports={reports as any} />}

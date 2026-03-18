@@ -8,6 +8,8 @@ import { PATIENT_AUDIT_SECTIONS, type PatientAuditAnswers } from "@/lib/patientA
 import DeleteDraftCaseButton from "./DeleteDraftCaseButton";
 import GraftIntegrityCard from "./GraftIntegrityCard";
 import DownloadReport from "@/app/cases/[caseId]/download-report";
+import PatientNextActionPanel from "@/components/patient/PatientNextActionPanel";
+import { BENCHMARKING_GLOBAL_STANDARDS } from "@/lib/benchmarkingCopy";
 
 function isMissingFeatureError(error: unknown): boolean {
   const e = error as { status?: number; code?: string; message?: string } | null;
@@ -318,6 +320,7 @@ export default async function PatientDashboardPage() {
             <div>Powered by Follicle Intelligence™</div>
             <div>Multi-Layer Visual Pattern Recognition Engine</div>
             <div>Vision Model: GPT-5.2</div>
+            <div className="mt-1 text-slate-400/90">{BENCHMARKING_GLOBAL_STANDARDS}</div>
           </div>
         </div>
       </section>
@@ -626,16 +629,28 @@ export default async function PatientDashboardPage() {
                       </div>
 
                       {isReportReady && (
-                        <div className="mt-4 flex flex-wrap items-center gap-3">
-                          <Link
-                            href={`/cases/${c.id}`}
-                            className="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-950 bg-gradient-to-r from-cyan-300 to-emerald-300 hover:from-cyan-200 hover:to-emerald-200 transition-colors shadow-sm"
-                          >
-                            View Report
-                          </Link>
-                          <DownloadReport pdfPath={pdfPath} label="Download PDF" />
-                        </div>
+                        <>
+                          <div className="mt-4 flex flex-wrap items-center gap-3">
+                            <Link
+                              href={`/cases/${c.id}`}
+                              className="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-950 bg-gradient-to-r from-cyan-300 to-emerald-300 hover:from-cyan-200 hover:to-emerald-200 transition-colors shadow-sm"
+                            >
+                              View Report
+                            </Link>
+                            <DownloadReport pdfPath={pdfPath} label="Download PDF" />
+                          </div>
+                          <p className="mt-2 text-xs text-slate-400/90">{BENCHMARKING_GLOBAL_STANDARDS}</p>
+                        </>
                       )}
+
+                      <div className="mt-4">
+                        <PatientNextActionPanel
+                          status={status}
+                          caseId={c.id}
+                          pdfPath={pdfPath}
+                          variant="dashboard"
+                        />
+                      </div>
                     </div>
 
                     {canDeleteDraft && (

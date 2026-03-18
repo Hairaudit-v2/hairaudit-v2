@@ -301,8 +301,9 @@ export default async function ReportHtmlPage({
             <div className="brand">
               <div className="logo">HA</div>
               <div>
-                <h1>HairAudit — Audit Report</h1>
-                <div className="muted">Generated: {new Date().toLocaleString()}</div>
+                <h1>Clinical Audit Report</h1>
+                <div className="muted">HairAudit — Independent surgical assessment</div>
+                <div className="muted" style={{ marginTop: 2 }}>Generated using structured evaluation protocols · {new Date().toLocaleString()}</div>
               </div>
             </div>
             <div className="muted" style={{ textAlign: "right" }}>
@@ -615,7 +616,8 @@ export default async function ReportHtmlPage({
           </div>
 
           <div className="footer">
-            HairAudit is an audit/reporting platform. This report is informational and not a medical diagnosis.
+            HairAudit — advancing transparency in hair restoration.<br />
+            This report is informational and not a medical diagnosis.
           </div>
         </div>
       </body>

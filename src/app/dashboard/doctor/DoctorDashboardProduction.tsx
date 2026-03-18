@@ -5,6 +5,7 @@ import CreateCaseButton from "../create-case-button";
 import DoctorOnboardingChecklist, { type OnboardingStep } from "./DoctorOnboardingChecklist";
 import ParticipationStatusBanner, { type ParticipationApprovalStatus } from "@/components/dashboard/ParticipationStatusBanner";
 import DoctorParticipationSummaryCard, { type ParticipationSummary } from "./DoctorParticipationSummaryCard";
+import { BENCHMARKING_GLOBAL_STANDARDS } from "@/lib/benchmarkingCopy";
 
 type CaseRow = {
   id: string;
@@ -85,12 +86,13 @@ export default function DoctorDashboardProduction({
         <p className="mt-1 text-sm text-slate-600">
           Complete the surgery form and upload photos per case. Each case uses the same audit flow: form → photos → submit.
         </p>
+        <p className="mt-1 text-xs text-slate-500">{BENCHMARKING_GLOBAL_STANDARDS}</p>
         <div className="mt-4">
           <CreateCaseButton variant="premium" />
         </div>
       </section>
 
-      <section>
+      <section id="your-cases">
         <h2 className="text-lg font-semibold text-slate-900 mb-3">Your cases</h2>
         {!cases || cases.length === 0 ? (
           <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-8 text-center">
