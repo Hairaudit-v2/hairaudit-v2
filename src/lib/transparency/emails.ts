@@ -52,7 +52,10 @@ function buildClinicOutreachHtml(
       : "One of your patients has recently submitted their hair transplant results to HairAudit for independent review. We assess each case with clinical accuracy and full context — not only patient-provided images. Your clinic can contribute procedural data so the audit reflects the complete picture.";
 
   const ctaLabel = "Submit Case Information";
-  const urgencyLine = "We recommend responding within 48 hours so the audit can include your input.";
+  const urgencyLine =
+    variant === "final"
+      ? "This is your last opportunity to contribute before the window closes."
+      : "We recommend responding within 48 hours so the audit can include your input.";
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -170,6 +173,80 @@ function buildClinicOutreachHtml(
 </html>`;
 }
 
+/**
+ * 48-hour follow-up: shorter, more direct, with stronger urgency.
+ * Used when clinic has not responded to the initial request.
+ */
+function buildReminderFollowUpHtml(input: ContributionEmailCommon): string {
+  const caseId = escapeHtml(input.caseId);
+  const clinicName = escapeHtml(safe(input.clinicName) || "—");
+  const doctorName = escapeHtml(safe(input.doctorName) || "—");
+  const contributionUrl = input.contributionUrl.replace(/"/g, "&quot;");
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HairAudit — Contribution reminder</title>
+  <style>@media only screen and (max-width: 620px) { .container { width: 100% !important; max-width: 100% !important; } .mobile-pad { padding-left: 20px !important; padding-right: 20px !important; } .cta-cell { width: 100% !important; } .cta-link { display: block !important; width: 100% !important; text-align: center !important; box-sizing: border-box !important; } }</style>
+</head>
+<body style="margin:0; padding:0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 16px; line-height: 1.55; color: ${CHARCOAL}; background-color: #f4f4f5;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f4f4f5;">
+    <tr>
+      <td style="padding: 32px 16px;">
+        <table role="presentation" class="container" width="100%" cellspacing="0" cellpadding="0" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 10px; box-shadow: 0 2px 12px rgba(0,0,0,0.06);">
+          <tr>
+            <td class="mobile-pad" style="padding: 24px 28px; border-bottom: 1px solid ${BORDER};">
+              <p style="margin: 0 0 4px 0; font-size: 22px; font-weight: 700; color: ${CHARCOAL}; letter-spacing: -0.02em;">HairAudit</p>
+              <p style="margin: 0; font-size: 11px; font-weight: 500; color: ${GOLD}; text-transform: uppercase; letter-spacing: 0.04em;">Independent Surgical Review</p>
+            </td>
+          </tr>
+          <tr>
+            <td class="mobile-pad" style="padding: 24px 28px 0 28px;">
+              <p style="margin: 0 0 16px 0; font-size: 16px; font-weight: 600; color: ${CHARCOAL}; line-height: 1.4;">We have not yet received your contribution for this case.</p>
+              <p style="margin: 0 0 20px 0; font-size: 15px; color: ${CHARCOAL_MUTED}; line-height: 1.6;">The audit may proceed on the basis of patient-submitted information alone if we do not hear from you. Contributing your procedural data ensures the review reflects full clinical context and supports an accurate, fair representation of your work — which matters for both audit quality and your clinic’s reputation.</p>
+            </td>
+          </tr>
+          <tr>
+            <td class="mobile-pad" style="padding: 20px 28px;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: ${CASE_BOX_BG}; border-radius: 8px; border: 1px solid ${BORDER};">
+                <tr>
+                  <td style="padding: 16px 20px;">
+                    <p style="margin: 0 0 8px 0; font-size: 12px; font-weight: 600; color: #6b7280;">Case ID</p>
+                    <p style="margin: 0 0 12px 0; font-size: 15px; color: ${CHARCOAL}; font-weight: 500;">${caseId}</p>
+                    <p style="margin: 0 0 4px 0; font-size: 12px; font-weight: 600; color: #6b7280;">Clinic · Doctor</p>
+                    <p style="margin: 0; font-size: 14px; color: ${CHARCOAL};">${clinicName} · ${doctorName}</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td class="mobile-pad" style="padding: 0 28px 28px 28px; text-align: center;">
+              <table role="presentation" align="center" cellspacing="0" cellpadding="0" style="margin: 0 auto; max-width: 320px;">
+                <tr>
+                  <td class="cta-cell" style="border-radius: 8px; background-color: ${GOLD}; box-shadow: 0 2px 10px rgba(184, 134, 11, 0.35);">
+                    <a href="${contributionUrl}" target="_blank" rel="noopener noreferrer" class="cta-link" style="display: inline-block; padding: 16px 36px; font-size: 17px; font-weight: 600; color: ${CHARCOAL}; text-decoration: none;">Submit Case Information</a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin: 12px 0 0 0; font-size: 12px; color: #9ca3af;">Authorized clinic or surgeon use only.</p>
+            </td>
+          </tr>
+          <tr>
+            <td class="mobile-pad" style="padding: 20px 28px 28px 28px; border-top: 1px solid ${BORDER};">
+              <p style="margin: 0; font-size: 12px; color: #9ca3af;">HairAudit — Independent surgical review and global benchmarking</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
 export async function sendInitialContributionRequestEmail(input: ContributionEmailCommon) {
   if (!input.to.length) return false;
   return sendEmail({
@@ -183,8 +260,8 @@ export async function sendReminderContributionEmail(input: ContributionEmailComm
   if (!input.to.length) return false;
   return sendEmail({
     to: input.to,
-    subject: "Reminder: contribution opportunity for submitted patient case",
-    html: buildClinicOutreachHtml(input, "reminder"),
+    subject: "Your input still needed for this HairAudit case review",
+    html: buildReminderFollowUpHtml(input),
   });
 }
 
