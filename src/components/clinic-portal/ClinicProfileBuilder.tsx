@@ -190,7 +190,7 @@ export default function ClinicProfileBuilder({
           capabilities.length < 6
             ? { label: "Add your surgical methods", href: "/dashboard/clinic/profile#clinical-stack" }
             : { label: "Upload devices and technology", href: "/dashboard/clinic/profile#clinical-stack" },
-          { label: "Respond to patient-submitted cases", href: "/dashboard/clinic/workspaces" },
+          { label: "Respond to Invited Contributions", href: "/dashboard/clinic/workspaces" },
         ]}
         readinessStates={readinessStates}
       />

@@ -19,11 +19,11 @@ export default async function ClinicCasesPage() {
   return (
     <div>
       <ClinicSectionHeader
-        title="Clinic Cases"
-        subtitle="Premium operating layer for patient-submitted and clinic-submitted case management."
+        title="All Clinic Cases"
+        subtitle="Invited Contributions (cases you were invited to) and Submitted Cases (cases your clinic created)."
         actions={[
           { href: "/dashboard/clinic/submit-case", label: "Submit New Case", variant: "primary" },
-          { href: "/dashboard/clinic/workspaces", label: "Open Workspaces" },
+          { href: "/dashboard/clinic/workspaces", label: "Invited Contributions" },
         ]}
       />
       <ClinicCasesManager />

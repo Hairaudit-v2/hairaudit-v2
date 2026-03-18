@@ -21,8 +21,8 @@ const STEPS = [
   },
   {
     id: "audit_workspaces",
-    title: "Audit Workspaces",
-    detail: "Configure patient-submitted and clinic-submitted case workflows.",
+    title: "Invited Contributions & Submitted Cases",
+    detail: "Respond to invited cases and create your own Submitted Cases.",
   },
   {
     id: "visibility_controls",
@@ -66,10 +66,10 @@ export default function ClinicOnboardingFlow({
       : !completedSteps.includes("clinical_stack")
         ? "Add your surgical methods"
         : !completedSteps.includes("audit_workspaces")
-          ? "Respond to patient-submitted cases"
+          ? "Respond to Invited Contributions"
           : !completedSteps.includes("visibility_controls")
             ? "Prepare your public profile"
-            : "Submit your first internal case";
+            : "Submit your first case (Submitted Case)";
 
   async function persist(nextSteps: string[], nextStep: string, nextMode: string) {
     setSaving(true);

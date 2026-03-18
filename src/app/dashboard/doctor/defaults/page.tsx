@@ -1,6 +1,11 @@
-import { redirect } from "next/navigation";
+import DoctorComingSoon from "../DoctorComingSoon";
 
-// Demo defaults editor removed from production. Per-case overrides are applied on /cases/[caseId]/doctor/form (saved defaults in localStorage at form boundary).
 export default function DoctorDefaultsPage() {
-  redirect("/dashboard/doctor");
+  return (
+    <DoctorComingSoon
+      title="Surgical defaults"
+      description="Saving default answers (e.g. extraction method, holding solution) to reuse across cases is planned. For now, set values per case on each case’s doctor form."
+      alternative={{ label: "Go to overview", href: "/dashboard/doctor" }}
+    />
+  );
 }

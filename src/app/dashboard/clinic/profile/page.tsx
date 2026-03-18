@@ -54,7 +54,7 @@ export default async function ClinicProfilePage() {
         title="Clinic Profile Builder"
         subtitle="Build a premium clinic profile that converts quality signals into trust, discoverability, and future benchmark strength."
         actions={[
-          { href: "/dashboard/clinic/workspaces", label: "Go to Workspaces", variant: "primary" },
+          { href: "/dashboard/clinic/workspaces", label: "Go to Invited Contributions", variant: "primary" },
           { href: "/dashboard/clinic", label: "Overview" },
         ]}
       />
@@ -70,7 +70,7 @@ export default async function ClinicProfilePage() {
             capabilityCount < 6
               ? { label: "Add your surgical methods", href: "/dashboard/clinic/profile#clinical-stack" }
               : { label: "Upload devices and technology", href: "/dashboard/clinic/profile#clinical-stack" },
-            { label: "Respond to patient-submitted cases", href: "/dashboard/clinic/workspaces" },
+            { label: "Respond to Invited Contributions", href: "/dashboard/clinic/workspaces" },
           ]}
           readinessStates={[
             { label: "Basic Profile Complete", ready: basicCompletion >= 90 },

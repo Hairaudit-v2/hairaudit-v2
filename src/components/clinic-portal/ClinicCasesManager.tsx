@@ -26,8 +26,8 @@ type CaseItem = {
 
 const TAB_DEFINITIONS = [
   { id: "all", label: "All" },
-  { id: "patient_submitted", label: "Patient-submitted" },
-  { id: "clinic_submitted", label: "Clinic-submitted" },
+  { id: "patient_submitted", label: "Invited Contributions" },
+  { id: "clinic_submitted", label: "Submitted Cases" },
   { id: "awaiting_input", label: "Awaiting Clinic Input" },
   { id: "in_progress", label: "In Progress" },
   { id: "internal", label: "Internal" },
@@ -43,8 +43,8 @@ function formatDate(value: string | null) {
 }
 
 function humanizeChannel(channel: string) {
-  if (channel === "patient_submitted") return "Patient-submitted";
-  if (channel === "clinic_submitted") return "Clinic-submitted";
+  if (channel === "patient_submitted") return "Invited contribution";
+  if (channel === "clinic_submitted") return "Submitted case";
   if (channel === "doctor_submitted") return "Doctor-submitted";
   if (channel === "imported") return "Imported";
   return channel.replaceAll("_", " ");
@@ -262,7 +262,7 @@ export default function ClinicCasesManager({ initialItems = [] }: { initialItems
           <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-6 text-center">
             <p className="text-sm font-medium text-slate-700">No cases match this view yet.</p>
             <p className="mt-1 text-xs text-slate-500">
-              Adjust filters or create a clinic-submitted case to start building trust assets.
+              Adjust filters or create a Submitted Case to start building trust assets.
             </p>
           </div>
         ) : (
@@ -331,7 +331,7 @@ export default function ClinicCasesManager({ initialItems = [] }: { initialItems
                       Open case
                     </Link>
                     <Link href={`/dashboard/clinic/workspaces?caseId=${item.caseId}`} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100">
-                      Workspace controls
+                      Contribution settings
                     </Link>
                   </div>
                 </article>

@@ -43,6 +43,23 @@ export default function SubmitButton({
     }
   }
 
+  const whatHappensNext = (
+    <div
+      className={
+        compact
+          ? "mt-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2.5"
+          : "mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3"
+      }
+    >
+      <p className={`font-medium ${compact ? "text-xs text-slate-300/90" : "text-sm text-slate-700"}`}>
+        What happens next
+      </p>
+      <p className={`mt-1 ${compact ? "text-xs text-slate-200/80 leading-relaxed" : "text-sm text-slate-600 leading-relaxed"}`}>
+        Once you submit your case, our system will process your audit. When your report is ready, we&apos;ll notify you by email and make it available in your dashboard.
+      </p>
+    </div>
+  );
+
   return (
     <div className="space-y-3">
       {!compact && (
@@ -63,6 +80,8 @@ export default function SubmitButton({
           Submitted {new Date(submittedAt).toLocaleString()}
         </div>
       )}
+
+      {!locked && whatHappensNext}
 
       {err && <p className="text-sm text-red-600">❌ {err}</p>}
     </div>

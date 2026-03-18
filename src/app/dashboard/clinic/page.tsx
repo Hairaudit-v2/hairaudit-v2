@@ -168,8 +168,8 @@ export default async function ClinicDashboardPage() {
     capabilityCount < 4 ? { label: "Add your surgical methods", href: "/dashboard/clinic/profile#clinical-stack" } : null,
     capabilityCount < 8 ? { label: "Upload devices and technology", href: "/dashboard/clinic/profile#clinical-stack" } : null,
     Number(workspaceCount ?? 0) === 0
-      ? { label: "Submit your first internal case", href: "/dashboard/clinic/submit-case" }
-      : { label: "Respond to patient-submitted cases", href: "/dashboard/clinic/workspaces" },
+      ? { label: "Submit your first case (Submitted Case)", href: "/dashboard/clinic/submit-case" }
+      : { label: "Respond to Invited Contributions", href: "/dashboard/clinic/workspaces" },
     !profileVisible ? { label: "Prepare your public profile", href: "/dashboard/clinic/profile" } : null,
   ].filter(Boolean) as Array<{ label: string; href: string }>;
   const readinessStates = [
@@ -184,7 +184,7 @@ export default async function ClinicDashboardPage() {
     <div>
       <ClinicSectionHeader
         title="Clinic Intelligence Overview"
-        subtitle="Operational trust, clinical quality signals, and commercial readiness across your clinic intelligence workspace."
+        subtitle="Operational trust and clinical quality across your Invited Contributions (cases you were invited to) and Submitted Cases (cases your clinic created)."
         actions={[
           { href: "/dashboard/clinic/submit-case", label: "Submit Case", variant: "primary" },
           { href: "/dashboard/clinic/onboarding", label: "Onboarding" },
@@ -240,12 +240,12 @@ export default async function ClinicDashboardPage() {
           <p className="mt-1 text-xs text-slate-600">Basic + advanced clinic intelligence profile.</p>
         </Link>
         <Link href="/dashboard/clinic/workspaces" className="rounded-xl border border-slate-200 bg-white p-4 hover:border-cyan-300 transition-colors">
-          <div className="text-sm font-semibold text-slate-900">Case Workspaces</div>
-          <p className="mt-1 text-xs text-slate-600">Respond to patient audits and manage visibility controls.</p>
+          <div className="text-sm font-semibold text-slate-900">Invited Contributions</div>
+          <p className="mt-1 text-xs text-slate-600">Cases you were invited to contribute to; respond and manage visibility.</p>
         </Link>
         <Link href="/dashboard/clinic/submit-case" className="rounded-xl border border-slate-200 bg-white p-4 hover:border-cyan-300 transition-colors">
-          <div className="text-sm font-semibold text-slate-900">Submit Clinic Case</div>
-          <p className="mt-1 text-xs text-slate-600">Create and submit clinic-owned audits with controlled visibility.</p>
+          <div className="text-sm font-semibold text-slate-900">Submit Case</div>
+          <p className="mt-1 text-xs text-slate-600">Create Submitted Cases (clinic-owned audits) with controlled visibility.</p>
         </Link>
         <div className="rounded-xl border border-slate-200 bg-white p-4">
           <div className="text-sm font-semibold text-slate-900">Portal Mode</div>
@@ -283,8 +283,8 @@ export default async function ClinicDashboardPage() {
 
       <div className="rounded-xl border border-amber-200 bg-amber-50/80 p-4 mb-6">
         <p className="text-sm text-amber-900">
-          Convert operational work into measurable trust: submit internal cases, respond quickly to patient-submitted cases, and set each case to public or internal usage.
-          Total configured clinic workspaces: <span className="font-semibold">{workspaceCount ?? 0}</span>.
+          <strong>Invited Contributions</strong> are cases you were invited to contribute to (e.g. by patients). <strong>Submitted Cases</strong> are cases your clinic created and submitted. Convert both into trust: respond to invited cases and submit your own; set each to public or internal.
+          Invited: <span className="font-semibold">{workspaceCount ?? 0}</span> · Submitted: <span className="font-semibold">{cases?.length ?? 0}</span>.
         </p>
       </div>
 
@@ -339,14 +339,15 @@ export default async function ClinicDashboardPage() {
         <CreateCaseButton />
       </div>
 
-      <h2 className="text-lg font-semibold text-slate-900 mt-8 mb-3">Our audit submissions</h2>
+      <h2 className="text-lg font-semibold text-slate-900 mt-8 mb-3">Submitted Cases</h2>
+      <p className="text-sm text-slate-500 mb-3">Cases your clinic created and submitted (distinct from Invited Contributions, which appear under Invited Contributions).</p>
       {(!cases || cases.length === 0) ? (
         <div className="rounded-xl border border-slate-200 bg-white p-8 text-center">
           <p className="text-slate-700 font-semibold">
-            Start your clinic evidence runway with your first submitted case.
+            Start with your first Submitted Case.
           </p>
           <p className="mt-1 text-sm text-slate-600">
-            Clinics with attributable internal cases build stronger quality-control data and future benchmarking leverage.
+            Clinics with attributable submitted cases build stronger quality-control data and future benchmarking leverage.
           </p>
           <CreateCaseButton />
         </div>

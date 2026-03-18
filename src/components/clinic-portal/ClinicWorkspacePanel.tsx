@@ -40,10 +40,10 @@ export default function ClinicWorkspacePanel() {
       try {
         const res = await fetch("/api/clinic-portal/workspaces");
         const json = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(json?.error ?? "Unable to load clinic workspaces.");
+        if (!res.ok) throw new Error(json?.error ?? "Unable to load invited contributions.");
         if (!cancelled) setItems(Array.isArray(json?.items) ? (json.items as WorkspaceItem[]) : []);
       } catch (error: unknown) {
-        if (!cancelled) setMessage((error as Error)?.message ?? "Unable to load clinic workspaces.");
+        if (!cancelled) setMessage((error as Error)?.message ?? "Unable to load invited contributions.");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -72,10 +72,10 @@ export default function ClinicWorkspacePanel() {
         }),
       });
       const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json?.error ?? "Unable to save workspace.");
-      setMessage(`Saved workspace settings for ${item.title}.`);
+      if (!res.ok) throw new Error(json?.error ?? "Unable to save settings.");
+      setMessage(`Saved settings for ${item.title}.`);
     } catch (error: unknown) {
-      setMessage((error as Error)?.message ?? "Unable to save workspace.");
+      setMessage((error as Error)?.message ?? "Unable to save settings.");
     } finally {
       setSavingCaseId(null);
     }
@@ -95,32 +95,32 @@ export default function ClinicWorkspacePanel() {
         benchmarkInclude: defaultWorkspace.benchmarkInclude,
       }))
     );
-    setMessage("Applied workspace defaults to all loaded cases. Review and save affected cases.");
+    setMessage("Applied defaults to all loaded invited contributions. Review and save affected cases.");
   }
 
   if (loading) {
     return (
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <p className="text-sm text-slate-600">Loading clinic workspaces...</p>
+        <p className="text-sm text-slate-600">Loading invited contributions...</p>
       </section>
     );
   }
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-      <h2 className="text-xl font-semibold text-slate-900">Clinic case workspaces</h2>
+      <h2 className="text-xl font-semibold text-slate-900">Your invited contributions</h2>
       <p className="mt-1 text-sm text-slate-600">
-        Respond to patient-submitted audits, control public/internal visibility, and convert daily operations into quality intelligence.
+        Cases you were invited to contribute to. Control public/internal visibility and convert responses into quality intelligence.
       </p>
 
       <div className="mt-4">
         <ClinicConversionPanel
-          title="Workspace trust conversion"
-          subtitle="Action speed and evidence governance in workspaces directly influence patient trust and operational credibility."
+          title="Invited contribution trust conversion"
+          subtitle="Responding quickly and with strong evidence on invited contributions builds patient trust and operational credibility."
           nextActions={[
             pendingResponses > 0
-              ? { label: "Respond to patient-submitted cases", href: "/dashboard/clinic/workspaces" }
-              : { label: "Submit your first internal case", href: "/dashboard/clinic/submit-case" },
+              ? { label: "Respond to invited contributions", href: "/dashboard/clinic/workspaces" }
+              : { label: "Submit your first case (Submitted Case)", href: "/dashboard/clinic/submit-case" },
             { label: "Prepare your public profile", href: "/dashboard/clinic/profile" },
             { label: "Upload devices and technology", href: "/dashboard/clinic/profile#clinical-stack" },
           ]}
@@ -136,8 +136,8 @@ export default function ClinicWorkspacePanel() {
 
       <div className="mt-4 space-y-4">
         <section className="rounded-xl border border-cyan-200 bg-cyan-50 p-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-cyan-900">Workspace defaults</p>
-          <p className="mt-1 text-xs text-cyan-900/80">Set your typical workspace controls once, then apply across repeat case handling.</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-cyan-900">Defaults for invited contributions</p>
+          <p className="mt-1 text-xs text-cyan-900/80">Set your typical visibility and response defaults once, then apply across invited cases.</p>
           <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
             <label className="text-xs text-slate-700">
               Visibility default
@@ -195,7 +195,7 @@ export default function ClinicWorkspacePanel() {
         </section>
         {items.length === 0 ? (
           <p className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-            No clinic-linked cases yet. Start with a clinic-submitted case to create your internal QA baseline, then respond to patient-submitted audits to strengthen public trust signals.
+            No invited contributions yet. You can create <strong>Submitted Cases</strong> (your own cases) from Submit Case, or wait for patients to invite you—those cases will appear here.
           </p>
         ) : (
           items.map((item) => (
@@ -305,7 +305,7 @@ export default function ClinicWorkspacePanel() {
                   disabled={savingCaseId === item.caseId}
                   className="rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
                 >
-                  {savingCaseId === item.caseId ? "Saving..." : "Save workspace settings"}
+                  {savingCaseId === item.caseId ? "Saving..." : "Save settings"}
                 </button>
               </div>
             </article>

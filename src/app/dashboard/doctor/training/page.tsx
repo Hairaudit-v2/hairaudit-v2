@@ -1,6 +1,11 @@
-import { redirect } from "next/navigation";
+import DoctorComingSoon from "../DoctorComingSoon";
 
-// Demo training removed from production. Redirect until real training is wired.
 export default function DoctorTrainingPage() {
-  redirect("/dashboard/doctor");
+  return (
+    <DoctorComingSoon
+      title="Training portal"
+      description="Targeted modules to improve documentation and audit readiness are planned. For now, use the audit feedback on each case report to strengthen your submissions."
+      alternative={{ label: "Go to overview", href: "/dashboard/doctor" }}
+    />
+  );
 }

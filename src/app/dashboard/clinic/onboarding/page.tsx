@@ -55,10 +55,10 @@ export default async function ClinicOnboardingPage() {
               : !hasClinicalStack
                 ? { label: "Add your surgical methods", href: "/dashboard/clinic/profile#clinical-stack" }
                 : !hasWorkspaces
-                  ? { label: "Respond to patient-submitted cases", href: "/dashboard/clinic/workspaces" }
+                  ? { label: "Respond to Invited Contributions", href: "/dashboard/clinic/workspaces" }
                   : !hasVisibility
                     ? { label: "Prepare your public profile", href: "/dashboard/clinic/profile" }
-                    : { label: "Submit your first internal case", href: "/dashboard/clinic/submit-case" },
+                    : { label: "Submit your first case (Submitted Case)", href: "/dashboard/clinic/submit-case" },
             { label: "Upload devices and technology", href: "/dashboard/clinic/profile#clinical-stack" },
           ]}
           readinessStates={[

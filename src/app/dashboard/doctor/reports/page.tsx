@@ -1,6 +1,11 @@
-import { redirect } from "next/navigation";
+import DoctorComingSoon from "../DoctorComingSoon";
 
-// Demo reports table removed from production. View reports from each case: /cases/[caseId]
 export default function DoctorReportsPage() {
-  redirect("/dashboard/doctor");
+  return (
+    <DoctorComingSoon
+      title="Audit reports hub"
+      description="A single place to see all your audit reports and pending actions is coming soon. For now, open any case from your overview to view its report and resolve feedback."
+      alternative={{ label: "Go to overview", href: "/dashboard/doctor" }}
+    />
+  );
 }

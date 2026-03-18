@@ -1,6 +1,11 @@
-import { redirect } from "next/navigation";
+import DoctorComingSoon from "../DoctorComingSoon";
 
-// Demo upload wizard removed from production. Use case-based flow: create case → /cases/[caseId]/doctor/form → /cases/[caseId]/doctor/photos
 export default function DoctorUploadPage() {
-  redirect("/dashboard/doctor");
+  return (
+    <DoctorComingSoon
+      title="Bulk upload"
+      description="A dedicated upload wizard for adding multiple cases in one flow is planned. For now, create cases from your overview and complete the form and photos for each case."
+      alternative={{ label: "Create a case", href: "/dashboard/doctor" }}
+    />
+  );
 }

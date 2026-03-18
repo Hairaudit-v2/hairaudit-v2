@@ -1,7 +1,11 @@
 import { redirect } from "next/navigation";
-import PatientPhotoUpload from "./photos/patient-photo-upload";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 
+/**
+ * Canonical patient photo upload is /cases/[id]/patient/photos.
+ * This route redirects there so bookmarked/legacy /cases/[id]/patient links
+ * land on the same upload experience.
+ */
 export default async function Page({ params }: { params: Promise<{ caseId: string }> }) {
   const { caseId } = await params;
   const supabase = await createSupabaseAuthServerClient();
@@ -10,27 +14,12 @@ export default async function Page({ params }: { params: Promise<{ caseId: strin
 
   const { data: c } = await supabase
     .from("cases")
-    .select("id, status, submitted_at")
+    .select("id, status, submitted_at, user_id, patient_id")
     .eq("id", caseId)
-    .eq("user_id", user.id)
     .maybeSingle();
 
-  if (!c) redirect("/dashboard");
+  const allowed = !!c && (c.user_id === user.id || c.patient_id === user.id);
+  if (!allowed) redirect("/dashboard");
 
-  const { data: uploads, error } = await supabase
-    .from("uploads")
-    .select("id, type, storage_path, metadata, created_at")
-    .eq("case_id", caseId)
-    .order("created_at", { ascending: false });
-
-  if (error) console.error(error);
-
-  return (
-    <PatientPhotoUpload
-      caseId={caseId}
-      initialUploads={uploads ?? []}
-      caseStatus={c.status ?? "draft"}
-      submittedAt={c.submitted_at}
-    />
-  );
+  redirect(`/cases/${caseId}/patient/photos`);
 }

@@ -26,7 +26,7 @@ const PAGE_META: Record<
   "/dashboard/clinic/profile": {
     title: "Clinic Profile",
     subtitle: "Build a premium profile that improves discoverability and verified credibility.",
-    primaryAction: { href: "/dashboard/clinic/workspaces", label: "Go to Workspaces" },
+    primaryAction: { href: "/dashboard/clinic/workspaces", label: "Go to Invited Contributions" },
     secondaryAction: { href: "/dashboard/clinic/profile#clinical-stack", label: "Methods & Devices" },
   },
   "/dashboard/clinic/public-preview": {
@@ -36,18 +36,18 @@ const PAGE_META: Record<
     secondaryAction: { href: "/dashboard/clinic/doctors", label: "Update Doctors" },
   },
   "/dashboard/clinic/workspaces": {
-    title: "Workspaces",
-    subtitle: "Action patient-submitted cases and govern internal/public intelligence visibility.",
+    title: "Invited Contributions",
+    subtitle: "Cases you were invited to contribute to. Set visibility and respond.",
     primaryAction: { href: "/dashboard/clinic/submit-case", label: "Create New Case" },
   },
   "/dashboard/clinic/submit-case": {
     title: "Submit Case",
-    subtitle: "Launch high-integrity clinic cases for quality control and trust growth.",
-    primaryAction: { href: "/dashboard/clinic/workspaces", label: "Manage Workspaces" },
+    subtitle: "Create Submitted Cases (clinic-owned) for quality control and trust growth.",
+    primaryAction: { href: "/dashboard/clinic/workspaces", label: "Invited Contributions" },
   },
   "/dashboard/clinic/clinic-cases": {
-    title: "Clinic Cases",
-    subtitle: "Dedicated clinic case management space.",
+    title: "All Clinic Cases",
+    subtitle: "Invited Contributions and Submitted Cases in one view.",
   },
   "/dashboard/clinic/doctors": {
     title: "Doctors",

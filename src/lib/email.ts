@@ -89,6 +89,45 @@ export async function notifyAuditorAuditFailed(caseId: string, errorMessage: str
   });
 }
 
+export type NotifyPatientReportReadyParams = {
+  to: string;
+  caseId: string;
+  /** Optional patient first name for greeting */
+  firstName?: string | null;
+};
+
+/**
+ * Send "Your HairAudit report is ready" email when a case successfully completes.
+ * Call only after report is complete and PDF is available; use idempotency (e.g. report_ready_email_sent_at) to avoid duplicates.
+ */
+export async function notifyPatientReportReady({
+  to,
+  caseId,
+  firstName,
+}: NotifyPatientReportReadyParams): Promise<boolean> {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? SITE_URL;
+  const dashboardUrl = `${baseUrl}/dashboard/patient`;
+  const caseUrl = `${baseUrl}/cases/${escapeHtml(caseId)}`;
+
+  const greeting = firstName && String(firstName).trim() ? `Hi ${escapeHtml(String(firstName).trim())},` : "Hi,";
+  const caseLine =
+    caseId ? `<p><strong>Case reference:</strong> ${escapeHtml(caseId)}</p>` : "";
+
+  return sendEmail({
+    to,
+    subject: "Your HairAudit report is ready",
+    html: `
+      <p>${greeting}</p>
+      <p>Your review has been completed and your report is now available securely in your HairAudit dashboard.</p>
+      ${caseLine}
+      <p>You can view and download your report from your dashboard.</p>
+      <p><a href="${dashboardUrl}">Go to Dashboard</a></p>
+      <p>Or open your case directly: <a href="${caseUrl}">View case &amp; report</a></p>
+      <p>— HairAudit</p>
+    `,
+  });
+}
+
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, "&amp;")

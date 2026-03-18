@@ -2,7 +2,13 @@
 
 import { useState } from "react";
 
-export default function DownloadReport({ pdfPath }: { pdfPath: string }) {
+export default function DownloadReport({
+  pdfPath,
+  label = "Download Report",
+}: {
+  pdfPath: string;
+  label?: string;
+}) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -29,7 +35,7 @@ export default function DownloadReport({ pdfPath }: { pdfPath: string }) {
         disabled={busy}
         className="rounded-lg border border-cyan-300/30 bg-cyan-300/15 px-3 py-2 text-sm font-medium text-cyan-100 hover:bg-cyan-300/25 disabled:opacity-60"
       >
-        {busy ? "Preparing..." : "Download Report"}
+        {busy ? "Preparing..." : label}
       </button>
       {err && <p className="mt-2 text-sm text-red-600">❌ {err}</p>}
     </div>

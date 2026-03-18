@@ -13,8 +13,8 @@ export default async function ClinicWorkspacesPage() {
   return (
     <div>
       <ClinicSectionHeader
-        title="Clinic Audit Workspaces"
-        subtitle="Run your clinic operating layer: respond fast, preserve internal quality control, and curate public credibility assets."
+        title="Invited Contributions"
+        subtitle="Cases you were invited to contribute to (e.g. by patients). Respond, set visibility, and build trust."
         actions={[
           { href: "/dashboard/clinic/submit-case", label: "Submit New Case", variant: "primary" },
           { href: "/dashboard/clinic", label: "Overview" },

@@ -82,7 +82,7 @@ export default function ClinicSidebarNav({
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
             <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-cyan-300">Clinic Portal</p>
             <p className="mt-2 text-base font-semibold text-white">{clinicName}</p>
-            <p className="mt-1 text-xs text-slate-300">Commercial intelligence workspace</p>
+            <p className="mt-1 text-xs text-slate-300">Invited Contributions & Submitted Cases</p>
           </div>
           <NavList items={navItems} pathname={pathname} />
           <ClinicStatusCard

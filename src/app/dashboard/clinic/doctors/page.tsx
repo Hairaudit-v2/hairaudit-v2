@@ -53,7 +53,7 @@ export default async function DoctorsPage() {
     <div>
       <ClinicSectionHeader
         title="Doctors"
-        subtitle="Manage your doctor roster, internal permissions, and profile trust signals in one premium workspace."
+        subtitle="Manage your doctor roster, internal permissions, and profile trust signals."
         actions={[
           { href: "/dashboard/clinic/clinic-cases", label: "Open Clinic Cases" },
           { href: "/dashboard/clinic/profile#clinical-stack", label: "Methods & Devices" },

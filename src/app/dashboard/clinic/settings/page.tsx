@@ -5,7 +5,7 @@ export default function SettingsPlaceholderPage() {
     <PortalPlaceholderPanel
       title="Settings"
       subtitle="Portal configuration and default operational controls."
-      recommendation="Settings will support role permissions, default visibility behavior, and white-label mode controls. You can already control case-level visibility from Workspaces."
+      recommendation="Settings will support role permissions, default visibility behavior, and white-label mode controls. You can already control case-level visibility from Invited Contributions."
     />
   );
 }

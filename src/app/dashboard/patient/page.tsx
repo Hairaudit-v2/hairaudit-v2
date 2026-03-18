@@ -7,6 +7,7 @@ import CreateCaseButton from "../create-case-button";
 import { PATIENT_AUDIT_SECTIONS, type PatientAuditAnswers } from "@/lib/patientAuditForm";
 import DeleteDraftCaseButton from "./DeleteDraftCaseButton";
 import GraftIntegrityCard from "./GraftIntegrityCard";
+import DownloadReport from "@/app/cases/[caseId]/download-report";
 
 function isMissingFeatureError(error: unknown): boolean {
   const e = error as { status?: number; code?: string; message?: string } | null;
@@ -96,6 +97,24 @@ export default async function PatientDashboardPage() {
   const latestSubmittedCase =
     (cases ?? []).find((c) => Boolean(c.submitted_at) || ["submitted", "processing", "complete", "audit_failed"].includes(String(c.status ?? ""))) ??
     null;
+
+  // Latest report pdf_path per case (for "Report Ready" and Download PDF on dashboard).
+  const caseIds = (cases ?? []).map((c) => c.id);
+  const pdfByCase: Record<string, string> = {};
+  if (caseIds.length > 0) {
+    const { data: reportRows } = await admin
+      .from("reports")
+      .select("case_id, pdf_path, version")
+      .in("case_id", caseIds)
+      .in("status", ["complete", "pdf_ready"])
+      .not("pdf_path", "is", null)
+      .order("version", { ascending: false });
+    for (const r of reportRows ?? []) {
+      const cid = (r as { case_id: string; pdf_path: string }).case_id;
+      const path = (r as { case_id: string; pdf_path: string }).pdf_path;
+      if (cid && path && !pdfByCase[cid]) pdfByCase[cid] = path;
+    }
+  }
 
   let patientAnswers: PatientAuditAnswers = {};
   let patientPhotoCount = 0;
@@ -304,26 +323,21 @@ export default async function PatientDashboardPage() {
       </section>
 
       <section className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <CreateCaseButton variant="card" label="Start New Audit" />
         <Link
-          href="/cases"
-          className="rounded-xl border border-slate-200 bg-white px-4 py-4 text-sm font-semibold text-slate-900 hover:border-amber-300 hover:shadow-sm"
-        >
-          Start New Audit
-        </Link>
-        <Link
-          href={nextCase?.id ? `/cases/${nextCase.id}/patient/photos` : "/cases"}
+          href={nextCase?.id ? `/cases/${nextCase.id}/patient/photos` : "/dashboard/patient"}
           className="rounded-xl border border-slate-200 bg-white px-4 py-4 text-sm font-semibold text-slate-900 hover:border-amber-300 hover:shadow-sm"
         >
           Upload Photos
         </Link>
         <Link
-          href={nextCase?.id ? `/cases/${nextCase.id}/patient/questions` : "/cases"}
+          href={nextCase?.id ? `/cases/${nextCase.id}/patient/questions` : "/dashboard/patient"}
           className="rounded-xl border border-slate-200 bg-white px-4 py-4 text-sm font-semibold text-slate-900 hover:border-amber-300 hover:shadow-sm"
         >
           Complete Intake Questions
         </Link>
         <Link
-          href="/cases"
+          href="/dashboard/patient/reports"
           className="rounded-xl border border-slate-200 bg-white px-4 py-4 text-sm font-semibold text-slate-900 hover:border-amber-300 hover:shadow-sm"
         >
           View Previous Reports
@@ -565,33 +579,64 @@ export default async function PatientDashboardPage() {
             {cases.map((c) => {
               const status = String(c.status ?? "draft");
               const canDeleteDraft = status === "draft" && !c.submitted_at;
-              const pill =
-                status === "complete"
-                  ? "border-emerald-300/20 bg-emerald-300/10 text-emerald-200"
-                  : status === "submitted"
-                    ? "border-cyan-300/20 bg-cyan-300/10 text-cyan-200"
+              const pdfPath = pdfByCase[c.id];
+              const isReportReady = status === "complete" && pdfPath;
+              const isProcessing = status === "submitted" || status === "processing";
+
+              const statusLabel = isReportReady
+                ? "Report Ready"
+                : status === "complete"
+                  ? "Complete"
+                  : isProcessing
+                    ? "Processing"
                     : status === "audit_failed"
-                      ? "border-rose-300/20 bg-rose-300/10 text-rose-200"
-                      : "border-white/10 bg-white/5 text-slate-200/80";
+                      ? "Audit failed"
+                      : status;
+
+              const pill =
+                isReportReady
+                  ? "border-emerald-400/30 bg-emerald-400/15 text-emerald-100"
+                  : status === "complete"
+                    ? "border-emerald-300/20 bg-emerald-300/10 text-emerald-200"
+                    : isProcessing
+                      ? "border-cyan-300/20 bg-cyan-300/10 text-cyan-200"
+                      : status === "audit_failed"
+                        ? "border-rose-300/20 bg-rose-300/10 text-rose-200"
+                        : "border-white/10 bg-white/5 text-slate-200/80";
 
               return (
                 <li key={c.id}>
                   <div className="group relative rounded-2xl border border-white/10 bg-white/5 backdrop-blur hover:bg-white/8 hover:border-white/15 transition-all shadow-[0_0_0_1px_rgba(255,255,255,0.03)]">
-                    <Link href={`/cases/${c.id}`} className="block p-4 sm:p-5">
+                    <div className="p-4 sm:p-5">
                       <div className="flex items-start justify-between gap-4">
                         <div>
-                          <div className="text-sm sm:text-base font-semibold text-white">
+                          <Link
+                            href={`/cases/${c.id}`}
+                            className="text-sm sm:text-base font-semibold text-white hover:text-cyan-200 transition-colors"
+                          >
                             {c.title ?? "Patient Audit"}
-                          </div>
+                          </Link>
                           <div className="mt-1 text-xs text-slate-200/70">
                             Created: {new Date(c.created_at).toLocaleString()}
                           </div>
                         </div>
                         <span className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold ${pill}`}>
-                          {status}
+                          {statusLabel}
                         </span>
                       </div>
-                    </Link>
+
+                      {isReportReady && (
+                        <div className="mt-4 flex flex-wrap items-center gap-3">
+                          <Link
+                            href={`/cases/${c.id}`}
+                            className="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-950 bg-gradient-to-r from-cyan-300 to-emerald-300 hover:from-cyan-200 hover:to-emerald-200 transition-colors shadow-sm"
+                          >
+                            View Report
+                          </Link>
+                          <DownloadReport pdfPath={pdfPath} label="Download PDF" />
+                        </div>
+                      )}
+                    </div>
 
                     {canDeleteDraft && (
                       <div className="px-4 pb-4 sm:px-5 sm:pb-5">

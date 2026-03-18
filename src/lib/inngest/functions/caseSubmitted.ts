@@ -1,5 +1,6 @@
 import { inngest } from "@/lib/inngest/client";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { notifyPatientReportReady } from "@/lib/email";
 import { Buffer } from "buffer";
 
 // Optional: simple PDF generator (Node)
@@ -170,6 +171,37 @@ export const caseSubmitted = inngest.createFunction(
         .eq("id", caseId);
 
       if (error) throw new Error(error.message);
+    });
+
+    // 9) Notify patient that report is ready (idempotent: only send once per report).
+    await step.run("notify patient report ready", async () => {
+      const res = await supabase
+        .from("reports")
+        .update({ report_ready_email_sent_at: new Date().toISOString() })
+        .eq("id", report.id)
+        .is("report_ready_email_sent_at", null)
+        .select("id")
+        .maybeSingle();
+
+      if (res.error) {
+        const msg = String(res.error.message ?? "");
+        if (/report_ready_email_sent_at|column.*does not exist/i.test(msg)) return { sent: false, reason: "skip" };
+        throw new Error(res.error.message);
+      }
+      if (!res.data) return { sent: false, reason: "already_sent" };
+
+      const { data: user } = await supabase.auth.admin.getUserById(userId);
+      const email = user?.user?.email;
+      if (!email || typeof email !== "string" || !email.trim()) return { sent: false, reason: "no_email" };
+
+      const meta = user?.user?.user_metadata as Record<string, unknown> | undefined;
+      const firstName = meta?.first_name ?? meta?.name;
+      await notifyPatientReportReady({
+        to: email.trim(),
+        caseId,
+        firstName: firstName != null ? String(firstName).trim() || null : null,
+      });
+      return { sent: true };
     });
 
     return { ok: true, reportId: report.id, pdfPath };

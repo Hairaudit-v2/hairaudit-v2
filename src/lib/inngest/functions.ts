@@ -4,7 +4,7 @@ import { type AuditMode } from "@/lib/pdf/reportBuilder";
 import { runAIAudit } from "@/lib/ai/audit";
 import { runGraftIntegrityModelEstimate } from "@/lib/ai/graftIntegrity";
 import { runDoctorScoringNarrative, DEFAULT_PROTOCOL_CATALOG, DEFAULT_TRAINING_MODULE_CATALOG } from "@/lib/ai/runDoctorScoringNarrative";
-import { notifyPatientAuditFailed, notifyAuditorAuditFailed } from "@/lib/email";
+import { notifyPatientAuditFailed, notifyAuditorAuditFailed, notifyPatientReportReady } from "@/lib/email";
 import { canSubmit } from "@/lib/auditPhotoSchemas";
 import { computeDomainScoresV1, computeDoctorAiContextV1 } from "@/lib/benchmarks/domainScoring";
 import { renderAndUploadPdfForCase } from "@/lib/reports/renderPdfInternal";
@@ -1272,6 +1272,50 @@ export const runAudit = inngest.createFunction(
       });
       logger.info("Transparency refresh after report complete", { caseId, ...result });
       return result;
+    });
+
+    // 14) Notify patient that report is ready (idempotent: only send once per report).
+    await step.run("notify-patient-report-ready", async () => {
+      const res = await supabase
+        .from("reports")
+        .update({ report_ready_email_sent_at: new Date().toISOString() })
+        .eq("case_id", caseId)
+        .eq("version", nextVersion)
+        .is("report_ready_email_sent_at", null)
+        .select("id")
+        .maybeSingle();
+
+      if (res.error) {
+        const msg = String(res.error.message ?? "");
+        if (/report_ready_email_sent_at|column.*does not exist/i.test(msg)) {
+          logger.info("Report-ready email skipped (idempotency column missing)", { caseId, nextVersion });
+          return { sent: false, reason: "skip" };
+        }
+        throw new Error(res.error.message);
+      }
+
+      if (!res.data) {
+        logger.info("Report-ready email skipped (already sent)", { caseId, nextVersion });
+        return { sent: false, reason: "already_sent" };
+      }
+
+      const { data: user } = await supabase.auth.admin.getUserById(userId);
+      const email = user?.user?.email;
+      if (!email || typeof email !== "string" || !email.trim()) {
+        logger.info("Report-ready email skipped: no patient email", { caseId });
+        return { sent: false, reason: "no_email" };
+      }
+
+      const firstName =
+        (user?.user?.user_metadata as Record<string, unknown> | undefined)?.first_name ??
+        (user?.user?.user_metadata as Record<string, unknown> | undefined)?.name;
+      const sent = await notifyPatientReportReady({
+        to: email.trim(),
+        caseId,
+        firstName: firstName != null ? String(firstName).trim() || null : null,
+      });
+      logger.info("Report-ready email sent", { caseId, sent });
+      return { sent, reason: sent ? "sent" : "send_failed" };
     });
 
     logger.info("Audit pipeline complete", { caseId, nextVersion, pdfPath: finalPdfPath });

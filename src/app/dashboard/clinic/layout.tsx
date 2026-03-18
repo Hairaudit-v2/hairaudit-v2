@@ -117,16 +117,16 @@ export default async function ClinicPortalLayout({
               ctaLabel: "Add devices",
             }
           : pendingResponsesTotal > 0
-            ? {
-                title: "Respond to patient-submitted cases",
-                description: "Action pending responses to protect trust velocity and care transparency.",
-                href: "/dashboard/clinic/workspaces",
-                ctaLabel: "Open workspaces",
-              }
+          ? {
+              title: "Respond to Invited Contributions",
+              description: "Cases you were invited to need your response to protect trust and care transparency.",
+              href: "/dashboard/clinic/workspaces",
+              ctaLabel: "Open Invited Contributions",
+            }
             : workspaceTotal === 0
               ? {
-                  title: "Submit your first internal case",
-                  description: "Create an internal case to establish your quality-control baseline.",
+                  title: "Submit your first case (Submitted Case)",
+                  description: "Create a Submitted Case to establish your quality-control baseline.",
                   href: "/dashboard/clinic/submit-case",
                   ctaLabel: "Submit case",
                 }
@@ -157,7 +157,7 @@ export default async function ClinicPortalLayout({
     { label: "Onboarding", href: "/dashboard/clinic/onboarding", matchPrefix: "/dashboard/clinic/onboarding" },
     { label: "Clinic Profile", href: "/dashboard/clinic/profile", matchPrefix: "/dashboard/clinic/profile" },
     { label: "Public Preview", href: "/dashboard/clinic/public-preview", matchPrefix: "/dashboard/clinic/public-preview" },
-    { label: "Workspaces", href: "/dashboard/clinic/workspaces", matchPrefix: "/dashboard/clinic/workspaces" },
+    { label: "Invited Contributions", href: "/dashboard/clinic/workspaces", matchPrefix: "/dashboard/clinic/workspaces" },
     { label: "Submit Case", href: "/dashboard/clinic/submit-case", matchPrefix: "/dashboard/clinic/submit-case" },
     { label: "Clinic Cases", href: "/dashboard/clinic/clinic-cases", matchPrefix: "/dashboard/clinic/clinic-cases" },
     { label: "Doctors", href: "/dashboard/clinic/doctors", matchPrefix: "/dashboard/clinic/doctors" },
