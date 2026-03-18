@@ -7,7 +7,6 @@ import CreateCaseButton from "../create-case-button";
 import { PATIENT_AUDIT_SECTIONS, type PatientAuditAnswers } from "@/lib/patientAuditForm";
 import DeleteDraftCaseButton from "./DeleteDraftCaseButton";
 import GraftIntegrityCard from "./GraftIntegrityCard";
-import DownloadReport from "@/app/cases/[caseId]/download-report";
 import PatientNextActionPanel from "@/components/patient/PatientNextActionPanel";
 import { BENCHMARKING_GLOBAL_STANDARDS } from "@/lib/benchmarkingCopy";
 
@@ -627,21 +626,6 @@ export default async function PatientDashboardPage() {
                           {statusLabel}
                         </span>
                       </div>
-
-                      {isReportReady && (
-                        <>
-                          <div className="mt-4 flex flex-wrap items-center gap-3">
-                            <Link
-                              href={`/cases/${c.id}`}
-                              className="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-950 bg-gradient-to-r from-cyan-300 to-emerald-300 hover:from-cyan-200 hover:to-emerald-200 transition-colors shadow-sm"
-                            >
-                              View Report
-                            </Link>
-                            <DownloadReport pdfPath={pdfPath} label="Download PDF" />
-                          </div>
-                          <p className="mt-2 text-xs text-slate-400/90">{BENCHMARKING_GLOBAL_STANDARDS}</p>
-                        </>
-                      )}
 
                       <div className="mt-4">
                         <PatientNextActionPanel

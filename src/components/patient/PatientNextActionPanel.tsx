@@ -3,7 +3,6 @@
 import Link from "next/link";
 import DownloadReport from "@/app/cases/[caseId]/download-report";
 import { CONTACT_EMAIL } from "@/lib/constants";
-import BenchmarkingFraming from "@/components/benchmarking/BenchmarkingFraming";
 
 export type PatientNextActionVariant = "dashboard" | "case";
 
@@ -72,14 +71,14 @@ export default function PatientNextActionPanel({
                 : "inline-flex items-center rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-semibold text-slate-100 hover:bg-white/15"
             }
           >
-            Complete questions
+            Complete Intake Questions
           </Link>
         </div>
       </div>
     );
   }
 
-  // Processing: Your report is being prepared
+  // Submitted or processing: Your report is being prepared
   if (state === "processing") {
     return (
       <div
@@ -96,25 +95,58 @@ export default function PatientNextActionPanel({
           Your report is being prepared
         </p>
         <p className={compact ? "mt-0.5 text-xs text-slate-200/80" : "mt-1 text-sm text-slate-200/80"}>
-          We’ll email you when it’s ready. You can check back anytime.
+          We are processing your audit. You will be notified when your report is ready.
         </p>
         <div className={compact ? "mt-2" : "mt-4"}>
           <Link
-            href={caseHref}
+            href="/dashboard/patient"
             className={
               compact
                 ? "text-xs font-medium text-cyan-200 hover:text-cyan-100"
                 : "text-sm font-medium text-cyan-200 hover:text-cyan-100"
             }
           >
-            View case →
+            Return to dashboard
           </Link>
         </div>
       </div>
     );
   }
 
-  // Complete: View your report, Download PDF
+  // Complete with PDF: Your report is ready — View Report, Download PDF
+  if (state === "complete" && pdfPath) {
+    return (
+      <div
+        className={
+          compact
+            ? "rounded-xl border border-emerald-300/20 bg-emerald-300/5 p-3"
+            : "rounded-2xl border border-emerald-300/25 bg-emerald-300/5 p-4 sm:p-5"
+        }
+      >
+        <p className={compact ? "text-xs font-semibold uppercase tracking-wide text-emerald-200/90" : "text-xs font-semibold uppercase tracking-wide text-emerald-200/90"}>
+          Next action
+        </p>
+        <p className={compact ? "mt-1 text-sm font-semibold text-white" : "mt-2 text-base font-semibold text-white"}>
+          Your report is ready
+        </p>
+        <div className={compact ? "mt-2 flex flex-wrap items-center gap-2" : "mt-4 flex flex-wrap items-center gap-3"}>
+          <Link
+            href={caseHref}
+            className={
+              compact
+                ? "inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-950 bg-gradient-to-r from-cyan-300 to-emerald-300 hover:from-cyan-200 hover:to-emerald-200"
+                : "inline-flex items-center rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-950 bg-gradient-to-r from-cyan-300 to-emerald-300 hover:from-cyan-200 hover:to-emerald-200"
+            }
+          >
+            View Report
+          </Link>
+          <DownloadReport pdfPath={pdfPath} label="Download PDF" />
+        </div>
+      </div>
+    );
+  }
+
+  // Complete without PDF: Your audit is complete — View Report only
   if (state === "complete") {
     return (
       <div
@@ -128,15 +160,9 @@ export default function PatientNextActionPanel({
           Next action
         </p>
         <p className={compact ? "mt-1 text-sm font-semibold text-white" : "mt-2 text-base font-semibold text-white"}>
-          View your report
+          Your audit is complete
         </p>
-        <p className={compact ? "mt-0.5 text-xs text-slate-200/80" : "mt-1 text-sm text-slate-200/80"}>
-          Your forensic audit is ready. View online or download your PDF.
-        </p>
-        <div className={compact ? "mt-1" : "mt-2"}>
-          <BenchmarkingFraming preset="global_standards" variant="dark" className="text-slate-400/90" />
-        </div>
-        <div className={compact ? "mt-2 flex flex-wrap items-center gap-2" : "mt-4 flex flex-wrap items-center gap-3"}>
+        <div className={compact ? "mt-2" : "mt-4"}>
           <Link
             href={caseHref}
             className={
@@ -145,17 +171,14 @@ export default function PatientNextActionPanel({
                 : "inline-flex items-center rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-950 bg-gradient-to-r from-cyan-300 to-emerald-300 hover:from-cyan-200 hover:to-emerald-200"
             }
           >
-            View your report
+            View Report
           </Link>
-          {pdfPath && (
-            <DownloadReport pdfPath={pdfPath} label={compact ? "Download PDF" : "Download PDF"} />
-          )}
         </div>
       </div>
     );
   }
 
-  // Audit failed: Contact support or resubmit
+  // Audit failed: We were unable to complete this audit
   if (state === "audit_failed") {
     return (
       <div
@@ -169,32 +192,32 @@ export default function PatientNextActionPanel({
           Next action
         </p>
         <p className={compact ? "mt-1 text-sm font-semibold text-white" : "mt-2 text-base font-semibold text-white"}>
-          Contact support or resubmit
+          We were unable to complete this audit
         </p>
         <p className={compact ? "mt-0.5 text-xs text-slate-200/80" : "mt-1 text-sm text-slate-200/80"}>
-          Our team has been notified. You can reach us or open your case to try again.
+          Please contact support or try resubmitting your case materials.
         </p>
         <div className={compact ? "mt-2 flex flex-wrap gap-2" : "mt-4 flex flex-wrap gap-3"}>
-          <a
-            href={`mailto:${CONTACT_EMAIL}`}
+          <Link
+            href="/dashboard/patient"
             className={
               compact
                 ? "inline-flex items-center rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-slate-100 hover:bg-white/15"
                 : "inline-flex items-center rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-semibold text-slate-100 hover:bg-white/15"
             }
           >
-            Contact support
-          </a>
-          <Link
-            href={caseHref}
+            Return to dashboard
+          </Link>
+          <a
+            href={`mailto:${CONTACT_EMAIL}`}
             className={
               compact
                 ? "inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-950 bg-gradient-to-r from-amber-300 to-cyan-300 hover:from-amber-200 hover:to-cyan-200"
                 : "inline-flex items-center rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-950 bg-gradient-to-r from-amber-300 to-cyan-300 hover:from-amber-200 hover:to-cyan-200"
             }
           >
-            Open case
-          </Link>
+            Contact support
+          </a>
         </div>
       </div>
     );
