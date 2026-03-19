@@ -16,7 +16,8 @@
     "test:audits:clinic": "tsx tests/audit-harness/runner.ts --type=clinic",
     "test:audits:regression": "tsx --test tests/audit-harness/regression/auditHarness.regression.test.ts",
     "inngest:dev": "npx inngest-cli@latest dev -u http://localhost:3000/api/inngest --no-discovery",
-    "seed:patients": "tsx scripts/seedPatientAudits.ts"
+    "seed:patients": "tsx scripts/seedPatientAudits.ts",
+    "test:certification": "tsx scripts/testCertification.ts"
   },
   "dependencies": {
     "@sparticuz/chromium": "^143.0.4",
