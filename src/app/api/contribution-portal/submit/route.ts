@@ -47,7 +47,11 @@ export async function POST(req: Request) {
       },
     });
 
-    const contributionPayload = {
+    const asNum = (v: unknown) => (v !== undefined && v !== null && v !== "" ? Number(v) : undefined);
+    const asArr = (v: unknown): string[] =>
+      Array.isArray(v) ? v.map((x) => String(x ?? "").trim()).filter(Boolean) : [];
+
+    const contributionPayload: Record<string, unknown> = {
       planning_details: asText(body?.planningDetails),
       donor_mapping_details: asText(body?.donorMappingDetails),
       graft_handling_details: asText(body?.graftHandlingDetails),
@@ -55,6 +59,35 @@ export async function POST(req: Request) {
       verification_fields: asText(body?.verificationFields),
       submitted_at: new Date().toISOString(),
     };
+
+    // Structured fields (optional) — improve audit quality and completeness scoring
+    if (body?.procedureType != null && asText(body.procedureType)) contributionPayload.procedure_type = asText(body.procedureType);
+    if (body?.repairCaseFlag != null && asText(body.repairCaseFlag)) contributionPayload.repair_case_flag = asText(body.repairCaseFlag);
+    if (body?.graftCountRange != null && asText(body.graftCountRange)) contributionPayload.graft_count_range = asText(body.graftCountRange);
+    const planned = asNum(body?.plannedGraftCount);
+    if (planned != null && !Number.isNaN(planned)) contributionPayload.planned_graft_count = planned;
+    const actual = asNum(body?.actualGraftCount);
+    if (actual != null && !Number.isNaN(actual)) contributionPayload.actual_graft_count = actual;
+    if (body?.futureLossPlanning != null && asText(body.futureLossPlanning)) contributionPayload.future_loss_planning = asText(body.futureLossPlanning);
+    if (body?.extractionMethod != null && asText(body.extractionMethod)) contributionPayload.extraction_method = asText(body.extractionMethod);
+    if (body?.primaryExtractionDevice != null && asText(body.primaryExtractionDevice)) contributionPayload.primary_extraction_device = asText(body.primaryExtractionDevice);
+    const punchSizes = asArr(body?.punchSizesUsed);
+    if (punchSizes.length) contributionPayload.punch_sizes_used = punchSizes;
+    if (body?.donorQualityRating != null && asText(body.donorQualityRating)) contributionPayload.donor_quality_rating = asText(body.donorQualityRating);
+    if (body?.safeDonorZoneAssessed != null && asText(body.safeDonorZoneAssessed)) contributionPayload.safe_donor_zone_assessed = asText(body.safeDonorZoneAssessed);
+    if (body?.primaryHoldingSolution != null && asText(body.primaryHoldingSolution)) contributionPayload.primary_holding_solution = asText(body.primaryHoldingSolution);
+    if (body?.sortingPerformed != null && asText(body.sortingPerformed)) contributionPayload.sorting_performed = asText(body.sortingPerformed);
+    if (body?.graftsKeptHydrated != null && asText(body.graftsKeptHydrated)) contributionPayload.grafts_kept_hydrated = asText(body.graftsKeptHydrated);
+    if (body?.outOfBodyTimeCategory != null && asText(body.outOfBodyTimeCategory)) contributionPayload.out_of_body_time_category = asText(body.outOfBodyTimeCategory);
+    if (body?.implantationMethod != null && asText(body.implantationMethod)) contributionPayload.implantation_method = asText(body.implantationMethod);
+    if (body?.implantedBy != null && asText(body.implantedBy)) contributionPayload.implanted_by = asText(body.implantedBy);
+    if (body?.densePackingAttempted != null && asText(body.densePackingAttempted)) contributionPayload.dense_packing_attempted = asText(body.densePackingAttempted);
+    if (body?.siteCreationMethod != null && asText(body.siteCreationMethod)) contributionPayload.site_creation_method = asText(body.siteCreationMethod);
+    if (body?.implantationDevice != null && asText(body.implantationDevice)) contributionPayload.primary_implantation_device = asText(body.implantationDevice);
+    if (body?.documentationLevel != null && asText(body.documentationLevel)) contributionPayload.documentation_level = asText(body.documentationLevel);
+    if (body?.graftCountVerification != null && asText(body.graftCountVerification)) contributionPayload.graft_count_verification = asText(body.graftCountVerification);
+    if (body?.discrepancyDetected != null && asText(body.discrepancyDetected)) contributionPayload.discrepancy_detected = asText(body.discrepancyDetected);
+    if (body?.confidenceLevel != null && asText(body.confidenceLevel)) contributionPayload.confidence_level = asText(body.confidenceLevel);
     const contributionImages = Array.isArray(body?.optionalImages)
       ? body.optionalImages.map((x: unknown) => String(x ?? "").trim()).filter(Boolean)
       : [];
