@@ -53,5 +53,7 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: "/((?!_next/static|_next/image|favicon.ico).*)",
+  // Explicitly include `/` so homepage root requests (including `/?code=...`)
+  // always pass through middleware.
+  matcher: ["/", "/((?!_next/static|_next/image|favicon.ico).*)"],
 };
