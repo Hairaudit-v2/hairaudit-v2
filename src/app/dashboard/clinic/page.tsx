@@ -19,6 +19,8 @@ import ParticipationBenefitBanner from "@/components/clinic-portal/Participation
 import FoundingClinicTag from "@/components/clinic-portal/FoundingClinicTag";
 import { SITE_URL } from "@/lib/constants";
 import { BENCHMARKING_GLOBAL_STANDARDS } from "@/lib/benchmarkingCopy";
+import ProfileCompletenessCard from "@/components/dashboard/ProfileCompletenessCard";
+import NextBestStepPanel from "@/components/dashboard/NextBestStepPanel";
 
 export default async function ClinicDashboardPage() {
   const supabase = await createSupabaseAuthServerClient();
@@ -215,6 +217,30 @@ export default async function ClinicDashboardPage() {
     Date.now() - new Date(clinicProfileCreatedAt).getTime() < 24 * 60 * 60 * 1000;
   const hasNoSubmittedCases = caseList.length === 0;
 
+  // Profile completeness (existing data only): name, email, website, location, public profile, at least one case
+  const hasClinicName = String(clinicProfile?.clinic_name ?? "").trim().length > 0;
+  const hasClinicEmail = String(clinicProfile?.clinic_email ?? "").trim().length > 0;
+  const hasWebsite = String((basicProfile?.website as string) ?? "").trim().length > 0;
+  const hasLocation =
+    String((basicProfile?.primary_country as string) ?? "").trim().length > 0 ||
+    String((basicProfile?.primary_city as string) ?? "").trim().length > 0;
+  const hasPublicProfile = Boolean(profileVisible && clinicSlug);
+  const hasCase = caseList.length > 0;
+  const clinicChecks = [hasClinicName, hasClinicEmail, hasWebsite, hasLocation, hasPublicProfile, hasCase];
+  const clinicDoneCount = clinicChecks.filter(Boolean).length;
+  const clinicTotalChecks = clinicChecks.length;
+  const clinicCompletenessPct = clinicTotalChecks ? Math.round((clinicDoneCount / clinicTotalChecks) * 100) : 0;
+  const clinicNextActions: Array<{ label: string; href: string }> = [];
+  if (!hasClinicName || !hasClinicEmail || !hasWebsite || !hasLocation)
+    clinicNextActions.push({ label: "Complete your profile", href: "/dashboard/clinic/profile" });
+  if (!hasCase) clinicNextActions.push({ label: "Submit your first case", href: "/dashboard/clinic/submit-case" });
+  if (!hasPublicProfile && hasCase)
+    clinicNextActions.push({ label: "Make your profile visible", href: "/dashboard/clinic/profile" });
+  if (clinicDoneCount === clinicTotalChecks)
+    clinicNextActions.push({ label: "Keep building verified public proof", href: "/dashboard/clinic/submit-case" });
+  const clinicNextBestStep =
+    clinicNextActions[0] ?? { label: "Explore your dashboard", href: "/dashboard/clinic" };
+
   return (
     <div>
       <ClinicSectionHeader
@@ -256,6 +282,17 @@ export default async function ClinicDashboardPage() {
           status={((clinicProfile as { participation_approval_status?: string })?.participation_approval_status as "not_started" | "pending_review" | "approved" | "more_info_required") ?? "not_started"}
           role="clinic"
         />
+      </div>
+
+      <div className="mb-6 grid gap-4 sm:grid-cols-2">
+        <ProfileCompletenessCard
+          title="Profile completeness"
+          percentage={clinicCompletenessPct}
+          doneCount={clinicDoneCount}
+          totalChecks={clinicTotalChecks}
+          nextActions={clinicNextActions.slice(0, 3)}
+        />
+        <NextBestStepPanel action={clinicNextBestStep} />
       </div>
 
       <div className="mb-6">

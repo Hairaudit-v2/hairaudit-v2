@@ -5,6 +5,8 @@ import CreateCaseButton from "../create-case-button";
 import DoctorOnboardingChecklist, { type OnboardingStep } from "./DoctorOnboardingChecklist";
 import ParticipationStatusBanner, { type ParticipationApprovalStatus } from "@/components/dashboard/ParticipationStatusBanner";
 import DoctorParticipationSummaryCard, { type ParticipationSummary } from "./DoctorParticipationSummaryCard";
+import ProfileCompletenessCard from "@/components/dashboard/ProfileCompletenessCard";
+import NextBestStepPanel from "@/components/dashboard/NextBestStepPanel";
 import { BENCHMARKING_GLOBAL_STANDARDS } from "@/lib/benchmarkingCopy";
 
 type CaseRow = {
@@ -16,18 +18,28 @@ type CaseRow = {
   evidence_score_doctor?: string | null;
 };
 
+type ProfileCompleteness = {
+  percentage: number;
+  doneCount: number;
+  totalChecks: number;
+  nextActions: Array<{ label: string; href: string }>;
+  nextBestStep: { label: string; href: string };
+};
+
 export default function DoctorDashboardProduction({
   cases,
   caseIdsWithUploads = [],
   participationApprovalStatus = "not_started",
   participationSummary = { casesSubmittedCount: 0, reportsCompletedCount: 0, benchmarkReadyCount: 0 },
   showWelcomeBanner = false,
+  profileCompleteness,
 }: {
   cases: CaseRow[];
   caseIdsWithUploads?: string[];
   participationApprovalStatus?: ParticipationApprovalStatus;
   participationSummary?: ParticipationSummary;
   showWelcomeBanner?: boolean;
+  profileCompleteness?: ProfileCompleteness;
 }) {
   const hasCase = cases.length > 0;
   const firstCase = cases[0] ?? null;
@@ -78,6 +90,19 @@ export default function DoctorDashboardProduction({
         <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-900" role="status">
           <p className="font-medium">Your doctor profile is now active.</p>
           <p className="mt-1 text-sm text-emerald-800">You can begin building your verified record.</p>
+        </div>
+      )}
+
+      {profileCompleteness && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <ProfileCompletenessCard
+            title="Profile completeness"
+            percentage={profileCompleteness.percentage}
+            doneCount={profileCompleteness.doneCount}
+            totalChecks={profileCompleteness.totalChecks}
+            nextActions={profileCompleteness.nextActions}
+          />
+          <NextBestStepPanel action={profileCompleteness.nextBestStep} />
         </div>
       )}
 

@@ -29,7 +29,7 @@ export default async function DoctorDashboardPage() {
 
   const { data: doctorProfile } = await admin
     .from("doctor_profiles")
-    .select("id, participation_approval_status, created_at")
+    .select("id, participation_approval_status, created_at, doctor_name, doctor_email, years_experience, clinic_profile_id")
     .eq("linked_user_id", user.id)
     .limit(1)
     .maybeSingle();
@@ -78,6 +78,31 @@ export default async function DoctorDashboardPage() {
     !!doctorProfileCreatedAt &&
     Date.now() - new Date(doctorProfileCreatedAt).getTime() < 24 * 60 * 60 * 1000;
 
+  // Profile completeness (existing doctor_profiles data only)
+  const doc = doctorProfile as {
+    doctor_name?: string | null;
+    doctor_email?: string | null;
+    years_experience?: number | null;
+    clinic_profile_id?: string | null;
+  } | null;
+  const hasDoctorName = String(doc?.doctor_name ?? "").trim().length > 0;
+  const hasDoctorEmail = String(doc?.doctor_email ?? "").trim().length > 0;
+  const hasYearsExperience = doc?.years_experience != null;
+  const hasClinicAffiliation = doc?.clinic_profile_id != null && String(doc.clinic_profile_id).trim().length > 0;
+  const hasDoctorCase = caseList.length > 0;
+  const doctorChecks = [hasDoctorName, hasDoctorEmail, hasYearsExperience, hasClinicAffiliation, hasDoctorCase];
+  const doctorDoneCount = doctorChecks.filter(Boolean).length;
+  const doctorTotalChecks = doctorChecks.length;
+  const doctorCompletenessPct = doctorTotalChecks ? Math.round((doctorDoneCount / doctorTotalChecks) * 100) : 0;
+  const doctorNextActions: Array<{ label: string; href: string }> = [];
+  if (!hasDoctorName || !hasDoctorEmail || !hasYearsExperience)
+    doctorNextActions.push({ label: "Complete your profile", href: "/dashboard/doctor/onboarding" });
+  if (!hasDoctorCase) doctorNextActions.push({ label: "Submit your first case", href: "/dashboard/doctor" });
+  if (doctorDoneCount === doctorTotalChecks)
+    doctorNextActions.push({ label: "Build more verified proof", href: "/dashboard/doctor" });
+  const doctorNextBestStep =
+    doctorNextActions[0] ?? { label: "Explore your dashboard", href: "/dashboard/doctor" };
+
   return (
     <DoctorDashboardProduction
       cases={caseList}
@@ -85,6 +110,7 @@ export default async function DoctorDashboardPage() {
       participationApprovalStatus={participationApprovalStatus}
       participationSummary={participationSummary}
       showWelcomeBanner={showDoctorWelcomeBanner}
+      profileCompleteness={{ percentage: doctorCompletenessPct, doneCount: doctorDoneCount, totalChecks: doctorTotalChecks, nextActions: doctorNextActions.slice(0, 3), nextBestStep: doctorNextBestStep }}
     />
   );
 }
