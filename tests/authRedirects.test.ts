@@ -11,6 +11,7 @@ import {
   getHomepageAuthRedirectTarget,
   buildAuthRedirectUrl,
 } from "@/lib/auth/redirects";
+import { GET as authCallbackGET } from "@/app/auth/callback/route";
 
 // --- sanitizeNextPath ---
 test("sanitizeNextPath: accepts internal relative paths", () => {
