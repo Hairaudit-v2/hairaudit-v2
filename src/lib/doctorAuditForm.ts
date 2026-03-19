@@ -67,6 +67,7 @@ import {
   PUNCH_MOTION_OPTIONS,
   TEMPERATURE_CONTROLLED_STORAGE_OPTIONS,
 } from "./audit/masterSurgicalMetadata";
+import { doctorDefaultFields } from "@/config/auditSchema";
 
 export type DoctorAuditAnswers = Record<string, string | number | string[] | boolean | null>;
 
@@ -84,6 +85,10 @@ type QuestionDef = {
     | { questionId: string; value?: string; hasValue?: string }
     | { questionId: string; oneOf: string[] }
     | { or: Array<{ questionId: string; value: string }> };
+  /** When true, this field can be prefilled from saved defaults (see config/auditSchema). */
+  defaultable?: boolean;
+  /** Which default set applies when defaultable is true. */
+  defaultSource?: "clinic" | "doctor";
 };
 
 type SectionDef = {
@@ -93,7 +98,7 @@ type SectionDef = {
   showWhen?: { questionId: string; oneOf: string[] };
 };
 
-export const DOCTOR_AUDIT_SECTIONS: SectionDef[] = [
+const DOCTOR_AUDIT_SECTIONS_BASE: SectionDef[] = [
   {
     id: "doctor_clinic",
     title: "1. Doctor & Clinic Profile",
@@ -1631,3 +1636,12 @@ export const DOCTOR_AUDIT_SECTIONS: SectionDef[] = [
     ],
   },
 ];
+
+const doctorDefaultSet = new Set<string>(doctorDefaultFields);
+export const DOCTOR_AUDIT_SECTIONS: SectionDef[] = DOCTOR_AUDIT_SECTIONS_BASE.map((section) => ({
+  ...section,
+  questions: section.questions.map((q) => ({
+    ...q,
+    ...(doctorDefaultSet.has(q.id) ? { defaultable: true, defaultSource: "doctor" as const } : {}),
+  })),
+}));

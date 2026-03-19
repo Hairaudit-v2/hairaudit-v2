@@ -66,8 +66,9 @@ import {
   PUNCH_MOTION_OPTIONS,
   TEMPERATURE_CONTROLLED_STORAGE_OPTIONS,
 } from "./audit/masterSurgicalMetadata";
+import { clinicDefaultFields } from "@/config/auditSchema";
 
-export const CLINIC_AUDIT_SECTIONS = [
+const CLINIC_AUDIT_SECTIONS_BASE = [
   {
     id: "clinic_info",
     title: "Clinic Information",
@@ -997,3 +998,12 @@ export const CLINIC_AUDIT_SECTIONS = [
     ],
   },
 ];
+
+const clinicDefaultSet = new Set<string>(clinicDefaultFields);
+export const CLINIC_AUDIT_SECTIONS = CLINIC_AUDIT_SECTIONS_BASE.map((section) => ({
+  ...section,
+  questions: section.questions.map((q) => ({
+    ...q,
+    ...(clinicDefaultSet.has(q.id) ? { defaultable: true, defaultSource: "clinic" as const } : {}),
+  })),
+}));

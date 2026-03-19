@@ -1,3 +1,10 @@
+/**
+ * Shared option registries for clinic and doctor audit forms.
+ * - Legacy: existing option values are preserved for scoring/validation; do not remove or rename.
+ * - New options use normalized value strings (snake_case, e.g. 0_70_mm).
+ * - OPTION_GROUPS at end supports future searchable/grouped UI.
+ */
+
 export type AuditOption = { value: string; label: string };
 
 export type Tier = "basic" | "advanced";
@@ -248,6 +255,7 @@ export const OVERHARVESTING_SIGN_OPTIONS: AuditOption[] = [
   { value: "other", label: "Other" },
 ];
 
+/** FUE extraction devices/systems. Legacy values first; new options use normalized value strings. */
 export const EXTRACTION_DEVICE_OPTIONS: AuditOption[] = [
   { value: "manual_punch", label: "Manual Punch" },
   { value: "motorised_punch", label: "Motorised Punch" },
@@ -259,10 +267,19 @@ export const EXTRACTION_DEVICE_OPTIONS: AuditOption[] = [
   { value: "trivellini_system", label: "Trivellini System" },
   { value: "waw_system", label: "WAW System" },
   { value: "zeus_ugraft_system", label: "Zeus UGraft System" },
+  { value: "fue_designer", label: "FUE Designer" },
+  { value: "mamba_fue", label: "Mamba FUE" },
+  { value: "sapyre", label: "Sapyre" },
+  { value: "prodigy_fue", label: "Prodigy FUE" },
+  { value: "fue_evolve", label: "FUE Evolve" },
+  { value: "manual_motorised_hybrid", label: "Manual / Motorised Hybrid" },
   { value: "other", label: "Other" },
 ];
 
+/** Punch sizes (mm). Normalized value format 0_70_mm etc. Legacy values preserved. */
 export const PUNCH_SIZE_OPTIONS: AuditOption[] = [
+  { value: "0_60_mm", label: "0.60 mm" },
+  { value: "0_65_mm", label: "0.65 mm" },
   { value: "0_70_mm", label: "0.70 mm" },
   { value: "0_75_mm", label: "0.75 mm" },
   { value: "0_80_mm", label: "0.80 mm" },
@@ -271,9 +288,12 @@ export const PUNCH_SIZE_OPTIONS: AuditOption[] = [
   { value: "0_95_mm", label: "0.95 mm" },
   { value: "1_00_mm", label: "1.00 mm" },
   { value: "1_05_mm", label: "1.05 mm" },
+  { value: "1_10_mm", label: "1.10 mm" },
+  { value: "1_15_mm", label: "1.15 mm" },
   { value: "other", label: "Other" },
 ];
 
+/** Punch types. Legacy values preserved for validation. */
 export const PUNCH_TYPE_OPTIONS: AuditOption[] = [
   { value: "sharp", label: "Sharp" },
   { value: "dull", label: "Dull" },
@@ -281,19 +301,24 @@ export const PUNCH_TYPE_OPTIONS: AuditOption[] = [
   { value: "serrated", label: "Serrated" },
   { value: "trumpet", label: "Trumpet" },
   { value: "custom_proprietary", label: "Custom / Proprietary" },
+  { value: "flared", label: "Flared" },
+  { value: "tapered", label: "Tapered" },
   { value: "other", label: "Other" },
 ];
 
+/** Punch manufacturers. For grouping/searchable UI. */
 export const PUNCH_MANUFACTURER_OPTIONS: AuditOption[] = [
   { value: "waw", label: "WAW" },
   { value: "trivellini", label: "Trivellini" },
   { value: "devroye", label: "Devroye" },
   { value: "cole", label: "Cole" },
   { value: "hans", label: "Hans" },
+  { value: "sharp_needle", label: "Sharp Needle" },
   { value: "generic", label: "Generic" },
   { value: "other", label: "Other" },
 ];
 
+/** Graft holding / storage solutions. Legacy values preserved. */
 export const HOLDING_SOLUTION_OPTIONS: AuditOption[] = [
   { value: "saline", label: "Saline" },
   { value: "hypothermosol", label: "Hypothermosol" },
@@ -301,9 +326,12 @@ export const HOLDING_SOLUTION_OPTIONS: AuditOption[] = [
   { value: "lactated_ringers", label: "Lactated Ringer's" },
   { value: "prp", label: "PRP" },
   { value: "chilled_saline", label: "Chilled saline" },
+  { value: "organ_culture_medium", label: "Organ culture medium" },
+  { value: "hypothermosol_plus", label: "Hypothermosol Plus" },
   { value: "other", label: "Other" },
 ];
 
+/** Recipient implantation devices. Legacy values preserved for validation. */
 export const IMPLANTATION_DEVICE_OPTIONS: AuditOption[] = [
   { value: "choi_pen", label: "Choi Pen" },
   { value: "lion_implanter", label: "Lion Implanter" },
@@ -312,6 +340,9 @@ export const IMPLANTATION_DEVICE_OPTIONS: AuditOption[] = [
   { value: "forceps", label: "Forceps" },
   { value: "stick_and_place", label: "Stick and Place" },
   { value: "needle_and_forceps", label: "Needle and Forceps" },
+  { value: "sergeant_implanter", label: "Sergeant Implanter" },
+  { value: "blunt_needle_forceps", label: "Blunt needle + forceps" },
+  { value: "implanter_pen_generic", label: "Implanter pen (generic)" },
   { value: "other", label: "Other" },
 ];
 
@@ -446,6 +477,7 @@ export const GRAFT_TISSUE_QUALITY_CONCERN_OPTIONS: AuditOption[] = [
   { value: "none_observed", label: "None observed" },
 ];
 
+/** Standard post-op protocol items. Legacy values preserved for scoring. */
 export const POSTOP_TREATMENT_OPTIONS: AuditOption[] = [
   { value: "prp", label: "PRP" },
   { value: "exosomes", label: "Exosomes" },
@@ -463,6 +495,8 @@ export const POSTOP_TREATMENT_OPTIONS: AuditOption[] = [
   { value: "analgesics", label: "Analgesics" },
   { value: "steroids_anti_swelling_medication", label: "Steroids / Anti-swelling Medication" },
   { value: "donor_recovery_protocol", label: "Donor Recovery Protocol" },
+  { value: "topical_steroid", label: "Topical steroid" },
+  { value: "follicle_support_supplements", label: "Follicle support supplements" },
   { value: "other", label: "Other" },
 ];
 
@@ -475,10 +509,12 @@ export const OUT_OF_BODY_TIME_CATEGORY_OPTIONS: AuditOption[] = [
   { value: "mixed", label: "Mixed (legacy)" },
 ];
 
+/** Punch motion (FUE). Legacy values preserved. */
 export const PUNCH_MOTION_OPTIONS: AuditOption[] = [
   { value: "rotation", label: "Rotation" },
   { value: "oscillation", label: "Oscillation" },
   { value: "hybrid", label: "Hybrid" },
+  { value: "reciprocating", label: "Reciprocating" },
   { value: "unknown", label: "Unknown" },
 ];
 
@@ -519,11 +555,15 @@ export const RECIPIENT_SITES_CREATED_BY_OPTIONS: AuditOption[] = [
   { value: "mixed_team", label: "Mixed Team" },
 ];
 
+/** Recipient site creation tools/methods. Legacy values preserved. */
 export const SITE_CREATION_METHOD_OPTIONS: AuditOption[] = [
   { value: "blade", label: "Blade" },
   { value: "needle", label: "Needle" },
   { value: "implanter_led", label: "Implanter-led" },
   { value: "stick_and_place", label: "Stick and Place" },
+  { value: "sapphire_blade", label: "Sapphire blade" },
+  { value: "steel_blade", label: "Steel blade" },
+  { value: "premade_slits", label: "Pre-made slits" },
   { value: "other", label: "Other" },
 ];
 
@@ -534,12 +574,15 @@ export const SLIT_ORIENTATION_OPTIONS: AuditOption[] = [
   { value: "unknown", label: "Unknown" },
 ];
 
+/** Recipient site instrument sizes (mm). For grouping/searchable UI. */
 export const SITE_INSTRUMENT_SIZE_OPTIONS: AuditOption[] = [
+  { value: "0_5_mm", label: "0.5 mm" },
   { value: "0_6_mm", label: "0.6 mm" },
   { value: "0_7_mm", label: "0.7 mm" },
   { value: "0_8_mm", label: "0.8 mm" },
   { value: "0_9_mm", label: "0.9 mm" },
   { value: "1_0_mm", label: "1.0 mm" },
+  { value: "1_2_mm", label: "1.2 mm" },
   { value: "other", label: "Other" },
 ];
 
@@ -554,6 +597,95 @@ export const TEMPERATURE_CONTROLLED_STORAGE_OPTIONS: AuditOption[] = [
   { value: "yes", label: "Yes" },
   { value: "no", label: "No" },
 ];
+
+// ---------------------------------------------------------------------------
+// New registries for clinic/doctor forms (additive). Not yet used in validation.
+// ---------------------------------------------------------------------------
+
+/** Microscopes / magnification / imaging. For graft inspection and dissection. */
+export const MICROSCOPE_MAGNIFICATION_OPTIONS: AuditOption[] = [
+  { value: "stereo_basic", label: "Basic stereo microscope" },
+  { value: "stereo_high_end", label: "High-end stereo microscope" },
+  { value: "digital_microscope", label: "Digital microscope" },
+  { value: "trichoscope", label: "Trichoscope" },
+  { value: "loupe_magnification", label: "Loupe magnification" },
+  { value: "none", label: "None" },
+  { value: "other", label: "Other" },
+];
+
+/** Sterilization / infection-control workflows. */
+export const STERILIZATION_PROTOCOL_OPTIONS: AuditOption[] = [
+  { value: "autoclave", label: "Autoclave" },
+  { value: "single_use_disposables", label: "Single-use disposables" },
+  { value: "chemical", label: "Chemical sterilization" },
+  { value: "mixed", label: "Mixed (autoclave + disposables)" },
+  { value: "other", label: "Other" },
+];
+
+/** Emergency / facility equipment. */
+export const EMERGENCY_FACILITY_EQUIPMENT_OPTIONS: AuditOption[] = [
+  { value: "defibrillator", label: "Defibrillator" },
+  { value: "oxygen", label: "Oxygen supply" },
+  { value: "emergency_meds", label: "Emergency medications" },
+  { value: "backup_power", label: "Backup power supply" },
+  { value: "crash_cart", label: "Crash cart" },
+  { value: "airway_management", label: "Airway management kit" },
+  { value: "other", label: "Other" },
+];
+
+/**
+ * Grouped option keys for future searchable/grouped UI.
+ * Maps logical group id to option constant name (so consumers can filter by group).
+ * Does not change validation or payload shape.
+ */
+export const OPTION_GROUPS: Record<
+  string,
+  { label: string; optionKeys: string[] }
+> = {
+  fue_extraction_devices: {
+    label: "FUE extraction devices/systems",
+    optionKeys: ["EXTRACTION_DEVICE_OPTIONS"],
+  },
+  fut_tools: {
+    label: "FUT tools / closure / dissection",
+    optionKeys: ["SITE_CREATION_METHOD_OPTIONS", "PUNCH_TYPE_OPTIONS"],
+  },
+  punch_sizes: { label: "Punch sizes", optionKeys: ["PUNCH_SIZE_OPTIONS"] },
+  punch_types: { label: "Punch types", optionKeys: ["PUNCH_TYPE_OPTIONS"] },
+  punch_motion: { label: "Punch motion", optionKeys: ["PUNCH_MOTION_OPTIONS"] },
+  microscopes: {
+    label: "Microscopes / magnification / imaging",
+    optionKeys: ["MICROSCOPE_MAGNIFICATION_OPTIONS"],
+  },
+  holding_storage: {
+    label: "Holding solutions / graft storage",
+    optionKeys: ["HOLDING_SOLUTION_OPTIONS", "TEMPERATURE_CONTROLLED_STORAGE_OPTIONS"],
+  },
+  graft_handling: {
+    label: "Graft handling / sorting / inspection",
+    optionKeys: ["GRAFT_SORTING_METHOD_OPTIONS", "GRAFT_TISSUE_QUALITY_CONCERN_OPTIONS", "VISIBLE_TRANSECTION_ON_TRAY_OPTIONS"],
+  },
+  recipient_site_tools: {
+    label: "Recipient site creation tools",
+    optionKeys: ["SITE_CREATION_METHOD_OPTIONS", "SITE_INSTRUMENT_SIZE_OPTIONS", "SLIT_ORIENTATION_OPTIONS"],
+  },
+  implantation: {
+    label: "Implantation devices / methods",
+    optionKeys: ["IMPLANTATION_DEVICE_OPTIONS", "IMPLANTATION_METHOD_OPTIONS", "IMPLANTED_BY_OPTIONS"],
+  },
+  sterilization: {
+    label: "Sterilization / infection control",
+    optionKeys: ["STERILIZATION_PROTOCOL_OPTIONS"],
+  },
+  emergency_facility: {
+    label: "Emergency / facility equipment",
+    optionKeys: ["EMERGENCY_FACILITY_EQUIPMENT_OPTIONS"],
+  },
+  postop_protocol: {
+    label: "Standard post-op protocol",
+    optionKeys: ["POSTOP_TREATMENT_OPTIONS"],
+  },
+};
 
 export const BASIC_REQUIRED_SURGICAL_METADATA_KEYS = [
   "extraction_method",

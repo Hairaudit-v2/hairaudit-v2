@@ -10,6 +10,7 @@ import {
   clinicDefaultFields,
   doctorDefaultFields,
 } from "@/config/auditSchema";
+import { AUDIT_PROTOCOL_GROUPS } from "@/config/auditProtocolGroups";
 
 type FormQuestion = {
   id: string;
@@ -25,6 +26,8 @@ type FormQuestion = {
     | { questionId: string; value?: string; hasValue?: string }
     | { questionId: string; oneOf: string[] }
     | { or: Array<{ questionId: string; value: string }> };
+  defaultable?: boolean;
+  defaultSource?: "clinic" | "doctor";
 };
 
 type Section = { id: string; title: string; questions: FormQuestion[] };
@@ -95,6 +98,7 @@ export default function AuditFormClient({
   const [workflowNotice, setWorkflowNotice] = useState<string | null>(null);
   const [onlyEditChanged, setOnlyEditChanged] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState<Record<string, boolean>>({});
+  const [useSavedDefaultForFields, setUseSavedDefaultForFields] = useState<Record<string, boolean>>({});
   const hasEditedRef = useRef(false);
   const baselineRef = useRef<Record<string, unknown> | null>(null);
   const originalAnswersRef = useRef<Record<string, unknown> | null>(null);
@@ -159,6 +163,18 @@ export default function AuditFormClient({
         if (!isEmptyAnswers(prefill)) {
           setAnswers(prefill);
           baselineRef.current = prefill;
+          const provenanceValue =
+            workflowActor === "doctor" ? "prefilled_from_doctor_default" : "prefilled_from_clinic_default";
+          setFieldProvenance((prev) => {
+            const next = { ...prev };
+            for (const key of Object.keys(prefill)) next[key] = provenanceValue;
+            return next;
+          });
+          setUseSavedDefaultForFields((prev) => {
+            const next = { ...prev };
+            for (const key of Object.keys(prefill)) next[key] = true;
+            return next;
+          });
           setWorkflowNotice("Prefilled from saved defaults. Only edit what changed.");
         }
       }
@@ -184,6 +200,35 @@ export default function AuditFormClient({
     });
     setAnswers((prev) => ({ ...prev, [id]: value }));
   };
+
+  const handleUseSavedDefaultChange = useCallback(
+    (qId: string, useDefault: boolean) => {
+      if (!defaultsStorageKey) return;
+      if (useDefault) {
+        const savedDefaults = readStorageObject(defaultsStorageKey);
+        if (!savedDefaults || !Object.prototype.hasOwnProperty.call(savedDefaults, qId)) return;
+        const defaultVal = savedDefaults[qId];
+        hasEditedRef.current = true;
+        setAnswers((prev) => ({ ...prev, [qId]: defaultVal }));
+        setFieldProvenance((prev) => ({
+          ...prev,
+          [qId]:
+            workflowActor === "doctor" ? "prefilled_from_doctor_default" : "prefilled_from_clinic_default",
+        }));
+        setUseSavedDefaultForFields((prev) => ({ ...prev, [qId]: true }));
+      } else {
+        setUseSavedDefaultForFields((prev) => ({ ...prev, [qId]: false }));
+      }
+    },
+    [defaultsStorageKey, readStorageObject, workflowActor]
+  );
+
+  const formatDefaultValue = useCallback((value: unknown): string => {
+    if (value === null || value === undefined) return "—";
+    if (Array.isArray(value)) return value.join(", ");
+    if (typeof value === "number") return String(value);
+    return String(value);
+  }, []);
 
   const save = async (answersToSave?: Record<string, unknown>) => {
     const payload = answersToSave ?? answers;
@@ -266,8 +311,45 @@ export default function AuditFormClient({
       return next;
     });
     setAnswers((prev) => ({ ...prev, ...prefill }));
+    setUseSavedDefaultForFields((prev) => {
+      const next = { ...prev };
+      for (const key of Object.keys(prefill)) next[key] = true;
+      return next;
+    });
     setWorkflowNotice("Applied saved defaults. Only edit what changed.");
   };
+
+  const applyProtocolGroup = useCallback(
+    (groupLabel: string, fieldIds: readonly string[]) => {
+      if (!defaultsStorageKey) return;
+      const defaults = readStorageObject(defaultsStorageKey);
+      if (!defaults) {
+        setWorkflowNotice("No saved defaults found yet.");
+        return;
+      }
+      const allowed = fieldIds.filter((id) => defaultSet.has(id));
+      const prefill = pickFields(defaults, allowed);
+      if (isEmptyAnswers(prefill)) {
+        setWorkflowNotice(`No saved values for ${groupLabel}.`);
+        return;
+      }
+      hasEditedRef.current = true;
+      const tag = workflowActor === "doctor" ? "prefilled_from_doctor_default" : "prefilled_from_clinic_default";
+      setFieldProvenance((prev) => {
+        const next = { ...prev };
+        for (const key of Object.keys(prefill)) next[key] = tag;
+        return next;
+      });
+      setAnswers((prev) => ({ ...prev, ...prefill }));
+      setUseSavedDefaultForFields((prev) => {
+        const next = { ...prev };
+        for (const key of Object.keys(prefill)) next[key] = true;
+        return next;
+      });
+      setWorkflowNotice(`Applied saved ${groupLabel}. You can override any field.`);
+    },
+    [defaultSet, defaultsStorageKey, pickFields, readStorageObject, workflowActor]
+  );
 
   const copyFromPreviousCase = () => {
     if (!lastCaseStorageKey || typeof window === "undefined") return;
@@ -350,6 +432,57 @@ export default function AuditFormClient({
       .filter((section) => section.questions.length > 0);
   }, [answers, caseStableSet, defaultSet, onlyEditChanged, sections]);
 
+  const savedDefaults = workflowActor ? readStorageObject(defaultsStorageKey) : null;
+
+  const renderQuestion = (q: FormQuestion) => {
+    const isDefaultable =
+      !locked && workflowActor && q.defaultable && q.defaultSource === workflowActor;
+    const hasDefault =
+      isDefaultable && savedDefaults != null && Object.prototype.hasOwnProperty.call(savedDefaults, q.id);
+    const useDefault = !!hasDefault && !!useSavedDefaultForFields[q.id];
+
+    if (hasDefault) {
+      return (
+        <div key={q.id} className="space-y-1.5">
+          <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={useDefault}
+              onChange={(e) => handleUseSavedDefaultChange(q.id, e.target.checked)}
+              className="rounded border-slate-300 text-amber-600 focus:ring-amber-500"
+            />
+            Use saved default
+          </label>
+          {useDefault ? (
+            <p className="text-sm text-slate-600 py-1.5 pl-6">
+              Using saved default: {formatDefaultValue(answers[q.id] ?? savedDefaults?.[q.id])}
+            </p>
+          ) : (
+            <QuestionField
+              question={q}
+              value={answers[q.id]}
+              onChange={(v) => update(q.id, v)}
+              allAnswers={answers}
+              locked={locked}
+              readOnly={isFollowupAudit && caseStableSet.has(q.id)}
+            />
+          )}
+        </div>
+      );
+    }
+    return (
+      <QuestionField
+        key={q.id}
+        question={q}
+        value={answers[q.id]}
+        onChange={(v) => update(q.id, v)}
+        allAnswers={answers}
+        locked={locked}
+        readOnly={isFollowupAudit && caseStableSet.has(q.id)}
+      />
+    );
+  };
+
   if (loading) {
     return (
       <div className="animate-pulse rounded-xl border p-6">
@@ -400,6 +533,25 @@ export default function AuditFormClient({
                 Save current as defaults
               </button>
             </div>
+            {savedDefaults && (
+              <div className="mt-3 pt-3 border-t border-slate-200">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-600 mb-2">
+                  Use saved protocol
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {AUDIT_PROTOCOL_GROUPS.map((group) => (
+                    <button
+                      key={group.id}
+                      type="button"
+                      onClick={() => applyProtocolGroup(group.label, group.fieldIds)}
+                      className="rounded-md border border-slate-300 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100"
+                    >
+                      {group.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             {workflowNotice && <p className="mt-2 text-xs text-slate-600">{workflowNotice}</p>}
           </div>
         )}
@@ -440,34 +592,14 @@ export default function AuditFormClient({
                 {AUDIT_WORKFLOW_UX_COPY.addAdvancedDataToImproveConfidenceAndBenchmarking}
               </p>
               <div className="mt-4 space-y-5">
-                {section.questions.map((q) => (
-                  <QuestionField
-                    key={q.id}
-                    question={q}
-                    value={answers[q.id]}
-                    onChange={(v) => update(q.id, v)}
-                    allAnswers={answers}
-                    locked={locked}
-                    readOnly={isFollowupAudit && caseStableSet.has(q.id)}
-                  />
-                ))}
+                {section.questions.map((q) => renderQuestion(q))}
               </div>
             </details>
           ) : (
             <>
               <h2 className="text-lg font-semibold text-gray-900 mb-4">{section.title as string}</h2>
               <div className="space-y-5">
-                {section.questions.map((q) => (
-                  <QuestionField
-                    key={q.id}
-                    question={q}
-                    value={answers[q.id]}
-                    onChange={(v) => update(q.id, v)}
-                    allAnswers={answers}
-                    locked={locked}
-                    readOnly={isFollowupAudit && caseStableSet.has(q.id)}
-                  />
-                ))}
+                {section.questions.map((q) => renderQuestion(q))}
               </div>
             </>
           )}
