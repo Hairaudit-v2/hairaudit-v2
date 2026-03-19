@@ -29,10 +29,15 @@ export default async function DoctorDashboardPage() {
 
   const { data: doctorProfile } = await admin
     .from("doctor_profiles")
-    .select("participation_approval_status")
+    .select("id, participation_approval_status")
     .eq("linked_user_id", user.id)
     .limit(1)
     .maybeSingle();
+
+  // Onboarding-first: send doctor users to onboarding when no profile (only from dashboard entry)
+  if (!doctorProfile) {
+    redirect("/dashboard/doctor/onboarding");
+  }
 
   const participationApprovalStatus = (doctorProfile?.participation_approval_status as "not_started" | "pending_review" | "approved" | "more_info_required") ?? "not_started";
 
