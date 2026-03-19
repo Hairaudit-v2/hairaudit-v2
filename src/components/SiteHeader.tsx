@@ -131,7 +131,7 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
             : "border-b border-slate-800 bg-slate-900"
         }
       >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 flex items-center justify-between h-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 flex items-center justify-between h-24">
         <Link href={logoHref} className="flex items-center gap-2 group">
           {showLogo && (
             <>
@@ -139,18 +139,18 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
                 <Image
                   src="/hairaudit-logo.svg"
                   alt="Hair Audit"
-                  width={210}
-                  height={60}
-                  className="h-12 sm:h-[3.375rem] w-auto object-contain"
+                  width={280}
+                  height={80}
+                  className="h-16 sm:h-20 w-auto object-contain"
                   priority
                 />
               ) : (
                 <Image
                   src="/hair-audit-logo-white.png"
                   alt="Hair Audit"
-                  width={345}
-                  height={96}
-                  className="h-12 sm:h-[3.75rem] w-auto object-contain"
+                  width={288}
+                  height={80}
+                  className="h-16 sm:h-20 w-auto object-contain"
                   priority
                 />
               )}
