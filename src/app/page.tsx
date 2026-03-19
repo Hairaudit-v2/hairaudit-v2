@@ -11,6 +11,10 @@ import OrganizationWebSiteSchema from "@/components/seo/OrganizationWebSiteSchem
 import { getHomepageAuthRedirectTarget } from "@/lib/auth/redirects";
 
 export const revalidate = 600;
+// Force dynamic rendering so `/?code=...` (Supabase auth return) is never served
+// from a cached HTML response. This ensures the server-side repair redirect
+// can run reliably in production.
+export const dynamic = "force-dynamic";
 export const metadata = createPageMetadata({
   title: "HairAudit",
   description:
