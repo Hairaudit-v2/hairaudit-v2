@@ -25,6 +25,7 @@ const PUBLIC_ROUTES = [
   "/professionals",
   "/professionals/apply",
   "/verified-surgeon-program",
+  "/certification-explained",
   "/methodology",
   "/services",
   "/benchmark-vision",

@@ -1,6 +1,5 @@
-import { SpeedInsights } from "@vercel/speed-insights/next";
-import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
+import ClientAnalytics from "@/components/analytics/ClientAnalytics";
 import { logAuthEnvHealthOnce } from "@/lib/auth/validateAuthEnv";
 import RecoveryHashRouter from "@/components/RecoveryHashRouter";
 import MainContentTarget from "@/components/a11y/MainContentTarget";
@@ -58,8 +57,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <MainContentTarget />
         <RecoveryHashRouter />
         {children}
-        <Analytics />
-        <SpeedInsights />
+        <ClientAnalytics />
       </body>
     </html>
   );

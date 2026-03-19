@@ -112,6 +112,8 @@ export default function PublicCaseClient({ caseId }: { caseId: string }) {
                 key={`${item.id}-${idx}`}
                 src={src}
                 alt={`Case image ${idx + 1}`}
+                width={352}
+                height={176}
                 className="h-44 w-full rounded-xl object-cover border border-white/10"
               />
             ))}

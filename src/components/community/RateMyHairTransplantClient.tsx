@@ -260,6 +260,8 @@ export default function RateMyHairTransplantClient() {
               key={`${src}-${i}`}
               src={src}
               alt=""
+              width={224}
+              height={112}
               className="h-28 w-full rounded-xl object-cover border border-white/10"
             />
           ))}

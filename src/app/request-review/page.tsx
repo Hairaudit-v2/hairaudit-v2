@@ -1,7 +1,6 @@
 import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
-import ScrollReveal from "@/components/ui/ScrollReveal";
 import ReviewProcessReassurance from "@/components/seo/ReviewProcessReassurance";
 import MedicalProcedureFaqSchema from "@/components/seo/MedicalProcedureFaqSchema";
 import { createPageMetadata } from "@/lib/seo/pageMetadata";
@@ -50,35 +49,31 @@ export default function RequestReviewPage() {
 
       <main className="relative flex-1 px-4 sm:px-6 py-16 sm:py-20">
         <div className="max-w-4xl mx-auto">
-          <ScrollReveal>
-            <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
-              Request Review
-            </h1>
-            <p className="mt-4 text-slate-300 max-w-2xl">
-              Send your surgery photos and details for an independent medical review, whether you
-              are concerned about problems or want quality validation.
+          {/* Hero: no ScrollReveal so LCP (H1/CTA) paints immediately */}
+          <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
+            Request Review
+          </h1>
+          <p className="mt-4 text-slate-300 max-w-2xl">
+            Send your surgery photos and details for an independent medical review, whether you
+            are concerned about problems or want quality validation.
+          </p>
+          <p className="mt-3 text-xs text-amber-300 font-medium">Independent Surgery Assessment</p>
+          <p className="mt-2 text-sm text-emerald-200 font-medium">Estimated completion time: 6 to 8 minutes</p>
+
+          <div className="mt-8 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-6">
+            <h2 className="text-lg font-semibold text-white">Your photos are private and secure</h2>
+            <p className="mt-3 text-sm text-slate-300">
+              They are only used for your HairAudit review and are never shared publicly without permission.
             </p>
-            <p className="mt-3 text-xs text-amber-300 font-medium">Independent Surgery Assessment</p>
-            <p className="mt-2 text-sm text-emerald-200 font-medium">Estimated completion time: 6 to 8 minutes</p>
-          </ScrollReveal>
-
-          <ScrollReveal delay={0.05}>
-            <div className="mt-8 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-6">
-              <h2 className="text-lg font-semibold text-white">Your photos are private and secure</h2>
-              <p className="mt-3 text-sm text-slate-300">
-                They are only used for your HairAudit review and are never shared publicly without permission.
-              </p>
-              <div className="mt-4 flex flex-wrap gap-2 text-xs">
-                <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-slate-200">Independent review platform</span>
-                <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-slate-200">Structured review process</span>
-                <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-slate-200">Expert-reviewed findings</span>
-                <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-slate-200">Secure photo handling</span>
-              </div>
+            <div className="mt-4 flex flex-wrap gap-2 text-xs">
+              <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-slate-200">Independent review platform</span>
+              <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-slate-200">Structured review process</span>
+              <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-slate-200">Expert-reviewed findings</span>
+              <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-slate-200">Secure photo handling</span>
             </div>
-          </ScrollReveal>
+          </div>
 
-          <ScrollReveal delay={0.08}>
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
               <div className="rounded-2xl border border-amber-300/25 bg-amber-300/10 p-5">
                 <p className="text-xs uppercase tracking-wider text-amber-200 font-semibold">For Patients</p>
                 <p className="mt-2 text-sm text-amber-50/95">Start your case submission and secure upload.</p>
@@ -102,10 +97,8 @@ export default function RequestReviewPage() {
                 </TrackedLink>
               </div>
             </div>
-          </ScrollReveal>
 
-          <ScrollReveal delay={0.1}>
-            <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-6">
+          <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-6">
               <h2 className="text-lg font-semibold text-white">Helpful photos include</h2>
               <ul className="mt-4 grid sm:grid-cols-2 gap-3 text-slate-300 text-sm">
                 {[
@@ -122,10 +115,8 @@ export default function RequestReviewPage() {
                 ))}
               </ul>
             </div>
-          </ScrollReveal>
 
-          <ScrollReveal delay={0.15}>
-            <div className="mt-8 flex flex-col sm:flex-row gap-4">
+          <div className="mt-8 flex flex-col sm:flex-row gap-4">
               <TrackedLink
                 href="/signup"
                 eventName="cta_secure_upload_request_review"
@@ -171,7 +162,6 @@ export default function RequestReviewPage() {
               </Link>
               .
             </p>
-          </ScrollReveal>
         </div>
       </main>
 

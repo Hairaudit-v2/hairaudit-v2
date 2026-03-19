@@ -1,15 +1,20 @@
 import Link from "next/link";
+import nextDynamic from "next/dynamic";
 import { redirect } from "next/navigation";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
-import ScrollReveal from "@/components/ui/ScrollReveal";
 import TrackedLink from "@/components/analytics/TrackedLink";
-import GlobalHairIntelligenceSection from "@/components/ecosystem/GlobalHairIntelligenceSection";
 import CertifiedClinicsSection from "@/components/home/CertifiedClinicsSection";
 import { StepIcons } from "@/components/ui/StepIcons";
 import { createPageMetadata } from "@/lib/seo/pageMetadata";
 import OrganizationWebSiteSchema from "@/components/seo/OrganizationWebSiteSchema";
 import { getHomepageAuthRedirectTarget } from "@/lib/auth/redirects";
+
+/** Below-the-fold ecosystem diagram: code-split to reduce initial bundle; ssr: true (required in Server Components). */
+const GlobalHairIntelligenceSection = nextDynamic(
+  () => import("@/components/ecosystem/GlobalHairIntelligenceSection").then((m) => m.default),
+  { ssr: true }
+);
 
 export const revalidate = 600;
 // Force dynamic rendering so `/?code=...` (Supabase auth return) is never served
@@ -85,67 +90,64 @@ export default async function HomePage(props: PageProps) {
       <SiteHeader />
 
       <main id="main-content" className="relative flex-1">
-        {/* 1. Hero */}
+        {/* 1. Hero — no ScrollReveal so LCP (H1/CTA) paints immediately */}
         <section className="relative px-4 sm:px-6 pt-16 sm:pt-20 pb-20 sm:pb-28 lg:pt-24 lg:pb-32">
           <div className="max-w-3xl mx-auto text-center">
-            <ScrollReveal>
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-[1.08]">
-                Was Your Hair Transplant Done Properly?
-              </h1>
-              <p className="mt-6 text-xl text-slate-300 max-w-xl mx-auto leading-relaxed">
-                Get a clinical audit of your results — based on real surgical standards, not opinions.
-              </p>
-              <p className="mt-4 text-slate-400 max-w-lg mx-auto">
-                Upload your photos and receive a detailed HairAudit Score, donor analysis, and surgical quality breakdown.
-              </p>
-              <div className="mt-12 flex flex-col sm:flex-row gap-4 justify-center items-center">
-                <TrackedLink
-                  href="/request-review"
-                  eventName="cta_start_audit_hero"
-                  className="inline-flex items-center justify-center px-10 py-4 rounded-2xl bg-amber-500 text-slate-900 font-semibold text-lg hover:bg-amber-400 transition-colors border border-amber-400/50 shadow-lg shadow-amber-500/20"
-                >
-                  Start My Audit
-                </TrackedLink>
-                <Link
-                  href="/demo-report"
-                  className="inline-flex items-center justify-center px-8 py-4 rounded-2xl border-2 border-slate-500 text-slate-200 font-medium hover:border-amber-500/50 hover:text-amber-400 transition-colors"
-                >
-                  View Sample Report
-                </Link>
-              </div>
-              <p className="mt-8 text-sm text-slate-500">
-                Used by trichologists, surgeons, and global training academies
-              </p>
-            </ScrollReveal>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-[1.08]">
+              Was Your Hair Transplant Done Properly?
+            </h1>
+            <p className="mt-6 text-xl text-slate-300 max-w-xl mx-auto leading-relaxed">
+              Get a clinical audit of your results — based on real surgical standards, not opinions.
+            </p>
+            <p className="mt-4 text-slate-400 max-w-lg mx-auto">
+              Upload your photos and receive a detailed HairAudit Score, donor analysis, and surgical quality breakdown.
+            </p>
+            <div className="mt-12 flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <TrackedLink
+                href="/request-review"
+                eventName="cta_start_audit_hero"
+                className="inline-flex items-center justify-center px-10 py-4 rounded-2xl bg-amber-500 text-slate-900 font-semibold text-lg hover:bg-amber-400 transition-colors border border-amber-400/50 shadow-lg shadow-amber-500/20"
+              >
+                Start My Audit
+              </TrackedLink>
+              <Link
+                href="/demo-report"
+                className="inline-flex items-center justify-center px-8 py-4 rounded-2xl border-2 border-slate-500 text-slate-200 font-medium hover:border-amber-500/50 hover:text-amber-400 transition-colors"
+              >
+                View Sample Report
+              </Link>
+            </div>
+            <p className="mt-8 text-sm text-slate-500">
+              Used by trichologists, surgeons, and global training academies
+            </p>
           </div>
         </section>
 
-        {/* 2. How It Works */}
+        {/* 2. How It Works — no ScrollReveal to avoid framer-motion on critical path */}
         <section className="relative px-4 sm:px-6 py-20 sm:py-24 border-t border-slate-700/60">
           <div className="max-w-4xl mx-auto">
-            <ScrollReveal>
-              <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
-                How HairAudit Works
-              </h2>
-            </ScrollReveal>
+            <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+              How HairAudit Works
+            </h2>
             <div className="mt-12 grid sm:grid-cols-3 gap-8 sm:gap-6">
               {HOW_IT_WORKS_STEPS.map((step, index) => (
-                <ScrollReveal key={step.title} delay={0.03 + index * 0.02}>
-                  <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 sm:p-6 flex flex-col items-center text-center">
-                    <span className="w-12 h-12 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center flex-shrink-0">
-                      {step.icon}
-                    </span>
-                    <p className="mt-4 text-sm font-semibold text-amber-400/90 uppercase tracking-wider">
-                      Step {index + 1}
-                    </p>
-                    <h3 className="mt-2 text-lg font-semibold text-white">
-                      {step.title}
-                    </h3>
-                    <p className="mt-3 text-slate-400 text-sm leading-relaxed">
-                      {step.description}
-                    </p>
-                  </div>
-                </ScrollReveal>
+                <div
+                  key={step.title}
+                  className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 sm:p-6 flex flex-col items-center text-center"
+                >
+                  <span className="w-12 h-12 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center flex-shrink-0">
+                    {step.icon}
+                  </span>
+                  <p className="mt-4 text-sm font-semibold text-amber-400/90 uppercase tracking-wider">
+                    Step {index + 1}
+                  </p>
+                  <h3 className="mt-2 text-lg font-semibold text-white">
+                    {step.title}
+                  </h3>
+                  <p className="mt-3 text-slate-400 text-sm leading-relaxed">
+                    {step.description}
+                  </p>
+                </div>
               ))}
             </div>
           </div>
@@ -166,23 +168,22 @@ export default async function HomePage(props: PageProps) {
         {/* 4. What You Get */}
         <section className="relative px-4 sm:px-6 py-20 sm:py-24 bg-slate-800/30">
           <div className="max-w-4xl mx-auto">
-            <ScrollReveal>
-              <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
-                Your HairAudit Report Includes
-              </h2>
-            </ScrollReveal>
+            <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+              Your HairAudit Report Includes
+            </h2>
             <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {WHAT_YOU_GET_ITEMS.map((item) => (
-                <ScrollReveal key={item.title} delay={0.02}>
-                  <div className="rounded-2xl border border-white/10 bg-slate-900/50 p-5 sm:p-6">
-                    <h3 className="text-base font-semibold text-white">
-                      {item.title}
-                    </h3>
-                    <p className="mt-2 text-sm text-slate-400 leading-relaxed">
-                      {item.description}
-                    </p>
-                  </div>
-                </ScrollReveal>
+                <div
+                  key={item.title}
+                  className="rounded-2xl border border-white/10 bg-slate-900/50 p-5 sm:p-6"
+                >
+                  <h3 className="text-base font-semibold text-white">
+                    {item.title}
+                  </h3>
+                  <p className="mt-2 text-sm text-slate-400 leading-relaxed">
+                    {item.description}
+                  </p>
+                </div>
               ))}
             </div>
           </div>
@@ -191,119 +192,109 @@ export default async function HomePage(props: PageProps) {
         {/* 5. Sample Report teaser */}
         <section className="relative px-4 sm:px-6 py-20 sm:py-24">
           <div className="max-w-3xl mx-auto">
-            <ScrollReveal>
-              <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
-                See What Your Results Could Reveal
-              </h2>
-              <p className="mt-5 text-slate-300 leading-relaxed text-lg">
-                Every HairAudit report provides a clear, visual breakdown of your surgery — showing what was done well and what may need attention.
-              </p>
-              <ul className="mt-8 space-y-3 text-slate-300">
-                <li className="flex items-start gap-3">
-                  <span className="text-amber-400 mt-0.5" aria-hidden>✓</span>
-                  Visual scoring with annotated images
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="text-amber-400 mt-0.5" aria-hidden>✓</span>
-                  Donor and recipient area analysis
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="text-amber-400 mt-0.5" aria-hidden>✓</span>
-                  Red flags and risk indicators
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="text-amber-400 mt-0.5" aria-hidden>✓</span>
-                  Clear clinical explanation — no confusing terminology
-                </li>
-              </ul>
-              <div className="mt-10">
-                <TrackedLink
-                  href="/demo-report"
-                  eventName="cta_view_sample_report_teaser"
-                  className="inline-flex items-center justify-center px-8 py-4 rounded-2xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors border border-amber-400/50"
-                >
-                  View Full Sample Report
-                </TrackedLink>
-              </div>
-            </ScrollReveal>
+            <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+              See What Your Results Could Reveal
+            </h2>
+            <p className="mt-5 text-slate-300 leading-relaxed text-lg">
+              Every HairAudit report provides a clear, visual breakdown of your surgery — showing what was done well and what may need attention.
+            </p>
+            <ul className="mt-8 space-y-3 text-slate-300">
+              <li className="flex items-start gap-3">
+                <span className="text-amber-400 mt-0.5" aria-hidden>✓</span>
+                Visual scoring with annotated images
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="text-amber-400 mt-0.5" aria-hidden>✓</span>
+                Donor and recipient area analysis
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="text-amber-400 mt-0.5" aria-hidden>✓</span>
+                Red flags and risk indicators
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="text-amber-400 mt-0.5" aria-hidden>✓</span>
+                Clear clinical explanation — no confusing terminology
+              </li>
+            </ul>
+            <div className="mt-10">
+              <TrackedLink
+                href="/demo-report"
+                eventName="cta_view_sample_report_teaser"
+                className="inline-flex items-center justify-center px-8 py-4 rounded-2xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors border border-amber-400/50"
+              >
+                View Full Sample Report
+              </TrackedLink>
+            </div>
           </div>
         </section>
 
-        {/* 6. Why HairAudit Matters — tightened */}
+        {/* 6. Why HairAudit Matters */}
         <section className="relative px-4 sm:px-6 py-20 sm:py-24 bg-slate-800/30">
           <div className="max-w-3xl mx-auto">
-            <ScrollReveal>
-              <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
-                Why HairAudit Matters
-              </h2>
-              <div className="mt-6 space-y-4 text-slate-300 leading-relaxed text-lg">
-                <p>
-                  Results are often judged by appearance alone — but what looks acceptable can hide poor technique. HairAudit assesses what most patients cannot see: how grafts were extracted, how the donor was managed, and whether the work meets real clinical standards.
-                </p>
-                <p className="text-slate-200 font-medium">
-                  Not a sales tool. Independent verification of your results.
-                </p>
-              </div>
-            </ScrollReveal>
+            <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+              Why HairAudit Matters
+            </h2>
+            <div className="mt-6 space-y-4 text-slate-300 leading-relaxed text-lg">
+              <p>
+                Results are often judged by appearance alone — but what looks acceptable can hide poor technique. HairAudit assesses what most patients cannot see: how grafts were extracted, how the donor was managed, and whether the work meets real clinical standards.
+              </p>
+              <p className="text-slate-200 font-medium">
+                Not a sales tool. Independent verification of your results.
+              </p>
+            </div>
           </div>
         </section>
 
         {/* 7. Who It's For */}
         <section className="relative px-4 sm:px-6 py-20 sm:py-24">
           <div className="max-w-3xl mx-auto">
-            <ScrollReveal>
-              <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
-                Who HairAudit Is For
-              </h2>
-              <ul className="mt-10 space-y-4">
-                {WHO_IT_FOR_ITEMS.map((item) => (
-                  <li
-                    key={item}
-                    className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-5 py-4 text-slate-300"
-                  >
-                    <span className="text-amber-400 mt-0.5 flex-shrink-0" aria-hidden>•</span>
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </ScrollReveal>
+            <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+              Who HairAudit Is For
+            </h2>
+            <ul className="mt-10 space-y-4">
+              {WHO_IT_FOR_ITEMS.map((item) => (
+                <li
+                  key={item}
+                  className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-5 py-4 text-slate-300"
+                >
+                  <span className="text-amber-400 mt-0.5 flex-shrink-0" aria-hidden>•</span>
+                  {item}
+                </li>
+              ))}
+            </ul>
           </div>
         </section>
 
         {/* 8. Trust / privacy */}
         <section className="relative px-4 sm:px-6 py-16 sm:py-20 bg-slate-800/30">
           <div className="max-w-2xl mx-auto">
-            <ScrollReveal>
-              <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-                Your Data, Protected
-              </h2>
-              <p className="mt-4 text-slate-400 leading-relaxed">
-                All uploads are securely stored and handled with strict privacy controls. Your data is never shared without your consent.
-              </p>
-            </ScrollReveal>
+            <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+              Your Data, Protected
+            </h2>
+            <p className="mt-4 text-slate-400 leading-relaxed">
+              All uploads are securely stored and handled with strict privacy controls. Your data is never shared without your consent.
+            </p>
           </div>
         </section>
 
         {/* 9. Final CTA */}
         <section className="relative px-4 sm:px-6 py-24 sm:py-28 border-t border-slate-700/60">
           <div className="max-w-2xl mx-auto text-center">
-            <ScrollReveal>
-              <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
-                Get Clarity on Your Hair Transplant
-              </h2>
-              <p className="mt-5 text-xl text-slate-300">
-                Understand your results. Identify risks. Make informed decisions.
-              </p>
-              <div className="mt-10">
-                <TrackedLink
-                  href="/request-review"
-                  eventName="cta_start_audit_final"
-                  className="inline-flex items-center justify-center px-10 py-4 rounded-2xl bg-amber-500 text-slate-900 font-semibold text-lg hover:bg-amber-400 transition-colors border border-amber-400/50 shadow-lg shadow-amber-500/20"
-                >
-                  Start My Audit
-                </TrackedLink>
-              </div>
-            </ScrollReveal>
+            <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
+              Get Clarity on Your Hair Transplant
+            </h2>
+            <p className="mt-5 text-xl text-slate-300">
+              Understand your results. Identify risks. Make informed decisions.
+            </p>
+            <div className="mt-10">
+              <TrackedLink
+                href="/request-review"
+                eventName="cta_start_audit_final"
+                className="inline-flex items-center justify-center px-10 py-4 rounded-2xl bg-amber-500 text-slate-900 font-semibold text-lg hover:bg-amber-400 transition-colors border border-amber-400/50 shadow-lg shadow-amber-500/20"
+              >
+                Start My Audit
+              </TrackedLink>
+            </div>
           </div>
         </section>
       </main>

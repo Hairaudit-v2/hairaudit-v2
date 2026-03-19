@@ -74,6 +74,7 @@ export async function generateMetadata({
       title: "Clinic not found | HairAudit",
       description: "This clinic profile could not be found.",
       pathname,
+      noindex: true,
     });
   }
 
