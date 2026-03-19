@@ -139,31 +139,21 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
                 <Image
                   src="/hairaudit-logo.svg"
                   alt="Hair Audit"
-                  width={140}
-                  height={40}
-                  className="h-8 sm:h-9 w-auto object-contain"
+                  width={210}
+                  height={60}
+                  className="h-12 sm:h-[3.375rem] w-auto object-contain"
                   priority
                 />
               ) : (
                 <Image
                   src="/hair-audit-logo-white.png"
                   alt="Hair Audit"
-                  width={230}
-                  height={64}
-                  className="h-8 sm:h-10 w-auto object-contain"
+                  width={345}
+                  height={96}
+                  className="h-12 sm:h-[3.75rem] w-auto object-contain"
                   priority
                 />
               )}
-              <span
-                className={
-                  isLight
-                    ? "rounded px-1.5 py-0.5 text-[10px] sm:text-xs font-bold uppercase tracking-wider bg-amber-500/15 text-amber-800 border border-amber-500/30"
-                    : "rounded px-1.5 py-0.5 text-[10px] sm:text-xs font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/40"
-                }
-                aria-label="Beta"
-              >
-                Beta
-              </span>
             </>
           )}
         </Link>
