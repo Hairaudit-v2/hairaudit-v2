@@ -1,8 +1,28 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { sanitizeNextPath } from "@/lib/auth/redirects";
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // Repair auth return URLs that land on the marketing/homepage root with `?code=...`.
+  // When this happens, we must redirect immediately to the dedicated code-exchange handler.
+  if (pathname === "/") {
+    const url = request.nextUrl;
+    const code = url.searchParams.get("code");
+    if (typeof code === "string" && code.trim() !== "") {
+      const nextParam = sanitizeNextPath(url.searchParams.get("next"));
+      const signupRole = url.searchParams.get("signup_role");
+
+      const redirectUrl = request.url;
+      const target = new URL(redirectUrl);
+      target.pathname = "/auth/callback";
+      target.searchParams.set("code", code);
+      if (nextParam) target.searchParams.set("next", nextParam);
+      if (signupRole) target.searchParams.set("signup_role", signupRole);
+      return NextResponse.redirect(target);
+    }
+  }
 
   // ✅ Allow Playwright report rendering (NO AUTH)
   if (pathname.match(/^\/reports\/[^/]+\/html$/)) {
