@@ -46,9 +46,8 @@ test("getLocaleMeta: returns registry row for known codes", () => {
   assert.equal(getLocaleMeta("not-a-locale"), undefined);
 });
 
-test("getTranslation: Spanish missing key falls back to English string", () => {
-  const v = getTranslation("nav.home", "es");
-  assert.equal(v, "Home");
+test("getTranslation: uses Spanish when key exists in es bundle", () => {
+  assert.equal(getTranslation("nav.home", "es"), "Inicio");
 });
 
 test("getTranslation: missing key everywhere returns key path", () => {
@@ -57,7 +56,7 @@ test("getTranslation: missing key everywhere returns key path", () => {
   assert.equal(getTranslation(key, "es"), key);
 });
 
-test("getTranslation: dev warns on English fallback from another locale", () => {
+test("getTranslation: dev warns when key missing in both locales", () => {
   const prevEnv = process.env.NODE_ENV;
   const prevWarn = console.warn;
   const warnings: unknown[][] = [];
@@ -66,16 +65,16 @@ test("getTranslation: dev warns on English fallback from another locale", () => 
     warnings.push(args);
   };
   try {
-    getTranslation("nav.howItWorks", "es");
+    getTranslation("nav.intentionally.absent.key", "es");
     assert.ok(warnings.length >= 1);
-    assert.match(String(warnings[0][0] ?? ""), /fell back to English/i);
+    assert.match(String(warnings[0][0] ?? ""), /Missing translation in requested and default locale/i);
   } finally {
     console.warn = prevWarn;
     process.env.NODE_ENV = prevEnv;
   }
 });
 
-test("getTranslation: no dev warn in production when falling back", () => {
+test("getTranslation: no dev warn in production for resolved Spanish", () => {
   const prevEnv = process.env.NODE_ENV;
   const prevWarn = console.warn;
   const warnings: unknown[][] = [];
@@ -85,7 +84,7 @@ test("getTranslation: no dev warn in production when falling back", () => {
   };
   try {
     const v = getTranslation("nav.clinics", "es");
-    assert.equal(v, "Clinics");
+    assert.equal(v, "Clínicas");
     assert.equal(warnings.length, 0);
   } finally {
     console.warn = prevWarn;

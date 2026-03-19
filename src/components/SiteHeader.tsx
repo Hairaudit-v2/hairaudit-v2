@@ -42,7 +42,7 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
   });
   const isLight = variant === "light";
   const navLinkClass =
-    "flex items-center leading-none text-[13px] xl:text-sm font-medium tracking-[0.01em] whitespace-nowrap transition-colors " +
+    "flex items-center justify-center text-center leading-snug text-[13px] xl:text-sm font-medium tracking-[0.01em] whitespace-normal transition-colors " +
     (isLight ? "text-slate-600 hover:text-amber-700" : "text-slate-300 hover:text-amber-300");
   const utilityLinkClass =
     "flex items-center leading-none text-[13px] xl:text-sm font-medium tracking-[0.01em] transition-colors " +
@@ -165,7 +165,7 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
 
         {variant === "default" || variant === "light" ? (
           <nav className="flex items-center" aria-label={t("nav.mainNav")}>
-            <div className="hidden lg:flex items-center gap-x-8">
+            <div className="hidden lg:flex items-center gap-x-5 xl:gap-x-6">
               {navItems.map((item) => (
                 <Link key={item.href} href={item.href} className={navLinkClass}>
                   {item.label}
@@ -186,7 +186,7 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
               <TrackedLink
                 href="/request-review"
                 eventName="cta_request_review_header"
-                className="flex items-center leading-none text-[13px] xl:text-sm font-semibold tracking-[0.01em] px-4 py-2 rounded-lg bg-amber-500 text-slate-900 hover:bg-amber-600 transition-colors border border-amber-600/20"
+                className="flex items-center justify-center text-center leading-snug text-[13px] xl:text-sm font-semibold tracking-[0.01em] px-4 py-2 rounded-lg bg-amber-500 text-slate-900 hover:bg-amber-600 transition-colors border border-amber-600/20"
               >
                 {t("nav.requestReview")}
               </TrackedLink>
@@ -196,7 +196,7 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
               <TrackedLink
                 href="/request-review"
                 eventName="cta_request_review_header"
-                className="inline-flex items-center justify-center rounded-lg bg-amber-500 px-3 py-2 text-xs font-semibold text-slate-900 hover:bg-amber-600 transition-colors"
+                className="inline-flex items-center justify-center text-center leading-snug rounded-lg bg-amber-500 px-3 py-2 text-xs font-semibold text-slate-900 hover:bg-amber-600 transition-colors"
               >
                 {t("nav.requestReview")}
               </TrackedLink>
@@ -229,7 +229,7 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
             <TrackedLink
               href="/request-review"
               eventName="cta_request_review_header"
-              className="flex items-center leading-none text-[13px] xl:text-sm font-semibold tracking-[0.01em] px-4 py-2 rounded-lg bg-amber-500 text-slate-900 hover:bg-amber-400 transition-colors"
+              className="flex items-center justify-center text-center leading-snug text-[13px] xl:text-sm font-semibold tracking-[0.01em] px-4 py-2 rounded-lg bg-amber-500 text-slate-900 hover:bg-amber-400 transition-colors"
             >
               {t("nav.requestReview")}
             </TrackedLink>

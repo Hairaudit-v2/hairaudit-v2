@@ -1,1 +1,85 @@
-{}
+{
+  "nav": {
+    "home": "Inicio",
+    "howItWorks": "Cómo funciona",
+    "requestReview": "Solicitar revisión",
+    "sampleReport": "Informe de ejemplo",
+    "clinics": "Clínicas",
+    "forClinics": "Para clínicas",
+    "forProfessionals": "Para profesionales",
+    "signIn": "Iniciar sesión",
+    "signInMobile": "Iniciar sesión",
+    "closeMenu": "Cerrar menú",
+    "openMenu": "Abrir menú",
+    "close": "Cerrar",
+    "menu": "Menú",
+    "navigation": "Navegación",
+    "closeMenuOverlay": "Cerrar capa del menú",
+    "mobileNavDialog": "Navegación del sitio (móvil)",
+    "mainNav": "Navegación principal",
+    "language": "Idioma",
+    "ecosystem": {
+      "poweredByFi": "Con tecnología de Follicle Intelligence",
+      "exploreHa": "Explorar HairAudit"
+    }
+  },
+  "dashboard": {
+    "shared": {
+      "createCaseDefault": "Crear nuevo caso de auditoría",
+      "startNewAudit": "Iniciar nueva auditoría"
+    },
+    "patient": {
+      "heroTitle": "Su panel de inteligencia quirúrgica",
+      "heroSubtitle": "Complete sus datos para desbloquear el análisis forense completo.",
+      "conversionPrompt": "Complete los últimos datos para aumentar la precisión de la auditoría hasta un 35 %.",
+      "completeQuestions": "Completar cuestionario de inteligencia",
+      "seeUnlock": "Ver qué desbloqueará",
+      "poweredBy": "Con tecnología de Follicle Intelligence™",
+      "mlEngine": "Motor de reconocimiento visual en capas",
+      "visionModel": "Modelo de visión: GPT-5.2",
+      "startNewAudit": "Iniciar nueva auditoría",
+      "uploadPhotos": "Subir fotos",
+      "completeIntake": "Completar cuestionario de admisión",
+      "viewReports": "Ver informes anteriores"
+    },
+    "reports": {
+      "back": "← Volver al panel",
+      "title": "Informes anteriores",
+      "subtitle": "Sus informes de auditoría completados. Consulte o descargue cada informe a continuación.",
+      "empty": "Aún no hay informes completados. Envíe un caso para generar su primer informe de auditoría.",
+      "goToDashboard": "Ir al panel"
+    },
+    "doctor": {
+      "workspaceTitle": "Espacio del médico",
+      "workspaceSubtitle": "Complete el formulario quirúrgico y suba las fotos en cada caso. El flujo es el mismo: formulario → fotos → envío.",
+      "yourCases": "Sus casos",
+      "noCasesTitle": "Aún no hay casos enviados",
+      "noCasesBody": "Comience a construir su perfil profesional verificado aportando su primer caso.",
+      "submitFirstCase": "Enviar su primer caso",
+      "profileActiveTitle": "Su perfil de médico ya está activo.",
+      "profileActiveBody": "Puede empezar a construir su historial verificado.",
+      "profileCompleteness": "Completitud del perfil",
+      "onboardingCreateCase": "Cree su primer caso",
+      "onboardingCreateCta": "Crear nuevo caso de auditoría",
+      "onboardingUpload": "Suba pruebas complementarias",
+      "onboardingUploadCta": "Añadir fotos al caso",
+      "onboardingUploadNoCase": "Cree un caso primero",
+      "onboardingSubmit": "Complete su primer envío",
+      "onboardingSubmitCta": "Abrir caso y enviar a auditoría",
+      "onboardingSubmitNoCase": "Cree un caso primero",
+      "onboardingBenchmark": "Descubra cómo funciona la evaluación comparativa",
+      "onboardingBenchmarkCta": "Ver clasificaciones de médicos y referencias"
+    },
+    "clinic": {
+      "overviewTitle": "Resumen de inteligencia clínica",
+      "overviewSubtitle": "Confianza operativa y calidad clínica en sus contribuciones invitadas (casos en los que fue invitado) y casos enviados por su clínica.",
+      "submitCase": "Enviar caso",
+      "onboarding": "Incorporación",
+      "profileActiveTitle": "Su perfil de clínica ya está activo.",
+      "profileActiveBody": "Puede empezar de forma privada con auditorías internas.",
+      "noCasesTitle": "Aún no hay casos",
+      "noCasesBody": "Inicie su primera auditoría interna para empezar a construir el perfil de su clínica.",
+      "submitFirstCase": "Enviar su primer caso"
+    }
+  }
+}

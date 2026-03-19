@@ -68,19 +68,19 @@ export default function PatientDashboardI18nIntro({
         <CreateCaseButton variant="card" label={t("dashboard.shared.startNewAudit")} />
         <Link
           href={nextCase?.id ? `/cases/${nextCase.id}/patient/photos` : "/dashboard/patient"}
-          className="rounded-xl border border-slate-200 bg-white px-4 py-4 text-sm font-semibold text-slate-900 hover:border-amber-300 hover:shadow-sm"
+          className="rounded-xl border border-slate-200 bg-white px-4 py-4 text-center text-sm font-semibold leading-snug text-slate-900 hover:border-amber-300 hover:shadow-sm"
         >
           {t("dashboard.patient.uploadPhotos")}
         </Link>
         <Link
           href={nextCase?.id ? `/cases/${nextCase.id}/patient/questions` : "/dashboard/patient"}
-          className="rounded-xl border border-slate-200 bg-white px-4 py-4 text-sm font-semibold text-slate-900 hover:border-amber-300 hover:shadow-sm"
+          className="rounded-xl border border-slate-200 bg-white px-4 py-4 text-center text-sm font-semibold leading-snug text-slate-900 hover:border-amber-300 hover:shadow-sm"
         >
           {t("dashboard.patient.completeIntake")}
         </Link>
         <Link
           href="/dashboard/patient/reports"
-          className="rounded-xl border border-slate-200 bg-white px-4 py-4 text-sm font-semibold text-slate-900 hover:border-amber-300 hover:shadow-sm"
+          className="rounded-xl border border-slate-200 bg-white px-4 py-4 text-center text-sm font-semibold leading-snug text-slate-900 hover:border-amber-300 hover:shadow-sm"
         >
           {t("dashboard.patient.viewReports")}
         </Link>
