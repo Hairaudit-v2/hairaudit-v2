@@ -70,13 +70,11 @@ const WHO_IT_FOR_ITEMS = [
   "Clinics and doctors who want independent validation of their work",
 ] as const;
 
-type PageProps = { searchParams?: Promise<Record<string, string | string[] | undefined>> | Record<string, string | string[] | undefined> };
+type PageProps = { searchParams?: Promise<Record<string, string | string[] | undefined>> };
 
 export default async function HomePage(props: PageProps) {
-  const rawParams = props.searchParams ?? {};
-  const searchParams = typeof (rawParams as Promise<unknown>).then === "function"
-    ? await (rawParams as Promise<Record<string, string | string[] | undefined>>)
-    : (rawParams as Record<string, string | string[] | undefined>);
+  const rawParams = props.searchParams;
+  const searchParams = rawParams ? await rawParams : {};
   const authRedirect = getHomepageAuthRedirectTarget(searchParams);
   if (authRedirect) redirect(authRedirect);
 
