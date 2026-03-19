@@ -92,6 +92,18 @@ export default async function AuditorDashboardPage({
   const { data: profile } = await admin.from("profiles").select("role").eq("id", user.id).maybeSingle();
   if (!isAuditor({ profileRole: profile?.role, userEmail: user.email })) redirect("/login/auditor");
 
+  let contributionRequestsWaiting = 0;
+  try {
+    const { count, error: crErr } = await admin
+      .from("case_contribution_requests")
+      .select("*", { count: "exact", head: true })
+      .in("status", ["clinic_request_pending", "clinic_request_sent", "clinic_viewed_request"])
+      .is("contribution_received_at", null);
+    if (!crErr && typeof count === "number") contributionRequestsWaiting = count;
+  } catch {
+    // table may not exist in some environments
+  }
+
   const primaryCasesRes = await admin
     .from("cases")
     .select(
@@ -256,6 +268,31 @@ export default async function AuditorDashboardPage({
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-6 py-2">
+      <section className="rounded-xl border border-amber-200 bg-amber-50/80 p-4 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900">Contribution Requests</h2>
+            <p className="text-sm text-slate-600 mt-0.5">
+              {contributionRequestsWaiting === 0
+                ? "No requests waiting for clinic/doctor response."
+                : `${contributionRequestsWaiting} request${contributionRequestsWaiting === 1 ? "" : "s"} waiting to be completed.`}
+            </p>
+          </div>
+          <Link
+            href="/admin/contribution-requests"
+            className="inline-flex items-center gap-2 rounded-lg border border-amber-400 bg-amber-100 px-4 py-2 text-sm font-medium text-amber-900 hover:bg-amber-200"
+          >
+            Contribution Requests
+            {contributionRequestsWaiting > 0 && (
+              <span className="rounded-full bg-amber-500 px-2 py-0.5 text-xs font-semibold text-white">
+                {contributionRequestsWaiting}
+              </span>
+            )}
+            →
+          </Link>
+        </div>
+      </section>
+
       <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>

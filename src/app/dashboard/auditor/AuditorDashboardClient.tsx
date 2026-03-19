@@ -486,17 +486,9 @@ export default function AuditorDashboardClient(props: {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Auditor Dashboard</h1>
-          <p className="text-slate-600 text-sm mt-1">Prioritized queues for manual review and case lifecycle actions.</p>
-        </div>
-        <Link
-          href="/admin/contribution-requests"
-          className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-        >
-          Contribution Requests →
-        </Link>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-slate-900">Auditor Dashboard</h1>
+        <p className="text-slate-600 text-sm mt-1">Prioritized queues for manual review and case lifecycle actions.</p>
       </div>
 
       <div className="rounded-xl border border-slate-200 bg-white p-4 mb-4">

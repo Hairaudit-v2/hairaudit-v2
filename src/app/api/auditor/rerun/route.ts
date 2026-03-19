@@ -110,8 +110,13 @@ export async function POST(req: Request) {
         .select("id, rerun_count, processing_log")
         .eq("id", caseId)
         .maybeSingle();
-      c = (withTracking.data ?? null) as Record<string, unknown> | null;
+      if (!withTracking.error && withTracking.data) {
+        c = withTracking.data as Record<string, unknown>;
+      }
     } catch {
+      // continue to fallback
+    }
+    if (!c) {
       const fallback = await admin.from("cases").select("id").eq("id", caseId).maybeSingle();
       c = (fallback.data ?? null) as Record<string, unknown> | null;
     }

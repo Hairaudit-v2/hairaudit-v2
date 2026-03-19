@@ -190,11 +190,19 @@ export default function ContributionRequestsClient({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-white">Clinic Contribution Requests</h1>
-        <p className="mt-1 text-sm text-slate-400">
-          Track lifecycle, reminders, and doctor participation across forensic audit requests.
-        </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold text-white">Clinic Contribution Requests</h1>
+          <p className="mt-1 text-sm text-slate-400">
+            Track lifecycle, reminders, and doctor participation across forensic audit requests.
+          </p>
+        </div>
+        <Link
+          href="/dashboard/auditor"
+          className="rounded-lg border border-white/20 bg-white/5 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-white/10"
+        >
+          ← Auditor Dashboard
+        </Link>
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
@@ -349,7 +357,7 @@ export default function ContributionRequestsClient({
                   {paginated.map((r) => (
                     <tr key={r.id} className="border-b border-white/5 hover:bg-white/5">
                       <td className="px-4 py-3">
-                        <Link href={`/cases/${r.case_id}`} className="font-mono text-xs text-cyan-300 hover:text-cyan-200">
+                        <Link href={`/cases/${r.case_id}?from=contribution-requests`} className="font-mono text-xs text-cyan-300 hover:text-cyan-200">
                           {r.case_id.slice(0, 8)}…
                         </Link>
                       </td>
@@ -416,7 +424,7 @@ export default function ContributionRequestsClient({
                             Close
                           </button>
                           <Link
-                            href={`/cases/${r.case_id}`}
+                            href={`/cases/${r.case_id}?from=contribution-requests`}
                             className="rounded px-2 py-1 text-xs text-slate-400 hover:bg-white/10"
                           >
                             Case
@@ -514,7 +522,7 @@ export default function ContributionRequestsClient({
             </dl>
             <div className="mt-4 flex gap-2">
               <Link
-                href={`/cases/${detailRequest.case_id}`}
+                href={`/cases/${detailRequest.case_id}?from=contribution-requests`}
                 className="rounded-lg border border-cyan-300/40 bg-cyan-300/15 px-3 py-2 text-sm font-medium text-cyan-200 hover:bg-cyan-300/25"
               >
                 Open Case

@@ -74,10 +74,14 @@ function monthsFromProcedureDate(value: string | null | undefined): number | nul
 
 export default async function Page({
   params,
+  searchParams,
 }: {
   params: Promise<{ caseId: string }>;
+  searchParams?: Promise<{ from?: string }> | { from?: string };
 }) {
   const { caseId } = await params;
+  const resolvedSearchParams = await Promise.resolve(searchParams ?? {});
+  const fromContributionRequests = resolvedSearchParams?.from === "contribution-requests";
   let supabase: Awaited<ReturnType<typeof createSupabaseAuthServerClient>>;
   try {
     supabase = await createSupabaseAuthServerClient();
@@ -507,12 +511,32 @@ export default async function Page({
 
   return (
     <div className="mx-auto mt-4 max-w-[1200px] rounded-3xl border border-slate-800 bg-slate-950 px-4 pb-10 pt-4 shadow-2xl sm:px-6">
-      <Link
-        href={dashboardPath}
-        className="inline-flex items-center text-sm font-medium text-cyan-300 hover:text-cyan-200 transition-colors"
-      >
-        ← Back to dashboard
-      </Link>
+      <div className="flex flex-wrap items-center gap-3">
+        {fromContributionRequests && role === "auditor" ? (
+          <>
+            <Link
+              href="/admin/contribution-requests"
+              className="inline-flex items-center text-sm font-medium text-cyan-300 hover:text-cyan-200 transition-colors"
+            >
+              ← Return to Contribution Requests
+            </Link>
+            <span className="text-slate-500">|</span>
+            <Link
+              href="/dashboard/auditor"
+              className="inline-flex items-center text-sm font-medium text-slate-400 hover:text-slate-200 transition-colors"
+            >
+              Auditor Dashboard
+            </Link>
+          </>
+        ) : (
+          <Link
+            href={dashboardPath}
+            className="inline-flex items-center text-sm font-medium text-cyan-300 hover:text-cyan-200 transition-colors"
+          >
+            ← Back to dashboard
+          </Link>
+        )}
+      </div>
 
       <section className="relative mt-6 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-6">
         <div className="pointer-events-none absolute -top-20 -right-20 h-64 w-64 rounded-full bg-cyan-400/10 blur-3xl" />
