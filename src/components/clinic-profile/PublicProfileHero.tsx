@@ -4,8 +4,7 @@ import CertificationExplainerLink from "./CertificationExplainerLink";
 import TransparencyStatusBadge from "./TransparencyStatusBadge";
 import type { AwardTier } from "@/lib/transparency/awardRules";
 
-const TRUST_LINE =
-  "Based on independently audited surgical data and verified case submissions.";
+import { CERTIFICATION_TRUST_LINE } from "@/lib/clinics/certificationCopy";
 const PATIENT_EXPLAINER =
   "Clinics that actively participate in HairAudit demonstrate transparency, quality assurance, and confidence in their work.";
 
@@ -64,7 +63,7 @@ export default function PublicProfileHero({
         )}
 
         <p className="mt-4 text-slate-400 text-sm leading-relaxed max-w-2xl">
-          {TRUST_LINE}
+          {CERTIFICATION_TRUST_LINE}
         </p>
         <p className="mt-3 text-slate-400 text-sm leading-relaxed max-w-2xl">
           {PATIENT_EXPLAINER}

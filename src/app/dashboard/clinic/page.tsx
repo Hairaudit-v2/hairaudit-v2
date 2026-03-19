@@ -106,6 +106,11 @@ export default async function ClinicDashboardPage() {
     : 0;
   const capabilityCount = capabilityRows?.length ?? 0;
 
+  // Onboarding-first: send clinic users to onboarding when incomplete (only from dashboard entry)
+  if (onboardingSteps < 5) {
+    redirect("/dashboard/clinic/onboarding");
+  }
+
   // Trend: last 30 days of completions (deduped per case by latest completed report timestamp).
   const days = 30;
   const start = new Date();

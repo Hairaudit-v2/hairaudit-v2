@@ -1,13 +1,11 @@
 /**
  * Certificate-style presentation: clinic name, tier, HairAudit branding, recognition statement.
  * Display-only; suitable for wall certificate preview, future PDF, or share.
+ * Wording from @/lib/clinics/certificationCopy.
  */
 
-import { CERTIFICATION_LABELS } from "./CertificationBadge";
 import type { AwardTier } from "@/lib/transparency/awardRules";
-
-const RECOGNITION_STATEMENT =
-  "This clinic has participated in HairAudit independent audit and transparency verification. Recognition is based on documented case contribution and validated outcomes.";
+import { getCertificationFullDescription, getCertificationLabel } from "@/lib/clinics/certificationCopy";
 
 type CertificatePresentationProps = {
   clinicName: string;
@@ -22,7 +20,8 @@ export default function CertificatePresentation({
   location,
 }: CertificatePresentationProps) {
   const tier = (certificationTier ?? "VERIFIED") as AwardTier;
-  const label = CERTIFICATION_LABELS[tier] ?? "Active";
+  const label = getCertificationLabel(tier);
+  const fullDescription = getCertificationFullDescription(tier, clinicName);
 
   return (
     <div
@@ -44,11 +43,11 @@ export default function CertificatePresentation({
           <p className="mt-1 text-sm text-slate-400">{location}</p>
         )}
         <p className="mt-4 inline-flex rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-5 py-2 text-sm font-bold text-cyan-200">
-          {label} Certification
+          {label}
         </p>
       </div>
       <p className="text-xs text-slate-400 leading-relaxed max-w-md mx-auto">
-        {RECOGNITION_STATEMENT}
+        {fullDescription}
       </p>
       <p className="mt-6 text-[10px] text-slate-500 uppercase tracking-wider">
         Evidence-based recognition · Not purchased

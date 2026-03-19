@@ -1,16 +1,12 @@
 /**
- * Certification badge (UI only): Active | Silver | Gold | Platinum.
- * Maps VERIFIED → Active; no backend scoring changes.
+ * Certification badge (UI only): Active | Silver Certified | Gold Certified | Platinum Certified.
+ * Wording from @/lib/clinics/certificationCopy.
  */
 
 import type { AwardTier } from "@/lib/transparency/awardRules";
+import { getCertificationLabel } from "@/lib/clinics/certificationCopy";
 
-export const CERTIFICATION_LABELS: Record<string, string> = {
-  VERIFIED: "Active",
-  SILVER: "Silver",
-  GOLD: "Gold",
-  PLATINUM: "Platinum",
-};
+export { CERTIFICATION_LABELS } from "@/lib/clinics/certificationCopy";
 
 type CertificationBadgeProps = {
   tier: AwardTier | string | null;
@@ -25,7 +21,7 @@ export default function CertificationBadge({
   className = "",
 }: CertificationBadgeProps) {
   const t = (tier ?? "VERIFIED") as AwardTier;
-  const label = CERTIFICATION_LABELS[t] ?? CERTIFICATION_LABELS.VERIFIED ?? "Active";
+  const label = getCertificationLabel(t);
 
   const isPremium = t === "GOLD" || t === "PLATINUM";
 
