@@ -334,7 +334,7 @@ export default async function ClinicDashboardPage() {
       <div className="mb-6">
         <CertificationProgressCard
           progress={{
-            currentTier: clinicCertProgress.currentTier as "Active" | "Silver" | "Gold" | "Platinum",
+            currentTier: clinicCertProgress.currentTier as "Active" | "Silver" | "Gold" | "Platinum" | null,
             nextTier: clinicCertProgress.nextTier as "Active" | "Silver" | "Gold" | "Platinum" | null,
             currentCount: clinicCertProgress.currentCount,
             nextTierThreshold: clinicCertProgress.nextTierThreshold,

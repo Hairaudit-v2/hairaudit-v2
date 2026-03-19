@@ -105,7 +105,7 @@ function getEngineIntegrity(summary: ReportSummaryForCert | null | undefined): n
   return Number.isFinite(n) ? n : null;
 }
 
-function printTierThresholdSnapshot(currentTier: string, nextTier: string | null): void {
+function printTierThresholdSnapshot(currentTier: string | null, nextTier: string | null): void {
   console.log("Threshold snapshot (next tier)");
   if (!nextTier) {
     console.log("  — No next tier");
@@ -118,7 +118,7 @@ function printTierThresholdSnapshot(currentTier: string, nextTier: string | null
     return;
   }
 
-  console.log(`  Current tier: ${currentTier}`);
+  console.log(`  Current tier: ${currentTier == null ? "No certification yet" : currentTier}`);
   console.log(`  Next tier:    ${nextTier}`);
   console.log("  Requirements:");
   console.log(`    eligiblePublicCases >= ${rule.minEligiblePublicCases}`);
@@ -193,7 +193,7 @@ function printDataset(name: string, casesWithReports: CaseWithReportForCert[], r
 
   // --- Tier result ---
   console.log("Tier result");
-  console.log(`  current tier: ${result.tier}`);
+  console.log(`  current tier: ${result.tier == null ? "No certification yet" : result.tier}`);
   console.log(`  next tier:    ${result.nextTier ?? "—"}`);
   console.log(`  progress to next tier: ${toFixedSmart(result.progressToNextTier, 1)}%`);
   printTierThresholdSnapshot(result.tier, result.nextTier);

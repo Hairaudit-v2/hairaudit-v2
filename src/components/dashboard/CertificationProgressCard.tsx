@@ -14,7 +14,9 @@ export default function CertificationProgressCard({ progress, certificationResul
     <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
       <h3 className="text-sm font-semibold text-slate-900">Certification progress</h3>
       <div className="mt-3 flex items-baseline gap-2">
-        <span className="text-lg font-bold text-slate-900">{currentTier ?? "—"}</span>
+        <span className="text-lg font-bold text-slate-900">
+          {currentTier === null ? "No certification yet" : currentTier ?? "—"}
+        </span>
         {nextTier && (
           <span className="text-sm text-slate-500">
             → next: {nextTier}

@@ -140,7 +140,7 @@ export default async function DoctorDashboardPage() {
     doctorNextActions[0] ?? { label: "Explore your dashboard", href: "/dashboard/doctor" };
 
   const doctorCertProgress = {
-    currentTier: doctorCertProgressMapped.currentTier as "Active" | "Silver" | "Gold" | "Platinum",
+    currentTier: doctorCertProgressMapped.currentTier as "Active" | "Silver" | "Gold" | "Platinum" | null,
     nextTier: doctorCertProgressMapped.nextTier as "Active" | "Silver" | "Gold" | "Platinum" | null,
     currentCount: doctorCertProgressMapped.currentCount,
     nextTierThreshold: doctorCertProgressMapped.nextTierThreshold,

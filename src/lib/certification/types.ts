@@ -61,7 +61,8 @@ export type CertificationMetrics = {
 
 /** Full result of certification evaluation. */
 export type CertificationResult = {
-  tier: CertificationTierKey;
+  /** Null when eligiblePublicCaseCount < 1 (no certification yet). */
+  tier: CertificationTierKey | null;
   score: number;
   metrics: CertificationMetrics;
   progressToNextTier: number;
