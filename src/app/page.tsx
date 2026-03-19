@@ -24,7 +24,7 @@ export const dynamic = "force-dynamic";
 export const metadata = createPageMetadata({
   title: "HairAudit",
   description:
-    "Was your hair transplant done properly? Get a clinical audit of your results — based on real surgical standards, not opinions.",
+    "How good is my Hair Transplant? Get a Free Audit on all aspects of your surgery — based on real surgical standards, not opinions.",
   pathname: "/",
 });
 
@@ -94,10 +94,10 @@ export default async function HomePage(props: PageProps) {
         <section className="relative px-4 sm:px-6 pt-16 sm:pt-20 pb-20 sm:pb-28 lg:pt-24 lg:pb-32">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-[1.08]">
-              Was Your Hair Transplant Done Properly?
+              How good is my Hair Transplant?
             </h1>
             <p className="mt-6 text-xl text-slate-300 max-w-xl mx-auto leading-relaxed">
-              Get a clinical audit of your results — based on real surgical standards, not opinions.
+              Get a Free Audit on all aspects of your surgery — based on real surgical standards, not opinions
             </p>
             <p className="mt-4 text-slate-400 max-w-lg mx-auto">
               Upload your photos and receive a detailed HairAudit Score, donor analysis, and surgical quality breakdown.

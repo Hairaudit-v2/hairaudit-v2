@@ -9,6 +9,7 @@ import DeleteDraftCaseButton from "./DeleteDraftCaseButton";
 import GraftIntegrityCard from "./GraftIntegrityCard";
 import PatientNextActionPanel from "@/components/patient/PatientNextActionPanel";
 import { BENCHMARKING_GLOBAL_STANDARDS } from "@/lib/benchmarkingCopy";
+import PatientDashboardI18nIntro from "@/components/i18n/PatientDashboardI18nIntro";
 
 function isMissingFeatureError(error: unknown): boolean {
   const e = error as { status?: number; code?: string; message?: string } | null;
@@ -273,78 +274,11 @@ export default async function PatientDashboardPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6">
-      {/* Hero */}
-      <section className="relative overflow-hidden rounded-2xl border border-slate-900 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-6 sm:p-8">
-        <div className="pointer-events-none absolute -top-20 -right-24 h-64 w-64 rounded-full bg-cyan-500/15 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-violet-500/10 blur-3xl" />
-
-        <div className="relative flex flex-col gap-5">
-          <div>
-            <h1 className="mt-2 text-2xl sm:text-3xl font-semibold text-white">
-              Your Surgical Intelligence Dashboard
-            </h1>
-            <p className="mt-2 text-sm sm:text-base text-slate-200/80 max-w-2xl">
-              Complete your intelligence inputs to unlock full forensic analysis.
-            </p>
-          </div>
-
-          {showConversionPrompt && (
-            <div className="rounded-xl border border-white/10 bg-white/5 backdrop-blur px-4 py-3 text-sm text-slate-200">
-              Complete your final inputs to increase audit precision by up to 35%.
-            </div>
-          )}
-
-          <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
-            {nextCase?.id ? (
-              <Link
-                href={`/cases/${nextCase.id}/patient/questions`}
-                className="inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold text-slate-950 bg-gradient-to-r from-cyan-300 to-emerald-300 hover:from-cyan-200 hover:to-emerald-200 transition-colors shadow-sm"
-              >
-                Complete Intelligence Questions
-              </Link>
-            ) : (
-              <CreateCaseButton variant="premium" />
-            )}
-
-            <a
-              href="#unlock-preview"
-              className="inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold text-slate-200 border border-white/15 bg-white/5 hover:bg-white/10 backdrop-blur transition-colors"
-            >
-              See what you’ll unlock
-            </a>
-          </div>
-
-          {/* Authority strip */}
-          <div className="pt-2 text-xs leading-relaxed text-slate-300/70">
-            <div>Powered by Follicle Intelligence™</div>
-            <div>Multi-Layer Visual Pattern Recognition Engine</div>
-            <div>Vision Model: GPT-5.2</div>
-            <div className="mt-1 text-slate-400/90">{BENCHMARKING_GLOBAL_STANDARDS}</div>
-          </div>
-        </div>
-      </section>
-
-      <section className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <CreateCaseButton variant="card" label="Start New Audit" />
-        <Link
-          href={nextCase?.id ? `/cases/${nextCase.id}/patient/photos` : "/dashboard/patient"}
-          className="rounded-xl border border-slate-200 bg-white px-4 py-4 text-sm font-semibold text-slate-900 hover:border-amber-300 hover:shadow-sm"
-        >
-          Upload Photos
-        </Link>
-        <Link
-          href={nextCase?.id ? `/cases/${nextCase.id}/patient/questions` : "/dashboard/patient"}
-          className="rounded-xl border border-slate-200 bg-white px-4 py-4 text-sm font-semibold text-slate-900 hover:border-amber-300 hover:shadow-sm"
-        >
-          Complete Intake Questions
-        </Link>
-        <Link
-          href="/dashboard/patient/reports"
-          className="rounded-xl border border-slate-200 bg-white px-4 py-4 text-sm font-semibold text-slate-900 hover:border-amber-300 hover:shadow-sm"
-        >
-          View Previous Reports
-        </Link>
-      </section>
+      <PatientDashboardI18nIntro
+        showConversionPrompt={showConversionPrompt}
+        nextCase={nextCase?.id ? { id: nextCase.id } : null}
+        benchmarkingLine={BENCHMARKING_GLOBAL_STANDARDS}
+      />
 
       {/* Intelligence gateway surface */}
       <section className="relative mt-8 overflow-hidden rounded-2xl border border-slate-900 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4 sm:p-6">

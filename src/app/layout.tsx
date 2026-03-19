@@ -4,6 +4,8 @@ import { logAuthEnvHealthOnce } from "@/lib/auth/validateAuthEnv";
 import RecoveryHashRouter from "@/components/RecoveryHashRouter";
 import MainContentTarget from "@/components/a11y/MainContentTarget";
 import BetaBanner from "@/components/BetaBanner";
+import { I18nProvider } from "@/components/i18n/I18nProvider";
+import I18nHtmlLang from "@/components/i18n/I18nHtmlLang";
 import type { Metadata } from "next";
 import { SITE_URL } from "@/lib/constants";
 
@@ -48,16 +50,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   logAuthEnvHealthOnce();
 
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className="min-h-screen">
-        <a href="#main-content" className="skip-link">
-          Skip to main content
-        </a>
-        <BetaBanner />
-        <MainContentTarget />
-        <RecoveryHashRouter />
-        {children}
-        <ClientAnalytics />
+        <I18nProvider>
+          <I18nHtmlLang />
+          <a href="#main-content" className="skip-link">
+            Skip to main content
+          </a>
+          <BetaBanner />
+          <MainContentTarget />
+          <RecoveryHashRouter />
+          {children}
+          <ClientAnalytics />
+        </I18nProvider>
       </body>
     </html>
   );

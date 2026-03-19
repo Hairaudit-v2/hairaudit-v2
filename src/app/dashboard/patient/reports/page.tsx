@@ -6,6 +6,8 @@ import DownloadReport from "@/app/cases/[caseId]/download-report";
 import ReportShareButton from "@/components/reports/ReportShareButton";
 import { BENCHMARKING_GLOBAL_STANDARDS } from "@/lib/benchmarkingCopy";
 import { REPORT_USE_HINT } from "@/lib/reportSharingCopy";
+import PatientReportsI18nHeader from "@/components/i18n/PatientReportsI18nHeader";
+import PatientReportsI18nEmpty from "@/components/i18n/PatientReportsI18nEmpty";
 
 export default async function PatientReportsPage() {
   const supabase = await createSupabaseAuthServerClient();
@@ -42,36 +44,10 @@ export default async function PatientReportsPage() {
     <div className="max-w-5xl mx-auto px-4 sm:px-6">
       <section className="relative overflow-hidden rounded-2xl border border-slate-900 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4 sm:p-6">
         <div className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-cyan-500/10 blur-3xl" />
-        <div className="relative flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-          <div>
-            <Link
-              href="/dashboard/patient"
-              className="text-sm font-medium text-slate-300 hover:text-white transition-colors"
-            >
-              ← Back to dashboard
-            </Link>
-            <h1 className="mt-2 text-xl sm:text-2xl font-semibold text-white">
-              Previous reports
-            </h1>
-            <p className="mt-1 text-sm text-slate-200/70">
-              Your completed audit reports. View or download each report below.
-            </p>
-            <p className="mt-1 text-xs text-slate-400/90">{BENCHMARKING_GLOBAL_STANDARDS}</p>
-          </div>
-        </div>
+        <PatientReportsI18nHeader benchmarkingLine={BENCHMARKING_GLOBAL_STANDARDS} />
 
         {completedCases.length === 0 ? (
-          <div className="relative mt-6 rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-8 text-center shadow-[0_0_0_1px_rgba(255,255,255,0.03)]">
-            <p className="text-slate-200/80 mb-4">
-              No completed reports yet. Submit a case to generate your first audit report.
-            </p>
-            <Link
-              href="/dashboard/patient"
-              className="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-950 bg-gradient-to-r from-cyan-300 to-emerald-300 hover:from-cyan-200 hover:to-emerald-200 transition-colors"
-            >
-              Go to dashboard
-            </Link>
-          </div>
+          <PatientReportsI18nEmpty />
         ) : (
           <ul className="relative mt-6 space-y-3">
             {completedCases.map((c) => {

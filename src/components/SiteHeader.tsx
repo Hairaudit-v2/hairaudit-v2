@@ -6,6 +6,8 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import TrackedLink from "@/components/analytics/TrackedLink";
 import { FI_HOME, HA_HOME } from "@/config/platform-links";
+import { useI18n } from "@/components/i18n/I18nProvider";
+import LanguageSwitcher from "@/components/i18n/LanguageSwitcher";
 
 type SiteHeaderProps = {
   variant?: "default" | "minimal" | "light";
@@ -14,28 +16,29 @@ type SiteHeaderProps = {
 
 type EcosystemNavItem = {
   href: string;
-  label: string;
+  labelKey: "nav.ecosystem.poweredByFi" | "nav.ecosystem.exploreHa";
 };
 
 export default function SiteHeader({ variant = "default", showLogo = true }: SiteHeaderProps) {
   const pathname = usePathname();
+  const { t } = useI18n();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const mobileDialogRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
 
   const logoHref = "/";
   const navItems = [
-    { href: "/", label: "Home" },
-    { href: "/how-it-works", label: "How It Works" },
-    { href: "/request-review", label: "Request Review" },
-    { href: "/demo-report", label: "Sample Report" },
-    { href: "/clinics", label: "Clinics" },
-    { href: "/for-clinics", label: "For Clinics" },
-    { href: "/professionals", label: "For Professionals" },
+    { href: "/", label: t("nav.home") },
+    { href: "/how-it-works", label: t("nav.howItWorks") },
+    { href: "/request-review", label: t("nav.requestReview") },
+    { href: "/demo-report", label: t("nav.sampleReport") },
+    { href: "/clinics", label: t("nav.clinics") },
+    { href: "/for-clinics", label: t("nav.forClinics") },
+    { href: "/professionals", label: t("nav.forProfessionals") },
   ];
   const [ecosystemNavItem, setEcosystemNavItem] = useState<EcosystemNavItem>({
     href: FI_HOME,
-    label: "Powered by Follicle Intelligence",
+    labelKey: "nav.ecosystem.poweredByFi",
   });
   const isLight = variant === "light";
   const navLinkClass =
@@ -55,8 +58,8 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
 
     setEcosystemNavItem(
       isFollicleDomain
-        ? { href: HA_HOME, label: "Explore HairAudit" }
-        : { href: FI_HOME, label: "Powered by Follicle Intelligence" }
+        ? { href: HA_HOME, labelKey: "nav.ecosystem.exploreHa" }
+        : { href: FI_HOME, labelKey: "nav.ecosystem.poweredByFi" }
     );
   }, []);
 
@@ -161,7 +164,7 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
         </Link>
 
         {variant === "default" || variant === "light" ? (
-          <nav className="flex items-center" aria-label="Main navigation">
+          <nav className="flex items-center" aria-label={t("nav.mainNav")}>
             <div className="hidden lg:flex items-center gap-x-8">
               {navItems.map((item) => (
                 <Link key={item.href} href={item.href} className={navLinkClass}>
@@ -169,41 +172,43 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
                 </Link>
               ))}
               <a href={ecosystemNavItem.href} target="_blank" rel="noopener noreferrer" className={navLinkClass}>
-                {ecosystemNavItem.label}
+                {t(ecosystemNavItem.labelKey)}
               </a>
             </div>
             <div className="hidden lg:flex ml-6 lg:ml-8 items-center gap-x-4">
+              <LanguageSwitcher variant={isLight ? "light" : "default"} />
               <Link
                 href="/login"
                 className={utilityLinkClass}
               >
-                Sign in
+                {t("nav.signIn")}
               </Link>
               <TrackedLink
                 href="/request-review"
                 eventName="cta_request_review_header"
                 className="flex items-center leading-none text-[13px] xl:text-sm font-semibold tracking-[0.01em] px-4 py-2 rounded-lg bg-amber-500 text-slate-900 hover:bg-amber-600 transition-colors border border-amber-600/20"
               >
-                Request Review
+                {t("nav.requestReview")}
               </TrackedLink>
             </div>
             <div className="ml-4 lg:hidden flex items-center gap-2">
+              <LanguageSwitcher variant={isLight ? "light" : "default"} />
               <TrackedLink
                 href="/request-review"
                 eventName="cta_request_review_header"
                 className="inline-flex items-center justify-center rounded-lg bg-amber-500 px-3 py-2 text-xs font-semibold text-slate-900 hover:bg-amber-600 transition-colors"
               >
-                Request Review
+                {t("nav.requestReview")}
               </TrackedLink>
               <button
                 type="button"
                 className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 ${isLight ? "border-slate-300 text-slate-700 hover:bg-slate-50" : "border-slate-700 text-slate-200 hover:bg-slate-800"}`}
                 aria-expanded={mobileMenuOpen}
                 aria-controls="mobile-site-menu"
-                aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+                aria-label={mobileMenuOpen ? t("nav.closeMenu") : t("nav.openMenu")}
                 onClick={() => setMobileMenuOpen((prev) => !prev)}
               >
-                <span>{mobileMenuOpen ? "Close" : "Menu"}</span>
+                <span>{mobileMenuOpen ? t("nav.close") : t("nav.menu")}</span>
                 <span className="relative block h-3.5 w-4" aria-hidden>
                   <span className={`absolute left-0 block h-0.5 w-4 bg-current transition-transform ${mobileMenuOpen ? "top-1.5 rotate-45" : "top-0"}`} />
                   <span className={`absolute left-0 top-1.5 block h-0.5 w-4 bg-current transition-opacity ${mobileMenuOpen ? "opacity-0" : "opacity-100"}`} />
@@ -214,18 +219,19 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
           </nav>
         ) : (
           <nav className="flex items-center gap-x-4">
+            <LanguageSwitcher variant={isLight ? "light" : "default"} />
             <Link
               href="/login"
               className={utilityLinkClass}
             >
-              Sign in
+              {t("nav.signIn")}
             </Link>
             <TrackedLink
               href="/request-review"
               eventName="cta_request_review_header"
               className="flex items-center leading-none text-[13px] xl:text-sm font-semibold tracking-[0.01em] px-4 py-2 rounded-lg bg-amber-500 text-slate-900 hover:bg-amber-400 transition-colors"
             >
-              Request Review
+              {t("nav.requestReview")}
             </TrackedLink>
           </nav>
         )}
@@ -235,7 +241,7 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
           <button
             type="button"
             className={`absolute inset-0 ${isLight ? "bg-slate-900/20" : "bg-slate-950/75"}`}
-            aria-label="Close menu overlay"
+            aria-label={t("nav.closeMenuOverlay")}
             onClick={() => setMobileMenuOpen(false)}
           />
           <div
@@ -243,19 +249,24 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
             ref={mobileDialogRef}
             role="dialog"
             aria-modal="true"
-            aria-label="Mobile site navigation"
+            aria-label={t("nav.mobileNavDialog")}
             tabIndex={-1}
             className={`absolute right-0 top-0 h-full w-full max-w-xs border-l p-5 ${isLight ? "border-slate-200 bg-white" : "border-slate-700 bg-slate-900 shadow-2xl"}`}
           >
-            <div className="flex items-center justify-between">
-              <p className={`text-sm font-semibold tracking-wide ${isLight ? "text-slate-700" : "text-slate-300"}`}>Navigation</p>
-              <button
-                type="button"
-                onClick={() => setMobileMenuOpen(false)}
-                className={`rounded-md border px-2.5 py-1.5 text-sm ${isLight ? "border-slate-300 text-slate-700 hover:bg-slate-50" : "border-slate-700 text-slate-200 hover:bg-slate-800"}`}
-              >
-                Close
-              </button>
+            <div className="flex items-center justify-between gap-2">
+              <p className={`text-sm font-semibold tracking-wide ${isLight ? "text-slate-700" : "text-slate-300"}`}>
+                {t("nav.navigation")}
+              </p>
+              <div className="flex items-center gap-2">
+                <LanguageSwitcher variant={isLight ? "light" : "default"} />
+                <button
+                  type="button"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`rounded-md border px-2.5 py-1.5 text-sm ${isLight ? "border-slate-300 text-slate-700 hover:bg-slate-50" : "border-slate-700 text-slate-200 hover:bg-slate-800"}`}
+                >
+                  {t("nav.close")}
+                </button>
+              </div>
             </div>
             <div className="mt-5 space-y-2">
               {navItems.map((item) => (
@@ -273,7 +284,7 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
                 rel="noopener noreferrer"
                 className={`block rounded-lg border px-3 py-2.5 text-sm font-medium ${isLight ? "border-slate-200 text-slate-700 hover:bg-slate-50" : "border-slate-800 text-slate-200 hover:border-slate-700 hover:bg-slate-800"}`}
               >
-                {ecosystemNavItem.label}
+                {t(ecosystemNavItem.labelKey)}
               </a>
             </div>
             <div className={`mt-6 space-y-3 border-t pt-5 ${isLight ? "border-slate-200" : "border-slate-800"}`}>
@@ -281,14 +292,14 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
                 href="/login"
                 className={`block rounded-lg border px-3 py-2.5 text-center text-sm font-medium ${isLight ? "border-slate-300 text-slate-700 hover:bg-slate-50" : "border-slate-700 text-slate-200 hover:bg-slate-800"}`}
               >
-                Sign In
+                {t("nav.signInMobile")}
               </Link>
               <TrackedLink
                 href="/request-review"
                 eventName="cta_request_review_header"
                 className="block rounded-lg bg-amber-500 px-3 py-2.5 text-center text-sm font-semibold text-slate-900 hover:bg-amber-600"
               >
-                Request Review
+                {t("nav.requestReview")}
               </TrackedLink>
             </div>
           </div>

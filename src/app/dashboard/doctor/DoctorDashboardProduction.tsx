@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useMemo } from "react";
 import CreateCaseButton from "../create-case-button";
 import DoctorOnboardingChecklist, { type OnboardingStep } from "./DoctorOnboardingChecklist";
 import ParticipationStatusBanner, { type ParticipationApprovalStatus } from "@/components/dashboard/ParticipationStatusBanner";
@@ -11,6 +12,7 @@ import CertificationProgressCard from "@/components/dashboard/CertificationProgr
 import type { CertificationProgress } from "@/lib/certificationProgress";
 import type { CertificationResult } from "@/lib/certification";
 import { BENCHMARKING_GLOBAL_STANDARDS } from "@/lib/benchmarkingCopy";
+import { useI18n } from "@/components/i18n/I18nProvider";
 
 type CaseRow = {
   id: string;
@@ -48,6 +50,7 @@ export default function DoctorDashboardProduction({
   certificationProgress?: CertificationProgress;
   certificationResult?: CertificationResult | null;
 }) {
+  const { t } = useI18n();
   const hasCase = cases.length > 0;
   const firstCase = cases[0] ?? null;
   const firstCaseId = firstCase?.id ?? null;
@@ -56,36 +59,39 @@ export default function DoctorDashboardProduction({
     (c) => c.submitted_at != null || String(c.status ?? "") === "submitted"
   );
 
-  const steps: OnboardingStep[] = [
-    {
-      id: "create_case",
-      label: "Create your first case",
-      done: hasCase,
-      href: "",
-      cta: "Create new audit case",
-    },
-    {
-      id: "upload_evidence",
-      label: "Upload supporting evidence",
-      done: hasEvidence,
-      href: firstCaseId ? `/cases/${firstCaseId}/doctor/photos` : "/dashboard/doctor",
-      cta: firstCaseId ? "Add photos to your case" : "Create a case first",
-    },
-    {
-      id: "complete_submission",
-      label: "Complete your first submission",
-      done: hasSubmission,
-      href: firstCaseId ? `/cases/${firstCaseId}` : "/dashboard/doctor",
-      cta: firstCaseId ? "Open case and submit for audit" : "Create a case first",
-    },
-    {
-      id: "learn_benchmarking",
-      label: "Learn how benchmarking works",
-      done: hasSubmission,
-      href: "/leaderboards/doctors",
-      cta: "View doctor leaderboards and benchmarks",
-    },
-  ];
+  const steps: OnboardingStep[] = useMemo(
+    () => [
+      {
+        id: "create_case",
+        label: t("dashboard.doctor.onboardingCreateCase"),
+        done: hasCase,
+        href: "",
+        cta: t("dashboard.doctor.onboardingCreateCta"),
+      },
+      {
+        id: "upload_evidence",
+        label: t("dashboard.doctor.onboardingUpload"),
+        done: hasEvidence,
+        href: firstCaseId ? `/cases/${firstCaseId}/doctor/photos` : "/dashboard/doctor",
+        cta: firstCaseId ? t("dashboard.doctor.onboardingUploadCta") : t("dashboard.doctor.onboardingUploadNoCase"),
+      },
+      {
+        id: "complete_submission",
+        label: t("dashboard.doctor.onboardingSubmit"),
+        done: hasSubmission,
+        href: firstCaseId ? `/cases/${firstCaseId}` : "/dashboard/doctor",
+        cta: firstCaseId ? t("dashboard.doctor.onboardingSubmitCta") : t("dashboard.doctor.onboardingSubmitNoCase"),
+      },
+      {
+        id: "learn_benchmarking",
+        label: t("dashboard.doctor.onboardingBenchmark"),
+        done: hasSubmission,
+        href: "/leaderboards/doctors",
+        cta: t("dashboard.doctor.onboardingBenchmarkCta"),
+      },
+    ],
+    [t, hasCase, hasEvidence, hasSubmission, firstCaseId]
+  );
 
   const showOnboarding = !hasSubmission || !hasCase || !hasEvidence;
 
@@ -95,15 +101,15 @@ export default function DoctorDashboardProduction({
 
       {showWelcomeBanner && (
         <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-900" role="status">
-          <p className="font-medium">Your doctor profile is now active.</p>
-          <p className="mt-1 text-sm text-emerald-800">You can begin building your verified record.</p>
+          <p className="font-medium">{t("dashboard.doctor.profileActiveTitle")}</p>
+          <p className="mt-1 text-sm text-emerald-800">{t("dashboard.doctor.profileActiveBody")}</p>
         </div>
       )}
 
       {profileCompleteness && (
         <div className="grid gap-4 sm:grid-cols-2">
           <ProfileCompletenessCard
-            title="Profile completeness"
+            title={t("dashboard.doctor.profileCompleteness")}
             percentage={profileCompleteness.percentage}
             doneCount={profileCompleteness.doneCount}
             totalChecks={profileCompleteness.totalChecks}
@@ -129,10 +135,8 @@ export default function DoctorDashboardProduction({
       />
 
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h1 className="text-xl font-semibold text-slate-900">Doctor workspace</h1>
-        <p className="mt-1 text-sm text-slate-600">
-          Complete the surgery form and upload photos per case. Each case uses the same audit flow: form → photos → submit.
-        </p>
+        <h1 className="text-xl font-semibold text-slate-900">{t("dashboard.doctor.workspaceTitle")}</h1>
+        <p className="mt-1 text-sm text-slate-600">{t("dashboard.doctor.workspaceSubtitle")}</p>
         <p className="mt-1 text-xs text-slate-500">{BENCHMARKING_GLOBAL_STANDARDS}</p>
         <div className="mt-4">
           <CreateCaseButton variant="premium" dashboardHref="/dashboard/doctor" />
@@ -140,15 +144,13 @@ export default function DoctorDashboardProduction({
       </section>
 
       <section id="your-cases">
-        <h2 className="text-lg font-semibold text-slate-900 mb-3">Your cases</h2>
+        <h2 className="text-lg font-semibold text-slate-900 mb-3">{t("dashboard.doctor.yourCases")}</h2>
         {!cases || cases.length === 0 ? (
           <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-8 text-center">
-            <p className="text-slate-700 font-semibold">No cases submitted yet</p>
-            <p className="mt-1 text-sm text-slate-600">
-              Begin building your verified professional profile by contributing your first case.
-            </p>
+            <p className="text-slate-700 font-semibold">{t("dashboard.doctor.noCasesTitle")}</p>
+            <p className="mt-1 text-sm text-slate-600">{t("dashboard.doctor.noCasesBody")}</p>
             <div className="mt-4">
-              <CreateCaseButton variant="premium" label="Submit your first case" dashboardHref="/dashboard/doctor" />
+              <CreateCaseButton variant="premium" label={t("dashboard.doctor.submitFirstCase")} dashboardHref="/dashboard/doctor" />
             </div>
           </div>
         ) : (

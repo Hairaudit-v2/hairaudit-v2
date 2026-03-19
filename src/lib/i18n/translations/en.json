@@ -1,0 +1,85 @@
+{
+  "nav": {
+    "home": "Home",
+    "howItWorks": "How It Works",
+    "requestReview": "Request Review",
+    "sampleReport": "Sample Report",
+    "clinics": "Clinics",
+    "forClinics": "For Clinics",
+    "forProfessionals": "For Professionals",
+    "signIn": "Sign in",
+    "signInMobile": "Sign In",
+    "closeMenu": "Close menu",
+    "openMenu": "Open menu",
+    "close": "Close",
+    "menu": "Menu",
+    "navigation": "Navigation",
+    "closeMenuOverlay": "Close menu overlay",
+    "mobileNavDialog": "Mobile site navigation",
+    "mainNav": "Main navigation",
+    "language": "Language",
+    "ecosystem": {
+      "poweredByFi": "Powered by Follicle Intelligence",
+      "exploreHa": "Explore HairAudit"
+    }
+  },
+  "dashboard": {
+    "shared": {
+      "createCaseDefault": "Create new audit case",
+      "startNewAudit": "Start New Audit"
+    },
+    "patient": {
+      "heroTitle": "Your Surgical Intelligence Dashboard",
+      "heroSubtitle": "Complete your intelligence inputs to unlock full forensic analysis.",
+      "conversionPrompt": "Complete your final inputs to increase audit precision by up to 35%.",
+      "completeQuestions": "Complete Intelligence Questions",
+      "seeUnlock": "See what you’ll unlock",
+      "poweredBy": "Powered by Follicle Intelligence™",
+      "mlEngine": "Multi-Layer Visual Pattern Recognition Engine",
+      "visionModel": "Vision Model: GPT-5.2",
+      "startNewAudit": "Start New Audit",
+      "uploadPhotos": "Upload Photos",
+      "completeIntake": "Complete Intake Questions",
+      "viewReports": "View Previous Reports"
+    },
+    "reports": {
+      "back": "← Back to dashboard",
+      "title": "Previous reports",
+      "subtitle": "Your completed audit reports. View or download each report below.",
+      "empty": "No completed reports yet. Submit a case to generate your first audit report.",
+      "goToDashboard": "Go to dashboard"
+    },
+    "doctor": {
+      "workspaceTitle": "Doctor workspace",
+      "workspaceSubtitle": "Complete the surgery form and upload photos per case. Each case uses the same audit flow: form → photos → submit.",
+      "yourCases": "Your cases",
+      "noCasesTitle": "No cases submitted yet",
+      "noCasesBody": "Begin building your verified professional profile by contributing your first case.",
+      "submitFirstCase": "Submit your first case",
+      "profileActiveTitle": "Your doctor profile is now active.",
+      "profileActiveBody": "You can begin building your verified record.",
+      "profileCompleteness": "Profile completeness",
+      "onboardingCreateCase": "Create your first case",
+      "onboardingCreateCta": "Create new audit case",
+      "onboardingUpload": "Upload supporting evidence",
+      "onboardingUploadCta": "Add photos to your case",
+      "onboardingUploadNoCase": "Create a case first",
+      "onboardingSubmit": "Complete your first submission",
+      "onboardingSubmitCta": "Open case and submit for audit",
+      "onboardingSubmitNoCase": "Create a case first",
+      "onboardingBenchmark": "Learn how benchmarking works",
+      "onboardingBenchmarkCta": "View doctor leaderboards and benchmarks"
+    },
+    "clinic": {
+      "overviewTitle": "Clinic Intelligence Overview",
+      "overviewSubtitle": "Operational trust and clinical quality across your Invited Contributions (cases you were invited to) and Submitted Cases (cases your clinic created).",
+      "submitCase": "Submit Case",
+      "onboarding": "Onboarding",
+      "profileActiveTitle": "Your clinic profile is now active.",
+      "profileActiveBody": "You can begin privately with internal audits.",
+      "noCasesTitle": "No cases yet",
+      "noCasesBody": "Start your first internal audit to begin building your clinic profile.",
+      "submitFirstCase": "Submit your first case"
+    }
+  }
+}

@@ -9,7 +9,8 @@ import ClinicTransparencyProgressPanel from "@/components/dashboard/ClinicTransp
 import ClinicFeedbackPanel from "@/components/dashboard/ClinicFeedbackPanel";
 import ClinicBadgeWidgetSection from "@/components/dashboard/ClinicBadgeWidgetSection";
 import { buildClinicProgressSteps, computeAdvancedCompletionScore, computeProfileCompletionScore } from "@/lib/clinicPortal";
-import ClinicSectionHeader from "@/components/clinic-portal/ClinicSectionHeader";
+import ClinicDashboardI18nSectionHeader from "@/components/i18n/ClinicDashboardI18nSectionHeader";
+import ClinicDashboardI18nAlerts from "@/components/i18n/ClinicDashboardI18nAlerts";
 import ClinicConversionPanel from "@/components/clinic-portal/ClinicConversionPanel";
 import ClinicProgressGuidancePanel from "@/components/dashboard/ClinicProgressGuidancePanel";
 import ParticipationStatusBanner from "@/components/dashboard/ParticipationStatusBanner";
@@ -279,38 +280,15 @@ export default async function ClinicDashboardPage() {
 
   return (
     <div>
-      <ClinicSectionHeader
-        title="Clinic Intelligence Overview"
-        subtitle="Operational trust and clinical quality across your Invited Contributions (cases you were invited to) and Submitted Cases (cases your clinic created)."
-        actions={[
-          { href: "/dashboard/clinic/submit-case", label: "Submit Case", variant: "primary" },
-          { href: "/dashboard/clinic/onboarding", label: "Onboarding" },
-        ]}
-      />
+      <ClinicDashboardI18nSectionHeader />
       <div className="mb-4 space-y-3">
         <ParticipationBenefitBanner />
         <FoundingClinicTag showFoundingTag={showFoundingTag} />
       </div>
-      {showClinicWelcomeBanner && (
-        <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-900" role="status">
-          <p className="font-medium">Your clinic profile is now active.</p>
-          <p className="mt-1 text-sm text-emerald-800">You can begin privately with internal audits.</p>
-        </div>
-      )}
-      {hasNoSubmittedCases && (
-        <div className="mb-6 rounded-xl border-2 border-slate-200 bg-slate-50 p-8 text-center">
-          <h2 className="text-xl font-semibold text-slate-900">No cases yet</h2>
-          <p className="mt-2 text-sm text-slate-600">
-            Start your first internal audit to begin building your clinic profile.
-          </p>
-          <Link
-            href="/dashboard/clinic/submit-case"
-            className="mt-4 inline-flex items-center rounded-lg bg-amber-500 px-4 py-2.5 text-sm font-semibold text-slate-900 hover:bg-amber-400"
-          >
-            Submit your first case
-          </Link>
-        </div>
-      )}
+      <ClinicDashboardI18nAlerts
+        showClinicWelcomeBanner={showClinicWelcomeBanner}
+        hasNoSubmittedCases={hasNoSubmittedCases}
+      />
       <p className="mb-6 text-xs text-slate-500">{BENCHMARKING_GLOBAL_STANDARDS}</p>
 
       <div className="mb-6">

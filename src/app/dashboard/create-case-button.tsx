@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useI18n } from "@/components/i18n/I18nProvider";
 
 function isValidCaseId(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
@@ -21,14 +22,15 @@ export default function CreateCaseButton({
   /** Dashboard link for recovery message (e.g. /dashboard/patient, /dashboard/doctor). */
   dashboardHref?: string;
 }) {
+  const { t } = useI18n();
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
 
   const defaultLabels: Record<string, string> = {
-    default: "Create new audit case",
-    premium: "Create new audit case",
-    card: "Start New Audit",
+    default: t("dashboard.shared.createCaseDefault"),
+    premium: t("dashboard.shared.createCaseDefault"),
+    card: t("dashboard.shared.startNewAudit"),
   };
   const displayLabel = label ?? defaultLabels[variant] ?? defaultLabels.default;
 
