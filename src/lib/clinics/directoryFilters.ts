@@ -16,6 +16,8 @@ export type DirectoryClinicRow = {
   documentation_integrity_average: number | null;
   /** For joining with public case counts (cases.clinic_id = linked_user_id) */
   linked_user_id?: string | null;
+  /** Public-only case count for sorting/filtering (set by directory page) */
+  public_case_count?: number;
 };
 
 const TIER_ORDER: AwardTier[] = ["PLATINUM", "GOLD", "SILVER", "VERIFIED"];
@@ -32,17 +34,25 @@ export type DirectoryFilterParams = {
   country?: string;
   status?: string;
   benchmark?: string;
+  /** sort: public_cases | certification | name */
+  sort?: string;
+  /** has_public_cases=1: only clinics with at least one public case */
+  has_public_cases?: string;
+  /** founding=1: only founding clinics (requires founding_slugs) */
+  founding?: string;
+  /** Slugs considered founding (from env); used when founding=1 */
+  founding_slugs?: string[];
 };
 
 /**
  * Filter and sort directory rows. Only rows with non-null clinic_slug are included.
- * Sort: highest tier first, then benchmark-eligible validated count desc, then average score desc, then clinic name asc.
+ * Uses public_case_count when sort=public_cases or has_public_cases=1.
  */
 export function filterAndSortDirectory(
   rows: DirectoryClinicRow[],
   params: DirectoryFilterParams
 ): DirectoryClinicRow[] {
-  let list = rows.filter((r) => r.clinic_slug != null) as (DirectoryClinicRow & { clinic_slug: string })[];
+  let list = rows.filter((r) => r.clinic_slug != null) as (DirectoryClinicRow & { clinic_slug: string; public_case_count?: number })[];
 
   const search = params.search?.trim().toLowerCase();
   if (search) {
@@ -67,18 +77,34 @@ export function filterAndSortDirectory(
       (r) => (r.benchmark_eligible_validated_count ?? r.benchmark_eligible_count ?? 0) > 0
     );
   }
+  if (params.has_public_cases === "1") {
+    list = list.filter((r) => (r.public_case_count ?? 0) > 0);
+  }
+  if (params.founding === "1" && params.founding_slugs?.length) {
+    const set = new Set(params.founding_slugs);
+    list = list.filter((r) => r.clinic_slug && set.has(r.clinic_slug));
+  }
 
   const tierRank = (t: string | null) => TIER_RANK[t ?? "VERIFIED"] ?? 0;
+  const sortMode = params.sort === "public_cases" || params.sort === "certification" || params.sort === "name" ? params.sort : "certification";
+
   list.sort((a, b) => {
+    if (sortMode === "name") {
+      return (a.clinic_name ?? "").localeCompare(b.clinic_name ?? "");
+    }
+    if (sortMode === "public_cases") {
+      const pa = a.public_case_count ?? 0;
+      const pb = b.public_case_count ?? 0;
+      if (pb !== pa) return pb - pa;
+      return (a.clinic_name ?? "").localeCompare(b.clinic_name ?? "");
+    }
+    // certification (default): tier first, then public cases, then name
     const tierA = tierRank(a.current_award_tier);
     const tierB = tierRank(b.current_award_tier);
     if (tierB !== tierA) return tierB - tierA;
-    const benchA = a.benchmark_eligible_validated_count ?? a.benchmark_eligible_count ?? 0;
-    const benchB = b.benchmark_eligible_validated_count ?? b.benchmark_eligible_count ?? 0;
-    if (benchB !== benchA) return benchB - benchA;
-    const scoreA = Number(a.average_forensic_score ?? 0);
-    const scoreB = Number(b.average_forensic_score ?? 0);
-    if (scoreB !== scoreA) return scoreB - scoreA;
+    const pa = a.public_case_count ?? 0;
+    const pb = b.public_case_count ?? 0;
+    if (pb !== pa) return pb - pa;
     return (a.clinic_name ?? "").localeCompare(b.clinic_name ?? "");
   });
 

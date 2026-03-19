@@ -6,9 +6,12 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import {
   PublicProfileHero,
+  PublicProofSummary,
   ClinicMetricCard,
   RecognitionPanel,
+  VerifiedCaseHighlights,
 } from "@/components/clinic-profile";
+import type { VerifiedCaseHighlight } from "@/components/clinic-profile";
 import { getNextMilestoneFromProfile } from "@/lib/transparency/awardRules";
 import type { AwardTier } from "@/lib/transparency/awardRules";
 
@@ -100,14 +103,29 @@ export default async function PublicClinicProfilePage({
   const row = clinic as ClinicProfileRow & { linked_user_id?: string | null };
   const linkedUserId = row.linked_user_id ?? null;
 
-  const { count: publicCaseCount } = linkedUserId
-    ? await admin
+  let publicCaseCount: number | null = null;
+  let verifiedHighlights: VerifiedCaseHighlight[] = [];
+  if (linkedUserId) {
+    const [countRes, casesRes] = await Promise.all([
+      admin
         .from("cases")
         .select("id", { count: "exact", head: true })
         .eq("clinic_id", linkedUserId)
+        .eq("audit_mode", "public"),
+      admin
+        .from("cases")
+        .select("id, submitted_at")
+        .eq("clinic_id", linkedUserId)
         .eq("audit_mode", "public")
-    : { count: null };
-
+        .order("submitted_at", { ascending: false, nullsFirst: false })
+        .limit(6),
+    ]);
+    publicCaseCount = countRes.count;
+    verifiedHighlights = (casesRes.data ?? []).map((c: { id: string; submitted_at: string | null }) => ({
+      id: c.id,
+      submittedAt: c.submitted_at ?? null,
+    }));
+  }
   const auditedPublic = publicCaseCount ?? row.audited_case_count ?? 0;
 
   const validatedCount =
@@ -168,6 +186,14 @@ export default async function PublicClinicProfilePage({
           publicAuditedCaseCount={audited}
           showFoundingTag={(process.env.NEXT_PUBLIC_FOUNDING_CLINIC_SLUGS ?? "").split(",").map((s) => s.trim()).includes(row.clinic_slug ?? "")}
         />
+
+        <PublicProofSummary
+          publicCaseCount={audited}
+          certificationTier={tier}
+          showFoundingTag={(process.env.NEXT_PUBLIC_FOUNDING_CLINIC_SLUGS ?? "").split(",").map((s) => s.trim()).includes(row.clinic_slug ?? "")}
+        />
+
+        <VerifiedCaseHighlights highlights={verifiedHighlights} />
 
         <section className="relative px-4 sm:px-6 py-12 sm:py-16">
           <div className="max-w-4xl mx-auto">

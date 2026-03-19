@@ -20,10 +20,15 @@ export const metadata = createPageMetadata({
   pathname: "/clinics",
 });
 
+const FOUNDING_SLUGS = (process.env.NEXT_PUBLIC_FOUNDING_CLINIC_SLUGS ?? "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+
 export default async function ClinicDirectoryPage({
   searchParams,
 }: {
-  searchParams: Promise<{ search?: string; tier?: string; country?: string; status?: string; benchmark?: string }>;
+  searchParams: Promise<{ search?: string; tier?: string; country?: string; status?: string; benchmark?: string; sort?: string; has_public_cases?: string; founding?: string }>;
 }) {
   const params = await searchParams;
   const admin = createSupabaseAdminClient();
@@ -48,7 +53,23 @@ export default async function ClinicDirectoryPage({
   }
 
   const allRows = (rows ?? []) as DirectoryClinicRow[];
-  const filtered = filterAndSortDirectory(allRows, params);
+  const rowsWithPublicCount: DirectoryClinicRow[] = allRows.map((r) => ({
+    ...r,
+    public_case_count: r.linked_user_id ? publicCaseCountByClinicUserId.get(r.linked_user_id) ?? 0 : 0,
+  }));
+
+  const filterParams = {
+    search: params.search,
+    tier: params.tier,
+    country: params.country,
+    status: params.status,
+    benchmark: params.benchmark,
+    sort: params.sort,
+    has_public_cases: params.has_public_cases,
+    founding: params.founding,
+    founding_slugs: params.founding === "1" ? FOUNDING_SLUGS : undefined,
+  };
+  const filtered = filterAndSortDirectory(rowsWithPublicCount, filterParams);
   const clinics: ClinicDirectoryItem[] = filtered.map((r) => {
     const publicCaseCount = r.linked_user_id ? publicCaseCountByClinicUserId.get(r.linked_user_id) ?? null : null;
     return {
@@ -121,7 +142,7 @@ export default async function ClinicDirectoryPage({
         <section className="relative px-4 sm:px-6 pb-8">
           <div className="max-w-5xl mx-auto">
             <Suspense fallback={<div className="rounded-2xl border border-white/10 bg-white/5 h-24 animate-pulse" />}>
-              <ClinicDirectoryFilters countries={countries} />
+              <ClinicDirectoryFilters countries={countries} foundingSlugs={FOUNDING_SLUGS} />
             </Suspense>
           </div>
         </section>

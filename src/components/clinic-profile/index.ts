@@ -4,5 +4,8 @@ export { default as CertificationExplainerLink } from "./CertificationExplainerL
 export { default as TransparencyStatusBadge } from "./TransparencyStatusBadge";
 export { default as ClinicMetricCard } from "./ClinicMetricCard";
 export { default as PublicProfileHero } from "./PublicProfileHero";
+export { default as PublicProofSummary } from "./PublicProofSummary";
 export { default as RecognitionPanel } from "./RecognitionPanel";
+export { default as VerifiedCaseHighlights } from "./VerifiedCaseHighlights";
+export type { VerifiedCaseHighlight } from "./VerifiedCaseHighlights";
 export { default as BadgeWidget } from "./BadgeWidget";

@@ -19,10 +19,18 @@ const STATUS_OPTIONS = [
   { value: "not_started", label: "Not started" },
 ];
 
+const SORT_OPTIONS = [
+  { value: "certification", label: "Certification level" },
+  { value: "public_cases", label: "Most public cases" },
+  { value: "name", label: "Alphabetical" },
+];
+
 export default function ClinicDirectoryFilters({
   countries,
+  foundingSlugs = [],
 }: {
   countries: string[];
+  foundingSlugs?: string[];
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -33,6 +41,9 @@ export default function ClinicDirectoryFilters({
   const country = searchParams.get("country") ?? "";
   const status = searchParams.get("status") ?? "";
   const benchmarkOnly = searchParams.get("benchmark") === "1";
+  const sort = searchParams.get("sort") ?? "certification";
+  const hasPublicCasesOnly = searchParams.get("has_public_cases") === "1";
+  const foundingOnly = searchParams.get("founding") === "1";
 
   const updateParams = useCallback(
     (updates: Record<string, string | null>) => {
@@ -111,6 +122,18 @@ export default function ClinicDirectoryFilters({
               </option>
             ))}
           </select>
+          <select
+            value={sort}
+            onChange={(e) => updateParams({ sort: e.target.value || "certification" })}
+            className="rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-white focus:border-cyan-500/40 focus:outline-none"
+            aria-label="Sort by"
+          >
+            {SORT_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
@@ -120,6 +143,26 @@ export default function ClinicDirectoryFilters({
             />
             <span className="text-sm text-slate-300">Benchmark-active only</span>
           </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={hasPublicCasesOnly}
+              onChange={(e) => updateParams({ has_public_cases: e.target.checked ? "1" : null })}
+              className="rounded border-white/20 bg-white/5 text-cyan-500 focus:ring-cyan-500/50"
+            />
+            <span className="text-sm text-slate-300">Has public cases</span>
+          </label>
+          {foundingSlugs.length > 0 && (
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={foundingOnly}
+                onChange={(e) => updateParams({ founding: e.target.checked ? "1" : null })}
+                className="rounded border-white/20 bg-white/5 text-cyan-500 focus:ring-cyan-500/50"
+              />
+              <span className="text-sm text-slate-300">Founding Clinic</span>
+            </label>
+          )}
         </div>
       </form>
       {isPending && (
