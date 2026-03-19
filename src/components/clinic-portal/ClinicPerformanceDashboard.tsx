@@ -60,7 +60,12 @@ export default function ClinicPerformanceDashboard({
           Clinic Performance Dashboard
         </h2>
         {currentAwardTier && (
-          <CertificationBadge tier={currentAwardTier} variant="full" />
+          <div>
+            <CertificationBadge tier={currentAwardTier} variant="full" />
+            <p className="mt-2 text-xs text-slate-500 max-w-xs">
+              Based on independently audited surgical data and verified case submissions.
+            </p>
+          </div>
         )}
       </div>
       <p className="text-sm text-slate-600 mb-6">

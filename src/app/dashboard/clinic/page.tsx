@@ -15,6 +15,8 @@ import ClinicProgressGuidancePanel from "@/components/dashboard/ClinicProgressGu
 import ParticipationStatusBanner from "@/components/dashboard/ParticipationStatusBanner";
 import CaseAuditModeSelect from "@/components/clinic-portal/CaseAuditModeSelect";
 import ClinicPerformanceDashboard from "@/components/clinic-portal/ClinicPerformanceDashboard";
+import ParticipationBenefitBanner from "@/components/clinic-portal/ParticipationBenefitBanner";
+import FoundingClinicTag from "@/components/clinic-portal/FoundingClinicTag";
 import { SITE_URL } from "@/lib/constants";
 import { BENCHMARKING_GLOBAL_STANDARDS } from "@/lib/benchmarkingCopy";
 
@@ -201,6 +203,8 @@ export default async function ClinicDashboardPage() {
     profileVisible: Boolean(profileVisible),
   });
 
+  const showFoundingTag = false;
+
   return (
     <div>
       <ClinicSectionHeader
@@ -211,6 +215,10 @@ export default async function ClinicDashboardPage() {
           { href: "/dashboard/clinic/onboarding", label: "Onboarding" },
         ]}
       />
+      <div className="mb-4 space-y-3">
+        <ParticipationBenefitBanner />
+        <FoundingClinicTag showFoundingTag={showFoundingTag} />
+      </div>
       <p className="mb-6 text-xs text-slate-500">{BENCHMARKING_GLOBAL_STANDARDS}</p>
 
       <div className="mb-6">
@@ -381,8 +389,27 @@ export default async function ClinicDashboardPage() {
         <CreateCaseButton dashboardHref="/dashboard/clinic" />
       </div>
 
-      <h2 className="text-lg font-semibold text-slate-900 mt-8 mb-3">Submitted Cases</h2>
+      {publicCaseCount === 0 && caseList.length > 0 && (
+        <div className="mb-6 rounded-xl border-2 border-amber-300 bg-amber-50 p-5" id="submitted-cases-notice">
+          <p className="font-semibold text-amber-900">You currently have no public cases.</p>
+          <p className="mt-1 text-sm text-amber-800">
+            Make your audited work visible to patients and begin building your verified clinic profile.
+          </p>
+          <a
+            href="#submitted-cases"
+            className="mt-4 inline-flex items-center rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700"
+          >
+            Make a case public
+          </a>
+        </div>
+      )}
+
+      <h2 className="text-lg font-semibold text-slate-900 mt-8 mb-3" id="submitted-cases">Submitted Cases</h2>
       <p className="text-sm text-slate-500 mb-3">Cases your clinic created and submitted (distinct from Invited Contributions, which appear under Invited Contributions).</p>
+      <div className="mb-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+        <strong>Internal Audit</strong> = private, not visible to patients.{" "}
+        <strong>Verified Public Audit</strong> = visible on your public profile and contributes to clinic visibility.
+      </div>
       {(!cases || cases.length === 0) ? (
         <div className="rounded-xl border border-slate-200 bg-white p-8 text-center">
           <p className="text-slate-700 font-semibold">

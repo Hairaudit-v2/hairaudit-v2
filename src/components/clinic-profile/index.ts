@@ -1,5 +1,6 @@
 export { default as AwardTierBadge } from "./AwardTierBadge";
 export { default as CertificationBadge } from "./CertificationBadge";
+export { default as CertificationExplainerLink } from "./CertificationExplainerLink";
 export { default as TransparencyStatusBadge } from "./TransparencyStatusBadge";
 export { default as ClinicMetricCard } from "./ClinicMetricCard";
 export { default as PublicProfileHero } from "./PublicProfileHero";

@@ -22,8 +22,23 @@ export default function SignUpPage() {
   const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
   const [resending, setResending] = useState<null | "confirm" | "magic">(null);
 
+  /** Base URL for auth redirects. Prefer https in production (hairaudit.com) so confirmation emails never use http. */
   function getAppUrl() {
-    return (process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "") || "").trim() || HA_HOME;
+    const raw =
+      (process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "") || "").trim() || HA_HOME;
+    try {
+      const u = new URL(raw);
+      if (u.hostname === "hairaudit.com" && u.protocol === "http:") u.protocol = "https:";
+      return u.toString().replace(/\/+$/, "");
+    } catch {
+      return raw.replace(/\/+$/, "");
+    }
+  }
+
+  /** Post-confirmation path for each role. Clinic must land on clinic dashboard, not site root. */
+  function getRedirectPathForRole(role: SignupRole): string {
+    if (role === "clinic") return "/dashboard/clinic";
+    return "/dashboard";
   }
 
   async function signUp(e: React.FormEvent) {
@@ -40,7 +55,8 @@ export default function SignUpPage() {
         fallback: appUrl,
       });
     }
-    const emailRedirectTo = `${appUrl}/auth/callback?signup_role=${signupRole}`;
+    const nextPath = getRedirectPathForRole(signupRole);
+    const emailRedirectTo = `${appUrl}/auth/callback?signup_role=${signupRole}&next=${encodeURIComponent(nextPath)}`;
     console.info("[signup] attempting signup", {
       emailRedirectTo,
       email: maskEmail(email),
@@ -121,7 +137,8 @@ export default function SignUpPage() {
     setMsg(null);
     try {
       const appUrl = getAppUrl();
-      const emailRedirectTo = `${appUrl}/auth/callback?signup_role=${signupRole}`;
+      const nextPath = getRedirectPathForRole(signupRole);
+      const emailRedirectTo = `${appUrl}/auth/callback?signup_role=${signupRole}&next=${encodeURIComponent(nextPath)}`;
       const { error } = await supabase.auth.resend({
         type: "signup",
         email: trimmedEmail,

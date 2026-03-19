@@ -40,7 +40,7 @@ type DoctorRow = {
 };
 
 const CLINIC_SELECT =
-  "id, clinic_name, clinic_slug, country, city, participation_status, transparency_score, performance_score, volume_confidence_score, current_award_tier, audited_case_count, contributed_case_count, benchmark_eligible_count, average_forensic_score, documentation_integrity_average, profile_visible, validated_case_count, benchmark_eligible_validated_count, award_progression_paused";
+  "id, clinic_name, clinic_slug, country, city, participation_status, transparency_score, performance_score, volume_confidence_score, current_award_tier, audited_case_count, contributed_case_count, benchmark_eligible_count, average_forensic_score, documentation_integrity_average, profile_visible, validated_case_count, benchmark_eligible_validated_count, award_progression_paused, linked_user_id";
 
 export async function generateMetadata({
   params,
@@ -97,7 +97,19 @@ export default async function PublicClinicProfilePage({
 
   if (error || !clinic) notFound();
 
-  const row = clinic as ClinicProfileRow;
+  const row = clinic as ClinicProfileRow & { linked_user_id?: string | null };
+  const linkedUserId = row.linked_user_id ?? null;
+
+  const { count: publicCaseCount } = linkedUserId
+    ? await admin
+        .from("cases")
+        .select("id", { count: "exact", head: true })
+        .eq("clinic_id", linkedUserId)
+        .eq("audit_mode", "public")
+    : { count: null };
+
+  const auditedPublic = publicCaseCount ?? row.audited_case_count ?? 0;
+
   const validatedCount =
     row.validated_case_count ?? row.contributed_case_count ?? 0;
   const benchmarkValidated =
@@ -124,7 +136,7 @@ export default async function PublicClinicProfilePage({
 
   const tier = (row.current_award_tier ?? "VERIFIED") as AwardTier;
   const transparencyRate = Number(row.transparency_score ?? 0);
-  const audited = Number(row.audited_case_count ?? 0);
+  const audited = Number(auditedPublic);
   const contributed = Number(row.contributed_case_count ?? 0);
   const avgScore = Number(row.average_forensic_score ?? 0);
   const docIntegrity = Number(row.documentation_integrity_average ?? 0);
@@ -153,6 +165,8 @@ export default async function PublicClinicProfilePage({
           country={row.country}
           currentAwardTier={tier}
           participationStatus={row.participation_status}
+          publicAuditedCaseCount={audited}
+          showFoundingTag={(process.env.NEXT_PUBLIC_FOUNDING_CLINIC_SLUGS ?? "").split(",").map((s) => s.trim()).includes(row.clinic_slug ?? "")}
         />
 
         <section className="relative px-4 sm:px-6 py-12 sm:py-16">

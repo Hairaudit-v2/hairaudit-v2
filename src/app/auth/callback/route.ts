@@ -4,10 +4,21 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { isAuditor } from "@/lib/auth/isAuditor";
 import { parseRole } from "@/lib/roles";
 
+/** Allow only relative paths (no protocol or //). */
+function safeRedirectPath(value: string | null): string | null {
+  if (value == null || typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (trimmed === "" || !trimmed.startsWith("/") || trimmed.startsWith("//") || trimmed.includes(":")) return null;
+  return trimmed;
+}
+
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
   const signupRole = parseRole(searchParams.get("signup_role"));
+  const nextParam = safeRedirectPath(searchParams.get("next"));
+  const defaultPath = signupRole === "clinic" ? "/dashboard/clinic" : "/dashboard";
+  const redirectPath = nextParam ?? defaultPath;
 
   if (code) {
     const supabase = await createSupabaseServerClient();
@@ -69,5 +80,5 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.redirect(`${origin}/dashboard`);
+  return NextResponse.redirect(`${origin}${redirectPath}`);
 }

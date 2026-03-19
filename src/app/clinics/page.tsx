@@ -11,7 +11,7 @@ import type { DirectoryClinicRow } from "@/lib/clinics/directoryFilters";
 import { createPageMetadata } from "@/lib/seo/pageMetadata";
 
 const CLINIC_SELECT =
-  "clinic_slug, clinic_name, country, city, participation_status, current_award_tier, transparency_score, audited_case_count, contributed_case_count, benchmark_eligible_count, benchmark_eligible_validated_count, average_forensic_score, documentation_integrity_average, award_progression_paused";
+  "clinic_slug, clinic_name, country, city, participation_status, current_award_tier, transparency_score, audited_case_count, contributed_case_count, benchmark_eligible_count, benchmark_eligible_validated_count, average_forensic_score, documentation_integrity_average, award_progression_paused, linked_user_id";
 
 export const metadata = createPageMetadata({
   title: "Clinic directory | HairAudit",
@@ -28,29 +28,45 @@ export default async function ClinicDirectoryPage({
   const params = await searchParams;
   const admin = createSupabaseAdminClient();
 
-  const { data: rows } = await admin
-    .from("clinic_profiles")
-    .select(CLINIC_SELECT)
-    .eq("profile_visible", true)
-    .not("clinic_slug", "is", null);
+  const [{ data: rows }, { data: publicCaseRows }] = await Promise.all([
+    admin
+      .from("clinic_profiles")
+      .select(CLINIC_SELECT)
+      .eq("profile_visible", true)
+      .not("clinic_slug", "is", null),
+    admin
+      .from("cases")
+      .select("clinic_id")
+      .eq("audit_mode", "public")
+      .not("clinic_id", "is", null),
+  ]);
+
+  const publicCaseCountByClinicUserId = new Map<string, number>();
+  for (const c of publicCaseRows ?? []) {
+    const uid = String((c as { clinic_id?: string }).clinic_id ?? "");
+    if (uid) publicCaseCountByClinicUserId.set(uid, (publicCaseCountByClinicUserId.get(uid) ?? 0) + 1);
+  }
 
   const allRows = (rows ?? []) as DirectoryClinicRow[];
   const filtered = filterAndSortDirectory(allRows, params);
-  const clinics: ClinicDirectoryItem[] = filtered.map((r) => ({
-    clinic_slug: r.clinic_slug!,
-    clinic_name: r.clinic_name,
-    city: r.city,
-    country: r.country,
-    participation_status: r.participation_status,
-    current_award_tier: r.current_award_tier,
-    transparency_score: r.transparency_score,
-    audited_case_count: r.audited_case_count,
-    contributed_case_count: r.contributed_case_count,
-    benchmark_eligible_count: r.benchmark_eligible_count,
-    benchmark_eligible_validated_count: r.benchmark_eligible_validated_count,
-    average_forensic_score: r.average_forensic_score,
-    documentation_integrity_average: r.documentation_integrity_average,
-  }));
+  const clinics: ClinicDirectoryItem[] = filtered.map((r) => {
+    const publicCaseCount = r.linked_user_id ? publicCaseCountByClinicUserId.get(r.linked_user_id) ?? null : null;
+    return {
+      clinic_slug: r.clinic_slug!,
+      clinic_name: r.clinic_name,
+      city: r.city,
+      country: r.country,
+      participation_status: r.participation_status,
+      current_award_tier: r.current_award_tier,
+      transparency_score: r.transparency_score,
+      audited_case_count: publicCaseCount ?? r.audited_case_count,
+      contributed_case_count: r.contributed_case_count,
+      benchmark_eligible_count: r.benchmark_eligible_count,
+      benchmark_eligible_validated_count: r.benchmark_eligible_validated_count,
+      average_forensic_score: r.average_forensic_score,
+      documentation_integrity_average: r.documentation_integrity_average,
+    };
+  });
 
   const countries = [...new Set(allRows.map((r) => r.country).filter(Boolean))] as string[];
   countries.sort((a, b) => (a ?? "").localeCompare(b ?? ""));

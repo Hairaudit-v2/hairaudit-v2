@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AwardTierBadge, TransparencyStatusBadge } from "@/components/clinic-profile";
+import { CertificationBadge, CertificationExplainerLink, TransparencyStatusBadge } from "@/components/clinic-profile";
 import type { AwardTier } from "@/lib/transparency/awardRules";
 
 export type ClinicDirectoryItem = {
@@ -18,6 +18,8 @@ export type ClinicDirectoryItem = {
   documentation_integrity_average: number | null;
 };
 
+const TRUST_COPY = "Based on independently audited surgical data and verified case submissions.";
+
 export default function ClinicDirectoryCard({ clinic }: { clinic: ClinicDirectoryItem }) {
   const tier = (clinic.current_award_tier ?? "VERIFIED") as AwardTier;
   const location = [clinic.city, clinic.country].filter(Boolean).join(", ") || null;
@@ -29,22 +31,26 @@ export default function ClinicDirectoryCard({ clinic }: { clinic: ClinicDirector
   return (
     <article className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm overflow-hidden hover:border-white/15 transition-colors">
       <div className="p-5 sm:p-6">
-        <div className="flex flex-wrap items-center gap-2 mb-3">
-          <AwardTierBadge tier={tier} />
+        <div className="flex flex-wrap items-center gap-2 mb-2">
+          <CertificationBadge tier={tier} variant="compact" />
           <TransparencyStatusBadge participationStatus={clinic.participation_status} />
+          <CertificationExplainerLink className="ml-1" />
         </div>
         <h2 className="text-xl font-semibold text-white tracking-tight">
           {clinic.clinic_name}
         </h2>
         {location && <p className="mt-1 text-sm text-slate-400">{location}</p>}
+        <p className="mt-3 text-xs text-slate-500 leading-snug max-w-sm">
+          {TRUST_COPY}
+        </p>
         <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+          <div>
+            <dt className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Public cases</dt>
+            <dd className="mt-0.5 font-medium text-slate-200">{audited}</dd>
+          </div>
           <div>
             <dt className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Participation</dt>
             <dd className="mt-0.5 font-medium text-slate-200">{audited > 0 ? `${transparencyRate}%` : "—"}</dd>
-          </div>
-          <div>
-            <dt className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Audited cases</dt>
-            <dd className="mt-0.5 font-medium text-slate-200">{audited}</dd>
           </div>
           <div>
             <dt className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Benchmark-eligible</dt>

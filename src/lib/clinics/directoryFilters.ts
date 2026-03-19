@@ -14,6 +14,8 @@ export type DirectoryClinicRow = {
   benchmark_eligible_validated_count: number | null;
   average_forensic_score: number | null;
   documentation_integrity_average: number | null;
+  /** For joining with public case counts (cases.clinic_id = linked_user_id) */
+  linked_user_id?: string | null;
 };
 
 const TIER_ORDER: AwardTier[] = ["PLATINUM", "GOLD", "SILVER", "VERIFIED"];

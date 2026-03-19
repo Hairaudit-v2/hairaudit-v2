@@ -41,6 +41,7 @@ export default async function ClinicsLeaderboardPage() {
     .from("cases")
     .select("id, doctor_id, clinic_id, status, created_at")
     .eq("status", "complete")
+    .eq("audit_mode", "public")
     .not("clinic_id", "is", null)
     .order("created_at", { ascending: false })
     .limit(1500);
