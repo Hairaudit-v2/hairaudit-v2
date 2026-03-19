@@ -1,6 +1,14 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { sanitizeNextPath } from "@/lib/auth/redirects";
+
+function sanitizeNextPathEdge(value: string | null | undefined): string | null {
+  if (value == null || typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (!trimmed.startsWith("/") || trimmed === "" || trimmed.startsWith("//") || trimmed.includes(":")) {
+    return null;
+  }
+  return trimmed;
+}
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -11,7 +19,7 @@ export function middleware(request: NextRequest) {
     const url = request.nextUrl;
     const code = url.searchParams.get("code");
     if (typeof code === "string" && code.trim() !== "") {
-      const nextParam = sanitizeNextPath(url.searchParams.get("next"));
+      const nextParam = sanitizeNextPathEdge(url.searchParams.get("next"));
       const signupRole = url.searchParams.get("signup_role");
 
       const redirectUrl = request.url;
