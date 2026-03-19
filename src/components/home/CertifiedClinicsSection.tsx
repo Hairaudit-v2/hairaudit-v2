@@ -40,6 +40,14 @@ export default function CertifiedClinicsSection() {
         <p className="mt-3 text-slate-400 max-w-xl">
           Sample recognition certificates across tiers. Click to view the printable certificate.
         </p>
+        <div className="mt-6">
+          <Link
+            href="/certificates/demo?tier=platinum"
+            className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-stone-200/20 border border-stone-400/40 text-stone-200 text-sm font-medium hover:bg-stone-200/30 hover:border-stone-400/60 transition-colors"
+          >
+            View sample Platinum certificate
+          </Link>
+        </div>
         <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           {DEMO_CERTIFICATES.map((cert) => (
             <Link

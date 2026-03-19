@@ -66,7 +66,7 @@ function SampleWatermark({ variant }: { variant: "default" | "platinum" }) {
         className={`
           font-semibold uppercase tracking-[0.2em]
           rotate-[-22deg] whitespace-nowrap
-          ${isPlatinum ? "text-[10rem] text-stone-300/20" : "text-7xl sm:text-8xl text-white/[0.07]"}
+          ${isPlatinum ? "text-[10rem] text-stone-300/[0.14]" : "text-7xl sm:text-8xl text-white/[0.07]"}
         `}
       >
         Sample
@@ -101,8 +101,9 @@ function renderPlatinumCertificate(data: CertificateData): ReactNode {
         relative w-full flex flex-col overflow-hidden
         aspect-[210/297] max-h-[840px]
         print:aspect-auto print:min-h-[297mm] print:max-h-none
-        rounded-lg border-2 border-stone-300
-        bg-stone-50 shadow-xl
+        rounded-sm border border-stone-300
+        bg-gradient-to-b from-stone-50 to-stone-100/30
+        shadow-[0_1px_3px_rgba(0,0,0,0.04)]
         print:shadow-none print:rounded-none print:bg-white print:border-stone-400
       `}
       style={{ maxWidth: "min(100%, 210mm)" }}
@@ -111,31 +112,31 @@ function renderPlatinumCertificate(data: CertificateData): ReactNode {
     >
       {isSample && <SampleWatermark variant="platinum" />}
 
-      {/* Inner frame */}
-      <div className="relative z-0 flex-1 flex flex-col m-3 sm:m-4 md:m-5 border border-stone-300/80 print:border-stone-400 print:m-4">
+      {/* Inner frame: thin, elegant */}
+      <div className="relative z-0 flex-1 flex flex-col m-4 sm:m-5 md:m-6 border border-stone-200/90 print:border-stone-300 print:m-5">
         <div className="flex flex-col flex-1 p-6 sm:p-8 md:p-10 print:p-8">
-          {/* Header: minimal */}
-          <div className="text-center">
-            <p className="text-[9px] font-medium uppercase tracking-[0.25em] text-stone-500">
+          {/* Header: accreditation anchor */}
+          <div className="text-center pb-2">
+            <p className="text-[10px] font-medium uppercase tracking-[0.28em] text-stone-600">
               HairAudit
             </p>
-            <p className="mt-0.5 text-[9px] text-stone-400 uppercase tracking-widest">
+            <p className="mt-1 text-[9px] text-stone-400 uppercase tracking-[0.2em]">
               Independent Surgical Transparency Verification
             </p>
           </div>
 
-          {/* Dominant: tier title */}
-          <div className="mt-8 sm:mt-10 text-center">
+          {/* Title and subtitle: tight relationship */}
+          <div className="mt-6 sm:mt-7 text-center">
             <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-stone-900">
               PLATINUM CERTIFICATION
             </h1>
-            <p className="mt-2 text-sm font-medium uppercase tracking-widest text-stone-500">
+            <p className="mt-1.5 text-[11px] font-normal uppercase tracking-wider text-stone-400">
               Certified Clinic
             </p>
           </div>
 
-          {/* Second: clinic name */}
-          <div className="mt-8 sm:mt-10 border-t border-b border-stone-300/70 py-6 sm:py-8">
+          {/* Clinic name: nameplate treatment */}
+          <div className="mt-6 sm:mt-8 border-t border-b border-stone-200/80 py-7 sm:py-9">
             <p className="font-serif text-xl sm:text-2xl md:text-3xl font-semibold text-stone-900 text-center tracking-tight">
               {clinicName}
             </p>
@@ -146,9 +147,9 @@ function renderPlatinumCertificate(data: CertificateData): ReactNode {
             {fullDescription}
           </p>
 
-          {/* Score / case count: minimal, secondary */}
+          {/* Score / case count: supporting layer only */}
           {(score != null || caseCount != null) && (
-            <div className="mt-4 flex flex-wrap justify-center gap-4 text-[11px] text-stone-500">
+            <div className="mt-3 flex flex-wrap justify-center gap-4 text-[10px] text-stone-400">
               {typeof score === "number" && (
                 <span>Score: {score.toFixed(1)}/100</span>
               )}
@@ -158,28 +159,28 @@ function renderPlatinumCertificate(data: CertificateData): ReactNode {
             </div>
           )}
 
-          <p className="mt-6 text-[10px] text-stone-500 uppercase tracking-wider text-center max-w-md mx-auto">
+          <p className="mt-5 text-[10px] text-stone-500 uppercase tracking-wider text-center max-w-md mx-auto">
             {CERTIFICATION_TRUST_LINE}
           </p>
 
-          {/* Signature block */}
-          <div className="mt-10 sm:mt-12 flex flex-col items-center">
-            <p className="text-[10px] uppercase tracking-widest text-stone-500">
+          {/* Signature block: ceremonial, understated */}
+          <div className="mt-8 sm:mt-10 flex flex-col items-center">
+            <p className="text-[10px] uppercase tracking-[0.18em] text-stone-500">
               Certified by
             </p>
-            <div className="w-32 sm:w-40 mt-2 border-b border-stone-400" aria-hidden />
-            <p className="mt-2 text-xs font-medium text-stone-700">
+            <div className="w-36 sm:w-44 mt-3 border-b border-stone-300" aria-hidden />
+            <p className="mt-3 text-xs font-medium text-stone-700">
               HairAudit Certification Board
             </p>
-            <p className="mt-2 text-[10px] text-stone-500">
+            <p className="mt-2.5 text-[10px] text-stone-500">
               {issuedDate || "—"}
             </p>
           </div>
 
-          {/* Footer: formal audit reference */}
-          <div className="mt-auto pt-6 border-t border-stone-300/80 flex flex-wrap items-center justify-between gap-4 text-[10px] text-stone-500">
+          {/* Footer: formal, traceable reference */}
+          <div className="mt-auto pt-6 border-t border-stone-200/80 flex flex-wrap items-center justify-between gap-4 text-[10px] text-stone-500">
             <span>Issued: {issuedDate || "—"}</span>
-            <span className="uppercase tracking-wider font-medium">
+            <span className="uppercase tracking-wider font-medium text-stone-600">
               Certificate ref. {certificateId}
             </span>
           </div>
