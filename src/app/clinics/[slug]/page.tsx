@@ -15,6 +15,12 @@ import {
   WebsiteBadgePreview,
 } from "@/components/clinic-profile";
 import type { VerifiedCaseHighlight } from "@/components/clinic-profile";
+import {
+  evaluateCertification,
+  type CaseWithReportForCert,
+  type CaseRowForCert,
+  type ReportSummaryForCert,
+} from "@/lib/certification";
 import { getNextMilestoneFromProfile } from "@/lib/transparency/awardRules";
 import type { AwardTier } from "@/lib/transparency/awardRules";
 
@@ -105,6 +111,60 @@ export default async function PublicClinicProfilePage({
 
   const row = clinic as ClinicProfileRow & { linked_user_id?: string | null };
   const linkedUserId = row.linked_user_id ?? null;
+
+  // Public trust-focused certification (computed from public completed cases + latest report summaries).
+  // No internal details, no progress UI, only a lightweight status/score for patient readability.
+  let engineCertificationTier: AwardTier | null = null;
+  let engineCertificationScore: number | null = null;
+  let engineEligiblePublicCases: number | null = null;
+
+  if (linkedUserId) {
+    const { data: publicCompletedCases } = await admin
+      .from("cases")
+      .select("id, status, audit_mode, visibility_scope, is_test")
+      .eq("clinic_id", linkedUserId)
+      .eq("status", "complete")
+      .or("audit_mode.eq.public,visibility_scope.eq.public")
+      .eq("is_test", false);
+
+    const caseList = (publicCompletedCases ?? []) as Array<
+      CaseRowForCert & { is_test?: boolean | null }
+    >;
+    const caseIds = caseList.map((c) => c.id).filter(Boolean);
+
+    if (caseIds.length > 0) {
+      const { data: reportRows } = await admin
+        .from("reports")
+        .select("case_id, version, summary")
+        .in("case_id", caseIds)
+        .order("version", { ascending: false })
+        .limit(3000);
+
+      const latestByCaseId = new Map<string, ReportSummaryForCert>();
+      for (const r of reportRows ?? []) {
+        const cid = String(r.case_id ?? "");
+        if (!cid || latestByCaseId.has(cid)) continue;
+        const summary = (r as { summary?: unknown }).summary;
+        if (!summary) continue;
+        latestByCaseId.set(cid, summary as ReportSummaryForCert);
+      }
+
+      const casesWithReports: CaseWithReportForCert[] = caseList.map((c) => ({
+        case: {
+          id: c.id,
+          status: c.status,
+          audit_mode: c.audit_mode,
+          visibility_scope: c.visibility_scope,
+        },
+        latestReportSummary: latestByCaseId.get(c.id) ?? null,
+      }));
+
+      const certificationResult = evaluateCertification(casesWithReports);
+      engineCertificationTier = (certificationResult.tier as AwardTier | null) ?? null;
+      engineCertificationScore = certificationResult.score;
+      engineEligiblePublicCases = certificationResult.metrics.eligiblePublicCaseCount;
+    }
+  }
 
   let publicCaseCount: number | null = null;
   let verifiedHighlights: VerifiedCaseHighlight[] = [];
@@ -248,7 +308,11 @@ export default async function PublicClinicProfilePage({
           </div>
         </section>
 
-        <CertificationStatusSection certificationTier={tier} />
+        <CertificationStatusSection
+          certificationTier={engineCertificationTier}
+          certificationScore={engineCertificationScore}
+          eligiblePublicCases={engineEligiblePublicCases}
+        />
 
         <section className="relative px-4 sm:px-6 py-12 sm:py-16">
           <div className="max-w-4xl mx-auto">

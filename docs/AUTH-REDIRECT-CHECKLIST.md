@@ -13,8 +13,8 @@ In **Supabase Dashboard → Authentication → URL Configuration**:
 
 - **Site URL:** Canonical https origin (e.g. `https://www.hairaudit.com`).
 - **Redirect URLs** must include:
-  - `https://www.hairaudit.com/auth/callback` (code exchange; OAuth + email confirmation)
-  - `https://www.hairaudit.com/auth/magic-link` (magic link sign-in)
+  - `https://www.hairaudit.com/auth/callback` (code exchange; OAuth + email confirmation + magic-link code exchange)
+  - `https://www.hairaudit.com/auth/magic-link` (optional: hash-based magic link sign-in fallback)
   - `https://www.hairaudit.com/auth/recovery` (password reset)
 
 If these are missing, Supabase may send users to the Site URL (homepage) with `?code=...`; the app repairs that by redirecting `/?code=...` → `/auth/callback?code=...`.
@@ -37,7 +37,7 @@ Implemented in `dashboardPathForRole()` and in `/auth/callback` when `next` is m
 |-------------------|---------------------|-----------|
 | **Callback**      | `/auth/callback`    | OAuth (Google), email signup confirmation, and when homepage receives `?code=...` (repair). Exchanges `code` for session; respects `next` or uses role-based path. |
 | **Recovery**      | `/auth/recovery`    | Password reset. User sets new password then is redirected to `/login`. |
-| **Magic-link**    | `/auth/magic-link`  | Email magic link sign-in. Sets session from hash, then redirects to `/dashboard` (which does role-based redirect). |
+| **Magic-link**    | `/auth/callback` (preferred) | Email magic link sign-in. For `?code=...` responses we exchange the code on `/auth/callback` and redirect by role/`next`. `/auth/magic-link` also hands off to `/auth/callback` when it receives `?code=...` (hash-based flows still work via the existing hash parsing). |
 
 ## Security
 

@@ -162,7 +162,10 @@ function SignUpForm({ initialRole = "patient" }: { initialRole?: SignupRole }) {
     setMsg(null);
     try {
       const appUrl = getCanonicalAppUrl();
-      const emailRedirectTo = `${appUrl}/auth/magic-link`;
+      const nextPath = dashboardPathForRole(signupRole);
+      const emailRedirectTo = `${appUrl}/auth/callback?signup_role=${signupRole}&next=${encodeURIComponent(
+        nextPath
+      )}`;
       const { error } = await supabase.auth.signInWithOtp({
         email: trimmedEmail,
         options: { emailRedirectTo },

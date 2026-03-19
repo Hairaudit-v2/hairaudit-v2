@@ -35,7 +35,7 @@ export async function POST(req: Request) {
   const baseUrl = getCanonicalAppUrl();
   const redirects = [
     { id: "callback", label: "Signup callback redirect", redirectTo: `${baseUrl}/auth/callback?signup_role=clinic&next=${encodeURIComponent("/dashboard/clinic")}` },
-    { id: "magic", label: "Magic-link redirect", redirectTo: `${baseUrl}/auth/magic-link` },
+    { id: "magic", label: "Magic-link redirect", redirectTo: `${baseUrl}/auth/callback` },
     { id: "recovery", label: "Recovery redirect", redirectTo: `${baseUrl}/auth/recovery` },
   ];
 

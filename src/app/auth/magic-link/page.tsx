@@ -20,6 +20,14 @@ export default function MagicLinkPage() {
         return;
       }
 
+      // Some Supabase magic-link configurations return an auth `code` query param
+      // instead of hash-based tokens. If present, hand off to the server exchange.
+      const codeFromQuery = new URLSearchParams(window.location.search).get("code");
+      if (codeFromQuery) {
+        window.location.replace(`/auth/callback?code=${encodeURIComponent(codeFromQuery)}`);
+        return;
+      }
+
       const hash = window.location.hash.startsWith("#")
         ? window.location.hash.slice(1)
         : window.location.hash;

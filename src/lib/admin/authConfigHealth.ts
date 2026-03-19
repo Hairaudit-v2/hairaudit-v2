@@ -30,7 +30,9 @@ export function runAuthConfigHealthChecks(): {
 } {
   const baseUrl = appBaseUrl();
   const callbackUrl = `${baseUrl}/auth/callback`;
-  const magicLinkUrl = `${baseUrl}/auth/magic-link`;
+  // Magic-link flows may return either hash tokens or an auth `code`.
+  // Route through /auth/callback so the server can always exchange the code.
+  const magicLinkUrl = `${baseUrl}/auth/callback`;
   const recoveryUrl = `${baseUrl}/auth/recovery`;
 
   const hasPublicAppUrl = Boolean(asClean(process.env.NEXT_PUBLIC_APP_URL));

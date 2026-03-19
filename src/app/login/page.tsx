@@ -17,7 +17,9 @@ export default function LoginPage() {
 
   const appUrl = getCanonicalAppUrl();
   const oauthRedirectTo = `${appUrl}/auth/callback`;
-  const magicLinkRedirectTo = `${appUrl}/auth/magic-link`;
+  // Magic-link emails may return an auth `code` (not only hash tokens). Always route
+  // through /auth/callback so the server exchanges the code for a session.
+  const magicLinkRedirectTo = `${appUrl}/auth/callback`;
 
   useEffect(() => {
     let mounted = true;
