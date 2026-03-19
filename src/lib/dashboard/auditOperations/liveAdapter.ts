@@ -1,6 +1,5 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { isMissingFeatureError } from "@/lib/db/isMissingFeatureError";
-import { demoAuditOperationsAdapter } from "./demoAdapter";
 import type {
   AuditKpi,
   AuditOperationsAdapter,
@@ -10,6 +9,37 @@ import type {
   DashboardRange,
   RecentOperationalAudits,
 } from "./types";
+
+const emptyKpis: AuditKpi = {
+  newAuditsToday: 0,
+  totalOpenAudits: 0,
+  completedToday: 0,
+  manualReviewQueue: 0,
+  overdueAudits: 0,
+  averageTurnaroundHours: 0,
+  lowConfidenceCases: 0,
+};
+
+const emptyStatusBreakdown: AuditStatusBreakdown = {
+  submitted: 0,
+  processing: 0,
+  inReview: 0,
+  complete: 0,
+  auditFailed: 0,
+};
+
+const emptyPriorityBreakdown: AuditPriorityBreakdown = {
+  overdue: 0,
+  lowConfidence: 0,
+  evidencePoor: 0,
+  manualReview: 0,
+};
+
+const emptyOperationalAudits: RecentOperationalAudits = {
+  recentAudits: [],
+  manualInputAudits: [],
+  stuckOrFailedAudits: [],
+};
 
 function toAuditType(value: unknown): "patient" | "doctor" | "clinic" {
   const text = String(value ?? "patient");
@@ -24,11 +54,11 @@ export const liveAuditOperationsAdapter: AuditOperationsAdapter = {
     const admin = createSupabaseAdminClient();
     const { data, error } = await admin.rpc("auditor_dashboard_kpis", { p_range: range });
     if (error) {
-      if (isMissingFeatureError(error)) return demoAuditOperationsAdapter.getAuditKpis(range);
+      if (isMissingFeatureError(error)) return emptyKpis;
       throw error;
     }
     const row = Array.isArray(data) ? data[0] : null;
-    if (!row) return demoAuditOperationsAdapter.getAuditKpis(range);
+    if (!row) return emptyKpis;
     return {
       newAuditsToday: Number(row.new_audits_today ?? 0),
       totalOpenAudits: Number(row.total_open_audits ?? 0),
@@ -44,11 +74,11 @@ export const liveAuditOperationsAdapter: AuditOperationsAdapter = {
     const admin = createSupabaseAdminClient();
     const { data, error } = await admin.rpc("auditor_dashboard_volume_series", { p_range: range });
     if (error) {
-      if (isMissingFeatureError(error)) return demoAuditOperationsAdapter.getAuditVolumeSeries(range);
+      if (isMissingFeatureError(error)) return [];
       throw error;
     }
     const rows = (data ?? []) as Array<Record<string, unknown>>;
-    if (rows.length === 0) return demoAuditOperationsAdapter.getAuditVolumeSeries(range);
+    if (rows.length === 0) return [];
     return rows.map((row) => ({
       label: String(row.bucket_label ?? ""),
       newAudits: Number(row.new_audits ?? 0),
@@ -61,11 +91,11 @@ export const liveAuditOperationsAdapter: AuditOperationsAdapter = {
     const admin = createSupabaseAdminClient();
     const { data, error } = await admin.rpc("auditor_dashboard_status_breakdown", { p_range: range });
     if (error) {
-      if (isMissingFeatureError(error)) return demoAuditOperationsAdapter.getAuditStatusBreakdown(range);
+      if (isMissingFeatureError(error)) return emptyStatusBreakdown;
       throw error;
     }
     const row = Array.isArray(data) ? data[0] : null;
-    if (!row) return demoAuditOperationsAdapter.getAuditStatusBreakdown(range);
+    if (!row) return emptyStatusBreakdown;
     return {
       submitted: Number(row.submitted ?? 0),
       processing: Number(row.processing ?? 0),
@@ -79,11 +109,11 @@ export const liveAuditOperationsAdapter: AuditOperationsAdapter = {
     const admin = createSupabaseAdminClient();
     const { data, error } = await admin.rpc("auditor_dashboard_priority_breakdown", { p_range: range });
     if (error) {
-      if (isMissingFeatureError(error)) return demoAuditOperationsAdapter.getAuditPriorityBreakdown(range);
+      if (isMissingFeatureError(error)) return emptyPriorityBreakdown;
       throw error;
     }
     const row = Array.isArray(data) ? data[0] : null;
-    if (!row) return demoAuditOperationsAdapter.getAuditPriorityBreakdown(range);
+    if (!row) return emptyPriorityBreakdown;
     return {
       overdue: Number(row.overdue ?? 0),
       lowConfidence: Number(row.low_confidence ?? 0),
@@ -96,11 +126,11 @@ export const liveAuditOperationsAdapter: AuditOperationsAdapter = {
     const admin = createSupabaseAdminClient();
     const { data, error } = await admin.rpc("auditor_dashboard_recent_operational_audits", { p_range: range });
     if (error) {
-      if (isMissingFeatureError(error)) return demoAuditOperationsAdapter.getRecentOperationalAudits(range);
+      if (isMissingFeatureError(error)) return emptyOperationalAudits;
       throw error;
     }
     const rows = (data ?? []) as Array<Record<string, unknown>>;
-    if (rows.length === 0) return demoAuditOperationsAdapter.getRecentOperationalAudits(range);
+    if (rows.length === 0) return emptyOperationalAudits;
 
     const mapped = rows.map((row) => ({
       category: String(row.category ?? "recent"),

@@ -6,7 +6,6 @@ import { isAuditor } from "@/lib/auth/isAuditor";
 import { isMissingFeatureError } from "@/lib/db/isMissingFeatureError";
 import AuditorDashboardClient from "./AuditorDashboardClient";
 import {
-  getAuditDashboardMode,
   getAuditKpis,
   getAuditPriorityBreakdown,
   getAuditStatusBreakdown,
@@ -254,7 +253,6 @@ export default async function AuditorDashboardPage({
     getAuditPriorityBreakdown(range),
     getRecentOperationalAudits(range),
   ]);
-  const mode = getAuditDashboardMode();
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-6 py-2">
@@ -276,13 +274,6 @@ export default async function AuditorDashboardPage({
                 {key}
               </Link>
             ))}
-            <span
-              className={`rounded-full border px-2.5 py-1 text-xs font-semibold uppercase tracking-wide ${
-                mode === "demo" ? "border-amber-300 bg-amber-50 text-amber-800" : "border-emerald-300 bg-emerald-50 text-emerald-800"
-              }`}
-            >
-              {mode} mode
-            </span>
           </div>
         </div>
       </section>

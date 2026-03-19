@@ -1,4 +1,3 @@
-import { demoAuditOperationsAdapter } from "./demoAdapter";
 import { liveAuditOperationsAdapter } from "./liveAdapter";
 import type {
   AuditKpi,
@@ -9,32 +8,24 @@ import type {
   RecentOperationalAudits,
 } from "./types";
 
-function getAdapter() {
-  return process.env.AUDITOR_DASHBOARD_DATA_MODE === "live" ? liveAuditOperationsAdapter : demoAuditOperationsAdapter;
-}
-
-export function getAuditDashboardMode(): "demo" | "live" {
-  return getAdapter().mode;
-}
-
 export async function getAuditKpis(range: DashboardRange): Promise<AuditKpi> {
-  return getAdapter().getAuditKpis(range);
+  return liveAuditOperationsAdapter.getAuditKpis(range);
 }
 
 export async function getAuditVolumeSeries(range: DashboardRange): Promise<AuditVolumePoint[]> {
-  return getAdapter().getAuditVolumeSeries(range);
+  return liveAuditOperationsAdapter.getAuditVolumeSeries(range);
 }
 
 export async function getAuditStatusBreakdown(range: DashboardRange): Promise<AuditStatusBreakdown> {
-  return getAdapter().getAuditStatusBreakdown(range);
+  return liveAuditOperationsAdapter.getAuditStatusBreakdown(range);
 }
 
 export async function getAuditPriorityBreakdown(range: DashboardRange): Promise<AuditPriorityBreakdown> {
-  return getAdapter().getAuditPriorityBreakdown(range);
+  return liveAuditOperationsAdapter.getAuditPriorityBreakdown(range);
 }
 
 export async function getRecentOperationalAudits(range: DashboardRange): Promise<RecentOperationalAudits> {
-  return getAdapter().getRecentOperationalAudits(range);
+  return liveAuditOperationsAdapter.getRecentOperationalAudits(range);
 }
 
 export type { DashboardRange };
