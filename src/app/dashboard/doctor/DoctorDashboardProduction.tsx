@@ -9,6 +9,7 @@ import ProfileCompletenessCard from "@/components/dashboard/ProfileCompletenessC
 import NextBestStepPanel from "@/components/dashboard/NextBestStepPanel";
 import CertificationProgressCard from "@/components/dashboard/CertificationProgressCard";
 import type { CertificationProgress } from "@/lib/certificationProgress";
+import type { CertificationResult } from "@/lib/certification";
 import { BENCHMARKING_GLOBAL_STANDARDS } from "@/lib/benchmarkingCopy";
 
 type CaseRow = {
@@ -36,6 +37,7 @@ export default function DoctorDashboardProduction({
   showWelcomeBanner = false,
   profileCompleteness,
   certificationProgress,
+  certificationResult,
 }: {
   cases: CaseRow[];
   caseIdsWithUploads?: string[];
@@ -44,6 +46,7 @@ export default function DoctorDashboardProduction({
   showWelcomeBanner?: boolean;
   profileCompleteness?: ProfileCompleteness;
   certificationProgress?: CertificationProgress;
+  certificationResult?: CertificationResult | null;
 }) {
   const hasCase = cases.length > 0;
   const firstCase = cases[0] ?? null;
@@ -112,7 +115,7 @@ export default function DoctorDashboardProduction({
 
       {certificationProgress && (
         <div>
-          <CertificationProgressCard progress={certificationProgress} />
+          <CertificationProgressCard progress={certificationProgress} certificationResult={certificationResult ?? undefined} />
         </div>
       )}
 

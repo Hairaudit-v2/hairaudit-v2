@@ -22,6 +22,12 @@ import { BENCHMARKING_GLOBAL_STANDARDS } from "@/lib/benchmarkingCopy";
 import ProfileCompletenessCard from "@/components/dashboard/ProfileCompletenessCard";
 import NextBestStepPanel from "@/components/dashboard/NextBestStepPanel";
 import CertificationProgressCard from "@/components/dashboard/CertificationProgressCard";
+import {
+  evaluateCertification,
+  certificationResultToProgress,
+  type CaseWithReportForCert,
+  type CaseRowForCert,
+} from "@/lib/certification";
 import { getCertificationProgress } from "@/lib/certificationProgress";
 
 export default async function ClinicDashboardPage() {
@@ -77,6 +83,33 @@ export default async function ClinicDashboardPage() {
       .eq("clinic_id", user.id)
       .eq("status", "complete"),
   ]);
+
+  const caseListForCert = cases ?? [];
+  const caseIdsForCert = caseListForCert.map((c) => c.id).filter(Boolean);
+  let latestReportsByCaseId: Map<string, { summary: unknown }> = new Map();
+  if (caseIdsForCert.length > 0) {
+    const { data: reportRows } = await admin
+      .from("reports")
+      .select("case_id, version, summary")
+      .in("case_id", caseIdsForCert)
+      .order("version", { ascending: false });
+    for (const r of reportRows ?? []) {
+      const cid = String(r.case_id ?? "");
+      if (!cid || latestReportsByCaseId.has(cid)) continue;
+      latestReportsByCaseId.set(cid, { summary: (r as { summary?: unknown }).summary });
+    }
+  }
+  const casesWithReportsForCert: CaseWithReportForCert[] = caseListForCert.map((c) => ({
+    case: {
+      id: c.id,
+      status: c.status,
+      audit_mode: (c as { audit_mode?: string | null }).audit_mode,
+      visibility_scope: (c as { visibility_scope?: string | null }).visibility_scope,
+    } as CaseRowForCert,
+    latestReportSummary: latestReportsByCaseId.get(c.id)?.summary as CaseWithReportForCert["latestReportSummary"],
+  }));
+  const clinicCertResult = evaluateCertification(casesWithReportsForCert);
+  const clinicCertProgress = certificationResultToProgress(clinicCertResult);
 
   const [{ data: portalProfile }, { data: capabilityRows }, { count: workspaceCount }] = await Promise.all([
     admin
@@ -243,7 +276,6 @@ export default async function ClinicDashboardPage() {
   const clinicNextBestStep =
     clinicNextActions[0] ?? { label: "Explore your dashboard", href: "/dashboard/clinic" };
 
-  const clinicCertProgress = getCertificationProgress(caseList.length);
 
   return (
     <div>
@@ -300,7 +332,18 @@ export default async function ClinicDashboardPage() {
       </div>
 
       <div className="mb-6">
-        <CertificationProgressCard progress={clinicCertProgress} />
+        <CertificationProgressCard
+          progress={{
+            currentTier: clinicCertProgress.currentTier as "Active" | "Silver" | "Gold" | "Platinum",
+            nextTier: clinicCertProgress.nextTier as "Active" | "Silver" | "Gold" | "Platinum" | null,
+            currentCount: clinicCertProgress.currentCount,
+            nextTierThreshold: clinicCertProgress.nextTierThreshold,
+            progressPct: clinicCertProgress.progressPct,
+            casesToNext: clinicCertProgress.casesToNext,
+            guidanceText: clinicCertProgress.guidanceText,
+          }}
+          certificationResult={clinicCertResult}
+        />
       </div>
 
       <div className="mb-6">

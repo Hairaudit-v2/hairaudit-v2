@@ -1,6 +1,12 @@
 import { redirect } from "next/navigation";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import {
+  evaluateCertification,
+  certificationResultToProgress,
+  type CaseWithReportForCert,
+  type CaseRowForCert,
+} from "@/lib/certification";
 import { getCertificationProgress } from "@/lib/certificationProgress";
 import DoctorDashboardProduction from "./DoctorDashboardProduction";
 
@@ -12,13 +18,42 @@ export default async function DoctorDashboardPage() {
   const admin = createSupabaseAdminClient();
   const { data: cases } = await admin
     .from("cases")
-    .select("id, title, status, created_at, submitted_at, evidence_score_doctor")
+    .select("id, title, status, created_at, submitted_at, evidence_score_doctor, doctor_id, audit_mode, visibility_scope")
     .or(`doctor_id.eq.${user.id},clinic_id.eq.${user.id},user_id.eq.${user.id}`)
     .order("created_at", { ascending: false })
     .limit(50);
 
   const caseList = cases ?? [];
   const caseIds = caseList.map((c) => c.id);
+
+  const doctorAttributedCases = caseList.filter(
+    (c) => (c as { doctor_id?: string | null }).doctor_id === user.id
+  );
+  const doctorCaseIds = doctorAttributedCases.map((c) => c.id).filter(Boolean);
+  let doctorLatestReportsByCaseId: Map<string, { summary: unknown }> = new Map();
+  if (doctorCaseIds.length > 0) {
+    const { data: doctorReportRows } = await admin
+      .from("reports")
+      .select("case_id, version, summary")
+      .in("case_id", doctorCaseIds)
+      .order("version", { ascending: false });
+    for (const r of doctorReportRows ?? []) {
+      const cid = String(r.case_id ?? "");
+      if (!cid || doctorLatestReportsByCaseId.has(cid)) continue;
+      doctorLatestReportsByCaseId.set(cid, { summary: (r as { summary?: unknown }).summary });
+    }
+  }
+  const doctorCasesWithReports: CaseWithReportForCert[] = doctorAttributedCases.map((c) => ({
+    case: {
+      id: c.id,
+      status: c.status,
+      audit_mode: (c as { audit_mode?: string | null }).audit_mode,
+      visibility_scope: (c as { visibility_scope?: string | null }).visibility_scope,
+    } as CaseRowForCert,
+    latestReportSummary: doctorLatestReportsByCaseId.get(c.id)?.summary as CaseWithReportForCert["latestReportSummary"],
+  }));
+  const doctorCertResult = evaluateCertification(doctorCasesWithReports);
+  const doctorCertProgressMapped = certificationResultToProgress(doctorCertResult);
   let caseIdsWithUploads: string[] = [];
   if (caseIds.length > 0) {
     const { data: uploadRows } = await admin
@@ -104,7 +139,15 @@ export default async function DoctorDashboardPage() {
   const doctorNextBestStep =
     doctorNextActions[0] ?? { label: "Explore your dashboard", href: "/dashboard/doctor" };
 
-  const doctorCertProgress = getCertificationProgress(caseList.length);
+  const doctorCertProgress = {
+    currentTier: doctorCertProgressMapped.currentTier as "Active" | "Silver" | "Gold" | "Platinum",
+    nextTier: doctorCertProgressMapped.nextTier as "Active" | "Silver" | "Gold" | "Platinum" | null,
+    currentCount: doctorCertProgressMapped.currentCount,
+    nextTierThreshold: doctorCertProgressMapped.nextTierThreshold,
+    progressPct: doctorCertProgressMapped.progressPct,
+    casesToNext: doctorCertProgressMapped.casesToNext,
+    guidanceText: doctorCertProgressMapped.guidanceText,
+  };
 
   return (
     <DoctorDashboardProduction
@@ -115,6 +158,7 @@ export default async function DoctorDashboardPage() {
       showWelcomeBanner={showDoctorWelcomeBanner}
       profileCompleteness={{ percentage: doctorCompletenessPct, doneCount: doctorDoneCount, totalChecks: doctorTotalChecks, nextActions: doctorNextActions.slice(0, 3), nextBestStep: doctorNextBestStep }}
       certificationProgress={doctorCertProgress}
+      certificationResult={doctorCertResult}
     />
   );
 }

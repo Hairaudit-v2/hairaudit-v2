@@ -1,6 +1,13 @@
 import type { CertificationProgress } from "@/lib/certificationProgress";
+import type { CertificationResult } from "@/lib/certification";
 
-export default function CertificationProgressCard({ progress }: { progress: CertificationProgress }) {
+type Props = {
+  progress: CertificationProgress;
+  /** When provided (e.g. clinic dashboard), shows score, eligible cases, helping/limiting reasons. */
+  certificationResult?: CertificationResult | null;
+};
+
+export default function CertificationProgressCard({ progress, certificationResult }: Props) {
   const { currentTier, nextTier, currentCount, nextTierThreshold, progressPct, guidanceText } = progress;
 
   return (
@@ -19,6 +26,14 @@ export default function CertificationProgressCard({ progress }: { progress: Cert
           </span>
         )}
       </div>
+      {certificationResult != null && (
+        <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-slate-600">
+          <span>Certification score</span>
+          <span className="font-medium text-slate-900">{certificationResult.score.toFixed(1)}</span>
+          <span>Eligible public cases</span>
+          <span className="font-medium text-slate-900">{certificationResult.metrics.eligiblePublicCaseCount}</span>
+        </div>
+      )}
       {nextTier && progressPct < 100 && (
         <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-100">
           <div
@@ -34,7 +49,22 @@ export default function CertificationProgressCard({ progress }: { progress: Cert
       {nextTier && progressPct < 100 && (
         <p className="mt-2 text-xs text-slate-600">{progressPct}% toward {nextTier}</p>
       )}
-      <p className="mt-2 text-sm text-slate-600">{guidanceText}</p>
+      {certificationResult != null && (certificationResult.helpingReasons.length > 0 || certificationResult.limitingReasons.length > 0) ? (
+        <div className="mt-2 space-y-1">
+          {certificationResult.helpingReasons.length > 0 && (
+            <p className="text-xs text-emerald-700">
+              Helping: {certificationResult.helpingReasons.join("; ")}
+            </p>
+          )}
+          {certificationResult.limitingReasons.length > 0 && (
+            <p className="text-xs text-amber-700">
+              To reach next tier: {certificationResult.limitingReasons.join("; ")}
+            </p>
+          )}
+        </div>
+      ) : (
+        <p className="mt-2 text-sm text-slate-600">{guidanceText}</p>
+      )}
     </div>
   );
 }
