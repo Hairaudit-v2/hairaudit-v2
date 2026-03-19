@@ -92,7 +92,7 @@ function CertificateLogoHeader({
   subClass?: string;
 }) {
   return (
-    <header className="text-center pb-3">
+    <header className="text-center pb-4">
       <img
         src={CERTIFICATE_LOGO_PATH}
         alt="HairAudit"
@@ -104,7 +104,7 @@ function CertificateLogoHeader({
       <p className={`mt-4 text-[10px] font-medium uppercase tracking-[0.2em] ${accentClass}`}>
         HairAudit Certification
       </p>
-      <p className={`mt-1 text-[9px] ${subClass} tracking-[0.02em]`}>
+      <p className={`mt-1.5 text-[9px] ${subClass} tracking-[0.02em]`}>
         Independently verified surgical performance certification
       </p>
     </header>
@@ -166,7 +166,7 @@ function renderPlatinumCertificate(
         certificate-layout certificate-layout--platinum
         relative w-full flex flex-col overflow-hidden
         aspect-[210/297] max-h-[840px]
-        print:aspect-auto print:min-h-[297mm] print:max-h-none
+        print:aspect-auto print:min-h-[297mm] print:max-h-none print:break-inside-avoid
         rounded-sm border border-stone-300
         bg-gradient-to-b from-stone-50 to-stone-100/30
         shadow-[0_1px_3px_rgba(0,0,0,0.04)]
@@ -181,11 +181,11 @@ function renderPlatinumCertificate(
 
       {/* Inner frame: thin, elegant */}
       <div className="relative z-0 flex-1 flex flex-col m-4 sm:m-5 md:m-6 border border-stone-200/90 print:border-stone-300 print:m-5">
-        <div className="flex flex-col flex-1 p-6 sm:p-8 md:p-10 print:p-8">
+        <div className="flex flex-col flex-1 p-6 sm:p-8 md:p-10 print:p-8 pb-8 print:pb-8">
           <CertificateLogoHeader accentClass="text-stone-600" subClass="text-stone-400" />
 
           {/* Title and subtitle: tight relationship */}
-          <div className="mt-6 sm:mt-7 text-center">
+          <div className="mt-7 sm:mt-8 text-center">
             <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-stone-900">
               PLATINUM CERTIFICATION
             </h1>
@@ -223,7 +223,7 @@ function renderPlatinumCertificate(
           </p>
 
           {/* Signature block: ceremonial, understated */}
-          <div className="mt-8 sm:mt-10 flex flex-col items-center">
+          <div className="mt-9 sm:mt-10 flex flex-col items-center">
             <p className="text-[10px] uppercase tracking-[0.18em] text-stone-500">
               Certified by
             </p>
@@ -237,13 +237,13 @@ function renderPlatinumCertificate(
           </div>
 
           {/* Footer: formal, traceable reference */}
-          <div className="mt-auto pt-6 border-t border-stone-200/80 flex flex-wrap items-center justify-between gap-4 text-[10px] text-stone-500">
+          <div className="mt-auto pt-7 border-t border-stone-200/80 flex flex-wrap items-center justify-between gap-4 text-[10px] text-stone-500">
             <span>Issued: {issuedDate || "—"}</span>
             <span className="uppercase tracking-wider font-medium text-stone-600">
               Certificate ref. {certificateId}
             </span>
           </div>
-          <p className="mt-2 text-[9px] text-stone-400 text-center">
+          <p className="mt-2.5 text-[9px] text-stone-400 text-center">
             Evidence-based recognition · Not purchased
           </p>
         </div>
@@ -292,7 +292,7 @@ function renderStandardCertificate(
         certificate-layout certificate-layout--standard
         relative w-full flex flex-col overflow-hidden
         aspect-[210/297] max-h-[840px]
-        print:aspect-auto print:min-h-[297mm] print:max-h-none
+        print:aspect-auto print:min-h-[297mm] print:max-h-none print:break-inside-avoid
         rounded-sm border ${styles.outerBorder}
         bg-gradient-to-b ${styles.bgFrom} ${styles.bgTo}
         shadow-[0_1px_3px_rgba(0,0,0,0.04)]
@@ -314,14 +314,14 @@ function renderStandardCertificate(
       <div
         className={`relative z-0 flex-1 flex flex-col m-4 sm:m-5 md:m-6 border ${styles.innerBorder} print:m-5`}
       >
-        <div className="flex flex-col flex-1 p-6 sm:p-8 md:p-10 print:p-8">
+        <div className="flex flex-col flex-1 p-6 sm:p-8 md:p-10 print:p-8 pb-8 print:pb-8">
           <CertificateLogoHeader
             accentClass={styles.headerAccent}
             subClass="text-slate-500"
           />
 
           {/* Main title (tier-based) + Certified Clinic */}
-          <div className="mt-6 sm:mt-7 text-center">
+          <div className="mt-7 sm:mt-8 text-center">
             <h1
               className={`font-serif text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight ${styles.titleColor}`}
             >
@@ -334,7 +334,7 @@ function renderStandardCertificate(
 
           {/* Clinic name: prominent, slightly less dominant than Platinum */}
           <div
-            className={`mt-6 sm:mt-8 border-t border-b ${styles.nameplateBorder} py-6 sm:py-8`}
+            className={`mt-6 sm:mt-8 border-t border-b ${styles.nameplateBorder} py-6 sm:py-9`}
           >
             <p
               className={`font-serif text-lg sm:text-xl md:text-2xl font-semibold ${styles.titleColor} text-center tracking-tight`}
@@ -360,12 +360,12 @@ function renderStandardCertificate(
             </div>
           )}
 
-          <p className="mt-5 text-[10px] text-slate-500 uppercase tracking-wider text-center max-w-md mx-auto">
+          <p className="mt-6 text-[10px] text-slate-500 uppercase tracking-wider text-center max-w-md mx-auto">
             {CERTIFICATION_TRUST_LINE}
           </p>
 
           {/* Signature block: same structure as Platinum, slightly lighter */}
-          <div className="mt-8 sm:mt-10 flex flex-col items-center">
+          <div className="mt-9 sm:mt-10 flex flex-col items-center">
             <p className="text-[10px] uppercase tracking-[0.18em] text-slate-500">
               Certified by
             </p>
@@ -383,14 +383,14 @@ function renderStandardCertificate(
 
           {/* Footer: certificate reference */}
           <div
-            className={`mt-auto pt-6 border-t ${styles.footerBorder} flex flex-wrap items-center justify-between gap-4 text-[10px] text-slate-500`}
+            className={`mt-auto pt-7 border-t ${styles.footerBorder} flex flex-wrap items-center justify-between gap-4 text-[10px] text-slate-500`}
           >
             <span>Issued: {issuedDate || "—"}</span>
             <span className="uppercase tracking-wider font-medium text-slate-600">
               Certificate ref. {certificateId}
             </span>
           </div>
-          <p className="mt-2 text-[9px] text-slate-400 text-center">
+          <p className="mt-2.5 text-[9px] text-slate-400 text-center">
             Evidence-based recognition · Not purchased
           </p>
         </div>
