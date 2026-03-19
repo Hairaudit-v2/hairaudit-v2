@@ -1,5 +1,13 @@
 "use client";
 
+import SearchableSelect from "./SearchableSelect";
+import SearchableMultiSelect from "./SearchableMultiSelect";
+
+/** Option count above which we use searchable UX (single select). */
+const SEARCHABLE_SELECT_THRESHOLD = 10;
+/** Option count above which we use searchable UX (multi-select). */
+const SEARCHABLE_MULTI_THRESHOLD = 8;
+
 type FormQuestion = {
   id: string;
   prompt: string;
@@ -135,7 +143,22 @@ export default function QuestionField({
           </div>
         );
       }
-      case "select":
+      case "select": {
+        const useSearchable = opts.length >= SEARCHABLE_SELECT_THRESHOLD;
+        if (useSearchable) {
+          return (
+            <SearchableSelect
+              id={fieldId}
+              name={question.id}
+              options={opts}
+              value={(value as string) ?? null}
+              onChange={(v) => onChange(v)}
+              disabled={isDisabled}
+              placeholder="— Select —"
+              className={baseClass}
+            />
+          );
+        }
         return (
           <select
             id={fieldId}
@@ -151,6 +174,7 @@ export default function QuestionField({
             ))}
           </select>
         );
+      }
       case "yesno":
         return (
           <div role="radiogroup" aria-labelledby={`${fieldId}-label`} className="flex gap-4">
@@ -173,6 +197,21 @@ export default function QuestionField({
         );
       case "checkbox": {
         const selected = Array.isArray(value) ? value : value ? [String(value)] : [];
+        const useSearchable = opts.length >= SEARCHABLE_MULTI_THRESHOLD;
+        if (useSearchable) {
+          return (
+            <SearchableMultiSelect
+              id={fieldId}
+              name={question.id}
+              options={opts}
+              value={selected}
+              onChange={(next) => onChange(next.length ? next : null)}
+              disabled={isDisabled}
+              placeholder="Select options..."
+              className={baseClass}
+            />
+          );
+        }
         return (
           <div role="group" aria-labelledby={`${fieldId}-label`} className="space-y-2">
             {opts.map((o) => (
