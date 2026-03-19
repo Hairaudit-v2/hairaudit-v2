@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -10,12 +10,37 @@ import { getCanonicalAppUrl, dashboardPathForRole } from "@/lib/auth/redirects";
 
 type SignupRole = "patient" | "doctor" | "clinic";
 
+const ROLE_COPY: Record<SignupRole, { label: string; description: string }> = {
+  patient: {
+    label: "Patient",
+    description: "Submit transplant cases for independent forensic review.",
+  },
+  clinic: {
+    label: "Clinic",
+    description:
+      "Create your free clinic profile, submit audited cases, and build a verified public presence over time.",
+  },
+  doctor: {
+    label: "Doctor",
+    description:
+      "Create your free doctor profile and begin building a transparent, evidence-based professional record.",
+  },
+};
+
 export default function SignUpPage() {
   const supabase = createSupabaseBrowserClient();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [signupRole, setSignupRole] = useState<SignupRole>("patient");
+
+  useEffect(() => {
+    const role = searchParams.get("role");
+    if (role === "clinic" || role === "doctor" || role === "patient") {
+      setSignupRole(role);
+    }
+  }, [searchParams]);
   const [msg, setMsg] = useState<string | null>(null);
   const [msgKind, setMsgKind] = useState<"error" | "success">("error");
   const [busy, setBusy] = useState(false);
@@ -190,9 +215,9 @@ export default function SignUpPage() {
                 className="h-10 w-auto object-contain"
               />
             </div>
-            <h1 className="text-2xl font-bold text-slate-900">Create your HairAudit beta account</h1>
+            <h1 className="text-2xl font-bold text-slate-900">Create your HairAudit account</h1>
             <p className="mt-2 text-sm text-slate-600">
-              Choose your account type. Patient, doctor, and clinic experiences are currently in beta testing.
+              Choose your path: Patient, Clinic, or Doctor. Each has a tailored experience.
             </p>
 
             <form onSubmit={signUp} className="mt-6 space-y-4">
@@ -208,7 +233,7 @@ export default function SignUpPage() {
                         : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
                     }`}
                   >
-                    Patient (Beta)
+                    Patient
                   </button>
                   <button
                     type="button"
@@ -219,7 +244,7 @@ export default function SignUpPage() {
                         : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
                     }`}
                   >
-                    Doctor (Beta)
+                    Doctor
                   </button>
                   <button
                     type="button"
@@ -230,15 +255,11 @@ export default function SignUpPage() {
                         : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
                     }`}
                   >
-                    Clinic (Beta)
+                    Clinic
                   </button>
                 </div>
                 <p className="mt-2 text-xs text-slate-500">
-                  {signupRole === "clinic"
-                    ? "Clinic beta accounts get access to the Clinic Intelligence Portal (Invited Contributions and Submitted Cases)."
-                    : signupRole === "doctor"
-                      ? "Doctor beta accounts get access to the Doctor Portal, defaults-first upload flow, and report visibility controls."
-                      : "Patient beta accounts can submit transplant cases for independent forensic review."}
+                  {ROLE_COPY[signupRole].description}
                 </p>
               </div>
               <div>
@@ -279,9 +300,11 @@ export default function SignUpPage() {
               >
                 {busy
                   ? "Creating..."
-                  : `Sign up as ${
-                      signupRole === "clinic" ? "Clinic" : signupRole === "doctor" ? "Doctor" : "Patient"
-                    }`}
+                  : signupRole === "clinic"
+                    ? "Create Clinic Profile"
+                    : signupRole === "doctor"
+                      ? "Create Doctor Profile"
+                      : "Sign up as Patient"}
               </button>
             </form>
 

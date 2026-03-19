@@ -81,8 +81,8 @@ export default function SiteFooter({ theme = "default" }: SiteFooterProps) {
                 </Link>
               </li>
               <li>
-                <Link href="/professionals/apply" className={linkClass}>
-                  Apply for Participation
+                <Link href="/signup" className={linkClass}>
+                  Create Clinic or Doctor Profile
                 </Link>
               </li>
             </ul>

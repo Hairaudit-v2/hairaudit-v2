@@ -56,8 +56,8 @@ export default function AboutPage() {
               <section className="rounded-2xl border border-white/10 bg-white/5 p-6">
                 <h2 className="text-xl font-semibold text-white">Current platform status</h2>
                 <p className="mt-3 text-slate-300 text-sm sm:text-base leading-relaxed">
-                  Patient review requests are available now. Professional participation for clinics,
-                  surgeons, and partners uses a dedicated onboarding pathway.
+                  Patient review requests are available now. Clinics and doctors can create a free
+                  profile and begin with internal audits or build a verified professional presence.
                 </p>
                 <div className="mt-5 flex flex-col sm:flex-row gap-3">
                   <Link
@@ -67,10 +67,10 @@ export default function AboutPage() {
                     Request Review
                   </Link>
                   <Link
-                    href="/professionals/apply"
+                    href="/signup"
                     className="inline-flex items-center justify-center px-6 py-3 rounded-xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
                   >
-                    Apply for Participation
+                    Create Clinic or Doctor Profile
                   </Link>
                 </div>
               </section>

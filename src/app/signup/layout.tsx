@@ -1,7 +1,7 @@
 export const metadata = {
-  title: "Beta Sign Up | HairAudit",
+  title: "Sign Up | HairAudit",
   description:
-    "Create a HairAudit beta account as a patient, doctor, or clinic. All three experiences are currently in beta testing.",
+    "Create your HairAudit account as a patient, clinic, or doctor. Create a free clinic or doctor profile, or submit cases for independent review as a patient.",
 };
 
 export default function SignUpLayout({

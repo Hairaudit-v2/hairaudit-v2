@@ -121,8 +121,8 @@ const serviceBlocks = [
     ],
     whyItMatters:
       "Helps clinics strengthen transparency, understand benchmark readiness, and support evidence-based positioning in the HairAudit ecosystem — without marketing spin.",
-    href: "/professionals/apply",
-    cta: "Apply for Participation",
+    href: "/signup",
+    cta: "Create Clinic Profile",
   },
   {
     id: "transparency",
@@ -143,8 +143,8 @@ const serviceBlocks = [
     ],
     whyItMatters:
       "Helps you understand how participation supports recognition, where documentation and consistency can improve, and how you stand within the Verified Program.",
-    href: "/professionals/apply",
-    cta: "Apply for Participation",
+    href: "/signup",
+    cta: "Create Doctor Profile",
   },
 ];
 
@@ -452,11 +452,11 @@ export default function ServicesPage() {
                   Request Review
                 </TrackedLink>
                 <TrackedLink
-                  href="/professionals/apply"
+                  href="/signup"
                   eventName="cta_professional_apply_services"
                   className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
                 >
-                  Apply for Participation
+                  Create Clinic or Doctor Profile
                 </TrackedLink>
               </div>
             </ScrollReveal>

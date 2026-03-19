@@ -17,34 +17,34 @@ const STATUS_CONFIG: Record<
   { label: string; description: string; className: string }
 > = {
   not_started: {
-    label: "Application not started",
+    label: "Profile not yet listed",
     description:
-      "You can use the dashboard to create and submit cases. To be listed in the professional directory and leaderboards, apply for participation.",
+      "You can use the dashboard to create and submit cases. To be listed in the professional directory and leaderboards, complete your profile.",
     className: "border-slate-200 bg-slate-50 text-slate-800",
   },
   pending_review: {
-    label: "Pending review",
+    label: "Listing in progress",
     description:
-      "Your participation application has been received and is under review. You will be notified once it has been processed.",
+      "Your profile details have been received and are being processed. You will be notified once your listing is updated.",
     className: "border-amber-200 bg-amber-50 text-amber-900",
   },
   approved: {
-    label: "Approved for participation",
+    label: "Listed for participation",
     description:
-      "Your participation is approved. Your submitted cases can contribute to benchmarking and public recognition where applicable.",
+      "Your profile is listed. Your submitted cases can contribute to benchmarking and public recognition where applicable.",
     className: "border-emerald-200 bg-emerald-50 text-emerald-900",
   },
   more_info_required: {
-    label: "More information required",
+    label: "More information needed",
     description:
-      "We need a bit more information to complete your participation application. Please check your email or contact support.",
+      "We need a bit more information to complete your profile listing. Please check your email or contact support.",
     className: "border-amber-200 bg-amber-50 text-amber-900",
   },
 };
 
 export default function ParticipationStatusBanner({ status, role }: ParticipationStatusBannerProps) {
   const config = STATUS_CONFIG[status];
-  const applyHref = "/professionals/apply";
+  const profileHref = "/signup";
 
   return (
     <div
@@ -59,10 +59,10 @@ export default function ParticipationStatusBanner({ status, role }: Participatio
         </div>
         {status === "not_started" && (
           <Link
-            href={applyHref}
+            href={profileHref}
             className="shrink-0 rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800"
           >
-            Apply to participate
+            Complete profile
           </Link>
         )}
       </div>

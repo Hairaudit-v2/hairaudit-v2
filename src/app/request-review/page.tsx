@@ -91,14 +91,14 @@ export default function RequestReviewPage() {
                 </TrackedLink>
               </div>
               <div className="rounded-2xl border border-cyan-300/25 bg-cyan-300/10 p-5">
-                <p className="text-xs uppercase tracking-wider text-cyan-100 font-semibold">For Clinics / Surgeons</p>
-                <p className="mt-2 text-sm text-cyan-50/95">Use the professional onboarding pathway.</p>
+                <p className="text-xs uppercase tracking-wider text-cyan-100 font-semibold">For Clinics / Doctors</p>
+                <p className="mt-2 text-sm text-cyan-50/95">Create a free clinic or doctor profile and start with internal audits.</p>
                 <TrackedLink
-                  href="/professionals/apply"
+                  href="/signup"
                   eventName="cta_professional_apply_request_review_split"
                   className="mt-4 inline-flex items-center rounded-xl border border-slate-500 px-4 py-2.5 text-sm font-medium text-slate-100 hover:bg-white/5 transition-colors"
                 >
-                  Apply for Participation
+                  Create Clinic or Doctor Profile
                 </TrackedLink>
               </div>
             </div>

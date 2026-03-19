@@ -107,18 +107,18 @@ export default function ForClinicsPage() {
                 HairAudit is a global transparency and quality framework for hair restoration clinics.
               </p>
               <p className="mt-4 text-slate-400 max-w-lg mx-auto">
-                Participate with internal audits first, then build public proof and certification that help patients and referrers trust your commitment to quality.
+                Clinics can create a free profile and begin with private internal audits before making selected cases public.
               </p>
               <div className="mt-12 flex flex-col sm:flex-row gap-4 justify-center items-center">
                 <TrackedLink
-                  href="/signup"
+                  href="/signup?role=clinic"
                   eventName="cta_create_clinic_profile_for_clinics"
                   className="inline-flex items-center justify-center px-10 py-4 rounded-2xl bg-amber-500 text-slate-900 font-semibold text-lg hover:bg-amber-400 transition-colors border border-amber-400/50 shadow-lg shadow-amber-500/20"
                 >
                   Create Clinic Profile
                 </TrackedLink>
                 <TrackedLink
-                  href="/signup"
+                  href="/signup?role=clinic"
                   eventName="cta_start_internal_audits_for_clinics"
                   className="inline-flex items-center justify-center px-8 py-4 rounded-2xl border-2 border-slate-500 text-slate-200 font-medium hover:border-amber-500/50 hover:text-amber-400 transition-colors"
                 >
@@ -295,14 +295,14 @@ export default function ForClinicsPage() {
           <div className="max-w-2xl mx-auto text-center">
             <ScrollReveal>
               <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
-                Join as an early participant
+                Get started free
               </h2>
               <p className="mt-5 text-xl text-slate-300">
-                Clinics that join now build certification and public proof from the start — and help shape a more transparent industry.
+                Create your clinic profile and start with internal audits. Build certification and public proof over time.
               </p>
               <div className="mt-10">
                 <TrackedLink
-                  href="/signup"
+                  href="/signup?role=clinic"
                   eventName="cta_join_clinics_final"
                   className="inline-flex items-center justify-center px-10 py-4 rounded-2xl bg-amber-500 text-slate-900 font-semibold text-lg hover:bg-amber-400 transition-colors border border-amber-400/50 shadow-lg shadow-amber-500/20"
                 >

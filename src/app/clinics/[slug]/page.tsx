@@ -381,10 +381,10 @@ export default async function PublicClinicProfilePage({
                 Request Review
               </Link>
               <Link
-                href="/professionals/apply"
+                href="/signup?role=clinic"
                 className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl border border-slate-600 text-slate-200 text-sm font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
               >
-                Apply for Participation
+                Create Clinic Profile
               </Link>
             </div>
           </div>

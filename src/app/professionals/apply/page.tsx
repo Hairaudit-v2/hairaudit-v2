@@ -1,38 +1,30 @@
 import Link from "next/link";
+import TrackedLink from "@/components/analytics/TrackedLink";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import { createPageMetadata } from "@/lib/seo/pageMetadata";
 
 export const metadata = createPageMetadata({
-  title: "Apply for Professional Participation | HairAudit",
+  title: "Create Clinic or Doctor Profile | HairAudit",
   description:
-    "Request participation in the HairAudit professional ecosystem for clinics, surgeons, partners, auditors, and expert stakeholders.",
+    "Create your free HairAudit profile as a clinic or doctor. Start with internal audits and build a verified, transparent professional presence.",
   pathname: "/professionals/apply",
 });
 
-const audienceItems = [
-  "Clinics that want transparent, evidence-based profile participation.",
-  "Surgeons seeking recognition through validated documentation and outcomes.",
-  "Clinical partners supporting quality improvement and benchmark readiness.",
-  "Independent auditors and expert stakeholders contributing review quality.",
-  "Legal and advisory professionals needing structured, objective documentation context.",
-];
+const clinicCopy = {
+  title: "Create Clinic Profile",
+  description:
+    "Create your free clinic profile, submit audited cases, and build a verified public presence over time. Clinics can begin with private internal audits before making selected cases public.",
+  cta: "Create Clinic Profile",
+  href: "/signup?role=clinic",
+};
 
-const valueItems = [
-  "Strengthen trust with independent, evidence-led visibility.",
-  "Support fairer interpretation through improved documentation contribution.",
-  "Track recognition progression based on validated participation.",
-  "Align your profile with transparent quality standards.",
-];
-
-const processSteps = [
-  "Submit your participation interest with role and organization details.",
-  "HairAudit reviews fit, scope, and operational readiness.",
-  "We confirm onboarding requirements and evidence standards.",
-  "You receive next-step onboarding guidance and access path.",
-];
-
-const participationEmail =
-  "mailto:auditor@hairaudit.com?subject=HairAudit%20Professional%20Participation%20Request";
+const doctorCopy = {
+  title: "Create Doctor Profile",
+  description:
+    "Create your free doctor profile and begin building a transparent, evidence-based professional record. Doctors can contribute cases and build a verified presence through transparent case contribution.",
+  cta: "Create Doctor Profile",
+  href: "/signup?role=doctor",
+};
 
 export default function ProfessionalApplyPage() {
   return (
@@ -40,99 +32,76 @@ export default function ProfessionalApplyPage() {
       <ScrollReveal>
         <section className="rounded-2xl border border-cyan-500/25 bg-cyan-500/10 p-6 sm:p-8">
           <p className="text-xs font-semibold uppercase tracking-wider text-cyan-300">
-            Professional Participation
+            For professionals
           </p>
           <h1 className="mt-3 text-3xl sm:text-4xl font-bold tracking-tight text-white">
-            Join the HairAudit professional ecosystem
+            Create your profile
           </h1>
           <p className="mt-4 max-w-3xl text-slate-200">
-            This pathway is for clinics, surgeons, partners, and expert stakeholders who want to
-            participate in transparent, evidence-based quality benchmarking.
+            Choose your path. Clinics and doctors can create a free profile and get started with
+            internal audits or begin building a verified, transparent presence — no application or
+            approval required.
           </p>
-          <div className="mt-6 flex flex-col sm:flex-row gap-3">
-            <Link
-              href={participationEmail}
-              className="inline-flex items-center justify-center rounded-xl bg-cyan-500 px-5 py-3 text-sm font-semibold text-slate-950 hover:bg-cyan-400 transition-colors"
-            >
-              Request Participation
-            </Link>
-            <Link
-              href="/verified-surgeon-program"
-              className="inline-flex items-center justify-center rounded-xl border border-slate-600 px-5 py-3 text-sm font-medium text-slate-100 hover:bg-white/5 transition-colors"
-            >
-              Review Program Overview
-            </Link>
-          </div>
         </section>
       </ScrollReveal>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <ScrollReveal delay={0.04}>
-          <section className="rounded-2xl border border-white/10 bg-white/5 p-6">
-            <h2 className="text-xl font-semibold text-white">Who this is for</h2>
-            <ul className="mt-4 space-y-2 text-slate-300 text-sm">
-              {audienceItems.map((item) => (
-                <li key={item} className="flex gap-2">
-                  <span className="text-cyan-300">-</span>
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
+          <section className="rounded-2xl border border-white/10 bg-white/5 p-6 flex flex-col h-full">
+            <h2 className="text-xl font-semibold text-white">{clinicCopy.title}</h2>
+            <p className="mt-3 text-slate-300 text-sm leading-relaxed flex-1">
+              {clinicCopy.description}
+            </p>
+            <div className="mt-6">
+              <TrackedLink
+                href={clinicCopy.href}
+                eventName="cta_create_clinic_profile_professionals_apply"
+                className="inline-flex items-center justify-center rounded-xl bg-cyan-500 px-5 py-3 text-sm font-semibold text-slate-950 hover:bg-cyan-400 transition-colors"
+              >
+                {clinicCopy.cta}
+              </TrackedLink>
+            </div>
           </section>
         </ScrollReveal>
 
-        <ScrollReveal delay={0.08}>
-          <section className="rounded-2xl border border-white/10 bg-white/5 p-6">
-            <h2 className="text-xl font-semibold text-white">Why participate</h2>
-            <ul className="mt-4 space-y-2 text-slate-300 text-sm">
-              {valueItems.map((item) => (
-                <li key={item} className="flex gap-2">
-                  <span className="text-cyan-300">-</span>
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
+        <ScrollReveal delay={0.06}>
+          <section className="rounded-2xl border border-white/10 bg-white/5 p-6 flex flex-col h-full">
+            <h2 className="text-xl font-semibold text-white">{doctorCopy.title}</h2>
+            <p className="mt-3 text-slate-300 text-sm leading-relaxed flex-1">
+              {doctorCopy.description}
+            </p>
+            <div className="mt-6">
+              <TrackedLink
+                href={doctorCopy.href}
+                eventName="cta_create_doctor_profile_professionals_apply"
+                className="inline-flex items-center justify-center rounded-xl bg-violet-500 px-5 py-3 text-sm font-semibold text-white hover:bg-violet-400 transition-colors"
+              >
+                {doctorCopy.cta}
+              </TrackedLink>
+            </div>
           </section>
         </ScrollReveal>
       </div>
 
-      <ScrollReveal delay={0.12}>
+      <ScrollReveal delay={0.1}>
         <section className="rounded-2xl border border-white/10 bg-white/5 p-6">
-          <h2 className="text-xl font-semibold text-white">What the process looks like</h2>
-          <ol className="mt-4 space-y-3 text-sm text-slate-300">
-            {processSteps.map((step, index) => (
-              <li key={step} className="flex gap-3">
-                <span className="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-cyan-500/25 text-cyan-200 text-xs font-semibold">
-                  {index + 1}
-                </span>
-                <span className="pt-0.5">{step}</span>
-              </li>
-            ))}
-          </ol>
-          <p className="mt-5 text-sm text-slate-400">
-            Include role, organization name, country, and your participation goals in your request.
-          </p>
-        </section>
-      </ScrollReveal>
-
-      <ScrollReveal delay={0.16}>
-        <section className="rounded-2xl border border-white/10 bg-white/5 p-6">
-          <h2 className="text-xl font-semibold text-white">Next steps</h2>
+          <h2 className="text-xl font-semibold text-white">Learn more</h2>
           <p className="mt-3 text-sm text-slate-300">
-            Ready to participate? Submit your request and our team will reply with onboarding guidance.
+            Explore the Verified Surgeon Program and how recognition works, or browse participating
+            clinics.
           </p>
-          <div className="mt-5 flex flex-col sm:flex-row gap-3">
+          <div className="mt-5 flex flex-wrap gap-3">
             <Link
-              href={participationEmail}
-              className="inline-flex items-center justify-center rounded-xl bg-cyan-500 px-5 py-3 text-sm font-semibold text-slate-950 hover:bg-cyan-400 transition-colors"
+              href="/verified-surgeon-program"
+              className="inline-flex items-center justify-center rounded-xl border border-slate-600 px-5 py-3 text-sm font-medium text-slate-100 hover:bg-white/5 transition-colors"
             >
-              Request Participation
+              Verified Surgeon Program
             </Link>
             <Link
               href="/clinics"
               className="inline-flex items-center justify-center rounded-xl border border-slate-600 px-5 py-3 text-sm font-medium text-slate-100 hover:bg-white/5 transition-colors"
             >
-              Explore Participating Clinics
+              Explore Clinics
             </Link>
           </div>
         </section>

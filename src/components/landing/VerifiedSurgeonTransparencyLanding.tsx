@@ -241,11 +241,18 @@ export default function VerifiedSurgeonTransparencyLanding() {
                 </p>
                 <div className="mt-8 flex flex-wrap gap-4">
                   <TrackedLink
-                    href="/professionals/apply"
+                    href="/signup?role=clinic"
                     eventName="cta_professional_apply_verified_program"
                     className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl bg-cyan-500 text-slate-950 font-semibold hover:bg-cyan-400 transition-colors shadow-lg shadow-cyan-500/20"
                   >
-                    Apply for Participation
+                    Create Clinic Profile
+                  </TrackedLink>
+                  <TrackedLink
+                    href="/signup?role=doctor"
+                    eventName="cta_create_doctor_profile_verified_program"
+                    className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl bg-violet-500 text-white font-semibold hover:bg-violet-400 transition-colors shadow-lg shadow-violet-500/20"
+                  >
+                    Create Doctor Profile
                   </TrackedLink>
                   <Link
                     href="/clinics"
@@ -728,11 +735,18 @@ export default function VerifiedSurgeonTransparencyLanding() {
               </p>
               <div className="mt-10 flex flex-wrap justify-center gap-4">
                 <TrackedLink
-                  href="/professionals/apply"
+                  href="/signup?role=clinic"
                   eventName="cta_professional_apply_verified_program"
                   className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl bg-cyan-500 text-slate-950 font-semibold hover:bg-cyan-400 transition-colors shadow-lg shadow-cyan-500/20"
                 >
-                  Apply for Participation
+                  Create Clinic Profile
+                </TrackedLink>
+                <TrackedLink
+                  href="/signup?role=doctor"
+                  eventName="cta_create_doctor_profile_verified_program"
+                  className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl bg-violet-500 text-white font-semibold hover:bg-violet-400 transition-colors shadow-lg shadow-violet-500/20"
+                >
+                  Create Doctor Profile
                 </TrackedLink>
                 <Link
                   href="/clinics"

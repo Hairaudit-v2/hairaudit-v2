@@ -11,7 +11,7 @@ export const metadata = createPageMetadata({
 });
 
 const cards = [
-  { href: "/professionals/apply", title: "Apply for Participation", desc: "Dedicated intake for clinics, surgeons, partners, auditors, and expert stakeholders." },
+  { href: "/professionals/apply", title: "Create Profile", desc: "Create a free clinic or doctor profile and begin with internal audits or build your verified professional presence." },
   { href: "/professionals/methodology", title: "Methodology", desc: "Structured review model, evidence weighting logic, and standardized assessment principles." },
   { href: "/professionals/scoring-framework", title: "Scoring Framework", desc: "Domain definitions, dual patient/technical explanations, and scoring clarity." },
   { href: "/professionals/evidence-standards", title: "Evidence Standards", desc: "Image requirements, sufficiency criteria, confidence grading, and limitations." },
