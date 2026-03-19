@@ -129,7 +129,21 @@ function mapUploadToStage(upload: UploadRow, monthsSinceSurgery: number | null):
     return { stage: "month_12_plus", reason: "12+ month key detected" };
   }
 
-  // Current-state patient evidence follows surgery maturity if explicit stage is absent.
+  // In the patient schema, patient_current_* are the PRE-OP baseline set (front, left, right, top, crown, donor_rear).
+  // Do not map them by months_since_surgery or they wrongly appear under 12m+ when procedure is 12+ months ago.
+  const patientPreopBaselineKeys = [
+    "patient_current_front",
+    "patient_current_left",
+    "patient_current_right",
+    "patient_current_top",
+    "patient_current_crown",
+    "patient_current_donor_rear",
+  ];
+  if (patientPreopBaselineKeys.includes(key)) {
+    return { stage: "preop", reason: "patient pre-op baseline key (patient_current_*)" };
+  }
+
+  // Other current-state / follow-up patient evidence can follow surgery maturity if no explicit stage.
   if (key.startsWith("patient_current_")) {
     const inferred = stageFromMonths(monthsSinceSurgery);
     return { stage: inferred, reason: "mapped from patient_current + months_since_surgery" };
