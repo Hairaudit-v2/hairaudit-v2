@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -27,20 +27,12 @@ const ROLE_COPY: Record<SignupRole, { label: string; description: string }> = {
   },
 };
 
-export default function SignUpPage() {
+function SignUpForm({ initialRole = "patient" }: { initialRole?: SignupRole }) {
   const supabase = createSupabaseBrowserClient();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [signupRole, setSignupRole] = useState<SignupRole>("patient");
-
-  useEffect(() => {
-    const role = searchParams.get("role");
-    if (role === "clinic" || role === "doctor" || role === "patient") {
-      setSignupRole(role);
-    }
-  }, [searchParams]);
+  const [signupRole, setSignupRole] = useState<SignupRole>(initialRole);
   const [msg, setMsg] = useState<string | null>(null);
   const [msgKind, setMsgKind] = useState<"error" | "success">("error");
   const [busy, setBusy] = useState(false);
@@ -355,5 +347,21 @@ export default function SignUpPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+function SignUpPageContent() {
+  const searchParams = useSearchParams();
+  const role = searchParams.get("role");
+  const initialRole: SignupRole =
+    role === "clinic" || role === "doctor" || role === "patient" ? role : "patient";
+  return <SignUpForm initialRole={initialRole} />;
+}
+
+export default function SignUpPage() {
+  return (
+    <Suspense fallback={<SignUpForm initialRole="patient" />}>
+      <SignUpPageContent />
+    </Suspense>
   );
 }
