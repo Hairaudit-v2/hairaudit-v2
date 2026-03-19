@@ -111,19 +111,19 @@ function CertificateLogoHeader({
   );
 }
 
-/** Subtle diagonal SAMPLE watermark: large, low opacity, embedded-in-paper feel; lighter than Platinum for standard tiers */
+/** Subtle diagonal SAMPLE watermark: top half only, background-only, no overlap with signature/footer. */
 function SampleWatermark({ variant }: { variant: "default" | "platinum" }) {
   const isPlatinum = variant === "platinum";
   return (
     <div
-      className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-10 overflow-hidden"
+      className="absolute top-0 left-0 right-0 h-[52%] flex items-center justify-center pointer-events-none select-none z-10 overflow-hidden"
       aria-hidden
     >
       <span
         className={`
           font-semibold uppercase tracking-[0.2em]
           rotate-[-22deg] whitespace-nowrap
-          ${isPlatinum ? "text-[10rem] text-stone-300/[0.14]" : "text-7xl sm:text-8xl text-slate-300/[0.08]"}
+          ${isPlatinum ? "text-[8rem] text-stone-300/[0.10]" : "text-6xl sm:text-7xl text-slate-300/[0.06]"}
         `}
       >
         Sample
@@ -132,8 +132,16 @@ function SampleWatermark({ variant }: { variant: "default" | "platinum" }) {
   );
 }
 
+export type RenderCertificateOptions = {
+  /** Seal variant: "print" for PDF/paper (default), "web" for on-screen preview. */
+  sealVariant?: "print" | "web";
+};
+
 /** Platinum certificate: institutional, wall-ready layout */
-function renderPlatinumCertificate(data: CertificateData): ReactNode {
+function renderPlatinumCertificate(
+  data: CertificateData,
+  options?: RenderCertificateOptions
+): ReactNode {
   const {
     clinicName,
     score,
@@ -142,6 +150,7 @@ function renderPlatinumCertificate(data: CertificateData): ReactNode {
     certificateId,
     isSample = false,
   } = data;
+  const sealVariant = options?.sealVariant ?? "print";
   const fullDescription = getCertificationFullDescription("PLATINUM", clinicName);
   const issuedDate = issuedAt
     ? new Date(issuedAt).toLocaleDateString("en-GB", {
@@ -168,7 +177,7 @@ function renderPlatinumCertificate(data: CertificateData): ReactNode {
       aria-label={`HairAudit Platinum certification certificate for ${clinicName}`}
     >
       {isSample && <SampleWatermark variant="platinum" />}
-      <CertificationSeal tier="platinum" />
+      <CertificationSeal tier="platinum" variant={sealVariant} />
 
       {/* Inner frame: thin, elegant */}
       <div className="relative z-0 flex-1 flex flex-col m-4 sm:m-5 md:m-6 border border-stone-200/90 print:border-stone-300 print:m-5">
@@ -244,7 +253,10 @@ function renderPlatinumCertificate(data: CertificateData): ReactNode {
 }
 
 /** Standard certificate layout for Verified, Silver, Gold — aligned with Platinum structure, tier-specific styling */
-function renderStandardCertificate(data: CertificateData): ReactNode {
+function renderStandardCertificate(
+  data: CertificateData,
+  options?: RenderCertificateOptions
+): ReactNode {
   const {
     clinicName,
     tier,
@@ -254,6 +266,7 @@ function renderStandardCertificate(data: CertificateData): ReactNode {
     certificateId,
     isSample = false,
   } = data;
+  const sealVariant = options?.sealVariant ?? "print";
   const styles = TIER_STYLES[tier];
   const backendTier =
     tier === "platinum"
@@ -291,7 +304,10 @@ function renderStandardCertificate(data: CertificateData): ReactNode {
     >
       {isSample && <SampleWatermark variant="default" />}
       {tier !== "verified" && (
-        <CertificationSeal tier={tier === "gold" ? "gold" : "silver"} />
+        <CertificationSeal
+          tier={tier === "gold" ? "gold" : "silver"}
+          variant={sealVariant}
+        />
       )}
 
       {/* Inner frame: thin, lighter than Platinum */}
@@ -383,9 +399,12 @@ function renderStandardCertificate(data: CertificateData): ReactNode {
   );
 }
 
-export function renderCertificate(data: CertificateData): ReactNode {
+export function renderCertificate(
+  data: CertificateData,
+  options?: RenderCertificateOptions
+): ReactNode {
   if (data.tier === "platinum") {
-    return renderPlatinumCertificate(data);
+    return renderPlatinumCertificate(data, options);
   }
-  return renderStandardCertificate(data);
+  return renderStandardCertificate(data, options);
 }
