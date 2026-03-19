@@ -5,6 +5,7 @@ import SiteFooter from "@/components/SiteFooter";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import TrackedLink from "@/components/analytics/TrackedLink";
 import GlobalHairIntelligenceSection from "@/components/ecosystem/GlobalHairIntelligenceSection";
+import CertifiedClinicsSection from "@/components/home/CertifiedClinicsSection";
 import { StepIcons } from "@/components/ui/StepIcons";
 import { createPageMetadata } from "@/lib/seo/pageMetadata";
 import OrganizationWebSiteSchema from "@/components/seo/OrganizationWebSiteSchema";
@@ -158,6 +159,9 @@ export default async function HomePage(props: PageProps) {
           size="hero"
           theme="light"
         />
+
+        {/* Certified clinics / certificates */}
+        <CertifiedClinicsSection />
 
         {/* 4. What You Get */}
         <section className="relative px-4 sm:px-6 py-20 sm:py-24 bg-slate-800/30">

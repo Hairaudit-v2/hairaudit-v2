@@ -5,13 +5,15 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import ClinicDirectoryCard from "@/components/clinics/ClinicDirectoryCard";
 import ClinicDirectoryFilters from "@/components/clinics/ClinicDirectoryFilters";
+import TopCertifiedClinicsSection from "@/components/clinics/TopCertifiedClinicsSection";
 import type { ClinicDirectoryItem } from "@/components/clinics/ClinicDirectoryCard";
 import { filterAndSortDirectory } from "@/lib/clinics/directoryFilters";
 import type { DirectoryClinicRow } from "@/lib/clinics/directoryFilters";
+import { computeClinicCertificationRanking } from "@/lib/ranking";
 import { createPageMetadata } from "@/lib/seo/pageMetadata";
 
 const CLINIC_SELECT =
-  "clinic_slug, clinic_name, country, city, participation_status, current_award_tier, transparency_score, audited_case_count, contributed_case_count, benchmark_eligible_count, benchmark_eligible_validated_count, average_forensic_score, documentation_integrity_average, award_progression_paused, linked_user_id";
+  "id, clinic_slug, clinic_name, country, city, participation_status, current_award_tier, transparency_score, audited_case_count, contributed_case_count, benchmark_eligible_count, benchmark_eligible_validated_count, average_forensic_score, documentation_integrity_average, award_progression_paused, linked_user_id";
 
 export const metadata = createPageMetadata({
   title: "Clinic directory | HairAudit",
@@ -92,6 +94,21 @@ export default async function ClinicDirectoryPage({
   const countries = [...new Set(allRows.map((r) => r.country).filter(Boolean))] as string[];
   countries.sort((a, b) => (a ?? "").localeCompare(b ?? ""));
 
+  const rankingInput = (allRows as Array<DirectoryClinicRow & { id?: string }>)
+    .filter((r) => r.id != null && r.clinic_slug != null)
+    .map((r) => ({
+      id: r.id!,
+      clinic_slug: r.clinic_slug,
+      clinic_name: r.clinic_name,
+      linked_user_id: r.linked_user_id ?? null,
+    }));
+  const fullRanking = await computeClinicCertificationRanking({
+    admin,
+    clinics: rankingInput,
+    maxClinics: 50,
+  });
+  const topCertified = fullRanking.slice(0, 5);
+
   const featured = clinics.filter(
     (c) => c.current_award_tier === "PLATINUM" || c.current_award_tier === "GOLD"
   );
@@ -146,6 +163,10 @@ export default async function ClinicDirectoryPage({
             </Suspense>
           </div>
         </section>
+
+        {topCertified.length > 0 && (
+          <TopCertifiedClinicsSection topClinics={topCertified} />
+        )}
 
         {featuredStrip.length > 0 && (
           <section className="relative px-4 sm:px-6 py-8">
