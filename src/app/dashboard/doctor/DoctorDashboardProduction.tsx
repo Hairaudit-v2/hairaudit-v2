@@ -7,6 +7,8 @@ import ParticipationStatusBanner, { type ParticipationApprovalStatus } from "@/c
 import DoctorParticipationSummaryCard, { type ParticipationSummary } from "./DoctorParticipationSummaryCard";
 import ProfileCompletenessCard from "@/components/dashboard/ProfileCompletenessCard";
 import NextBestStepPanel from "@/components/dashboard/NextBestStepPanel";
+import CertificationProgressCard from "@/components/dashboard/CertificationProgressCard";
+import type { CertificationProgress } from "@/lib/certificationProgress";
 import { BENCHMARKING_GLOBAL_STANDARDS } from "@/lib/benchmarkingCopy";
 
 type CaseRow = {
@@ -33,6 +35,7 @@ export default function DoctorDashboardProduction({
   participationSummary = { casesSubmittedCount: 0, reportsCompletedCount: 0, benchmarkReadyCount: 0 },
   showWelcomeBanner = false,
   profileCompleteness,
+  certificationProgress,
 }: {
   cases: CaseRow[];
   caseIdsWithUploads?: string[];
@@ -40,6 +43,7 @@ export default function DoctorDashboardProduction({
   participationSummary?: ParticipationSummary;
   showWelcomeBanner?: boolean;
   profileCompleteness?: ProfileCompleteness;
+  certificationProgress?: CertificationProgress;
 }) {
   const hasCase = cases.length > 0;
   const firstCase = cases[0] ?? null;
@@ -103,6 +107,12 @@ export default function DoctorDashboardProduction({
             nextActions={profileCompleteness.nextActions}
           />
           <NextBestStepPanel action={profileCompleteness.nextBestStep} />
+        </div>
+      )}
+
+      {certificationProgress && (
+        <div>
+          <CertificationProgressCard progress={certificationProgress} />
         </div>
       )}
 

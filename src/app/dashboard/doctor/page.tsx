@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { getCertificationProgress } from "@/lib/certificationProgress";
 import DoctorDashboardProduction from "./DoctorDashboardProduction";
 
 export default async function DoctorDashboardPage() {
@@ -103,6 +104,8 @@ export default async function DoctorDashboardPage() {
   const doctorNextBestStep =
     doctorNextActions[0] ?? { label: "Explore your dashboard", href: "/dashboard/doctor" };
 
+  const doctorCertProgress = getCertificationProgress(caseList.length);
+
   return (
     <DoctorDashboardProduction
       cases={caseList}
@@ -111,6 +114,7 @@ export default async function DoctorDashboardPage() {
       participationSummary={participationSummary}
       showWelcomeBanner={showDoctorWelcomeBanner}
       profileCompleteness={{ percentage: doctorCompletenessPct, doneCount: doctorDoneCount, totalChecks: doctorTotalChecks, nextActions: doctorNextActions.slice(0, 3), nextBestStep: doctorNextBestStep }}
+      certificationProgress={doctorCertProgress}
     />
   );
 }

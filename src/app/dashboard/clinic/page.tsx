@@ -21,6 +21,8 @@ import { SITE_URL } from "@/lib/constants";
 import { BENCHMARKING_GLOBAL_STANDARDS } from "@/lib/benchmarkingCopy";
 import ProfileCompletenessCard from "@/components/dashboard/ProfileCompletenessCard";
 import NextBestStepPanel from "@/components/dashboard/NextBestStepPanel";
+import CertificationProgressCard from "@/components/dashboard/CertificationProgressCard";
+import { getCertificationProgress } from "@/lib/certificationProgress";
 
 export default async function ClinicDashboardPage() {
   const supabase = await createSupabaseAuthServerClient();
@@ -241,6 +243,8 @@ export default async function ClinicDashboardPage() {
   const clinicNextBestStep =
     clinicNextActions[0] ?? { label: "Explore your dashboard", href: "/dashboard/clinic" };
 
+  const clinicCertProgress = getCertificationProgress(caseList.length);
+
   return (
     <div>
       <ClinicSectionHeader
@@ -293,6 +297,10 @@ export default async function ClinicDashboardPage() {
           nextActions={clinicNextActions.slice(0, 3)}
         />
         <NextBestStepPanel action={clinicNextBestStep} />
+      </div>
+
+      <div className="mb-6">
+        <CertificationProgressCard progress={clinicCertProgress} />
       </div>
 
       <div className="mb-6">
