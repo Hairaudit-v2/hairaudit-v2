@@ -136,3 +136,61 @@ test("buildAuthRedirectUrl: builds path with optional params", () => {
   assert.ok(url.includes("signup_role=clinic"));
   assert.ok(url.includes("next="));
 });
+
+// --- /auth/callback route (no-code path only; avoids Supabase in tests) ---
+const CALLBACK_ORIGIN = "https://example.com";
+const REDIRECT_STATUS = 307; // NextResponse.redirect() uses 307
+
+test("/auth/callback: with next=/dashboard/clinic redirects to origin + path", async () => {
+  const req = new Request(`${CALLBACK_ORIGIN}/auth/callback?next=%2Fdashboard%2Fclinic`);
+  const res = await authCallbackGET(req);
+  assert.equal(res.status, REDIRECT_STATUS);
+  assert.equal(res.headers.get("location"), `${CALLBACK_ORIGIN}/dashboard/clinic`);
+});
+
+test("/auth/callback: with invalid external next uses default (no open redirect)", async () => {
+  const req = new Request(`${CALLBACK_ORIGIN}/auth/callback?next=https%3A%2F%2Fevil.com%2F`);
+  const res = await authCallbackGET(req);
+  assert.equal(res.status, REDIRECT_STATUS);
+  const loc = res.headers.get("location");
+  assert.ok(loc?.startsWith(CALLBACK_ORIGIN));
+  assert.ok(!loc?.includes("evil.com"));
+  assert.equal(loc, `${CALLBACK_ORIGIN}/dashboard`);
+});
+
+test("/auth/callback: with no next and signup_role=clinic redirects to /dashboard/clinic", async () => {
+  const req = new Request(`${CALLBACK_ORIGIN}/auth/callback?signup_role=clinic`);
+  const res = await authCallbackGET(req);
+  assert.equal(res.status, REDIRECT_STATUS);
+  assert.equal(res.headers.get("location"), `${CALLBACK_ORIGIN}/dashboard/clinic`);
+});
+
+test("/auth/callback: with no next and signup_role=doctor redirects to /dashboard/doctor", async () => {
+  const req = new Request(`${CALLBACK_ORIGIN}/auth/callback?signup_role=doctor`);
+  const res = await authCallbackGET(req);
+  assert.equal(res.status, REDIRECT_STATUS);
+  assert.equal(res.headers.get("location"), `${CALLBACK_ORIGIN}/dashboard/doctor`);
+});
+
+test("/auth/callback: with no next and no signup_role redirects to /dashboard", async () => {
+  const req = new Request(`${CALLBACK_ORIGIN}/auth/callback`);
+  const res = await authCallbackGET(req);
+  assert.equal(res.status, REDIRECT_STATUS);
+  assert.equal(res.headers.get("location"), `${CALLBACK_ORIGIN}/dashboard`);
+});
+
+test("/auth/callback: with invalid code redirects to /login?error=auth_callback_failed", async () => {
+  const req = new Request(`${CALLBACK_ORIGIN}/auth/callback?code=invalid-code`);
+  let res: Awaited<ReturnType<typeof authCallbackGET>>;
+  try {
+    res = await authCallbackGET(req);
+  } catch (err) {
+    // In CI without Next/Supabase env, handler may throw; skip assertion
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL) throw err;
+    return;
+  }
+  assert.equal(res.status, REDIRECT_STATUS);
+  const loc = res.headers.get("location");
+  assert.ok(loc?.includes("/login"));
+  assert.ok(loc?.includes("error=auth_callback_failed"));
+});
