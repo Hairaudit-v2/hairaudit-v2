@@ -10,6 +10,9 @@ import {
   ClinicMetricCard,
   RecognitionPanel,
   VerifiedCaseHighlights,
+  CertificationStatusSection,
+  CertificatePresentation,
+  WebsiteBadgePreview,
 } from "@/components/clinic-profile";
 import type { VerifiedCaseHighlight } from "@/components/clinic-profile";
 import { getNextMilestoneFromProfile } from "@/lib/transparency/awardRules";
@@ -244,6 +247,32 @@ export default async function PublicClinicProfilePage({
             />
           </div>
         </section>
+
+        <CertificationStatusSection certificationTier={tier} />
+
+        <section className="relative px-4 sm:px-6 py-12 sm:py-16">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-cyan-400 mb-4">
+              Certificate
+            </h2>
+            <p className="text-sm text-slate-500 mb-6 max-w-2xl">
+              Recognition suitable for display and future certificate options.
+            </p>
+            <CertificatePresentation
+              clinicName={row.clinic_name}
+              certificationTier={tier}
+              location={[row.city, row.country].filter(Boolean).join(", ") || undefined}
+            />
+          </div>
+        </section>
+
+        <WebsiteBadgePreview
+          clinicName={row.clinic_name}
+          clinicSlug={row.clinic_slug ?? ""}
+          currentAwardTier={row.current_award_tier}
+          participationStatus={row.participation_status}
+          baseUrl={(process.env.NEXT_PUBLIC_APP_URL ?? process.env.SITE_URL ?? "").replace(/\/+$/, "")}
+        />
 
         <section className="relative px-4 sm:px-6 py-12 sm:py-16">
           <div className="max-w-4xl mx-auto rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-6 sm:p-8">

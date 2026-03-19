@@ -15,6 +15,7 @@ export default function MagicLinkPage() {
     async function completeMagicLink() {
       const existing = await supabase.auth.getSession();
       if (existing.data.session) {
+        // /dashboard redirects to role-specific dashboard (clinic/doctor/auditor/patient)
         window.location.replace("/dashboard");
         return;
       }
@@ -32,6 +33,7 @@ export default function MagicLinkPage() {
           refresh_token: refreshToken,
         });
         if (!error) {
+          // /dashboard applies role-based redirect (clinic/doctor/auditor/patient)
           window.location.replace("/dashboard");
           return;
         }

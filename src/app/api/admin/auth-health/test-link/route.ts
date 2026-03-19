@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { isAuditor } from "@/lib/auth/isAuditor";
-import { SITE_URL } from "@/lib/constants";
+import { getCanonicalAppUrl } from "@/lib/auth/redirects";
 
 type LinkCheckResult = {
   id: string;
@@ -11,14 +11,6 @@ type LinkCheckResult = {
   ok: boolean;
   detail: string;
 };
-
-function getBaseUrl() {
-  return (
-    String(process.env.NEXT_PUBLIC_APP_URL ?? "").trim().replace(/\/+$/, "") ||
-    String(process.env.SITE_URL ?? "").trim().replace(/\/+$/, "") ||
-    SITE_URL
-  );
-}
 
 export async function POST(req: Request) {
   const supabase = await createSupabaseAuthServerClient();
@@ -40,7 +32,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Missing test email" }, { status: 400 });
   }
 
-  const baseUrl = getBaseUrl();
+  const baseUrl = getCanonicalAppUrl();
   const redirects = [
     { id: "callback", label: "Signup callback redirect", redirectTo: `${baseUrl}/auth/callback?signup_role=clinic&next=${encodeURIComponent("/dashboard/clinic")}` },
     { id: "magic", label: "Magic-link redirect", redirectTo: `${baseUrl}/auth/magic-link` },

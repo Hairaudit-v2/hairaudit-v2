@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import ScrollReveal from "@/components/ui/ScrollReveal";
@@ -7,6 +8,7 @@ import GlobalHairIntelligenceSection from "@/components/ecosystem/GlobalHairInte
 import { StepIcons } from "@/components/ui/StepIcons";
 import { createPageMetadata } from "@/lib/seo/pageMetadata";
 import OrganizationWebSiteSchema from "@/components/seo/OrganizationWebSiteSchema";
+import { getHomepageAuthRedirectTarget } from "@/lib/auth/redirects";
 
 export const revalidate = 600;
 export const metadata = createPageMetadata({
@@ -64,7 +66,16 @@ const WHO_IT_FOR_ITEMS = [
   "Clinics and doctors who want independent validation of their work",
 ] as const;
 
-export default function HomePage() {
+type PageProps = { searchParams?: Promise<Record<string, string | string[] | undefined>> | Record<string, string | string[] | undefined> };
+
+export default async function HomePage(props: PageProps) {
+  const rawParams = props.searchParams ?? {};
+  const searchParams = typeof (rawParams as Promise<unknown>).then === "function"
+    ? await (rawParams as Promise<Record<string, string | string[] | undefined>>)
+    : (rawParams as Record<string, string | string[] | undefined>);
+  const authRedirect = getHomepageAuthRedirectTarget(searchParams);
+  if (authRedirect) redirect(authRedirect);
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-900 text-slate-100">
       <OrganizationWebSiteSchema />

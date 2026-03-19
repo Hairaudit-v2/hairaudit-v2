@@ -2,23 +2,16 @@ import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { isAuditor } from "@/lib/auth/isAuditor";
+import { sanitizeNextPath, dashboardPathForRole } from "@/lib/auth/redirects";
 import { parseRole } from "@/lib/roles";
-
-/** Allow only relative paths (no protocol or //). */
-function safeRedirectPath(value: string | null): string | null {
-  if (value == null || typeof value !== "string") return null;
-  const trimmed = value.trim();
-  if (trimmed === "" || !trimmed.startsWith("/") || trimmed.startsWith("//") || trimmed.includes(":")) return null;
-  return trimmed;
-}
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
   const signupRole = parseRole(searchParams.get("signup_role"));
-  const nextParam = safeRedirectPath(searchParams.get("next"));
-  const defaultPath = signupRole === "clinic" ? "/dashboard/clinic" : "/dashboard";
-  const redirectPath = nextParam ?? defaultPath;
+  const nextParam = sanitizeNextPath(searchParams.get("next"));
+  let redirectPath =
+    nextParam ?? (signupRole === "clinic" ? "/dashboard/clinic" : signupRole === "doctor" ? "/dashboard/doctor" : "/dashboard");
 
   if (code) {
     const supabase = await createSupabaseServerClient();
@@ -28,6 +21,8 @@ export async function GET(request: Request) {
         message: exchangeError.message,
         status: (exchangeError as { status?: number }).status,
       });
+      const errorUrl = `${origin}/login?error=auth_callback_failed`;
+      return NextResponse.redirect(errorUrl);
     }
 
     try {
@@ -71,6 +66,7 @@ export async function GET(request: Request) {
             message: upsertError.message,
           });
         }
+        if (!nextParam) redirectPath = dashboardPathForRole(role);
       }
     } catch (error) {
       // If service role env vars aren't set locally, don't block login.

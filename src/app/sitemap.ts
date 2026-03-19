@@ -21,6 +21,7 @@ const PUBLIC_ROUTES = [
   "/best-hair-transplant-results",
   "/community-results",
   "/clinics",
+  "/for-clinics",
   "/professionals",
   "/professionals/apply",
   "/verified-surgeon-program",

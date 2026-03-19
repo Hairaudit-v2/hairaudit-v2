@@ -30,6 +30,7 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
     { href: "/request-review", label: "Request Review" },
     { href: "/demo-report", label: "Sample Report" },
     { href: "/clinics", label: "Clinics" },
+    { href: "/for-clinics", label: "For Clinics" },
     { href: "/professionals", label: "For Professionals" },
   ];
   const [ecosystemNavItem, setEcosystemNavItem] = useState<EcosystemNavItem>({

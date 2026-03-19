@@ -29,7 +29,7 @@ export default async function ClinicPortalLayout({
     userEmail: String(user.email ?? "").toLowerCase(),
   });
 
-  if (!clinicProfile) redirect("/dashboard");
+  if (!clinicProfile) redirect("/dashboard/clinic");
 
   const [{ data: profile }, { data: portalProfile }, { count: capabilityCount }, { count: workspaceCount }, { count: pendingResponses }] =
     await Promise.all([

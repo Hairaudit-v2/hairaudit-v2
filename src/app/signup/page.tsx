@@ -6,7 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import SiteHeader from "@/components/SiteHeader";
-import { HA_HOME } from "@/config/platform-links";
+import { getCanonicalAppUrl, dashboardPathForRole } from "@/lib/auth/redirects";
 
 type SignupRole = "patient" | "doctor" | "clinic";
 
@@ -22,40 +22,19 @@ export default function SignUpPage() {
   const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
   const [resending, setResending] = useState<null | "confirm" | "magic">(null);
 
-  /** Base URL for auth redirects. Prefer https in production (hairaudit.com) so confirmation emails never use http. */
-  function getAppUrl() {
-    const raw =
-      (process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "") || "").trim() || HA_HOME;
-    try {
-      const u = new URL(raw);
-      if (u.hostname === "hairaudit.com" && u.protocol === "http:") u.protocol = "https:";
-      return u.toString().replace(/\/+$/, "");
-    } catch {
-      return raw.replace(/\/+$/, "");
-    }
-  }
-
-  /** Post-confirmation path for each role. Clinic must land on clinic dashboard, not site root. */
-  function getRedirectPathForRole(role: SignupRole): string {
-    if (role === "clinic") return "/dashboard/clinic";
-    return "/dashboard";
-  }
-
   async function signUp(e: React.FormEvent) {
     e.preventDefault();
     setMsg(null);
     setMsgKind("error");
     setBusy(true);
 
-    // IMPORTANT: Prevent localhost leaking into Supabase confirmation emails.
-    // If NEXT_PUBLIC_APP_URL is not set, default to production domain.
-    const appUrl = getAppUrl();
+    const appUrl = getCanonicalAppUrl();
     if (!process.env.NEXT_PUBLIC_APP_URL) {
       console.warn("[signup] NEXT_PUBLIC_APP_URL is not set; using fallback domain for email redirect.", {
         fallback: appUrl,
       });
     }
-    const nextPath = getRedirectPathForRole(signupRole);
+    const nextPath = dashboardPathForRole(signupRole);
     const emailRedirectTo = `${appUrl}/auth/callback?signup_role=${signupRole}&next=${encodeURIComponent(nextPath)}`;
     console.info("[signup] attempting signup", {
       emailRedirectTo,
@@ -136,8 +115,8 @@ export default function SignUpPage() {
     setResending("confirm");
     setMsg(null);
     try {
-      const appUrl = getAppUrl();
-      const nextPath = getRedirectPathForRole(signupRole);
+      const appUrl = getCanonicalAppUrl();
+      const nextPath = dashboardPathForRole(signupRole);
       const emailRedirectTo = `${appUrl}/auth/callback?signup_role=${signupRole}&next=${encodeURIComponent(nextPath)}`;
       const { error } = await supabase.auth.resend({
         type: "signup",
@@ -165,7 +144,7 @@ export default function SignUpPage() {
     setResending("magic");
     setMsg(null);
     try {
-      const appUrl = getAppUrl();
+      const appUrl = getCanonicalAppUrl();
       const emailRedirectTo = `${appUrl}/auth/magic-link`;
       const { error } = await supabase.auth.signInWithOtp({
         email: trimmedEmail,

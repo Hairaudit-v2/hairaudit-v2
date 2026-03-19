@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import SiteHeader from "@/components/SiteHeader";
-import { HA_HOME } from "@/config/platform-links";
+import { getCanonicalAppUrl } from "@/lib/auth/redirects";
 
 export default function LoginPage() {
   const supabase = createSupabaseBrowserClient();
@@ -15,9 +15,7 @@ export default function LoginPage() {
   const [busyProvider, setBusyProvider] = useState<"google" | "email" | "password" | null>(null);
   const [sendingReset, setSendingReset] = useState(false);
 
-  const appUrl =
-    (process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "") || "").trim() ||
-    HA_HOME;
+  const appUrl = getCanonicalAppUrl();
   const oauthRedirectTo = `${appUrl}/auth/callback`;
   const magicLinkRedirectTo = `${appUrl}/auth/magic-link`;
 

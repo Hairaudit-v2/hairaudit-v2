@@ -77,8 +77,9 @@ export default function RecoveryPage() {
       setBusy(false);
       return;
     }
-    setMsg("✅ Password updated. You can now sign in as auditor.");
+    setMsg("✅ Password updated. Redirecting to sign in…");
     setBusy(false);
+    window.location.href = "/login";
   }
 
   return (
@@ -87,10 +88,10 @@ export default function RecoveryPage() {
       <main className="flex-1 flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
           <Link
-            href="/login/auditor"
+            href="/login"
             className="inline-flex items-center text-sm text-slate-500 hover:text-amber-400 mb-4 transition-colors"
           >
-            ← Back to auditor login
+            ← Back to login
           </Link>
           <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
             <div className="mb-6 flex justify-center rounded-xl bg-slate-900 px-4 py-3">
@@ -104,7 +105,7 @@ export default function RecoveryPage() {
             </div>
             <h1 className="text-2xl font-bold text-slate-900">Set a new password</h1>
             <p className="mt-2 text-sm text-slate-600">
-              Complete your password reset for the auditor account.
+              Complete your password reset. Use the link from your recovery email.
             </p>
 
             <form onSubmit={onSubmit} className="mt-6 space-y-4">
