@@ -21,9 +21,9 @@ function scoreChip(score?: number) {
   return "border-rose-300/40 bg-rose-300/15 text-rose-100";
 }
 
-type Props = { report: LatestReport | null; caseId?: string | null };
+type Props = { report: LatestReport | null; caseId?: string | null; displayScore?: number | null };
 
-export default function LatestReportCard({ report, caseId }: Props) {
+export default function LatestReportCard({ report, caseId, displayScore }: Props) {
   const [busy, setBusy] = useState(false);
 
   async function openPdf() {
@@ -46,7 +46,8 @@ export default function LatestReportCard({ report, caseId }: Props) {
   }
 
   const summary = (report.summary ?? {}) as { score?: number };
-  const score = typeof summary.score === "number" ? summary.score : undefined;
+  const rawScore = typeof summary.score === "number" ? summary.score : undefined;
+  const score = typeof displayScore === "number" ? displayScore : rawScore;
   const processing = !report.pdf_path && report.status !== "failed";
 
   return (

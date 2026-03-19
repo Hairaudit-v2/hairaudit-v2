@@ -19,6 +19,7 @@ import { normalizeIntakeFormData } from "@/lib/intake/normalizeIntakeFormData";
 import DomainIntelligenceAccordion from "@/components/reports/DomainIntelligenceAccordion";
 import AuditorReviewPanel from "@/components/reports/AuditorReviewPanel";
 import { isAuditorReviewAvailable } from "@/lib/auditor/eligibility";
+import { applyAuditorOverridesToSummary, type OverrideRow } from "@/lib/auditor/applyOverrides";
 import UnlockAuditorReviewButton from "./UnlockAuditorReviewButton";
 import VersionHistoryDrawer from "@/components/reports/VersionHistoryDrawer";
 import UploadThumbnailGallery from "@/components/reports/UploadThumbnailGallery";
@@ -358,6 +359,26 @@ export default async function Page({
   const completenessIndex = (forensic as any)?.completeness_index_v1 ?? null;
   const reportScore = typeof latestSummary?.score === "number" ? latestSummary.score : overallScores?.performance_score;
   const scoreNum = typeof reportScore === "number" ? reportScore : Number(overallScores?.performance_score ?? overallScores?.benchmark_score ?? 0);
+
+  let latestReportDisplayScore: number | undefined = scoreNum;
+  if (latestReport?.id && typeof scoreNum === "number") {
+    try {
+      const { data: overrideRows } = await db
+        .from("audit_score_overrides")
+        .select("domain_key, ai_score, ai_weighted_score, manual_score, manual_weighted_score, delta_score")
+        .eq("report_id", latestReport.id);
+      const overrides = (overrideRows ?? []) as OverrideRow[];
+      if (overrides.length > 0) {
+        const applied = applyAuditorOverridesToSummary(latestSummary as Record<string, unknown>, overrides);
+        const forensicApplied = (applied.forensic_audit ?? applied.forensic) as { overall_scores_v1?: { performance_score?: number } } | undefined;
+        const perf = forensicApplied?.overall_scores_v1?.performance_score;
+        if (typeof perf === "number") latestReportDisplayScore = perf;
+      }
+    } catch {
+      // Overrides table may not exist or RLS may block; keep scoreNum
+    }
+  }
+
   const isHighScore = scoreNum > 90;
   const isHighScoreProvisional = isHighScore && provisionalStatus === "pending_validation";
   const isHighScoreValidated = isHighScore && countsForAwards === true && (provisionalStatus === "validated_by_auditor" || provisionalStatus === "validated_by_evidence" || provisionalStatus === "validated_by_consistency");
@@ -940,7 +961,7 @@ export default async function Page({
           {reports && reports.length > 0 && <VersionHistoryDrawer reports={reports as any} />}
         </div>
         <div className="mt-4">
-          <LatestReportCard report={latestReport as any} caseId={c.id} />
+          <LatestReportCard report={latestReport as any} caseId={c.id} displayScore={latestReportDisplayScore} />
         </div>
       </section>
 

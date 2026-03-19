@@ -4,7 +4,7 @@ import { type AuditMode } from "@/lib/pdf/reportBuilder";
 import { runAIAudit } from "@/lib/ai/audit";
 import { runGraftIntegrityModelEstimate } from "@/lib/ai/graftIntegrity";
 import { runDoctorScoringNarrative, DEFAULT_PROTOCOL_CATALOG, DEFAULT_TRAINING_MODULE_CATALOG } from "@/lib/ai/runDoctorScoringNarrative";
-import { notifyPatientAuditFailed, notifyAuditorAuditFailed, notifyPatientReportReady } from "@/lib/email";
+import { notifyPatientAuditFailed, notifyAuditorAuditFailed, notifyPatientReportReady, notifyAuditorNewAuditSubmitted } from "@/lib/email";
 import { canSubmit } from "@/lib/auditPhotoSchemas";
 import { computeDomainScoresV1, computeDoctorAiContextV1 } from "@/lib/benchmarks/domainScoring";
 import { renderAndUploadPdfForCase } from "@/lib/reports/renderPdfInternal";
@@ -583,12 +583,19 @@ export const runAudit = inngest.createFunction(
       return res.data as any;
     });
 
-    // 2) Mark processing (optional but helpful)
+    // 2) Notify auditor that a new audit was submitted (so they can log in and complete)
+    await step.run("notify-auditor-new-submission", async () => {
+      const sent = await notifyAuditorNewAuditSubmitted(caseId);
+      logger.info("Auditor new-submission email", { caseId, sent });
+      return { sent };
+    });
+
+    // 3) Mark processing (optional but helpful)
     await step.run("mark-processing", async () => {
       await setCasePipelineStatus(supabase, caseId, "processing");
     });
 
-    // 3) Verify uploads
+    // 4) Verify uploads
     const uploads = await step.run("load-uploads", async () => {
       const { data, error } = await supabase
         .from("uploads")
@@ -612,7 +619,7 @@ export const runAudit = inngest.createFunction(
       throw new Error("Missing required patient photos (Current Front, Top, Donor rear)");
     }
 
-    // 4) Load existing report summary (patient/doctor/clinic answers)
+    // 5) Load existing report summary (patient/doctor/clinic answers)
     const existingSummary = await step.run("load-report-summary", async () => {
       const { data, error } = await supabase
         .from("reports")
@@ -1413,6 +1420,116 @@ export const auditorRerun = inngest.createFunction(
             data: { caseId, userId: triggeredBy },
           });
           const ver = (result as any)?.version;
+          const sourceReportVersion = data.sourceReportVersion != null ? Number(data.sourceReportVersion) : null;
+          if (typeof ver === "number" && ver >= 1 && typeof sourceReportVersion === "number" && sourceReportVersion >= 1) {
+            await step.run("copy-auditor-overrides-to-new-report", async () => {
+              const sb = supabaseAdmin();
+              const [sourceRes, newRes] = await Promise.all([
+                sb.from("reports").select("id").eq("case_id", caseId).eq("version", sourceReportVersion).maybeSingle(),
+                sb.from("reports").select("id, summary").eq("case_id", caseId).eq("version", ver).maybeSingle(),
+              ]);
+              const sourceReportId = (sourceRes.data as { id?: string } | null)?.id ?? null;
+              const newReport = newRes.data as { id: string; summary: Record<string, unknown> | null } | null;
+              const newReportId = newReport?.id ?? null;
+              if (!sourceReportId || !newReportId) {
+                logger.info("Copy overrides skipped: source or new report not found", {
+                  caseId,
+                  sourceReportVersion,
+                  ver,
+                  hasSource: !!sourceReportId,
+                  hasNew: !!newReportId,
+                });
+                return { copiedOverrides: 0, copiedFeedback: 0 };
+              }
+              const summary = (newReport?.summary ?? {}) as Record<string, unknown>;
+              const forensic = (summary.forensic_audit ?? summary.forensic) as Record<string, unknown> | undefined;
+              const domainScores = forensic?.domain_scores_v1 as { domains?: Array<{ domain_id?: string; raw_score?: number; weighted_score?: number }> } | undefined;
+              const domains = Array.isArray(domainScores?.domains) ? domainScores.domains : [];
+              const newAiByDomain = new Map<string, { raw: number; weighted: number | null }>();
+              for (const d of domains) {
+                const id = String(d.domain_id ?? "");
+                if (!id) continue;
+                newAiByDomain.set(id, {
+                  raw: Number(d.raw_score ?? 0),
+                  weighted: d.weighted_score != null ? Number(d.weighted_score) : null,
+                });
+              }
+              const { data: overrides } = await sb
+                .from("audit_score_overrides")
+                .select("*")
+                .eq("report_id", sourceReportId);
+              const rows = (overrides ?? []) as Array<{
+                domain_key: string;
+                manual_score: number;
+                manual_weighted_score: number | null;
+                reason_category: string;
+                override_note: string | null;
+                visibility_scope?: string;
+                created_by: string | null;
+                section_key?: string | null;
+              }>;
+              let copiedOverrides = 0;
+              for (const row of rows) {
+                const newAi = newAiByDomain.get(row.domain_key) ?? { raw: 0, weighted: null };
+                const aiScore = newAi.raw;
+                const aiWeightedScore = newAi.weighted;
+                const manualScore = Number(row.manual_score);
+                const deltaScore = Number((manualScore - aiScore).toFixed(2));
+                const manualWeightedScore = row.manual_weighted_score != null ? Number(row.manual_weighted_score) : null;
+                const { error: insErr } = await sb.from("audit_score_overrides").upsert(
+                  {
+                    case_id: caseId,
+                    report_id: newReportId,
+                    domain_key: row.domain_key,
+                    section_key: row.section_key ?? null,
+                    ai_score: aiScore,
+                    ai_weighted_score: aiWeightedScore,
+                    manual_score: manualScore,
+                    manual_weighted_score: manualWeightedScore,
+                    delta_score: deltaScore,
+                    reason_category: row.reason_category,
+                    override_note: row.override_note,
+                    visibility_scope: row.visibility_scope ?? "internal_only",
+                    created_by: row.created_by,
+                  },
+                  { onConflict: "case_id,report_id,domain_key" }
+                );
+                if (!insErr) copiedOverrides += 1;
+              }
+              const { data: sectionFeedback } = await sb
+                .from("audit_section_feedback")
+                .select("section_key, feedback_type, visibility_scope, feedback_note, created_by")
+                .eq("report_id", sourceReportId);
+              const feedbackRows = (sectionFeedback ?? []) as Array<{
+                section_key: string;
+                feedback_type: string;
+                visibility_scope: string;
+                feedback_note: string;
+                created_by: string | null;
+              }>;
+              let copiedFeedback = 0;
+              for (const f of feedbackRows) {
+                const { error: fbErr } = await sb.from("audit_section_feedback").insert({
+                  case_id: caseId,
+                  report_id: newReportId,
+                  section_key: f.section_key,
+                  feedback_type: f.feedback_type,
+                  visibility_scope: f.visibility_scope,
+                  feedback_note: f.feedback_note,
+                  created_by: f.created_by,
+                });
+                if (!fbErr) copiedFeedback += 1;
+              }
+              logger.info("Auditor overrides and section feedback copied to new report after rerun", {
+                caseId,
+                sourceReportVersion,
+                newVersion: ver,
+                copiedOverrides,
+                copiedFeedback,
+              });
+              return { copiedOverrides, copiedFeedback };
+            });
+          }
           await complete("complete", ver);
           return { ok: true, action, version: ver };
         }
@@ -1443,6 +1560,55 @@ export const auditorRerun = inngest.createFunction(
             data: { caseId, userId: triggeredBy },
           });
           const ver = (auditResult as any)?.version;
+          const sourceReportVersionFull = data.sourceReportVersion != null ? Number(data.sourceReportVersion) : null;
+          if (typeof ver === "number" && ver >= 1 && typeof sourceReportVersionFull === "number" && sourceReportVersionFull >= 1) {
+            await step.run("copy-auditor-overrides-full-reaudit", async () => {
+              const sb = supabaseAdmin();
+              const [sourceRes, newRes] = await Promise.all([
+                sb.from("reports").select("id").eq("case_id", caseId).eq("version", sourceReportVersionFull).maybeSingle(),
+                sb.from("reports").select("id, summary").eq("case_id", caseId).eq("version", ver).maybeSingle(),
+              ]);
+              const sourceReportId = (sourceRes.data as { id?: string } | null)?.id ?? null;
+              const newReport = newRes.data as { id: string; summary: Record<string, unknown> | null } | null;
+              const newReportId = newReport?.id ?? null;
+              if (!sourceReportId || !newReportId) return { copiedOverrides: 0, copiedFeedback: 0 };
+              const summary = (newReport?.summary ?? {}) as Record<string, unknown>;
+              const forensic = (summary.forensic_audit ?? summary.forensic) as Record<string, unknown> | undefined;
+              const domainScores = forensic?.domain_scores_v1 as { domains?: Array<{ domain_id?: string; raw_score?: number; weighted_score?: number }> } | undefined;
+              const domains = Array.isArray(domainScores?.domains) ? domainScores.domains : [];
+              const newAiByDomain = new Map<string, { raw: number; weighted: number | null }>();
+              for (const d of domains) {
+                const id = String(d.domain_id ?? "");
+                if (!id) continue;
+                newAiByDomain.set(id, { raw: Number(d.raw_score ?? 0), weighted: d.weighted_score != null ? Number(d.weighted_score) : null });
+              }
+              const { data: overrides } = await sb.from("audit_score_overrides").select("*").eq("report_id", sourceReportId);
+              const rows = (overrides ?? []) as Array<{ domain_key: string; manual_score: number; manual_weighted_score: number | null; reason_category: string; override_note: string | null; visibility_scope?: string; created_by: string | null; section_key?: string | null }>;
+              let copiedOverrides = 0;
+              for (const row of rows) {
+                const newAi = newAiByDomain.get(row.domain_key) ?? { raw: 0, weighted: null };
+                const aiScore = newAi.raw;
+                const aiWeightedScore = newAi.weighted;
+                const manualScore = Number(row.manual_score);
+                const deltaScore = Number((manualScore - aiScore).toFixed(2));
+                const manualWeightedScore = row.manual_weighted_score != null ? Number(row.manual_weighted_score) : null;
+                const { error: insErr } = await sb.from("audit_score_overrides").upsert(
+                  { case_id: caseId, report_id: newReportId, domain_key: row.domain_key, section_key: row.section_key ?? null, ai_score: aiScore, ai_weighted_score: aiWeightedScore, manual_score: manualScore, manual_weighted_score: manualWeightedScore, delta_score: deltaScore, reason_category: row.reason_category, override_note: row.override_note, visibility_scope: row.visibility_scope ?? "internal_only", created_by: row.created_by },
+                  { onConflict: "case_id,report_id,domain_key" }
+                );
+                if (!insErr) copiedOverrides += 1;
+              }
+              const { data: sectionFeedback } = await sb.from("audit_section_feedback").select("section_key, feedback_type, visibility_scope, feedback_note, created_by").eq("report_id", sourceReportId);
+              const feedbackRows = (sectionFeedback ?? []) as Array<{ section_key: string; feedback_type: string; visibility_scope: string; feedback_note: string; created_by: string | null }>;
+              let copiedFeedback = 0;
+              for (const f of feedbackRows) {
+                const { error: fbErr } = await sb.from("audit_section_feedback").insert({ case_id: caseId, report_id: newReportId, section_key: f.section_key, feedback_type: f.feedback_type, visibility_scope: f.visibility_scope, feedback_note: f.feedback_note, created_by: f.created_by });
+                if (!fbErr) copiedFeedback += 1;
+              }
+              logger.info("Auditor overrides and section feedback copied to new report after full reaudit", { caseId, sourceReportVersion: sourceReportVersionFull, newVersion: ver, copiedOverrides, copiedFeedback });
+              return { copiedOverrides, copiedFeedback };
+            });
+          }
           await complete("complete", ver);
           return { ok: true, action, version: ver };
         }

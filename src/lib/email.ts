@@ -89,6 +89,28 @@ export async function notifyAuditorAuditFailed(caseId: string, errorMessage: str
   });
 }
 
+/**
+ * Notify auditor when a new audit is submitted so they can log in and complete review.
+ * Sent at the start of the audit pipeline (case/submitted).
+ */
+export async function notifyAuditorNewAuditSubmitted(caseId: string): Promise<boolean> {
+  const baseUrl = (process.env.NEXT_PUBLIC_APP_URL ?? SITE_URL).replace(/\/+$/, "");
+  const dashboardUrl = `${baseUrl}/dashboard/auditor`;
+  const caseUrl = `${baseUrl}/cases/${caseId}`;
+
+  return sendEmail({
+    to: AUDITOR_EMAIL,
+    subject: `[HairAudit] New audit submitted – Case ${caseId.slice(0, 8)}…`,
+    html: `
+      <p>A new audit has been submitted and is in the queue.</p>
+      <p><strong>Case ID:</strong> ${escapeHtml(caseId)}</p>
+      <p>Log in to the Auditor Dashboard to review and complete the case.</p>
+      <p><a href="${dashboardUrl}">Auditor Dashboard</a> &nbsp;|&nbsp; <a href="${caseUrl}">Open case</a></p>
+      <p>— HairAudit</p>
+    `,
+  });
+}
+
 export type NotifyPatientReportReadyParams = {
   to: string;
   caseId: string;
