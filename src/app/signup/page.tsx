@@ -162,10 +162,9 @@ function SignUpForm({ initialRole = "patient" }: { initialRole?: SignupRole }) {
     setMsg(null);
     try {
       const appUrl = getCanonicalAppUrl();
-      const nextPath = dashboardPathForRole(signupRole);
-      const emailRedirectTo = `${appUrl}/auth/callback?signup_role=${signupRole}&next=${encodeURIComponent(
-        nextPath
-      )}`;
+      // Supabase may be strict about matching redirect URLs (query params can cause fallbacks).
+      // Magic-link code exchange is role-aware after session is established, so keep redirect URL minimal.
+      const emailRedirectTo = `${appUrl}/auth/callback`;
       const { error } = await supabase.auth.signInWithOtp({
         email: trimmedEmail,
         options: { emailRedirectTo },
