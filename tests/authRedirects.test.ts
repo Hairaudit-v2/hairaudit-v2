@@ -74,6 +74,18 @@ test("getCanonicalAppUrl: returns string with no trailing slash", () => {
   assert.ok(!url.endsWith("/"), "should not end with slash");
 });
 
+test("getCanonicalAppUrl: strips any path from NEXT_PUBLIC_APP_URL", () => {
+  const prev = process.env.NEXT_PUBLIC_APP_URL;
+  try {
+    process.env.NEXT_PUBLIC_APP_URL = "https://hairaudit.com/dashboard";
+    const url = getCanonicalAppUrl();
+    assert.equal(url, "https://hairaudit.com");
+  } finally {
+    if (prev !== undefined) process.env.NEXT_PUBLIC_APP_URL = prev;
+    else delete process.env.NEXT_PUBLIC_APP_URL;
+  }
+});
+
 test("getCanonicalAppUrl: forces https for hairaudit.com when env is http", () => {
   const prev = process.env.NEXT_PUBLIC_APP_URL;
   try {

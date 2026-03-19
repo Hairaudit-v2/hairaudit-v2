@@ -10,7 +10,10 @@ export function getCanonicalAppUrl(): string {
   try {
     const u = new URL(base);
     if (u.hostname.includes("hairaudit.com") && u.protocol === "http:") u.protocol = "https:";
-    return u.toString().replace(/\/+$/, "");
+    // Only use the canonical origin (protocol + host). Env values sometimes
+    // include a path (e.g. ".../dashboard"), and keeping that would break
+    // Supabase allowlisting for auth redirect URLs.
+    return `${u.protocol}//${u.host}`.replace(/\/+$/, "");
   } catch {
     return base.replace(/\/+$/, "");
   }
