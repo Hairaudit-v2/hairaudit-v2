@@ -29,7 +29,7 @@ export default async function DoctorDashboardPage() {
 
   const { data: doctorProfile } = await admin
     .from("doctor_profiles")
-    .select("id, participation_approval_status")
+    .select("id, participation_approval_status, created_at")
     .eq("linked_user_id", user.id)
     .limit(1)
     .maybeSingle();
@@ -73,12 +73,18 @@ export default async function DoctorDashboardPage() {
     benchmarkReadyCount,
   };
 
+  const doctorProfileCreatedAt = (doctorProfile as { created_at?: string } | null)?.created_at;
+  const showDoctorWelcomeBanner =
+    !!doctorProfileCreatedAt &&
+    Date.now() - new Date(doctorProfileCreatedAt).getTime() < 24 * 60 * 60 * 1000;
+
   return (
     <DoctorDashboardProduction
       cases={caseList}
       caseIdsWithUploads={caseIdsWithUploads}
       participationApprovalStatus={participationApprovalStatus}
       participationSummary={participationSummary}
+      showWelcomeBanner={showDoctorWelcomeBanner}
     />
   );
 }

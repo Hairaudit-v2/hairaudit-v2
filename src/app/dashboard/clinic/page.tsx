@@ -29,7 +29,7 @@ export default async function ClinicDashboardPage() {
   const userEmail = String(user.email ?? "").toLowerCase();
 
   const profileSelect =
-    "id, linked_user_id, clinic_name, clinic_email, transparency_score, audited_case_count, contributed_case_count, benchmark_eligible_count, average_forensic_score, documentation_integrity_average, current_award_tier, award_progression_paused, volume_confidence_score, validated_case_count, provisional_high_score_count, validated_high_score_count, low_score_case_count, benchmark_eligible_validated_count, profile_visible, clinic_slug, participation_status, participation_approval_status";
+    "id, linked_user_id, clinic_name, clinic_email, transparency_score, audited_case_count, contributed_case_count, benchmark_eligible_count, average_forensic_score, documentation_integrity_average, current_award_tier, award_progression_paused, volume_confidence_score, validated_case_count, provisional_high_score_count, validated_high_score_count, low_score_case_count, benchmark_eligible_validated_count, profile_visible, clinic_slug, participation_status, participation_approval_status, created_at";
   const { data: byUserProfile } = await admin
     .from("clinic_profiles")
     .select(profileSelect)
@@ -209,6 +209,11 @@ export default async function ClinicDashboardPage() {
   });
 
   const showFoundingTag = false;
+  const clinicProfileCreatedAt = (clinicProfile as { created_at?: string } | null)?.created_at;
+  const showClinicWelcomeBanner =
+    !!clinicProfileCreatedAt &&
+    Date.now() - new Date(clinicProfileCreatedAt).getTime() < 24 * 60 * 60 * 1000;
+  const hasNoSubmittedCases = caseList.length === 0;
 
   return (
     <div>
@@ -224,6 +229,26 @@ export default async function ClinicDashboardPage() {
         <ParticipationBenefitBanner />
         <FoundingClinicTag showFoundingTag={showFoundingTag} />
       </div>
+      {showClinicWelcomeBanner && (
+        <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-900" role="status">
+          <p className="font-medium">Your clinic profile is now active.</p>
+          <p className="mt-1 text-sm text-emerald-800">You can begin privately with internal audits.</p>
+        </div>
+      )}
+      {hasNoSubmittedCases && (
+        <div className="mb-6 rounded-xl border-2 border-slate-200 bg-slate-50 p-8 text-center">
+          <h2 className="text-xl font-semibold text-slate-900">No cases yet</h2>
+          <p className="mt-2 text-sm text-slate-600">
+            Start your first internal audit to begin building your clinic profile.
+          </p>
+          <Link
+            href="/dashboard/clinic/submit-case"
+            className="mt-4 inline-flex items-center rounded-lg bg-amber-500 px-4 py-2.5 text-sm font-semibold text-slate-900 hover:bg-amber-400"
+          >
+            Submit your first case
+          </Link>
+        </div>
+      )}
       <p className="mb-6 text-xs text-slate-500">{BENCHMARKING_GLOBAL_STANDARDS}</p>
 
       <div className="mb-6">
@@ -417,13 +442,16 @@ export default async function ClinicDashboardPage() {
       </div>
       {(!cases || cases.length === 0) ? (
         <div className="rounded-xl border border-slate-200 bg-white p-8 text-center">
-          <p className="text-slate-700 font-semibold">
-            Start with your first Submitted Case.
-          </p>
+          <p className="text-slate-700 font-semibold">No cases yet</p>
           <p className="mt-1 text-sm text-slate-600">
-            Clinics with attributable submitted cases build stronger quality-control data and future benchmarking leverage.
+            Start your first internal audit to begin building your clinic profile.
           </p>
-          <CreateCaseButton dashboardHref="/dashboard/clinic" />
+          <Link
+            href="/dashboard/clinic/submit-case"
+            className="mt-4 inline-flex items-center rounded-lg bg-amber-500 px-4 py-2.5 text-sm font-semibold text-slate-900 hover:bg-amber-400"
+          >
+            Submit your first case
+          </Link>
         </div>
       ) : (
         <ul className="space-y-3">

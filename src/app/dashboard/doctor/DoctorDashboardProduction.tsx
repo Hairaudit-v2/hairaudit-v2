@@ -21,11 +21,13 @@ export default function DoctorDashboardProduction({
   caseIdsWithUploads = [],
   participationApprovalStatus = "not_started",
   participationSummary = { casesSubmittedCount: 0, reportsCompletedCount: 0, benchmarkReadyCount: 0 },
+  showWelcomeBanner = false,
 }: {
   cases: CaseRow[];
   caseIdsWithUploads?: string[];
   participationApprovalStatus?: ParticipationApprovalStatus;
   participationSummary?: ParticipationSummary;
+  showWelcomeBanner?: boolean;
 }) {
   const hasCase = cases.length > 0;
   const firstCase = cases[0] ?? null;
@@ -72,6 +74,13 @@ export default function DoctorDashboardProduction({
     <div className="space-y-6">
       <ParticipationStatusBanner status={participationApprovalStatus} role="doctor" />
 
+      {showWelcomeBanner && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-900" role="status">
+          <p className="font-medium">Your doctor profile is now active.</p>
+          <p className="mt-1 text-sm text-emerald-800">You can begin building your verified record.</p>
+        </div>
+      )}
+
       {showOnboarding && (
         <DoctorOnboardingChecklist steps={steps} showWhyItMatters />
       )}
@@ -96,12 +105,12 @@ export default function DoctorDashboardProduction({
         <h2 className="text-lg font-semibold text-slate-900 mb-3">Your cases</h2>
         {!cases || cases.length === 0 ? (
           <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-8 text-center">
-            <p className="text-slate-700 font-medium">No cases yet</p>
+            <p className="text-slate-700 font-semibold">No cases submitted yet</p>
             <p className="mt-1 text-sm text-slate-600">
-              Create a case to start the doctor audit flow (form + photos).
+              Begin building your verified professional profile by contributing your first case.
             </p>
             <div className="mt-4">
-              <CreateCaseButton dashboardHref="/dashboard/doctor" />
+              <CreateCaseButton variant="premium" label="Submit your first case" dashboardHref="/dashboard/doctor" />
             </div>
           </div>
         ) : (
