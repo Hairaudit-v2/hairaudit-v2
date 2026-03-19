@@ -27,7 +27,7 @@ export default function CertificateView({
     <div
       className={
         isFullPage
-          ? "min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 print:p-0 bg-slate-900 print:bg-white"
+          ? "min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 print:p-0 bg-stone-200 print:bg-white"
           : "flex flex-col items-center p-4 max-h-[90vh] overflow-auto"
       }
     >

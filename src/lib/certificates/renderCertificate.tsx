@@ -8,53 +8,79 @@ import type { ReactNode } from "react";
 import type { CertificateData, CertificateTier } from "./types";
 import {
   getCertificationFullDescription,
-  getCertificationLabel,
   CERTIFICATION_TRUST_LINE,
 } from "@/lib/clinics/certificationCopy";
 
+/** Institutional, print-safe tier styling for standard layout (Verified, Silver, Gold). */
 const TIER_STYLES: Record<
   CertificateTier,
-  { border: string; accent: string; labelBg: string; labelText: string }
+  {
+    outerBorder: string;
+    innerBorder: string;
+    headerAccent: string;
+    titleColor: string;
+    nameplateBorder: string;
+    bgFrom: string;
+    bgTo: string;
+    footerBorder: string;
+    sigLine: string;
+  }
 > = {
   verified: {
-    border: "border-cyan-500/30",
-    accent: "text-cyan-400",
-    labelBg: "bg-cyan-500/15 border-cyan-500/40",
-    labelText: "text-cyan-200",
+    outerBorder: "border-slate-300 print:border-slate-400",
+    innerBorder: "border-slate-200/80 print:border-slate-300",
+    headerAccent: "text-slate-600",
+    titleColor: "text-slate-800",
+    nameplateBorder: "border-slate-200",
+    bgFrom: "from-stone-50",
+    bgTo: "to-slate-50/40",
+    footerBorder: "border-slate-200/80",
+    sigLine: "border-slate-300",
   },
   silver: {
-    border: "border-slate-400/40",
-    accent: "text-slate-300",
-    labelBg: "bg-slate-500/20 border-slate-400/50",
-    labelText: "text-slate-200",
+    outerBorder: "border-slate-400/90 print:border-slate-500",
+    innerBorder: "border-slate-300/70 print:border-slate-400",
+    headerAccent: "text-slate-600",
+    titleColor: "text-slate-800",
+    nameplateBorder: "border-slate-300",
+    bgFrom: "from-slate-50/95",
+    bgTo: "to-stone-50/50",
+    footerBorder: "border-slate-300/80",
+    sigLine: "border-slate-400",
   },
   gold: {
-    border: "border-amber-500/40",
-    accent: "text-amber-400",
-    labelBg: "bg-amber-500/20 border-amber-500/50",
-    labelText: "text-amber-200",
+    outerBorder: "border-amber-200/90 print:border-amber-300",
+    innerBorder: "border-amber-100/80 print:border-amber-200",
+    headerAccent: "text-amber-900/90",
+    titleColor: "text-amber-950",
+    nameplateBorder: "border-amber-200/90",
+    bgFrom: "from-amber-50/30",
+    bgTo: "to-stone-50/60",
+    footerBorder: "border-amber-200/70",
+    sigLine: "border-amber-300/90",
   },
   platinum: {
-    // Used only for non-Platinum layout fallback; Platinum has its own layout
-    border: "border-stone-300",
-    accent: "text-stone-600",
-    labelBg: "bg-stone-200/80 border-stone-400",
-    labelText: "text-stone-900",
+    outerBorder: "border-stone-300",
+    innerBorder: "border-stone-200/90",
+    headerAccent: "text-stone-600",
+    titleColor: "text-stone-900",
+    nameplateBorder: "border-stone-200/80",
+    bgFrom: "from-stone-50",
+    bgTo: "to-stone-100/30",
+    footerBorder: "border-stone-200/80",
+    sigLine: "border-stone-300",
   },
 };
 
-/** Map CertificateTier to backend label (Active, Silver Certified, etc.) */
-function tierToBackendLabel(tier: CertificateTier): string {
-  const map: Record<CertificateTier, string> = {
-    verified: "VERIFIED",
-    silver: "SILVER",
-    gold: "GOLD",
-    platinum: "PLATINUM",
-  };
-  return getCertificationLabel(map[tier]);
-}
+/** Title line for standard tiers (Platinum uses its own in renderPlatinumCertificate). */
+const TIER_TITLE: Record<CertificateTier, string> = {
+  verified: "VERIFIED CERTIFICATION",
+  silver: "SILVER CERTIFICATION",
+  gold: "GOLD CERTIFICATION",
+  platinum: "PLATINUM CERTIFICATION",
+};
 
-/** Subtle diagonal SAMPLE watermark: large, low opacity, embedded-in-paper feel */
+/** Subtle diagonal SAMPLE watermark: large, low opacity, embedded-in-paper feel; lighter than Platinum for standard tiers */
 function SampleWatermark({ variant }: { variant: "default" | "platinum" }) {
   const isPlatinum = variant === "platinum";
   return (
@@ -66,7 +92,7 @@ function SampleWatermark({ variant }: { variant: "default" | "platinum" }) {
         className={`
           font-semibold uppercase tracking-[0.2em]
           rotate-[-22deg] whitespace-nowrap
-          ${isPlatinum ? "text-[10rem] text-stone-300/[0.14]" : "text-7xl sm:text-8xl text-white/[0.07]"}
+          ${isPlatinum ? "text-[10rem] text-stone-300/[0.14]" : "text-7xl sm:text-8xl text-slate-300/[0.08]"}
         `}
       >
         Sample
@@ -193,7 +219,7 @@ function renderPlatinumCertificate(data: CertificateData): ReactNode {
   );
 }
 
-/** Standard certificate layout for Verified, Silver, Gold */
+/** Standard certificate layout for Verified, Silver, Gold — aligned with Platinum structure, tier-specific styling */
 function renderStandardCertificate(data: CertificateData): ReactNode {
   const {
     clinicName,
@@ -205,7 +231,6 @@ function renderStandardCertificate(data: CertificateData): ReactNode {
     isSample = false,
   } = data;
   const styles = TIER_STYLES[tier];
-  const label = tierToBackendLabel(tier);
   const backendTier =
     tier === "platinum"
       ? "PLATINUM"
@@ -222,79 +247,117 @@ function renderStandardCertificate(data: CertificateData): ReactNode {
         year: "numeric",
       })
     : "";
+  const titleLine = TIER_TITLE[tier];
 
   return (
     <div
       className={`
-        certificate-layout relative w-full rounded-lg border-2 bg-gradient-to-b from-slate-900/95 to-slate-900/98
-        text-white shadow-xl print:shadow-none print:rounded-none print:border-slate-600
-        aspect-[210/297] max-h-[840px] flex flex-col overflow-hidden
+        certificate-layout certificate-layout--standard
+        relative w-full flex flex-col overflow-hidden
+        aspect-[210/297] max-h-[840px]
         print:aspect-auto print:min-h-[297mm] print:max-h-none
-        ${styles.border}
+        rounded-sm border ${styles.outerBorder}
+        bg-gradient-to-b ${styles.bgFrom} ${styles.bgTo}
+        shadow-[0_1px_3px_rgba(0,0,0,0.04)]
+        print:shadow-none print:rounded-none print:bg-white
       `}
       style={{ maxWidth: "min(100%, 210mm)" }}
       role="img"
-      aria-label={`HairAudit certification certificate for ${clinicName}`}
+      aria-label={`HairAudit ${titleLine} certificate for ${clinicName}`}
     >
       {isSample && <SampleWatermark variant="default" />}
 
-      <div className="relative z-0 flex flex-col flex-1 p-6 sm:p-8 md:p-10 print:p-8">
-        {/* Header */}
-        <div className="text-center">
-          <p
-            className={`text-[10px] font-semibold uppercase tracking-[0.2em] ${styles.accent}`}
-          >
-            HairAudit
-          </p>
-          <p className="mt-1 text-[10px] text-slate-500 uppercase tracking-widest">
-            Independent Surgical Transparency Verification
-          </p>
-        </div>
-
-        {/* Main content */}
-        <div className="flex-1 flex flex-col justify-center mt-6 sm:mt-8">
-          <div className="border-t border-b border-white/15 py-6 sm:py-8">
-            <p className="text-xl sm:text-2xl md:text-3xl font-bold text-white tracking-tight text-center">
-              {clinicName}
-            </p>
+      {/* Inner frame: thin, lighter than Platinum */}
+      <div
+        className={`relative z-0 flex-1 flex flex-col m-4 sm:m-5 md:m-6 border ${styles.innerBorder} print:m-5`}
+      >
+        <div className="flex flex-col flex-1 p-6 sm:p-8 md:p-10 print:p-8">
+          {/* Header: logo + HairAudit Certification + subheading */}
+          <div className="text-center pb-2">
             <p
-              className={`
-                mt-4 inline-flex mx-auto rounded-xl border px-5 py-2.5 text-sm font-bold
-                ${styles.labelBg} ${styles.labelText}
-              `}
+              className={`text-[10px] font-medium uppercase tracking-[0.28em] ${styles.headerAccent}`}
             >
-              {label}
+              HairAudit
+            </p>
+            <p className="mt-1 text-[9px] text-slate-400 uppercase tracking-[0.2em]">
+              Independent Surgical Transparency Verification
             </p>
           </div>
 
-          <p className="mt-6 text-xs sm:text-sm text-slate-400 leading-relaxed max-w-md mx-auto text-center">
+          {/* Main title (tier-based) + Certified Clinic */}
+          <div className="mt-6 sm:mt-7 text-center">
+            <h1
+              className={`font-serif text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight ${styles.titleColor}`}
+            >
+              {titleLine}
+            </h1>
+            <p className="mt-1.5 text-[11px] font-normal uppercase tracking-wider text-slate-400">
+              Certified Clinic
+            </p>
+          </div>
+
+          {/* Clinic name: prominent, slightly less dominant than Platinum */}
+          <div
+            className={`mt-6 sm:mt-8 border-t border-b ${styles.nameplateBorder} py-6 sm:py-8`}
+          >
+            <p
+              className={`font-serif text-lg sm:text-xl md:text-2xl font-semibold ${styles.titleColor} text-center tracking-tight`}
+            >
+              {clinicName}
+            </p>
+          </div>
+
+          {/* Certification statement */}
+          <p className="mt-6 text-xs text-slate-600 leading-relaxed max-w-md mx-auto text-center">
             {fullDescription}
           </p>
 
+          {/* Score + verified cases: minimal, secondary */}
           {(score != null || caseCount != null) && (
-            <div className="mt-6 flex flex-wrap justify-center gap-6 text-xs text-slate-500">
+            <div className="mt-3 flex flex-wrap justify-center gap-4 text-[10px] text-slate-400">
               {typeof score === "number" && (
-                <span>Certification score: {score.toFixed(1)}/100</span>
+                <span>Score: {score.toFixed(1)}/100</span>
               )}
               {typeof caseCount === "number" && (
-                <span>Eligible public cases: {caseCount}</span>
+                <span>Verified cases: {caseCount}</span>
               )}
             </div>
           )}
 
-          <p className="mt-6 text-[10px] text-slate-500 uppercase tracking-wider text-center">
+          <p className="mt-5 text-[10px] text-slate-500 uppercase tracking-wider text-center max-w-md mx-auto">
             {CERTIFICATION_TRUST_LINE}
           </p>
-        </div>
 
-        {/* Footer */}
-        <div className="mt-auto pt-6 border-t border-white/10 flex flex-wrap items-center justify-between gap-4 text-[10px] text-slate-500">
-          <span>Issued: {issuedDate || "—"}</span>
-          <span className="uppercase tracking-wider">ID: {certificateId}</span>
+          {/* Signature block: same structure as Platinum, slightly lighter */}
+          <div className="mt-8 sm:mt-10 flex flex-col items-center">
+            <p className="text-[10px] uppercase tracking-[0.18em] text-slate-500">
+              Certified by
+            </p>
+            <div
+              className={`w-36 sm:w-44 mt-3 border-b ${styles.sigLine}`}
+              aria-hidden
+            />
+            <p className="mt-3 text-xs font-medium text-slate-700">
+              HairAudit Certification Board
+            </p>
+            <p className="mt-2.5 text-[10px] text-slate-500">
+              {issuedDate || "—"}
+            </p>
+          </div>
+
+          {/* Footer: certificate reference */}
+          <div
+            className={`mt-auto pt-6 border-t ${styles.footerBorder} flex flex-wrap items-center justify-between gap-4 text-[10px] text-slate-500`}
+          >
+            <span>Issued: {issuedDate || "—"}</span>
+            <span className="uppercase tracking-wider font-medium text-slate-600">
+              Certificate ref. {certificateId}
+            </span>
+          </div>
+          <p className="mt-2 text-[9px] text-slate-400 text-center">
+            Evidence-based recognition · Not purchased
+          </p>
         </div>
-        <p className="mt-2 text-[10px] text-slate-600 text-center">
-          Evidence-based recognition · Not purchased
-        </p>
       </div>
     </div>
   );

@@ -22,7 +22,7 @@ export default async function CertificateDemoPage(props: PageProps) {
   const cert = DEMO_CERTIFICATES.find((c) => c.tier === tier) ?? DEMO_CERTIFICATES[0];
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-900 text-slate-100">
+    <div className="min-h-screen flex flex-col bg-stone-200 text-stone-900">
       <SiteHeader />
       <main className="relative flex-1">
         <CertificateView data={cert} variant="fullPage" showDownloadPlaceholder />
