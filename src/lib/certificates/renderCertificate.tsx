@@ -5,8 +5,11 @@
 
 import type { ReactNode } from "react";
 import type { CertificateData, CertificateTier } from "./types";
-import { getCertificationFullDescription, getCertificationLabel } from "@/lib/clinics/certificationCopy";
-import { CERTIFICATION_TRUST_LINE } from "@/lib/clinics/certificationCopy";
+import {
+  getCertificationFullDescription,
+  getCertificationLabel,
+  CERTIFICATION_TRUST_LINE,
+} from "@/lib/clinics/certificationCopy";
 
 const TIER_STYLES: Record<
   CertificateTier,
@@ -68,9 +71,10 @@ export function renderCertificate(data: CertificateData): ReactNode {
   return (
     <div
       className={`
-        relative w-full rounded-lg border-2 bg-gradient-to-b from-slate-900/95 to-slate-900/98
+        certificate-layout relative w-full rounded-lg border-2 bg-gradient-to-b from-slate-900/95 to-slate-900/98
         text-white shadow-xl print:shadow-none print:rounded-none print:border-slate-600
         aspect-[210/297] max-h-[840px] flex flex-col overflow-hidden
+        print:aspect-auto print:min-h-[297mm] print:max-h-none
         ${styles.border}
       `}
       style={{ maxWidth: "min(100%, 210mm)" }}

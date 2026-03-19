@@ -327,6 +327,14 @@ export default async function PublicClinicProfilePage({
               certificationTier={tier}
               location={[row.city, row.country].filter(Boolean).join(", ") || undefined}
             />
+            <div className="mt-6">
+              <Link
+                href={`/clinics/${row.clinic_slug ?? ""}/certificate`}
+                className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl border border-cyan-500/30 text-cyan-300 text-sm font-medium hover:bg-cyan-500/10 transition-colors"
+              >
+                View Certificate
+              </Link>
+            </div>
           </div>
         </section>
 
