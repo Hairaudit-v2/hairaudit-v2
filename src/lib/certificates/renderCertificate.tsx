@@ -10,6 +10,7 @@ import {
   getCertificationFullDescription,
   CERTIFICATION_TRUST_LINE,
 } from "@/lib/clinics/certificationCopy";
+import CertificationSeal from "@/components/certificates/CertificationSeal";
 
 /** Institutional, print-safe tier styling for standard layout (Verified, Silver, Gold). */
 const TIER_STYLES: Record<
@@ -80,6 +81,36 @@ const TIER_TITLE: Record<CertificateTier, string> = {
   platinum: "PLATINUM CERTIFICATION",
 };
 
+const CERTIFICATE_LOGO_PATH = "/logos/hairaudit-logo.png";
+
+/** Logo-based accreditation header: same for all tiers. Print-safe, institutional. */
+function CertificateLogoHeader({
+  accentClass = "text-stone-600",
+  subClass = "text-stone-400",
+}: {
+  accentClass?: string;
+  subClass?: string;
+}) {
+  return (
+    <header className="text-center pb-3">
+      <img
+        src={CERTIFICATE_LOGO_PATH}
+        alt="HairAudit"
+        width={160}
+        height={48}
+        className="w-[140px] sm:w-[160px] md:w-[180px] h-auto mx-auto object-contain print:w-[160px] print:h-auto"
+        style={{ minHeight: 32 }}
+      />
+      <p className={`mt-4 text-[10px] font-medium uppercase tracking-[0.2em] ${accentClass}`}>
+        HairAudit Certification
+      </p>
+      <p className={`mt-1 text-[9px] ${subClass} tracking-[0.02em]`}>
+        Independently verified surgical performance certification
+      </p>
+    </header>
+  );
+}
+
 /** Subtle diagonal SAMPLE watermark: large, low opacity, embedded-in-paper feel; lighter than Platinum for standard tiers */
 function SampleWatermark({ variant }: { variant: "default" | "platinum" }) {
   const isPlatinum = variant === "platinum";
@@ -137,19 +168,12 @@ function renderPlatinumCertificate(data: CertificateData): ReactNode {
       aria-label={`HairAudit Platinum certification certificate for ${clinicName}`}
     >
       {isSample && <SampleWatermark variant="platinum" />}
+      <CertificationSeal tier="platinum" />
 
       {/* Inner frame: thin, elegant */}
       <div className="relative z-0 flex-1 flex flex-col m-4 sm:m-5 md:m-6 border border-stone-200/90 print:border-stone-300 print:m-5">
         <div className="flex flex-col flex-1 p-6 sm:p-8 md:p-10 print:p-8">
-          {/* Header: accreditation anchor */}
-          <div className="text-center pb-2">
-            <p className="text-[10px] font-medium uppercase tracking-[0.28em] text-stone-600">
-              HairAudit
-            </p>
-            <p className="mt-1 text-[9px] text-stone-400 uppercase tracking-[0.2em]">
-              Independent Surgical Transparency Verification
-            </p>
-          </div>
+          <CertificateLogoHeader accentClass="text-stone-600" subClass="text-stone-400" />
 
           {/* Title and subtitle: tight relationship */}
           <div className="mt-6 sm:mt-7 text-center">
@@ -266,23 +290,19 @@ function renderStandardCertificate(data: CertificateData): ReactNode {
       aria-label={`HairAudit ${titleLine} certificate for ${clinicName}`}
     >
       {isSample && <SampleWatermark variant="default" />}
+      {tier !== "verified" && (
+        <CertificationSeal tier={tier === "gold" ? "gold" : "silver"} />
+      )}
 
       {/* Inner frame: thin, lighter than Platinum */}
       <div
         className={`relative z-0 flex-1 flex flex-col m-4 sm:m-5 md:m-6 border ${styles.innerBorder} print:m-5`}
       >
         <div className="flex flex-col flex-1 p-6 sm:p-8 md:p-10 print:p-8">
-          {/* Header: logo + HairAudit Certification + subheading */}
-          <div className="text-center pb-2">
-            <p
-              className={`text-[10px] font-medium uppercase tracking-[0.28em] ${styles.headerAccent}`}
-            >
-              HairAudit
-            </p>
-            <p className="mt-1 text-[9px] text-slate-400 uppercase tracking-[0.2em]">
-              Independent Surgical Transparency Verification
-            </p>
-          </div>
+          <CertificateLogoHeader
+            accentClass={styles.headerAccent}
+            subClass="text-slate-500"
+          />
 
           {/* Main title (tier-based) + Certified Clinic */}
           <div className="mt-6 sm:mt-7 text-center">
