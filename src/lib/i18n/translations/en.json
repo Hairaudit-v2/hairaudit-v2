@@ -22,6 +22,43 @@
     "ecosystem": {
       "poweredByFi": "Powered by Follicle Intelligence",
       "exploreHa": "Explore HairAudit"
+    },
+    "betaBanner": {
+      "lead": "HairAudit is currently in public beta.",
+      "detail": "All audits are free while we refine the Follicle Intelligence™ scoring system. AI scoring is monitored and manually corrected when required. Clinics and doctors participating in beta receive free access and early ranking placement."
+    },
+    "footer": {
+      "brandName": "HairAudit",
+      "brandBlurb": "Independent, evidence-based forensic audits of hair transplant procedures.",
+      "sectionPatients": "Patients",
+      "sectionProfessionals": "Professionals",
+      "sectionCompany": "Company",
+      "sectionLegal": "Legal",
+      "sectionPlatformEcosystem": "Platform Ecosystem",
+      "linkFaq": "FAQ",
+      "linkVerifiedProgram": "Verified Surgeon Program",
+      "linkCreateProfile": "Create Clinic or Doctor Profile",
+      "linkAbout": "About",
+      "linkContact": "Contact",
+      "linkPrivacy": "Privacy",
+      "linkTerms": "Terms",
+      "linkDisclaimer": "Disclaimer",
+      "platformFiSubtitle": "Clinical Intelligence Platform",
+      "platformHaSubtitle": "Hair Transplant Audit System",
+      "tagline": "HairAudit — Audit and feedback for hair transplant procedures",
+      "assistedByPrefix": "Analysis assisted by",
+      "follicleIntelligenceName": "Follicle Intelligence",
+      "ecosystemBandTitle": "Part of the Surgical Intelligence Ecosystem™",
+      "ecosystemBandAria": "Surgical Intelligence Ecosystem",
+      "ecosystemNavAria": "Ecosystem platforms",
+      "ecosystemTagTraining": "Training",
+      "ecosystemTagMeasurement": "Measurement",
+      "ecosystemTagAnalysis": "Analysis",
+      "ecosystemTagBiology": "Biology",
+      "crossPlatformLabel": "Platform relationship",
+      "crossPlatformHairAuditMessage": "HairAudit is powered by the Follicle Intelligence engine.",
+      "crossPlatformFiMessage": "HairAudit is the first application powered by Follicle Intelligence.",
+      "crossPlatformVisitFi": "Visit Follicle Intelligence"
     }
   },
   "dashboard": {

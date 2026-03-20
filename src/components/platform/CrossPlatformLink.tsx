@@ -1,5 +1,7 @@
+"use client";
+
 import { FI_HOME, HA_HOME } from "@/config/platform-links";
-import { PLATFORM } from "@/lib/constants/platform";
+import { useI18n } from "@/components/i18n/I18nProvider";
 
 type CrossPlatformLinkMode = "hairAudit" | "follicleIntelligence";
 
@@ -9,32 +11,12 @@ type CrossPlatformLinkProps = {
   theme?: "default" | "light";
 };
 
-const CONTENT: Record<
-  CrossPlatformLinkMode,
-  {
-    message: string;
-    cta: string;
-    href: string;
-  }
-> = {
-  hairAudit: {
-    message: "HairAudit is powered by the Follicle Intelligence engine.",
-    cta: `Visit ${PLATFORM.FI_NAME}`,
-    href: FI_HOME,
-  },
-  follicleIntelligence: {
-    message: "HairAudit is the first application powered by Follicle Intelligence.",
-    cta: "Explore HairAudit",
-    href: HA_HOME,
-  },
-};
-
 export default function CrossPlatformLink({
   mode,
   className = "",
   theme = "default",
 }: CrossPlatformLinkProps) {
-  const content = CONTENT[mode];
+  const { t } = useI18n();
   const isLight = theme === "light";
   const asideClass = isLight
     ? "rounded-xl border border-slate-200 bg-neutral-50 p-4 sm:p-5"
@@ -44,17 +26,25 @@ export default function CrossPlatformLink({
     : "text-xs uppercase tracking-wider text-slate-400";
   const messageClass = isLight ? "mt-2 text-sm text-slate-600" : "mt-2 text-sm text-slate-200";
 
+  const message =
+    mode === "hairAudit"
+      ? t("nav.footer.crossPlatformHairAuditMessage")
+      : t("nav.footer.crossPlatformFiMessage");
+  const href = mode === "hairAudit" ? FI_HOME : HA_HOME;
+  const cta =
+    mode === "hairAudit" ? t("nav.footer.crossPlatformVisitFi") : t("nav.ecosystem.exploreHa");
+
   return (
     <aside className={`${asideClass} ${className}`.trim()}>
-      <p className={labelClass}>Platform relationship</p>
-      <p className={messageClass}>{content.message}</p>
+      <p className={labelClass}>{t("nav.footer.crossPlatformLabel")}</p>
+      <p className={`${messageClass} leading-snug`}>{message}</p>
       <a
-        href={content.href}
+        href={href}
         target="_blank"
         rel="noopener noreferrer"
-        className="mt-4 inline-flex items-center rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-slate-900 transition-colors hover:bg-amber-600 border border-amber-600/20"
+        className="mt-4 inline-flex items-center rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-slate-900 transition-colors hover:bg-amber-600 border border-amber-600/20 text-center leading-snug"
       >
-        {content.cta}
+        {cta}
       </a>
     </aside>
   );

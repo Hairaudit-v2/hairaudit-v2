@@ -22,6 +22,43 @@
     "ecosystem": {
       "poweredByFi": "Con tecnología de Follicle Intelligence",
       "exploreHa": "Explorar HairAudit"
+    },
+    "betaBanner": {
+      "lead": "HairAudit está actualmente en beta pública.",
+      "detail": "Todas las auditorías son gratuitas mientras perfeccionamos el sistema de puntuación Follicle Intelligence™. La calificación asistida por IA se supervisa y corrige manualmente cuando es necesario. Las clínicas y médicos que participan en la beta tienen acceso gratuito y posicionamiento preferente en las clasificaciones iniciales."
+    },
+    "footer": {
+      "brandName": "HairAudit",
+      "brandBlurb": "Auditorías forenses independientes y basadas en evidencia de procedimientos de trasplante capilar.",
+      "sectionPatients": "Pacientes",
+      "sectionProfessionals": "Profesionales",
+      "sectionCompany": "Empresa",
+      "sectionLegal": "Legal",
+      "sectionPlatformEcosystem": "Ecosistema de plataforma",
+      "linkFaq": "Preguntas frecuentes",
+      "linkVerifiedProgram": "Programa de cirujanos verificados",
+      "linkCreateProfile": "Crear perfil de clínica o médico",
+      "linkAbout": "Acerca de",
+      "linkContact": "Contacto",
+      "linkPrivacy": "Privacidad",
+      "linkTerms": "Términos",
+      "linkDisclaimer": "Aviso legal",
+      "platformFiSubtitle": "Plataforma de inteligencia clínica",
+      "platformHaSubtitle": "Sistema de auditoría de trasplante capilar",
+      "tagline": "HairAudit — Auditoría y comentarios sobre procedimientos de trasplante capilar",
+      "assistedByPrefix": "Análisis asistido por",
+      "follicleIntelligenceName": "Follicle Intelligence",
+      "ecosystemBandTitle": "Parte del ecosistema Surgical Intelligence™",
+      "ecosystemBandAria": "Ecosistema Surgical Intelligence",
+      "ecosystemNavAria": "Plataformas del ecosistema",
+      "ecosystemTagTraining": "Formación",
+      "ecosystemTagMeasurement": "Medición",
+      "ecosystemTagAnalysis": "Análisis",
+      "ecosystemTagBiology": "Biología",
+      "crossPlatformLabel": "Relación entre plataformas",
+      "crossPlatformHairAuditMessage": "HairAudit funciona con el motor Follicle Intelligence.",
+      "crossPlatformFiMessage": "HairAudit es la primera aplicación impulsada por Follicle Intelligence.",
+      "crossPlatformVisitFi": "Visitar Follicle Intelligence"
     }
   },
   "dashboard": {

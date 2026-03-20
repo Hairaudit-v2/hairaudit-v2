@@ -1,15 +1,19 @@
+"use client";
+
 import Link from "next/link";
 import TrackedLink from "@/components/analytics/TrackedLink";
 import { FI_HOME } from "@/config/platform-links";
 import CrossPlatformLink from "@/components/platform/CrossPlatformLink";
 import SurgicalEcosystemFooterBand from "@/components/SurgicalEcosystemFooterBand";
 import { PLATFORM_ECOSYSTEM } from "@/lib/constants/platform";
+import { useI18n } from "@/components/i18n/I18nProvider";
 
 type SiteFooterProps = {
   theme?: "default" | "light";
 };
 
 export default function SiteFooter({ theme = "default" }: SiteFooterProps) {
+  const { t } = useI18n();
   const isLight = theme === "light";
   const footerClass = isLight
     ? "border-t border-slate-200 bg-white text-slate-600"
@@ -33,17 +37,15 @@ export default function SiteFooter({ theme = "default" }: SiteFooterProps) {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-16">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-8">
           <div className="lg:col-span-1">
-            <h4 className={headingClass}>HairAudit</h4>
-            <p className="text-sm leading-relaxed">
-              Independent, evidence-based forensic audits of hair transplant procedures.
-            </p>
+            <h4 className={headingClass}>{t("nav.footer.brandName")}</h4>
+            <p className="text-sm leading-relaxed">{t("nav.footer.brandBlurb")}</p>
           </div>
           <div>
-            <h4 className={headingClass}>Patients</h4>
+            <h4 className={headingClass}>{t("nav.footer.sectionPatients")}</h4>
             <ul className="space-y-1.5 text-sm">
               <li>
                 <Link href="/how-it-works" className={linkClass}>
-                  How It Works
+                  {t("nav.howItWorks")}
                 </Link>
               </li>
               <li>
@@ -52,78 +54,78 @@ export default function SiteFooter({ theme = "default" }: SiteFooterProps) {
                   eventName="cta_request_review_footer"
                   className={linkClass}
                 >
-                  Request Review
+                  {t("nav.requestReview")}
                 </TrackedLink>
               </li>
               <li>
                 <Link href="/demo-report" className={linkClass}>
-                  Sample Report
+                  {t("nav.sampleReport")}
                 </Link>
               </li>
               <li>
                 <Link href="/faq" className={linkClass}>
-                  FAQ
+                  {t("nav.footer.linkFaq")}
                 </Link>
               </li>
             </ul>
           </div>
           <div>
-            <h4 className={headingClass}>Professionals</h4>
+            <h4 className={headingClass}>{t("nav.footer.sectionProfessionals")}</h4>
             <ul className="space-y-1.5 text-sm">
               <li>
                 <Link href="/professionals" className={linkClass}>
-                  For Professionals
+                  {t("nav.forProfessionals")}
                 </Link>
               </li>
               <li>
                 <Link href="/verified-surgeon-program" className={linkClass}>
-                  Verified Surgeon Program
+                  {t("nav.footer.linkVerifiedProgram")}
                 </Link>
               </li>
               <li>
                 <Link href="/signup" className={linkClass}>
-                  Create Clinic or Doctor Profile
+                  {t("nav.footer.linkCreateProfile")}
                 </Link>
               </li>
             </ul>
           </div>
           <div>
-            <h4 className={headingClass}>Company</h4>
+            <h4 className={headingClass}>{t("nav.footer.sectionCompany")}</h4>
             <ul className="space-y-1.5 text-sm">
               <li>
                 <Link href="/about" className={linkClass}>
-                  About
+                  {t("nav.footer.linkAbout")}
                 </Link>
               </li>
               <li>
                 <a href="mailto:auditor@hairaudit.com" className={linkClass}>
-                  Contact
+                  {t("nav.footer.linkContact")}
                 </a>
               </li>
             </ul>
           </div>
           <div>
-            <h4 className={headingClass}>Legal</h4>
+            <h4 className={headingClass}>{t("nav.footer.sectionLegal")}</h4>
             <ul className="space-y-1.5 text-sm">
               <li>
                 <Link href="/privacy" className={linkClass}>
-                  Privacy
+                  {t("nav.footer.linkPrivacy")}
                 </Link>
               </li>
               <li>
                 <Link href="/terms" className={linkClass}>
-                Terms
+                  {t("nav.footer.linkTerms")}
                 </Link>
               </li>
               <li>
                 <Link href="/disclaimer" className={linkClass}>
-                  Disclaimer
+                  {t("nav.footer.linkDisclaimer")}
                 </Link>
               </li>
             </ul>
           </div>
           <div>
-            <h4 className={headingClass}>Platform Ecosystem</h4>
+            <h4 className={headingClass}>{t("nav.footer.sectionPlatformEcosystem")}</h4>
             <ul className="space-y-2 text-sm">
               {PLATFORM_ECOSYSTEM.map((platform) => (
                 <li key={platform.key}>
@@ -134,7 +136,11 @@ export default function SiteFooter({ theme = "default" }: SiteFooterProps) {
                     className={platformLinkClass}
                   >
                     <span className={platformNameClass}>{platform.name}</span>
-                    <span className={platformSubClass}>{platform.subtitle}</span>
+                    <span className={platformSubClass}>
+                      {platform.key === "follicleIntelligence"
+                        ? t("nav.footer.platformFiSubtitle")
+                        : t("nav.footer.platformHaSubtitle")}
+                    </span>
                   </a>
                 </li>
               ))}
@@ -142,17 +148,14 @@ export default function SiteFooter({ theme = "default" }: SiteFooterProps) {
           </div>
         </div>
         <CrossPlatformLink mode="hairAudit" theme={theme} className="mt-8" />
-        <div className={`mt-10 pt-8 border-t ${borderClass} text-center text-sm space-y-1`}>
-          <p>HairAudit — Audit and feedback for hair transplant procedures</p>
+        <div
+          className={`mt-10 pt-8 border-t ${borderClass} text-center text-sm space-y-1 leading-snug`}
+        >
+          <p>{t("nav.footer.tagline")}</p>
           <p className="text-slate-500">
-            Analysis assisted by{" "}
-            <a
-              href={FI_HOME}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={fiLinkClass}
-            >
-              Follicle Intelligence
+            {t("nav.footer.assistedByPrefix")}{" "}
+            <a href={FI_HOME} target="_blank" rel="noopener noreferrer" className={fiLinkClass}>
+              {t("nav.footer.follicleIntelligenceName")}
             </a>
           </p>
         </div>

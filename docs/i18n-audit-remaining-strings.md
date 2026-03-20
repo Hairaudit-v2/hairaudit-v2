@@ -17,8 +17,8 @@
 
 | Location | Examples | Tag | Notes |
 |----------|----------|-----|-------|
-| `SiteFooter.tsx` | Column headings, link labels, descriptions | **later** | RSC; needs client footer or server locale cookie |
-| `BetaBanner.tsx` | Beta disclaimer paragraph | **later** | RSC; same pattern |
+| `SiteFooter.tsx` | Column headings, link labels, descriptions | **done (batch 4)** | Client + `nav.footer.*` |
+| `BetaBanner.tsx` | Beta disclaimer paragraph | **done (batch 4)** | `nav.betaBanner.*` |
 | `app/layout.tsx` | Skip link text | **done (batch 3)** | `SkipLinkI18n` + `nav.skipToMain` |
 | `app/page.tsx` (home) | Hero, CTAs, sections | **later** | Large surface; separate batch |
 
@@ -115,10 +115,16 @@
 1. **`ClinicSidebarNav`** — `dashboard.shared.comingSoon`; `dashboard.clinic.sidebarPortalLabel`, `sidebarPortalTagline`, `openPortalNav`, `closePortalNav`
 2. **Skip link** — `SkipLinkI18n` + `nav.skipToMain` (inside `I18nProvider`; same `#main-content` target)
 
-## Recommended **next batch (batch 4 candidates)**
+## Batch 4 (implemented)
 
-1. **`SiteFooter` + `BetaBanner`** — client islands or dedicated PR (larger surface)
-2. **Clinic `layout.tsx`** server-driven nav item labels
-3. **Patient `page.tsx`** / **login** — module-by-module
+1. **`SiteFooter`** — client; `nav.footer.*`; reuses `nav.howItWorks`, `nav.requestReview`, `nav.sampleReport`, `nav.forProfessionals`
+2. **`BetaBanner`** — client; `nav.betaBanner.lead` / `detail`
+3. **`SurgicalEcosystemFooterBand`** — client; band title, aria labels, ecosystem role tags (`ecosystemTag*`)
+4. **`CrossPlatformLink`** — client; `nav.footer.crossPlatform*` + `nav.ecosystem.exploreHa` for FI-mode CTA
+
+## Recommended **next batch (batch 5 candidates)**
+
+1. **Clinic `layout.tsx`** server-driven nav item labels (needs pattern for server + i18n)
+2. **Patient `page.tsx`** / **login** — module-by-module
 
 **Follow-up (later):** clinic `layout.tsx` server nav labels, patient `page.tsx` modules, login/auth copy.
