@@ -1,8 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useI18n } from "@/components/i18n/I18nProvider";
+import { formatTemplate } from "@/lib/i18n/formatTemplate";
+import type { TranslateFn } from "@/lib/i18n/getTranslation";
 import { PATIENT_AUDIT_SECTIONS } from "@/lib/patientAuditForm";
 import type { PatientFormQuestion } from "@/lib/patientAuditForm";
 import {
@@ -15,6 +18,19 @@ import { validatePatientAuditV2, normalizePatientV2ForValidation } from "@/lib/p
 
 function isNonEmptyObject(v: unknown): v is Record<string, unknown> {
   return !!v && typeof v === "object" && !Array.isArray(v) && Object.keys(v as Record<string, unknown>).length > 0;
+}
+
+function localizedSectionTitle(t: TranslateFn, section: { id: string; title: string }) {
+  const key = `dashboard.patient.forms.sections.${section.id}.title`;
+  const tr = t(key);
+  return tr === key ? section.title : tr;
+}
+
+function localizedSectionDescription(t: TranslateFn, section: { id: string; description?: string }) {
+  if (!section.description) return undefined;
+  const key = `dashboard.patient.forms.sections.${section.id}.description`;
+  const tr = t(key);
+  return tr === key ? section.description : tr;
 }
 
 export default function PatientAuditFormClient({
@@ -38,12 +54,22 @@ export default function PatientAuditFormClient({
   const hasEditedRef = useRef(false);
   const locked = caseStatus === "submitted" || !!submittedAt;
   const router = useRouter();
+  const { t } = useI18n();
 
-  const visibleSections = PATIENT_AUDIT_SECTIONS.filter((s) => !s.advanced || showAdvanced);
-  const STEPS = [
-    ...visibleSections.map((s) => ({ id: s.id, title: s.title })),
-    { id: "review", title: "Review & Submit" },
-  ];
+  const visibleSections = useMemo(
+    () => PATIENT_AUDIT_SECTIONS.filter((s) => !s.advanced || showAdvanced),
+    [showAdvanced]
+  );
+  const STEPS = useMemo(
+    () => [
+      ...visibleSections.map((s) => ({
+        id: s.id,
+        title: localizedSectionTitle(t, s),
+      })),
+      { id: "review", title: t("dashboard.patient.forms.intake.reviewSubmitStep") },
+    ],
+    [visibleSections, t]
+  );
 
   const updateField = useCallback((fieldKey: string, value: string | number | string[] | boolean | null) => {
     hasEditedRef.current = true;
@@ -55,7 +81,7 @@ export default function PatientAuditFormClient({
     const res = await fetch(`/api/patient-answers?caseId=${caseId}`);
     const json = await res.json().catch(() => ({}));
     if (!res.ok) {
-      setLoadingError(json?.error ?? "Failed to load answers");
+      setLoadingError(json?.error ?? t("dashboard.patient.forms.intake.failedToLoadAnswers"));
       setFormData({});
     } else if (json.patientAnswers) {
       const canonical = normalizeIntakeFormData(json.patientAnswers as Record<string, unknown>);
@@ -65,7 +91,7 @@ export default function PatientAuditFormClient({
       }
     }
     setLoading(false);
-  }, [caseId]);
+  }, [caseId, t]);
 
   useEffect(() => {
     load();
@@ -82,16 +108,20 @@ export default function PatientAuditFormClient({
         body: JSON.stringify({ patientAnswers: payload }),
       });
       const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json?.error ?? `Save failed (${res.status})`);
-      setMessage({ type: "ok", text: "Saved" });
+      if (!res.ok)
+        throw new Error(
+          json?.error ??
+            formatTemplate(t("dashboard.patient.forms.intake.saveFailedStatus"), { status: res.status })
+        );
+      setMessage({ type: "ok", text: t("forms.shared.saved") });
     } catch (e: unknown) {
-      const msg = (e as Error)?.message ?? "Save failed";
+      const msg = (e as Error)?.message ?? t("forms.shared.saveFailedGeneric");
       setMessage({ type: "err", text: msg });
       console.error("[patient-answers save]", msg);
     } finally {
       setSaving(false);
     }
-  }, [caseId, formData]);
+  }, [caseId, formData, t]);
 
   useEffect(() => {
     if (!hasEditedRef.current || locked) return;
@@ -119,10 +149,10 @@ export default function PatientAuditFormClient({
         body: JSON.stringify({ patientAnswers: payload }),
       });
       const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json?.error ?? "Save failed");
+      if (!res.ok) throw new Error(json?.error ?? t("forms.shared.saveFailedGeneric"));
       router.push(`/cases/${caseId}/patient/photos`);
     } catch (e: unknown) {
-      setMessage({ type: "err", text: (e as Error)?.message ?? "Save failed" });
+      setMessage({ type: "err", text: (e as Error)?.message ?? t("forms.shared.saveFailedGeneric") });
     } finally {
       setSaving(false);
     }
@@ -140,7 +170,7 @@ export default function PatientAuditFormClient({
 
   if (loading) {
     return (
-      <div className={`animate-pulse p-6 ${glassCard}`}>
+      <div className={`animate-pulse p-6 ${glassCard}`} aria-busy="true" aria-label={t("forms.shared.loading")}>
         <div className="h-6 w-48 bg-slate-200 rounded" />
         <div className="h-4 w-full mt-4 bg-slate-100 rounded" />
       </div>
@@ -150,13 +180,13 @@ export default function PatientAuditFormClient({
   if (loadingError) {
     return (
       <div className="rounded-2xl border border-rose-300/20 bg-rose-300/10 p-6">
-        <p className="text-sm font-semibold text-rose-100">Could not load form</p>
+        <p className="text-sm font-semibold text-rose-100">{t("dashboard.patient.forms.intake.loadErrorTitle")}</p>
         <p className="mt-2 text-sm text-rose-100/80">{loadingError}</p>
         <Link
           href={`/cases/${caseId}`}
           className="mt-4 inline-block text-sm font-semibold text-rose-100 underline underline-offset-4 hover:opacity-90"
         >
-          Back to case
+          {t("dashboard.patient.forms.questionsPage.backToCase")}
         </Link>
       </div>
     );
@@ -167,22 +197,18 @@ export default function PatientAuditFormClient({
   return (
     <div className="max-w-4xl space-y-6">
       <header>
-        <p className="text-sm text-slate-900">
-          About 5–6 minutes. Complete your intelligence inputs to unlock deeper forensic analysis.
-        </p>
+        <p className="text-sm text-slate-900">{t("dashboard.patient.forms.intake.introLine")}</p>
         <div className={`mt-3 p-4 ${glassCard}`}>
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-sm font-semibold text-slate-900">Advanced forensic questions (optional)</p>
-              <p className="mt-1 text-sm text-slate-800">
-                Adds deeper inputs for graft viability, donor risk, healing stage, and aesthetic consistency. You can skip anytime.
-              </p>
+              <p className="text-sm font-semibold text-slate-900">{t("dashboard.patient.forms.intake.advancedTitle")}</p>
+              <p className="mt-1 text-sm text-slate-800">{t("dashboard.patient.forms.intake.advancedBody")}</p>
               {showAdvanced && Object.keys(advancedCompletion).length > 0 && (
                 <p className="mt-2 text-xs text-slate-600">
                   {Object.entries(advancedCompletion)
                     .map(([, s]) => `${s.complete}/${s.total}`)
-                    .join(" · ")}{" "}
-                  completed
+                    .join(t("dashboard.patient.forms.intake.advancedProgressJoin"))}{" "}
+                  {t("forms.shared.completed")}
                 </p>
               )}
             </div>
@@ -196,13 +222,13 @@ export default function PatientAuditFormClient({
               disabled={locked}
               className="shrink-0 rounded-xl px-3 py-2 text-sm font-semibold border border-slate-300 bg-white text-slate-800 hover:bg-slate-50 disabled:opacity-60 transition-colors"
             >
-              {showAdvanced ? "Hide advanced" : "Add advanced"}
+              {showAdvanced ? t("dashboard.patient.forms.intake.hideAdvanced") : t("dashboard.patient.forms.intake.addAdvanced")}
             </button>
           </div>
         </div>
         {locked && (
           <div className="mt-3 rounded-2xl border border-amber-300/30 bg-amber-50 p-4 text-sm text-amber-900">
-            Case submitted. Intelligence inputs are locked.
+            {t("dashboard.patient.forms.intake.lockedBanner")}
           </div>
         )}
       </header>
@@ -210,7 +236,7 @@ export default function PatientAuditFormClient({
       {/* Stepper */}
       <nav
         className="flex items-center gap-1 overflow-x-auto pb-2"
-        aria-label="Form progress"
+        aria-label={t("dashboard.patient.forms.intake.stepperAria")}
       >
         {STEPS.map((step, i) => (
           <button
@@ -237,6 +263,7 @@ export default function PatientAuditFormClient({
           values={formData}
           sections={visibleSections}
           onEdit={() => setActiveStep(0)}
+          t={t}
         />
       ) : (
         (() => {
@@ -244,8 +271,10 @@ export default function PatientAuditFormClient({
           if (!section) return null;
           return (
             <section className={`p-6 ${glassCard}`}>
-              <h2 className="text-lg font-semibold text-slate-900 mb-2">{section.title}</h2>
-              {section.description && <p className="text-sm text-slate-800 mb-4">{section.description}</p>}
+              <h2 className="text-lg font-semibold text-slate-900 mb-2">{localizedSectionTitle(t, section)}</h2>
+              {section.description && (
+                <p className="text-sm text-slate-800 mb-4">{localizedSectionDescription(t, section)}</p>
+              )}
               <div className="space-y-5">
                 {section.questions.map((q) => (
                   <QuestionField
@@ -255,6 +284,7 @@ export default function PatientAuditFormClient({
                     onChange={(v) => updateField(q.id, v)}
                     values={formData}
                     locked={locked}
+                    t={t}
                   />
                 ))}
               </div>
@@ -272,7 +302,7 @@ export default function PatientAuditFormClient({
             disabled={activeStep === 0 || locked}
             className="rounded-xl px-4 py-2 text-sm font-semibold border border-slate-300 bg-white text-slate-800 hover:bg-slate-50 disabled:opacity-50 transition-colors"
           >
-            Previous
+            {t("forms.shared.previous")}
           </button>
           <button
             type="button"
@@ -280,7 +310,7 @@ export default function PatientAuditFormClient({
             disabled={locked}
             className="rounded-xl px-4 py-2 text-sm font-semibold text-slate-950 bg-gradient-to-r from-cyan-300 to-emerald-300 hover:from-cyan-200 hover:to-emerald-200 transition-colors"
           >
-            {activeStep === STEPS.length - 2 ? "Review" : "Next"}
+            {activeStep === STEPS.length - 2 ? t("forms.shared.review") : t("forms.shared.next")}
           </button>
         </div>
       )}
@@ -288,17 +318,17 @@ export default function PatientAuditFormClient({
       {/* Review step CTA — Add photos */}
       {isReviewStep && (
         <section className={`p-6 ${glassCard}`}>
-          <h2 className="text-lg font-semibold text-slate-900 mb-2">2. Add your photos</h2>
-          <p className="text-sm text-slate-800 mb-4">
-            Pre-procedure, surgery, and post-procedure images go in the next step.
-          </p>
+          <h2 className="text-lg font-semibold text-slate-900 mb-2">
+            {t("dashboard.patient.forms.intake.photosSectionTitle")}
+          </h2>
+          <p className="text-sm text-slate-800 mb-4">{t("dashboard.patient.forms.intake.photosSectionBody")}</p>
           <button
             type="button"
             onClick={goToPhotos}
             disabled={saving || locked}
             className="rounded-xl px-5 py-3 text-sm font-semibold text-slate-950 bg-gradient-to-r from-cyan-300 to-emerald-300 hover:from-cyan-200 hover:to-emerald-200 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
           >
-            {saving ? "Saving…" : "Add your photos →"}
+            {saving ? t("forms.shared.saving") : t("dashboard.patient.forms.intake.addPhotosCta")}
           </button>
         </section>
       )}
@@ -316,7 +346,7 @@ export default function PatientAuditFormClient({
                   onClick={() => save()}
                   className="text-sm font-semibold text-cyan-700 underline underline-offset-4 hover:text-cyan-800"
                 >
-                  Retry
+                  {t("forms.shared.retry")}
                 </button>
               )}
             </>
@@ -327,7 +357,7 @@ export default function PatientAuditFormClient({
             href={`/cases/${caseId}`}
             className="rounded-xl px-4 py-2 text-sm font-semibold border border-slate-300 bg-white text-slate-800 hover:bg-slate-50 transition-colors"
           >
-            Back to case
+            {t("dashboard.patient.forms.questionsPage.backToCase")}
           </Link>
           {!locked && !isReviewStep && (
             <button
@@ -335,7 +365,7 @@ export default function PatientAuditFormClient({
               disabled={saving}
               className="rounded-xl px-4 py-2 text-sm font-semibold border border-cyan-200 bg-cyan-50 text-cyan-800 hover:bg-cyan-100 transition-colors"
             >
-              {saving ? "Saving…" : "Save answers"}
+              {saving ? t("forms.shared.saving") : t("forms.shared.saveAnswers")}
             </button>
           )}
         </div>
@@ -348,50 +378,61 @@ function PatientReviewSummary({
   values,
   sections,
   onEdit,
+  t,
 }: {
   values: IntakeFormData;
   sections: { id: string; title: string; questions: PatientFormQuestion[] }[];
   onEdit: () => void;
+  t: TranslateFn;
 }) {
   if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
     console.log("[PatientReviewSummary] canonical intake:", JSON.stringify(values).slice(0, 600) + (JSON.stringify(values).length > 600 ? "…" : ""));
   }
-  const labels: Record<string, Record<string, string>> = {
-    clinic_country: { turkey: "Turkey", spain: "Spain", india: "India", thailand: "Thailand", mexico: "Mexico", brazil: "Brazil", argentina: "Argentina", colombia: "Colombia", australia: "Australia", uk: "UK", usa: "USA", canada: "Canada", uae: "UAE", belgium: "Belgium", germany: "Germany", poland: "Poland", greece: "Greece", other: "Other" },
-    procedure_type: { fue: "FUE", fut: "FUT", dhi: "DHI", robotic: "Robotic", not_sure: "Not Sure", other: "Other" },
-    donor_shaving: { full_shave: "Full shave", partial_shave: "Partial shave", no: "No" },
-    surgery_duration: { under_4h: "<4h", "4_6h": "4–6h", "6_8h": "6–8h", "8_plus": "8+ hrs" },
-    post_op_swelling: { none: "None", mild: "Mild", moderate: "Moderate", severe: "Severe" },
-    bleeding_issue: { yes: "Yes", no: "No", not_sure: "Not Sure" },
-    recovery_time: { under_1_week: "<1 wk", "1_2_weeks": "1–2 wks", "2_4_weeks": "2–4 wks", "4_plus_weeks": "4+ wks" },
-    shock_loss: { yes: "Yes", no: "No", not_sure: "Not Sure" },
-    months_since: { under_3: "<3 mo", "3_6": "3–6 mo", "6_9": "6–9 mo", "9_12": "9–12 mo", "12_plus": "12+ mo" },
-    would_repeat: { yes: "Yes", no: "No", not_sure: "Not Sure" },
-  };
+
+  const reviewEnumIds = new Set([
+    "clinic_country",
+    "procedure_type",
+    "donor_shaving",
+    "surgery_duration",
+    "post_op_swelling",
+    "bleeding_issue",
+    "recovery_time",
+    "shock_loss",
+    "months_since",
+    "would_repeat",
+  ]);
+
   const fmt = (qId: string, v: unknown) => {
-    if (v === null || v === undefined || v === "") return "—";
+    if (v === null || v === undefined || v === "") return t("forms.shared.emDash");
     if (Array.isArray(v)) return v.join(", ");
-    const m = labels[qId];
-    if (m && typeof v === "string") return m[v] ?? v;
+    if ((qId === "complications" || qId === "would_recommend") && typeof v === "string") {
+      if (v === "yes") return t("forms.shared.yes");
+      if (v === "no") return t("forms.shared.no");
+    }
+    if (reviewEnumIds.has(qId) && typeof v === "string") {
+      const path = `dashboard.patient.forms.reviewEnums.${qId}.${v}`;
+      const tr = t(path);
+      if (tr !== path) return tr;
+    }
     return String(v);
   };
 
   return (
     <section className="rounded-2xl border border-slate-300 bg-white p-6 shadow-sm">
-      <h2 className="text-lg font-semibold text-slate-900 mb-4">Review Summary</h2>
-      <p className="text-sm text-slate-800 mb-4">Review your answers below. Use the step dots above to edit.</p>
+      <h2 className="text-lg font-semibold text-slate-900 mb-4">{t("dashboard.patient.forms.reviewSummary.title")}</h2>
+      <p className="text-sm text-slate-800 mb-4">{t("dashboard.patient.forms.reviewSummary.hint")}</p>
       <div className="space-y-4">
         {sections.map((sec) => (
           <div key={sec.id}>
-            <h3 className="text-sm font-semibold text-slate-800 mb-2">{sec.title}</h3>
+            <h3 className="text-sm font-semibold text-slate-800 mb-2">{localizedSectionTitle(t, sec)}</h3>
             <dl className="space-y-1 text-sm">
               {sec.questions.map((q) => {
-                const v = values[q.id];
-                if (q.dependsOn && v === undefined) return null;
+                const ov = values[q.id];
+                if (q.dependsOn && ov === undefined) return null;
                 return (
                   <div key={q.id} className="flex justify-between gap-2">
                     <dt className="text-slate-800">{q.prompt}</dt>
-                    <dd className="font-semibold text-slate-900">{fmt(q.id, v)}</dd>
+                    <dd className="font-semibold text-slate-900">{fmt(q.id, ov)}</dd>
                   </div>
                 );
               })}
@@ -404,7 +445,7 @@ function PatientReviewSummary({
         onClick={onEdit}
         className="mt-4 text-sm font-semibold text-cyan-700 underline underline-offset-4 hover:text-cyan-800"
       >
-        Edit answers
+        {t("dashboard.patient.forms.reviewSummary.editAnswers")}
       </button>
     </section>
   );
@@ -416,12 +457,14 @@ function QuestionField({
   onChange,
   values,
   locked,
+  t,
 }: {
   question: PatientFormQuestion & { dependsOn?: { questionId: string; value?: string; hasValue?: string } };
   value: unknown;
   onChange: (v: string | number | string[] | boolean | null) => void;
   values: IntakeFormData;
   locked: boolean;
+  t: TranslateFn;
 }) {
   const dep = question.dependsOn;
   const getDepVal = (id: string) => values[id];
@@ -555,7 +598,7 @@ function QuestionField({
             onChange={(e) => onChange(e.target.value || null)}
             disabled={locked}
           >
-            <option value="">— Select —</option>
+            <option value="">{t("forms.shared.selectPlaceholder")}</option>
             {(question.options ?? []).map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
             ))}
@@ -576,7 +619,7 @@ function QuestionField({
                   disabled={locked}
                   className="rounded-full accent-emerald-600"
                 />
-                <span className="text-sm capitalize text-slate-900">{v}</span>
+                <span className="text-sm text-slate-900">{v === "yes" ? t("forms.shared.yes") : t("forms.shared.no")}</span>
               </label>
             ))}
           </div>
@@ -585,11 +628,11 @@ function QuestionField({
         const cur = typeof value === "boolean" ? value : value === null || value === undefined || value === "" ? null : Boolean(value);
         return (
           <div role="radiogroup" aria-labelledby={`${fieldId}-label`} className="flex gap-4">
-            {([
-              { label: "Yes", v: true },
-              { label: "No", v: false },
-            ] as const).map((opt) => (
-              <label key={opt.label} htmlFor={`${fieldId}-${String(opt.v)}`} className="flex items-center gap-2 cursor-pointer">
+            {[
+              { label: t("forms.shared.yes"), v: true as const },
+              { label: t("forms.shared.no"), v: false as const },
+            ].map((opt) => (
+              <label key={String(opt.v)} htmlFor={`${fieldId}-${String(opt.v)}`} className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="radio"
                   id={`${fieldId}-${String(opt.v)}`}
@@ -608,7 +651,7 @@ function QuestionField({
               disabled={locked || cur === null}
               className="text-sm text-slate-700 underline underline-offset-4 disabled:opacity-60"
             >
-              Clear
+              {t("forms.shared.clear")}
             </button>
           </div>
         );

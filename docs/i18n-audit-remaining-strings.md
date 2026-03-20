@@ -47,7 +47,7 @@
 | `doctor/layout.tsx` | "Overview", "Onboarding" pills | **done (batch 2)** | `DoctorDashboardSubnav.tsx` + `pageNav*` keys |
 | `DoctorDashboardProduction.tsx` | "Untitled case", status labels | **later** | Data-adjacent; keep English or future `common.*` |
 | `DoctorOnboardingChecklist.tsx` | Title, subtitle, "Why this matters" | **done (batch 2)** | `checklist*` / `whyMatters*` keys |
-| `DoctorOnboardingForm.tsx`, `doctor/onboarding/page.tsx` | Form labels | **later** | Larger form batch |
+| `DoctorOnboardingForm.tsx`, `doctor/onboarding/page.tsx` | Form labels | **done (batch 11)** | `dashboard.doctor.forms.*`, `forms.shared.*` |
 | `DoctorParticipationSummaryCard.tsx` | Card copy | **later** | — |
 | `DoctorComingSoon.tsx`, placeholder doctor routes | Coming-soon panels | **done (batch 5)** | `dashboard.doctor.placeholders.*`, `comingSoonEyebrow`, `placeholderBackToOverview` |
 | `PortalPlaceholderPanel`, clinic settings/benchmarking/training | Placeholder pages | **done (batch 5)** | `dashboard.clinic.placeholders.*`, shared badge |
@@ -62,6 +62,8 @@
 | `ClinicSidebarNav.tsx` | "Soon", portal chrome, mobile toggle | **done (batch 3)** | `comingSoon`, `sidebar*`, `open/closePortalNav` |
 | `ClinicPortalShell`, `ClinicNextActionCard`, status chips | Dynamic strings from layout | **later** | Fed from server; refactor with care |
 | `clinic/page.tsx` & feature panels | Large amount of marketing/ops copy | **later** | High volume |
+| `ClinicProfileBuilder.tsx` | Basic/advanced profile fields, stack catalog, messages | **done (batch 11)** | `dashboard.clinic.forms.profileBuilder.*`; stored select **values** stay English; **labels** localized for display |
+| `ClinicConversionPanel.tsx` | Eyebrow, readiness chip, details toggle, default teaser CTA | **done (batch 11)** | `dashboard.clinic.forms.conversionPanel.*`; parent **title/subtitle/actions** still passed as before |
 
 ---
 
@@ -76,7 +78,7 @@
 | `DeleteDraftCaseButton` | Confirm, labels | **done (batch 6A)** | `dashboard.patient.deleteDraft.*` |
 | `PatientReportsCompletedCaseList` | Completed-case list chrome | **done (batch 6A)** | `dashboard.reports.*` row strings + `shareHint` |
 | `download-report.tsx` | Busy label | **done (batch 6A)** | `dashboard.reports.downloadPreparing` |
-| `cases/.../patient/questions`, deep intake forms | Form copy | **later** | — |
+| `cases/.../patient/questions` | Page hero, step chrome, section titles/descriptions, review enums, shared controls | **done (batch 11)** | `dashboard.patient.forms.*`, `forms.shared.*`; **`patientAuditForm.ts` question prompts/options** unchanged (submission-stable) |
 
 ---
 
@@ -158,7 +160,7 @@ Patient portal: next-action panel, delete-draft control, graft integrity card UI
 
 Auth and account shell: **`auth.*`** (common, login, auditor, signup, recovery, magic link) and **`account.betaAccess.*`** in `en`/`es`. Wired: `/login`, `/login/auditor`, `/signup`, `/auth/recovery`, `/auth/magic-link` client, `/beta-access-message` via `BetaAccessMessageClient`. Small **doctor onboarding** header: `dashboard.doctor.onboardingPageTitle` / `onboardingPageSubtitle` + `DoctorOnboardingPageHeader`. Layout **metadata** for login/signup remains English (no route-locale pattern).
 
-**Follow-up (later):** clinic **`layout.tsx`** server nav labels, **patient intake/forms** module-by-module, **`ClinicProfileBuilder`** / heavy profile surfaces, **`DoctorOnboardingForm`** fields.
+**Follow-up (later):** clinic **`layout.tsx`** server nav labels; optional deeper localization of **`patientAuditForm.ts`** field copy (large key surface).
 
 ## Batch 7 (implemented)
 
@@ -169,6 +171,15 @@ Public marketing UI (no SEO metadata changes, no locale routes): **`marketing.*`
 ## Batch 10 (implemented)
 
 **Report page chrome only** (HTML `/reports/.../html`, case **Latest report** section, **VersionHistoryDrawer**, **LatestReportCard**, **ReportShareButton**, **DownloadReport** errors/labels, **ScoreAreaGraph** headings/levels, **demo-report** marketing shell): top-level **`reports.*`** in `en`/`es` (`chrome`, `actions`, `status`, `errors`; nested `chrome.html`, `chrome.demo`). Server surfaces use **`resolvePublicSeoLocale`** + **`getTranslation`**; client uses **`useI18n`**. **`formatTemplate`** for `{{count}}` / `{{score}}` / `{{version}}`. Generated findings, AI text, rubric titles from payload, and PDF pipelines unchanged.
+
+## Batch 11 (implemented)
+
+**Signed-in workflows — form UI only** (no report/PDF/AI/finalize/scoring changes):
+
+1. **`forms.shared.*`** — save/saving, navigation, retry, select placeholder, yes/no/clear, add/remove, etc. (`en`/`es`).
+2. **Patient intelligence intake** — `cases/[caseId]/patient/questions/page.tsx` (hero); **`PatientAuditFormClient`** (stepper, advanced banner, review/photos CTAs, load/save messaging, **`PATIENT_AUDIT_SECTIONS` title/description via `dashboard.patient.forms.sections.*`, review summary + enum display via `reviewEnums.*`). Question **prompts** and **option labels** in **`patientAuditForm.ts`** left English so payloads and validation stay unchanged; API error strings still shown as returned.
+3. **Doctor onboarding** — **`DoctorOnboardingForm`** → **`dashboard.doctor.forms.*`**.
+4. **Clinic profile** — **`ClinicProfileBuilder`** → **`dashboard.clinic.forms.profileBuilder.*`**; **`ClinicConversionPanel`** shared chrome → **`dashboard.clinic.forms.conversionPanel.*`** (all existing call sites get localized panel chrome; optional `teaserCtaLabel` override preserved).
 
 ## Batch 9 (implemented — architecture only)
 

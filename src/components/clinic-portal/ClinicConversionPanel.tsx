@@ -1,4 +1,8 @@
+"use client";
+
 import Link from "next/link";
+import { useI18n } from "@/components/i18n/I18nProvider";
+import { formatTemplate } from "@/lib/i18n/formatTemplate";
 
 type ConversionAction = {
   label: string;
@@ -16,7 +20,7 @@ export default function ClinicConversionPanel({
   nextActions,
   readinessStates,
   teaserHref = "/dashboard/clinic/profile",
-  teaserCtaLabel = "Preview profile impact",
+  teaserCtaLabel,
   compact = true,
 }: {
   title?: string;
@@ -27,23 +31,31 @@ export default function ClinicConversionPanel({
   teaserCtaLabel?: string;
   compact?: boolean;
 }) {
+  const { t } = useI18n();
   const readyCount = readinessStates.filter((state) => state.ready).length;
+  const cta = teaserCtaLabel ?? t("dashboard.clinic.forms.conversionPanel.defaultTeaser");
+  const readinessChip = formatTemplate(t("dashboard.clinic.forms.conversionPanel.readinessSignals"), {
+    active: readyCount,
+    total: readinessStates.length,
+  });
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-700">Conversion Layer</p>
+      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-700">
+        {t("dashboard.clinic.forms.conversionPanel.eyebrow")}
+      </p>
       <h3 className="mt-1 text-base font-semibold text-slate-900">{title}</h3>
       <p className="mt-1 text-sm text-slate-600">{subtitle}</p>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700">
-          {readyCount}/{readinessStates.length} readiness signals active
+          {readinessChip}
         </span>
         <Link
           href={teaserHref}
           className="rounded-full border border-cyan-200 bg-cyan-50 px-2.5 py-1 text-xs font-semibold text-cyan-800 hover:bg-cyan-100"
         >
-          {teaserCtaLabel}
+          {cta}
         </Link>
       </div>
 
@@ -61,7 +73,7 @@ export default function ClinicConversionPanel({
 
       <details className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
         <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wide text-slate-600">
-          Show readiness details
+          {t("dashboard.clinic.forms.conversionPanel.showReadinessDetails")}
         </summary>
         <div className="mt-2 flex flex-wrap gap-2">
           {readinessStates.map((state) => (

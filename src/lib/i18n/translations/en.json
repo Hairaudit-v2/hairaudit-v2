@@ -158,6 +158,36 @@
       "backToSignIn": "Back to sign in"
     }
   },
+  "forms": {
+    "shared": {
+      "save": "Save",
+      "saving": "Saving…",
+      "continue": "Continue",
+      "back": "Back",
+      "submit": "Submit",
+      "next": "Next",
+      "previous": "Previous",
+      "review": "Review",
+      "retry": "Retry",
+      "loading": "Loading…",
+      "optional": "optional",
+      "required": "required",
+      "optionalInParens": "(optional)",
+      "selectPlaceholder": "— Select —",
+      "clear": "Clear",
+      "yes": "Yes",
+      "no": "No",
+      "add": "Add",
+      "remove": "Remove",
+      "completed": "completed",
+      "saveAnswers": "Save answers",
+      "backToCase": "← Back to case",
+      "saved": "Saved",
+      "saveFailedGeneric": "Save failed",
+      "failedToLoad": "Failed to load",
+      "emDash": "—"
+    }
+  },
   "marketing": {
     "meta": {
       "home": {
@@ -624,6 +654,156 @@
         "uploadRecommendedPhotos": "Upload recommended photos",
         "aiNotesHeading": "AI notes",
         "updatedPrefix": "Updated"
+      },
+      "forms": {
+        "questionsPage": {
+          "backToCase": "← Back to case",
+          "title": "Intelligence Questions",
+          "subtitle": "These inputs unlock deeper forensic analysis across donor safety, graft viability, healing course, and aesthetic balance.",
+          "poweredBy": "Powered by Follicle Intelligence™",
+          "visionModel": "Vision Model: GPT-5.2"
+        },
+        "intake": {
+          "introLine": "About 5–6 minutes. Complete your intelligence inputs to unlock deeper forensic analysis.",
+          "advancedTitle": "Advanced forensic questions (optional)",
+          "advancedBody": "Adds deeper inputs for graft viability, donor risk, healing stage, and aesthetic consistency. You can skip anytime.",
+          "advancedProgressJoin": " · ",
+          "hideAdvanced": "Hide advanced",
+          "addAdvanced": "Add advanced",
+          "lockedBanner": "Case submitted. Intelligence inputs are locked.",
+          "stepperAria": "Form progress",
+          "reviewSubmitStep": "Review & Submit",
+          "loadErrorTitle": "Could not load form",
+          "failedToLoadAnswers": "Failed to load answers",
+          "photosSectionTitle": "2. Add your photos",
+          "photosSectionBody": "Pre-procedure, surgery, and post-procedure images go in the next step.",
+          "addPhotosCta": "Add your photos →",
+          "saveFailedStatus": "Save failed ({{status}})"
+        },
+        "reviewSummary": {
+          "title": "Review Summary",
+          "hint": "Review your answers below. Use the step dots above to edit.",
+          "editAnswers": "Edit answers"
+        },
+        "sections": {
+          "clinic_procedure": {
+            "title": "Clinic & Procedure Details"
+          },
+          "transparency": {
+            "title": "Transparency & Process"
+          },
+          "cost": {
+            "title": "Cost & Value Transparency"
+          },
+          "surgical_experience": {
+            "title": "Surgical Experience"
+          },
+          "recovery": {
+            "title": "Recovery & Complications"
+          },
+          "results": {
+            "title": "Results (Contextualized)"
+          },
+          "adv_basics": {
+            "title": "Basics",
+            "description": "Optional. Helps the AI model contextualize risk and healing stage."
+          },
+          "adv_hair_biology": {
+            "title": "Hair & Biology",
+            "description": "Optional. Improves progression and donor-risk inference."
+          },
+          "adv_procedure_details": {
+            "title": "Procedure Details",
+            "description": "Optional. Improves technician-role and planning inference."
+          },
+          "adv_graft_handling": {
+            "title": "Graft Handling",
+            "description": "Optional. Strongly improves desiccation and viability inference."
+          },
+          "adv_healing": {
+            "title": "Healing",
+            "description": "Optional. Improves stage inference and complication risk framing."
+          },
+          "adv_current_status": {
+            "title": "Current Status",
+            "description": "Optional. Improves aesthetic consistency + patient experience context."
+          }
+        },
+        "reviewEnums": {
+          "clinic_country": {
+            "turkey": "Turkey",
+            "spain": "Spain",
+            "india": "India",
+            "thailand": "Thailand",
+            "mexico": "Mexico",
+            "brazil": "Brazil",
+            "argentina": "Argentina",
+            "colombia": "Colombia",
+            "australia": "Australia",
+            "uk": "UK",
+            "usa": "USA",
+            "canada": "Canada",
+            "uae": "UAE",
+            "belgium": "Belgium",
+            "germany": "Germany",
+            "poland": "Poland",
+            "greece": "Greece",
+            "other": "Other"
+          },
+          "procedure_type": {
+            "fue": "FUE",
+            "fut": "FUT",
+            "dhi": "DHI",
+            "robotic": "Robotic",
+            "not_sure": "Not Sure",
+            "other": "Other"
+          },
+          "donor_shaving": {
+            "full_shave": "Full shave",
+            "partial_shave": "Partial shave",
+            "no": "No"
+          },
+          "surgery_duration": {
+            "under_4h": "<4h",
+            "4_6h": "4–6h",
+            "6_8h": "6–8h",
+            "8_plus": "8+ hrs"
+          },
+          "post_op_swelling": {
+            "none": "None",
+            "mild": "Mild",
+            "moderate": "Moderate",
+            "severe": "Severe"
+          },
+          "bleeding_issue": {
+            "yes": "Yes",
+            "no": "No",
+            "not_sure": "Not Sure"
+          },
+          "recovery_time": {
+            "under_1_week": "<1 wk",
+            "1_2_weeks": "1–2 wks",
+            "2_4_weeks": "2–4 wks",
+            "4_plus_weeks": "4+ wks"
+          },
+          "shock_loss": {
+            "yes": "Yes",
+            "no": "No",
+            "not_sure": "Not Sure"
+          },
+          "months_since": {
+            "under_3": "<3 mo",
+            "3_6": "3–6 mo",
+            "6_9": "6–9 mo",
+            "9_12": "9–12 mo",
+            "12_plus": "12+ mo"
+          },
+          "would_repeat": {
+            "yes": "Yes",
+            "no": "No",
+            "not_sure": "Not Sure"
+          }
+        }
       }
     },
     "reports": {
@@ -700,6 +880,24 @@
           "description": "A dedicated upload wizard for adding multiple cases in one flow is planned. For now, create cases from your overview and complete the form and photos for each case.",
           "altCta": "Create a case"
         }
+      },
+      "forms": {
+        "onboardingTitle": "Professional profile",
+        "onboardingLead": "A minimal profile helps attribute your cases and build your public record.",
+        "fullName": "Full name",
+        "fullNamePlaceholder": "e.g. Dr. Jane Smith",
+        "emailOptional": "Email (optional)",
+        "emailPlaceholder": "Professional email",
+        "clinicOptional": "Clinic or practice name (optional)",
+        "clinicPlaceholder": "e.g. City Hair Clinic",
+        "yearsOptional": "Years of experience (optional)",
+        "yearsPlaceholder": "0",
+        "nameRequired": "Doctor name is required.",
+        "errorSaveFailed": "Failed to save profile.",
+        "continueToDashboard": "Continue to dashboard",
+        "backToOverview": "Back to overview",
+        "afterSaveHint": "After saving, you can create your first audit case from the doctor overview and start building your evidence-based record.",
+        "goToOverviewCreate": "Go to overview and create a case →"
       }
     },
     "clinic": {
@@ -734,6 +932,95 @@
           "title": "Training",
           "subtitle": "Internal QA and training intelligence modules.",
           "recommendation": "This module will become your clinic's training hub, combining case intelligence, protocol adherence, and repeatable quality playbooks."
+        }
+      },
+      "forms": {
+        "conversionPanel": {
+          "eyebrow": "Conversion Layer",
+          "readinessSignals": "{{active}}/{{total}} readiness signals active",
+          "showReadinessDetails": "Show readiness details",
+          "defaultTeaser": "Preview profile impact"
+        },
+        "profileBuilder": {
+          "trustTitle": "Profile trust conversion guidance",
+          "trustSubtitle": "A complete clinic identity plus deep procedural metadata improves attribution quality and reinforces medical credibility.",
+          "nextCompleteIdentity": "Complete your clinic identity",
+          "nextPublicProfile": "Prepare your public profile",
+          "nextAddMethods": "Add your surgical methods",
+          "nextUploadDevices": "Upload devices and technology",
+          "nextWorkspaces": "Respond to Invited Contributions",
+          "readinessBasic": "Basic Profile Complete",
+          "readinessEnhanced": "Enhanced Trust Profile",
+          "readinessBenchmark": "Benchmark Ready",
+          "readinessPublic": "Public Listing In Progress",
+          "readinessTraining": "Training Ready",
+          "basicSectionTitle": "Basic clinic profile",
+          "basicSectionLead": "This powers your trust posture and profile discoverability.",
+          "applyDefaults": "Apply standard clinic defaults",
+          "saveOnceHint": "Save once, then edit only what changed",
+          "completion": "Completion",
+          "advancedSectionTitle": "Advanced operating profile",
+          "advancedSectionLead": "Designed for QA, benchmarking, and training intelligence modules.",
+          "advancedMetadataSummary": "Advanced metadata (optional)",
+          "clinicalStackTitle": "Clinical stack catalog",
+          "clinicalStackLead": "Add methods, tools, devices, machine details, optional extras, and protocols.",
+          "capabilityPlaceholder": "e.g. Sapphire FUE punch, Choi implanter, cold-chain protocol",
+          "emptyGroupHint": "No entries yet. Add structured details here to strengthen profile trust and improve benchmark-readiness.",
+          "messageSaved": "Clinic profile saved.",
+          "messageCapabilityAdded": "Capability added.",
+          "messageDefaultsApplied": "Applied repeat-friendly defaults. Review and save.",
+          "messageCapabilityRemoved": "Capability removed.",
+          "errorSaveProfile": "Unable to save profile.",
+          "errorAddCapability": "Unable to add capability.",
+          "errorRemoveCapability": "Unable to remove capability.",
+          "footerSave": "Save profile",
+          "fieldTagline": "Clinic positioning tagline",
+          "fieldPrimaryCountry": "Primary country",
+          "fieldPrimaryCity": "Primary city",
+          "fieldYearEstablished": "Year established",
+          "fieldLeadDoctor": "Lead doctor",
+          "fieldContactEmail": "Contact email",
+          "fieldWebsite": "Website",
+          "fieldSurgicalTeamSize": "Surgical team size",
+          "fieldAvgCasesPerMonth": "Average cases per month",
+          "fieldQaProtocol": "QA protocol",
+          "fieldTrainingProgram": "Training program",
+          "fieldInternalAuditFrequency": "Internal audit frequency",
+          "fieldPrimaryMachineStack": "Primary machine stack",
+          "fieldSterilizationProtocol": "Sterilization protocol",
+          "fieldPatientFollowupProtocol": "Patient follow-up protocol",
+          "fieldMachinePlaceholder": "e.g. Choi + sapphire + cooling chain",
+          "fieldSterilizationPlaceholder": "e.g. WHO checklist + dual verification",
+          "capTypeMethod": "Surgical Method",
+          "capTypeTool": "Tool",
+          "capTypeDevice": "Device",
+          "capTypeMachine": "Machine",
+          "capTypeOptionalExtra": "Optional Extra",
+          "capTypeProtocol": "Protocol",
+          "optSurgicalTeam2to4": "2-4",
+          "optSurgicalTeam5to8": "5-8",
+          "optSurgicalTeam9to12": "9-12",
+          "optSurgicalTeam12plus": "12+",
+          "optCasesLt20": "<20",
+          "optCases20to50": "20-50",
+          "optCases51to100": "51-100",
+          "optCases100plus": "100+",
+          "optQaDaily": "Daily checklist",
+          "optQaWeekly": "Weekly QA huddle",
+          "optQaCaseSignoff": "Case-level QA signoff",
+          "optQaMultilayer": "Multilayer QA board",
+          "optTrainingMentorship": "Internal mentorship",
+          "optTrainingCadaver": "Weekly cadaver lab",
+          "optTrainingQuarterly": "Quarterly competency review",
+          "optTrainingHybrid": "Hybrid external training",
+          "optAuditPerCase": "Per case",
+          "optAuditWeekly": "Weekly",
+          "optAuditBiweekly": "Bi-weekly",
+          "optAuditMonthly": "Monthly",
+          "optFollowupDay1": "Day 1 / Week 1 / Month 1 / Month 6 / Month 12",
+          "optFollowupWeek1": "Week 1 / Month 1 / Month 3 / Month 6 / Month 12",
+          "optFollowupCustom": "Custom protocol",
+          "selectPrompt": "Select..."
         }
       }
     }

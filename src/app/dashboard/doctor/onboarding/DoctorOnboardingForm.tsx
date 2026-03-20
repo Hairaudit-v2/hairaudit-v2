@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useI18n } from "@/components/i18n/I18nProvider";
 
 type ProfilePrefill = {
   id: string;
@@ -13,6 +14,7 @@ type ProfilePrefill = {
 } | null;
 
 export default function DoctorOnboardingForm() {
+  const { t } = useI18n();
   const router = useRouter();
   const [doctorName, setDoctorName] = useState("");
   const [doctorEmail, setDoctorEmail] = useState("");
@@ -52,7 +54,7 @@ export default function DoctorOnboardingForm() {
     setError(null);
     const name = doctorName.trim();
     if (!name) {
-      setError("Doctor name is required.");
+      setError(t("dashboard.doctor.forms.nameRequired"));
       return;
     }
     setSaving(true);
@@ -72,7 +74,7 @@ export default function DoctorOnboardingForm() {
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError((json?.error as string) ?? "Failed to save profile.");
+        setError((json?.error as string) ?? t("dashboard.doctor.forms.errorSaveFailed"));
         return;
       }
       router.replace("/dashboard/doctor");
@@ -85,7 +87,7 @@ export default function DoctorOnboardingForm() {
   if (loading) {
     return (
       <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-        <p className="text-sm text-slate-500">Loading…</p>
+        <p className="text-sm text-slate-500">{t("forms.shared.loading")}</p>
       </div>
     );
   }
@@ -93,14 +95,12 @@ export default function DoctorOnboardingForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">Professional profile</h2>
-        <p className="mt-1 text-sm text-slate-600">
-          A minimal profile helps attribute your cases and build your public record.
-        </p>
+        <h2 className="text-lg font-semibold text-slate-900">{t("dashboard.doctor.forms.onboardingTitle")}</h2>
+        <p className="mt-1 text-sm text-slate-600">{t("dashboard.doctor.forms.onboardingLead")}</p>
         <div className="mt-4 space-y-4">
           <div>
             <label htmlFor="doctor_name" className="block text-sm font-medium text-slate-700">
-              Full name <span className="text-amber-600">*</span>
+              {t("dashboard.doctor.forms.fullName")} <span className="text-amber-600">*</span>
             </label>
             <input
               id="doctor_name"
@@ -109,12 +109,12 @@ export default function DoctorOnboardingForm() {
               value={doctorName}
               onChange={(e) => setDoctorName(e.target.value)}
               className="mt-1 block w-full max-w-md rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-              placeholder="e.g. Dr. Jane Smith"
+              placeholder={t("dashboard.doctor.forms.fullNamePlaceholder")}
             />
           </div>
           <div>
             <label htmlFor="doctor_email" className="block text-sm font-medium text-slate-700">
-              Email (optional)
+              {t("dashboard.doctor.forms.emailOptional")}
             </label>
             <input
               id="doctor_email"
@@ -122,12 +122,12 @@ export default function DoctorOnboardingForm() {
               value={doctorEmail}
               onChange={(e) => setDoctorEmail(e.target.value)}
               className="mt-1 block w-full max-w-md rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-              placeholder="Professional email"
+              placeholder={t("dashboard.doctor.forms.emailPlaceholder")}
             />
           </div>
           <div>
             <label htmlFor="clinic_name" className="block text-sm font-medium text-slate-700">
-              Clinic or practice name (optional)
+              {t("dashboard.doctor.forms.clinicOptional")}
             </label>
             <input
               id="clinic_name"
@@ -135,12 +135,12 @@ export default function DoctorOnboardingForm() {
               value={clinicName}
               onChange={(e) => setClinicName(e.target.value)}
               className="mt-1 block w-full max-w-md rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-              placeholder="e.g. City Hair Clinic"
+              placeholder={t("dashboard.doctor.forms.clinicPlaceholder")}
             />
           </div>
           <div>
             <label htmlFor="years_experience" className="block text-sm font-medium text-slate-700">
-              Years of experience (optional)
+              {t("dashboard.doctor.forms.yearsOptional")}
             </label>
             <input
               id="years_experience"
@@ -150,7 +150,7 @@ export default function DoctorOnboardingForm() {
               value={yearsExperience}
               onChange={(e) => setYearsExperience(e.target.value)}
               className="mt-1 block w-full max-w-[8rem] rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-              placeholder="0"
+              placeholder={t("dashboard.doctor.forms.yearsPlaceholder")}
             />
           </div>
         </div>
@@ -163,26 +163,23 @@ export default function DoctorOnboardingForm() {
             disabled={saving || !doctorName.trim()}
             className="inline-flex items-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {saving ? "Saving…" : "Continue to dashboard"}
+            {saving ? t("forms.shared.saving") : t("dashboard.doctor.forms.continueToDashboard")}
           </button>
           <Link
             href="/dashboard/doctor"
             className="inline-flex items-center rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
-            Back to overview
+            {t("dashboard.doctor.forms.backToOverview")}
           </Link>
         </div>
       </div>
       <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
-        <p className="text-sm text-slate-600">
-          After saving, you can create your first audit case from the doctor overview and start
-          building your evidence-based record.
-        </p>
+        <p className="text-sm text-slate-600">{t("dashboard.doctor.forms.afterSaveHint")}</p>
         <Link
           href="/dashboard/doctor"
           className="mt-2 inline-block text-sm font-medium text-cyan-700 hover:text-cyan-800"
         >
-          Go to overview and create a case →
+          {t("dashboard.doctor.forms.goToOverviewCreate")}
         </Link>
       </div>
     </form>

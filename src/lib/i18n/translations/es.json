@@ -158,6 +158,36 @@
       "backToSignIn": "Volver al inicio de sesión"
     }
   },
+  "forms": {
+    "shared": {
+      "save": "Guardar",
+      "saving": "Guardando…",
+      "continue": "Continuar",
+      "back": "Volver",
+      "submit": "Enviar",
+      "next": "Siguiente",
+      "previous": "Anterior",
+      "review": "Revisar",
+      "retry": "Reintentar",
+      "loading": "Cargando…",
+      "optional": "opcional",
+      "required": "obligatorio",
+      "optionalInParens": "(opcional)",
+      "selectPlaceholder": "— Seleccionar —",
+      "clear": "Borrar",
+      "yes": "Sí",
+      "no": "No",
+      "add": "Añadir",
+      "remove": "Quitar",
+      "completed": "completado",
+      "saveAnswers": "Guardar respuestas",
+      "backToCase": "← Volver al caso",
+      "saved": "Guardado",
+      "saveFailedGeneric": "No se pudo guardar",
+      "failedToLoad": "No se pudo cargar",
+      "emDash": "—"
+    }
+  },
   "marketing": {
     "meta": {
       "home": {
@@ -624,6 +654,156 @@
         "uploadRecommendedPhotos": "Subir fotos recomendadas",
         "aiNotesHeading": "Notas de IA",
         "updatedPrefix": "Actualizado"
+      },
+      "forms": {
+        "questionsPage": {
+          "backToCase": "← Volver al caso",
+          "title": "Preguntas de inteligencia",
+          "subtitle": "Estos datos desbloquean un análisis forense más profundo sobre seguridad del donante, viabilidad del injerto, curación y equilibrio estético.",
+          "poweredBy": "Con tecnología de Follicle Intelligence™",
+          "visionModel": "Modelo de visión: GPT-5.2"
+        },
+        "intake": {
+          "introLine": "Unos 5–6 minutos. Complete sus datos de inteligencia para desbloquear un análisis forense más profundo.",
+          "advancedTitle": "Preguntas forenses avanzadas (opcional)",
+          "advancedBody": "Añade datos más profundos sobre viabilidad del injerto, riesgo del donante, fase de cicatrización y coherencia estética. Puede omitirlas en cualquier momento.",
+          "advancedProgressJoin": " · ",
+          "hideAdvanced": "Ocultar avanzadas",
+          "addAdvanced": "Añadir avanzadas",
+          "lockedBanner": "Caso enviado. Los datos de inteligencia están bloqueados.",
+          "stepperAria": "Progreso del formulario",
+          "reviewSubmitStep": "Revisar y enviar",
+          "loadErrorTitle": "No se pudo cargar el formulario",
+          "failedToLoadAnswers": "No se pudieron cargar las respuestas",
+          "photosSectionTitle": "2. Añada sus fotos",
+          "photosSectionBody": "Las imágenes preoperatorias, durante la cirugía y postoperatorias van en el siguiente paso.",
+          "addPhotosCta": "Añadir fotos →",
+          "saveFailedStatus": "Error al guardar ({{status}})"
+        },
+        "reviewSummary": {
+          "title": "Resumen de revisión",
+          "hint": "Revise sus respuestas abajo. Use los puntos de arriba para editar.",
+          "editAnswers": "Editar respuestas"
+        },
+        "sections": {
+          "clinic_procedure": {
+            "title": "Detalles de clínica y procedimiento"
+          },
+          "transparency": {
+            "title": "Transparencia y proceso"
+          },
+          "cost": {
+            "title": "Transparencia de coste y valor"
+          },
+          "surgical_experience": {
+            "title": "Experiencia quirúrgica"
+          },
+          "recovery": {
+            "title": "Recuperación y complicaciones"
+          },
+          "results": {
+            "title": "Resultados (contextualizados)"
+          },
+          "adv_basics": {
+            "title": "Datos básicos",
+            "description": "Opcional. Ayuda al modelo de IA a contextualizar riesgo y fase de cicatrización."
+          },
+          "adv_hair_biology": {
+            "title": "Cabello y biología",
+            "description": "Opcional. Mejora la inferencia de progresión y riesgo del donante."
+          },
+          "adv_procedure_details": {
+            "title": "Detalles del procedimiento",
+            "description": "Opcional. Mejora la inferencia del rol del técnico y la planificación."
+          },
+          "adv_graft_handling": {
+            "title": "Manejo del injerto",
+            "description": "Opcional. Mejora de forma notable la inferencia de desecación y viabilidad."
+          },
+          "adv_healing": {
+            "title": "Cicatrización",
+            "description": "Opcional. Mejora la inferencia de fase y el encuadre de riesgo de complicaciones."
+          },
+          "adv_current_status": {
+            "title": "Estado actual",
+            "description": "Opcional. Mejora la coherencia estética y el contexto de experiencia del paciente."
+          }
+        },
+        "reviewEnums": {
+          "clinic_country": {
+            "turkey": "Turquía",
+            "spain": "España",
+            "india": "India",
+            "thailand": "Tailandia",
+            "mexico": "México",
+            "brazil": "Brasil",
+            "argentina": "Argentina",
+            "colombia": "Colombia",
+            "australia": "Australia",
+            "uk": "Reino Unido",
+            "usa": "Estados Unidos",
+            "canada": "Canadá",
+            "uae": "EAU",
+            "belgium": "Bélgica",
+            "germany": "Alemania",
+            "poland": "Polonia",
+            "greece": "Grecia",
+            "other": "Otro"
+          },
+          "procedure_type": {
+            "fue": "FUE",
+            "fut": "FUT",
+            "dhi": "DHI",
+            "robotic": "Robótico",
+            "not_sure": "No estoy seguro",
+            "other": "Otro"
+          },
+          "donor_shaving": {
+            "full_shave": "Afeitado total",
+            "partial_shave": "Afeitado parcial",
+            "no": "No"
+          },
+          "surgery_duration": {
+            "under_4h": "<4 h",
+            "4_6h": "4–6 h",
+            "6_8h": "6–8 h",
+            "8_plus": "8+ h"
+          },
+          "post_op_swelling": {
+            "none": "Ninguno",
+            "mild": "Leve",
+            "moderate": "Moderado",
+            "severe": "Grave"
+          },
+          "bleeding_issue": {
+            "yes": "Sí",
+            "no": "No",
+            "not_sure": "No estoy seguro"
+          },
+          "recovery_time": {
+            "under_1_week": "<1 sem",
+            "1_2_weeks": "1–2 sem",
+            "2_4_weeks": "2–4 sem",
+            "4_plus_weeks": "4+ sem"
+          },
+          "shock_loss": {
+            "yes": "Sí",
+            "no": "No",
+            "not_sure": "No estoy seguro"
+          },
+          "months_since": {
+            "under_3": "<3 m",
+            "3_6": "3–6 m",
+            "6_9": "6–9 m",
+            "9_12": "9–12 m",
+            "12_plus": "12+ m"
+          },
+          "would_repeat": {
+            "yes": "Sí",
+            "no": "No",
+            "not_sure": "No estoy seguro"
+          }
+        }
       }
     },
     "reports": {
@@ -700,6 +880,24 @@
           "description": "Se planea un asistente dedicado para añadir varios casos en un solo flujo. Por ahora, cree casos desde su resumen y complete el formulario y las fotos de cada uno.",
           "altCta": "Crear un caso"
         }
+      },
+      "forms": {
+        "onboardingTitle": "Perfil profesional",
+        "onboardingLead": "Un perfil mínimo ayuda a atribuirle casos y construir su registro público.",
+        "fullName": "Nombre completo",
+        "fullNamePlaceholder": "p. ej. Dra. Ana López",
+        "emailOptional": "Correo (opcional)",
+        "emailPlaceholder": "Correo profesional",
+        "clinicOptional": "Nombre de clínica o consulta (opcional)",
+        "clinicPlaceholder": "p. ej. Clínica Capilar Central",
+        "yearsOptional": "Años de experiencia (opcional)",
+        "yearsPlaceholder": "0",
+        "nameRequired": "El nombre del médico es obligatorio.",
+        "errorSaveFailed": "No se pudo guardar el perfil.",
+        "continueToDashboard": "Continuar al panel",
+        "backToOverview": "Volver al resumen",
+        "afterSaveHint": "Tras guardar, puede crear su primer caso de auditoría desde el resumen del médico y empezar a construir su registro basado en evidencia.",
+        "goToOverviewCreate": "Ir al resumen y crear un caso →"
       }
     },
     "clinic": {
@@ -734,6 +932,95 @@
           "title": "Formación",
           "subtitle": "Módulos internos de control de calidad y formación.",
           "recommendation": "Este módulo será el centro de formación de su clínica, combinando inteligencia de casos, cumplimiento de protocolos y guías de calidad reproducibles."
+        }
+      },
+      "forms": {
+        "conversionPanel": {
+          "eyebrow": "Capa de conversión",
+          "readinessSignals": "{{active}}/{{total}} señales de preparación activas",
+          "showReadinessDetails": "Mostrar detalles de preparación",
+          "defaultTeaser": "Vista previa del impacto del perfil"
+        },
+        "profileBuilder": {
+          "trustTitle": "Guía de conversión de confianza del perfil",
+          "trustSubtitle": "Una identidad clínica completa junto con metadatos procedimentales profundos mejora la calidad de la atribución y refuerza la credibilidad médica.",
+          "nextCompleteIdentity": "Complete la identidad de su clínica",
+          "nextPublicProfile": "Prepare su perfil público",
+          "nextAddMethods": "Añada sus métodos quirúrgicos",
+          "nextUploadDevices": "Suba dispositivos y tecnología",
+          "nextWorkspaces": "Responder a contribuciones invitadas",
+          "readinessBasic": "Perfil básico completo",
+          "readinessEnhanced": "Perfil de confianza ampliado",
+          "readinessBenchmark": "Listo para referencias",
+          "readinessPublic": "Ficha pública en curso",
+          "readinessTraining": "Listo para formación",
+          "basicSectionTitle": "Perfil básico de la clínica",
+          "basicSectionLead": "Refuerza su postura de confianza y la visibilidad del perfil.",
+          "applyDefaults": "Aplicar valores estándar de clínica",
+          "saveOnceHint": "Guarde una vez y luego edite solo lo que cambió",
+          "completion": "Finalización",
+          "advancedSectionTitle": "Perfil operativo avanzado",
+          "advancedSectionLead": "Diseñado para control de calidad, referencias y módulos de inteligencia de formación.",
+          "advancedMetadataSummary": "Metadatos avanzados (opcional)",
+          "clinicalStackTitle": "Catálogo del stack clínico",
+          "clinicalStackLead": "Añada métodos, herramientas, dispositivos, detalles de equipamiento, extras opcionales y protocolos.",
+          "capabilityPlaceholder": "p. ej. perforador FUE zafiro, implanter Choi, protocolo de cadena de frío",
+          "emptyGroupHint": "Aún no hay entradas. Añada datos estructurados para reforzar la confianza del perfil y la preparación para referencias.",
+          "messageSaved": "Perfil de clínica guardado.",
+          "messageCapabilityAdded": "Capacidad añadida.",
+          "messageDefaultsApplied": "Se aplicaron valores prácticos por defecto. Revise y guarde.",
+          "messageCapabilityRemoved": "Capacidad eliminada.",
+          "errorSaveProfile": "No se pudo guardar el perfil.",
+          "errorAddCapability": "No se pudo añadir la capacidad.",
+          "errorRemoveCapability": "No se pudo eliminar la capacidad.",
+          "footerSave": "Guardar perfil",
+          "fieldTagline": "Eslogan de posicionamiento de la clínica",
+          "fieldPrimaryCountry": "País principal",
+          "fieldPrimaryCity": "Ciudad principal",
+          "fieldYearEstablished": "Año de fundación",
+          "fieldLeadDoctor": "Médico principal",
+          "fieldContactEmail": "Correo de contacto",
+          "fieldWebsite": "Sitio web",
+          "fieldSurgicalTeamSize": "Tamaño del equipo quirúrgico",
+          "fieldAvgCasesPerMonth": "Casos medios por mes",
+          "fieldQaProtocol": "Protocolo de control de calidad",
+          "fieldTrainingProgram": "Programa de formación",
+          "fieldInternalAuditFrequency": "Frecuencia de auditoría interna",
+          "fieldPrimaryMachineStack": "Parque de equipos principal",
+          "fieldSterilizationProtocol": "Protocolo de esterilización",
+          "fieldPatientFollowupProtocol": "Protocolo de seguimiento al paciente",
+          "fieldMachinePlaceholder": "p. ej. Choi + zafiro + cadena de refrigeración",
+          "fieldSterilizationPlaceholder": "p. ej. Lista OMS + doble verificación",
+          "capTypeMethod": "Método quirúrgico",
+          "capTypeTool": "Herramienta",
+          "capTypeDevice": "Dispositivo",
+          "capTypeMachine": "Equipo",
+          "capTypeOptionalExtra": "Extra opcional",
+          "capTypeProtocol": "Protocolo",
+          "optSurgicalTeam2to4": "2-4",
+          "optSurgicalTeam5to8": "5-8",
+          "optSurgicalTeam9to12": "9-12",
+          "optSurgicalTeam12plus": "12+",
+          "optCasesLt20": "<20",
+          "optCases20to50": "20-50",
+          "optCases51to100": "51-100",
+          "optCases100plus": "100+",
+          "optQaDaily": "Lista diaria",
+          "optQaWeekly": "Reunión semanal de CA",
+          "optQaCaseSignoff": "Aprobación de CA por caso",
+          "optQaMultilayer": "Tablero de CA multicapa",
+          "optTrainingMentorship": "Mentoría interna",
+          "optTrainingCadaver": "Laboratorio semanal de cadáver",
+          "optTrainingQuarterly": "Revisión trimestral de competencias",
+          "optTrainingHybrid": "Formación externa híbrida",
+          "optAuditPerCase": "Por caso",
+          "optAuditWeekly": "Semanal",
+          "optAuditBiweekly": "Quincenal",
+          "optAuditMonthly": "Mensual",
+          "optFollowupDay1": "Día 1 / Semana 1 / Mes 1 / Mes 6 / Mes 12",
+          "optFollowupWeek1": "Semana 1 / Mes 1 / Mes 3 / Mes 6 / Mes 12",
+          "optFollowupCustom": "Protocolo personalizado",
+          "selectPrompt": "Seleccionar..."
         }
       }
     }
