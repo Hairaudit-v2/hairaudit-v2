@@ -26,7 +26,8 @@
   "dashboard": {
     "shared": {
       "createCaseDefault": "Crear nuevo caso de auditoría",
-      "startNewAudit": "Iniciar nueva auditoría"
+      "startNewAudit": "Iniciar nueva auditoría",
+      "signOut": "Cerrar sesión"
     },
     "patient": {
       "heroTitle": "Su panel de inteligencia quirúrgica",
@@ -68,7 +69,13 @@
       "onboardingSubmitCta": "Abrir caso y enviar a auditoría",
       "onboardingSubmitNoCase": "Cree un caso primero",
       "onboardingBenchmark": "Descubra cómo funciona la evaluación comparativa",
-      "onboardingBenchmarkCta": "Ver clasificaciones de médicos y referencias"
+      "onboardingBenchmarkCta": "Ver clasificaciones de médicos y referencias",
+      "pageNavOverview": "Resumen",
+      "pageNavOnboarding": "Incorporación",
+      "checklistTitle": "Primeros pasos",
+      "checklistSubtitle": "Siga estos pasos para completar su primer caso y contribuir a una evaluación comparativa transparente.",
+      "whyMattersLead": "Por qué importa.",
+      "whyMattersBody": "Participar en HairAudit ayuda a comparar resultados y mejorar la transparencia. Sus casos documentados contribuyen al reconocimiento basado en evidencia y aclaran las expectativas de pacientes y colegas."
     },
     "clinic": {
       "overviewTitle": "Resumen de inteligencia clínica",

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import CreateCaseButton from "../create-case-button";
+import { useI18n } from "@/components/i18n/I18nProvider";
 
 export type OnboardingStep = {
   id: string;
@@ -37,18 +38,17 @@ export default function DoctorOnboardingChecklist({
   steps,
   showWhyItMatters = true,
 }: DoctorOnboardingChecklistProps) {
+  const { t } = useI18n();
   const allDone = steps.every((s) => s.done);
   if (allDone) return null;
 
   return (
     <section
       className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
-      aria-label="Getting started"
+      aria-label={t("dashboard.doctor.checklistTitle")}
     >
-      <h2 className="text-lg font-semibold text-slate-900">Getting started</h2>
-      <p className="mt-1 text-sm text-slate-600">
-        Follow these steps to complete your first case and contribute to transparent benchmarking.
-      </p>
+      <h2 className="text-lg font-semibold text-slate-900">{t("dashboard.doctor.checklistTitle")}</h2>
+      <p className="mt-1 text-sm text-slate-600">{t("dashboard.doctor.checklistSubtitle")}</p>
 
       <ul className="mt-5 space-y-4" role="list">
         {steps.map((step) => (
@@ -81,9 +81,8 @@ export default function DoctorOnboardingChecklist({
       {showWhyItMatters && (
         <div className="mt-5 rounded-xl border border-slate-100 bg-slate-50/80 p-4">
           <p className="text-sm text-slate-700">
-            <strong className="font-medium text-slate-800">Why this matters.</strong>{" "}
-            Participation in HairAudit helps benchmark outcomes and improve transparency. Your documented cases
-            contribute to evidence-based recognition and help set clearer expectations for patients and peers.
+            <strong className="font-medium text-slate-800">{t("dashboard.doctor.whyMattersLead")}</strong>{" "}
+            {t("dashboard.doctor.whyMattersBody")}
           </p>
         </div>
       )}

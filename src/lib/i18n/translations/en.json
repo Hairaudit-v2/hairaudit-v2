@@ -26,7 +26,8 @@
   "dashboard": {
     "shared": {
       "createCaseDefault": "Create new audit case",
-      "startNewAudit": "Start New Audit"
+      "startNewAudit": "Start New Audit",
+      "signOut": "Sign out"
     },
     "patient": {
       "heroTitle": "Your Surgical Intelligence Dashboard",
@@ -68,7 +69,13 @@
       "onboardingSubmitCta": "Open case and submit for audit",
       "onboardingSubmitNoCase": "Create a case first",
       "onboardingBenchmark": "Learn how benchmarking works",
-      "onboardingBenchmarkCta": "View doctor leaderboards and benchmarks"
+      "onboardingBenchmarkCta": "View doctor leaderboards and benchmarks",
+      "pageNavOverview": "Overview",
+      "pageNavOnboarding": "Onboarding",
+      "checklistTitle": "Getting started",
+      "checklistSubtitle": "Follow these steps to complete your first case and contribute to transparent benchmarking.",
+      "whyMattersLead": "Why this matters.",
+      "whyMattersBody": "Participation in HairAudit helps benchmark outcomes and improve transparency. Your documented cases contribute to evidence-based recognition and help set clearer expectations for patients and peers."
     },
     "clinic": {
       "overviewTitle": "Clinic Intelligence Overview",
