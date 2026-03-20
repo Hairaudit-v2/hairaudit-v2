@@ -92,6 +92,7 @@ export async function POST(req: Request) {
     const caseId = String(body?.caseId ?? "").trim();
     const locale = normalizeLocale(typeof body?.locale === "string" ? body.locale : null) as SupportedLocale;
     const action = String(body?.action ?? "").trim();
+    const reviewNotes = typeof body?.reviewNotes === "string" ? body.reviewNotes : null;
 
     if (!caseId) return NextResponse.json({ ok: false, error: "Missing caseId" }, { status: 400 });
     if (!["refresh", "approve", "reject", "reset_review"].includes(action)) {
@@ -120,13 +121,14 @@ export async function POST(req: Request) {
       reportId: ctx.reportId,
       targetLocale: locale,
       reviewStatus,
+      reviewAction: action as "approve" | "reject" | "reset_review",
       reviewerId: userId,
       reviewNotes:
         reviewStatus === "approved"
-          ? "Approved via auditor pilot ops panel."
+          ? reviewNotes ?? "Approved via auditor pilot ops panel."
           : reviewStatus === "rejected"
-            ? "Rejected via auditor pilot ops panel."
-            : "Review status reset via auditor pilot ops panel.",
+            ? reviewNotes
+            : reviewNotes ?? "Review status reset via auditor pilot ops panel.",
     });
     if (!review.ok) return NextResponse.json({ ok: false, error: review.error }, { status: 400 });
     return NextResponse.json({ ok: true });

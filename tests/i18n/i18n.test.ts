@@ -32,6 +32,7 @@ import {
   PATIENT_SAFE_SUMMARY_TRANSLATION_SECTION_ID,
   refreshPatientSafeSummaryNarrativeTranslation,
   resolvePatientSafeSummaryNarrativePresentation,
+  validatePatientSafeSummaryReviewAction,
 } from "@/lib/reports/patientSafeSummaryNarrativeTranslation";
 import { createLocalizedPageMetadata, localeFromAcceptLanguage } from "@/lib/seo/localeMetadata";
 import {
@@ -244,6 +245,39 @@ test("canServePatientSafeSummaryNarrativeTranslation: stale source falls back", 
   );
 });
 
+test("canServePatientSafeSummaryNarrativeTranslation: stale after approval still falls back", () => {
+  const sourceSnapshot = createPatientSafeSummaryNarrativeSourceSnapshot({
+    observations: [{ stage: "preop", text: "Pre-op donor photos show mild asymmetry." }],
+    reportId: "report-123",
+    reportVersion: 2,
+  });
+  assert.equal(
+    canServePatientSafeSummaryNarrativeTranslation({
+      section: {
+        sectionId: PATIENT_SAFE_SUMMARY_TRANSLATION_SECTION_ID,
+        sourceLocale: "en",
+        targetLocale: "es",
+        status: "reviewed_approved",
+        policy: {
+          category: "patient_safe_generated",
+          machineTranslationAllowed: true,
+          humanReviewRequirement: "recommended",
+          patientVisible: true,
+        },
+        sourceSnapshot,
+        translatedText: "Las fotos preoperatorias del área donante muestran una leve asimetría.",
+        review: { status: "approved" },
+      },
+      requestedLocale: "es",
+      currentSourceText: sourceSnapshot.text,
+      currentContentVersion: createPatientSafeSummaryNarrativeContentVersion("report-123", 3),
+      translatedItems: ["Las fotos preoperatorias del área donante muestran una leve asimetría."],
+      sourceObservationCount: 1,
+    }),
+    false
+  );
+});
+
 test("canServePatientSafeSummaryNarrativeTranslation: unsupported locale does not serve pilot text", () => {
   const sourceSnapshot = createPatientSafeSummaryNarrativeSourceSnapshot({
     observations: [{ stage: "preop", text: "Pre-op donor photos show mild asymmetry." }],
@@ -381,6 +415,13 @@ test("refreshPatientSafeSummaryNarrativeTranslation: explicit refresh path still
   });
   assert.equal(out.translationStatus, "english_fallback");
   assert.ok(out.fallbackReason === "generation_failed" || out.fallbackReason === "stored_translation_not_servable");
+});
+
+test("validatePatientSafeSummaryReviewAction: rejection requires rationale note", () => {
+  assert.equal(validatePatientSafeSummaryReviewAction({ action: "approve" }).ok, true);
+  assert.equal(validatePatientSafeSummaryReviewAction({ action: "reset_review" }).ok, true);
+  assert.equal(validatePatientSafeSummaryReviewAction({ action: "reject", reviewNotes: "Needs terminology correction." }).ok, true);
+  assert.equal(validatePatientSafeSummaryReviewAction({ action: "reject", reviewNotes: "   " }).ok, false);
 });
 
 test("formatTemplate: replaces placeholders", () => {

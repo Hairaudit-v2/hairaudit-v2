@@ -14,12 +14,18 @@ type OpsState = {
   translationProvenance?: string;
   translatedAt?: string | null;
   reviewedAt?: string | null;
+  reviewerId?: string | null;
+  reviewNotes?: string | null;
+  lastReviewAction?: "approved" | "rejected" | "reset_review" | null;
+  lastReviewActionAt?: string | null;
+  lastReviewActionBy?: string | null;
 };
 
 export default function PatientSafeSummaryTranslationOpsPanel({ caseId, locale }: { caseId: string; locale: string }) {
   const [state, setState] = useState<OpsState | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [reviewNote, setReviewNote] = useState("");
 
   async function load() {
     setError(null);
@@ -42,7 +48,7 @@ export default function PatientSafeSummaryTranslationOpsPanel({ caseId, locale }
       const res = await fetch("/api/auditor/patient-safe-summary-translation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ caseId, locale, action }),
+        body: JSON.stringify({ caseId, locale, action, reviewNotes: reviewNote }),
       });
       const data = (await res.json().catch(() => null)) as { ok?: boolean; error?: string } | null;
       if (!res.ok || !data?.ok) {
@@ -123,6 +129,31 @@ export default function PatientSafeSummaryTranslationOpsPanel({ caseId, locale }
           {busy === "reset_review" ? "Saving…" : "Reset review"}
         </button>
       </div>
+
+      <div className="mt-3">
+        <label className="mb-1 block text-xs text-slate-300">Review note (required for rejection)</label>
+        <textarea
+          value={reviewNote}
+          onChange={(e) => setReviewNote(e.target.value)}
+          rows={3}
+          className="w-full rounded-lg border border-white/20 bg-slate-950/50 px-2.5 py-2 text-xs text-slate-100"
+          placeholder="Add rationale for approval/rejection/reset."
+          disabled={busy != null}
+        />
+      </div>
+
+      {state ? (
+        <dl className="mt-3 grid gap-2 text-xs text-slate-200 sm:grid-cols-2">
+          <div><dt className="text-slate-400">Reviewed at</dt><dd>{state.reviewedAt ?? "n/a"}</dd></div>
+          <div><dt className="text-slate-400">Reviewer</dt><dd>{state.reviewerId ?? "n/a"}</dd></div>
+          <div><dt className="text-slate-400">Last action</dt><dd>{state.lastReviewAction ?? "n/a"}</dd></div>
+          <div><dt className="text-slate-400">Last action at</dt><dd>{state.lastReviewActionAt ?? "n/a"}</dd></div>
+          <div className="sm:col-span-2">
+            <dt className="text-slate-400">Review note</dt>
+            <dd className="whitespace-pre-wrap">{state.reviewNotes ?? "n/a"}</dd>
+          </div>
+        </dl>
+      ) : null}
 
       {error && <p className="mt-2 text-xs text-rose-300">{error}</p>}
     </section>

@@ -134,3 +134,39 @@ Auditors can set pilot review status:
 - **Reset review** -> `review_status=not_reviewed`, `translation_status=generated_unreviewed`
 
 These controls affect only pilot translation rows in `report_narrative_translations`.
+
+## Batch 21 review workflow refinement
+
+Batch 21 improves auditability of human review decisions without expanding translation scope.
+
+### Added review action metadata
+
+`report_narrative_translations` now tracks:
+
+- `last_review_action` (`approved` | `rejected` | `reset_review`)
+- `last_review_action_at`
+- `last_review_action_by`
+
+Existing review fields remain in use:
+
+- `review_status`
+- `reviewed_at`
+- `reviewer_id`
+- `review_notes`
+
+### Review rigor rules
+
+- rejection now requires a review note/rationale
+- approve/reject/reset actions capture who acted and when
+- stale detection still prevents serving outdated translations even if they were previously approved
+
+### Auditor UX
+
+The ops panel now shows:
+
+- current translation status + review status
+- reviewer identity / reviewed timestamp
+- last review action metadata
+- persisted review note
+
+This remains auditor-only internal tooling and is not shown to patients.

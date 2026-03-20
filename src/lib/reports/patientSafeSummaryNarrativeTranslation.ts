@@ -39,6 +39,9 @@ type ReportNarrativeTranslationRow = {
   reviewed_at: string | null;
   reviewer_id: string | null;
   review_notes: string | null;
+  last_review_action?: "approved" | "rejected" | "reset_review" | null;
+  last_review_action_at?: string | null;
+  last_review_action_by?: string | null;
   stale_detected_at: string | null;
   created_at: string | null;
   updated_at: string | null;
@@ -116,6 +119,11 @@ export type PatientSafeSummaryTranslationOpsState = {
   translationProvenance?: string;
   translatedAt?: string | null;
   reviewedAt?: string | null;
+  reviewerId?: string | null;
+  reviewNotes?: string | null;
+  lastReviewAction?: "approved" | "rejected" | "reset_review" | null;
+  lastReviewActionAt?: string | null;
+  lastReviewActionBy?: string | null;
 };
 
 const PATIENT_SAFE_SUMMARY_TRANSLATION_JSON_SCHEMA = {
@@ -459,6 +467,11 @@ export async function getPatientSafeSummaryTranslationOpsState(
     translationProvenance: existing.translation_provenance ?? undefined,
     translatedAt: existing.translated_at,
     reviewedAt: existing.reviewed_at,
+    reviewerId: existing.reviewer_id ?? null,
+    reviewNotes: existing.review_notes ?? null,
+    lastReviewAction: existing.last_review_action ?? null,
+    lastReviewActionAt: existing.last_review_action_at ?? null,
+    lastReviewActionBy: existing.last_review_action_by ?? null,
   };
 }
 
@@ -468,14 +481,34 @@ export async function refreshPatientSafeSummaryNarrativeTranslation(
   return resolvePatientSafeSummaryNarrativePresentation({ ...args, forceRefresh: true });
 }
 
+export function validatePatientSafeSummaryReviewAction(args: {
+  action: "approve" | "reject" | "reset_review";
+  reviewNotes?: string | null;
+}): { ok: true } | { ok: false; error: string } {
+  if (args.action === "reject") {
+    const note = normalizeReviewNote(args.reviewNotes);
+    if (!note) {
+      return { ok: false, error: "Rejection requires a review note/rationale." };
+    }
+  }
+  return { ok: true };
+}
+
 export async function setPatientSafeSummaryNarrativeReviewStatus(args: {
   db: TranslationDbClient | null;
   reportId: string;
   targetLocale: SupportedLocale;
   reviewStatus: "approved" | "rejected" | "not_reviewed";
+  reviewAction: "approve" | "reject" | "reset_review";
   reviewerId?: string | null;
   reviewNotes?: string | null;
 }): Promise<{ ok: boolean; error?: string }> {
+  const validation = validatePatientSafeSummaryReviewAction({
+    action: args.reviewAction,
+    reviewNotes: args.reviewNotes,
+  });
+  if (!validation.ok) return validation;
+
   const targetLocale = getPatientSafeSummaryPilotTargetLocale(args.targetLocale);
   if (!args.db || !targetLocale) return { ok: false, error: "Unsupported locale or database unavailable." };
 
@@ -491,7 +524,11 @@ export async function setPatientSafeSummaryNarrativeReviewStatus(args: {
         translation_status: status,
         reviewed_at: args.reviewStatus === "not_reviewed" ? null : now,
         reviewer_id: args.reviewStatus === "not_reviewed" ? null : args.reviewerId ?? null,
-        review_notes: args.reviewNotes ?? null,
+        review_notes: normalizeReviewNote(args.reviewNotes),
+        last_review_action:
+          args.reviewAction === "approve" ? "approved" : args.reviewAction === "reject" ? "rejected" : "reset_review",
+        last_review_action_at: now,
+        last_review_action_by: args.reviewerId ?? null,
         updated_at: now,
       })
       .eq("report_id", args.reportId)
@@ -514,6 +551,11 @@ export async function setPatientSafeSummaryNarrativeReviewStatus(args: {
   }
 }
 
+function normalizeReviewNote(value?: string | null): string | null {
+  const s = String(value ?? "").trim();
+  return s.length > 0 ? s : null;
+}
+
 async function readStoredPatientSafeSummaryTranslation(
   db: TranslationDbClient,
   args: { reportId: string; targetLocale: PatientSafeSummaryTranslationPilotLocale }
@@ -522,7 +564,7 @@ async function readStoredPatientSafeSummaryTranslation(
     const res = await db
       .from("report_narrative_translations")
       .select(
-        "id, case_id, report_id, report_version, section_id, source_locale, source_content_locale, source_text_snapshot, source_content_version, translated_text, translated_items, target_locale, translation_status, review_status, translation_provenance, translated_at, reviewed_at, reviewer_id, review_notes, stale_detected_at, created_at, updated_at"
+        "id, case_id, report_id, report_version, section_id, source_locale, source_content_locale, source_text_snapshot, source_content_version, translated_text, translated_items, target_locale, translation_status, review_status, translation_provenance, translated_at, reviewed_at, reviewer_id, review_notes, last_review_action, last_review_action_at, last_review_action_by, stale_detected_at, created_at, updated_at"
       )
       .eq("report_id", args.reportId)
       .eq("section_id", PATIENT_SAFE_SUMMARY_TRANSLATION_SECTION_ID)
@@ -609,7 +651,7 @@ async function upsertPatientSafeSummaryTranslation(
       .from("report_narrative_translations")
       .upsert(payload, { onConflict: "report_id,section_id,target_locale" })
       .select(
-        "case_id, report_id, report_version, section_id, source_locale, source_content_locale, source_text_snapshot, source_content_version, translated_text, translated_items, target_locale, translation_status, review_status, translation_provenance, translated_at, reviewed_at, reviewer_id, review_notes, stale_detected_at, created_at, updated_at"
+        "case_id, report_id, report_version, section_id, source_locale, source_content_locale, source_text_snapshot, source_content_version, translated_text, translated_items, target_locale, translation_status, review_status, translation_provenance, translated_at, reviewed_at, reviewer_id, review_notes, last_review_action, last_review_action_at, last_review_action_by, stale_detected_at, created_at, updated_at"
       )
       .maybeSingle();
 
