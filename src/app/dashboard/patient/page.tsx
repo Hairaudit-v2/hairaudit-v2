@@ -1,15 +1,15 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import type { ReactNode } from "react";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import CreateCaseButton from "../create-case-button";
 import { PATIENT_AUDIT_SECTIONS, type PatientAuditAnswers } from "@/lib/patientAuditForm";
-import DeleteDraftCaseButton from "./DeleteDraftCaseButton";
 import GraftIntegrityCard from "./GraftIntegrityCard";
-import PatientNextActionPanel from "@/components/patient/PatientNextActionPanel";
 import { BENCHMARKING_GLOBAL_STANDARDS } from "@/lib/benchmarkingCopy";
 import PatientDashboardI18nIntro from "@/components/i18n/PatientDashboardI18nIntro";
+import PatientDashboardCompletionCard from "@/components/patient/PatientDashboardCompletionCard";
+import PatientDashboardUnlockSection from "@/components/patient/PatientDashboardUnlockSection";
+import PatientDashboardWhyMattersSection from "@/components/patient/PatientDashboardWhyMattersSection";
+import PatientDashboardCaseHistorySection from "@/components/patient/PatientDashboardCaseHistorySection";
+import PatientGraftIntegrityRolloutNotice from "@/components/patient/PatientGraftIntegrityRolloutNotice";
 
 function isMissingFeatureError(error: unknown): boolean {
   const e = error as { status?: number; code?: string; message?: string } | null;
@@ -64,11 +64,11 @@ function computeRequiredQuestionsCompletion(answers: PatientAuditAnswers) {
 
 type ModuleKey = "procedure" | "graftHandling" | "healingCourse" | "currentStatus";
 
-const MODULE_DEFS: Array<{ key: ModuleKey; title: string; prefixes: string[] }> = [
-  { key: "procedure", title: "Procedure", prefixes: ["enhanced_patient_answers.procedure_execution", "enhanced_patient_answers.donor_profile"] },
-  { key: "graftHandling", title: "Graft Handling", prefixes: ["enhanced_patient_answers.graft_handling"] },
-  { key: "healingCourse", title: "Healing Course", prefixes: ["enhanced_patient_answers.healing_course"] },
-  { key: "currentStatus", title: "Current Status", prefixes: ["enhanced_patient_answers.aesthetics", "enhanced_patient_answers.experience"] },
+const MODULE_DEFS: Array<{ key: ModuleKey; prefixes: string[] }> = [
+  { key: "procedure", prefixes: ["enhanced_patient_answers.procedure_execution", "enhanced_patient_answers.donor_profile"] },
+  { key: "graftHandling", prefixes: ["enhanced_patient_answers.graft_handling"] },
+  { key: "healingCourse", prefixes: ["enhanced_patient_answers.healing_course"] },
+  { key: "currentStatus", prefixes: ["enhanced_patient_answers.aesthetics", "enhanced_patient_answers.experience"] },
 ];
 
 function computeModuleCompletion(answers: PatientAuditAnswers, prefixes: string[]) {
@@ -204,74 +204,6 @@ export default async function PatientDashboardPage() {
 
   const showConversionPrompt = Boolean(nextCase?.id) && completionPct < 70;
 
-  const unlockCards: Array<{
-    title: string;
-    desc: string;
-    unlockAt: number;
-    icon: ReactNode;
-  }> = [
-    {
-      title: "Performance Radar Signature",
-      desc: "A multi-factor performance imprint synthesized from photos + procedure signals.",
-      unlockAt: 20,
-      icon: (
-        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M12 2v3m0 14v3M2 12h3m14 0h3" strokeLinecap="round" />
-          <path d="M12 6a6 6 0 1 0 6 6" strokeLinecap="round" />
-          <path d="M12 12l6-2" strokeLinecap="round" />
-        </svg>
-      ),
-    },
-    {
-      title: "Donor Safety Index",
-      desc: "Risk calibration for extraction density, pattern, and long-term donor integrity.",
-      unlockAt: 40,
-      icon: (
-        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M12 2l8 4v6c0 5-3.5 9.5-8 10-4.5-.5-8-5-8-10V6l8-4z" strokeLinejoin="round" />
-          <path d="M9 12l2 2 4-5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      ),
-    },
-    {
-      title: "Graft Viability Model",
-      desc: "Viability inference from handling signals—hydration, storage, time, and exposure.",
-      unlockAt: 60,
-      icon: (
-        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M12 2c3 4 6 7 6 11a6 6 0 1 1-12 0c0-4 3-7 6-11z" strokeLinejoin="round" />
-          <path d="M9.5 14.5c.5 1.5 2 2.5 3.5 2.5" strokeLinecap="round" />
-        </svg>
-      ),
-    },
-    {
-      title: "Aesthetic Balance Assessment",
-      desc: "Aesthetic consistency scoring across hairline, directionality, and symmetry signals.",
-      unlockAt: 80,
-      icon: (
-        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M12 3v18" strokeLinecap="round" />
-          <path d="M6 7h12M6 17h12" strokeLinecap="round" />
-          <path d="M8 7l-2 4 2 4" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M16 17l2-4-2-4" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      ),
-    },
-    {
-      title: "Predictive Growth Timeline",
-      desc: "Stage-aware projection of growth and density maturation based on healing inputs.",
-      unlockAt: 100,
-      icon: (
-        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M3 12h18" strokeLinecap="round" />
-          <path d="M7 12a5 5 0 0 1 10 0" strokeLinecap="round" />
-          <path d="M12 12v7" strokeLinecap="round" />
-          <path d="M9 19h6" strokeLinecap="round" />
-        </svg>
-      ),
-    },
-  ];
-
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6">
       <PatientDashboardI18nIntro
@@ -286,108 +218,20 @@ export default async function PatientDashboardPage() {
 
         <div className="relative grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Completion module */}
-          <div className="lg:col-span-5 flex flex-col gap-6">
-            <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-6 shadow-[0_0_0_1px_rgba(255,255,255,0.04)]">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h2 className="text-sm font-semibold text-white">Case Completion</h2>
-                  <p className="mt-1 text-xs text-slate-300/80">
-                    Based on photos + procedure + handling + healing inputs.
-                  </p>
-                </div>
-                <div className="text-right">
-                  <div className="text-2xl font-semibold text-white tabular-nums">{nextCase?.id ? `${completionPct}%` : "—"}</div>
-                  <div className="text-xs text-slate-300/70">{nextCase?.id ? (hasAnyCaseData ? "Live" : "Not started") : "No case yet"}</div>
-                </div>
-              </div>
-
-              <div className="mt-4">
-                <div className="h-2 w-full rounded-full bg-white/10 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-cyan-300 to-emerald-300"
-                    style={{ width: `${nextCase?.id ? clamp01(completionPct / 100) * 100 : 0}%` }}
-                  />
-                </div>
-              </div>
-
-              <div className="mt-5 space-y-3">
-                {([
-                  {
-                    label: "Photos",
-                    done: patientPhotoCount >= 6,
-                    detail: nextCase?.id ? `${patientPhotoCount}/${PHOTOS_TARGET}` : "—",
-                  },
-                  {
-                    label: "Procedure",
-                    done: required.pct >= 0.95,
-                    detail: nextCase?.id ? `${required.answered}/${required.total}` : "—",
-                  },
-                  {
-                    label: "Graft Handling",
-                    done: modules.graftHandling.pct >= 0.6,
-                    detail: nextCase?.id ? `${modules.graftHandling.answered}/${modules.graftHandling.total}` : "—",
-                  },
-                  {
-                    label: "Healing Course",
-                    done: modules.healingCourse.pct >= 0.6,
-                    detail: nextCase?.id ? `${modules.healingCourse.answered}/${modules.healingCourse.total}` : "—",
-                  },
-                  {
-                    label: "Current Status",
-                    done: modules.currentStatus.pct >= 0.6,
-                    detail: nextCase?.id ? `${modules.currentStatus.answered}/${modules.currentStatus.total}` : "—",
-                  },
-                ] as const).map((item) => (
-                  <div key={item.label} className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <span
-                        className={`inline-flex h-6 w-6 items-center justify-center rounded-lg border ${
-                          nextCase?.id && item.done
-                            ? "border-emerald-300/30 bg-emerald-300/10 text-emerald-200"
-                            : "border-white/10 bg-white/5 text-slate-300/70"
-                        }`}
-                        aria-hidden="true"
-                      >
-                        {nextCase?.id && item.done ? (
-                          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                        ) : (
-                          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M12 6v6l4 2" strokeLinecap="round" strokeLinejoin="round" />
-                            <path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                        )}
-                      </span>
-                      <div>
-                        <div className="text-sm font-medium text-white">{item.label}</div>
-                        <div className="text-xs text-slate-300/70">{item.detail}</div>
-                      </div>
-                    </div>
-                    {nextCase?.id && !item.done && (
-                      <span className="text-xs font-medium text-cyan-200/80">In progress</span>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              {nextCase?.id && (
-                <div className="mt-6 flex flex-col sm:flex-row gap-3">
-                  <Link
-                    href={`/cases/${nextCase.id}/patient/questions`}
-                    className="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-950 bg-gradient-to-r from-cyan-300 to-emerald-300 hover:from-cyan-200 hover:to-emerald-200 transition-colors"
-                  >
-                    Complete Intelligence Questions
-                  </Link>
-                  <Link
-                    href={`/cases/${nextCase.id}/patient/photos`}
-                    className="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-200 border border-white/15 bg-white/5 hover:bg-white/10 backdrop-blur transition-colors"
-                  >
-                    Add photos
-                  </Link>
-                </div>
-              )}
-            </section>
+          <div className="flex flex-col gap-6 lg:col-span-5">
+            <PatientDashboardCompletionCard
+              nextCaseId={nextCase?.id ?? null}
+              completionPct={completionPct}
+              hasAnyCaseData={hasAnyCaseData}
+              patientPhotoCount={patientPhotoCount}
+              photosTarget={PHOTOS_TARGET}
+              required={required}
+              modules={{
+                graftHandling: modules.graftHandling,
+                healingCourse: modules.healingCourse,
+                currentStatus: modules.currentStatus,
+              }}
+            />
 
             {graftIntegrityInitial ? (
               <GraftIntegrityCard
@@ -395,194 +239,17 @@ export default async function PatientDashboardPage() {
                 initialEstimate={(graftIntegrityInitial ?? null) as any}
               />
             ) : graftIntegrityRolloutPending ? (
-              <section className="rounded-2xl border border-white/10 bg-white/5 p-6">
-                <h2 className="text-sm font-semibold text-white">Graft Integrity Index</h2>
-                <p className="mt-2 text-xs text-slate-300/80">
-                  This feature is rolling out in your environment. Check back soon.
-                </p>
-              </section>
+              <PatientGraftIntegrityRolloutNotice />
             ) : null}
           </div>
 
-        {/* Unlock preview */}
-        <section id="unlock-preview" className="lg:col-span-7 scroll-mt-24">
-          <div className="flex items-end justify-between gap-4 mb-3">
-            <div>
-              <h2 className="text-sm font-semibold text-white">Preview: what you’ll unlock</h2>
-              <p className="mt-1 text-xs text-slate-200/70">
-                Your inputs activate deeper models—each layer increases audit precision.
-              </p>
-            </div>
-            {nextCase?.id && (
-              <div className="text-xs font-medium text-slate-200/70">
-                Current unlock level: <span className="text-white">{completionPct}%</span>
-              </div>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {unlockCards.map((card) => {
-              const unlocked = nextCase?.id ? completionPct >= card.unlockAt : false;
-              return (
-                <div
-                  key={card.title}
-                  className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]"
-                >
-                  <div className={`relative ${unlocked ? "" : "filter blur-[1.5px]"}`}>
-                    <div className="flex items-start gap-3">
-                      <div className="mt-0.5 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-white shadow-sm border border-white/10">
-                        {card.icon}
-                      </div>
-                      <div>
-                        <div className="text-sm font-semibold text-white">{card.title}</div>
-                        <div className="mt-1 text-xs text-slate-200/70">{card.desc}</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {!unlocked && (
-                    <div className="absolute inset-0 bg-slate-950/55 backdrop-blur-[2px]">
-                      <div className="absolute inset-x-5 bottom-4 flex items-center justify-between gap-3">
-                        <span className="text-xs font-semibold text-white">Locked</span>
-                        <span className="text-xs font-medium text-slate-200/80">Unlock at {card.unlockAt}%</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </section>
+          <PatientDashboardUnlockSection completionPct={completionPct} nextCaseId={nextCase?.id ?? null} />
         </div>
 
-        {/* Why this matters */}
-        <section className="relative mt-6">
-          <div className="flex items-end justify-between gap-4 mb-4">
-            <div>
-              <h2 className="text-lg font-semibold text-white">Why this matters</h2>
-              <p className="mt-1 text-sm text-slate-200/70">Better inputs mean higher-confidence conclusions.</p>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {[
-              {
-                title: "Donor Risk Calibration",
-                desc: "Improves donor safety inference and extraction-pattern interpretation.",
-              },
-              {
-                title: "Graft Survival Modeling",
-                desc: "Transforms handling details into a viability confidence profile.",
-              },
-              {
-                title: "Long-Term Projection",
-                desc: "Sharpens growth-stage interpretation and forecasted outcome stability.",
-              },
-            ].map((c) => (
-              <div
-                key={c.title}
-                className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]"
-              >
-                <div className="text-sm font-semibold text-white">{c.title}</div>
-                <div className="mt-1 text-xs text-slate-200/70">{c.desc}</div>
-              </div>
-            ))}
-          </div>
-        </section>
+        <PatientDashboardWhyMattersSection />
       </section>
 
-      {/* Case history (match premium surface) */}
-      <section className="relative mt-10 overflow-hidden rounded-2xl border border-slate-900 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4 sm:p-6">
-        <div className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-cyan-500/10 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-violet-500/10 blur-3xl" />
-
-        <div className="relative flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-          <div>
-            <h2 className="text-lg font-semibold text-white">My audit requests</h2>
-            <p className="text-sm text-slate-200/70 mt-1">Your cases and audit status history.</p>
-          </div>
-          <CreateCaseButton variant="premium" />
-        </div>
-
-        {(!cases || cases.length === 0) ? (
-          <div className="relative mt-5 rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-8 text-center shadow-[0_0_0_1px_rgba(255,255,255,0.03)]">
-            <p className="text-slate-200/80 mb-4">No cases yet. Create your first one to activate the dashboard.</p>
-            <div className="inline-flex">
-              <CreateCaseButton variant="premium" />
-            </div>
-          </div>
-        ) : (
-          <ul className="relative mt-5 space-y-3">
-            {cases.map((c) => {
-              const status = String(c.status ?? "draft");
-              const canDeleteDraft = status === "draft" && !c.submitted_at;
-              const pdfPath = pdfByCase[c.id];
-              const isReportReady = status === "complete" && pdfPath;
-              const isProcessing = status === "submitted" || status === "processing";
-
-              const statusLabel = isReportReady
-                ? "Report Ready"
-                : status === "complete"
-                  ? "Complete"
-                  : isProcessing
-                    ? "Processing"
-                    : status === "audit_failed"
-                      ? "Audit failed"
-                      : status;
-
-              const pill =
-                isReportReady
-                  ? "border-emerald-400/30 bg-emerald-400/15 text-emerald-100"
-                  : status === "complete"
-                    ? "border-emerald-300/20 bg-emerald-300/10 text-emerald-200"
-                    : isProcessing
-                      ? "border-cyan-300/20 bg-cyan-300/10 text-cyan-200"
-                      : status === "audit_failed"
-                        ? "border-rose-300/20 bg-rose-300/10 text-rose-200"
-                        : "border-white/10 bg-white/5 text-slate-200/80";
-
-              return (
-                <li key={c.id}>
-                  <div className="group relative rounded-2xl border border-white/10 bg-white/5 backdrop-blur hover:bg-white/8 hover:border-white/15 transition-all shadow-[0_0_0_1px_rgba(255,255,255,0.03)]">
-                    <div className="p-4 sm:p-5">
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <Link
-                            href={`/cases/${c.id}`}
-                            className="text-sm sm:text-base font-semibold text-white hover:text-cyan-200 transition-colors"
-                          >
-                            {c.title ?? "Patient Audit"}
-                          </Link>
-                          <div className="mt-1 text-xs text-slate-200/70">
-                            Created: {new Date(c.created_at).toLocaleString()}
-                          </div>
-                        </div>
-                        <span className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold ${pill}`}>
-                          {statusLabel}
-                        </span>
-                      </div>
-
-                      <div className="mt-4">
-                        <PatientNextActionPanel
-                          status={status}
-                          caseId={c.id}
-                          pdfPath={pdfPath}
-                          variant="dashboard"
-                        />
-                      </div>
-                    </div>
-
-                    {canDeleteDraft && (
-                      <div className="px-4 pb-4 sm:px-5 sm:pb-5">
-                        <DeleteDraftCaseButton caseId={c.id} caseTitle={c.title} />
-                      </div>
-                    )}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </section>
+      <PatientDashboardCaseHistorySection cases={cases} pdfByCase={pdfByCase} />
     </div>
   );
 }

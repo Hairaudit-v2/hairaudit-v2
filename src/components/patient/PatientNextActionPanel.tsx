@@ -4,7 +4,7 @@ import Link from "next/link";
 import DownloadReport from "@/app/cases/[caseId]/download-report";
 import ReportShareButton from "@/components/reports/ReportShareButton";
 import { CONTACT_EMAIL } from "@/lib/constants";
-import { REPORT_USE_HINT } from "@/lib/reportSharingCopy";
+import { useI18n } from "@/components/i18n/I18nProvider";
 
 export type PatientNextActionVariant = "dashboard" | "case";
 
@@ -31,6 +31,7 @@ export default function PatientNextActionPanel({
   pdfPath,
   variant = "case",
 }: PatientNextActionPanelProps) {
+  const { t } = useI18n();
   const state = normalizeStatus(status);
   const caseHref = `/cases/${caseId}`;
   const compact = variant === "dashboard";
@@ -46,13 +47,13 @@ export default function PatientNextActionPanel({
         }
       >
         <p className={compact ? "text-xs font-semibold uppercase tracking-wide text-cyan-200/90" : "text-xs font-semibold uppercase tracking-wide text-cyan-200/90"}>
-          Next action
+          {t("dashboard.patient.nextAction.eyebrow")}
         </p>
         <p className={compact ? "mt-1 text-sm font-semibold text-white" : "mt-2 text-base font-semibold text-white"}>
-          Complete your audit
+          {t("dashboard.patient.nextAction.draftTitle")}
         </p>
         <p className={compact ? "mt-0.5 text-xs text-slate-200/80" : "mt-1 text-sm text-slate-200/80"}>
-          Upload photos · Complete questions
+          {t("dashboard.patient.nextAction.draftSubtitle")}
         </p>
         <div className={compact ? "mt-2 flex flex-wrap gap-2" : "mt-4 flex flex-wrap gap-3"}>
           <Link
@@ -63,7 +64,7 @@ export default function PatientNextActionPanel({
                 : "inline-flex items-center rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-950 bg-gradient-to-r from-cyan-300 to-emerald-300 hover:from-cyan-200 hover:to-emerald-200"
             }
           >
-            Upload photos
+            {t("dashboard.patient.uploadPhotos")}
           </Link>
           <Link
             href={`${caseHref}/patient/questions`}
@@ -73,7 +74,7 @@ export default function PatientNextActionPanel({
                 : "inline-flex items-center rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-semibold text-slate-100 hover:bg-white/15"
             }
           >
-            Complete Intake Questions
+            {t("dashboard.patient.completeIntake")}
           </Link>
         </div>
       </div>
@@ -91,13 +92,13 @@ export default function PatientNextActionPanel({
         }
       >
         <p className={compact ? "text-xs font-semibold uppercase tracking-wide text-cyan-200/90" : "text-xs font-semibold uppercase tracking-wide text-cyan-200/90"}>
-          Next action
+          {t("dashboard.patient.nextAction.eyebrow")}
         </p>
         <p className={compact ? "mt-1 text-sm font-semibold text-white" : "mt-2 text-base font-semibold text-white"}>
-          Your report is being prepared
+          {t("dashboard.patient.nextAction.processingTitle")}
         </p>
         <p className={compact ? "mt-0.5 text-xs text-slate-200/80" : "mt-1 text-sm text-slate-200/80"}>
-          We are processing your audit. You will be notified when your report is ready.
+          {t("dashboard.patient.nextAction.processingBody")}
         </p>
         <div className={compact ? "mt-2" : "mt-4"}>
           <Link
@@ -108,7 +109,7 @@ export default function PatientNextActionPanel({
                 : "text-sm font-medium text-cyan-200 hover:text-cyan-100"
             }
           >
-            Return to dashboard
+            {t("dashboard.patient.nextAction.returnToDashboard")}
           </Link>
         </div>
       </div>
@@ -126,10 +127,10 @@ export default function PatientNextActionPanel({
         }
       >
         <p className={compact ? "text-xs font-semibold uppercase tracking-wide text-emerald-200/90" : "text-xs font-semibold uppercase tracking-wide text-emerald-200/90"}>
-          Next action
+          {t("dashboard.patient.nextAction.eyebrow")}
         </p>
         <p className={compact ? "mt-1 text-sm font-semibold text-white" : "mt-2 text-base font-semibold text-white"}>
-          Your report is ready
+          {t("dashboard.patient.nextAction.readyTitle")}
         </p>
         <div className={compact ? "mt-2 flex flex-wrap items-center gap-2" : "mt-4 flex flex-wrap items-center gap-3"}>
           <Link
@@ -140,12 +141,14 @@ export default function PatientNextActionPanel({
                 : "inline-flex items-center rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-950 bg-gradient-to-r from-cyan-300 to-emerald-300 hover:from-cyan-200 hover:to-emerald-200"
             }
           >
-            View Report
+            {t("dashboard.reports.viewReport")}
           </Link>
-          <DownloadReport pdfPath={pdfPath} label="Download PDF" />
+          <DownloadReport pdfPath={pdfPath} label={t("dashboard.reports.downloadPdf")} />
           <ReportShareButton caseId={caseId} variant={compact ? "compact" : "default"} />
         </div>
-        <p className={compact ? "mt-2 text-xs text-slate-400/90" : "mt-3 text-xs text-slate-400/90"}>{REPORT_USE_HINT}</p>
+        <p className={compact ? "mt-2 text-xs text-slate-400/90" : "mt-3 text-xs text-slate-400/90"}>
+          {t("dashboard.reports.shareHint")}
+        </p>
       </div>
     );
   }
@@ -161,12 +164,14 @@ export default function PatientNextActionPanel({
         }
       >
         <p className={compact ? "text-xs font-semibold uppercase tracking-wide text-emerald-200/90" : "text-xs font-semibold uppercase tracking-wide text-emerald-200/90"}>
-          Next action
+          {t("dashboard.patient.nextAction.eyebrow")}
         </p>
         <p className={compact ? "mt-1 text-sm font-semibold text-white" : "mt-2 text-base font-semibold text-white"}>
-          Your audit is complete
+          {t("dashboard.patient.nextAction.completeNoPdfTitle")}
         </p>
-        <p className={compact ? "mt-1.5 text-xs text-slate-400/90" : "mt-2 text-xs text-slate-400/90"}>{REPORT_USE_HINT}</p>
+        <p className={compact ? "mt-1.5 text-xs text-slate-400/90" : "mt-2 text-xs text-slate-400/90"}>
+          {t("dashboard.reports.shareHint")}
+        </p>
         <div className={compact ? "mt-2" : "mt-4"}>
           <Link
             href={caseHref}
@@ -176,7 +181,7 @@ export default function PatientNextActionPanel({
                 : "inline-flex items-center rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-950 bg-gradient-to-r from-cyan-300 to-emerald-300 hover:from-cyan-200 hover:to-emerald-200"
             }
           >
-            View Report
+            {t("dashboard.reports.viewReport")}
           </Link>
         </div>
       </div>
@@ -194,13 +199,13 @@ export default function PatientNextActionPanel({
         }
       >
         <p className={compact ? "text-xs font-semibold uppercase tracking-wide text-amber-200/90" : "text-xs font-semibold uppercase tracking-wide text-amber-200/90"}>
-          Next action
+          {t("dashboard.patient.nextAction.eyebrow")}
         </p>
         <p className={compact ? "mt-1 text-sm font-semibold text-white" : "mt-2 text-base font-semibold text-white"}>
-          We were unable to complete this audit
+          {t("dashboard.patient.nextAction.failedTitle")}
         </p>
         <p className={compact ? "mt-0.5 text-xs text-slate-200/80" : "mt-1 text-sm text-slate-200/80"}>
-          Please contact support or try resubmitting your case materials.
+          {t("dashboard.patient.nextAction.failedBody")}
         </p>
         <div className={compact ? "mt-2 flex flex-wrap gap-2" : "mt-4 flex flex-wrap gap-3"}>
           <Link
@@ -211,7 +216,7 @@ export default function PatientNextActionPanel({
                 : "inline-flex items-center rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-semibold text-slate-100 hover:bg-white/15"
             }
           >
-            Return to dashboard
+            {t("dashboard.patient.nextAction.returnToDashboard")}
           </Link>
           <a
             href={`mailto:${CONTACT_EMAIL}`}
@@ -221,7 +226,7 @@ export default function PatientNextActionPanel({
                 : "inline-flex items-center rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-950 bg-gradient-to-r from-amber-300 to-cyan-300 hover:from-amber-200 hover:to-cyan-200"
             }
           >
-            Contact support
+            {t("dashboard.patient.nextAction.contactSupport")}
           </a>
         </div>
       </div>

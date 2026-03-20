@@ -63,9 +63,14 @@
 
 | Location | Examples | Tag | Notes |
 |----------|----------|-----|-------|
-| `patient/page.tsx` | Sections beyond `PatientDashboardI18nIntro` | **later** | Very large file; module-by-module |
-| `GraftIntegrityCard`, `DeleteDraftCaseButton` | Labels | **later** | — |
-| `patient/reports/page.tsx` | List row chrome (if any hardcoded) | **later** | Keep report content out of scope |
+| `patient/page.tsx` | Data fetching, orchestration | — | Heavy UI moved to `components/patient/PatientDashboard*` clients (**batch 6A**) |
+| `PatientDashboardCompletionCard`, `UnlockSection`, `WhyMattersSection`, `CaseHistorySection`, `GraftIntegrityRolloutNotice` | Dashboard sections | **done (batch 6A)** | `dashboard.patient.completion`, `unlock`, `whyMatters`, `caseHistory`, `graftIntegrity.rollout*` |
+| `PatientNextActionPanel` | Next-action states | **done (batch 6A)** | `dashboard.patient.nextAction*`, `dashboard.reports.shareHint`, `viewReport`, `downloadPdf` |
+| `GraftIntegrityCard` | Card chrome, empty/loading, static disclaimers | **done (batch 6A)** | `graftIntegrity.*`; API-fed text (`ai_notes`, limitations) unchanged |
+| `DeleteDraftCaseButton` | Confirm, labels | **done (batch 6A)** | `dashboard.patient.deleteDraft.*` |
+| `PatientReportsCompletedCaseList` | Completed-case list chrome | **done (batch 6A)** | `dashboard.reports.*` row strings + `shareHint` |
+| `download-report.tsx` | Busy label | **done (batch 6A)** | `dashboard.reports.downloadPreparing` |
+| `cases/.../patient/questions`, deep intake forms | Form copy | **later** | — |
 
 ---
 
@@ -128,4 +133,8 @@
 1. **`PortalPlaceholderPanel`** + **`ClinicPortalPlaceholder`** — clinic settings / benchmarking / training placeholders: shared badge `dashboard.shared.comingSoonBadge`; clinic chrome keys `placeholderBackToOverview`, `placeholderManageProfile`, `placeholderInvitedContributions`; per-page copy under `dashboard.clinic.placeholders.*`.
 2. **`DoctorComingSoon`** + **`DoctorComingSoonPlaceholder`** — eyebrow + back link; placeholder pages (public profile, training, defaults, reports hub, upload) under `dashboard.doctor.placeholders.*` (+ `common.goToOverview` for shared secondary CTA).
 
-**Follow-up (later):** clinic **`layout.tsx`** server nav labels, **patient `page.tsx`** modules, **login/auth** copy, **`ClinicProfileBuilder`** / heavy profile surfaces.
+## Batch 6A (implemented)
+
+Patient portal: next-action panel, delete-draft control, graft integrity card UI chrome (not API bodies), completion / unlock / why-matters / case-history sections via client components, completed-reports list chrome, download button busy state. Keys under **`dashboard.patient.*`** and extended **`dashboard.reports.*`** (aligned `en` / `es`).
+
+**Follow-up (later):** clinic **`layout.tsx`** server nav labels, **patient intake/forms** module-by-module, **login/auth** copy, **`ClinicProfileBuilder`** / heavy profile surfaces.

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useI18n } from "@/components/i18n/I18nProvider";
 
 export default function DownloadReport({
   pdfPath,
@@ -9,6 +10,7 @@ export default function DownloadReport({
   pdfPath: string;
   label?: string;
 }) {
+  const { t } = useI18n();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -35,7 +37,7 @@ export default function DownloadReport({
         disabled={busy}
         className="rounded-lg border border-cyan-300/30 bg-cyan-300/15 px-3 py-2 text-sm font-medium text-cyan-100 hover:bg-cyan-300/25 disabled:opacity-60"
       >
-        {busy ? "Preparing..." : label}
+        {busy ? t("dashboard.reports.downloadPreparing") : label}
       </button>
       {err && <p className="mt-2 text-sm text-red-600">❌ {err}</p>}
     </div>

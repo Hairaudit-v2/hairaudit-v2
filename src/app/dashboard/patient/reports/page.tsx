@@ -1,13 +1,10 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import DownloadReport from "@/app/cases/[caseId]/download-report";
-import ReportShareButton from "@/components/reports/ReportShareButton";
 import { BENCHMARKING_GLOBAL_STANDARDS } from "@/lib/benchmarkingCopy";
-import { REPORT_USE_HINT } from "@/lib/reportSharingCopy";
 import PatientReportsI18nHeader from "@/components/i18n/PatientReportsI18nHeader";
 import PatientReportsI18nEmpty from "@/components/i18n/PatientReportsI18nEmpty";
+import PatientReportsCompletedCaseList from "@/components/patient/PatientReportsCompletedCaseList";
 
 export default async function PatientReportsPage() {
   const supabase = await createSupabaseAuthServerClient();
@@ -49,59 +46,7 @@ export default async function PatientReportsPage() {
         {completedCases.length === 0 ? (
           <PatientReportsI18nEmpty />
         ) : (
-          <ul className="relative mt-6 space-y-3">
-            {completedCases.map((c) => {
-              const pdfPath = pdfByCase[c.id];
-              const isReportReady = Boolean(pdfPath);
-
-              return (
-                <li key={c.id}>
-                  <div className="group relative rounded-2xl border border-white/10 bg-white/5 backdrop-blur hover:bg-white/8 hover:border-white/15 transition-all shadow-[0_0_0_1px_rgba(255,255,255,0.03)]">
-                    <div className="p-4 sm:p-5">
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <Link
-                            href={`/cases/${c.id}`}
-                            className="text-sm sm:text-base font-semibold text-white hover:text-cyan-200 transition-colors"
-                          >
-                            {c.title ?? "Patient Audit"}
-                          </Link>
-                          <div className="mt-1 text-xs text-slate-200/70">
-                            Created: {new Date(c.created_at).toLocaleString()}
-                          </div>
-                        </div>
-                        <span
-                          className={
-                            isReportReady
-                              ? "shrink-0 rounded-full border border-emerald-400/30 bg-emerald-400/15 px-2.5 py-1 text-xs font-semibold text-emerald-100"
-                              : "shrink-0 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-2.5 py-1 text-xs font-semibold text-emerald-200"
-                          }
-                        >
-                          {isReportReady ? "Report Ready" : "Complete"}
-                        </span>
-                      </div>
-
-                      {isReportReady && (
-                        <>
-                          <div className="mt-4 flex flex-wrap items-center gap-3">
-                            <Link
-                              href={`/cases/${c.id}`}
-                              className="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-950 bg-gradient-to-r from-cyan-300 to-emerald-300 hover:from-cyan-200 hover:to-emerald-200 transition-colors shadow-sm"
-                            >
-                              View Report
-                            </Link>
-                            <DownloadReport pdfPath={pdfPath} label="Download PDF" />
-                            <ReportShareButton caseId={c.id} variant="default" />
-                          </div>
-                          <p className="mt-2 text-xs text-slate-400/90">{REPORT_USE_HINT}</p>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+          <PatientReportsCompletedCaseList cases={completedCases} pdfByCase={pdfByCase} />
         )}
       </section>
     </div>

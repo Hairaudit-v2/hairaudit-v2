@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { isMissingFeatureError } from "@/lib/db/isMissingFeatureError";
 
@@ -52,38 +53,16 @@ function formatPctRange(min: number | null, max: number | null): string {
     return `${sign}${n}%`;
   };
   if (min === null && max === null) return "—";
-  if (min !== null && max !== null) return `${fmt(min)} to ${fmt(max)}`;
+  if (min !== null && max !== null) return `${fmt(min)}–${fmt(max)}`;
   if (min !== null) return `≥ ${fmt(min)}`;
   return `≤ ${fmt(max as number)}`;
-}
-
-function titleCase(s: string) {
-  return s.slice(0, 1).toUpperCase() + s.slice(1);
-}
-
-function statusUi(status: AuditorStatus): { label: string; pill: string } {
-  if (status === "approved") {
-    return { label: "Approved", pill: "border-emerald-300/20 bg-emerald-300/10 text-emerald-200" };
-  }
-  if (status === "needs_more_evidence") {
-    return { label: "Needs More Evidence", pill: "border-amber-300/20 bg-amber-300/10 text-amber-200" };
-  }
-  if (status === "rejected") {
-    return { label: "Rejected", pill: "border-rose-300/20 bg-rose-300/10 text-rose-200" };
-  }
-  return { label: "Pending Auditor Review", pill: "border-cyan-300/20 bg-cyan-300/10 text-cyan-200" };
-}
-
-function confidenceUi(label: ConfidenceLabel): { label: string; pill: string } {
-  if (label === "high") return { label: "High", pill: "border-emerald-300/20 bg-emerald-300/10 text-emerald-200" };
-  if (label === "low") return { label: "Low", pill: "border-amber-300/20 bg-amber-300/10 text-amber-200" };
-  return { label: "Medium", pill: "border-cyan-300/20 bg-cyan-300/10 text-cyan-200" };
 }
 
 export default function GraftIntegrityCard(props: {
   caseId: string | null;
   initialEstimate?: GraftIntegrityEstimateRow | null;
 }) {
+  const { t } = useI18n();
   const { caseId } = props;
   const [estimate, setEstimate] = useState<GraftIntegrityEstimateRow | null>(props.initialEstimate ?? null);
   const [loading, setLoading] = useState<boolean>(Boolean(caseId) && !props.initialEstimate);
@@ -182,8 +161,26 @@ export default function GraftIntegrityCard(props: {
   if (featureUnavailable) return null;
 
   const status = estimate?.auditor_status ?? "pending";
-  const statusBadge = statusUi(status);
-  const confBadge = confidenceUi(estimate?.confidence_label ?? "medium");
+  const statusBadge = (() => {
+    if (status === "approved") {
+      return { label: t("dashboard.patient.graftIntegrity.statusApproved"), pill: "border-emerald-300/20 bg-emerald-300/10 text-emerald-200" };
+    }
+    if (status === "needs_more_evidence") {
+      return { label: t("dashboard.patient.graftIntegrity.statusNeedsEvidence"), pill: "border-amber-300/20 bg-amber-300/10 text-amber-200" };
+    }
+    if (status === "rejected") {
+      return { label: t("dashboard.patient.graftIntegrity.statusRejected"), pill: "border-rose-300/20 bg-rose-300/10 text-rose-200" };
+    }
+    return { label: t("dashboard.patient.graftIntegrity.statusPending"), pill: "border-cyan-300/20 bg-cyan-300/10 text-cyan-200" };
+  })();
+  const confLabel = estimate?.confidence_label ?? "medium";
+  const confBadge = (() => {
+    if (confLabel === "high")
+      return { label: t("dashboard.patient.graftIntegrity.confidenceHigh"), pill: "border-emerald-300/20 bg-emerald-300/10 text-emerald-200" };
+    if (confLabel === "low")
+      return { label: t("dashboard.patient.graftIntegrity.confidenceLow"), pill: "border-amber-300/20 bg-amber-300/10 text-amber-200" };
+    return { label: t("dashboard.patient.graftIntegrity.confidenceMedium"), pill: "border-cyan-300/20 bg-cyan-300/10 text-cyan-200" };
+  })();
 
   const showNeedsEvidence = status === "needs_more_evidence";
   // Only approved: high-impact claims (ranges, variance) must never surface to patients when pending/rejected/needs_more_evidence
@@ -212,10 +209,8 @@ export default function GraftIntegrityCard(props: {
               </svg>
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-white">Graft Integrity Index™</h2>
-              <p className="mt-0.5 text-xs text-slate-300/80">
-                Claimed vs visually supportable graft ranges (probabilistic).
-              </p>
+              <h2 className="text-sm font-semibold text-white">{t("dashboard.patient.graftIntegrity.title")}</h2>
+              <p className="mt-0.5 text-xs leading-relaxed text-slate-300/80">{t("dashboard.patient.graftIntegrity.subtitle")}</p>
             </div>
           </div>
         </div>
@@ -225,14 +220,14 @@ export default function GraftIntegrityCard(props: {
             {statusBadge.label}
           </span>
           <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${confBadge.pill}`}>
-            Confidence: {confBadge.label}
+            {t("dashboard.patient.graftIntegrity.confidencePrefix")} {confBadge.label}
           </span>
         </div>
       </div>
 
       <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-          <div className="text-xs font-medium text-slate-200/70">Claimed grafts</div>
+          <div className="text-xs font-medium text-slate-200/70">{t("dashboard.patient.graftIntegrity.claimedGrafts")}</div>
           <div className="mt-1 text-lg font-semibold text-white tabular-nums">
             {estimate?.claimed_grafts !== null && estimate?.claimed_grafts !== undefined
               ? formatInt(estimate.claimed_grafts)
@@ -241,30 +236,30 @@ export default function GraftIntegrityCard(props: {
         </div>
 
         <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-          <div className="text-xs font-medium text-slate-200/70">Estimated extracted</div>
+          <div className="text-xs font-medium text-slate-200/70">{t("dashboard.patient.graftIntegrity.estimatedExtracted")}</div>
           <div className="mt-1 text-lg font-semibold text-white tabular-nums">
             {estimate && isApproved ? formatRange(estimate.estimated_extracted_min, estimate.estimated_extracted_max) : "—"}
           </div>
         </div>
 
         <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-          <div className="text-xs font-medium text-slate-200/70">Estimated implanted</div>
+          <div className="text-xs font-medium text-slate-200/70">{t("dashboard.patient.graftIntegrity.estimatedImplanted")}</div>
           <div className="mt-1 text-lg font-semibold text-white tabular-nums">
             {estimate && isApproved ? formatRange(estimate.estimated_implanted_min, estimate.estimated_implanted_max) : "—"}
           </div>
         </div>
 
         <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-          <div className="text-xs font-medium text-slate-200/70">Variance vs claimed</div>
+          <div className="text-xs font-medium text-slate-200/70">{t("dashboard.patient.graftIntegrity.varianceVsClaimed")}</div>
           <div className="mt-1 text-sm font-semibold text-white tabular-nums">
             <div>
-              Implanted:{" "}
+              {t("dashboard.patient.graftIntegrity.varianceImplanted")}{" "}
               {estimate && isApproved
                 ? formatPctRange(estimate.variance_claimed_vs_implanted_min_pct, estimate.variance_claimed_vs_implanted_max_pct)
                 : "—"}
             </div>
             <div className="mt-1 text-xs text-slate-200/70">
-              Extracted:{" "}
+              {t("dashboard.patient.graftIntegrity.varianceExtracted")}{" "}
               {estimate && isApproved
                 ? formatPctRange(estimate.variance_claimed_vs_extracted_min_pct, estimate.variance_claimed_vs_extracted_max_pct)
                 : "—"}
@@ -273,14 +268,12 @@ export default function GraftIntegrityCard(props: {
         </div>
       </div>
 
-      <div className="mt-4 text-xs text-slate-300/75">
-        This is an AI-based visual density estimate and not a definitive graft count.
-      </div>
+      <div className="mt-4 text-xs leading-relaxed text-slate-300/75">{t("dashboard.patient.graftIntegrity.aiDisclaimer")}</div>
 
       {evidenceStrength !== null && (
         <div className="mt-3 rounded-xl border border-white/10 bg-white/5 p-4">
           <div className="flex items-center justify-between gap-3">
-            <div className="text-xs font-semibold text-white">Evidence Strength</div>
+            <div className="text-xs font-semibold text-white">{t("dashboard.patient.graftIntegrity.evidenceStrength")}</div>
             <div className="text-xs font-semibold text-slate-200 tabular-nums">{evidenceStrength}/100</div>
           </div>
           <div className="mt-2 h-2 w-full rounded-full bg-white/10 overflow-hidden">
@@ -290,8 +283,8 @@ export default function GraftIntegrityCard(props: {
             />
           </div>
           {evidenceStrength < 60 && (
-            <div className="mt-2 text-xs text-slate-200/80">
-              Evidence is currently limited. Adding clearer donor/recipient photos helps narrow the range.
+            <div className="mt-2 text-xs leading-relaxed text-slate-200/80">
+              {t("dashboard.patient.graftIntegrity.evidenceLimited")}
               {recommendedMissing.length > 0 && (
                 <ul className="mt-2 space-y-1">
                   {recommendedMissing.map((x, i) => (
@@ -308,24 +301,24 @@ export default function GraftIntegrityCard(props: {
       )}
 
       {loading && (
-        <div className="mt-4 text-xs text-slate-200/70">Loading estimate…</div>
+        <div className="mt-4 text-xs text-slate-200/70">{t("dashboard.patient.graftIntegrity.loading")}</div>
       )}
 
       {!loading && caseId && !estimate && (
-        <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-slate-200/80">
-          No estimate is available yet for your latest submitted case. Once enough donor/recipient photos are available, the system will generate a conservative range with explicit limitations.
+        <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-4 text-sm leading-relaxed text-slate-200/80">
+          {t("dashboard.patient.graftIntegrity.emptyState")}
         </div>
       )}
 
       {!isApproved && status === "pending" && (
-        <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-slate-200/80">
-          Your estimate is being prepared and reviewed. You’ll see audited ranges once review is complete.
+        <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-4 text-sm leading-relaxed text-slate-200/80">
+          {t("dashboard.patient.graftIntegrity.pendingReview")}
         </div>
       )}
 
       {estimate?.auditor_status === "rejected" && estimate?.ai_notes && (
         <div className="mt-4 rounded-xl border border-rose-300/15 bg-rose-300/5 p-4">
-          <div className="text-xs font-semibold text-rose-200">Explanation</div>
+          <div className="text-xs font-semibold text-rose-200">{t("dashboard.patient.graftIntegrity.explanation")}</div>
           <div className="mt-1 text-xs text-slate-200/80">
             {publicNote || estimate.ai_notes}
           </div>
@@ -336,9 +329,9 @@ export default function GraftIntegrityCard(props: {
         <div className="mt-4 rounded-xl border border-amber-300/15 bg-amber-300/5 p-4">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <div className="text-xs font-semibold text-amber-200">Recommended next step</div>
-              <div className="mt-1 text-xs text-slate-200/80">
-                Upload clearer donor/recipient photos to narrow the range and increase confidence.
+              <div className="text-xs font-semibold text-amber-200">{t("dashboard.patient.graftIntegrity.recommendedNextStep")}</div>
+              <div className="mt-1 text-xs leading-relaxed text-slate-200/80">
+                {t("dashboard.patient.graftIntegrity.needsEvidenceBody")}
               </div>
               {publicNote && (
                 <div className="mt-2 text-xs text-slate-200/80">{publicNote}</div>
@@ -349,7 +342,7 @@ export default function GraftIntegrityCard(props: {
                 href={`/cases/${caseId}/patient/photos`}
                 className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-xs font-semibold text-slate-950 bg-gradient-to-r from-cyan-300 to-emerald-300 hover:from-cyan-200 hover:to-emerald-200 transition-colors"
               >
-                Upload recommended photos
+                {t("dashboard.patient.graftIntegrity.uploadRecommendedPhotos")}
               </Link>
             )}
           </div>
@@ -369,10 +362,12 @@ export default function GraftIntegrityCard(props: {
 
       {estimate?.ai_notes && isApproved && (
         <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-4">
-          <div className="text-xs font-semibold text-white">AI notes</div>
+          <div className="text-xs font-semibold text-white">{t("dashboard.patient.graftIntegrity.aiNotesHeading")}</div>
           <div className="mt-1 text-xs text-slate-200/80">{estimate.ai_notes}</div>
           {estimate.updated_at && (
-            <div className="mt-2 text-[11px] text-slate-300/60">Updated {titleCase(new Date(estimate.updated_at).toLocaleString())}</div>
+            <div className="mt-2 text-[11px] text-slate-300/60">
+              {t("dashboard.patient.graftIntegrity.updatedPrefix")} {new Date(estimate.updated_at).toLocaleString()}
+            </div>
           )}
         </div>
       )}
