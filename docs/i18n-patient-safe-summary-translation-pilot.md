@@ -187,3 +187,38 @@ Guidelines used in this pass:
 - no technical/internal trace details shown to patients
 - explicit reminder that English source remains authoritative
 - clear note that translation availability can vary by case/review state
+
+## Batch 23 translation queue/dashboard visibility
+
+Batch 23 adds a lightweight auditor dashboard queue for patient-safe summary translation pilot work.
+
+Surface:
+
+- `src/components/dashboard/PatientSafeSummaryTranslationQueuePanel.tsx`
+- rendered from `src/app/dashboard/auditor/page.tsx`
+
+Scope is intentionally limited to:
+
+- latest report per case
+- section `patientSafeSummaryNarrative`
+- locale `es`
+
+Queue statuses:
+
+- `missing_translation`
+- `generated_unreviewed`
+- `approved`
+- `rejected`
+- `stale`
+
+Filter/sort controls:
+
+- status
+- review status
+- stale/current freshness
+- updated newest/oldest
+
+Actionability:
+
+- each queue row links to the existing case-level pilot ops surface (`/cases/[caseId]`)
+- no duplication of all per-case controls in the dashboard table

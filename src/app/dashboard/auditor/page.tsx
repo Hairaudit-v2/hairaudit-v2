@@ -18,6 +18,12 @@ import AuditVolumeChart from "@/components/dashboard/AuditVolumeChart";
 import AuditStatusChart from "@/components/dashboard/AuditStatusChart";
 import AuditPriorityChart from "@/components/dashboard/AuditPriorityChart";
 import OperationalAuditsTable from "@/components/dashboard/OperationalAuditsTable";
+import PatientSafeSummaryTranslationQueuePanel from "@/components/dashboard/PatientSafeSummaryTranslationQueuePanel";
+import {
+  derivePatientSafeSummaryQueueStatus,
+  shouldFallbackToEnglishInQueue,
+  type PatientSafeSummaryTranslationQueueItem,
+} from "@/lib/reports/patientSafeSummaryTranslationQueue";
 
 export const revalidate = 60;
 
@@ -43,7 +49,9 @@ type CaseDashboardRow = {
 };
 
 type ReportDashboardRow = {
+  id?: string;
   case_id: string;
+  version?: number | null;
   pdf_path: string | null;
   status: string | null;
   created_at: string;
@@ -67,6 +75,18 @@ type GiiDashboardRow = {
   audited_by?: string | null;
   audited_at?: string | null;
   created_at?: string | null;
+};
+
+type NarrativeTranslationDashboardRow = {
+  report_id: string;
+  case_id: string;
+  report_version: number;
+  target_locale: "es";
+  translation_status: "not_requested" | "pending_generation" | "generated_unreviewed" | "reviewed_approved" | "stale_due_to_source_change";
+  review_status: "not_reviewed" | "review_required" | "approved" | "rejected";
+  updated_at: string | null;
+  translated_at: string | null;
+  reviewed_at: string | null;
 };
 
 function parseRange(value: string | undefined): DashboardRange {
@@ -128,7 +148,7 @@ export default async function AuditorDashboardPage({
 
   const { data: allReports } = await admin
     .from("reports")
-    .select("case_id, pdf_path, status, created_at, auditor_review_status, summary")
+    .select("id, case_id, version, pdf_path, status, created_at, auditor_review_status, summary")
     .in("case_id", caseIds.length ? caseIds : ["00000000-0000-0000-0000-000000000000"])
     .order("created_at", { ascending: false });
 
@@ -136,7 +156,9 @@ export default async function AuditorDashboardPage({
     string,
     {
       case_id: string;
+      id?: string;
       pdf_path: string | null;
+      version?: number | null;
       status: string | null;
       created_at: string;
       auditor_review_status?: string | null;
@@ -148,6 +170,8 @@ export default async function AuditorDashboardPage({
     if (!reportByCase.has(cid)) {
       reportByCase.set(cid, {
         case_id: cid,
+          id: (r as { id?: string }).id ?? undefined,
+          version: (r as { version?: number | null }).version ?? null,
         pdf_path: r.pdf_path ?? null,
         status: r.status ?? null,
         created_at: r.created_at,
@@ -266,6 +290,64 @@ export default async function AuditorDashboardPage({
     getRecentOperationalAudits(range),
   ]);
 
+  const latestReportRows = Array.from(reportByCase.values());
+  const latestReportIds = latestReportRows.map((r) => String((r as { id?: string; report_id?: string }).id ?? "")).filter(Boolean);
+  const reportIdByCaseId = new Map<string, string>();
+  for (const r of latestReportRows as Array<ReportDashboardRow & { id?: string }>) {
+    if (r.case_id && r.id) reportIdByCaseId.set(String(r.case_id), String(r.id));
+  }
+
+  let translationRows: NarrativeTranslationDashboardRow[] = [];
+  if (latestReportIds.length > 0) {
+    try {
+      const trRes = await admin
+        .from("report_narrative_translations")
+        .select("report_id, case_id, report_version, target_locale, translation_status, review_status, updated_at, translated_at, reviewed_at")
+        .in("report_id", latestReportIds)
+        .eq("section_id", "patientSafeSummaryNarrative")
+        .eq("target_locale", "es");
+      if (!trRes.error) {
+        translationRows = (trRes.data ?? []) as NarrativeTranslationDashboardRow[];
+      }
+    } catch {
+      // optional pilot table may not exist in all environments
+    }
+  }
+
+  const translationByReportId = new Map<string, NarrativeTranslationDashboardRow>();
+  for (const row of translationRows) {
+    translationByReportId.set(String(row.report_id), row);
+  }
+
+  const translationQueueItems: PatientSafeSummaryTranslationQueueItem[] = [];
+  for (const c of cases) {
+    const caseId = String(c.id);
+    const latestReportId = reportIdByCaseId.get(caseId);
+    if (!latestReportId) continue;
+    const row = translationByReportId.get(latestReportId);
+    const latestReport = reportByCase.get(caseId) as { version?: number | null } | undefined;
+    const hasTranslation = !!row;
+    const status = derivePatientSafeSummaryQueueStatus({
+      hasTranslation,
+      translationStatus: row?.translation_status ?? null,
+      reviewStatus: row?.review_status ?? null,
+    });
+    translationQueueItems.push({
+      caseId,
+      caseTitle: String(c.title ?? `Case ${caseId.slice(0, 8)}`),
+      reportId: latestReportId,
+      reportVersion: Number(row?.report_version ?? latestReport?.version ?? 0),
+      targetLocale: "es",
+      status,
+      translationStatus: row?.translation_status ?? "not_available",
+      reviewStatus: row?.review_status ?? "not_available",
+      fallbackCurrentlyEnglish: shouldFallbackToEnglishInQueue(status),
+      updatedAt: row?.updated_at ?? null,
+      translatedAt: row?.translated_at ?? null,
+      reviewedAt: row?.reviewed_at ?? null,
+    });
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-6 py-2">
       <section className="rounded-xl border border-amber-200 bg-amber-50/80 p-4 shadow-sm">
@@ -330,6 +412,8 @@ export default async function AuditorDashboardPage({
         <OperationalAuditsTable title="Audits Needing Manual Input" rows={operationalAudits.manualInputAudits} />
         <OperationalAuditsTable title="Stuck / Failed Audits" rows={operationalAudits.stuckOrFailedAudits} />
       </div>
+
+      <PatientSafeSummaryTranslationQueuePanel items={translationQueueItems} />
 
       <AuditorDashboardClient
         cases={casesForClient}

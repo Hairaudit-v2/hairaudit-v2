@@ -35,6 +35,10 @@ import {
   validatePatientSafeSummaryReviewAction,
 } from "@/lib/reports/patientSafeSummaryNarrativeTranslation";
 import { resolvePatientSafeSummaryDisclosureState } from "@/lib/reports/patientSafeSummaryDisclosure";
+import {
+  derivePatientSafeSummaryQueueStatus,
+  filterAndSortPatientSafeSummaryQueue,
+} from "@/lib/reports/patientSafeSummaryTranslationQueue";
 import { createLocalizedPageMetadata, localeFromAcceptLanguage } from "@/lib/seo/localeMetadata";
 import {
   buildLocalizedPublicPathname,
@@ -449,6 +453,88 @@ test("resolvePatientSafeSummaryDisclosureState: Spanish fallback shows translati
     fallbackReason: "generation_failed",
   });
   assert.equal(state, "english_source_translation_unavailable");
+});
+
+test("derivePatientSafeSummaryQueueStatus: maps pilot translation workflow states", () => {
+  assert.equal(derivePatientSafeSummaryQueueStatus({ hasTranslation: false }), "missing_translation");
+  assert.equal(
+    derivePatientSafeSummaryQueueStatus({
+      hasTranslation: true,
+      translationStatus: "stale_due_to_source_change",
+      reviewStatus: "approved",
+    }),
+    "stale"
+  );
+  assert.equal(
+    derivePatientSafeSummaryQueueStatus({
+      hasTranslation: true,
+      translationStatus: "reviewed_approved",
+      reviewStatus: "approved",
+    }),
+    "approved"
+  );
+  assert.equal(
+    derivePatientSafeSummaryQueueStatus({
+      hasTranslation: true,
+      translationStatus: "generated_unreviewed",
+      reviewStatus: "rejected",
+    }),
+    "rejected"
+  );
+});
+
+test("filterAndSortPatientSafeSummaryQueue: filters stale and sorts oldest first", () => {
+  const rows = filterAndSortPatientSafeSummaryQueue(
+    [
+      {
+        caseId: "c1",
+        caseTitle: "Case One",
+        reportId: "r1",
+        reportVersion: 1,
+        targetLocale: "es",
+        status: "stale",
+        translationStatus: "stale_due_to_source_change",
+        reviewStatus: "approved",
+        fallbackCurrentlyEnglish: true,
+        updatedAt: "2026-03-20T10:00:00.000Z",
+        translatedAt: null,
+        reviewedAt: null,
+      },
+      {
+        caseId: "c2",
+        caseTitle: "Case Two",
+        reportId: "r2",
+        reportVersion: 1,
+        targetLocale: "es",
+        status: "stale",
+        translationStatus: "stale_due_to_source_change",
+        reviewStatus: "approved",
+        fallbackCurrentlyEnglish: true,
+        updatedAt: "2026-03-18T10:00:00.000Z",
+        translatedAt: null,
+        reviewedAt: null,
+      },
+      {
+        caseId: "c3",
+        caseTitle: "Case Three",
+        reportId: "r3",
+        reportVersion: 1,
+        targetLocale: "es",
+        status: "approved",
+        translationStatus: "reviewed_approved",
+        reviewStatus: "approved",
+        fallbackCurrentlyEnglish: false,
+        updatedAt: "2026-03-19T10:00:00.000Z",
+        translatedAt: null,
+        reviewedAt: null,
+      },
+    ],
+    { status: "stale", freshness: "stale", sort: "updated_asc" }
+  );
+  assert.deepEqual(
+    rows.map((r) => r.caseId),
+    ["c2", "c1"]
+  );
 });
 
 test("formatTemplate: replaces placeholders", () => {
