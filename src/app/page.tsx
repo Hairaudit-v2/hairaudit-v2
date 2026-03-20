@@ -1,9 +1,10 @@
 import nextDynamic from "next/dynamic";
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import OrganizationWebSiteSchema from "@/components/seo/OrganizationWebSiteSchema";
-import { createPageMetadata } from "@/lib/seo/pageMetadata";
+import { createLocalizedPageMetadata, resolvePublicSeoLocale } from "@/lib/seo/localeMetadata";
 import { getHomepageAuthRedirectTarget } from "@/lib/auth/redirects";
 
 const HomePageMarketing = nextDynamic(
@@ -13,12 +14,15 @@ const HomePageMarketing = nextDynamic(
 
 export const revalidate = 600;
 export const dynamic = "force-dynamic";
-export const metadata = createPageMetadata({
-  title: "HairAudit",
-  description:
-    "How good is my Hair Transplant? Get a Free Audit on all aspects of your surgery — based on real surgical standards, not opinions.",
-  pathname: "/",
-});
+
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await resolvePublicSeoLocale();
+  return createLocalizedPageMetadata(locale, {
+    titleKey: "marketing.meta.home.title",
+    descriptionKey: "marketing.meta.home.description",
+    pathname: "/",
+  });
+}
 
 type PageProps = { searchParams?: Promise<Record<string, string | string[] | undefined>> };
 

@@ -159,6 +159,24 @@
     }
   },
   "marketing": {
+    "meta": {
+      "home": {
+        "title": "HairAudit",
+        "description": "¿Qué tal está mi trasplante capilar? Obtenga una auditoría gratuita de todos los aspectos de su cirugía, según estándares quirúrgicos reales, no opiniones."
+      },
+      "howItWorks": {
+        "title": "Cómo funciona | HairAudit",
+        "description": "Descubra cómo HairAudit revisa las fotos de su cirugía con análisis estructurado, revisión experta e informes claros."
+      },
+      "professionals": {
+        "title": "Para profesionales | HairAudit",
+        "description": "Consulte los estándares de HairAudit sobre metodología, puntuación, calidad de la evidencia, participación y marcos de documentación."
+      },
+      "sampleReport": {
+        "title": "Informe de auditoría de ejemplo | HairAudit",
+        "description": "Vista previa de un informe HairAudit premium estilo forense con desgloses de puntuación, análisis de evidencia en imágenes, hallazgos y orientación correctiva."
+      }
+    },
     "shared": {
       "stepEyebrow": "Paso {{n}}",
       "reviewAfterSubmitTitle": "Qué ocurre después de enviar",

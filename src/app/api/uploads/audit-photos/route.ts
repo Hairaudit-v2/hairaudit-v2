@@ -8,12 +8,19 @@ import {
   DOCTOR_PHOTO_SCHEMA,
   PATIENT_PHOTO_SCHEMA,
 } from "@/lib/auditPhotoSchemas";
+import { PATIENT_UPLOAD_CATEGORY_DEFS } from "@/lib/patientPhotoCategoryConfig";
 
 export const runtime = "nodejs";
 
+/** Patient uploads: legacy audit buckets (patient_current_*, any_*) plus all storage keys from shared patient config (preop_*, Stage 2, etc.). */
+const PATIENT_AUDIT_PHOTO_KEYS = new Set([
+  ...PATIENT_PHOTO_SCHEMA.map((c) => c.key),
+  ...PATIENT_UPLOAD_CATEGORY_DEFS.map((d) => d.key),
+]);
+
 const VALID_KEYS: Record<SubmitterType, Set<string>> = {
   doctor: new Set(DOCTOR_PHOTO_SCHEMA.map((c) => c.key)),
-  patient: new Set(PATIENT_PHOTO_SCHEMA.map((c) => c.key)),
+  patient: PATIENT_AUDIT_PHOTO_KEYS,
   clinic: new Set(DOCTOR_PHOTO_SCHEMA.map((c) => c.key)),
 };
 
@@ -22,14 +29,26 @@ function safeName(name: string) {
 }
 
 function getMaxForKey(st: SubmitterType, key: string): number {
-  const schema = st === "patient" ? PATIENT_PHOTO_SCHEMA : DOCTOR_PHOTO_SCHEMA;
-  const def = schema.find((c) => c.key === key);
+  if (st === "patient") {
+    const fromSchema = PATIENT_PHOTO_SCHEMA.find((c) => c.key === key);
+    if (fromSchema) return fromSchema.max;
+    const fromUpload = PATIENT_UPLOAD_CATEGORY_DEFS.find((d) => d.key === key);
+    if (fromUpload) return fromUpload.maxFiles;
+    return 6;
+  }
+  const def = DOCTOR_PHOTO_SCHEMA.find((c) => c.key === key);
   return def?.max ?? 6;
 }
 
 function getAcceptForKey(st: SubmitterType, key: string): string {
-  const schema = st === "patient" ? PATIENT_PHOTO_SCHEMA : DOCTOR_PHOTO_SCHEMA;
-  const def = schema.find((c) => c.key === key);
+  if (st === "patient") {
+    const fromSchema = PATIENT_PHOTO_SCHEMA.find((c) => c.key === key);
+    if (fromSchema?.accept) return fromSchema.accept;
+    const fromUpload = PATIENT_UPLOAD_CATEGORY_DEFS.find((d) => d.key === key);
+    if (fromUpload) return fromUpload.accept;
+    return "image/*";
+  }
+  const def = DOCTOR_PHOTO_SCHEMA.find((c) => c.key === key);
   return def?.accept ?? "image/*";
 }
 

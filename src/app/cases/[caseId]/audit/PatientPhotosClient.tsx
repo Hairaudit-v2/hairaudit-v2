@@ -1,17 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import {
-  PATIENT_PHOTO_CATEGORIES,
-  PatientPhotoCategory,
-  resolveCategoryForValidation,
-} from "@/lib/photoCategories";
+import { PATIENT_PHOTO_CATEGORIES, resolveCategoryForValidation } from "@/lib/photoCategories";
 
 const CATEGORIES = PATIENT_PHOTO_CATEGORIES.map((c) => ({
   key: c.key,
   label: c.title,
   required: c.required,
 }));
+
+type UiPatientPhotoCategory = (typeof CATEGORIES)[number]["key"];
 
 type UploadRow = {
   id: string;
@@ -21,7 +19,7 @@ type UploadRow = {
 };
 
 export default function PatientPhotosClient({ caseId }: { caseId: string }) {
-  const [category, setCategory] = useState(CATEGORIES[0].key);
+  const [category, setCategory] = useState<UiPatientPhotoCategory>(CATEGORIES[0].key);
   const [files, setFiles] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
@@ -116,7 +114,7 @@ export default function PatientPhotosClient({ caseId }: { caseId: string }) {
           id="patient-photo-category"
           name="category"
           value={category}
-          onChange={(e) => setCategory(e.target.value as PatientPhotoCategory)}
+          onChange={(e) => setCategory(e.target.value as UiPatientPhotoCategory)}
           style={{ padding: 10, borderRadius: 10, border: "1px solid #ddd", maxWidth: 420 }}
         >
           {CATEGORIES.map((c) => (

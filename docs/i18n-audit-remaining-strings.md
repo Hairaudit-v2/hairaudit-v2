@@ -165,3 +165,7 @@ Auth and account shell: **`auth.*`** (common, login, auditor, signup, recovery, 
 Public marketing UI (no SEO metadata changes, no locale routes): **`marketing.*`** in `en`/`es` with namespaces `shared`, `home`, `howItWorks`, `professionals`, `sampleReport`. Wired via client modules under `components/marketing/*`, **`ReviewProcessReassurance`**, **`CertifiedClinicsSection`**, and **`ProfessionalsShell`** (nav/footer). Sample report **demo** finding/recommendation body copy remains English; **ES `es.json`:** repaired `account` / `dashboard` nesting and aligned `marketing` + new `sampleReport.correction*` keys.
 
 **Still later (not batch 7):** other static marketing routes (`/about`, `/faq`, program pages), **`professionals/*` article bodies**, **`/professionals/apply`** cards, **`GlobalHairIntelligenceSection`** internal node labels, tier badge spellings in **`CertifiedClinicsSection`**.
+
+## Batch 8 (implemented)
+
+**SEO metadata** for pages already localized in Batch 7: **`marketing.meta.*`** (`title` / `description`) in `en`/`es`. **`createLocalizedPageMetadata`** + **`resolvePublicSeoLocale`** (`src/lib/seo/localeMetadata.ts`): cookie `hairaudit.preferred_language` (mirrored from client via **`syncSeoLocaleCookie`**) then **`Accept-Language`**, default English. **`generateMetadata`** on `/`, `/how-it-works`, `/professionals`, `/sample-report`. Hreflang/localized canonical **not** implemented (same URL); see **`docs/i18n-seo-discoverability.md`**.

@@ -159,6 +159,24 @@
     }
   },
   "marketing": {
+    "meta": {
+      "home": {
+        "title": "HairAudit",
+        "description": "How good is my Hair Transplant? Get a Free Audit on all aspects of your surgery — based on real surgical standards, not opinions."
+      },
+      "howItWorks": {
+        "title": "How It Works | HairAudit",
+        "description": "See how HairAudit reviews surgery photos with structured analysis, expert review, and clear reporting."
+      },
+      "professionals": {
+        "title": "For Professionals | HairAudit",
+        "description": "Review HairAudit standards for methodology, scoring, evidence quality, participation, and documentation frameworks."
+      },
+      "sampleReport": {
+        "title": "Sample Audit Report | HairAudit",
+        "description": "Preview a premium HairAudit forensic-style report with score breakdowns, image evidence analysis, findings, and correction guidance."
+      }
+    },
     "shared": {
       "stepEyebrow": "Step {{n}}",
       "reviewAfterSubmitTitle": "What happens after you submit",

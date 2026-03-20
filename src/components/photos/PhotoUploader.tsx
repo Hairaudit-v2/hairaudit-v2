@@ -17,6 +17,7 @@ import {
   PATIENT_UPLOADER_TIPS,
 } from "@/lib/photoSchemas";
 import UploadedThumb from "@/components/uploads/UploadedThumb";
+import ExtendedPatientPhotoUploadGroups from "@/components/patient/ExtendedPatientPhotoUploadGroups";
 
 type UploadRow = {
   id: string;
@@ -229,6 +230,19 @@ export default function PhotoUploader({
           );
         })}
       </div>
+
+      {submitterType === "patient" && (
+        <ExtendedPatientPhotoUploadGroups
+          locked={isLocked}
+          busyCats={busyCats}
+          uploadsByCategory={uploadsByCategory}
+          onUpload={(cat, files) => {
+            void uploadFiles(cat, files);
+          }}
+          onDeleted={deleteUpload}
+          skin="audit"
+        />
+      )}
 
       {submitterType === "patient" && (
         <p className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">

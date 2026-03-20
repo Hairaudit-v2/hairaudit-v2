@@ -16,6 +16,7 @@ import {
   normalizeLocale,
   type SupportedLocale,
 } from "@/lib/i18n/constants";
+import { clearSeoLocaleCookie, syncSeoLocaleCookie } from "@/lib/i18n/syncSeoLocaleCookie";
 import { getTranslation, type TranslateFn } from "@/lib/i18n/getTranslation";
 
 type I18nContextValue = {
@@ -62,9 +63,11 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     if (rawStored !== "") {
       if (!isSupportedLocale(rawStored)) {
         safeStorageRemove(LOCALE_STORAGE_KEY);
+        clearSeoLocaleCookie();
         /* fall through to profile fetch */
       } else {
         setLocaleState(rawStored);
+        syncSeoLocaleCookie(rawStored);
         return;
       }
     }
@@ -77,6 +80,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
           safeStorageSet(LOCALE_STORAGE_KEY, pref);
         }
         setLocaleState(pref);
+        syncSeoLocaleCookie(pref);
       })
       .catch(() => {
         /* ignore */
@@ -86,6 +90,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   const setLocale = useCallback((next: SupportedLocale) => {
     setLocaleState(next);
     safeStorageSet(LOCALE_STORAGE_KEY, next);
+    syncSeoLocaleCookie(next);
     persistLocaleRemote(next);
   }, []);
 

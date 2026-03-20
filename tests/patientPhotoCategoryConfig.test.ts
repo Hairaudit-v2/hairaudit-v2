@@ -10,12 +10,14 @@ import {
   REQUIRED_PATIENT_UPLOAD_CATEGORY_KEYS,
   buildPatientUploadToAuditKeyMap,
   PATIENT_AUDIT_PHOTO_BUCKET_DEFS,
+  STAGE2_HIDDEN_PATIENT_UPLOAD_KEYS,
 } from "@/lib/patientPhotoCategoryConfig";
 import {
   REQUIRED_PATIENT_PHOTO_CATEGORIES,
   getMissingRequiredPatientPhotoCategories,
   buildPatientPhotoCategoryCounts,
   PATIENT_PHOTO_CATEGORY_ALIASES,
+  PatientPhotoCategorySchema,
 } from "@/lib/photoCategories";
 import {
   canSubmit,
@@ -65,12 +67,26 @@ test("buildPatientUploadToAuditKeyMap matches pre-refactor PATIENT_LEGACY_MAP en
   }
 });
 
-test("PATIENT_UPLOAD_CATEGORY_DEFS preserves upload metadata counts (10 rows)", () => {
-  assert.equal(PATIENT_UPLOAD_CATEGORY_DEFS.length, 10);
+test("Stage-2 hidden keys are not added to legacy audit map", () => {
+  const map = buildPatientUploadToAuditKeyMap();
+  for (const k of STAGE2_HIDDEN_PATIENT_UPLOAD_KEYS) {
+    assert.equal(map[k], undefined);
+  }
+});
+
+test("PATIENT_UPLOAD_CATEGORY_DEFS: Stage 1 visible count + Stage 2 hidden optional", () => {
+  assert.equal(PATIENT_UPLOAD_CATEGORY_DEFS.length, 46);
   assert.equal(
     PATIENT_UPLOAD_CATEGORY_DEFS.filter((d) => d.required).length,
     8
   );
+  assert.equal(PATIENT_UPLOAD_CATEGORY_DEFS.filter((d) => d.visibleInUi).length, 10);
+  assert.equal(STAGE2_HIDDEN_PATIENT_UPLOAD_KEYS.length, 36);
+});
+
+test("PatientPhotoCategorySchema accepts Stage-2 storage keys (backend-ready)", () => {
+  assert.ok(PatientPhotoCategorySchema.safeParse("postop_month12_front").success);
+  assert.ok(PatientPhotoCategorySchema.safeParse("graft_tray_closeup").success);
 });
 
 test("PATIENT_AUDIT_PHOTO_BUCKET_DEFS unchanged bucket count and required keys", () => {
@@ -93,6 +109,27 @@ test("getMissingRequiredPatientPhotoCategories: full eight present yields none m
   }));
   const missing = getMissingRequiredPatientPhotoCategories(uploads);
   assert.equal(missing.length, 0);
+});
+
+test("Stage-2-only uploads do not satisfy required patient photo coverage", () => {
+  const uploads = STAGE2_HIDDEN_PATIENT_UPLOAD_KEYS.slice(0, 5).map((key) => ({
+    type: `patient_photo:${key}`,
+  }));
+  const missing = getMissingRequiredPatientPhotoCategories(uploads);
+  assert.deepEqual([...missing], [...EXPECTED_REQUIRED_UPLOAD_KEYS]);
+});
+
+test("canSubmit: Stage-2 extras do not replace legacy minimal three-bucket requirement", () => {
+  const withHiddenOnly = [{ type: "patient_photo:postop_month12_front" as const }];
+  assert.equal(canSubmit("patient", withHiddenOnly), false);
+
+  const minimalPlusNoise = [
+    { type: "patient_photo:preop_front" },
+    { type: "patient_photo:preop_top" },
+    { type: "patient_photo:preop_donor_rear" },
+    { type: "patient_photo:graft_tray_overview" },
+  ];
+  assert.equal(canSubmit("patient", minimalPlusNoise), true);
 });
 
 test("buildPatientPhotoCategoryCounts: one file per required category", () => {

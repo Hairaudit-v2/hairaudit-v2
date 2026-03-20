@@ -11,6 +11,7 @@ import {
   normalizeLocale,
 } from "@/lib/i18n/constants";
 import { getTranslation } from "@/lib/i18n/getTranslation";
+import { localeFromAcceptLanguage } from "@/lib/seo/localeMetadata";
 
 test("getDefaultLocale returns en", () => {
   assert.equal(getDefaultLocale(), "en");
@@ -72,6 +73,31 @@ test("getTranslation: dev warns when key missing in both locales", () => {
     console.warn = prevWarn;
     process.env.NODE_ENV = prevEnv;
   }
+});
+
+test("localeFromAcceptLanguage: prefers es when listed first", () => {
+  assert.equal(localeFromAcceptLanguage("es,en;q=0.9"), "es");
+  assert.equal(localeFromAcceptLanguage("es-MX,en-US"), "es");
+});
+
+test("localeFromAcceptLanguage: en before es yields en", () => {
+  assert.equal(localeFromAcceptLanguage("en,es;q=0.8"), "en");
+});
+
+test("localeFromAcceptLanguage: unknown languages fall back to en", () => {
+  assert.equal(localeFromAcceptLanguage("fr-CH,de"), "en");
+});
+
+test("localeFromAcceptLanguage: null or empty is en", () => {
+  assert.equal(localeFromAcceptLanguage(null), "en");
+  assert.equal(localeFromAcceptLanguage(""), "en");
+});
+
+test("getTranslation: marketing meta resolves Spanish when present", () => {
+  assert.equal(
+    getTranslation("marketing.meta.howItWorks.title", "es"),
+    "Cómo funciona | HairAudit"
+  );
 });
 
 test("getTranslation: no dev warn in production for resolved Spanish", () => {

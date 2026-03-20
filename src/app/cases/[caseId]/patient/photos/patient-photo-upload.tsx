@@ -7,6 +7,7 @@ import {
   PatientPhotoCategory,
 } from "@/lib/photoCategories";
 import UploadedThumb from "@/components/uploads/UploadedThumb";
+import ExtendedPatientPhotoUploadGroups from "@/components/patient/ExtendedPatientPhotoUploadGroups";
 
 /* ---------------- Types ---------------- */
 
@@ -139,6 +140,15 @@ export default function PatientPhotoUpload({
           />
         ))}
       </div>
+
+      <ExtendedPatientPhotoUploadGroups
+        locked={isLocked}
+        busyCats={busyCats}
+        uploadsByCategory={uploadsByCategory}
+        onUpload={uploadFiles}
+        onDeleted={deleteUpload}
+        skin="legacy"
+      />
 
       <footer className="flex items-center justify-between pt-3 border-t text-sm">
         <span>

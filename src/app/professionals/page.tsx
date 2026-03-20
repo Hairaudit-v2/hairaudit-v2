@@ -1,12 +1,15 @@
+import type { Metadata } from "next";
 import ProfessionalsHub from "@/components/marketing/ProfessionalsHub";
-import { createPageMetadata } from "@/lib/seo/pageMetadata";
+import { createLocalizedPageMetadata, resolvePublicSeoLocale } from "@/lib/seo/localeMetadata";
 
-export const metadata = createPageMetadata({
-  title: "For Professionals | HairAudit",
-  description:
-    "Review HairAudit standards for methodology, scoring, evidence quality, participation, and documentation frameworks.",
-  pathname: "/professionals",
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await resolvePublicSeoLocale();
+  return createLocalizedPageMetadata(locale, {
+    titleKey: "marketing.meta.professionals.title",
+    descriptionKey: "marketing.meta.professionals.description",
+    pathname: "/professionals",
+  });
+}
 
 export default function ProfessionalsPage() {
   return <ProfessionalsHub />;

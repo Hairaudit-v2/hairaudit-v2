@@ -1,12 +1,15 @@
-import { createPageMetadata } from "@/lib/seo/pageMetadata";
+import type { Metadata } from "next";
 import SampleReportMarketing from "@/components/marketing/SampleReportMarketing";
+import { createLocalizedPageMetadata, resolvePublicSeoLocale } from "@/lib/seo/localeMetadata";
 
-export const metadata = createPageMetadata({
-  title: "Sample Audit Report | HairAudit",
-  description:
-    "Preview a premium HairAudit forensic-style report with score breakdowns, image evidence analysis, findings, and correction guidance.",
-  pathname: "/sample-report",
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await resolvePublicSeoLocale();
+  return createLocalizedPageMetadata(locale, {
+    titleKey: "marketing.meta.sampleReport.title",
+    descriptionKey: "marketing.meta.sampleReport.description",
+    pathname: "/sample-report",
+  });
+}
 
 export default function SampleReportPage() {
   return <SampleReportMarketing />;
