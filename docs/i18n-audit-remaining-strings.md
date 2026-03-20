@@ -78,7 +78,8 @@
 | `DeleteDraftCaseButton` | Confirm, labels | **done (batch 6A)** | `dashboard.patient.deleteDraft.*` |
 | `PatientReportsCompletedCaseList` | Completed-case list chrome | **done (batch 6A)** | `dashboard.reports.*` row strings + `shareHint` |
 | `download-report.tsx` | Busy label | **done (batch 6A)** | `dashboard.reports.downloadPreparing` |
-| `cases/.../patient/questions` | Page hero, step chrome, section titles/descriptions, review enums, shared controls | **done (batch 11)** | `dashboard.patient.forms.*`, `forms.shared.*`; **`patientAuditForm.ts` question prompts/options** unchanged (submission-stable) |
+| `cases/.../patient/questions` | Page hero, step chrome, section titles/descriptions, review enums, shared controls | **done (batch 11)** | `dashboard.patient.forms.*`, `forms.shared.*` |
+| `patientIntake` display layer | Optional localized prompts/help/placeholders/option labels | **done (batch 12)** | `intakeDisplayI18n.ts` + `dashboard.patient.forms.intakeFields.*`; canonical ids/values still from **`patientAuditForm.ts`**; see **`docs/i18n-patient-intake-display.md`** |
 
 ---
 
@@ -180,6 +181,17 @@ Public marketing UI (no SEO metadata changes, no locale routes): **`marketing.*`
 2. **Patient intelligence intake** — `cases/[caseId]/patient/questions/page.tsx` (hero); **`PatientAuditFormClient`** (stepper, advanced banner, review/photos CTAs, load/save messaging, **`PATIENT_AUDIT_SECTIONS` title/description via `dashboard.patient.forms.sections.*`, review summary + enum display via `reviewEnums.*`). Question **prompts** and **option labels** in **`patientAuditForm.ts`** left English so payloads and validation stay unchanged; API error strings still shown as returned.
 3. **Doctor onboarding** — **`DoctorOnboardingForm`** → **`dashboard.doctor.forms.*`**.
 4. **Clinic profile** — **`ClinicProfileBuilder`** → **`dashboard.clinic.forms.profileBuilder.*`**; **`ClinicConversionPanel`** shared chrome → **`dashboard.clinic.forms.conversionPanel.*`** (all existing call sites get localized panel chrome; optional `teaserCtaLabel` override preserved).
+
+## Batch 12 (implemented — architecture + sample fields)
+
+**Multilingual patient intake question *display*** without changing payloads, validation, or `patientAuditForm` canonical values:
+
+1. **`src/lib/patientIntake/intakeDisplayI18n.ts`** — `PATIENT_INTAKE_QUESTION_DISPLAY` maps question id → optional `TranslationKey`s for prompt/help/placeholder and per-option **label** keys; resolvers fall back to `PatientFormQuestion` English strings.
+2. **Locale bundles** — `dashboard.patient.forms.intakeFields.*` for field-specific copy; procedure-type option labels **reuse** `reviewEnums.procedure_type.*`.
+3. **UI** — **`PatientAuditFormClient`** uses resolvers for labels/help/placeholder and select/checkbox option text; submitted `value` / field names unchanged.
+4. **Docs** — **`docs/i18n-patient-intake-display.md`** (extend registry + bundles; avoid regressions).
+
+**Proof ids:** `clinic_name`, `preop_consult`, `procedure_type` (full form migration remains future work).
 
 ## Batch 9 (implemented — architecture only)
 

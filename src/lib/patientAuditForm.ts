@@ -1,6 +1,9 @@
 // Patient Audit Form v2 — streamlined, data-rich, ~5–6 min
 // Optimized for patients who may not know technical details
 // "Not Sure" / "Not clear" options to avoid bad data
+//
+// Canonical field ids and option *values* live here for payloads and validation.
+// Localized *display* (prompts/help/labels) is layered in `src/lib/patientIntake/intakeDisplayI18n.ts` (Batch 12+).
 
 // Patient answers are primarily primitive values, but we also support nested structured objects
 // for progressive “advanced forensic” inputs (backward-compatible).

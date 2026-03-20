@@ -15,6 +15,12 @@ import {
   getAdvancedSectionsCompletion,
 } from "@/lib/intake/normalizeIntakeFormData";
 import { validatePatientAuditV2, normalizePatientV2ForValidation } from "@/lib/patientAuditSchema";
+import {
+  resolvePatientIntakeHelp,
+  resolvePatientIntakeOptionDisplayLabel,
+  resolvePatientIntakePlaceholder,
+  resolvePatientIntakePrompt,
+} from "@/lib/patientIntake/intakeDisplayI18n";
 
 function isNonEmptyObject(v: unknown): v is Record<string, unknown> {
   return !!v && typeof v === "object" && !Array.isArray(v) && Object.keys(v as Record<string, unknown>).length > 0;
@@ -431,7 +437,7 @@ function PatientReviewSummary({
                 if (q.dependsOn && ov === undefined) return null;
                 return (
                   <div key={q.id} className="flex justify-between gap-2">
-                    <dt className="text-slate-800">{q.prompt}</dt>
+                    <dt className="text-slate-800">{resolvePatientIntakePrompt(t, q)}</dt>
                     <dd className="font-semibold text-slate-900">{fmt(q.id, ov)}</dd>
                   </div>
                 );
@@ -478,6 +484,10 @@ function QuestionField({
   if (!show) return null;
 
   const fieldId = `patient-${question.id}`;
+  const promptText = resolvePatientIntakePrompt(t, question);
+  const helpText = resolvePatientIntakeHelp(t, question);
+  const placeholderText = resolvePatientIntakePlaceholder(t, question);
+
   const baseClass =
     "w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 " +
     "focus:outline-none focus:ring-2 focus:ring-cyan-300/40 focus:border-cyan-400 " +
@@ -493,7 +503,7 @@ function QuestionField({
             name={question.id}
             type="text"
             className={baseClass}
-            placeholder={question.placeholder}
+            placeholder={placeholderText}
             value={(value as string) ?? ""}
             onChange={(e) => onChange(e.target.value || null)}
             disabled={locked}
@@ -506,7 +516,7 @@ function QuestionField({
             id={fieldId}
             name={question.id}
             className={`${baseClass} min-h-[80px]`}
-            placeholder={question.placeholder}
+            placeholder={placeholderText}
             value={(value as string) ?? ""}
             onChange={(e) => onChange(e.target.value || null)}
             disabled={locked}
@@ -533,7 +543,7 @@ function QuestionField({
             className={baseClass}
             min={question.min}
             max={question.max}
-            placeholder={question.placeholder}
+            placeholder={placeholderText}
             value={(value as number) ?? ""}
             onChange={(e) => {
               const v = e.target.value;
@@ -600,7 +610,9 @@ function QuestionField({
           >
             <option value="">{t("forms.shared.selectPlaceholder")}</option>
             {(question.options ?? []).map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
+              <option key={o.value} value={o.value}>
+                {resolvePatientIntakeOptionDisplayLabel(t, question.id, o.value, o.label)}
+              </option>
             ))}
           </select>
         );
@@ -678,7 +690,9 @@ function QuestionField({
                   disabled={locked}
                   className="rounded accent-emerald-600"
                 />
-                <span className="text-sm text-slate-900">{o.label}</span>
+                <span className="text-sm text-slate-900">
+                  {resolvePatientIntakeOptionDisplayLabel(t, question.id, o.value, o.label)}
+                </span>
               </label>
             ))}
           </div>
@@ -693,10 +707,10 @@ function QuestionField({
   return (
     <div>
       <label id={`${fieldId}-label`} htmlFor={primaryControlId} className={labelClass}>
-        {question.prompt}
+        {promptText}
         {question.required && <span className="text-emerald-700 ml-1">*</span>}
       </label>
-      {question.help && <p className="text-xs text-slate-700 mb-2">{question.help}</p>}
+      {helpText && <p className="text-xs text-slate-700 mb-2">{helpText}</p>}
       {render()}
     </div>
   );

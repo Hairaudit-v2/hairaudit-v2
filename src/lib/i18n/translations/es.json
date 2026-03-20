@@ -803,6 +803,19 @@
             "no": "No",
             "not_sure": "No estoy seguro"
           }
+        },
+        "intakeFields": {
+          "clinic_name": {
+            "prompt": "Nombre de la clínica",
+            "placeholder": "Clínica Capilar ABC"
+          },
+          "preop_consult": {
+            "prompt": "¿Tuvo una consulta preoperatoria?"
+          },
+          "procedure_type": {
+            "prompt": "Tipo de procedimiento",
+            "help": "Elija lo que le indicaron; «No estoy seguro» es válido."
+          }
         }
       }
     },

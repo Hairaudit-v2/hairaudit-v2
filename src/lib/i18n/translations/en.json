@@ -803,6 +803,19 @@
             "no": "No",
             "not_sure": "Not Sure"
           }
+        },
+        "intakeFields": {
+          "clinic_name": {
+            "prompt": "Clinic Name",
+            "placeholder": "ABC Hair Clinic"
+          },
+          "preop_consult": {
+            "prompt": "Did you have a pre-operative consultation?"
+          },
+          "procedure_type": {
+            "prompt": "Type of Procedure",
+            "help": "Choose what you were told; 'Not Sure' is okay."
+          }
         }
       }
     },
