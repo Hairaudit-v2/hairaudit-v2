@@ -4,8 +4,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import QuestionField from "./QuestionField";
+import { useI18n } from "@/components/i18n/I18nProvider";
+import { isAdvancedAuditSection, localizeAuditQuestion, resolveAuditSectionTitle } from "@/lib/audit/auditDisplayI18n";
 import {
-  AUDIT_WORKFLOW_UX_COPY,
   caseStableFields,
   clinicDefaultFields,
   doctorDefaultFields,
@@ -104,6 +105,7 @@ export default function AuditFormClient({
   const originalAnswersRef = useRef<Record<string, unknown> | null>(null);
   const locked = caseStatus === "submitted" || !!submittedAt;
   const router = useRouter();
+  const { t, locale } = useI18n();
   const caseStableSet = useMemo(() => new Set<string>(caseStableFields as readonly string[]), []);
   const defaultFieldKeys = useMemo(
     () => (workflowActor === "doctor" ? doctorDefaultFields : clinicDefaultFields) as readonly string[],
@@ -112,6 +114,35 @@ export default function AuditFormClient({
   const defaultSet = useMemo(() => new Set<string>(defaultFieldKeys), [defaultFieldKeys]);
   const defaultsStorageKey = workflowActor ? `hairaudit:${workflowActor}:defaults:v1` : null;
   const lastCaseStorageKey = workflowActor ? `hairaudit:${workflowActor}:last-case:v1` : null;
+
+  const translateOrFallback = useCallback(
+    (key: string, fallback: string) => {
+      const out = t(key);
+      return out === key ? fallback : out;
+    },
+    [t]
+  );
+
+  const localizedDescription = workflowActor
+    ? translateOrFallback(`dashboard.${workflowActor}.forms.caseAudit.page.introHint`, description)
+    : description;
+  const localizedLockedMessage = workflowActor
+    ? translateOrFallback(`dashboard.${workflowActor}.forms.caseAudit.page.lockedMessage`, lockedMessage)
+    : lockedMessage;
+  const localizedBackLabel = workflowActor
+    ? translateOrFallback(`dashboard.${workflowActor}.forms.caseAudit.page.backToCase`, backLabel)
+    : backLabel;
+  const localizedPrimaryCtaLabel =
+    workflowActor && primaryCtaLabel
+      ? translateOrFallback(`dashboard.${workflowActor}.forms.caseAudit.page.primaryCtaLabel`, primaryCtaLabel)
+      : primaryCtaLabel;
+  const localizedPhotosDescription =
+    workflowActor && photosNav
+      ? translateOrFallback(
+          `dashboard.${workflowActor}.forms.caseAudit.page.photosNavDescription`,
+          photosNav.description ?? t("dashboard.shared.auditForms.uploadImagesNextStep")
+        )
+      : (photosNav?.description ?? t("dashboard.shared.auditForms.uploadImagesNextStep"));
 
   const pickFields = useCallback((source: Record<string, unknown>, fieldKeys: readonly string[]) => {
     const picked: Record<string, unknown> = {};
@@ -175,7 +206,7 @@ export default function AuditFormClient({
             for (const key of Object.keys(prefill)) next[key] = true;
             return next;
           });
-          setWorkflowNotice("Prefilled from saved defaults. Only edit what changed.");
+          setWorkflowNotice(t("dashboard.shared.auditForms.prefilledFromSavedDefaults"));
         }
       }
     }
@@ -242,16 +273,16 @@ export default function AuditFormClient({
         body: JSON.stringify({ [payloadKey]: payloadWithProvenance }),
       });
       const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json?.error ?? "Save failed");
+      if (!res.ok) throw new Error(json?.error ?? t("forms.shared.saveFailedGeneric"));
       if (lastCaseStorageKey && typeof window !== "undefined") {
         window.localStorage.setItem(
           lastCaseStorageKey,
           JSON.stringify({ caseId, savedAt: new Date().toISOString(), answers: payloadWithProvenance })
         );
       }
-      setMessage({ type: "ok", text: "Saved" });
+      setMessage({ type: "ok", text: t("forms.shared.saved") });
     } catch (e: unknown) {
-      setMessage({ type: "err", text: (e as Error)?.message ?? "Save failed" });
+      setMessage({ type: "err", text: (e as Error)?.message ?? t("forms.shared.saveFailedGeneric") });
     } finally {
       setSaving(false);
     }
@@ -275,7 +306,7 @@ export default function AuditFormClient({
         body: JSON.stringify({ [payloadKey]: payloadWithProvenance }),
       });
       const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json?.error ?? "Save failed");
+      if (!res.ok) throw new Error(json?.error ?? t("forms.shared.saveFailedGeneric"));
       if (lastCaseStorageKey && typeof window !== "undefined") {
         window.localStorage.setItem(
           lastCaseStorageKey,
@@ -284,7 +315,7 @@ export default function AuditFormClient({
       }
       router.push(href);
     } catch (e: unknown) {
-      setMessage({ type: "err", text: (e as Error)?.message ?? "Save failed" });
+      setMessage({ type: "err", text: (e as Error)?.message ?? t("forms.shared.saveFailedGeneric") });
     } finally {
       setSaving(false);
     }
@@ -294,12 +325,12 @@ export default function AuditFormClient({
     if (!defaultsStorageKey) return;
     const defaults = readStorageObject(defaultsStorageKey);
     if (!defaults) {
-      setWorkflowNotice("No saved defaults found yet.");
+      setWorkflowNotice(t("dashboard.shared.auditForms.noSavedDefaultsFound"));
       return;
     }
     const prefill = pickFields(defaults, defaultFieldKeys);
     if (isEmptyAnswers(prefill)) {
-      setWorkflowNotice("No matching default fields available to prefill.");
+      setWorkflowNotice(t("dashboard.shared.auditForms.noMatchingDefaultFields"));
       return;
     }
     hasEditedRef.current = true;
@@ -316,7 +347,7 @@ export default function AuditFormClient({
       for (const key of Object.keys(prefill)) next[key] = true;
       return next;
     });
-    setWorkflowNotice("Applied saved defaults. Only edit what changed.");
+    setWorkflowNotice(t("dashboard.shared.auditForms.appliedSavedDefaults"));
   };
 
   const applyProtocolGroup = useCallback(
@@ -324,13 +355,13 @@ export default function AuditFormClient({
       if (!defaultsStorageKey) return;
       const defaults = readStorageObject(defaultsStorageKey);
       if (!defaults) {
-        setWorkflowNotice("No saved defaults found yet.");
+        setWorkflowNotice(t("dashboard.shared.auditForms.noSavedDefaultsFound"));
         return;
       }
       const allowed = fieldIds.filter((id) => defaultSet.has(id));
       const prefill = pickFields(defaults, allowed);
       if (isEmptyAnswers(prefill)) {
-        setWorkflowNotice(`No saved values for ${groupLabel}.`);
+        setWorkflowNotice(`${t("dashboard.shared.auditForms.noSavedValuesForGroupPrefix")} ${groupLabel}.`);
         return;
       }
       hasEditedRef.current = true;
@@ -346,7 +377,9 @@ export default function AuditFormClient({
         for (const key of Object.keys(prefill)) next[key] = true;
         return next;
       });
-      setWorkflowNotice(`Applied saved ${groupLabel}. You can override any field.`);
+      setWorkflowNotice(
+        `${t("dashboard.shared.auditForms.appliedSavedGroupPrefix")} ${groupLabel}. ${t("dashboard.shared.auditForms.appliedSavedGroupSuffix")}`
+      );
     },
     [defaultSet, defaultsStorageKey, pickFields, readStorageObject, workflowActor]
   );
@@ -356,19 +389,19 @@ export default function AuditFormClient({
     try {
       const raw = window.localStorage.getItem(lastCaseStorageKey);
       if (!raw) {
-        setWorkflowNotice("No previous case snapshot found.");
+        setWorkflowNotice(t("dashboard.shared.auditForms.noPreviousCaseSnapshot"));
         return;
       }
       const parsed = JSON.parse(raw) as { caseId?: string; answers?: Record<string, unknown> };
       if (!parsed?.answers || parsed.caseId === caseId) {
-        setWorkflowNotice("No eligible previous case snapshot found.");
+        setWorkflowNotice(t("dashboard.shared.auditForms.noEligiblePreviousCaseSnapshot"));
         return;
       }
       const source = parsed.answers;
       const copyKeys = Array.from(new Set<string>([...(caseStableFields as readonly string[]), ...defaultFieldKeys]));
       const prefill = pickFields(source, copyKeys);
       if (isEmptyAnswers(prefill)) {
-        setWorkflowNotice("Previous case snapshot does not include reusable fields.");
+        setWorkflowNotice(t("dashboard.shared.auditForms.previousCaseNoReusableFields"));
         return;
       }
       hasEditedRef.current = true;
@@ -379,9 +412,9 @@ export default function AuditFormClient({
         return next;
       });
       setAnswers((prev) => ({ ...prev, ...prefill }));
-      setWorkflowNotice("Copied reusable data from previous case. Only edit what changed.");
+      setWorkflowNotice(t("dashboard.shared.auditForms.copiedReusableDataFromPreviousCase"));
     } catch {
-      setWorkflowNotice("Unable to read previous case snapshot.");
+      setWorkflowNotice(t("dashboard.shared.auditForms.unableReadPreviousCase"));
     }
   };
 
@@ -389,11 +422,11 @@ export default function AuditFormClient({
     if (!defaultsStorageKey || typeof window === "undefined") return;
     const defaultsPayload = pickFields(answers, defaultFieldKeys);
     if (isEmptyAnswers(defaultsPayload)) {
-      setWorkflowNotice("Add at least one defaultable field before saving defaults.");
+      setWorkflowNotice(t("dashboard.shared.auditForms.addDefaultableFieldBeforeSaving"));
       return;
     }
     window.localStorage.setItem(defaultsStorageKey, JSON.stringify(defaultsPayload));
-    setWorkflowNotice("Saved current answers as your defaults.");
+    setWorkflowNotice(t("dashboard.shared.auditForms.savedCurrentAnswersAsDefaults"));
   };
 
   // Auto-save 2 seconds after last change
@@ -403,13 +436,25 @@ export default function AuditFormClient({
     return () => clearTimeout(t);
   }, [answers, locked]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const localizedSections = useMemo(
+    () =>
+      workflowActor
+        ? sections.map((section) => ({
+            ...section,
+            title: resolveAuditSectionTitle(workflowActor, locale, section),
+            questions: section.questions.map((question) => localizeAuditQuestion(workflowActor, locale, question)),
+          }))
+        : sections,
+    [locale, sections, workflowActor]
+  );
+
   const questionLabelById = useMemo(() => {
     const labels = new Map<string, string>();
-    for (const section of sections) {
+    for (const section of localizedSections) {
       for (const question of section.questions) labels.set(question.id, question.prompt);
     }
     return labels;
-  }, [sections]);
+  }, [localizedSections]);
 
   const inheritedStableEntries = useMemo(() => {
     if (!isFollowupAudit || !originalAnswersRef.current) return [] as Array<{ key: string; label: string; value: unknown }>;
@@ -420,7 +465,7 @@ export default function AuditFormClient({
   }, [isFollowupAudit, questionLabelById]);
 
   const renderedSections = useMemo(() => {
-    return sections
+    return localizedSections
       .map((section) => {
         const filteredQuestions = section.questions.filter((q) => {
           if (!onlyEditChanged || !baselineRef.current) return true;
@@ -430,7 +475,7 @@ export default function AuditFormClient({
         return { ...section, questions: filteredQuestions };
       })
       .filter((section) => section.questions.length > 0);
-  }, [answers, caseStableSet, defaultSet, onlyEditChanged, sections]);
+  }, [answers, caseStableSet, defaultSet, localizedSections, onlyEditChanged]);
 
   const savedDefaults = workflowActor ? readStorageObject(defaultsStorageKey) : null;
 
@@ -451,11 +496,11 @@ export default function AuditFormClient({
               onChange={(e) => handleUseSavedDefaultChange(q.id, e.target.checked)}
               className="rounded border-slate-300 text-amber-600 focus:ring-amber-500"
             />
-            Use saved default
+            {t("dashboard.shared.auditForms.useSavedDefault")}
           </label>
           {useDefault ? (
             <p className="text-sm text-slate-600 py-1.5 pl-6">
-              Using saved default: {formatDefaultValue(answers[q.id] ?? savedDefaults?.[q.id])}
+              {t("dashboard.shared.auditForms.usingSavedDefaultPrefix")} {formatDefaultValue(answers[q.id] ?? savedDefaults?.[q.id])}
             </p>
           ) : (
             <QuestionField
@@ -495,24 +540,24 @@ export default function AuditFormClient({
   return (
     <div className="max-w-2xl space-y-8">
       <header>
-        <p className="text-sm text-gray-600">{description}</p>
+        <p className="text-sm text-gray-600">{localizedDescription}</p>
         {!locked && workflowActor && (
           <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-700">Exception-based entry</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-700">{t("dashboard.shared.auditForms.exceptionEntry")}</p>
             <div className="mt-2 flex flex-wrap gap-2">
               <button
                 type="button"
                 onClick={applySavedDefaults}
                 className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
               >
-                {AUDIT_WORKFLOW_UX_COPY.useSavedDefaults}
+                {t("dashboard.shared.auditForms.useSavedDefaults")}
               </button>
               <button
                 type="button"
                 onClick={copyFromPreviousCase}
                 className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
               >
-                {AUDIT_WORKFLOW_UX_COPY.copyFromPreviousCase}
+                {t("dashboard.shared.auditForms.copyFromPreviousCase")}
               </button>
               <button
                 type="button"
@@ -523,30 +568,35 @@ export default function AuditFormClient({
                     : "border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
                 }`}
               >
-                {AUDIT_WORKFLOW_UX_COPY.onlyUpdateWhatChanged}
+                {t("dashboard.shared.auditForms.onlyUpdateWhatChanged")}
               </button>
               <button
                 type="button"
                 onClick={saveCurrentAsDefaults}
                 className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
               >
-                Save current as defaults
+                {t("dashboard.shared.auditForms.saveCurrentAsDefaults")}
               </button>
             </div>
             {savedDefaults && (
               <div className="mt-3 pt-3 border-t border-slate-200">
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-600 mb-2">
-                  Use saved protocol
+                  {t("dashboard.shared.auditForms.useSavedProtocol")}
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {AUDIT_PROTOCOL_GROUPS.map((group) => (
                     <button
                       key={group.id}
                       type="button"
-                      onClick={() => applyProtocolGroup(group.label, group.fieldIds)}
+                      onClick={() =>
+                        applyProtocolGroup(
+                          t(`dashboard.shared.auditForms.protocolGroups.${group.id}`),
+                          group.fieldIds
+                        )
+                      }
                       className="rounded-md border border-slate-300 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100"
                     >
-                      {group.label}
+                      {t(`dashboard.shared.auditForms.protocolGroups.${group.id}`)}
                     </button>
                   ))}
                 </div>
@@ -558,7 +608,7 @@ export default function AuditFormClient({
         {isFollowupAudit && inheritedStableEntries.length > 0 && (
           <details className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
             <summary className="cursor-pointer text-sm font-medium text-slate-800">
-              {AUDIT_WORKFLOW_UX_COPY.inheritedFromOriginalSurgeryRecord}
+              {t("dashboard.shared.auditForms.inheritedFromOriginalSurgeryRecord")}
             </summary>
             <div className="mt-3 space-y-2 text-sm">
               {inheritedStableEntries.map((entry) => (
@@ -571,13 +621,13 @@ export default function AuditFormClient({
           </details>
         )}
         {locked && (
-          <div className="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm">{lockedMessage}</div>
+          <div className="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm">{localizedLockedMessage}</div>
         )}
       </header>
 
       {renderedSections.map((section) => (
         <section key={section.id} className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          {section.title.includes("Advanced / Forensic") ? (
+          {isAdvancedAuditSection(section) ? (
             <details
               open={!!advancedOpen[section.id]}
               onToggle={(event) => {
@@ -589,7 +639,7 @@ export default function AuditFormClient({
                 {section.title as string}
               </summary>
               <p className="mt-2 text-sm text-gray-600">
-                {AUDIT_WORKFLOW_UX_COPY.addAdvancedDataToImproveConfidenceAndBenchmarking}
+                {t("dashboard.shared.auditForms.advancedSectionHint")}
               </p>
               <div className="mt-4 space-y-5">
                 {section.questions.map((q) => renderQuestion(q))}
@@ -609,10 +659,10 @@ export default function AuditFormClient({
       {photosNav ? (
         <section className="rounded-xl border border-gray-200 bg-gray-50 p-6">
           <h2 className="text-lg font-semibold text-slate-900 mb-2">
-            {isFollowupAudit ? "2. Add new follow-up evidence" : "2. Add your photos"}
+            {isFollowupAudit ? t("dashboard.shared.auditForms.addFollowupEvidenceTitle") : t("dashboard.shared.auditForms.addPhotosTitle")}
           </h2>
           <p className="text-sm text-gray-600 mb-3">
-            {photosNav.description ?? "Upload images in the next step."}
+            {localizedPhotosDescription}
           </p>
         </section>
       ) : (
@@ -627,7 +677,7 @@ export default function AuditFormClient({
         </div>
         <div className="flex gap-3">
           <Link href={backHref} className="rounded-lg px-4 py-2 text-sm font-medium border border-gray-300 hover:bg-gray-50">
-            {backLabel}
+            {localizedBackLabel}
           </Link>
           {!locked && (
             <>
@@ -636,23 +686,23 @@ export default function AuditFormClient({
                 disabled={saving}
                 className="rounded-lg px-4 py-2 text-sm font-medium border border-amber-500 text-amber-700 hover:bg-amber-50"
               >
-                {saving ? "Saving…" : "Save answers"}
+                {saving ? t("dashboard.shared.auditForms.saving") : t("forms.shared.saveAnswers")}
               </button>
-              {primaryCtaHref && primaryCtaLabel ? (
+              {primaryCtaHref && localizedPrimaryCtaLabel ? (
                 <button
                   type="button"
                   onClick={() => goToPhotos(primaryCtaHref)}
                   disabled={saving}
                   className="rounded-lg px-4 py-2 text-sm font-medium bg-amber-500 text-slate-900 hover:bg-amber-400"
                 >
-                  {saving ? "Saving…" : primaryCtaLabel}
+                  {saving ? t("dashboard.shared.auditForms.saving") : localizedPrimaryCtaLabel}
                 </button>
               ) : (
                 <Link
                   href={backHref}
                   className="rounded-lg px-4 py-2 text-sm font-medium bg-amber-500 text-slate-900 hover:bg-amber-400"
                 >
-                  Continue →
+                  {t("dashboard.shared.auditForms.continue")}
                 </Link>
               )}
             </>

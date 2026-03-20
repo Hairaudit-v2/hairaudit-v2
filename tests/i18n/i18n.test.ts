@@ -11,6 +11,7 @@ import {
   normalizeLocale,
 } from "@/lib/i18n/constants";
 import { formatTemplate } from "@/lib/i18n/formatTemplate";
+import { resolveAuditPrompt, resolveAuditSectionTitle } from "@/lib/audit/auditDisplayI18n";
 import { getIntakeFieldOptionLabel, getIntakeFieldPrompt, getTranslation } from "@/lib/i18n/getTranslation";
 import { getReportGlossaryLabel } from "@/lib/i18n/reportTerminology";
 import { defaultReportOutputLocale, describeLocaleIntent, normalizeUiLocale } from "@/lib/i18n/localeContexts";
@@ -149,6 +150,24 @@ test("getIntakeFieldOptionLabel: option value with spaces uses bracket lookup", 
   assert.equal(en, "Prefer not to say");
   assert.ok(es && es.length > 0);
   assert.notEqual(es, "Prefer not to say");
+});
+
+test("doctor case audit display: section title resolves in Spanish", () => {
+  const out = resolveAuditSectionTitle("doctor", "es", {
+    id: "doctor_clinic",
+    title: "1. Doctor & Clinic Profile",
+  });
+  assert.ok(out.length > 4);
+  assert.notEqual(out, "1. Doctor & Clinic Profile");
+});
+
+test("clinic case audit display: prompt resolves in Spanish", () => {
+  const out = resolveAuditPrompt("clinic", "es", {
+    id: "clinic_location",
+    prompt: "Clinic Location(s)",
+  });
+  assert.ok(out.length > 4);
+  assert.notEqual(out, "Clinic Location(s)");
 });
 
 test("getTranslation: no dev warn in production for resolved Spanish", () => {

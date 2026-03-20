@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import AuditFormClient from "@/components/audit-form/AuditFormClient";
+import { getTranslation } from "@/lib/i18n/getTranslation";
 import { CLINIC_AUDIT_SECTIONS } from "@/lib/clinicAuditForm";
 import { validateClinicAnswers } from "@/lib/clinicAuditSchema";
+import { resolvePublicSeoLocale } from "@/lib/seo/localeMetadata";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { canAccessCase } from "@/lib/case-access";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -18,6 +20,7 @@ export default async function ClinicFormPage({
   const { caseId } = await params;
   const resolvedSearch = await searchParams;
   const isFollowupAudit = resolvedSearch.followup === "1" || resolvedSearch.followup === "true";
+  const locale = await resolvePublicSeoLocale();
   const supabase = await createSupabaseAuthServerClient();
   const {
     data: { user },
@@ -46,11 +49,11 @@ export default async function ClinicFormPage({
     <div className="max-w-3xl mx-auto px-4 py-8">
       <div className="mb-6">
         <Link href={`/cases/${caseId}`} className="text-sm text-gray-600 hover:underline">
-          ← Back to case
+          ← {getTranslation("dashboard.clinic.forms.caseAudit.page.backToCase", locale)}
         </Link>
       </div>
-      <h1 className="text-2xl font-bold mb-2">Clinic Audit Form</h1>
-      <p className="text-gray-600 mb-8">About 15–20 minutes. Clinic performance, facilities, and pricing.</p>
+      <h1 className="text-2xl font-bold mb-2">{getTranslation("dashboard.clinic.forms.caseAudit.page.title", locale)}</h1>
+      <p className="text-gray-600 mb-8">{getTranslation("dashboard.clinic.forms.caseAudit.page.description", locale)}</p>
 
       <AuditFormClient
         caseId={caseId}
@@ -65,12 +68,12 @@ export default async function ClinicFormPage({
         backHref={`/cases/${caseId}`}
         photosNav={{
           href: `/cases/${caseId}/clinic/photos`,
-          label: "→ Upload or view clinic images",
-          title: "Visual Documentation (Optional)",
-          description: "Clinic facilities, equipment, and procedure images.",
+          label: getTranslation("dashboard.clinic.forms.caseAudit.page.photosNavLabel", locale),
+          title: getTranslation("dashboard.clinic.forms.caseAudit.page.photosNavTitle", locale),
+          description: getTranslation("dashboard.clinic.forms.caseAudit.page.photosNavDescription", locale),
         }}
         primaryCtaHref={`/cases/${caseId}/clinic/photos`}
-        primaryCtaLabel="Add your photos →"
+        primaryCtaLabel={getTranslation("dashboard.clinic.forms.caseAudit.page.primaryCtaLabel", locale)}
         validate={validateClinicAnswers}
         workflowActor="clinic"
         isFollowupAudit={isFollowupAudit}

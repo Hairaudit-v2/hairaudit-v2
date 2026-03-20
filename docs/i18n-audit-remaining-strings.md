@@ -215,6 +215,18 @@ Public marketing UI (no SEO metadata changes, no locale routes): **`marketing.*`
 
 **Verification:** `npx tsc --noEmit`, `pnpm test:i18n`, `npm run build`.
 
+## Batch 15 (implemented — doctor / clinic deep form display parity)
+
+**Doctor and clinic deep workflow forms** now use the same **display-layer** approach as patient intake, without changing ids, stored values, validation, payloads, or workflow behavior:
+
+1. **Doctor case audit** — `src/lib/doctorAuditForm.ts` remains canonical; generated display tree merged under `dashboard.doctor.forms.caseAudit.{sections,fields}` and consumed by `DoctorAuditFormClient`.
+2. **Clinic case audit** — `src/lib/clinicAuditForm.ts` remains canonical; generated display tree merged under `dashboard.clinic.forms.caseAudit.{sections,fields}` and consumed by `AuditFormClient`.
+3. **Shared deep-form UI** — select placeholders, inherited-record banners, saved-default workflow notices, review-summary chrome, protocol-group labels, and add-photos CTAs localized via `dashboard.shared.auditForms.*`.
+4. **Clinic doctor roster manager** — remaining app-owned form labels / placeholders / permissions / actions moved under `dashboard.clinic.forms.doctorsManager.*`.
+5. **Docs / scripts** — `docs/i18n-doctor-clinic-audit-display.md`; generator / translator / merge scripts for doctor+clinic audit display trees under `scripts/`.
+
+**Notes:** English schema text remains the fallback source of truth. API-returned error bodies remain unchanged and are shown as returned.
+
 ## Batch 9 (implemented — architecture only)
 
 **Report-adjacent i18n groundwork** (no report body / PDF / AI changes): **`localeContexts.ts`** (UI vs report-output vs source locale), **`reportTranslationBlueprint.ts`** (future translation plan types), **`reportTerminology.ts`** + **`reportGlossary.*`** in `en`/`es` (controlled labels, not wired to generators). **`docs/i18n-report-translation-pipeline.md`**. **`REPORT_CONTENT_DEFAULT_LOCALE`** and `report.ts` JSDoc updated.

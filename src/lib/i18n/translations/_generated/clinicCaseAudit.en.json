@@ -1,0 +1,1415 @@
+{
+  "sections": {
+    "clinic_info": {
+      "title": "Clinic Information"
+    },
+    "facilities": {
+      "title": "Clinic Facilities"
+    },
+    "case_identity_submission_context": {
+      "title": "Case Identity & Submission Context"
+    },
+    "case_identity_submission_context_advanced": {
+      "title": "Advanced / Forensic Case Context"
+    },
+    "procedure_type_areas_treated_basic": {
+      "title": "Basic Audit Questions — Procedure Type & Areas Treated"
+    },
+    "procedure_type_areas_treated_advanced": {
+      "title": "Advanced / Forensic Questions — Procedure Type & Areas Treated"
+    },
+    "patient_baseline_basic": {
+      "title": "Basic Audit Questions — Patient Baseline"
+    },
+    "patient_baseline_advanced": {
+      "title": "Advanced / Forensic Questions — Patient Baseline"
+    },
+    "diagnosis_pattern_basic": {
+      "title": "Basic Audit Questions — Diagnosis & Hair Loss Pattern"
+    },
+    "diagnosis_pattern_advanced": {
+      "title": "Advanced / Forensic Questions — Diagnosis & Hair Loss Pattern"
+    },
+    "preoperative_planning_basic": {
+      "title": "Basic Audit Questions — Pre-Operative Planning"
+    },
+    "preoperative_planning_advanced": {
+      "title": "Advanced / Forensic Questions — Pre-Operative Planning"
+    },
+    "donor_assessment_basic": {
+      "title": "Basic Audit Questions — Donor Assessment"
+    },
+    "donor_assessment_advanced": {
+      "title": "Advanced / Forensic Questions — Donor Assessment"
+    },
+    "staff": {
+      "title": "Staff Qualifications"
+    },
+    "statistics": {
+      "title": "Procedure Statistics"
+    },
+    "surgical_metadata_basic": {
+      "title": "Basic Audit Questions — Surgical Metadata"
+    },
+    "surgical_metadata_advanced": {
+      "title": "Advanced / Forensic Audit Questions"
+    },
+    "pricing": {
+      "title": "Pricing Structure"
+    },
+    "quality": {
+      "title": "Quality Assurance"
+    },
+    "services": {
+      "title": "Patient Services"
+    },
+    "technology": {
+      "title": "Technology and Equipment"
+    },
+    "testimonials": {
+      "title": "Patient Testimonials and Reviews (Optional)"
+    }
+  },
+  "fields": {
+    "clinic_name": {
+      "prompt": "Clinic Name",
+      "placeholder": "ABC Hair Clinic"
+    },
+    "clinic_location": {
+      "prompt": "Clinic Location(s)",
+      "placeholder": "Istanbul, Turkey; Dubai, UAE"
+    },
+    "phone": {
+      "prompt": "Phone Number",
+      "placeholder": "+90 123 456 7890"
+    },
+    "email": {
+      "prompt": "Email Address",
+      "placeholder": "info@abchairclinic.com"
+    },
+    "website": {
+      "prompt": "Website",
+      "placeholder": "www.abchairclinic.com"
+    },
+    "years_operation": {
+      "prompt": "Years in Operation"
+    },
+    "operating_rooms": {
+      "prompt": "Number of Operating Rooms"
+    },
+    "recovery_areas": {
+      "prompt": "Recovery Areas",
+      "placeholder": "3 private recovery rooms"
+    },
+    "waiting_rooms": {
+      "prompt": "Waiting Rooms",
+      "placeholder": "2 waiting areas with refreshments"
+    },
+    "sterilization": {
+      "prompt": "Sterilization and Hygiene Protocols",
+      "placeholder": "Autoclave sterilization, daily deep cleaning"
+    },
+    "emergency_equipment": {
+      "prompt": "Emergency Equipment",
+      "options": {
+        "defibrillator": "Defibrillator",
+        "oxygen": "Oxygen Supply",
+        "emergency_meds": "Emergency Medications",
+        "backup_power": "Backup Power Supply",
+        "other": "Other"
+      }
+    },
+    "submission_type": {
+      "prompt": "Audit Submission Type",
+      "options": {
+        "doctor": "Doctor",
+        "clinic": "Clinic",
+        "internal": "Internal"
+      }
+    },
+    "audit_type": {
+      "prompt": "Audit Type",
+      "options": {
+        "standard_audit": "Standard Audit",
+        "advanced_audit": "Advanced Audit",
+        "forensic_review": "Forensic Review",
+        "training_review": "Training Review",
+        "certification_review": "Certification Review"
+      }
+    },
+    "case_id": {
+      "prompt": "Case ID"
+    },
+    "clinic_branch": {
+      "prompt": "Clinic Branch / Location"
+    },
+    "doctor_name": {
+      "prompt": "Doctor Name"
+    },
+    "country_jurisdiction": {
+      "prompt": "Country / Jurisdiction",
+      "options": {
+        "turkey": "Turkey",
+        "spain": "Spain",
+        "india": "India",
+        "thailand": "Thailand",
+        "mexico": "Mexico",
+        "brazil": "Brazil",
+        "argentina": "Argentina",
+        "colombia": "Colombia",
+        "australia": "Australia",
+        "uk": "United Kingdom",
+        "usa": "United States",
+        "canada": "Canada",
+        "uae": "UAE",
+        "belgium": "Belgium",
+        "germany": "Germany",
+        "poland": "Poland",
+        "greece": "Greece",
+        "other": "Other"
+      }
+    },
+    "surgery_date": {
+      "prompt": "Surgery Date"
+    },
+    "multi_day_flag": {
+      "prompt": "Multi-Day Procedure",
+      "options": {
+        "yes": "Yes",
+        "no": "No"
+      }
+    },
+    "requested_by": {
+      "prompt": "Requested By",
+      "options": {
+        "doctor": "Doctor",
+        "clinic": "Clinic",
+        "internal_team": "Internal Team"
+      }
+    },
+    "review_purpose": {
+      "prompt": "Review Purpose",
+      "options": {
+        "qa": "QA",
+        "training": "Training",
+        "marketing": "Marketing",
+        "certification": "Certification",
+        "outcome_review": "Outcome Review",
+        "dispute_review": "Dispute Review"
+      }
+    },
+    "previous_surgery_history": {
+      "prompt": "Previous Surgery History",
+      "options": {
+        "yes": "Yes",
+        "no": "No"
+      }
+    },
+    "repair_case_flag": {
+      "prompt": "Corrective / Repair Case",
+      "options": {
+        "yes": "Yes",
+        "no": "No"
+      }
+    },
+    "additional_operators": {
+      "prompt": "Additional Surgeons / Operators",
+      "options": {
+        "additional_surgeon": "Additional Surgeon",
+        "assistant_surgeon": "Assistant Surgeon",
+        "extraction_technician": "Extraction Technician",
+        "implantation_technician": "Implantation Technician",
+        "anaesthesia_support": "Anaesthesia Support",
+        "other": "Other"
+      }
+    },
+    "additional_operators_details": {
+      "prompt": "Additional Operators (Names / Roles)"
+    },
+    "procedure_day_breakdown": {
+      "prompt": "Procedure Day Breakdown"
+    },
+    "previous_surgery_details": {
+      "prompt": "Previous Surgery Details"
+    },
+    "procedure_type": {
+      "prompt": "Procedure Type",
+      "options": {
+        "fue": "FUE",
+        "fut": "FUT",
+        "long_hair_fue": "Long Hair FUE",
+        "eyebrow": "Eyebrow",
+        "beard": "Beard",
+        "body_hair": "Body Hair",
+        "repair": "Repair",
+        "scar_revision": "Scar Revision",
+        "mixed": "Mixed"
+      }
+    },
+    "primary_procedure_type": {
+      "prompt": "Primary Procedure Type",
+      "options": {
+        "fue": "FUE",
+        "fut": "FUT",
+        "long_hair_fue": "Long Hair FUE",
+        "eyebrow": "Eyebrow",
+        "beard": "Beard",
+        "body_hair": "Body Hair",
+        "repair": "Repair",
+        "scar_revision": "Scar Revision",
+        "mixed": "Mixed"
+      }
+    },
+    "areas_treated": {
+      "prompt": "Areas Treated",
+      "options": {
+        "hairline": "Hairline",
+        "temples": "Temples",
+        "frontal_tuft": "Frontal Tuft",
+        "forelock": "Forelock",
+        "midscalp": "Midscalp",
+        "crown": "Crown",
+        "donor_repair": "Donor Repair",
+        "eyebrows": "Eyebrows",
+        "beard": "Beard",
+        "scar": "Scar",
+        "other": "Other"
+      }
+    },
+    "primary_area_treated": {
+      "prompt": "Primary Area Treated",
+      "options": {
+        "hairline": "Hairline",
+        "temples": "Temples",
+        "frontal_tuft": "Frontal Tuft",
+        "forelock": "Forelock",
+        "midscalp": "Midscalp",
+        "crown": "Crown",
+        "donor_repair": "Donor Repair",
+        "eyebrows": "Eyebrows",
+        "beard": "Beard",
+        "scar": "Scar",
+        "other": "Other"
+      }
+    },
+    "hairline_lowering_flag": {
+      "prompt": "Hairline Lowering Performed",
+      "options": {
+        "yes": "Yes",
+        "no": "No"
+      }
+    },
+    "crown_included_flag": {
+      "prompt": "Crown Work Included",
+      "options": {
+        "yes": "Yes",
+        "no": "No"
+      }
+    },
+    "beard_donor_used": {
+      "prompt": "Beard Donor Used",
+      "options": {
+        "yes": "Yes",
+        "no": "No"
+      }
+    },
+    "body_donor_used": {
+      "prompt": "Body Donor Used",
+      "options": {
+        "yes": "Yes",
+        "no": "No"
+      }
+    },
+    "patient_age_bracket": {
+      "prompt": "Patient Age Bracket",
+      "options": {
+        "lt_25": "<25",
+        "25_30": "25-30",
+        "31_35": "31-35",
+        "36_40": "36-40",
+        "41_50": "41-50",
+        "51_60": "51-60",
+        "gt_60": "60+"
+      }
+    },
+    "patient_sex": {
+      "prompt": "Sex",
+      "options": {
+        "male": "Male",
+        "female": "Female",
+        "other_prefer_not_to_say": "Other / Prefer not to say"
+      }
+    },
+    "ethnicity_hair_background": {
+      "prompt": "Ethnicity / Hair Background",
+      "options": {
+        "caucasian": "Caucasian",
+        "south_asian": "South Asian",
+        "east_asian": "East Asian",
+        "african_afro_textured": "African / Afro-textured",
+        "middle_eastern": "Middle Eastern",
+        "latino": "Latino",
+        "mixed": "Mixed",
+        "other": "Other"
+      }
+    },
+    "hair_type_curl_pattern": {
+      "prompt": "Hair Type / Curl Pattern",
+      "options": {
+        "straight": "Straight",
+        "wavy": "Wavy",
+        "curly": "Curly",
+        "coily": "Coily",
+        "afro_textured": "Afro-textured"
+      }
+    },
+    "hair_calibre_category": {
+      "prompt": "Hair Calibre Category",
+      "options": {
+        "fine": "Fine",
+        "medium": "Medium",
+        "coarse": "Coarse",
+        "mixed": "Mixed"
+      }
+    },
+    "hair_shaft_diameter_microns": {
+      "prompt": "Exact Hair Shaft Diameter (microns)"
+    },
+    "hair_colour": {
+      "prompt": "Hair Colour",
+      "options": {
+        "black": "Black",
+        "brown": "Brown",
+        "blonde": "Blonde",
+        "grey": "Grey",
+        "red": "Red",
+        "mixed": "Mixed"
+      }
+    },
+    "skin_hair_contrast": {
+      "prompt": "Skin / Hair Contrast",
+      "options": {
+        "low": "Low",
+        "moderate": "Moderate",
+        "high": "High"
+      }
+    },
+    "primary_diagnosis": {
+      "prompt": "Primary Diagnosis",
+      "options": {
+        "aga": "AGA",
+        "female_pattern_hair_loss": "Female Pattern Hair Loss",
+        "traction_alopecia": "Traction Alopecia",
+        "scarring_alopecia": "Scarring Alopecia",
+        "ccca": "CCCA",
+        "post_surgical_scar": "Post-surgical Scar",
+        "other": "Other"
+      }
+    },
+    "hair_loss_scale_used": {
+      "prompt": "Hair Loss Scale Used",
+      "options": {
+        "hamilton_norwood": "Hamilton-Norwood",
+        "ludwig": "Ludwig",
+        "savin": "Savin",
+        "custom": "Custom",
+        "not_recorded": "Not Recorded"
+      }
+    },
+    "hair_loss_grade": {
+      "prompt": "Hair Loss Grade",
+      "placeholder": "Grade / stage"
+    },
+    "hair_loss_stability": {
+      "prompt": "Hair Loss Stability",
+      "options": {
+        "stable": "Stable",
+        "probably_stable": "Probably Stable",
+        "unstable": "Unstable",
+        "unknown": "Unknown"
+      }
+    },
+    "miniaturisation_present": {
+      "prompt": "Miniaturisation Present",
+      "options": {
+        "yes": "Yes",
+        "no": "No"
+      }
+    },
+    "secondary_diagnosis": {
+      "prompt": "Secondary Diagnosis / Contributors",
+      "options": {
+        "diffuse_thinning": "Diffuse thinning",
+        "scalp_inflammation": "Scalp inflammation",
+        "hypothyroid_related": "Hypothyroid-related",
+        "stress_related": "Stress-related",
+        "nutritional": "Nutritional",
+        "other": "Other"
+      }
+    },
+    "miniaturisation_regions": {
+      "prompt": "Miniaturisation Regions",
+      "options": {
+        "hairline": "Hairline",
+        "frontal": "Frontal",
+        "midscalp": "Midscalp",
+        "crown": "Crown",
+        "donor": "Donor",
+        "temples": "Temples"
+      }
+    },
+    "dupa_retrograde_flag": {
+      "prompt": "DUPA / Retrograde Concern",
+      "options": {
+        "yes": "Yes",
+        "no": "No"
+      }
+    },
+    "scalp_condition_flags": {
+      "prompt": "Scalp Condition Flags",
+      "options": {
+        "seb_derm": "Seb Derm",
+        "psoriasis": "Psoriasis",
+        "fibrosis": "Fibrosis",
+        "scar_tissue": "Scar tissue",
+        "folliculitis": "Folliculitis",
+        "inflammation": "Inflammation",
+        "other": "Other"
+      }
+    },
+    "planned_graft_count": {
+      "prompt": "Planned Graft Count"
+    },
+    "actual_graft_count": {
+      "prompt": "Actual Graft Count"
+    },
+    "zones_planned": {
+      "prompt": "Zones Planned",
+      "options": {
+        "hairline": "Hairline",
+        "temples": "Temples",
+        "frontal_tuft": "Frontal Tuft",
+        "forelock": "Forelock",
+        "midscalp": "Midscalp",
+        "crown": "Crown",
+        "scar": "Scar",
+        "eyebrows": "Eyebrows",
+        "beard": "Beard"
+      }
+    },
+    "future_loss_planning": {
+      "prompt": "Future Loss Planning Considered",
+      "options": {
+        "yes": "Yes",
+        "no": "No"
+      }
+    },
+    "estimated_hair_count": {
+      "prompt": "Estimated Hair Count"
+    },
+    "density_goal_by_zone": {
+      "prompt": "Density Goal by Zone"
+    },
+    "hairline_design_strategy": {
+      "prompt": "Hairline Design Strategy"
+    },
+    "risk_counselling_documented": {
+      "prompt": "Risk Counselling Documented",
+      "options": {
+        "yes": "Yes",
+        "no": "No"
+      }
+    },
+    "candidate_suitability_rating": {
+      "prompt": "Candidate Suitability Rating",
+      "options": {
+        "good": "Good",
+        "borderline": "Borderline",
+        "high_risk": "High Risk",
+        "poor_candidate": "Poor Candidate"
+      }
+    },
+    "donor_quality_rating": {
+      "prompt": "Donor Quality Rating",
+      "options": {
+        "poor": "Poor",
+        "fair": "Fair",
+        "good": "Good",
+        "excellent": "Excellent"
+      }
+    },
+    "donor_density_rating": {
+      "prompt": "Donor Density Rating",
+      "options": {
+        "low": "Low",
+        "moderate": "Moderate",
+        "high": "High"
+      }
+    },
+    "estimated_donor_capacity": {
+      "prompt": "Estimated Donor Capacity",
+      "options": {
+        "low": "Low",
+        "moderate": "Moderate",
+        "high": "High"
+      }
+    },
+    "estimated_donor_capacity_numeric": {
+      "prompt": "Estimated Donor Capacity (numeric)"
+    },
+    "safe_donor_zone_assessed": {
+      "prompt": "Safe Donor Zone Assessed",
+      "options": {
+        "yes": "Yes",
+        "no": "No"
+      }
+    },
+    "donor_scarring_present": {
+      "prompt": "Scarring Present in Donor",
+      "options": {
+        "yes": "Yes",
+        "no": "No"
+      }
+    },
+    "overharvesting_risk_flag": {
+      "prompt": "Overharvesting Risk Flag",
+      "options": {
+        "yes": "Yes",
+        "no": "No"
+      }
+    },
+    "donor_density_per_cm2": {
+      "prompt": "Donor Density per cm²"
+    },
+    "avg_hairs_per_graft": {
+      "prompt": "Average Hairs per Graft"
+    },
+    "overharvesting_signs": {
+      "prompt": "Overharvesting Signs Observed",
+      "options": {
+        "patchiness": "Patchiness",
+        "moth_eaten_appearance": "Moth-eaten appearance",
+        "visible_thinning": "Visible thinning",
+        "uneven_extraction": "Uneven extraction",
+        "other": "Other"
+      }
+    },
+    "donor_mapping_notes": {
+      "prompt": "Donor Mapping Notes"
+    },
+    "num_surgeons": {
+      "prompt": "Number of Surgeons"
+    },
+    "avg_experience": {
+      "prompt": "Average Years of Experience for Surgeons"
+    },
+    "num_nurses_techs": {
+      "prompt": "Number of Nurses/Technicians"
+    },
+    "staff_training": {
+      "prompt": "Staff Training Programs",
+      "placeholder": "Quarterly training on new techniques"
+    },
+    "staff_certifications": {
+      "prompt": "Certifications of Key Staff",
+      "placeholder": "All surgeons are ISHRS-certified"
+    },
+    "procedures_annually": {
+      "prompt": "Total Hair Transplant Procedures Performed Annually"
+    },
+    "success_rate": {
+      "prompt": "Success Rate (%)"
+    },
+    "patient_satisfaction": {
+      "prompt": "Patient Satisfaction Score"
+    },
+    "complication_rate": {
+      "prompt": "Complication Rate (%)"
+    },
+    "extraction_method": {
+      "prompt": "Extraction Method",
+      "options": {
+        "manual": "Manual",
+        "motorised": "Motorised",
+        "robotic": "Robotic",
+        "mixed": "Mixed"
+      }
+    },
+    "extraction_devices_used": {
+      "prompt": "Extraction Devices/Systems Used",
+      "options": {
+        "manual_punch": "Manual Punch",
+        "motorised_punch": "Motorised Punch",
+        "safe_system": "SAFE System",
+        "artas_robotic_system": "ARTAS Robotic System",
+        "neograft": "Neograft",
+        "smartgraft": "SmartGraft",
+        "atera_fue_100": "Atera FUE-100",
+        "trivellini_system": "Trivellini System",
+        "waw_system": "WAW System",
+        "zeus_ugraft_system": "Zeus UGraft System",
+        "fue_designer": "FUE Designer",
+        "mamba_fue": "Mamba FUE",
+        "sapyre": "Sapyre",
+        "prodigy_fue": "Prodigy FUE",
+        "fue_evolve": "FUE Evolve",
+        "manual_motorised_hybrid": "Manual / Motorised Hybrid",
+        "other": "Other"
+      }
+    },
+    "extraction_technique": {
+      "prompt": "Extraction Technique",
+      "options": {
+        "standard_fue": "Standard FUE",
+        "long_hair_fue": "Long Hair FUE",
+        "unshaven_fue": "Unshaven FUE",
+        "partial_shave_fue": "Partial Shave FUE",
+        "zone_shave_fue": "Zone Shave FUE",
+        "hybrid_fue_fut": "Hybrid FUE/FUT",
+        "other": "Other"
+      }
+    },
+    "extraction_operator": {
+      "prompt": "Extraction Performed By",
+      "options": {
+        "surgeon": "Surgeon",
+        "technician": "Technician",
+        "mixed_team": "Mixed Team",
+        "robotic": "Robotic"
+      }
+    },
+    "punch_sizes_used": {
+      "prompt": "Punch Sizes Used",
+      "options": {
+        "0_60_mm": "0.60 mm",
+        "0_65_mm": "0.65 mm",
+        "0_70_mm": "0.70 mm",
+        "0_75_mm": "0.75 mm",
+        "0_80_mm": "0.80 mm",
+        "0_85_mm": "0.85 mm",
+        "0_90_mm": "0.90 mm",
+        "0_95_mm": "0.95 mm",
+        "1_00_mm": "1.00 mm",
+        "1_05_mm": "1.05 mm",
+        "1_10_mm": "1.10 mm",
+        "1_15_mm": "1.15 mm",
+        "other": "Other"
+      }
+    },
+    "punch_types_used": {
+      "prompt": "Punch Types Used",
+      "options": {
+        "sharp": "Sharp",
+        "dull": "Dull",
+        "hybrid": "Hybrid",
+        "serrated": "Serrated",
+        "trumpet": "Trumpet",
+        "custom_proprietary": "Custom / Proprietary",
+        "flared": "Flared",
+        "tapered": "Tapered",
+        "other": "Other"
+      }
+    },
+    "holding_solutions_used": {
+      "prompt": "Holding/Storage Solutions Used",
+      "options": {
+        "saline": "Saline",
+        "hypothermosol": "Hypothermosol",
+        "atp_enhanced_solution": "ATP-enhanced solution",
+        "lactated_ringers": "Lactated Ringer's",
+        "prp": "PRP",
+        "chilled_saline": "Chilled saline",
+        "organ_culture_medium": "Organ culture medium",
+        "hypothermosol_plus": "Hypothermosol Plus",
+        "other": "Other"
+      }
+    },
+    "grafts_kept_hydrated": {
+      "prompt": "Grafts Kept Hydrated",
+      "options": {
+        "yes": "Yes",
+        "no": "No"
+      }
+    },
+    "sorting_performed": {
+      "prompt": "Sorting Performed",
+      "options": {
+        "yes": "Yes",
+        "no": "No"
+      }
+    },
+    "implantation_method": {
+      "prompt": "Implantation Method",
+      "options": {
+        "implanter": "Implanter",
+        "forceps": "Forceps",
+        "stick_and_place": "Stick and Place",
+        "needle_and_forceps": "Needle and Forceps",
+        "mixed": "Mixed",
+        "other": "Other"
+      }
+    },
+    "implantation_devices_used": {
+      "prompt": "Implantation Devices Used",
+      "options": {
+        "choi_pen": "Choi Pen",
+        "lion_implanter": "Lion Implanter",
+        "keep_implanter": "KEEP Implanter",
+        "sava_implanter": "SAVA Implanter",
+        "forceps": "Forceps",
+        "stick_and_place": "Stick and Place",
+        "needle_and_forceps": "Needle and Forceps",
+        "sergeant_implanter": "Sergeant Implanter",
+        "blunt_needle_forceps": "Blunt needle + forceps",
+        "implanter_pen_generic": "Implanter pen (generic)",
+        "other": "Other"
+      }
+    },
+    "implanted_by": {
+      "prompt": "Implanted By",
+      "options": {
+        "surgeon": "Surgeon",
+        "technician": "Technician",
+        "mixed_team": "Mixed Team"
+      }
+    },
+    "intraoperative_adjuncts_used": {
+      "prompt": "Intraoperative Adjuncts Used",
+      "options": {
+        "prp": "PRP",
+        "exosomes": "Exosomes",
+        "atp": "ATP",
+        "hypothermosol": "Hypothermosol",
+        "microneedling": "Microneedling",
+        "partial_transection_technique": "Partial Transection Technique",
+        "chilled_storage_protocol": "Chilled Storage Protocol",
+        "other": "Other"
+      }
+    },
+    "postoperative_treatments_included": {
+      "prompt": "Post-Operative Treatments Included",
+      "options": {
+        "prp": "PRP",
+        "exosomes": "Exosomes",
+        "microneedling": "Microneedling",
+        "led_light_therapy": "LED Light Therapy",
+        "lllt_laser_cap": "LLLT / Laser Cap",
+        "minoxidil_topical": "Minoxidil Topical",
+        "minoxidil_oral": "Minoxidil Oral",
+        "finasteride_oral": "Finasteride Oral",
+        "dutasteride_oral": "Dutasteride Oral",
+        "saw_palmetto": "Saw Palmetto",
+        "ketoconazole_shampoo": "Ketoconazole Shampoo",
+        "nutraceutical_support": "Nutraceutical Support",
+        "antibiotics": "Antibiotics",
+        "analgesics": "Analgesics",
+        "steroids_anti_swelling_medication": "Steroids / Anti-swelling Medication",
+        "donor_recovery_protocol": "Donor Recovery Protocol",
+        "topical_steroid": "Topical steroid",
+        "follicle_support_supplements": "Follicle support supplements",
+        "other": "Other"
+      }
+    },
+    "postoperative_treatments_recommended": {
+      "prompt": "Post-Operative Treatments Recommended",
+      "options": {
+        "prp": "PRP",
+        "exosomes": "Exosomes",
+        "microneedling": "Microneedling",
+        "led_light_therapy": "LED Light Therapy",
+        "lllt_laser_cap": "LLLT / Laser Cap",
+        "minoxidil_topical": "Minoxidil Topical",
+        "minoxidil_oral": "Minoxidil Oral",
+        "finasteride_oral": "Finasteride Oral",
+        "dutasteride_oral": "Dutasteride Oral",
+        "saw_palmetto": "Saw Palmetto",
+        "ketoconazole_shampoo": "Ketoconazole Shampoo",
+        "nutraceutical_support": "Nutraceutical Support",
+        "antibiotics": "Antibiotics",
+        "analgesics": "Analgesics",
+        "steroids_anti_swelling_medication": "Steroids / Anti-swelling Medication",
+        "donor_recovery_protocol": "Donor Recovery Protocol",
+        "topical_steroid": "Topical steroid",
+        "follicle_support_supplements": "Follicle support supplements",
+        "other": "Other"
+      }
+    },
+    "follow_up_plan_documented": {
+      "prompt": "Follow-Up Plan Documented",
+      "options": {
+        "yes": "Yes",
+        "no": "No"
+      }
+    },
+    "outcome_audit_stage": {
+      "prompt": "Outcome Audit Stage",
+      "options": {
+        "immediate_post_op": "Immediate Post-op",
+        "early_follow_up": "Early Follow-up",
+        "6_month": "6 Month",
+        "12_month": "12 Month",
+        "18_plus_month": "18+ Month"
+      }
+    },
+    "growth_outcome_category": {
+      "prompt": "Growth Outcome Category",
+      "options": {
+        "poor": "Poor",
+        "fair": "Fair",
+        "good": "Good",
+        "excellent": "Excellent",
+        "too_early_to_assess": "Too Early to Assess"
+      }
+    },
+    "donor_healing_category": {
+      "prompt": "Donor Healing Category",
+      "options": {
+        "poor": "Poor",
+        "fair": "Fair",
+        "good": "Good",
+        "excellent": "Excellent"
+      }
+    },
+    "recipient_sites_created_by": {
+      "prompt": "Recipient Sites Created By",
+      "options": {
+        "surgeon": "Surgeon",
+        "technician": "Technician",
+        "mixed_team": "Mixed Team"
+      }
+    },
+    "site_creation_method": {
+      "prompt": "Site Creation Method",
+      "options": {
+        "blade": "Blade",
+        "needle": "Needle",
+        "implanter_led": "Implanter-led",
+        "stick_and_place": "Stick and Place",
+        "sapphire_blade": "Sapphire blade",
+        "steel_blade": "Steel blade",
+        "premade_slits": "Pre-made slits",
+        "other": "Other"
+      }
+    },
+    "dense_packing_attempted": {
+      "prompt": "Dense Packing Attempted",
+      "options": {
+        "yes": "Yes",
+        "no": "No"
+      }
+    },
+    "transection_category": {
+      "prompt": "Estimated Transection Category",
+      "options": {
+        "low": "Low",
+        "moderate": "Moderate",
+        "high": "High",
+        "unknown": "Unknown"
+      }
+    },
+    "primary_extraction_device": {
+      "prompt": "Primary Extraction Device/System",
+      "options": {
+        "manual_punch": "Manual Punch",
+        "motorised_punch": "Motorised Punch",
+        "safe_system": "SAFE System",
+        "artas_robotic_system": "ARTAS Robotic System",
+        "neograft": "Neograft",
+        "smartgraft": "SmartGraft",
+        "atera_fue_100": "Atera FUE-100",
+        "trivellini_system": "Trivellini System",
+        "waw_system": "WAW System",
+        "zeus_ugraft_system": "Zeus UGraft System",
+        "fue_designer": "FUE Designer",
+        "mamba_fue": "Mamba FUE",
+        "sapyre": "Sapyre",
+        "prodigy_fue": "Prodigy FUE",
+        "fue_evolve": "FUE Evolve",
+        "manual_motorised_hybrid": "Manual / Motorised Hybrid",
+        "other": "Other"
+      }
+    },
+    "extraction_experience_years": {
+      "prompt": "Extraction Experience Years"
+    },
+    "primary_punch_size": {
+      "prompt": "Primary Punch Size",
+      "options": {
+        "0_60_mm": "0.60 mm",
+        "0_65_mm": "0.65 mm",
+        "0_70_mm": "0.70 mm",
+        "0_75_mm": "0.75 mm",
+        "0_80_mm": "0.80 mm",
+        "0_85_mm": "0.85 mm",
+        "0_90_mm": "0.90 mm",
+        "0_95_mm": "0.95 mm",
+        "1_00_mm": "1.00 mm",
+        "1_05_mm": "1.05 mm",
+        "1_10_mm": "1.10 mm",
+        "1_15_mm": "1.15 mm",
+        "other": "Other"
+      }
+    },
+    "primary_punch_type": {
+      "prompt": "Primary Punch Type",
+      "options": {
+        "sharp": "Sharp",
+        "dull": "Dull",
+        "hybrid": "Hybrid",
+        "serrated": "Serrated",
+        "trumpet": "Trumpet",
+        "custom_proprietary": "Custom / Proprietary",
+        "flared": "Flared",
+        "tapered": "Tapered",
+        "other": "Other"
+      }
+    },
+    "punch_manufacturers_used": {
+      "prompt": "Punch Manufacturers Used",
+      "options": {
+        "waw": "WAW",
+        "trivellini": "Trivellini",
+        "devroye": "Devroye",
+        "cole": "Cole",
+        "hans": "Hans",
+        "sharp_needle": "Sharp Needle",
+        "generic": "Generic",
+        "other": "Other"
+      }
+    },
+    "primary_holding_solution": {
+      "prompt": "Primary Holding Solution",
+      "options": {
+        "saline": "Saline",
+        "hypothermosol": "Hypothermosol",
+        "atp_enhanced_solution": "ATP-enhanced solution",
+        "lactated_ringers": "Lactated Ringer's",
+        "prp": "PRP",
+        "chilled_saline": "Chilled saline",
+        "organ_culture_medium": "Organ culture medium",
+        "hypothermosol_plus": "Hypothermosol Plus",
+        "other": "Other"
+      }
+    },
+    "primary_implantation_device": {
+      "prompt": "Primary Implantation Device",
+      "options": {
+        "choi_pen": "Choi Pen",
+        "lion_implanter": "Lion Implanter",
+        "keep_implanter": "KEEP Implanter",
+        "sava_implanter": "SAVA Implanter",
+        "forceps": "Forceps",
+        "stick_and_place": "Stick and Place",
+        "needle_and_forceps": "Needle and Forceps",
+        "sergeant_implanter": "Sergeant Implanter",
+        "blunt_needle_forceps": "Blunt needle + forceps",
+        "implanter_pen_generic": "Implanter pen (generic)",
+        "other": "Other"
+      }
+    },
+    "implantation_time_minutes": {
+      "prompt": "Implantation Time (minutes)"
+    },
+    "singles_reserved_for_hairline": {
+      "prompt": "Singles Reserved for Hairline",
+      "options": {
+        "yes": "Yes",
+        "no": "No"
+      }
+    },
+    "intraop_prp_used": {
+      "prompt": "PRP Used Intraoperatively",
+      "options": {
+        "yes": "Yes",
+        "no": "No"
+      }
+    },
+    "intraop_exosomes_used": {
+      "prompt": "Exosomes Used Intraoperatively",
+      "options": {
+        "yes": "Yes",
+        "no": "No"
+      }
+    },
+    "exosome_type": {
+      "prompt": "Exosome Type",
+      "options": {
+        "human_msc": "Human MSC",
+        "plant": "Plant",
+        "other": "Other",
+        "unknown": "Unknown"
+      }
+    },
+    "partial_transection_used": {
+      "prompt": "Partial Transection Technique Used",
+      "options": {
+        "yes": "Yes",
+        "no": "No"
+      }
+    },
+    "intraop_adjunct_notes": {
+      "prompt": "Intraoperative Adjunct Notes"
+    },
+    "extraction_device_change_notes": {
+      "prompt": "Extraction Device Change Notes"
+    },
+    "punch_size_change_notes": {
+      "prompt": "Punch Size Change Notes"
+    },
+    "punch_type_change_notes": {
+      "prompt": "Punch Type Change Notes"
+    },
+    "holding_solution_notes": {
+      "prompt": "Holding Solution Notes"
+    },
+    "graft_handling_team_notes": {
+      "prompt": "Graft Handling Team Notes"
+    },
+    "microscopic_inspection_used": {
+      "prompt": "Microscopic Inspection Used",
+      "options": {
+        "yes": "Yes",
+        "no": "No"
+      }
+    },
+    "graft_composition_available": {
+      "prompt": "Graft Composition Count Available",
+      "options": {
+        "yes": "Yes",
+        "no": "No"
+      }
+    },
+    "graft_tray_quality_rating": {
+      "prompt": "Graft Tray Quality Rating",
+      "options": {
+        "poor": "Poor",
+        "fair": "Fair",
+        "good": "Good",
+        "excellent": "Excellent"
+      }
+    },
+    "graft_sorting_method": {
+      "prompt": "Graft Sorting Method",
+      "options": {
+        "singles": "Singles",
+        "doubles": "Doubles",
+        "triples": "Triples",
+        "by_calibre": "By calibre",
+        "by_zone": "By zone",
+        "not_sorted": "Not sorted",
+        "other": "Other"
+      }
+    },
+    "visible_transection_on_tray": {
+      "prompt": "Visible Transection on Tray",
+      "options": {
+        "none": "None",
+        "minimal": "Minimal",
+        "mild": "Mild",
+        "moderate": "Moderate",
+        "significant": "Significant",
+        "unknown": "Unknown"
+      }
+    },
+    "graft_tissue_quality_concern": {
+      "prompt": "Graft Tissue Quality Concern",
+      "options": {
+        "excess_tissue": "Excess tissue",
+        "overskeletonised": "Overskeletonised",
+        "crushed_grafts": "Crushed grafts",
+        "dehydration_concern": "Dehydration concern",
+        "blood_heavy_tray": "Blood-heavy tray",
+        "inconsistent_graft_quality": "Inconsistent graft quality",
+        "none_observed": "None observed"
+      }
+    },
+    "microscopic_graft_review_available": {
+      "prompt": "Microscopic Graft Review Available",
+      "options": {
+        "yes": "Yes",
+        "no": "No"
+      }
+    },
+    "implantation_device_notes": {
+      "prompt": "Implantation Device Notes"
+    },
+    "popping_issues_observed": {
+      "prompt": "Popping Issues Observed",
+      "options": {
+        "yes": "Yes",
+        "no": "No"
+      }
+    },
+    "implant_depth_consistency": {
+      "prompt": "Implant Depth Consistency",
+      "options": {
+        "poor": "Poor",
+        "fair": "Fair",
+        "good": "Good",
+        "excellent": "Excellent"
+      }
+    },
+    "postoperative_protocol_notes": {
+      "prompt": "Post-Operative Protocol Notes"
+    },
+    "finasteride_recommended": {
+      "prompt": "Finasteride Recommended",
+      "options": {
+        "yes": "Yes",
+        "no": "No"
+      }
+    },
+    "minoxidil_recommended": {
+      "prompt": "Minoxidil Recommended",
+      "options": {
+        "yes": "Yes",
+        "no": "No"
+      }
+    },
+    "donor_recovery_protocol_included": {
+      "prompt": "Donor Recovery Protocol Included",
+      "options": {
+        "yes": "Yes",
+        "no": "No"
+      }
+    },
+    "patient_satisfaction_category": {
+      "prompt": "Patient Satisfaction Category",
+      "options": {
+        "dissatisfied": "Dissatisfied",
+        "mixed": "Mixed",
+        "satisfied": "Satisfied",
+        "very_satisfied": "Very Satisfied",
+        "unknown": "Unknown"
+      }
+    },
+    "corrective_surgery_likely": {
+      "prompt": "Corrective Surgery Likely Needed",
+      "options": {
+        "yes": "Yes",
+        "no": "No"
+      }
+    },
+    "outcome_notes": {
+      "prompt": "Outcome Notes"
+    },
+    "review_concern_categories": {
+      "prompt": "Review Concern Categories",
+      "options": {
+        "low_yield": "Low Yield",
+        "overharvesting": "Overharvesting",
+        "poor_hairline_design": "Poor Hairline Design",
+        "poor_angle_direction": "Poor Angle/Direction",
+        "poor_density": "Poor Density",
+        "donor_trauma": "Donor Trauma",
+        "incomplete_records": "Incomplete Records",
+        "other": "Other"
+      }
+    },
+    "claimed_evidenced_discrepancy": {
+      "prompt": "Claimed vs Evidenced Discrepancy",
+      "options": {
+        "yes": "Yes",
+        "no": "No"
+      }
+    },
+    "incomplete_records_flag": {
+      "prompt": "Incomplete Records Flag",
+      "options": {
+        "yes": "Yes",
+        "no": "No"
+      }
+    },
+    "case_complexity_rating": {
+      "prompt": "Case Complexity Rating",
+      "options": {
+        "low": "Low",
+        "moderate": "Moderate",
+        "high": "High",
+        "extreme": "Extreme"
+      }
+    },
+    "auditor_confidence_level": {
+      "prompt": "Auditor Confidence Level",
+      "options": {
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High"
+      }
+    },
+    "forensic_notes": {
+      "prompt": "Freeform Forensic Notes"
+    },
+    "reason_for_intraoperative_changes": {
+      "prompt": "Reason for Intra-Operative Changes"
+    },
+    "motor_speed_rpm": {
+      "prompt": "Motor Speed (RPM)"
+    },
+    "punch_motion": {
+      "prompt": "Punch Motion",
+      "options": {
+        "rotation": "Rotation",
+        "oscillation": "Oscillation",
+        "hybrid": "Hybrid",
+        "reciprocating": "Reciprocating",
+        "unknown": "Unknown"
+      }
+    },
+    "transection_rate_percent": {
+      "prompt": "Transection Rate (%)"
+    },
+    "buried_graft_rate_percent": {
+      "prompt": "Buried Graft Rate (%)"
+    },
+    "extraction_time_minutes": {
+      "prompt": "Extraction Time (minutes)"
+    },
+    "slit_orientation": {
+      "prompt": "Coronal / Sagittal Orientation",
+      "options": {
+        "coronal": "Coronal",
+        "sagittal": "Sagittal",
+        "mixed": "Mixed",
+        "unknown": "Unknown"
+      }
+    },
+    "site_instrument_sizes_used": {
+      "prompt": "Site Instrument Sizes Used",
+      "options": {
+        "0_5_mm": "0.5 mm",
+        "0_6_mm": "0.6 mm",
+        "0_7_mm": "0.7 mm",
+        "0_8_mm": "0.8 mm",
+        "0_9_mm": "0.9 mm",
+        "1_0_mm": "1.0 mm",
+        "1_2_mm": "1.2 mm",
+        "other": "Other"
+      }
+    },
+    "hairline_direction_quality": {
+      "prompt": "Hairline Direction Quality",
+      "options": {
+        "poor": "Poor",
+        "fair": "Fair",
+        "good": "Good",
+        "excellent": "Excellent"
+      }
+    },
+    "angle_direction_notes": {
+      "prompt": "Angle / Direction Strategy Notes"
+    },
+    "native_hair_protection_strategy": {
+      "prompt": "Native Hair Protection Strategy"
+    },
+    "out_of_body_time_category": {
+      "prompt": "Out-of-Body Time Category",
+      "options": {
+        "lt_1h": "< 1 hour",
+        "1_2h": "1-2 hours",
+        "2_4h": "2-4 hours",
+        "gt_4h": "> 4 hours",
+        "mixed_unknown": "Mixed / Unknown",
+        "mixed": "Mixed (legacy)"
+      }
+    },
+    "temperature_controlled_storage": {
+      "prompt": "Temperature Controlled Storage",
+      "options": {
+        "yes": "Yes",
+        "no": "No"
+      }
+    },
+    "surgeon_vs_technician_split_notes": {
+      "prompt": "Surgeon vs Technician Split Notes"
+    },
+    "cost_range": {
+      "prompt": "Typical Cost Range for Hair Transplant Procedures",
+      "placeholder": "$3,000 - $7,000"
+    },
+    "cost_included": {
+      "prompt": "What Is Typically Included in the Cost?",
+      "options": {
+        "consultation": "Initial Consultation",
+        "preop_tests": "Pre-Operative Tests",
+        "procedure": "Hair Transplant Procedure",
+        "medications": "Post-Operative Medications",
+        "followup": "Follow-Up Appointments",
+        "accommodation": "Accommodation",
+        "transportation": "Transportation",
+        "other": "Other"
+      }
+    },
+    "quality_control": {
+      "prompt": "Quality Control Measures",
+      "placeholder": "Regular audits, patient follow-up surveys"
+    },
+    "equipment_maintenance": {
+      "prompt": "Equipment Maintenance Schedule",
+      "placeholder": "Monthly calibration of tools"
+    },
+    "safety_protocols": {
+      "prompt": "Patient Safety Protocols",
+      "placeholder": "Pre-operative health screenings"
+    },
+    "certifications": {
+      "prompt": "Certifications and Accreditations",
+      "placeholder": "ISO 9001:2015, JCI Accreditation"
+    },
+    "preop_services": {
+      "prompt": "Pre-Operative Services",
+      "options": {
+        "consult_inperson": "Initial Consultation (In-Person)",
+        "consult_virtual": "Initial Consultation (Virtual)",
+        "health_screening": "Pre-Operative Health Screening",
+        "treatment_planning": "Personalized Treatment Planning",
+        "other": "Other"
+      }
+    },
+    "postop_services": {
+      "prompt": "Post-Operative Services",
+      "options": {
+        "followup": "Follow-Up Appointments",
+        "medications": "Post-Operative Medications",
+        "care_instructions": "Hair Care Instructions",
+        "helpline": "24/7 Helpline",
+        "other": "Other"
+      }
+    },
+    "additional_services": {
+      "prompt": "Additional Services",
+      "options": {
+        "accommodation": "Accommodation Arrangements",
+        "transportation": "Transportation Services",
+        "translation": "Translation Services",
+        "financing": "Financing Options",
+        "other": "Other"
+      }
+    },
+    "techniques_offered": {
+      "prompt": "Hair Transplant Techniques Offered",
+      "options": {
+        "fue": "FUE",
+        "fut": "FUT",
+        "dhi": "DHI",
+        "robotic": "Robotic",
+        "other": "Other"
+      }
+    },
+    "advanced_tech": {
+      "prompt": "Advanced Technologies Used",
+      "placeholder": "ARTAS Robotic System, Choi Implanter Pens"
+    },
+    "graft_preservation": {
+      "prompt": "Graft Preservation Methods",
+      "placeholder": "Hypothermosol solution at 4°C"
+    },
+    "testimonials": {
+      "prompt": "Patient Testimonials"
+    },
+    "reviews_link": {
+      "prompt": "Link to Online Reviews",
+      "placeholder": "www.reviewsite.com/abchairclinic"
+    }
+  }
+}

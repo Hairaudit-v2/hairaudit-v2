@@ -2,6 +2,7 @@
 
 import SearchableSelect from "./SearchableSelect";
 import SearchableMultiSelect from "./SearchableMultiSelect";
+import { useI18n } from "@/components/i18n/I18nProvider";
 
 /** Option count above which we use searchable UX (single select). */
 const SEARCHABLE_SELECT_THRESHOLD = 10;
@@ -39,6 +40,7 @@ export default function QuestionField({
   locked: boolean;
   readOnly?: boolean;
 }) {
+  const { t } = useI18n();
   const dep = question.dependsOn;
   let show = true;
   if (dep) {
@@ -154,7 +156,7 @@ export default function QuestionField({
               value={(value as string) ?? null}
               onChange={(v) => onChange(v)}
               disabled={isDisabled}
-              placeholder="— Select —"
+              placeholder={t("dashboard.shared.auditForms.selectPlaceholder")}
               className={baseClass}
             />
           );
@@ -168,7 +170,7 @@ export default function QuestionField({
             onChange={(e) => onChange(e.target.value || null)}
             disabled={isDisabled}
           >
-            <option value="">— Select —</option>
+            <option value="">{t("dashboard.shared.auditForms.selectPlaceholder")}</option>
             {opts.map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
             ))}
@@ -190,7 +192,7 @@ export default function QuestionField({
                   disabled={isDisabled}
                   className="rounded-full"
                 />
-                <span className="text-sm capitalize">{v}</span>
+                <span className="text-sm">{v === "yes" ? t("forms.shared.yes") : t("forms.shared.no")}</span>
               </label>
             ))}
           </div>
@@ -207,7 +209,7 @@ export default function QuestionField({
               value={selected}
               onChange={(next) => onChange(next.length ? next : null)}
               disabled={isDisabled}
-              placeholder="Select options..."
+              placeholder={t("dashboard.shared.auditForms.searchMultiPlaceholder")}
               className={baseClass}
             />
           );
@@ -247,7 +249,7 @@ export default function QuestionField({
         {question.required && <span className="text-amber-600 ml-1">*</span>}
       </label>
       {readOnly && !locked && (
-        <p className="text-xs text-slate-500 mb-2">Inherited from original surgery record</p>
+        <p className="text-xs text-slate-500 mb-2">{t("dashboard.shared.auditForms.inheritedFieldMessage")}</p>
       )}
       {question.help && <p className="text-xs text-gray-500 mb-2">{question.help}</p>}
       {render()}
