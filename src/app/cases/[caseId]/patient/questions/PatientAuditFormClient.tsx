@@ -16,6 +16,7 @@ import {
 } from "@/lib/intake/normalizeIntakeFormData";
 import { validatePatientAuditV2, normalizePatientV2ForValidation } from "@/lib/patientAuditSchema";
 import {
+  PATIENT_INTAKE_REVIEW_ENUM_QUESTION_IDS,
   resolvePatientIntakeHelp,
   resolvePatientIntakeOptionDisplayLabel,
   resolvePatientIntakePlaceholder,
@@ -60,7 +61,7 @@ export default function PatientAuditFormClient({
   const hasEditedRef = useRef(false);
   const locked = caseStatus === "submitted" || !!submittedAt;
   const router = useRouter();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   const visibleSections = useMemo(
     () => PATIENT_AUDIT_SECTIONS.filter((s) => !s.advanced || showAdvanced),
@@ -270,6 +271,7 @@ export default function PatientAuditFormClient({
           sections={visibleSections}
           onEdit={() => setActiveStep(0)}
           t={t}
+          locale={locale}
         />
       ) : (
         (() => {
@@ -291,6 +293,7 @@ export default function PatientAuditFormClient({
                     values={formData}
                     locked={locked}
                     t={t}
+                    locale={locale}
                   />
                 ))}
               </div>
@@ -385,28 +388,17 @@ function PatientReviewSummary({
   sections,
   onEdit,
   t,
+  locale,
 }: {
   values: IntakeFormData;
   sections: { id: string; title: string; questions: PatientFormQuestion[] }[];
   onEdit: () => void;
   t: TranslateFn;
+  locale: string;
 }) {
   if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
     console.log("[PatientReviewSummary] canonical intake:", JSON.stringify(values).slice(0, 600) + (JSON.stringify(values).length > 600 ? "…" : ""));
   }
-
-  const reviewEnumIds = new Set([
-    "clinic_country",
-    "procedure_type",
-    "donor_shaving",
-    "surgery_duration",
-    "post_op_swelling",
-    "bleeding_issue",
-    "recovery_time",
-    "shock_loss",
-    "months_since",
-    "would_repeat",
-  ]);
 
   const fmt = (qId: string, v: unknown) => {
     if (v === null || v === undefined || v === "") return t("forms.shared.emDash");
@@ -415,7 +407,7 @@ function PatientReviewSummary({
       if (v === "yes") return t("forms.shared.yes");
       if (v === "no") return t("forms.shared.no");
     }
-    if (reviewEnumIds.has(qId) && typeof v === "string") {
+    if (PATIENT_INTAKE_REVIEW_ENUM_QUESTION_IDS.has(qId) && typeof v === "string") {
       const path = `dashboard.patient.forms.reviewEnums.${qId}.${v}`;
       const tr = t(path);
       if (tr !== path) return tr;
@@ -437,7 +429,7 @@ function PatientReviewSummary({
                 if (q.dependsOn && ov === undefined) return null;
                 return (
                   <div key={q.id} className="flex justify-between gap-2">
-                    <dt className="text-slate-800">{resolvePatientIntakePrompt(t, q)}</dt>
+                    <dt className="text-slate-800">{resolvePatientIntakePrompt(t, locale, q)}</dt>
                     <dd className="font-semibold text-slate-900">{fmt(q.id, ov)}</dd>
                   </div>
                 );
@@ -464,6 +456,7 @@ function QuestionField({
   values,
   locked,
   t,
+  locale,
 }: {
   question: PatientFormQuestion & { dependsOn?: { questionId: string; value?: string; hasValue?: string } };
   value: unknown;
@@ -471,6 +464,7 @@ function QuestionField({
   values: IntakeFormData;
   locked: boolean;
   t: TranslateFn;
+  locale: string;
 }) {
   const dep = question.dependsOn;
   const getDepVal = (id: string) => values[id];
@@ -484,9 +478,9 @@ function QuestionField({
   if (!show) return null;
 
   const fieldId = `patient-${question.id}`;
-  const promptText = resolvePatientIntakePrompt(t, question);
-  const helpText = resolvePatientIntakeHelp(t, question);
-  const placeholderText = resolvePatientIntakePlaceholder(t, question);
+  const promptText = resolvePatientIntakePrompt(t, locale, question);
+  const helpText = resolvePatientIntakeHelp(t, locale, question);
+  const placeholderText = resolvePatientIntakePlaceholder(t, locale, question);
 
   const baseClass =
     "w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 " +
@@ -611,7 +605,7 @@ function QuestionField({
             <option value="">{t("forms.shared.selectPlaceholder")}</option>
             {(question.options ?? []).map((o) => (
               <option key={o.value} value={o.value}>
-                {resolvePatientIntakeOptionDisplayLabel(t, question.id, o.value, o.label)}
+                {resolvePatientIntakeOptionDisplayLabel(t, locale, question.id, o.value, o.label)}
               </option>
             ))}
           </select>
@@ -691,7 +685,7 @@ function QuestionField({
                   className="rounded accent-emerald-600"
                 />
                 <span className="text-sm text-slate-900">
-                  {resolvePatientIntakeOptionDisplayLabel(t, question.id, o.value, o.label)}
+                  {resolvePatientIntakeOptionDisplayLabel(t, locale, question.id, o.value, o.label)}
                 </span>
               </label>
             ))}

@@ -11,7 +11,7 @@ import {
   normalizeLocale,
 } from "@/lib/i18n/constants";
 import { formatTemplate } from "@/lib/i18n/formatTemplate";
-import { getTranslation } from "@/lib/i18n/getTranslation";
+import { getIntakeFieldOptionLabel, getIntakeFieldPrompt, getTranslation } from "@/lib/i18n/getTranslation";
 import { getReportGlossaryLabel } from "@/lib/i18n/reportTerminology";
 import { defaultReportOutputLocale, describeLocaleIntent, normalizeUiLocale } from "@/lib/i18n/localeContexts";
 import { createEmptyReportTranslationPlan } from "@/lib/i18n/reportTranslationBlueprint";
@@ -134,6 +134,21 @@ test("getTranslation: marketing meta resolves Spanish when present", () => {
     getTranslation("marketing.meta.howItWorks.title", "es"),
     "Cómo funciona | HairAudit"
   );
+});
+
+test("getIntakeFieldPrompt: nested question id resolves in Spanish", () => {
+  const p = getIntakeFieldPrompt("es", "clinic_city");
+  assert.ok(p && p.length > 2);
+  assert.notEqual(p, "Clinic City");
+});
+
+test("getIntakeFieldOptionLabel: option value with spaces uses bracket lookup", () => {
+  const qid = "enhanced_patient_answers.baseline.patient_sex";
+  const es = getIntakeFieldOptionLabel("es", qid, "Prefer not to say");
+  const en = getIntakeFieldOptionLabel("en", qid, "Prefer not to say");
+  assert.equal(en, "Prefer not to say");
+  assert.ok(es && es.length > 0);
+  assert.notEqual(es, "Prefer not to say");
 });
 
 test("getTranslation: no dev warn in production for resolved Spanish", () => {

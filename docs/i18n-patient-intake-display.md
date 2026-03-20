@@ -1,44 +1,59 @@
-# Patient intake: canonical data vs localized display (Batch 12)
+# Patient intake: canonical data vs localized display (Batches 12–13)
 
 ## Goals
 
 - **Submit and store** the same field ids and option **values** as today (`patientAuditForm.ts`, validation, APIs).
-- **Show** translated prompts, help, placeholders, and option **labels** when keys exist in `en.json` / `es.json`.
-- Keep **English** as the canonical fallback: every string on `PatientFormQuestion` remains the source of truth when a translation key is missing or mis-typed.
+- **Show** translated prompts, help, placeholders, and option **labels** from locale bundles when present.
+- Keep **English** as the canonical fallback: every string on `PatientFormQuestion` remains the source of truth when bundle data is missing.
 
 ## Where things live
 
 | Concern | Location |
 |--------|----------|
 | Field ids, types, `required`, option **values**, English prompt/help/placeholder/labels | `src/lib/patientAuditForm.ts` (`PATIENT_AUDIT_SECTIONS`) |
-| Optional i18n keys per question (prompt/help/placeholder + per-value label keys) | `src/lib/patientIntake/intakeDisplayI18n.ts` → `PATIENT_INTAKE_QUESTION_DISPLAY` |
-| English + Spanish copy for dedicated field keys | `dashboard.patient.forms.intakeFields.*` in `src/lib/i18n/translations/en.json` and `es.json` |
-| Reused option labels (e.g. procedure type) | Often `dashboard.patient.forms.reviewEnums.<questionId>.<value>` so review summary and selects stay aligned |
-| UI wiring | `PatientAuditFormClient` → `resolvePatientIntake*` helpers |
+| Resolver entry points (review-enum id set + fallbacks) | `src/lib/patientIntake/intakeDisplayI18n.ts` |
+| English source tree for display copy | `src/lib/i18n/translations/_generated/intakeFields.en.json` (regenerated from sections) → merged into `en.json` at `dashboard.patient.forms.intakeFields` |
+| Spanish display copy | `_generated/intakeFields.flat.es.json` (machine-translated + hand fixes) → unflattened → merged into `es.json` at the same path |
+| Reused option labels (10 review enums) | `dashboard.patient.forms.reviewEnums.<questionId>.<value>` — same ids as `PATIENT_INTAKE_REVIEW_ENUM_QUESTION_IDS` in `intakeDisplayI18n.ts` |
+| Bracket-walk helpers (nested ids, option keys with spaces) | `getIntakeFieldPrompt` / `Help` / `Placeholder` / `getIntakeFieldOptionLabel` in `src/lib/i18n/getTranslation.ts` |
+| UI wiring | `PatientAuditFormClient` → `resolvePatientIntake*` helpers + `locale` from `useI18n` |
 
 ## How resolution works
 
-1. Look up `PATIENT_INTAKE_QUESTION_DISPLAY[question.id]`.
-2. If a `*Key` is present, call `t(key)`; if the bundle returns the key path (missing string), **fall back** to the canonical string from `patientAuditForm`.
-3. For select/checkbox options, **`option value` is never translated**—only the visible label. The submitted payload is still `value` (e.g. `fue`, `not_sure`).
+1. **Prompt / help / placeholder** — Read `dashboard.patient.forms.intakeFields` via a **segment walk** on `question.id` (dot-separated path under intakeFields). If missing in the active locale, fall back to English bundle, then to `patientAuditForm` strings.
+2. **Select/checkbox option labels** — If `question.id` is in `PATIENT_INTAKE_REVIEW_ENUM_QUESTION_IDS`, use `t("dashboard.patient.forms.reviewEnums.<id>.<value>")` so the review step and dropdowns stay aligned. Otherwise use **`getIntakeFieldOptionLabel`** (object bracket access on `options`) so values like `Prefer not to say` work without dotted key paths.
+3. **`option.value` is never translated**—only the visible label. The submitted payload is still the canonical value (`fue`, `not_sure`, `Yes`, etc.).
 
-## Adding a new localized question
+## Regenerating intake field bundles
 
-1. **Do not** change existing `value` strings or question `id` values in `patientAuditForm.ts` unless you are doing a dedicated migration (out of scope for display-only work).
-2. Add keys under `dashboard.patient.forms.intakeFields.<question_id>.prompt` (and `help` / `placeholder` if needed) in **both** `en.json` and `es.json`. English must match the current `patientAuditForm` text so default locale stays identical.
-3. For selects/checkboxes, either:
-   - add `optionLabelKeys` in `PATIENT_INTAKE_QUESTION_DISPLAY` pointing at `intakeFields...` or `reviewEnums...` keys, **one key per option value**, or
-   - add a `reviewEnums` subtree and reference those keys from `optionLabelKeys` (recommended when the review step shows the same enum).
-4. Register the question id in `PATIENT_INTAKE_QUESTION_DISPLAY` with `promptKey` / `helpKey` / `placeholderKey` / `optionLabelKeys` as appropriate.
+1. **English tree + flat English** (from `PATIENT_AUDIT_SECTIONS`):
+
+   `pnpm exec tsx scripts/generate-patient-intake-intakeFields.ts`
+
+   Writes `_generated/intakeFields.en.json` and `_generated/intakeFields.flat.en.json`.  
+   **Review-enum questions** (`clinic_country`, `procedure_type`, `donor_shaving`, `surgery_duration`, `post_op_swelling`, `bleeding_issue`, `recovery_time`, `shock_loss`, `months_since`, `would_repeat`) have **no** `options` in this tree so labels are not duplicated under `intakeFields`.
+
+2. **Spanish flat** (optional refresh):
+
+   `pnpm exec tsx scripts/translate-intake-flat-es.mts`
+
+   Uses the MyMemory public API. Spot-check and patch `_generated/intakeFields.flat.es.json` for currency codes, placeholders, or garbled segments.
+
+3. **Merge into `en.json` / `es.json`**:
+
+   `pnpm exec tsx scripts/merge-intake-fields-into-bundles.mts`
+
+   Unflattens Spanish with **deep merge** of `options` so per-option keys merge correctly.
+
+After changing canonical English copy in `patientAuditForm.ts`, re-run (1) and (3); refresh (2) when Spanish should track the new strings.
 
 ## Regression avoidance
 
-- **Changing** prompt text in `patientAuditForm` without updating `en.json` `intakeFields` (when keys exist) will not break submission but **Spanish** may diverge until translations are updated; keep English bundles in sync with canonical labels whenever you change the source string.
-- **Renaming** an option `value` requires DB/schema/validation work—treat as a schema change, not an i18n-only edit.
-- **Adding** options requires a new `value` in `patientAuditForm` plus a new translation key and `optionLabelKeys` entry if that option should be localized.
+- **Changing** prompt text in `patientAuditForm` without re-merging `intakeFields` leaves Spanish showing old machine text until regeneration; keep **English** bundle in sync with canonical source strings.
+- **Renaming** an option `value` requires schema/validation work—not an i18n-only edit.
+- **Dotted `getTranslation`** must not be used for option labels when the canonical **value** can contain spaces; use `getIntakeFieldOptionLabel` instead.
 
-## Batch 12 proof (sample)
+## Rollout status
 
-These question ids are registered end-to-end: `clinic_name`, `preop_consult`, `procedure_type` (option labels reuse `reviewEnums.procedure_type`).
-
-Use this as a template for rolling more questions forward mechanically.
+- **Batch 12:** Resolver pattern + sample `intakeFields` keys + `reviewEnums` for procedure type.
+- **Batch 13:** Full question set under `dashboard.patient.forms.intakeFields` (merged from generated EN + flat ES), convention-based resolvers, shared `PATIENT_INTAKE_REVIEW_ENUM_QUESTION_IDS` with review summary.

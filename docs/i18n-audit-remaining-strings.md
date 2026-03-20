@@ -178,7 +178,7 @@ Public marketing UI (no SEO metadata changes, no locale routes): **`marketing.*`
 **Signed-in workflows — form UI only** (no report/PDF/AI/finalize/scoring changes):
 
 1. **`forms.shared.*`** — save/saving, navigation, retry, select placeholder, yes/no/clear, add/remove, etc. (`en`/`es`).
-2. **Patient intelligence intake** — `cases/[caseId]/patient/questions/page.tsx` (hero); **`PatientAuditFormClient`** (stepper, advanced banner, review/photos CTAs, load/save messaging, **`PATIENT_AUDIT_SECTIONS` title/description via `dashboard.patient.forms.sections.*`, review summary + enum display via `reviewEnums.*`). Question **prompts** and **option labels** in **`patientAuditForm.ts`** left English so payloads and validation stay unchanged; API error strings still shown as returned.
+2. **Patient intelligence intake** — `cases/[caseId]/patient/questions/page.tsx` (hero); **`PatientAuditFormClient`** (stepper, advanced banner, review/photos CTAs, load/save messaging, **`PATIENT_AUDIT_SECTIONS` title/description via `dashboard.patient.forms.sections.*`, review summary + enum display via `reviewEnums.*`). Canonical question **prompts** / option **values** remain in **`patientAuditForm.ts`** for logic and payloads; **Batch 13** adds `dashboard.patient.forms.intakeFields` (+ resolvers) for localized **display** only. API error strings still shown as returned.
 3. **Doctor onboarding** — **`DoctorOnboardingForm`** → **`dashboard.doctor.forms.*`**.
 4. **Clinic profile** — **`ClinicProfileBuilder`** → **`dashboard.clinic.forms.profileBuilder.*`**; **`ClinicConversionPanel`** shared chrome → **`dashboard.clinic.forms.conversionPanel.*`** (all existing call sites get localized panel chrome; optional `teaserCtaLabel` override preserved).
 
@@ -192,6 +192,18 @@ Public marketing UI (no SEO metadata changes, no locale routes): **`marketing.*`
 4. **Docs** — **`docs/i18n-patient-intake-display.md`** (extend registry + bundles; avoid regressions).
 
 **Proof ids:** `clinic_name`, `preop_consult`, `procedure_type` (full form migration remains future work).
+
+## Batch 13 (implemented — full intake display layer)
+
+**Patient intake display** for the **full** `PATIENT_AUDIT_SECTIONS` question set, still **without** changing field ids, submitted values, validation, or API shape:
+
+1. **`dashboard.patient.forms.intakeFields`** — merged nested EN/ES trees (generated + `merge-intake-fields-into-bundles.mts`); review-enum questions omit duplicate `options` (labels stay on `reviewEnums.*`).
+2. **`getIntakeField*` in `getTranslation.ts`** — bracket walk for nested ids and option values that are not valid dotted path segments (e.g. labels with spaces).
+3. **`intakeDisplayI18n.ts`** — convention-based resolvers + `PATIENT_INTAKE_REVIEW_ENUM_QUESTION_IDS` shared with review summary formatting.
+4. **Scripts** — `generate-patient-intake-intakeFields.ts`, `translate-intake-flat-es.mts` (MyMemory), `merge-intake-fields-into-bundles.mts`; artifacts under `translations/_generated/`.
+5. **Docs** — `docs/i18n-patient-intake-display.md` updated for Batch 13 workflow.
+
+**Residual / quality:** Spanish flat file is machine-assisted; spot-check clinical nuance and edit `_generated/intakeFields.flat.es.json` before merge when copy must be exact.
 
 ## Batch 9 (implemented — architecture only)
 

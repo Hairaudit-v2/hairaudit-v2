@@ -13,12 +13,55 @@ const BUNDLES: Record<SupportedLocale, JsonRecord> = {
 
 function getByPath(obj: JsonRecord, path: string): unknown {
   const parts = path.split(".").filter(Boolean);
+  return walkPathSegments(obj, parts);
+}
+
+function walkPathSegments(obj: JsonRecord, parts: string[]): unknown {
   let cur: unknown = obj;
   for (const p of parts) {
     if (cur == null || typeof cur !== "object" || Array.isArray(cur)) return undefined;
     cur = (cur as JsonRecord)[p];
   }
   return cur;
+}
+
+function getIntakeQuestionRecord(locale: string, questionId: string): Record<string, unknown> | undefined {
+  const loc = normalizeLocale(locale) as SupportedLocale;
+  const parts = ["dashboard", "patient", "forms", "intakeFields", ...questionId.split(".")];
+  const read = (l: SupportedLocale): Record<string, unknown> | undefined => {
+    const node = walkPathSegments(BUNDLES[l] as JsonRecord, parts);
+    if (node && typeof node === "object" && !Array.isArray(node)) return node as Record<string, unknown>;
+    return undefined;
+  };
+  return read(loc) ?? (loc !== DEFAULT_LOCALE ? read(DEFAULT_LOCALE) : undefined);
+}
+
+/** Prompt copy under `dashboard.patient.forms.intakeFields` (bracket-walk; supports nested question ids). */
+export function getIntakeFieldPrompt(locale: string, questionId: string): string | undefined {
+  const v = getIntakeQuestionRecord(locale, questionId)?.prompt;
+  return typeof v === "string" && v.length > 0 ? v : undefined;
+}
+
+export function getIntakeFieldHelp(locale: string, questionId: string): string | undefined {
+  const v = getIntakeQuestionRecord(locale, questionId)?.help;
+  return typeof v === "string" && v.length > 0 ? v : undefined;
+}
+
+export function getIntakeFieldPlaceholder(locale: string, questionId: string): string | undefined {
+  const v = getIntakeQuestionRecord(locale, questionId)?.placeholder;
+  return typeof v === "string" && v.length > 0 ? v : undefined;
+}
+
+/**
+ * Visible label for an option value (object key may contain spaces — do not use dotted `getTranslation` paths).
+ */
+export function getIntakeFieldOptionLabel(locale: string, questionId: string, optionValue: string): string | undefined {
+  const opts = getIntakeQuestionRecord(locale, questionId)?.options;
+  if (opts && typeof opts === "object" && !Array.isArray(opts)) {
+    const v = (opts as JsonRecord)[optionValue];
+    return typeof v === "string" && v.length > 0 ? v : undefined;
+  }
+  return undefined;
 }
 
 function warnDev(message: string, payload: Record<string, unknown>) {
