@@ -18,6 +18,7 @@
     "mobileNavDialog": "Navegación del sitio (móvil)",
     "mainNav": "Navegación principal",
     "language": "Idioma",
+    "skipToMain": "Ir al contenido principal",
     "ecosystem": {
       "poweredByFi": "Con tecnología de Follicle Intelligence",
       "exploreHa": "Explorar HairAudit"
@@ -27,7 +28,8 @@
     "shared": {
       "createCaseDefault": "Crear nuevo caso de auditoría",
       "startNewAudit": "Iniciar nueva auditoría",
-      "signOut": "Cerrar sesión"
+      "signOut": "Cerrar sesión",
+      "comingSoon": "Pronto"
     },
     "patient": {
       "heroTitle": "Su panel de inteligencia quirúrgica",
@@ -86,7 +88,11 @@
       "profileActiveBody": "Puede empezar de forma privada con auditorías internas.",
       "noCasesTitle": "Aún no hay casos",
       "noCasesBody": "Inicie su primera auditoría interna para empezar a construir el perfil de su clínica.",
-      "submitFirstCase": "Enviar su primer caso"
+      "submitFirstCase": "Enviar su primer caso",
+      "sidebarPortalLabel": "Portal de clínica",
+      "sidebarPortalTagline": "Contribuciones invitadas y casos enviados",
+      "openPortalNav": "Abrir navegación del portal",
+      "closePortalNav": "Cerrar navegación del portal"
     }
   }
 }

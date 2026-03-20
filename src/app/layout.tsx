@@ -6,6 +6,7 @@ import MainContentTarget from "@/components/a11y/MainContentTarget";
 import BetaBanner from "@/components/BetaBanner";
 import { I18nProvider } from "@/components/i18n/I18nProvider";
 import I18nHtmlLang from "@/components/i18n/I18nHtmlLang";
+import SkipLinkI18n from "@/components/i18n/SkipLinkI18n";
 import type { Metadata } from "next";
 import { SITE_URL } from "@/lib/constants";
 
@@ -54,9 +55,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-screen">
         <I18nProvider>
           <I18nHtmlLang />
-          <a href="#main-content" className="skip-link">
-            Skip to main content
-          </a>
+          <SkipLinkI18n />
           <BetaBanner />
           <MainContentTarget />
           <RecoveryHashRouter />

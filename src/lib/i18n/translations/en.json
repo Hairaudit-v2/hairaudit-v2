@@ -18,6 +18,7 @@
     "mobileNavDialog": "Mobile site navigation",
     "mainNav": "Main navigation",
     "language": "Language",
+    "skipToMain": "Skip to main content",
     "ecosystem": {
       "poweredByFi": "Powered by Follicle Intelligence",
       "exploreHa": "Explore HairAudit"
@@ -27,7 +28,8 @@
     "shared": {
       "createCaseDefault": "Create new audit case",
       "startNewAudit": "Start New Audit",
-      "signOut": "Sign out"
+      "signOut": "Sign out",
+      "comingSoon": "Soon"
     },
     "patient": {
       "heroTitle": "Your Surgical Intelligence Dashboard",
@@ -86,7 +88,11 @@
       "profileActiveBody": "You can begin privately with internal audits.",
       "noCasesTitle": "No cases yet",
       "noCasesBody": "Start your first internal audit to begin building your clinic profile.",
-      "submitFirstCase": "Submit your first case"
+      "submitFirstCase": "Submit your first case",
+      "sidebarPortalLabel": "Clinic Portal",
+      "sidebarPortalTagline": "Invited Contributions & Submitted Cases",
+      "openPortalNav": "Open Portal Nav",
+      "closePortalNav": "Close Portal Nav"
     }
   }
 }

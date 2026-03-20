@@ -19,7 +19,7 @@
 |----------|----------|-----|-------|
 | `SiteFooter.tsx` | Column headings, link labels, descriptions | **later** | RSC; needs client footer or server locale cookie |
 | `BetaBanner.tsx` | Beta disclaimer paragraph | **later** | RSC; same pattern |
-| `app/layout.tsx` | Skip link text | **safe now** | Tiny client island possible |
+| `app/layout.tsx` | Skip link text | **done (batch 3)** | `SkipLinkI18n` + `nav.skipToMain` |
 | `app/page.tsx` (home) | Hero, CTAs, sections | **later** | Large surface; separate batch |
 
 ---
@@ -52,7 +52,7 @@
 | Location | Examples | Tag | Notes |
 |----------|----------|-----|-------|
 | `clinic/layout.tsx` | `navItems` labels (Overview, Onboarding, …) | **later** | Server layout; needs client nav or message passing |
-| `ClinicSidebarNav.tsx` | "Soon" badge | **safe now** | Client; small follow-up |
+| `ClinicSidebarNav.tsx` | "Soon", portal chrome, mobile toggle | **done (batch 3)** | `comingSoon`, `sidebar*`, `open/closePortalNav` |
 | `ClinicPortalShell`, `ClinicNextActionCard`, status chips | Dynamic strings from layout | **later** | Fed from server; refactor with care |
 | `clinic/page.tsx` & feature panels | Large amount of marketing/ops copy | **later** | High volume |
 
@@ -110,10 +110,15 @@
 
 **Rationale:** Client-only or thin client extraction; no report/PDF paths; under `I18nProvider` via dashboard shell.
 
-## Recommended **next safe batch (batch 3 candidates)**
+## Batch 3 (implemented)
 
-1. **`ClinicSidebarNav`** — `Soon` badge → `dashboard.shared.comingSoon` or similar
-2. **`app/layout.tsx`** skip link — `nav.skipToContent` (client island)
-3. **`SiteFooter` + `BetaBanner`** — convert to client islands or pass-through (larger diff; own PR)
+1. **`ClinicSidebarNav`** — `dashboard.shared.comingSoon`; `dashboard.clinic.sidebarPortalLabel`, `sidebarPortalTagline`, `openPortalNav`, `closePortalNav`
+2. **Skip link** — `SkipLinkI18n` + `nav.skipToMain` (inside `I18nProvider`; same `#main-content` target)
+
+## Recommended **next batch (batch 4 candidates)**
+
+1. **`SiteFooter` + `BetaBanner`** — client islands or dedicated PR (larger surface)
+2. **Clinic `layout.tsx`** server-driven nav item labels
+3. **Patient `page.tsx`** / **login** — module-by-module
 
 **Follow-up (later):** clinic `layout.tsx` server nav labels, patient `page.tsx` modules, login/auth copy.
