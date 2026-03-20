@@ -48,6 +48,9 @@ import { isClinicFollowupReminderDraftsEnabled } from "@/lib/features/enableFoll
 import { buildFollowupReminderDraftsFromReadiness } from "@/lib/audit/followupReminderDraftsFromReadiness";
 import type { FollowupReminderDraft } from "@/lib/audit/followupReminderDraftsFromReadiness";
 import FollowupReminderDraftsPanel from "@/components/clinic/FollowupReminderDraftsPanel";
+import FollowupReminderManualSendPanel from "@/components/clinic/FollowupReminderManualSendPanel";
+import { isClinicFollowupManualSendEnabled } from "@/lib/features/enableFollowupReminderManualSend";
+import type { FollowupReminderSendLogRow } from "@/lib/audit/followupReminderSendPayload";
 
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { tryCreateSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -346,6 +349,7 @@ export default async function Page({
   const followupTimelineFlag = isFollowupTimelineEnabled();
   const followupReminderReadinessFlag = isClinicFollowupReminderReadinessEnabled();
   const followupReminderDraftsFlag = isClinicFollowupReminderDraftsEnabled();
+  const followupReminderManualSendFlag = isClinicFollowupManualSendEnabled();
   let clinicEvidencePrompts: ClinicEvidencePrompt[] = [];
   let clinicFollowupTimeline: FollowupTimelineResult | null = null;
   if (isClinicForCase && (clinicEvidencePromptsFlag || followupTimelineFlag || followupReminderReadinessFlag || followupReminderDraftsFlag)) {
@@ -493,6 +497,31 @@ export default async function Page({
     clinicFollowupReminderReadiness.summaryLines.length > 0;
   const showFollowupReminderDraftsPanel =
     isClinicForCase && followupReminderDraftsFlag && clinicFollowupReminderDrafts.length > 0;
+
+  let clinicFollowupReminderSendLog: FollowupReminderSendLogRow[] = [];
+  if (isClinicForCase && followupReminderManualSendFlag) {
+    try {
+      const logRes = await db
+        .from("followup_reminder_send_log")
+        .select(
+          "id, case_id, milestone, channel, recipient, subject, body, sent_by_user_id, sent_at, source, draft_schema_version, delivery_status, error_message"
+        )
+        .eq("case_id", c.id)
+        .order("sent_at", { ascending: false })
+        .limit(50);
+      if (logRes.error) {
+        if (!isMissingFeatureError(logRes.error)) {
+          console.error(LOG_PREFIX, "followup_reminder_send_log select failed", logRes.error);
+        }
+      } else {
+        clinicFollowupReminderSendLog = (logRes.data ?? []) as FollowupReminderSendLogRow[];
+      }
+    } catch (e) {
+      console.error(LOG_PREFIX, "followup_reminder_send_log select threw", { caseId, error: e });
+    }
+  }
+
+  const showFollowupReminderManualSendPanel = isClinicForCase && followupReminderManualSendFlag;
 
   const auditType = c.audit_type ?? (c.clinic_id ? "clinic" : c.doctor_id ? "doctor" : "patient");
   const auditSource =
@@ -860,7 +889,8 @@ export default async function Page({
       {showClinicEvidencePromptPanel ||
       showFollowupTimelinePanel ||
       showFollowupReminderReadinessPanel ||
-      showFollowupReminderDraftsPanel ? (
+      showFollowupReminderDraftsPanel ||
+      showFollowupReminderManualSendPanel ? (
         <section className="mt-6 grid gap-6 lg:grid-cols-2">
           {showClinicEvidencePromptPanel ? <ClinicEvidencePromptPanel prompts={clinicEvidencePrompts} /> : null}
           {showFollowupTimelinePanel && clinicFollowupTimeline ? (
@@ -874,6 +904,15 @@ export default async function Page({
           {showFollowupReminderDraftsPanel ? (
             <div className="lg:col-span-2">
               <FollowupReminderDraftsPanel drafts={clinicFollowupReminderDrafts} />
+            </div>
+          ) : null}
+          {showFollowupReminderManualSendPanel ? (
+            <div className="lg:col-span-2">
+              <FollowupReminderManualSendPanel
+                caseId={c.id}
+                drafts={clinicFollowupReminderDrafts}
+                initialLog={clinicFollowupReminderSendLog}
+              />
             </div>
           ) : null}
         </section>
