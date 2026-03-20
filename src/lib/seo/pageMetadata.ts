@@ -5,6 +5,8 @@ type PageMetadataInput = {
   description: string;
   pathname: string;
   noindex?: boolean;
+  canonicalPathname?: string;
+  languageAlternates?: Record<string, string>;
 };
 
 export function createPageMetadata({
@@ -12,12 +14,15 @@ export function createPageMetadata({
   description,
   pathname,
   noindex = false,
+  canonicalPathname,
+  languageAlternates,
 }: PageMetadataInput): Metadata {
   return {
     title,
     description,
     alternates: {
-      canonical: pathname,
+      canonical: canonicalPathname ?? pathname,
+      languages: languageAlternates,
     },
     openGraph: {
       type: "website",

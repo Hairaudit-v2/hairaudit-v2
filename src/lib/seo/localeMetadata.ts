@@ -4,6 +4,7 @@ import { DEFAULT_LOCALE, isSupportedLocale, SEO_LOCALE_COOKIE_NAME, type Support
 import { getTranslation } from "@/lib/i18n/getTranslation";
 import type { TranslationKey } from "@/lib/i18n/translationKeys";
 import { createPageMetadata } from "./pageMetadata";
+import { buildPublicLocaleLanguageAlternates, createPublicLocaleRoutingPlan } from "./publicLocaleRouting";
 
 export type LocalizedPageMetaKeys = {
   titleKey: TranslationKey;
@@ -19,10 +20,13 @@ export type LocalizedPageMetaKeys = {
 export function createLocalizedPageMetadata(locale: SupportedLocale, keys: LocalizedPageMetaKeys): Metadata {
   const title = getTranslation(keys.titleKey, locale);
   const description = getTranslation(keys.descriptionKey, locale);
+  const localeRouting = createPublicLocaleRoutingPlan(keys.pathname);
   return createPageMetadata({
     title,
     description,
     pathname: keys.pathname,
+    canonicalPathname: localeRouting.canonicalPathname,
+    languageAlternates: buildPublicLocaleLanguageAlternates(localeRouting),
     noindex: keys.noindex,
   });
 }
@@ -60,10 +64,8 @@ export function localeFromAcceptLanguage(header: string | null | undefined): Sup
 }
 
 /**
- * Future hreflang / canonical expansion (not implemented — same URL today):
- * - Add locale-prefixed routes or query-stable locales, then set `alternates.languages` with
- *   absolute URLs from `metadataBase`.
- * - Keep one canonical per logical page; hreflang crosses should reference every published locale.
+ * Future hreflang / canonical expansion remains scaffold-only until locale-distinct public URLs
+ * exist. Use `publicLocaleRouting.ts` to centralize path mapping and keep English canonical.
  * - Localized OG/Twitter: pass translated title/description into {@link createPageMetadata} (already
  *   wired when using {@link createLocalizedPageMetadata}).
  *

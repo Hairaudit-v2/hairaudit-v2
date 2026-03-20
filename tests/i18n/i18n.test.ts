@@ -24,7 +24,13 @@ import {
   isReportNarrativeTranslationStale,
 } from "@/lib/i18n/reportTranslationBlueprint";
 import { buildPatientSafeSummaryObservations } from "@/lib/reports/patientSafeSummary";
-import { localeFromAcceptLanguage } from "@/lib/seo/localeMetadata";
+import { createLocalizedPageMetadata, localeFromAcceptLanguage } from "@/lib/seo/localeMetadata";
+import {
+  buildLocalizedPublicPathname,
+  buildPublicLocaleLanguageAlternates,
+  createPublicLocaleRoutingPlan,
+  isLocalizedPublicPathname,
+} from "@/lib/seo/publicLocaleRouting";
 
 test("getDefaultLocale returns en", () => {
   assert.equal(getDefaultLocale(), "en");
@@ -104,6 +110,47 @@ test("localeFromAcceptLanguage: unknown languages fall back to en", () => {
 test("localeFromAcceptLanguage: null or empty is en", () => {
   assert.equal(localeFromAcceptLanguage(null), "en");
   assert.equal(localeFromAcceptLanguage(""), "en");
+});
+
+test("isLocalizedPublicPathname: recognizes Batch 18 localized marketing routes", () => {
+  assert.equal(isLocalizedPublicPathname("/"), true);
+  assert.equal(isLocalizedPublicPathname("/how-it-works"), true);
+  assert.equal(isLocalizedPublicPathname("/professionals"), true);
+  assert.equal(isLocalizedPublicPathname("/sample-report"), true);
+  assert.equal(isLocalizedPublicPathname("/clinics"), false);
+});
+
+test("buildLocalizedPublicPathname: keeps English unprefixed and prefixes Spanish", () => {
+  assert.equal(buildLocalizedPublicPathname("en", "/how-it-works"), "/how-it-works");
+  assert.equal(buildLocalizedPublicPathname("es", "/how-it-works"), "/es/how-it-works");
+  assert.equal(buildLocalizedPublicPathname("en", "/"), "/");
+  assert.equal(buildLocalizedPublicPathname("es", "/"), "/es");
+});
+
+test("createPublicLocaleRoutingPlan: current public setup stays single-url canonical", () => {
+  const plan = createPublicLocaleRoutingPlan("/how-it-works");
+  assert.equal(plan.localized, true);
+  assert.equal(plan.canonicalLocale, "en");
+  assert.equal(plan.canonicalPathname, "/how-it-works");
+  assert.equal(plan.distinctLocaleUrlsReady, false);
+  assert.equal(plan.strategy, "unprefixed_single_url");
+  assert.equal(plan.localePathnames, undefined);
+});
+
+test("buildPublicLocaleLanguageAlternates: returns undefined until locale URLs are real", () => {
+  const plan = createPublicLocaleRoutingPlan("/how-it-works");
+  assert.equal(buildPublicLocaleLanguageAlternates(plan), undefined);
+});
+
+test("buildPublicLocaleLanguageAlternates: future distinct locale URLs get full map", () => {
+  const plan = createPublicLocaleRoutingPlan("/how-it-works", {
+    distinctLocaleUrlsReady: true,
+  });
+  assert.deepEqual(buildPublicLocaleLanguageAlternates(plan), {
+    en: "/how-it-works",
+    es: "/es/how-it-works",
+    "x-default": "/how-it-works",
+  });
 });
 
 test("formatTemplate: replaces placeholders", () => {
@@ -206,6 +253,16 @@ test("getTranslation: marketing meta resolves Spanish when present", () => {
     getTranslation("marketing.meta.howItWorks.title", "es"),
     "Cómo funciona | HairAudit"
   );
+});
+
+test("createLocalizedPageMetadata: keeps canonical stable and omits hreflang today", () => {
+  const metadata = createLocalizedPageMetadata("es", {
+    titleKey: "marketing.meta.howItWorks.title",
+    descriptionKey: "marketing.meta.howItWorks.description",
+    pathname: "/how-it-works",
+  });
+  assert.equal(metadata.alternates?.canonical, "/how-it-works");
+  assert.equal(metadata.alternates?.languages, undefined);
 });
 
 test("getIntakeFieldPrompt: nested question id resolves in Spanish", () => {
