@@ -40,6 +40,10 @@ import { isClinicEvidencePromptsEnabled } from "@/lib/features/enableClinicEvide
 import { isFollowupTimelineEnabled } from "@/lib/features/enableFollowupTimeline";
 import ClinicEvidencePromptPanel from "@/components/clinic/ClinicEvidencePromptPanel";
 import FollowupTimelinePanel from "@/components/clinic/FollowupTimelinePanel";
+import FollowupReminderReadinessPanel from "@/components/clinic/FollowupReminderReadinessPanel";
+import { buildFollowupReminderReadinessFromTimeline } from "@/lib/audit/followupReminderReadinessFromTimeline";
+import type { FollowupReminderReadiness } from "@/lib/audit/followupReminderReadinessFromTimeline";
+import { isClinicFollowupReminderReadinessEnabled } from "@/lib/features/enableFollowupReminderReadiness";
 
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { tryCreateSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -336,9 +340,10 @@ export default async function Page({
 
   const clinicEvidencePromptsFlag = isClinicEvidencePromptsEnabled();
   const followupTimelineFlag = isFollowupTimelineEnabled();
+  const followupReminderReadinessFlag = isClinicFollowupReminderReadinessEnabled();
   let clinicEvidencePrompts: ClinicEvidencePrompt[] = [];
   let clinicFollowupTimeline: FollowupTimelineResult | null = null;
-  if (isClinicForCase && (clinicEvidencePromptsFlag || followupTimelineFlag)) {
+  if (isClinicForCase && (clinicEvidencePromptsFlag || followupTimelineFlag || followupReminderReadinessFlag)) {
     try {
       const patientPhotoUploads = (uploads ?? []).filter((u) => String((u as { type?: string }).type ?? "").startsWith("patient_photo:"));
       const q = computePatientImageEvidenceQualityFromCaseUploads(
@@ -347,7 +352,7 @@ export default async function Page({
       if (clinicEvidencePromptsFlag) {
         clinicEvidencePrompts = buildClinicEvidencePromptsFromSufficiency(q);
       }
-      if (followupTimelineFlag) {
+      if (followupTimelineFlag || followupReminderReadinessFlag) {
         clinicFollowupTimeline = buildFollowupTimelineFromPatientUploads(patientPhotoUploads);
       }
     } catch (e) {
@@ -452,6 +457,23 @@ export default async function Page({
   const monthsSinceSurgery =
     monthsFromProcedureDate(normalizedPatient?.procedure_date ? String(normalizedPatient.procedure_date) : null) ??
     monthsFromBucket(normalizedPatient?.months_since ? String(normalizedPatient.months_since) : null);
+
+  let clinicFollowupReminderReadiness: FollowupReminderReadiness | null = null;
+  if (isClinicForCase && followupReminderReadinessFlag && clinicFollowupTimeline) {
+    try {
+      clinicFollowupReminderReadiness = buildFollowupReminderReadinessFromTimeline(clinicFollowupTimeline, {
+        monthsPostOpEstimate: monthsSinceSurgery,
+      });
+    } catch (e) {
+      console.error(LOG_PREFIX, "followup reminder readiness compute failed", { caseId, error: e });
+    }
+  }
+  const showFollowupReminderReadinessPanel =
+    isClinicForCase &&
+    followupReminderReadinessFlag &&
+    clinicFollowupReminderReadiness != null &&
+    clinicFollowupReminderReadiness.summaryLines.length > 0;
+
   const auditType = c.audit_type ?? (c.clinic_id ? "clinic" : c.doctor_id ? "doctor" : "patient");
   const auditSource =
     c.visibility_scope === "internal" || c.submission_channel === "imported"
@@ -815,11 +837,16 @@ export default async function Page({
         />
       )}
 
-      {showClinicEvidencePromptPanel || showFollowupTimelinePanel ? (
+      {showClinicEvidencePromptPanel || showFollowupTimelinePanel || showFollowupReminderReadinessPanel ? (
         <section className="mt-6 grid gap-6 lg:grid-cols-2">
           {showClinicEvidencePromptPanel ? <ClinicEvidencePromptPanel prompts={clinicEvidencePrompts} /> : null}
           {showFollowupTimelinePanel && clinicFollowupTimeline ? (
             <FollowupTimelinePanel timeline={clinicFollowupTimeline} />
+          ) : null}
+          {showFollowupReminderReadinessPanel && clinicFollowupReminderReadiness ? (
+            <div className="lg:col-span-2">
+              <FollowupReminderReadinessPanel readiness={clinicFollowupReminderReadiness} />
+            </div>
           ) : null}
         </section>
       ) : null}

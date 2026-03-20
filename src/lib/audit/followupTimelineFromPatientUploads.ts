@@ -21,7 +21,8 @@ export type FollowupTimelineResult = {
   stages: FollowupTimelineStage[];
 };
 
-const STAGE_ORDER: readonly FollowupTimelineStageId[] = [
+/** Ordered milestones (earliest → latest). */
+export const FOLLOWUP_TIMELINE_STAGE_ORDER: readonly FollowupTimelineStageId[] = [
   "day1",
   "week1",
   "month3",
@@ -29,6 +30,8 @@ const STAGE_ORDER: readonly FollowupTimelineStageId[] = [
   "month9",
   "month12",
 ] as const;
+
+const STAGE_ORDER = FOLLOWUP_TIMELINE_STAGE_ORDER;
 
 const STAGE_LABEL: Record<FollowupTimelineStageId, string> = {
   day1: "Day 1",
@@ -38,6 +41,10 @@ const STAGE_LABEL: Record<FollowupTimelineStageId, string> = {
   month9: "Month 9",
   month12: "Month 12",
 };
+
+export function followupTimelineStageLabel(id: FollowupTimelineStageId): string {
+  return STAGE_LABEL[id];
+}
 
 function categoryMatchesStage(cat: string, stage: FollowupTimelineStageId): boolean {
   switch (stage) {
