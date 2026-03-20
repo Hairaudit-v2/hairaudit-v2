@@ -1,43 +1,43 @@
 {
   "clinic_name": {
     "prompt": "Nombre de la clínica",
-    "placeholder": "ABC Hair Clinic"
+    "placeholder": "p. ej., Clínica Capilar Central"
   },
   "clinic_country": {
     "prompt": "País de la clínica"
   },
   "clinic_country_other": {
-    "prompt": "País de la clínica (si es otro)",
-    "placeholder": "por ejemplo, Portugal"
+    "prompt": "País de la clínica (si eligió «Otro»)",
+    "placeholder": "p. ej., Portugal"
   },
   "clinic_city": {
     "prompt": "Ciudad de la clínica",
-    "placeholder": "Estambul"
+    "placeholder": "p. ej., Estambul"
   },
   "procedure_date": {
     "prompt": "Fecha del procedimiento"
   },
   "procedure_type": {
     "prompt": "Tipo de procedimiento",
-    "help": "Elija lo que le dijeron; 'No estoy seguro' está bien."
+    "help": "Seleccione lo que le indicaron; «No estoy seguro/a» es una respuesta válida."
   },
   "procedure_type_other": {
-    "prompt": "Tipo de procedimiento (si es otro)",
-    "placeholder": "por ejemplo, combinado"
+    "prompt": "Tipo de procedimiento (si eligió «Otro»)",
+    "placeholder": "p. ej., combinado FUE + DHI"
   },
   "surgeon_name": {
     "prompt": "Nombre del cirujano (opcional)",
-    "placeholder": "Dr. Smith"
+    "placeholder": "p. ej., Dr. García"
   },
   "patient_name": {
     "prompt": "Su nombre (opcional, por privacidad)",
-    "placeholder": "John Doe"
+    "placeholder": "p. ej., A. M."
   },
   "preop_consult": {
-    "prompt": "¿Tuvo una consulta preoperatoria?"
+    "prompt": "¿Tuvo consulta preoperatoria?"
   },
   "doctor_present_extraction": {
-    "prompt": "¿Estaba presente un médico durante la extracción del injerto?",
+    "prompt": "¿Hubo un médico presente durante la extracción de injertos?",
     "options": {
       "yes": "Sí",
       "no": "No",
@@ -45,7 +45,7 @@
     }
   },
   "doctor_present_implant": {
-    "prompt": "¿Estaba presente un médico durante la implantación del injerto?",
+    "prompt": "¿Hubo un médico presente durante la implantación de injertos?",
     "options": {
       "yes": "Sí",
       "no": "No",
@@ -53,18 +53,18 @@
     }
   },
   "graft_number_disclosed": {
-    "prompt": "¿Le dijeron el recuento de injertos?"
+    "prompt": "¿Le indicaron el número de injertos?"
   },
   "graft_number_received": {
-    "prompt": "Número de injerto (si se le dio uno)",
-    "help": "Solo si le indicaron un número.",
-    "placeholder": "por ejemplo, 3500"
+    "prompt": "Número de injertos (si se lo comunicaron)",
+    "help": "Rellene solo si le dieron una cifra concreta.",
+    "placeholder": "p. ej., 3500"
   },
   "donor_shaving": {
-    "prompt": "Afeitado de la zona donante"
+    "prompt": "Afeitado en zona donante"
   },
   "surgery_duration": {
-    "prompt": "Duración de la cirugía"
+    "prompt": "Duración de la intervención"
   },
   "total_paid_currency": {
     "prompt": "Moneda",
@@ -72,83 +72,83 @@
       "usd": "USD ($)",
       "eur": "EUR (€)",
       "gbp": "GBP (£)",
-      "try": "TRY",
-      "inr": "INR",
-      "thb": "THB",
+      "try": "TRY (₺)",
+      "inr": "INR (₹)",
+      "thb": "THB (฿)",
       "mxn": "MXN ($)",
       "aud": "AUD ($)",
-      "other": "Otros"
+      "other": "Otra"
     }
   },
   "total_paid_currency_other": {
-    "prompt": "Moneda (si es otra)",
-    "placeholder": "por ejemplo, CAD, CHF"
+    "prompt": "Moneda (si eligió «Otra»)",
+    "placeholder": "p. ej., CAD, CHF"
   },
   "total_paid_amount": {
     "prompt": "Importe total pagado",
     "placeholder": "5000"
   },
   "cost_model": {
-    "prompt": "¿Cómo estaba estructurado el coste?",
+    "prompt": "¿Cómo se estructuró el precio?",
     "options": {
       "per_graft": "Por injerto",
-      "per_session": "Por período de sesiones",
-      "package": "Paquete",
-      "not_clear": "Cifra imprecisa"
+      "per_session": "Por sesión",
+      "package": "Paquete cerrado",
+      "not_clear": "No quedó claro"
     }
   },
   "what_included": {
     "prompt": "¿Qué se incluyó?",
     "options": {
-      "procedure": "Procedimiento",
-      "medications": "Medicamentos",
+      "procedure": "Intervención",
+      "medications": "Medicación",
       "followup": "Seguimiento",
-      "prp": "PRP*",
+      "prp": "PRP",
       "accommodation": "Alojamiento",
       "transport": "Transporte",
-      "other": "Otros"
+      "other": "Otro"
     }
   },
   "what_included_other": {
-    "prompt": "Otro (especifique)"
+    "prompt": "Otras inclusiones (especifique)"
   },
   "pain_level": {
     "prompt": "Nivel de dolor durante la cirugía",
-    "help": "1 = Sin dolor, 10 = Dolor intenso"
+    "help": "1 = sin dolor · 10 = dolor intenso"
   },
   "post_op_swelling": {
     "prompt": "Hinchazón postoperatoria"
   },
   "bleeding_issue": {
-    "prompt": "sangrado significativo."
+    "prompt": "¿Hubo sangrado importante?"
   },
   "recovery_time": {
     "prompt": "Tiempo de recuperación"
   },
   "shock_loss": {
-    "prompt": "¿Experimentó pérdida por choque (desprendimiento temporal)?"
+    "prompt": "¿Experimentó caída reactiva postoperatoria (efluvio telógeno)?"
   },
   "complications": {
-    "prompt": "Cualquier tipo de complicaciones."
+    "prompt": "¿Alguna complicación?"
   },
   "complications_details": {
-    "prompt": "Detalles de la complicación",
+    "prompt": "Detalle de la complicación",
     "placeholder": "Describa qué ocurrió"
   },
   "months_since": {
-    "prompt": "Meses desde el procedimiento"
+    "prompt": "Meses transcurridos desde el procedimiento"
   },
   "density_satisfaction": {
     "prompt": "Satisfacción con la densidad",
-    "help": "(1= muy insatisfecho/a, 5=muy satisfecho/a)"
+    "help": "(1 = muy insatisfecho/a · 5 = muy satisfecho/a)"
   },
   "hairline_naturalness": {
-    "prompt": "Naturalidad de la línea capilar",
-    "help": "1 escaso - 5 excelente"
+    "prompt": "Naturalidad de la línea frontal",
+    "help": "1 = poco natural · 5 = muy natural"
   },
   "donor_appearance": {
-    "prompt": "Apariencia del área donante",
-    "help": "1 escaso - 5 excelente"
+    "prompt": "Apariencia de la zona donante",
+    "help": "1 = poco satisfactoria · 5 = muy satisfactoria"
   },
   "would_repeat": {
     "prompt": "¿Repetiría el procedimiento con esta clínica?"
@@ -172,18 +172,18 @@
         }
       },
       "smoking_status": {
-        "prompt": "Condición de fumador",
+        "prompt": "Tabaquismo",
         "options": {
           "No": "No",
-          "Occasionally": "Ocasionalmente",
+          "Occasionally": "Ocasional",
           "Daily": "Diario"
         }
       },
       "alcohol_frequency": {
-        "prompt": "Frecuencia alcohólica (opcional)",
+        "prompt": "Consumo de alcohol (opcional)",
         "options": {
-          "Rare": "Rara",
-          "Weekly": "Semanalmente",
+          "Rare": "Raras veces",
+          "Weekly": "Semanal",
           "Daily": "Diario"
         }
       },
@@ -192,299 +192,299 @@
         "options": {
           "No": "No",
           "Type1": "Tipo 1",
-          "Type2": "3 . Ajuste",
-          "Not sure": "Tengo dudas"
+          "Type2": "Tipo 2",
+          "Not sure": "No estoy seguro/a"
         }
       },
       "autoimmune_conditions": {
         "prompt": "Enfermedades autoinmunes (opcional)",
-        "placeholder": "por ejemplo, alopecia areata, lupus, psoriasis (si se conoce)"
+        "placeholder": "p. ej., alopecia areata, lupus, psoriasis (si lo sabe)"
       },
       "thyroid_issues": {
         "prompt": "Problemas de tiroides",
         "options": {
           "No": "No",
           "Yes": "Sí",
-          "Not sure": "Tengo dudas"
+          "Not sure": "No estoy seguro/a"
         }
       },
       "clotting_disorders": {
-        "prompt": "Trastornos de coagulación",
+        "prompt": "Trastornos de la coagulación",
         "options": {
           "No": "No",
           "Yes": "Sí",
-          "Not sure": "Tengo dudas"
+          "Not sure": "No estoy seguro/a"
         }
       },
       "blood_thinners": {
         "prompt": "Anticoagulantes (opcional)",
-        "placeholder": "Nombre(s) si corresponde"
+        "placeholder": "Nombre(s), si aplica"
       },
       "steroid_use": {
-        "prompt": "Uso de esteroides (opcional)",
-        "placeholder": "Si corresponde (no se necesita dosis)"
+        "prompt": "Uso de corticoides (opcional)",
+        "placeholder": "Si aplica (no hace falta la dosis)"
       },
       "previous_scalp_surgeries": {
         "prompt": "Cirugías previas del cuero cabelludo (opcional)",
-        "placeholder": "por ejemplo, trasplante previo, reducción del cuero cabelludo"
+        "placeholder": "p. ej., trasplante anterior, reducción de cuero cabelludo"
       }
     },
     "hair_biology": {
       "hair_loss_duration_years": {
-        "prompt": "Duración de la caída del cabello (años)",
-        "placeholder": "Ej. 6"
+        "prompt": "Antigüedad de la caída (años)",
+        "placeholder": "p. ej., 6"
       },
       "hair_loss_progression_speed": {
         "prompt": "Velocidad de progresión",
         "options": {
-          "Slow": "Slow",
+          "Slow": "Lenta",
           "Moderate": "Moderada",
-          "Rapid": "Rápido"
+          "Rapid": "Rápida"
         }
       },
       "family_history_strength": {
-        "prompt": "Fortaleza de antecedentes familiares",
+        "prompt": "Importancia de los antecedentes familiares",
         "options": {
           "None": "Ninguno",
           "Mild": "Leve",
-          "Strong": "Corte fuerte",
-          "Unknown": "Desconocido"
+          "Strong": "Marcada",
+          "Unknown": "No lo sé"
         }
       },
       "current_medications_for_hair": {
-        "prompt": "Medicamentos capilares actuales (opcional)",
-        "placeholder": "Enumere lo que está usando (si corresponde)"
+        "prompt": "Medicación capilar actual (opcional)",
+        "placeholder": "Liste lo que usa, si aplica"
       },
       "stopped_medications_recently": {
-        "prompt": "¿Ha dejado de tomar medicamentos para el cabello recientemente? (opcional)"
+        "prompt": "¿Ha suspendido recientemente medicación capilar? (opcional)"
       },
       "scalp_condition_history": {
-        "prompt": "Historial de condición del cuero cabelludo (opcional)",
-        "placeholder": "por ejemplo, dermatitis, foliculitis, picazón"
+        "prompt": "Antecedentes del cuero cabelludo (opcional)",
+        "placeholder": "p. ej., dermatitis, foliculitis, picor"
       },
       "previous_prp_or_exosomes": {
-        "prompt": "¿PRP anterior o exosomas? (opcional)"
+        "prompt": "¿Tratamientos previos con PRP o exosomas? (opcional)"
       }
     },
     "procedure_execution": {
       "technician_role_extraction": {
         "prompt": "¿Quién realizó la extracción?",
         "options": {
-          "Doctor": "Doctor/a",
+          "Doctor": "Médico",
           "Technician": "Técnico",
-          "Mixed": "Mestizo",
-          "Not sure": "Tengo dudas"
+          "Mixed": "Mixto",
+          "Not sure": "No estoy seguro/a"
         }
       },
       "technician_role_implantation": {
         "prompt": "¿Quién realizó la implantación?",
         "options": {
-          "Doctor": "Doctor/a",
+          "Doctor": "Médico",
           "Technician": "Técnico",
-          "Mixed": "Mestizo",
-          "Not sure": "Tengo dudas"
+          "Mixed": "Mixto",
+          "Not sure": "No estoy seguro/a"
         }
       },
       "grafts_claimed_total": {
-        "prompt": "Total de injertos reclamados (opcional)",
-        "placeholder": "por ejemplo, 3800"
+        "prompt": "Injertos según la clínica (total, opcional)",
+        "placeholder": "p. ej., 3800"
       },
       "graft_ratio": {
-        "prompt": "Relación de injerto (opcional)",
-        "placeholder": "Si te dijeran una proporción"
+        "prompt": "Ratio o reparto frontal/coronilla (opcional)",
+        "placeholder": "Si se lo indicaron"
       },
       "hairline_drawn_by_doctor": {
-        "prompt": "¿Línea de cabello dibujada por el médico?",
+        "prompt": "¿Diseñó el médico la línea frontal?",
         "options": {
           "Yes": "Sí",
           "Technician": "Técnico",
-          "Not sure": "Tengo dudas"
+          "Not sure": "No estoy seguro/a"
         }
       },
       "single_hair_grafts_front": {
-        "prompt": "¿Injertos de un solo cabello utilizados en la zona frontal?",
+        "prompt": "¿Se usaron injertos unifoliculares en la zona frontal?",
         "options": {
           "Yes": "Sí",
           "No": "No",
-          "Not sure": "Tengo dudas"
+          "Not sure": "No estoy seguro/a"
         }
       },
       "crown_pattern_discussed": {
-        "prompt": "¿Se discutió el patrón de la corona (si se realizó el trabajo de la corona)?",
+        "prompt": "¿Comentaron el diseño de la coronilla (si trabajaron la coronilla)?",
         "options": {
           "Yes": "Sí",
           "No": "No",
-          "Not sure": "Tengo dudas"
+          "Not sure": "No estoy seguro/a"
         }
       }
     },
     "donor_profile": {
       "pre_existing_donor_thinning": {
-        "prompt": "Adelgazamiento de donantes preexistentes",
+        "prompt": "Rarefacción previa de la zona donante",
         "options": {
-          "None": "Ninguno",
+          "None": "Ninguna",
           "Mild": "Leve",
           "Moderate": "Moderada",
-          "Severe": "Grave",
-          "Not sure": "Tengo dudas"
+          "Severe": "Marcada",
+          "Not sure": "No estoy seguro/a"
         }
       },
       "donor_density_measured": {
-        "prompt": "¿Se midió la densidad de donantes?",
+        "prompt": "¿Midieron la densidad capilar del donante?",
         "options": {
-          "Numeric": "Sí (medida numérica)",
-          "Visual only": "Solo visual",
+          "Numeric": "Sí (medición numérica)",
+          "Visual only": "Solo valoración visual",
           "No": "No",
-          "Not sure": "Tengo dudas"
+          "Not sure": "No estoy seguro/a"
         }
       },
       "donor_area_marked_preop": {
-        "prompt": "¿Área del donante marcada antes de la operación?",
+        "prompt": "¿Delimitaron la zona donante antes de la cirugía?",
         "options": {
           "Yes": "Sí",
           "No": "No",
-          "Not sure": "Tengo dudas"
+          "Not sure": "No estoy seguro/a"
         }
       },
       "donor_extraction_pattern_observed": {
         "prompt": "Patrón de extracción observado (opcional)",
         "options": {
-          "Uniform": "Uniform",
-          "Clustered": "Clasificada en grupos.",
-          "Not sure": "Tengo dudas"
+          "Uniform": "Uniforme",
+          "Clustered": "Agrupado",
+          "Not sure": "No estoy seguro/a"
         }
       },
       "multiple_days_of_extraction": {
-        "prompt": "¿Varios días de extracción? (opcional)"
+        "prompt": "¿La extracción se realizó en más de un día? (opcional)"
       }
     },
     "graft_handling": {
       "out_of_body_time_estimate": {
-        "prompt": "Estimación del tiempo fuera del cuerpo (opcional)",
+        "prompt": "Tiempo fuera del cuerpo estimado (opcional)",
         "options": {
-          "Less than 1h": "El procedimiento suele durar menos de una hora.",
-          "1-2h": "1-2 horas",
-          "2-4h": "2 a 4 horas",
-          "4h+": "4 horas",
-          "Not sure": "Tengo dudas"
+          "Less than 1h": "Menos de 1 hora",
+          "1-2h": "1–2 horas",
+          "2-4h": "2–4 horas",
+          "4h+": "Más de 4 horas",
+          "Not sure": "No estoy seguro/a"
         }
       },
       "storage_solution": {
-        "prompt": "Solución de almacenamiento (opcional)",
+        "prompt": "Solución de conservación (opcional)",
         "options": {
           "Saline": "Solución salina",
-          "HypoThermosol": "Hipotermosol",
-          "PRP": "PRP*",
-          "Other": "Otros",
-          "Not sure": "Tengo dudas"
+          "HypoThermosol": "HypoThermosol",
+          "PRP": "PRP",
+          "Other": "Otra",
+          "Not sure": "No estoy seguro/a"
         }
       },
       "temperature_control": {
         "prompt": "Control de temperatura (opcional)",
         "options": {
           "Chilled": "Refrigerado",
-          "Room temp": "Temperatura ambiente.",
-          "Not sure": "Tengo dudas"
+          "Room temp": "Temperatura ambiente",
+          "Not sure": "No estoy seguro/a"
         }
       },
       "grafts_kept_hydrated": {
-        "prompt": "¿Los injertos se mantienen hidratados? (opcional)",
+        "prompt": "¿Mantuvieron los injertos hidratados? (opcional)",
         "options": {
           "Yes": "Sí",
           "No": "No",
-          "Not sure": "Tengo dudas"
+          "Not sure": "No estoy seguro/a"
         }
       },
       "exposed_to_air": {
-        "prompt": "Expuestos al aire (opcional)",
+        "prompt": "Exposición al aire (opcional)",
         "options": {
           "Never": "Nunca",
           "Occasionally": "Ocasionalmente",
-          "Frequently": "Frecuentemente",
-          "Not sure": "Tengo dudas"
+          "Frequently": "Con frecuencia",
+          "Not sure": "No estoy seguro/a"
         }
       },
       "long_breaks_during_surgery": {
-        "prompt": "¿Descansos largos durante la cirugía? (opcional)",
+        "prompt": "¿Hubo pausas prolongadas durante la cirugía? (opcional)",
         "options": {
           "No": "No",
           "Under 30min": "Menos de 30 minutos",
-          "Over 1h": "Poco más de 1 hora",
-          "Not sure": "Tengo dudas"
+          "Over 1h": "Más de 1 hora",
+          "Not sure": "No estoy seguro/a"
         }
       }
     },
     "healing_course": {
       "current_month_postop": {
-        "prompt": "Meses actuales después de la operación (opcional)",
-        "placeholder": "p. ej. 8"
+        "prompt": "Mes actual tras la cirugía (opcional)",
+        "placeholder": "p. ej., 8"
       },
       "shedding_start_week": {
-        "prompt": "Inicio del desprendimiento (semana, opcional)",
-        "placeholder": "p.ej. 3"
+        "prompt": "Inicio de la caída telógena (semana, opcional)",
+        "placeholder": "p. ej., 3"
       },
       "shedding_severity": {
-        "prompt": "Gravedad de desprendimiento (opcional)",
+        "prompt": "Intensidad de la caída (opcional)",
         "options": {
-          "None": "Ninguno",
+          "None": "Ninguna",
           "Mild": "Leve",
           "Moderate": "Moderada",
-          "Heavy": "Fuerte"
+          "Heavy": "Marcada"
         }
       },
       "regrowth_start_month": {
-        "prompt": "Inicio del nuevo crecimiento (mes, opcional)",
-        "placeholder": "e.j. 4"
+        "prompt": "Inicio del nuevo crecimiento visible (mes, opcional)",
+        "placeholder": "p. ej., 4"
       },
       "visible_density_improvement": {
-        "prompt": "Mejora de la densidad visible (opcional)",
+        "prompt": "Mejora visible de densidad (opcional)",
         "options": {
-          "None": "Ninguno",
+          "None": "Ninguna",
           "Mild": "Leve",
           "Moderate": "Moderada",
           "Significant": "Importante"
         }
       },
       "uneven_growth_present": {
-        "prompt": "¿Crecimiento desigual presente? (opcional)"
+        "prompt": "¿Crecimiento irregular? (opcional)"
       },
       "persistent_redness": {
         "prompt": "¿Enrojecimiento persistente? (opcional)"
       },
       "recipient_irregularities": {
-        "prompt": "Irregularidades del destinatario (opcional)",
+        "prompt": "Irregularidades en zona receptora (opcional)",
         "options": {
-          "Cobblestoning": "Cobblestoning",
-          "Pitting": "Picadura",
-          "Ridges": "Riscos",
-          "None": "Ninguno",
-          "Not sure": "Tengo dudas"
+          "Cobblestoning": "Textura en «piel de naranja» (cobblestoning)",
+          "Pitting": "Hoyuelos (pitting)",
+          "Ridges": "Surcos / cordones",
+          "None": "Ninguna",
+          "Not sure": "No estoy seguro/a"
         }
       }
     },
     "aesthetics": {
       "hairline_height_changed_cm": {
-        "prompt": "Altura de la línea capilar cambiada (cm, opcional)",
-        "placeholder": "por ejemplo, 1,5"
+        "prompt": "Cambio de altura de la línea frontal (cm, opcional)",
+        "placeholder": "p. ej., 1,5"
       },
       "temple_points_reconstructed": {
-        "prompt": "¿Puntos del templo reconstruidos? (opcional)"
+        "prompt": "¿Reconstruyeron las puntas temporales? (opcional)"
       },
       "direction_matches_native": {
-        "prompt": "¿La dirección coincide con el cabello nativo? (opcional)",
+        "prompt": "¿La dirección del pelo coincide con el pelo nativo? (opcional)",
         "options": {
           "Yes": "Sí",
-          "Slight mismatch": "Ligera falta de coincidencia",
+          "Slight mismatch": "Ligeramente distinta",
           "No": "No",
-          "Not sure": "Tengo dudas"
+          "Not sure": "No estoy seguro/a"
         }
       },
       "crown_swirl_matches": {
-        "prompt": "¿Coincidencias de remolino de corona? (opcional)",
+        "prompt": "¿El remolino de la coronilla luce natural? (opcional)",
         "options": {
           "Yes": "Sí",
           "No": "No",
-          "Not applicable": "No se aplica."
+          "Not applicable": "No aplica"
         }
       }
     },
@@ -493,16 +493,16 @@
         "prompt": "Valoración de la comunicación"
       },
       "transparency_rating": {
-        "prompt": "Clasificación de transparencia"
+        "prompt": "Valoración de la transparencia"
       },
       "felt_rushed": {
-        "prompt": "¿Se sintió apresurado? (opcional)"
+        "prompt": "¿Se sintió apresurado/a? (opcional)"
       },
       "felt_informed": {
-        "prompt": "¿Te sentiste informado?",
+        "prompt": "¿Se sintió bien informado/a?",
         "options": {
           "Yes": "Sí",
-          "Somewhat": "Más o menos",
+          "Somewhat": "En parte",
           "No": "No"
         }
       },
@@ -511,23 +511,23 @@
         "options": {
           "No": "No",
           "Ongoing": "En curso",
-          "Resolved": "Resuelto"
+          "Resolved": "Resuelta"
         }
       },
       "current_satisfaction": {
         "prompt": "Satisfacción actual (0–10)",
-        "placeholder": "ej. 7"
+        "placeholder": "p. ej., 7"
       },
       "biggest_concern_now": {
-        "prompt": "Mayor preocupación en este momento (opcional)",
-        "placeholder": "¿Cuál es tu principal preocupación hoy?"
+        "prompt": "Principal preocupación ahora (opcional)",
+        "placeholder": "Describa brevemente su principal inquietud"
       },
       "considering_revision": {
-        "prompt": "¿Está considerando una revisión?",
+        "prompt": "¿Valora una corrección quirúrgica?",
         "options": {
           "Yes": "Sí",
           "No": "No",
-          "Unsure": "No lo sé"
+          "Unsure": "No estoy seguro/a"
         }
       }
     }

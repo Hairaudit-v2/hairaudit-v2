@@ -205,6 +205,16 @@ Public marketing UI (no SEO metadata changes, no locale routes): **`marketing.*`
 
 **Residual / quality:** Spanish flat file is machine-assisted; spot-check clinical nuance and edit `_generated/intakeFields.flat.es.json` before merge when copy must be exact.
 
+## Batch 14 (implemented — Spanish linguistic QA)
+
+**Content-only** polish for `es` patient intake + report-adjacent UI (no ids, values, validation, payloads, or generators changed):
+
+1. **`_generated/intakeFields.flat.es.json`** — human-edited prompts, help, placeholders, and option labels (clarity, neutral clinical tone, **injerto/zona donante/zona receptora/línea frontal/coronilla** consistency; **No estoy seguro/a** for uncertainty).
+2. **`es.json`** — re-merged `intakeFields`; **`reviewEnums`** `not_sure` strings aligned; patient **questions/intake/review** chrome wording tuned; **inteligencia forense** block aligned with **injertos**/cicatrización vocabulary; aesthetic radar description uses **línea frontal** like intake.
+3. **`docs/i18n-es-terminology.md`** — glossary and regeneration note for future editors.
+
+**Verification:** `npx tsc --noEmit`, `pnpm test:i18n`, `npm run build`.
+
 ## Batch 9 (implemented — architecture only)
 
 **Report-adjacent i18n groundwork** (no report body / PDF / AI changes): **`localeContexts.ts`** (UI vs report-output vs source locale), **`reportTranslationBlueprint.ts`** (future translation plan types), **`reportTerminology.ts`** + **`reportGlossary.*`** in `en`/`es` (controlled labels, not wired to generators). **`docs/i18n-report-translation-pipeline.md`**. **`REPORT_CONTENT_DEFAULT_LOCALE`** and `report.ts` JSDoc updated.

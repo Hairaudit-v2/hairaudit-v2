@@ -57,3 +57,4 @@ After changing canonical English copy in `patientAuditForm.ts`, re-run (1) and (
 
 - **Batch 12:** Resolver pattern + sample `intakeFields` keys + `reviewEnums` for procedure type.
 - **Batch 13:** Full question set under `dashboard.patient.forms.intakeFields` (merged from generated EN + flat ES), convention-based resolvers, shared `PATIENT_INTAKE_REVIEW_ENUM_QUESTION_IDS` with review summary.
+- **Batch 14:** Spanish copy QA on `_generated/intakeFields.flat.es.json` and aligned dashboard/report-adjacent `es.json` strings; glossary in **`docs/i18n-es-terminology.md`**.
