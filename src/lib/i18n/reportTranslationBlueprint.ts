@@ -13,6 +13,7 @@ export type ReportTranslationStatus =
 
 /** Coarse sections that could be translated independently in a future pipeline. */
 export type ReportTranslatedSectionId =
+  | "patientSafeSummaryShell"
   | "executiveSummary"
   | "findings"
   | "recommendations"
@@ -40,6 +41,24 @@ export type ReportTranslationPlan = {
   sections: Partial<Record<ReportTranslatedSectionId, ReportTranslationSectionBlueprint>>;
   status: ReportTranslationStatus;
 };
+
+/**
+ * Additive shell-level readiness marker for future patient-safe summary delivery.
+ * This intentionally tracks only app-owned framing; generated narrative remains English-first.
+ */
+export type PatientSafeSummaryShellBlueprint = {
+  locale: SupportedLocale;
+  narrativeLocale: "en";
+  translatedNarrativeAvailable: false;
+};
+
+export function createPatientSafeSummaryShellBlueprint(locale: SupportedLocale): PatientSafeSummaryShellBlueprint {
+  return {
+    locale,
+    narrativeLocale: "en",
+    translatedNarrativeAvailable: false,
+  };
+}
 
 export function createEmptyReportTranslationPlan(targetLocale: SupportedLocale): ReportTranslationPlan {
   return {

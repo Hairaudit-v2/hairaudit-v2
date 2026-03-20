@@ -227,6 +227,18 @@ Public marketing UI (no SEO metadata changes, no locale routes): **`marketing.*`
 
 **Notes:** English schema text remains the fallback source of truth. API-returned error bodies remain unchanged and are shown as returned.
 
+## Batch 16 (implemented — first patient-safe summary output shell)
+
+**Localized patient-facing summary framing** now exists on the case page, while **generated narrative remains English-first** and report generation stays unchanged:
+
+1. **Structured observation helper** — `src/lib/reports/patientSafeSummary.ts` extracts a bounded observation list from existing `summary.key_findings` / `summary.red_flags` and infers coarse stage badges (`preop`, `day0`, `month_1_3`, etc.) without mutating report payloads.
+2. **Patient-safe summary shell** — `src/components/patient/PatientSafeSummaryShell.tsx` localizes headings, status/score labels, stage badges, helper text, disclaimer text, and action framing under `dashboard.patient.safeSummary.*`.
+3. **Case page wiring** — `src/app/cases/[caseId]/page.tsx` renders the localized shell for patient viewers when a latest report exists; the observation text itself remains the original generated English text.
+4. **Readiness only** — `reportTranslationBlueprint.ts` adds `patientSafeSummaryShell` and `PatientSafeSummaryShellBlueprint` as additive future markers only; finalize / PDF / scoring / AI pipelines do not read them.
+5. **Docs** — `docs/i18n-patient-safe-summary-shell.md` describes the live boundary: localized shell now, translated narrative later.
+
+**Notes:** No AI findings / recommendations / rubric text was translated. No PDF, scoring, finalize, or storage behavior changed.
+
 ## Batch 9 (implemented — architecture only)
 
 **Report-adjacent i18n groundwork** (no report body / PDF / AI changes): **`localeContexts.ts`** (UI vs report-output vs source locale), **`reportTranslationBlueprint.ts`** (future translation plan types), **`reportTerminology.ts`** + **`reportGlossary.*`** in `en`/`es` (controlled labels, not wired to generators). **`docs/i18n-report-translation-pipeline.md`**. **`REPORT_CONTENT_DEFAULT_LOCALE`** and `report.ts` JSDoc updated.

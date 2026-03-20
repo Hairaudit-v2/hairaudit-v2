@@ -615,6 +615,31 @@
         "failedBody": "Please contact support or try resubmitting your case materials.",
         "contactSupport": "Contact support"
       },
+      "safeSummary": {
+        "title": "Patient-safe summary",
+        "subtitle": "Localized framing is shown here. Generated clinical observation text remains in English for now.",
+        "statusLabel": "Status:",
+        "scoreLabel": "Score:",
+        "observationsTitle": "Structured observations",
+        "observationsHint": "These items come from the current report summary, but only the shell labels are translated in this phase.",
+        "noObservations": "No structured summary observations are available yet for this case.",
+        "disclaimer": "This summary shell is localized for easier navigation. Generated narrative, findings, and recommendations are still shown in their original English output.",
+        "actionPrompt": "Use the report actions on this page to open or download the full report.",
+        "badges": {
+          "localizedShell": "Localized shell",
+          "englishNarrative": "English narrative"
+        },
+        "stages": {
+          "preop": "Pre-op",
+          "day0": "Surgery day",
+          "early_healing": "Early healing",
+          "month_1_3": "Months 1-3",
+          "month_4_6": "Months 4-6",
+          "month_7_12": "Months 7-12",
+          "month_12_plus": "12+ months",
+          "unknown": "General"
+        }
+      },
       "deleteDraft": {
         "button": "Delete draft",
         "busy": "Deleting…",

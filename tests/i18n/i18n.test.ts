@@ -15,7 +15,8 @@ import { resolveAuditPrompt, resolveAuditSectionTitle } from "@/lib/audit/auditD
 import { getIntakeFieldOptionLabel, getIntakeFieldPrompt, getTranslation } from "@/lib/i18n/getTranslation";
 import { getReportGlossaryLabel } from "@/lib/i18n/reportTerminology";
 import { defaultReportOutputLocale, describeLocaleIntent, normalizeUiLocale } from "@/lib/i18n/localeContexts";
-import { createEmptyReportTranslationPlan } from "@/lib/i18n/reportTranslationBlueprint";
+import { createEmptyReportTranslationPlan, createPatientSafeSummaryShellBlueprint } from "@/lib/i18n/reportTranslationBlueprint";
+import { buildPatientSafeSummaryObservations } from "@/lib/reports/patientSafeSummary";
 import { localeFromAcceptLanguage } from "@/lib/seo/localeMetadata";
 
 test("getDefaultLocale returns en", () => {
@@ -130,6 +131,13 @@ test("createEmptyReportTranslationPlan: blueprint defaults", () => {
   assert.deepEqual(plan.sections, {});
 });
 
+test("createPatientSafeSummaryShellBlueprint: remains English narrative only", () => {
+  const shell = createPatientSafeSummaryShellBlueprint("es");
+  assert.equal(shell.locale, "es");
+  assert.equal(shell.narrativeLocale, "en");
+  assert.equal(shell.translatedNarrativeAvailable, false);
+});
+
 test("getTranslation: marketing meta resolves Spanish when present", () => {
   assert.equal(
     getTranslation("marketing.meta.howItWorks.title", "es"),
@@ -168,6 +176,33 @@ test("clinic case audit display: prompt resolves in Spanish", () => {
   });
   assert.ok(out.length > 4);
   assert.notEqual(out, "Clinic Location(s)");
+});
+
+test("patient safe summary shell labels resolve in Spanish", () => {
+  assert.equal(
+    getTranslation("dashboard.patient.safeSummary.title", "es"),
+    "Resumen seguro para el paciente"
+  );
+  assert.equal(
+    getTranslation("dashboard.patient.safeSummary.stages.day0", "es"),
+    "Día de la cirugía"
+  );
+});
+
+test("buildPatientSafeSummaryObservations: keeps generated text but infers stages", () => {
+  const observations = buildPatientSafeSummaryObservations({
+    key_findings: [
+      { title: "Pre-op donor photos show mild asymmetry." },
+      { title: "At 12 month follow-up, density appears stable." },
+    ],
+    red_flags: ["Healing irregularity noted near day 0 recipient zone."],
+  });
+
+  assert.deepEqual(
+    observations.map((item) => item.stage),
+    ["preop", "month_12_plus", "day0"]
+  );
+  assert.equal(observations[0]?.text, "Pre-op donor photos show mild asymmetry.");
 });
 
 test("getTranslation: no dev warn in production for resolved Spanish", () => {

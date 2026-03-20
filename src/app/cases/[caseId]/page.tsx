@@ -27,6 +27,7 @@ import LatestReportCard from "@/components/reports/LatestReportCard";
 import InviteClinicContributionCard from "@/components/case/InviteClinicContributionCard";
 import ForensicCaseTimelineViewer from "@/components/reports/ForensicCaseTimelineViewer";
 import PatientNextActionPanel from "@/components/patient/PatientNextActionPanel";
+import PatientSafeSummaryShell from "@/components/patient/PatientSafeSummaryShell";
 import { BENCHMARKING_GLOBAL_STANDARDS } from "@/lib/benchmarkingCopy";
 import CaseNotFoundRecovery from "@/components/case/CaseNotFoundRecovery";
 import PatientImageEvidenceQualityPanel from "@/components/reports/PatientImageEvidenceQualityPanel";
@@ -59,6 +60,7 @@ import { resolveAuditorRole } from "@/lib/auth/isAuditor";
 import { isMissingFeatureError } from "@/lib/db/isMissingFeatureError";
 import { getTranslation } from "@/lib/i18n/getTranslation";
 import type { TranslationKey } from "@/lib/i18n/translationKeys";
+import { buildPatientSafeSummaryObservations } from "@/lib/reports/patientSafeSummary";
 import { resolvePublicSeoLocale } from "@/lib/seo/localeMetadata";
 
 function scoreChipClass(score: number | null | undefined) {
@@ -538,33 +540,7 @@ export default async function Page({
   const giiLimitations: string[] =
     Array.isArray(graftIntegrityEstimate?.limitations) ? (graftIntegrityEstimate.limitations as string[]) : [];
   const giiNotes = typeof graftIntegrityEstimate?.auditor_notes === "string" ? (graftIntegrityEstimate.auditor_notes as string) : null;
-  const summaryObservations: Array<{ stage: "preop" | "day0" | "early_healing" | "month_1_3" | "month_4_6" | "month_7_12" | "month_12_plus" | "unknown"; text: string }> = [];
-  const keyFindings = Array.isArray(latestSummary?.key_findings) ? latestSummary.key_findings : [];
-  const redFlags = Array.isArray(latestSummary?.red_flags) ? latestSummary.red_flags : [];
-  const toObs = [...keyFindings, ...redFlags].slice(0, 8);
-  for (const entry of toObs) {
-    const raw = typeof entry === "string" ? entry : typeof entry === "object" && entry && "title" in (entry as Record<string, unknown>) ? String((entry as Record<string, unknown>).title ?? "") : "";
-    const text = raw.trim();
-    if (!text) continue;
-    const lower = text.toLowerCase();
-    const stage =
-      lower.includes("pre-op") || lower.includes("preop")
-        ? "preop"
-        : lower.includes("day 0") || lower.includes("day0") || lower.includes("surgery day")
-          ? "day0"
-          : lower.includes("healing")
-            ? "early_healing"
-            : lower.includes("1 month") || lower.includes("3 month")
-              ? "month_1_3"
-              : lower.includes("4 month") || lower.includes("5 month") || lower.includes("6 month")
-                ? "month_4_6"
-                : lower.includes("7 month") || lower.includes("8 month") || lower.includes("9 month") || lower.includes("10 month") || lower.includes("11 month")
-                  ? "month_7_12"
-                  : lower.includes("12 month") || lower.includes("final")
-                    ? "month_12_plus"
-                    : "unknown";
-    summaryObservations.push({ stage, text });
-  }
+  const summaryObservations = buildPatientSafeSummaryObservations(latestSummary);
 
   const uploadEntryPath = showDoctorFlow
     ? `/cases/${c.id}/doctor/photos`
@@ -702,6 +678,14 @@ export default async function Page({
               caseId={c.id}
               pdfPath={(latestReport as { pdf_path?: string } | null)?.pdf_path}
               variant="case"
+            />
+          )}
+
+          {isPatientForCase && latestReport && (
+            <PatientSafeSummaryShell
+              statusLabel={statusDisplayLabel}
+              score={latestReportDisplayScore}
+              observations={summaryObservations}
             />
           )}
 

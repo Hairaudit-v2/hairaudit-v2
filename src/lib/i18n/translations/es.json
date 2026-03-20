@@ -615,6 +615,31 @@
         "failedBody": "Contacte con soporte o intente volver a enviar los materiales del caso.",
         "contactSupport": "Contactar soporte"
       },
+      "safeSummary": {
+        "title": "Resumen seguro para el paciente",
+        "subtitle": "Aquí se muestra solo la estructura localizada. El texto clínico generado sigue mostrándose en inglés por ahora.",
+        "statusLabel": "Estado:",
+        "scoreLabel": "Puntuación:",
+        "observationsTitle": "Observaciones estructuradas",
+        "observationsHint": "Estos elementos provienen del resumen actual del informe, pero en esta fase solo se traduce la estructura visual.",
+        "noObservations": "Aún no hay observaciones estructuradas disponibles para este caso.",
+        "disclaimer": "Esta estructura del resumen está localizada para facilitar la lectura. La narrativa generada, los hallazgos y las recomendaciones siguen mostrándose en su salida original en inglés.",
+        "actionPrompt": "Use las acciones del informe en esta página para abrir o descargar el informe completo.",
+        "badges": {
+          "localizedShell": "Estructura localizada",
+          "englishNarrative": "Narrativa en inglés"
+        },
+        "stages": {
+          "preop": "Preoperatorio",
+          "day0": "Día de la cirugía",
+          "early_healing": "Cicatrización temprana",
+          "month_1_3": "Meses 1-3",
+          "month_4_6": "Meses 4-6",
+          "month_7_12": "Meses 7-12",
+          "month_12_plus": "12+ meses",
+          "unknown": "General"
+        }
+      },
       "deleteDraft": {
         "button": "Eliminar borrador",
         "busy": "Eliminando…",
