@@ -5,9 +5,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import SiteHeader from "@/components/SiteHeader";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { getCanonicalAppUrl } from "@/lib/auth/redirects";
 
 export default function LoginPage() {
+  const { t } = useI18n();
   const supabase = createSupabaseBrowserClient();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -66,7 +68,7 @@ export default function LoginPage() {
   async function sendMagicLink() {
     setMsg(null);
     if (!email.trim()) {
-      setMsg("Enter your email first to receive a magic link.");
+      setMsg(t("auth.login.enterEmailMagicLink"));
       return;
     }
     setBusyProvider("email");
@@ -79,7 +81,7 @@ export default function LoginPage() {
     if (error) {
       setMsg(`❌ ${error.message}`);
     } else {
-      setMsg("Check your email for a secure sign-in link.");
+      setMsg(t("auth.login.magicLinkSent"));
     }
     setBusyProvider(null);
   }
@@ -88,7 +90,7 @@ export default function LoginPage() {
     setMsg(null);
     const normalizedEmail = email.trim().toLowerCase();
     if (!normalizedEmail) {
-      setMsg("Enter your email first so we can send a recovery link.");
+      setMsg(t("auth.login.enterEmailReset"));
       return;
     }
 
@@ -100,7 +102,7 @@ export default function LoginPage() {
     if (error) {
       setMsg(`❌ ${error.message}`);
     } else {
-      setMsg("Recovery link sent. Check your email to reset your password.");
+      setMsg(t("auth.login.resetSent"));
     }
     setSendingReset(false);
   }
@@ -115,22 +117,20 @@ export default function LoginPage() {
             href="/"
             className="inline-flex items-center text-sm text-slate-500 hover:text-amber-400 mb-4 transition-colors"
           >
-            ← Back to HairAudit
+            {t("auth.common.backToHairAudit")}
           </Link>
           <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
             <div className="mb-6 flex justify-center rounded-xl bg-slate-900 px-4 py-3">
               <Image
                 src="/hair-audit-logo-white.png"
-                alt="Hair Audit"
+                alt={t("auth.common.logoAlt")}
                 width={220}
                 height={48}
                 className="h-10 w-auto object-contain"
               />
             </div>
-            <h1 className="text-2xl font-bold text-slate-900">Sign in</h1>
-            <p className="mt-2 text-sm text-slate-600">
-              Sign in to access your HairAudit account. Patient, doctor, and clinic experiences are all in beta testing.
-            </p>
+            <h1 className="text-2xl font-bold text-slate-900">{t("auth.login.title")}</h1>
+            <p className="mt-2 text-sm leading-relaxed text-slate-600">{t("auth.login.subtitle")}</p>
 
             <div className="mt-6 space-y-3">
               <button
@@ -139,14 +139,14 @@ export default function LoginPage() {
                 disabled={busyProvider !== null}
                 className="w-full rounded-lg border border-slate-300 bg-white text-slate-900 py-2.5 font-semibold hover:bg-slate-50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                Continue with Google
+                {t("auth.login.continueGoogle")}
               </button>
             </div>
 
             <form onSubmit={signInWithPassword} className="mt-6 space-y-4">
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1">
-                  Email
+                  {t("auth.common.email")}
                 </label>
                 <input
                   id="email"
@@ -157,12 +157,12 @@ export default function LoginPage() {
                   required
                   autoComplete="email"
                   className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-slate-900 placeholder-slate-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-colors"
-                  placeholder="your@email.com"
+                  placeholder={t("auth.common.emailPlaceholder")}
                 />
               </div>
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1">
-                  Password
+                  {t("auth.common.password")}
                 </label>
                 <input
                   id="password"
@@ -173,7 +173,7 @@ export default function LoginPage() {
                   required
                   autoComplete="current-password"
                   className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-slate-900 placeholder-slate-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-colors"
-                  placeholder="••••••••"
+                  placeholder={t("auth.common.passwordPlaceholderMasked")}
                 />
               </div>
               <button
@@ -181,7 +181,7 @@ export default function LoginPage() {
                 disabled={busyProvider !== null}
                 className="w-full rounded-lg bg-amber-500 text-slate-900 py-2.5 font-semibold hover:bg-amber-400 transition-colors disabled:opacity-60 disabled:cursor-not-allowed focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
               >
-                Sign in with Email + Password
+                {t("auth.login.signInEmailPassword")}
               </button>
             </form>
             <p className="mt-3 text-right text-sm text-slate-600">
@@ -191,7 +191,7 @@ export default function LoginPage() {
                 disabled={busyProvider !== null || sendingReset}
                 className="font-medium text-slate-700 hover:text-slate-900 disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                {sendingReset ? "Sending recovery link..." : "Lost password?"}
+                {sendingReset ? t("auth.login.sendingRecovery") : t("auth.login.lostPassword")}
               </button>
             </p>
 
@@ -201,7 +201,7 @@ export default function LoginPage() {
               disabled={busyProvider !== null}
               className="mt-3 w-full rounded-lg border border-slate-300 bg-white text-slate-900 py-2.5 font-semibold hover:bg-slate-50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              Continue with Email Magic Link
+              {t("auth.login.magicLink")}
             </button>
 
             {msg && (
@@ -210,19 +210,17 @@ export default function LoginPage() {
               </p>
             )}
 
-            <p className="mt-6 text-center text-xs text-slate-500">
-              By signing in, you&apos;ll be redirected to your role-based dashboard.
-            </p>
+            <p className="mt-6 text-center text-xs leading-relaxed text-slate-500">{t("auth.login.footerRedirect")}</p>
             <p className="mt-2 text-center text-sm text-slate-600">
-              Need an account?{" "}
+              {t("auth.login.needAccount")}{" "}
               <Link href="/signup" className="font-medium text-amber-600 hover:text-amber-500">
-                Sign up (Patient Beta, Doctor Beta, or Clinic Beta)
+                {t("auth.login.signUpCta")}
               </Link>
             </p>
             <p className="mt-2 text-center text-sm text-slate-600">
-              Need auditor access?{" "}
+              {t("auth.login.auditorPrompt")}{" "}
               <Link href="/login/auditor" className="font-medium text-slate-700 hover:text-slate-900">
-                Auditor login
+                {t("auth.login.auditorLink")}
               </Link>
             </p>
           </div>

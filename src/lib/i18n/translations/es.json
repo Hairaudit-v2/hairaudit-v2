@@ -61,6 +61,103 @@
       "crossPlatformVisitFi": "Visitar Follicle Intelligence"
     }
   },
+  "auth": {
+    "common": {
+      "backToHairAudit": "← Volver a HairAudit",
+      "backToLogin": "← Volver al inicio de sesión",
+      "email": "Correo electrónico",
+      "password": "Contraseña",
+      "logoAlt": "Hair Audit",
+      "emailPlaceholder": "su@correo.com",
+      "passwordPlaceholderMasked": "••••••••"
+    },
+    "login": {
+      "title": "Iniciar sesión",
+      "subtitle": "Acceda a su cuenta HairAudit. Las experiencias de paciente, médico y clínica están en pruebas beta.",
+      "continueGoogle": "Continuar con Google",
+      "signInEmailPassword": "Iniciar sesión con correo y contraseña",
+      "lostPassword": "¿Olvidó su contraseña?",
+      "sendingRecovery": "Enviando enlace de recuperación...",
+      "magicLink": "Continuar con enlace mágico por correo",
+      "footerRedirect": "Al iniciar sesión se le redirigirá al panel según su rol.",
+      "needAccount": "¿No tiene cuenta?",
+      "signUpCta": "Registrarse (beta paciente, médico o clínica)",
+      "auditorPrompt": "¿Acceso de auditor?",
+      "auditorLink": "Inicio de sesión de auditor",
+      "enterEmailMagicLink": "Introduzca primero su correo para recibir un enlace mágico.",
+      "magicLinkSent": "Revise su correo para el enlace seguro de acceso.",
+      "enterEmailReset": "Introduzca primero su correo para enviarle un enlace de recuperación.",
+      "resetSent": "Enlace de recuperación enviado. Revise su correo para restablecer la contraseña."
+    },
+    "auditor": {
+      "title": "Inicio de sesión de auditor",
+      "subtitleBefore": "Solo auditores autorizados. Use ",
+      "subtitleAfter": " como correo de acceso.",
+      "signInButton": "Entrar como auditor",
+      "forgotSending": "Enviando enlace...",
+      "forgotPassword": "¿Olvidó su contraseña?",
+      "resetSent": "Correo de restablecimiento enviado. Abra el enlace y establezca una nueva contraseña.",
+      "notAuditor": "¿No es auditor?",
+      "standardSignIn": "Inicio de sesión estándar",
+      "onlyThisEmail": "Solo {{email}} puede iniciar sesión aquí. Use el inicio de sesión habitual para otras cuentas."
+    },
+    "signup": {
+      "title": "Cree su cuenta HairAudit",
+      "subtitle": "Elija su perfil: Paciente, Clínica o Médico. Cada uno tiene una experiencia adaptada.",
+      "roleLabel": "Me registro como",
+      "rolePatient": "Paciente",
+      "roleDoctor": "Médico",
+      "roleClinic": "Clínica",
+      "rolePatientDesc": "Envíe casos de trasplante para revisión forense independiente.",
+      "roleClinicDesc": "Cree el perfil gratuito de su clínica, envíe casos auditados y construya una presencia pública verificada.",
+      "roleDoctorDesc": "Cree su perfil médico gratuito y empiece un registro profesional transparente basado en evidencia.",
+      "creating": "Creando...",
+      "submitClinic": "Crear perfil de clínica",
+      "submitDoctor": "Crear perfil médico",
+      "submitPatient": "Registrarse como paciente",
+      "confirmCheckEmail": "✅ Revise su correo para confirmar su dirección y luego vuelva a iniciar sesión.",
+      "enterEmailResend": "Introduzca su correo para reenviar la confirmación.",
+      "resentConfirm": "✅ Correo de confirmación reenviado. Si llega en blanco, use el enlace mágico abajo.",
+      "resendFailed": "No se pudo reenviar el correo de confirmación.",
+      "enterEmailMagic": "Introduzca su correo para recibir un enlace mágico.",
+      "magicSent": "✅ Enlace mágico enviado. Puede usarlo para entrar mientras se ajustan las plantillas de correo.",
+      "magicFailed": "No se pudo enviar el enlace mágico.",
+      "awaitingEmailHelp": "¿No recibió un correo de confirmación útil?",
+      "resendConfirmation": "Reenviar confirmación",
+      "resending": "Reenviando...",
+      "sendMagicLinkInstead": "Enviar enlace mágico",
+      "sendingShort": "Enviando...",
+      "alreadyHaveAccount": "¿Ya tiene cuenta?"
+    },
+    "recovery": {
+      "sessionMissing": "❌ Sesión de recuperación ausente o caducada. Solicite un nuevo enlace.",
+      "passwordMinLength": "La contraseña debe tener al menos 8 caracteres.",
+      "passwordMismatch": "Las contraseñas no coinciden.",
+      "successRedirect": "✅ Contraseña actualizada. Redirigiendo al inicio de sesión…",
+      "title": "Nueva contraseña",
+      "subtitle": "Complete el restablecimiento. Use el enlace del correo de recuperación.",
+      "newPassword": "Nueva contraseña",
+      "confirmNewPassword": "Confirmar nueva contraseña",
+      "updating": "Actualizando...",
+      "updatePassword": "Actualizar contraseña",
+      "preparingSession": "Preparando sesión de restablecimiento..."
+    },
+    "magicLink": {
+      "signingIn": "Iniciando sesión...",
+      "invalidOrExpired": "Este enlace no es válido o ha caducado. Solicite un nuevo enlace mágico.",
+      "title": "Completando el acceso",
+      "backToLogin": "Volver al inicio de sesión"
+    }
+  },
+  "account": {
+    "betaAccess": {
+      "title": "Aviso de acceso beta",
+      "body1": "La beta de HairAudit admite experiencias de paciente, médico y clínica (por ejemplo contribuciones invitadas y casos enviados para clínicas).",
+      "body2": "Si ve esta página, el rol de su cuenta aún no está en la lista beta activa.",
+      "body3": "Inicie sesión con una cuenta beta aprobada de paciente, médico o clínica para continuar.",
+      "backToSignIn": "Volver al inicio de sesión"
+    }
+  },
   "dashboard": {
     "shared": {
       "createCaseDefault": "Crear nuevo caso de auditoría",
@@ -211,6 +308,8 @@
       "profileActiveTitle": "Su perfil de médico ya está activo.",
       "profileActiveBody": "Puede empezar a construir su historial verificado.",
       "profileCompleteness": "Completitud del perfil",
+      "onboardingPageTitle": "Incorporación del médico",
+      "onboardingPageSubtitle": "Configure su perfil profesional para atribuirle casos y construir su registro transparente.",
       "onboardingCreateCase": "Cree su primer caso",
       "onboardingCreateCta": "Crear nuevo caso de auditoría",
       "onboardingUpload": "Suba pruebas complementarias",

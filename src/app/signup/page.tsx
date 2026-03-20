@@ -6,28 +6,13 @@ import Link from "next/link";
 import Image from "next/image";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import SiteHeader from "@/components/SiteHeader";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { getCanonicalAppUrl, dashboardPathForRole } from "@/lib/auth/redirects";
 
 type SignupRole = "patient" | "doctor" | "clinic";
 
-const ROLE_COPY: Record<SignupRole, { label: string; description: string }> = {
-  patient: {
-    label: "Patient",
-    description: "Submit transplant cases for independent forensic review.",
-  },
-  clinic: {
-    label: "Clinic",
-    description:
-      "Create your free clinic profile, submit audited cases, and build a verified public presence over time.",
-  },
-  doctor: {
-    label: "Doctor",
-    description:
-      "Create your free doctor profile and begin building a transparent, evidence-based professional record.",
-  },
-};
-
 function SignUpForm({ initialRole = "patient" }: { initialRole?: SignupRole }) {
+  const { t } = useI18n();
   const supabase = createSupabaseBrowserClient();
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -91,7 +76,7 @@ function SignUpForm({ initialRole = "patient" }: { initialRole?: SignupRole }) {
         email: maskEmail(email),
         signupRole,
       });
-      setMsg("✅ Check your email to confirm your address, then come back and sign in.");
+      setMsg(t("auth.signup.confirmCheckEmail"));
       setMsgKind("success");
       setAwaitingConfirmation(true);
       setBusy(false);
@@ -126,7 +111,7 @@ function SignUpForm({ initialRole = "patient" }: { initialRole?: SignupRole }) {
     const trimmedEmail = email.trim();
     if (!trimmedEmail) {
       setMsgKind("error");
-      setMsg("Enter your email to resend confirmation.");
+      setMsg(t("auth.signup.enterEmailResend"));
       return;
     }
     setResending("confirm");
@@ -142,10 +127,10 @@ function SignUpForm({ initialRole = "patient" }: { initialRole?: SignupRole }) {
       });
       if (error) throw error;
       setMsgKind("success");
-      setMsg("✅ Confirmation email resent. If it appears blank, use the magic-link fallback below.");
+      setMsg(t("auth.signup.resentConfirm"));
     } catch (error: unknown) {
       setMsgKind("error");
-      setMsg(`❌ ${(error as Error)?.message ?? "Could not resend confirmation email."}`);
+      setMsg(`❌ ${(error as Error)?.message ?? t("auth.signup.resendFailed")}`);
     } finally {
       setResending(null);
     }
@@ -155,7 +140,7 @@ function SignUpForm({ initialRole = "patient" }: { initialRole?: SignupRole }) {
     const trimmedEmail = email.trim();
     if (!trimmedEmail) {
       setMsgKind("error");
-      setMsg("Enter your email to receive a magic link.");
+      setMsg(t("auth.signup.enterEmailMagic"));
       return;
     }
     setResending("magic");
@@ -171,10 +156,10 @@ function SignUpForm({ initialRole = "patient" }: { initialRole?: SignupRole }) {
       });
       if (error) throw error;
       setMsgKind("success");
-      setMsg("✅ Magic link sent. You can use it to sign in while confirmation email templates are being fixed.");
+      setMsg(t("auth.signup.magicSent"));
     } catch (error: unknown) {
       setMsgKind("error");
-      setMsg(`❌ ${(error as Error)?.message ?? "Could not send magic link."}`);
+      setMsg(`❌ ${(error as Error)?.message ?? t("auth.signup.magicFailed")}`);
     } finally {
       setResending(null);
     }
@@ -187,6 +172,13 @@ function SignUpForm({ initialRole = "patient" }: { initialRole?: SignupRole }) {
     return `${localPart.slice(0, 2)}***@${domain}`;
   }
 
+  const roleDescription =
+    signupRole === "patient"
+      ? t("auth.signup.rolePatientDesc")
+      : signupRole === "doctor"
+        ? t("auth.signup.roleDoctorDesc")
+        : t("auth.signup.roleClinicDesc");
+
   return (
     <div className="min-h-screen flex flex-col">
       <SiteHeader variant="minimal" />
@@ -197,26 +189,24 @@ function SignUpForm({ initialRole = "patient" }: { initialRole?: SignupRole }) {
             href="/"
             className="inline-flex items-center text-sm text-slate-500 hover:text-amber-400 mb-4 transition-colors"
           >
-            ← Back to HairAudit
+            {t("auth.common.backToHairAudit")}
           </Link>
           <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
             <div className="mb-6 flex justify-center rounded-xl bg-slate-900 px-4 py-3">
               <Image
                 src="/hair-audit-logo-white.png"
-                alt="Hair Audit"
+                alt={t("auth.common.logoAlt")}
                 width={220}
                 height={48}
                 className="h-10 w-auto object-contain"
               />
             </div>
-            <h1 className="text-2xl font-bold text-slate-900">Create your HairAudit account</h1>
-            <p className="mt-2 text-sm text-slate-600">
-              Choose your path: Patient, Clinic, or Doctor. Each has a tailored experience.
-            </p>
+            <h1 className="text-2xl font-bold text-slate-900">{t("auth.signup.title")}</h1>
+            <p className="mt-2 text-sm leading-relaxed text-slate-600">{t("auth.signup.subtitle")}</p>
 
             <form onSubmit={signUp} className="mt-6 space-y-4">
               <div>
-                <p className="block text-sm font-medium text-slate-700 mb-2">I am signing up as</p>
+                <p className="mb-2 block text-sm font-medium text-slate-700">{t("auth.signup.roleLabel")}</p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <button
                     type="button"
@@ -227,7 +217,7 @@ function SignUpForm({ initialRole = "patient" }: { initialRole?: SignupRole }) {
                         : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
                     }`}
                   >
-                    Patient
+                    {t("auth.signup.rolePatient")}
                   </button>
                   <button
                     type="button"
@@ -238,7 +228,7 @@ function SignUpForm({ initialRole = "patient" }: { initialRole?: SignupRole }) {
                         : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
                     }`}
                   >
-                    Doctor
+                    {t("auth.signup.roleDoctor")}
                   </button>
                   <button
                     type="button"
@@ -249,16 +239,14 @@ function SignUpForm({ initialRole = "patient" }: { initialRole?: SignupRole }) {
                         : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
                     }`}
                   >
-                    Clinic
+                    {t("auth.signup.roleClinic")}
                   </button>
                 </div>
-                <p className="mt-2 text-xs text-slate-500">
-                  {ROLE_COPY[signupRole].description}
-                </p>
+                <p className="mt-2 text-xs leading-relaxed text-slate-500">{roleDescription}</p>
               </div>
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1">
-                  Email
+                  {t("auth.common.email")}
                 </label>
                 <input
                   id="email"
@@ -273,7 +261,7 @@ function SignUpForm({ initialRole = "patient" }: { initialRole?: SignupRole }) {
               </div>
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1">
-                  Password
+                  {t("auth.common.password")}
                 </label>
                 <input
                   id="password"
@@ -293,12 +281,12 @@ function SignUpForm({ initialRole = "patient" }: { initialRole?: SignupRole }) {
                 className="w-full rounded-lg bg-amber-500 text-slate-900 py-2.5 font-semibold hover:bg-amber-400 transition-colors disabled:opacity-60 disabled:cursor-not-allowed focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
               >
                 {busy
-                  ? "Creating..."
+                  ? t("auth.signup.creating")
                   : signupRole === "clinic"
-                    ? "Create Clinic Profile"
+                    ? t("auth.signup.submitClinic")
                     : signupRole === "doctor"
-                      ? "Create Doctor Profile"
-                      : "Sign up as Patient"}
+                      ? t("auth.signup.submitDoctor")
+                      : t("auth.signup.submitPatient")}
               </button>
             </form>
 
@@ -315,9 +303,7 @@ function SignUpForm({ initialRole = "patient" }: { initialRole?: SignupRole }) {
             )}
             {awaitingConfirmation && (
               <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
-                <p className="text-xs text-slate-600">
-                  Didn&apos;t get a usable confirmation email?
-                </p>
+                <p className="text-xs leading-relaxed text-slate-600">{t("auth.signup.awaitingEmailHelp")}</p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   <button
                     type="button"
@@ -325,7 +311,7 @@ function SignUpForm({ initialRole = "patient" }: { initialRole?: SignupRole }) {
                     disabled={resending !== null}
                     className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-60"
                   >
-                    {resending === "confirm" ? "Resending..." : "Resend confirmation"}
+                    {resending === "confirm" ? t("auth.signup.resending") : t("auth.signup.resendConfirmation")}
                   </button>
                   <button
                     type="button"
@@ -333,16 +319,16 @@ function SignUpForm({ initialRole = "patient" }: { initialRole?: SignupRole }) {
                     disabled={resending !== null}
                     className="rounded-md border border-cyan-300 bg-cyan-50 px-3 py-1.5 text-xs font-semibold text-cyan-800 hover:bg-cyan-100 disabled:opacity-60"
                   >
-                    {resending === "magic" ? "Sending..." : "Send magic link instead"}
+                    {resending === "magic" ? t("auth.signup.sendingShort") : t("auth.signup.sendMagicLinkInstead")}
                   </button>
                 </div>
               </div>
             )}
 
             <p className="mt-6 text-center text-sm text-slate-600">
-              Already have an account?{" "}
+              {t("auth.signup.alreadyHaveAccount")}{" "}
               <Link href="/login" className="font-medium text-amber-600 hover:text-amber-500">
-                Sign in
+                {t("nav.signIn")}
               </Link>
             </p>
           </div>

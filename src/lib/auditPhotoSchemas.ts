@@ -3,6 +3,7 @@
 // Schema definitions (with copy) come from photoSchemas.ts
 
 import { z } from "zod";
+import { buildPatientUploadToAuditKeyMap } from "./patientPhotoCategoryConfig";
 import { PATIENT_PHOTO_SCHEMA as PATIENT_SCHEMA, DOCTOR_PHOTO_SCHEMA as DOCTOR_SCHEMA } from "./photoSchemas";
 
 export type SubmitterType = "doctor" | "patient" | "clinic";
@@ -97,20 +98,10 @@ export function parsePhotoKey(typeOrRow: string | { type?: string } | { photo_ke
   return null;
 }
 
-/** Legacy patient keys -> new patient keys mapping */
-const PATIENT_LEGACY_MAP: Record<string, PatientPhotoKey | null> = {
-  preop_front: "patient_current_front",
-  preop_top: "patient_current_top",
-  preop_donor_rear: "patient_current_donor_rear",
-  donor_rear: "patient_current_donor_rear",
-  preop_left: "patient_current_left",
-  preop_right: "patient_current_right",
-  preop_crown: "patient_current_crown",
-  day0_recipient: "any_day0",
-  day0_donor: "any_day0",
-  intraop: "any_day0",
-  postop_day0: "any_early_postop_day0_3",
-};
+/** Legacy patient keys -> audit bucket keys (derived from patientPhotoCategoryConfig). */
+const PATIENT_LEGACY_MAP: Record<string, PatientPhotoKey | null> = Object.fromEntries(
+  Object.entries(buildPatientUploadToAuditKeyMap()).map(([k, v]) => [k, v as PatientPhotoKey])
+) as Record<string, PatientPhotoKey | null>;
 
 function normalizeToPatientKey(key: string): PatientPhotoKey | null {
   const k = key.trim().toLowerCase();

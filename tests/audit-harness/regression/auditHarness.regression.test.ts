@@ -107,7 +107,10 @@ test("canonical mapping: doctor_photo legacy types (preop_*) normalize and satis
 test("canonical mapping: parsePhotoKey extracts submitter and key", () => {
   assert.deepEqual(parsePhotoKey("patient_photo:preop_front"), { submitterType: "patient", key: "preop_front" });
   assert.deepEqual(parsePhotoKey("doctor_photo:img_preop_front"), { submitterType: "doctor", key: "img_preop_front" });
-  assert.equal(parsePhotoKey("clinic_photo:img_preop_front"), null);
+  assert.deepEqual(parsePhotoKey("clinic_photo:img_preop_front"), {
+    submitterType: "clinic",
+    key: "img_preop_front",
+  });
 });
 
 test("canonical mapping: DOCTOR_PHOTO_CATEGORIES includes all DOCTOR_REQUIRED_KEYS", () => {

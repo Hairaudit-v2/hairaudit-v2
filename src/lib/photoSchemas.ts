@@ -1,6 +1,8 @@
 // Single source of truth for photo upload copy (titles, help text, tips)
 // Reused across: patient uploader, review summary, admin view
 
+import { PATIENT_AUDIT_PHOTO_BUCKET_DEFS } from "./patientPhotoCategoryConfig";
+
 export type PhotoCategoryDef = {
   key: string;
   title: string;
@@ -12,85 +14,9 @@ export type PhotoCategoryDef = {
   accept?: string;
 };
 
-/* ----- PATIENT SCHEMA (with copy) ----- */
+/* ----- PATIENT SCHEMA (with copy) — buckets defined in patientPhotoCategoryConfig ----- */
 
-export const PATIENT_PHOTO_SCHEMA: PhotoCategoryDef[] = [
-  {
-    key: "patient_current_front",
-    title: "Front View (Required)",
-    help: "Stand under bright indoor light. Hold your phone at eye level and take a straight-on photo of your hairline and front scalp. No filters. No flash glare.",
-    quickTips: ["Neutral background", "Show full hairline", "No filters"],
-    min: 1,
-    max: 3,
-    required: true,
-  },
-  {
-    key: "patient_current_top",
-    title: "Top View (Required)",
-    help: "Take a photo from above your head showing the top of your scalp. Use a mirror or ask someone to help if needed.",
-    quickTips: ["Bright room lighting", "Tilt head slightly forward", "Show whole top area"],
-    min: 1,
-    max: 3,
-    required: true,
-  },
-  {
-    key: "patient_current_donor_rear",
-    title: "Donor Area — Rear (Required)",
-    help: "Take a photo of the back of your head where grafts were taken. Show the full donor region.",
-    quickTips: ["One wide photo", "One closer photo if possible", "Good lighting, no shadows"],
-    min: 1,
-    max: 3,
-    required: true,
-  },
-  {
-    key: "patient_current_left",
-    title: "Left Side (Optional)",
-    help: "Turn slightly and take a clear photo of your left temple and side profile.",
-    min: 0,
-    max: 2,
-    required: false,
-  },
-  {
-    key: "patient_current_right",
-    title: "Right Side (Optional)",
-    help: "Turn slightly and take a clear photo of your right temple and side profile.",
-    min: 0,
-    max: 2,
-    required: false,
-  },
-  {
-    key: "patient_current_crown",
-    title: "Crown (Optional)",
-    help: "If your crown was treated, take a photo of the back/top swirl area.",
-    min: 0,
-    max: 3,
-    required: false,
-  },
-  {
-    key: "any_preop",
-    title: "Pre-Surgery Photos (Optional)",
-    help: "Upload any photos taken before surgery. Even casual photos help.",
-    min: 0,
-    max: 10,
-    required: false,
-  },
-  {
-    key: "any_day0",
-    title: "Day-of Surgery Photos (Optional)",
-    help: "Photos from the day of surgery (recipient or donor area) help us compare technique and healing.",
-    min: 0,
-    max: 10,
-    required: false,
-  },
-  {
-    key: "any_early_postop_day0_3",
-    title: "Early Healing Photos (Optional)",
-    help: "Photos from the first few days after surgery show graft placement and donor healing.",
-    min: 0,
-    max: 10,
-    required: false,
-  },
-];
+export const PATIENT_PHOTO_SCHEMA: PhotoCategoryDef[] = PATIENT_AUDIT_PHOTO_BUCKET_DEFS as PhotoCategoryDef[];
 
 /* ----- DOCTOR SCHEMA (structural only; copy can be extended later) ----- */
 

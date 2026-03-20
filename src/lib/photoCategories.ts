@@ -1,117 +1,29 @@
 // src/lib/photoCategories.ts
 // Patient Photos – Basic Audit requirements (8 required categories)
 import { z } from "zod";
+import {
+  PATIENT_UPLOAD_CATEGORY_DEFS,
+  type PatientUploadCategoryKey,
+} from "./patientPhotoCategoryConfig";
 
-export const PATIENT_PHOTO_CATEGORIES = [
-  {
-    key: "preop_front",
-    title: "Pre-op — Front",
-    required: true,
-    help: "Front-facing scalp/hairline in good lighting.",
-    tips: ["Stand under bright indoor light", "Hold camera at eye level", "No filters"],
-    accept: "image/*",
-    maxFiles: 3,
-    minFiles: 1,
-  },
-  {
-    key: "preop_left",
-    title: "Pre-op — Left side",
-    required: true,
-    help: "Left temple / side profile view.",
-    tips: ["Keep background plain", "Good lighting"],
-    accept: "image/*",
-    maxFiles: 2,
-    minFiles: 1,
-  },
-  {
-    key: "preop_right",
-    title: "Pre-op — Right side",
-    required: true,
-    help: "Right temple / side profile view.",
-    tips: ["Keep background plain", "Good lighting"],
-    accept: "image/*",
-    maxFiles: 2,
-    minFiles: 1,
-  },
-  {
-    key: "preop_top",
-    title: "Pre-op — Top",
-    required: true,
-    help: "Top-down view of scalp.",
-    tips: ["Take from above head", "Use mirror or helper if needed"],
-    accept: "image/*",
-    maxFiles: 3,
-    minFiles: 1,
-  },
-  {
-    key: "preop_crown",
-    title: "Pre-op — Crown",
-    required: true,
-    help: "Crown area coverage.",
-    tips: ["Include crown region if involved in procedure"],
-    accept: "image/*",
-    maxFiles: 3,
-    minFiles: 1,
-  },
-  {
-    key: "preop_donor_rear",
-    title: "Pre-op — Donor (rear)",
-    required: true,
-    help: "Back of head and donor zone coverage.",
-    tips: ["Include whole donor region", "Add one close-up if possible"],
-    accept: "image/*",
-    maxFiles: 5,
-    minFiles: 1,
-  },
-  {
-    key: "day0_recipient",
-    title: "Day-of surgery — Recipient",
-    required: true,
-    help: "Recipient area (day of procedure or day after is fine).",
-    tips: ["Clear view of graft placement"],
-    accept: "image/*",
-    maxFiles: 6,
-    minFiles: 1,
-  },
-  {
-    key: "day0_donor",
-    title: "Day-of surgery — Donor",
-    required: true,
-    help: "Donor area (day of procedure or day after is fine).",
-    tips: ["Shows extraction sites"],
-    accept: "image/*",
-    maxFiles: 6,
-    minFiles: 1,
-  },
-  {
-    key: "intraop",
-    title: "Intra-op (Optional)",
-    required: false,
-    help: "Any additional photos taken during surgery.",
-    tips: ["Include graft placement close-ups if you have them"],
-    accept: "image/*",
-    maxFiles: 6,
-    minFiles: 0,
-  },
-  {
-    key: "postop_day0",
-    title: "Post-op Day 0–3 (Optional)",
-    required: false,
-    help: "Immediate post-op healing photos.",
-    tips: ["Good for verifying placement + early healing"],
-    accept: "image/*",
-    maxFiles: 6,
-    minFiles: 0,
-  },
-] as const;
+/** UI / API list shape (unchanged for consumers). */
+export const PATIENT_PHOTO_CATEGORIES = PATIENT_UPLOAD_CATEGORY_DEFS.filter(
+  (d) => d.visibleInUi
+).map((d) => ({
+  key: d.key,
+  title: d.label,
+  required: d.required,
+  help: d.description,
+  tips: [...d.tips],
+  accept: d.accept,
+  maxFiles: d.maxFiles,
+  minFiles: d.minFiles,
+}));
 
-export type PatientPhotoCategory = (typeof PATIENT_PHOTO_CATEGORIES)[number]["key"];
+export type PatientPhotoCategory = PatientUploadCategoryKey;
 
 export const PatientPhotoCategorySchema = z.enum(
-  PATIENT_PHOTO_CATEGORIES.map((c) => c.key) as [
-    PatientPhotoCategory,
-    ...PatientPhotoCategory[]
-  ]
+  PATIENT_UPLOAD_CATEGORY_DEFS.map((c) => c.key) as [PatientPhotoCategory, ...PatientPhotoCategory[]]
 );
 
 // Backwards-compatible aliases (for existing uploads with old type names)
@@ -137,9 +49,9 @@ export function requiredCategoryMinFiles(cat: PatientPhotoCategory): number {
   return def?.minFiles ?? 0;
 }
 
-export const REQUIRED_PATIENT_PHOTO_CATEGORIES = PATIENT_PHOTO_CATEGORIES
-  .filter((c) => c.required)
-  .map((c) => c.key) as PatientPhotoCategory[];
+export const REQUIRED_PATIENT_PHOTO_CATEGORIES = PATIENT_UPLOAD_CATEGORY_DEFS.filter(
+  (c) => c.required
+).map((c) => c.key) as PatientPhotoCategory[];
 
 /** Resolve raw DB category to canonical; legacy "preop_sides" maps to both left & right */
 export function resolveCategoryForValidation(cat: string): PatientPhotoCategory[] {

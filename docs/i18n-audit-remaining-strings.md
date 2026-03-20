@@ -86,7 +86,11 @@
 
 | Location | Examples | Tag | Notes |
 |----------|----------|-----|-------|
-| `app/login/*` | Headings, errors | **later** | Dedicated auth i18n batch |
+| `app/login/page.tsx`, `login/auditor/page.tsx` | Headings, labels, app-owned helper copy | **done (batch 6B)** | `auth.login.*`, `auth.auditor.*`, `auth.common.*` |
+| `app/signup/page.tsx` | Role picker, form labels, CTAs, resend/magic helpers | **done (batch 6B)** | `auth.signup.*`; bottom link reuses `nav.signIn` |
+| `app/auth/recovery/page.tsx` | Reset UI | **done (batch 6B)** | `auth.recovery.*` |
+| `app/auth/magic-link/MagicLinkClient.tsx` | Completing sign-in | **done (batch 6B)** | `auth.magicLink.*` |
+| Supabase/API error `.message` strings | Provider text | — | Shown as returned; not localized |
 
 ---
 
@@ -95,7 +99,14 @@
 | Location | Examples | Tag | Notes |
 |----------|----------|-----|-------|
 | `components/dashboard/*` | Various banners, cards | **later** | Per-component |
-| `components/patient/*` | Next-action panels | **later** | — |
+| `DoctorOnboardingPageHeader` | Doctor onboarding page title/subtitle | **done (batch 6B)** | `dashboard.doctor.onboardingPageTitle` / `onboardingPageSubtitle` |
+| `components/patient/*` | Next-action panels | **done (batch 6A)** | — |
+
+## Account / beta gating
+
+| Location | Examples | Tag | Notes |
+|----------|----------|-----|-------|
+| `beta-access-message/page.tsx` | Role-not-enabled notice | **done (batch 6B)** | `components/account/BetaAccessMessageClient.tsx` + `account.betaAccess.*` |
 
 ---
 
@@ -137,4 +148,8 @@
 
 Patient portal: next-action panel, delete-draft control, graft integrity card UI chrome (not API bodies), completion / unlock / why-matters / case-history sections via client components, completed-reports list chrome, download button busy state. Keys under **`dashboard.patient.*`** and extended **`dashboard.reports.*`** (aligned `en` / `es`).
 
-**Follow-up (later):** clinic **`layout.tsx`** server nav labels, **patient intake/forms** module-by-module, **login/auth** copy, **`ClinicProfileBuilder`** / heavy profile surfaces.
+## Batch 6B (implemented)
+
+Auth and account shell: **`auth.*`** (common, login, auditor, signup, recovery, magic link) and **`account.betaAccess.*`** in `en`/`es`. Wired: `/login`, `/login/auditor`, `/signup`, `/auth/recovery`, `/auth/magic-link` client, `/beta-access-message` via `BetaAccessMessageClient`. Small **doctor onboarding** header: `dashboard.doctor.onboardingPageTitle` / `onboardingPageSubtitle` + `DoctorOnboardingPageHeader`. Layout **metadata** for login/signup remains English (no route-locale pattern).
+
+**Follow-up (later):** clinic **`layout.tsx`** server nav labels, **patient intake/forms** module-by-module, **`ClinicProfileBuilder`** / heavy profile surfaces, **`DoctorOnboardingForm`** fields.

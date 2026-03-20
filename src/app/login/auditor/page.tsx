@@ -5,11 +5,13 @@ import Link from "next/link";
 import Image from "next/image";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import SiteHeader from "@/components/SiteHeader";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { getCanonicalAppUrl } from "@/lib/auth/redirects";
 
 const AUDITOR_EMAIL = "auditor@hairaudit.com";
 
 export default function AuditorLoginPage() {
+  const { t } = useI18n();
   const supabase = createSupabaseBrowserClient();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -22,7 +24,7 @@ export default function AuditorLoginPage() {
 
     const normalizedEmail = email.trim().toLowerCase();
     if (normalizedEmail !== AUDITOR_EMAIL) {
-      setMsg(`Only ${AUDITOR_EMAIL} can sign in here. Use the regular login for other accounts.`);
+      setMsg(t("auth.auditor.onlyThisEmail").replace("{{email}}", AUDITOR_EMAIL));
       return;
     }
 
@@ -66,7 +68,7 @@ export default function AuditorLoginPage() {
     if (error) {
       setMsg(`❌ ${error.message}`);
     } else {
-      setMsg("Reset email sent. Open the link and set a new password.");
+      setMsg(t("auth.auditor.resetSent"));
     }
     setSendingReset(false);
   }
@@ -81,27 +83,29 @@ export default function AuditorLoginPage() {
             href="/"
             className="inline-flex items-center text-sm text-slate-500 hover:text-amber-400 mb-4 transition-colors"
           >
-            ← Back to HairAudit
+            {t("auth.common.backToHairAudit")}
           </Link>
           <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
             <div className="mb-6 flex justify-center rounded-xl bg-slate-900 px-4 py-3">
               <Image
                 src="/hair-audit-logo-white.png"
-                alt="Hair Audit"
+                alt={t("auth.common.logoAlt")}
                 width={220}
                 height={48}
                 className="h-10 w-auto object-contain"
               />
             </div>
-            <h1 className="text-2xl font-bold text-slate-900">Auditor sign in</h1>
-            <p className="mt-2 text-sm text-slate-600">
-              Restricted to authorized auditors only. Use <strong>auditor@hairaudit.com</strong>.
+            <h1 className="text-2xl font-bold text-slate-900">{t("auth.auditor.title")}</h1>
+            <p className="mt-2 text-sm leading-relaxed text-slate-600">
+              {t("auth.auditor.subtitleBefore")}
+              <strong>{AUDITOR_EMAIL}</strong>
+              {t("auth.auditor.subtitleAfter")}
             </p>
 
             <form onSubmit={signIn} className="mt-6 space-y-4">
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1">
-                  Email
+                  {t("auth.common.email")}
                 </label>
                 <input
                   id="email"
@@ -117,7 +121,7 @@ export default function AuditorLoginPage() {
               </div>
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1">
-                  Password
+                  {t("auth.common.password")}
                 </label>
                 <input
                   id="password"
@@ -128,14 +132,14 @@ export default function AuditorLoginPage() {
                   required
                   autoComplete="current-password"
                   className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-slate-900 placeholder-slate-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-colors"
-                  placeholder="••••••••"
+                  placeholder={t("auth.common.passwordPlaceholderMasked")}
                 />
               </div>
               <button
                 type="submit"
                 className="w-full rounded-lg bg-slate-900 text-white py-2.5 font-semibold hover:bg-slate-800 transition-colors focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
               >
-                Sign in as auditor
+                {t("auth.auditor.signInButton")}
               </button>
             </form>
 
@@ -152,14 +156,14 @@ export default function AuditorLoginPage() {
                 disabled={sendingReset}
                 className="font-medium text-slate-700 hover:text-slate-900 disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                {sendingReset ? "Sending reset link..." : "Forgot password?"}
+                {sendingReset ? t("auth.auditor.forgotSending") : t("auth.auditor.forgotPassword")}
               </button>
             </p>
 
             <p className="mt-2 text-center text-sm text-slate-600">
-              Not an auditor?{" "}
+              {t("auth.auditor.notAuditor")}{" "}
               <Link href="/login" className="font-medium text-amber-600 hover:text-amber-500">
-                Standard sign in
+                {t("auth.auditor.standardSignIn")}
               </Link>
             </p>
           </div>

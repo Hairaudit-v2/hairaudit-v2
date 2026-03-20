@@ -229,11 +229,11 @@ export const REQUIRED_PATIENT_UPLOAD_CATEGORY_KEYS = PATIENT_UPLOAD_CATEGORY_DEF
  * Extra legacy upload raw keys (not primary UI categories) → audit normalization target.
  * Kept here beside PATIENT_UPLOAD_CATEGORY_DEFS so all patient legacy routing lives in one module.
  */
+/** Raw upload keys not covered by PATIENT_UPLOAD_CATEGORY_DEFS (historical type strings). */
 export const PATIENT_UPLOAD_LEGACY_EXTRA_KEYS: Readonly<
   Record<string, PatientAuditNormalizationTarget>
 > = {
   donor_rear: "patient_current_donor_rear",
-  donor: "patient_current_donor_rear",
 };
 
 /** Build the patient legacy map consumed by auditPhotoSchemas (lowercase keys). */

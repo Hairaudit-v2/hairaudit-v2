@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import DoctorOnboardingPageHeader from "@/components/dashboard/DoctorOnboardingPageHeader";
 import DoctorOnboardingForm from "./DoctorOnboardingForm";
 
 export default async function DoctorOnboardingPage() {
@@ -23,23 +23,7 @@ export default async function DoctorOnboardingPage() {
 
   return (
     <div className="max-w-2xl">
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-slate-900">
-            Doctor onboarding
-          </h1>
-          <p className="mt-1 text-sm text-slate-600">
-            Set up your professional profile so we can attribute your cases and build your
-            transparent record.
-          </p>
-        </div>
-        <Link
-          href="/dashboard/doctor"
-          className="inline-flex items-center rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-        >
-          Overview
-        </Link>
-      </div>
+      <DoctorOnboardingPageHeader />
       <DoctorOnboardingForm />
     </div>
   );

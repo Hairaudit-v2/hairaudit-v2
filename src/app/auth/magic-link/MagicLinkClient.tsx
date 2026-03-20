@@ -3,11 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export default function MagicLinkClient() {
+  const { t } = useI18n();
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
-  const [msg, setMsg] = useState("Signing you in...");
+  const [msg, setMsg] = useState(() => t("auth.magicLink.signingIn"));
 
   useEffect(() => {
     let mounted = true;
@@ -40,7 +42,7 @@ export default function MagicLinkClient() {
       }
 
       if (mounted) {
-        setMsg("This sign-in link is invalid or expired. Please request a new magic link.");
+        setMsg(t("auth.magicLink.invalidOrExpired"));
       }
     }
 
@@ -48,18 +50,18 @@ export default function MagicLinkClient() {
     return () => {
       mounted = false;
     };
-  }, [supabase]);
+  }, [supabase, t]);
 
   return (
     <div className="min-h-screen flex flex-col">
       <SiteHeader variant="minimal" />
       <main className="flex-1 flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-          <h1 className="text-2xl font-bold text-slate-900">Completing sign-in</h1>
-          <p className="mt-3 text-sm text-slate-600">{msg}</p>
+          <h1 className="text-2xl font-bold text-slate-900">{t("auth.magicLink.title")}</h1>
+          <p className="mt-3 text-sm leading-relaxed text-slate-600">{msg}</p>
           <div className="mt-6">
             <Link href="/login" className="text-sm font-medium text-amber-600 hover:text-amber-500">
-              Back to login
+              {t("auth.magicLink.backToLogin")}
             </Link>
           </div>
         </div>

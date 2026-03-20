@@ -8,24 +8,15 @@ import {
   PATIENT_REQUIRED_KEYS,
   type SubmitterType,
 } from "@/lib/auditPhotoSchemas";
-import { REQUIRED_PATIENT_PHOTO_CATEGORIES } from "@/lib/photoCategories";
+import { REQUIRED_PATIENT_UPLOAD_CATEGORY_KEYS } from "@/lib/patientPhotoCategoryConfig";
 import { DOCTOR_PHOTO_CATEGORIES } from "@/lib/doctorPhotoCategories";
 import { CLINIC_PHOTO_CATEGORIES } from "@/lib/clinicPhotoCategories";
 
 export const SUBMISSION_TYPES = ["patient", "doctor", "clinic"] as const;
 export type SubmissionType = (typeof SUBMISSION_TYPES)[number];
 
-/** Patient: upload category keys (photoCategories) — stored as patient_photo:{key} */
-export const PATIENT_UPLOAD_CATEGORIES_REQUIRED = [
-  "preop_front",
-  "preop_left",
-  "preop_right",
-  "preop_top",
-  "preop_crown",
-  "preop_donor_rear",
-  "day0_recipient",
-  "day0_donor",
-] as const;
+/** Patient: upload category keys — stored as patient_photo:{key} */
+export const PATIENT_UPLOAD_CATEGORIES_REQUIRED = REQUIRED_PATIENT_UPLOAD_CATEGORY_KEYS;
 
 /** Submit readiness uses PATIENT_REQUIRED_KEYS (patient_current_*) — legacy map in auditPhotoSchemas maps preop_* → these */
 export const PATIENT_REQUIRED_FOR_SUBMIT = [...PATIENT_REQUIRED_KEYS];

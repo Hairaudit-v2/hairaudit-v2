@@ -61,6 +61,103 @@
       "crossPlatformVisitFi": "Visit Follicle Intelligence"
     }
   },
+  "auth": {
+    "common": {
+      "backToHairAudit": "← Back to HairAudit",
+      "backToLogin": "← Back to login",
+      "email": "Email",
+      "password": "Password",
+      "logoAlt": "Hair Audit",
+      "emailPlaceholder": "your@email.com",
+      "passwordPlaceholderMasked": "••••••••"
+    },
+    "login": {
+      "title": "Sign in",
+      "subtitle": "Sign in to access your HairAudit account. Patient, doctor, and clinic experiences are all in beta testing.",
+      "continueGoogle": "Continue with Google",
+      "signInEmailPassword": "Sign in with Email + Password",
+      "lostPassword": "Lost password?",
+      "sendingRecovery": "Sending recovery link...",
+      "magicLink": "Continue with Email Magic Link",
+      "footerRedirect": "By signing in, you’ll be redirected to your role-based dashboard.",
+      "needAccount": "Need an account?",
+      "signUpCta": "Sign up (Patient Beta, Doctor Beta, or Clinic Beta)",
+      "auditorPrompt": "Need auditor access?",
+      "auditorLink": "Auditor login",
+      "enterEmailMagicLink": "Enter your email first to receive a magic link.",
+      "magicLinkSent": "Check your email for a secure sign-in link.",
+      "enterEmailReset": "Enter your email first so we can send a recovery link.",
+      "resetSent": "Recovery link sent. Check your email to reset your password."
+    },
+    "auditor": {
+      "title": "Auditor sign in",
+      "subtitleBefore": "Restricted to authorized auditors only. Use ",
+      "subtitleAfter": " as the sign-in email.",
+      "signInButton": "Sign in as auditor",
+      "forgotSending": "Sending reset link...",
+      "forgotPassword": "Forgot password?",
+      "resetSent": "Reset email sent. Open the link and set a new password.",
+      "notAuditor": "Not an auditor?",
+      "standardSignIn": "Standard sign in",
+      "onlyThisEmail": "Only {{email}} can sign in here. Use the regular login for other accounts."
+    },
+    "signup": {
+      "title": "Create your HairAudit account",
+      "subtitle": "Choose your path: Patient, Clinic, or Doctor. Each has a tailored experience.",
+      "roleLabel": "I am signing up as",
+      "rolePatient": "Patient",
+      "roleDoctor": "Doctor",
+      "roleClinic": "Clinic",
+      "rolePatientDesc": "Submit transplant cases for independent forensic review.",
+      "roleClinicDesc": "Create your free clinic profile, submit audited cases, and build a verified public presence over time.",
+      "roleDoctorDesc": "Create your free doctor profile and begin building a transparent, evidence-based professional record.",
+      "creating": "Creating...",
+      "submitClinic": "Create Clinic Profile",
+      "submitDoctor": "Create Doctor Profile",
+      "submitPatient": "Sign up as Patient",
+      "confirmCheckEmail": "✅ Check your email to confirm your address, then come back and sign in.",
+      "enterEmailResend": "Enter your email to resend confirmation.",
+      "resentConfirm": "✅ Confirmation email resent. If it appears blank, use the magic-link fallback below.",
+      "resendFailed": "Could not resend confirmation email.",
+      "enterEmailMagic": "Enter your email to receive a magic link.",
+      "magicSent": "✅ Magic link sent. You can use it to sign in while confirmation email templates are being fixed.",
+      "magicFailed": "Could not send magic link.",
+      "awaitingEmailHelp": "Didn’t get a usable confirmation email?",
+      "resendConfirmation": "Resend confirmation",
+      "resending": "Resending...",
+      "sendMagicLinkInstead": "Send magic link instead",
+      "sendingShort": "Sending...",
+      "alreadyHaveAccount": "Already have an account?"
+    },
+    "recovery": {
+      "sessionMissing": "❌ Recovery session missing or expired. Please request a fresh reset link.",
+      "passwordMinLength": "Password must be at least 8 characters.",
+      "passwordMismatch": "Passwords do not match.",
+      "successRedirect": "✅ Password updated. Redirecting to sign in…",
+      "title": "Set a new password",
+      "subtitle": "Complete your password reset. Use the link from your recovery email.",
+      "newPassword": "New password",
+      "confirmNewPassword": "Confirm new password",
+      "updating": "Updating...",
+      "updatePassword": "Update password",
+      "preparingSession": "Preparing reset session..."
+    },
+    "magicLink": {
+      "signingIn": "Signing you in...",
+      "invalidOrExpired": "This sign-in link is invalid or expired. Please request a new magic link.",
+      "title": "Completing sign-in",
+      "backToLogin": "Back to login"
+    }
+  },
+  "account": {
+    "betaAccess": {
+      "title": "Beta Access Notice",
+      "body1": "HairAudit beta currently supports patient, doctor, and clinic experiences (for example Invited Contributions and Submitted Cases for clinics).",
+      "body2": "If you are seeing this page, your current account role is not yet enabled for the active beta access list.",
+      "body3": "Sign in with an approved Patient, Doctor, or Clinic beta account to continue.",
+      "backToSignIn": "Back to sign in"
+    }
+  },
   "dashboard": {
     "shared": {
       "createCaseDefault": "Create new audit case",
@@ -211,6 +308,8 @@
       "profileActiveTitle": "Your doctor profile is now active.",
       "profileActiveBody": "You can begin building your verified record.",
       "profileCompleteness": "Profile completeness",
+      "onboardingPageTitle": "Doctor onboarding",
+      "onboardingPageSubtitle": "Set up your professional profile so we can attribute your cases and build your transparent record.",
       "onboardingCreateCase": "Create your first case",
       "onboardingCreateCta": "Create new audit case",
       "onboardingUpload": "Upload supporting evidence",

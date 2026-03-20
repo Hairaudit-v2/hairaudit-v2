@@ -5,8 +5,10 @@ import Link from "next/link";
 import Image from "next/image";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import SiteHeader from "@/components/SiteHeader";
+import { useI18n } from "@/components/i18n/I18nProvider";
 
 export default function RecoveryPage() {
+  const { t } = useI18n();
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -46,7 +48,7 @@ export default function RecoveryPage() {
       }
 
       if (mounted) {
-        setMsg("❌ Recovery session missing or expired. Please request a fresh reset link.");
+        setMsg(t("auth.recovery.sessionMissing"));
         setSessionReady(true);
       }
     }
@@ -55,18 +57,18 @@ export default function RecoveryPage() {
     return () => {
       mounted = false;
     };
-  }, [supabase]);
+  }, [supabase, t]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setMsg(null);
 
     if (password.length < 8) {
-      setMsg("Password must be at least 8 characters.");
+      setMsg(t("auth.recovery.passwordMinLength"));
       return;
     }
     if (password !== confirmPassword) {
-      setMsg("Passwords do not match.");
+      setMsg(t("auth.recovery.passwordMismatch"));
       return;
     }
 
@@ -77,7 +79,7 @@ export default function RecoveryPage() {
       setBusy(false);
       return;
     }
-    setMsg("✅ Password updated. Redirecting to sign in…");
+    setMsg(t("auth.recovery.successRedirect"));
     setBusy(false);
     window.location.href = "/login";
   }
@@ -91,27 +93,25 @@ export default function RecoveryPage() {
             href="/login"
             className="inline-flex items-center text-sm text-slate-500 hover:text-amber-400 mb-4 transition-colors"
           >
-            ← Back to login
+            {t("auth.common.backToLogin")}
           </Link>
           <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
             <div className="mb-6 flex justify-center rounded-xl bg-slate-900 px-4 py-3">
               <Image
                 src="/hair-audit-logo-white.png"
-                alt="Hair Audit"
+                alt={t("auth.common.logoAlt")}
                 width={220}
                 height={48}
                 className="h-10 w-auto object-contain"
               />
             </div>
-            <h1 className="text-2xl font-bold text-slate-900">Set a new password</h1>
-            <p className="mt-2 text-sm text-slate-600">
-              Complete your password reset. Use the link from your recovery email.
-            </p>
+            <h1 className="text-2xl font-bold text-slate-900">{t("auth.recovery.title")}</h1>
+            <p className="mt-2 text-sm leading-relaxed text-slate-600">{t("auth.recovery.subtitle")}</p>
 
             <form onSubmit={onSubmit} className="mt-6 space-y-4">
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1">
-                  New password
+                  {t("auth.recovery.newPassword")}
                 </label>
                 <input
                   id="password"
@@ -127,7 +127,7 @@ export default function RecoveryPage() {
               </div>
               <div>
                 <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-700 mb-1">
-                  Confirm new password
+                  {t("auth.recovery.confirmNewPassword")}
                 </label>
                 <input
                   id="confirmPassword"
@@ -146,7 +146,11 @@ export default function RecoveryPage() {
                 disabled={busy || !sessionReady}
                 className="w-full rounded-lg bg-slate-900 text-white py-2.5 font-semibold hover:bg-slate-800 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                {busy ? "Updating..." : sessionReady ? "Update password" : "Preparing reset session..."}
+                {busy
+                  ? t("auth.recovery.updating")
+                  : sessionReady
+                    ? t("auth.recovery.updatePassword")
+                    : t("auth.recovery.preparingSession")}
               </button>
             </form>
 
