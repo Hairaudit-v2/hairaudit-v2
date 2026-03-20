@@ -94,3 +94,43 @@ When translation is unavailable or unsafe, the same shell falls back to the exis
 - rebuild
 
 This disables the live translated narrative pilot while leaving stored additive translation rows untouched.
+
+## Batch 20 operational hardening
+
+Batch 20 adds internal operational controls without expanding pilot scope:
+
+- auditor-only ops endpoint: `src/app/api/auditor/patient-safe-summary-translation/route.ts`
+- auditor-only case-page panel: `src/app/cases/[caseId]/PatientSafeSummaryTranslationOpsPanel.tsx`
+- resolver trace/fallback fields in `PatientSafeSummaryNarrativePresentation`
+
+### Internal status visibility
+
+The auditor ops panel reports:
+
+- pilot flag status
+- requested locale and target locale
+- whether a stored translation row exists
+- translation status (`generated_unreviewed`, `reviewed_approved`, `stale_due_to_source_change`, etc.)
+- review status (`not_reviewed`, `approved`, `rejected`)
+- current serve decision and fallback reason
+- translation provenance marker
+
+### Regeneration / refresh workflow
+
+Auditors can trigger a bounded translation refresh for the latest report snapshot:
+
+1. Open case page as auditor.
+2. Use **Regenerate translation**.
+3. The server recomputes from the current English source snapshot and upserts only the `patientSafeSummaryNarrative` overlay.
+
+No report scoring/finalize/PDF flows are called.
+
+### Review workflow
+
+Auditors can set pilot review status:
+
+- **Mark approved** -> `review_status=approved`, `translation_status=reviewed_approved`
+- **Mark rejected** -> `review_status=rejected` (translation is not served)
+- **Reset review** -> `review_status=not_reviewed`, `translation_status=generated_unreviewed`
+
+These controls affect only pilot translation rows in `report_narrative_translations`.

@@ -30,6 +30,8 @@ import {
   createPatientSafeSummaryNarrativeSourceSnapshot,
   getPatientSafeSummaryPilotTargetLocale,
   PATIENT_SAFE_SUMMARY_TRANSLATION_SECTION_ID,
+  refreshPatientSafeSummaryNarrativeTranslation,
+  resolvePatientSafeSummaryNarrativePresentation,
 } from "@/lib/reports/patientSafeSummaryNarrativeTranslation";
 import { createLocalizedPageMetadata, localeFromAcceptLanguage } from "@/lib/seo/localeMetadata";
 import {
@@ -306,6 +308,79 @@ test("canServePatientSafeSummaryNarrativeTranslation: rejected review never serv
     }),
     false
   );
+});
+
+test("resolvePatientSafeSummaryNarrativePresentation: feature flag off forces English fallback", async () => {
+  const prev = process.env.ENABLE_PATIENT_SAFE_SUMMARY_TRANSLATION_PILOT;
+  process.env.ENABLE_PATIENT_SAFE_SUMMARY_TRANSLATION_PILOT = "false";
+  try {
+    const out = await resolvePatientSafeSummaryNarrativePresentation({
+      db: null,
+      caseId: "case-1",
+      reportId: "report-1",
+      reportVersion: 1,
+      requestedLocale: "es",
+      sourceObservations: [{ stage: "preop", text: "Pre-op donor photos show mild asymmetry." }],
+    });
+    assert.equal(out.translationStatus, "english_fallback");
+    assert.equal(out.fallbackReason, "pilot_disabled");
+  } finally {
+    process.env.ENABLE_PATIENT_SAFE_SUMMARY_TRANSLATION_PILOT = prev;
+  }
+});
+
+test("resolvePatientSafeSummaryNarrativePresentation: unsupported locale yields explicit fallback reason", async () => {
+  const out = await resolvePatientSafeSummaryNarrativePresentation({
+    db: null,
+    caseId: "case-1",
+    reportId: "report-1",
+    reportVersion: 1,
+    requestedLocale: "en",
+    sourceObservations: [{ stage: "preop", text: "Pre-op donor photos show mild asymmetry." }],
+  });
+  assert.equal(out.translationStatus, "english_fallback");
+  assert.equal(out.fallbackReason, "unsupported_locale");
+});
+
+test("refreshPatientSafeSummaryNarrativeTranslation: explicit refresh path still falls back safely without generation", async () => {
+  const mockDb = {
+    from: () => ({
+      select: () => ({
+        eq: () => ({
+          eq: () => ({
+            eq: () => ({
+              maybeSingle: async () => ({ data: null, error: null }),
+            }),
+            maybeSingle: async () => ({ data: null, error: null }),
+          }),
+          maybeSingle: async () => ({ data: null, error: null }),
+        }),
+      }),
+      upsert: () => ({
+        select: () => ({
+          maybeSingle: async () => ({ data: null, error: null }),
+        }),
+      }),
+      update: () => ({
+        eq: () => ({
+          eq: () => ({
+            eq: async () => ({ error: null }),
+          }),
+        }),
+      }),
+    }),
+  };
+  const out = await refreshPatientSafeSummaryNarrativeTranslation({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    db: mockDb as any,
+    caseId: "case-1",
+    reportId: "report-1",
+    reportVersion: 1,
+    requestedLocale: "es",
+    sourceObservations: [{ stage: "preop", text: "Pre-op donor photos show mild asymmetry." }],
+  });
+  assert.equal(out.translationStatus, "english_fallback");
+  assert.ok(out.fallbackReason === "generation_failed" || out.fallbackReason === "stored_translation_not_servable");
 });
 
 test("formatTemplate: replaces placeholders", () => {

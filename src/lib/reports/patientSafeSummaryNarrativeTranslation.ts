@@ -20,6 +20,7 @@ export const PATIENT_SAFE_SUMMARY_TRANSLATION_SECTION_ID = "patientSafeSummaryNa
 type PatientSafeSummaryTranslationPilotLocale = (typeof PATIENT_SAFE_SUMMARY_TRANSLATION_PILOT_LOCALES)[number];
 
 type ReportNarrativeTranslationRow = {
+  id?: string;
   case_id: string;
   report_id: string;
   report_version: number;
@@ -57,6 +58,31 @@ export type PatientSafeSummaryNarrativePresentation = {
   translatedNarrativeAvailable: boolean;
   translatedNarrativeActive: boolean;
   translationStatus: "english_fallback" | "translated_pilot";
+  fallbackReason?:
+    | "pilot_disabled"
+    | "unsupported_locale"
+    | "missing_db"
+    | "missing_report_context"
+    | "no_source_observations"
+    | "no_stored_translation"
+    | "stored_translation_not_servable"
+    | "generation_failed";
+  trace: {
+    pilotEnabled: boolean;
+    requestedLocale: SupportedLocale;
+    targetLocale: PatientSafeSummaryTranslationPilotLocale | null;
+    usedStoredTranslation: boolean;
+    generatedThisRequest: boolean;
+    staleDetected: boolean;
+    serveDecision:
+      | "served"
+      | "unsupported_locale"
+      | "wrong_section"
+      | "review_rejected"
+      | "translated_items_invalid"
+      | "stale_source_snapshot"
+      | "status_not_allowed";
+  };
 };
 
 type ResolvePatientSafeSummaryNarrativeArgs = {
@@ -67,6 +93,29 @@ type ResolvePatientSafeSummaryNarrativeArgs = {
   requestedLocale: SupportedLocale;
   sourceObservations: PatientSafeSummaryObservation[];
   sourceContentLocale?: string | null;
+  forceRefresh?: boolean;
+};
+
+export type PatientSafeSummaryTranslationOpsState = {
+  pilotEnabled: boolean;
+  requestedLocale: SupportedLocale;
+  targetLocale: PatientSafeSummaryTranslationPilotLocale | null;
+  hasStoredTranslation: boolean;
+  translationStatus: ReportNarrativeTranslationStatus | "not_available";
+  reviewStatus: ReportNarrativeTranslationReviewStatus | "not_available";
+  serveDecision:
+    | "served"
+    | "unsupported_locale"
+    | "wrong_section"
+    | "review_rejected"
+    | "translated_items_invalid"
+    | "stale_source_snapshot"
+    | "status_not_allowed"
+    | "not_available";
+  fallbackReason?: PatientSafeSummaryNarrativePresentation["fallbackReason"];
+  translationProvenance?: string;
+  translatedAt?: string | null;
+  reviewedAt?: string | null;
 };
 
 const PATIENT_SAFE_SUMMARY_TRANSLATION_JSON_SCHEMA = {
@@ -128,10 +177,39 @@ export function canServePatientSafeSummaryNarrativeTranslation(args: {
   translatedItems: string[];
   sourceObservationCount: number;
 }): boolean {
-  if (getPatientSafeSummaryPilotTargetLocale(args.requestedLocale) !== args.section.targetLocale) return false;
-  if (args.section.sectionId !== PATIENT_SAFE_SUMMARY_TRANSLATION_SECTION_ID) return false;
-  if (args.section.review.status === "rejected") return false;
-  if (args.translatedItems.length !== args.sourceObservationCount || args.translatedItems.some((item) => !item.trim())) return false;
+  return evaluatePatientSafeSummaryNarrativeTranslationDecision(args).canServe;
+}
+
+export function evaluatePatientSafeSummaryNarrativeTranslationDecision(args: {
+  section: ReportNarrativeTranslationSection;
+  requestedLocale: SupportedLocale;
+  currentSourceText: string;
+  currentContentVersion: string;
+  translatedItems: string[];
+  sourceObservationCount: number;
+}): {
+  canServe: boolean;
+  reason:
+    | "served"
+    | "unsupported_locale"
+    | "wrong_section"
+    | "review_rejected"
+    | "translated_items_invalid"
+    | "stale_source_snapshot"
+    | "status_not_allowed";
+} {
+  if (getPatientSafeSummaryPilotTargetLocale(args.requestedLocale) !== args.section.targetLocale) {
+    return { canServe: false, reason: "unsupported_locale" };
+  }
+  if (args.section.sectionId !== PATIENT_SAFE_SUMMARY_TRANSLATION_SECTION_ID) {
+    return { canServe: false, reason: "wrong_section" };
+  }
+  if (args.section.review.status === "rejected") {
+    return { canServe: false, reason: "review_rejected" };
+  }
+  if (args.translatedItems.length !== args.sourceObservationCount || args.translatedItems.some((item) => !item.trim())) {
+    return { canServe: false, reason: "translated_items_invalid" };
+  }
 
   if (
     isReportNarrativeTranslationStale({
@@ -140,34 +218,40 @@ export function canServePatientSafeSummaryNarrativeTranslation(args: {
       currentContentVersion: args.currentContentVersion,
     })
   ) {
-    return false;
+    return { canServe: false, reason: "stale_source_snapshot" };
   }
 
-  if (canServeReviewedNarrativeTranslation(args.section)) return true;
+  if (canServeReviewedNarrativeTranslation(args.section)) return { canServe: true, reason: "served" };
 
-  return (
+  const allowedGenerated =
     args.section.status === "generated_unreviewed" &&
     args.section.policy.humanReviewRequirement !== "required" &&
-    Boolean(args.section.translatedText?.trim())
-  );
+    Boolean(args.section.translatedText?.trim());
+
+  return allowedGenerated ? { canServe: true, reason: "served" } : { canServe: false, reason: "status_not_allowed" };
 }
 
 export async function resolvePatientSafeSummaryNarrativePresentation(
   args: ResolvePatientSafeSummaryNarrativeArgs
 ): Promise<PatientSafeSummaryNarrativePresentation> {
-  const fallback = createEnglishFallbackPresentation(args.sourceObservations);
+  const pilotEnabled = isPatientSafeSummaryTranslationPilotEnabled();
   const targetLocale = getPatientSafeSummaryPilotTargetLocale(args.requestedLocale);
+  const baseTrace = {
+    pilotEnabled,
+    requestedLocale: args.requestedLocale,
+    targetLocale,
+    usedStoredTranslation: false,
+    generatedThisRequest: false,
+    staleDetected: false,
+    serveDecision: "status_not_allowed" as PatientSafeSummaryNarrativePresentation["trace"]["serveDecision"],
+  };
+  const fallback = createEnglishFallbackPresentation(args.sourceObservations, baseTrace);
 
-  if (
-    !isPatientSafeSummaryTranslationPilotEnabled() ||
-    !targetLocale ||
-    !args.db ||
-    !args.reportId ||
-    !args.reportVersion ||
-    args.sourceObservations.length === 0
-  ) {
-    return fallback;
-  }
+  if (!pilotEnabled) return { ...fallback, fallbackReason: "pilot_disabled" };
+  if (!targetLocale) return { ...fallback, fallbackReason: "unsupported_locale", trace: { ...baseTrace, serveDecision: "unsupported_locale" } };
+  if (!args.db) return { ...fallback, fallbackReason: "missing_db" };
+  if (!args.reportId || !args.reportVersion) return { ...fallback, fallbackReason: "missing_report_context" };
+  if (args.sourceObservations.length === 0) return { ...fallback, fallbackReason: "no_source_observations" };
 
   const sourceSnapshot = createPatientSafeSummaryNarrativeSourceSnapshot({
     observations: args.sourceObservations,
@@ -181,15 +265,16 @@ export async function resolvePatientSafeSummaryNarrativePresentation(
     targetLocale,
   });
 
-  if (existing) {
+  if (existing && !args.forceRefresh) {
     const served = maybeServeStoredTranslation({
       row: existing,
       requestedLocale: args.requestedLocale,
       sourceObservations: args.sourceObservations,
       sourceSnapshot,
     });
-    if (served) return served;
+    if (served) return { ...served, trace: { ...served.trace, usedStoredTranslation: true } };
 
+    fallback.trace.staleDetected = true;
     await markStoredPatientSafeSummaryTranslationStale(args.db, existing.id as string, sourceSnapshot.contentVersion ?? "");
   }
 
@@ -198,7 +283,12 @@ export async function resolvePatientSafeSummaryNarrativePresentation(
     sourceObservations: args.sourceObservations,
   });
 
-  if (!generated) return fallback;
+  if (!generated) {
+    return {
+      ...fallback,
+      fallbackReason: existing ? "stored_translation_not_servable" : "generation_failed",
+    };
+  }
 
   const stored = await upsertPatientSafeSummaryTranslation(args.db, {
     caseId: args.caseId,
@@ -220,18 +310,19 @@ export async function resolvePatientSafeSummaryNarrativePresentation(
     translationProvenance: generated.translationProvenance,
   });
 
-  return (
-    maybeServeStoredTranslation({
-      row: rowToUse,
-      requestedLocale: args.requestedLocale,
-      sourceObservations: args.sourceObservations,
-      sourceSnapshot,
-    }) ?? fallback
-  );
+  const served = maybeServeStoredTranslation({
+    row: rowToUse,
+    requestedLocale: args.requestedLocale,
+    sourceObservations: args.sourceObservations,
+    sourceSnapshot,
+  });
+  if (!served) return { ...fallback, fallbackReason: "stored_translation_not_servable" };
+  return { ...served, trace: { ...served.trace, generatedThisRequest: true } };
 }
 
 function createEnglishFallbackPresentation(
-  observations: PatientSafeSummaryObservation[]
+  observations: PatientSafeSummaryObservation[],
+  trace: PatientSafeSummaryNarrativePresentation["trace"]
 ): PatientSafeSummaryNarrativePresentation {
   return {
     observations,
@@ -239,6 +330,7 @@ function createEnglishFallbackPresentation(
     translatedNarrativeAvailable: false,
     translatedNarrativeActive: false,
     translationStatus: "english_fallback",
+    trace,
   };
 }
 
@@ -303,27 +395,123 @@ function maybeServeStoredTranslation(args: {
 }): PatientSafeSummaryNarrativePresentation | null {
   const translatedItems = parseStoredTranslatedItems(args.row.translated_items);
   const section = buildSectionFromRow(args.row);
+  const decision = evaluatePatientSafeSummaryNarrativeTranslationDecision({
+    section,
+    requestedLocale: args.requestedLocale,
+    currentSourceText: args.sourceSnapshot.text,
+    currentContentVersion: args.sourceSnapshot.contentVersion ?? "",
+    translatedItems,
+    sourceObservationCount: args.sourceObservations.length,
+  });
 
-  if (
-    !canServePatientSafeSummaryNarrativeTranslation({
-      section,
-      requestedLocale: args.requestedLocale,
-      currentSourceText: args.sourceSnapshot.text,
-      currentContentVersion: args.sourceSnapshot.contentVersion ?? "",
-      translatedItems,
-      sourceObservationCount: args.sourceObservations.length,
-    })
-  ) {
+  if (!decision.canServe) {
     return null;
   }
 
+  const staleDetected = decision.reason === "stale_source_snapshot";
   return {
     observations: buildTranslatedObservations(args.sourceObservations, translatedItems),
     narrativeLocale: args.row.target_locale,
     translatedNarrativeAvailable: true,
     translatedNarrativeActive: true,
     translationStatus: "translated_pilot",
+    trace: {
+      pilotEnabled: isPatientSafeSummaryTranslationPilotEnabled(),
+      requestedLocale: args.requestedLocale,
+      targetLocale: getPatientSafeSummaryPilotTargetLocale(args.requestedLocale),
+      usedStoredTranslation: true,
+      generatedThisRequest: false,
+      staleDetected,
+      serveDecision: decision.reason,
+    },
   };
+}
+
+export async function getPatientSafeSummaryTranslationOpsState(
+  args: ResolvePatientSafeSummaryNarrativeArgs
+): Promise<PatientSafeSummaryTranslationOpsState> {
+  const presentation = await resolvePatientSafeSummaryNarrativePresentation(args);
+  const targetLocale = getPatientSafeSummaryPilotTargetLocale(args.requestedLocale);
+  const base: PatientSafeSummaryTranslationOpsState = {
+    pilotEnabled: isPatientSafeSummaryTranslationPilotEnabled(),
+    requestedLocale: args.requestedLocale,
+    targetLocale,
+    hasStoredTranslation: false,
+    translationStatus: "not_available",
+    reviewStatus: "not_available",
+    serveDecision: presentation.trace.serveDecision,
+    fallbackReason: presentation.fallbackReason,
+  };
+
+  if (!args.db || !args.reportId || !targetLocale) return base;
+
+  const existing = await readStoredPatientSafeSummaryTranslation(args.db, {
+    reportId: args.reportId,
+    targetLocale,
+  });
+  if (!existing) return base;
+
+  return {
+    ...base,
+    hasStoredTranslation: true,
+    translationStatus: existing.translation_status,
+    reviewStatus: existing.review_status,
+    translationProvenance: existing.translation_provenance ?? undefined,
+    translatedAt: existing.translated_at,
+    reviewedAt: existing.reviewed_at,
+  };
+}
+
+export async function refreshPatientSafeSummaryNarrativeTranslation(
+  args: ResolvePatientSafeSummaryNarrativeArgs
+): Promise<PatientSafeSummaryNarrativePresentation> {
+  return resolvePatientSafeSummaryNarrativePresentation({ ...args, forceRefresh: true });
+}
+
+export async function setPatientSafeSummaryNarrativeReviewStatus(args: {
+  db: TranslationDbClient | null;
+  reportId: string;
+  targetLocale: SupportedLocale;
+  reviewStatus: "approved" | "rejected" | "not_reviewed";
+  reviewerId?: string | null;
+  reviewNotes?: string | null;
+}): Promise<{ ok: boolean; error?: string }> {
+  const targetLocale = getPatientSafeSummaryPilotTargetLocale(args.targetLocale);
+  if (!args.db || !targetLocale) return { ok: false, error: "Unsupported locale or database unavailable." };
+
+  try {
+    const now = new Date().toISOString();
+    const status: ReportNarrativeTranslationStatus =
+      args.reviewStatus === "approved" ? "reviewed_approved" : "generated_unreviewed";
+
+    const res = await args.db
+      .from("report_narrative_translations")
+      .update({
+        review_status: args.reviewStatus,
+        translation_status: status,
+        reviewed_at: args.reviewStatus === "not_reviewed" ? null : now,
+        reviewer_id: args.reviewStatus === "not_reviewed" ? null : args.reviewerId ?? null,
+        review_notes: args.reviewNotes ?? null,
+        updated_at: now,
+      })
+      .eq("report_id", args.reportId)
+      .eq("section_id", PATIENT_SAFE_SUMMARY_TRANSLATION_SECTION_ID)
+      .eq("target_locale", targetLocale);
+
+    if (res.error) {
+      if (!isMissingFeatureError(res.error)) {
+        console.error("[patient-safe-summary-translation] review update failed", res.error);
+      }
+      return { ok: false, error: String(res.error.message ?? "Could not update review state.") };
+    }
+
+    return { ok: true };
+  } catch (error) {
+    if (!isMissingFeatureError(error)) {
+      console.error("[patient-safe-summary-translation] review update threw", error);
+    }
+    return { ok: false, error: "Could not update review state." };
+  }
 }
 
 async function readStoredPatientSafeSummaryTranslation(

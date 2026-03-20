@@ -52,6 +52,7 @@ import FollowupReminderDraftsPanel from "@/components/clinic/FollowupReminderDra
 import FollowupReminderManualSendPanel from "@/components/clinic/FollowupReminderManualSendPanel";
 import { isClinicFollowupManualSendEnabled } from "@/lib/features/enableFollowupReminderManualSend";
 import type { FollowupReminderSendLogRow } from "@/lib/audit/followupReminderSendPayload";
+import PatientSafeSummaryTranslationOpsPanel from "./PatientSafeSummaryTranslationOpsPanel";
 
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { tryCreateSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -697,6 +698,9 @@ export default async function Page({
               observations={patientSafeSummaryNarrative.observations}
               translatedNarrativeActive={patientSafeSummaryNarrative.translatedNarrativeActive}
             />
+          )}
+          {isAuditor && latestReport && (
+            <PatientSafeSummaryTranslationOpsPanel caseId={c.id} locale={seoLocale} />
           )}
 
           <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
