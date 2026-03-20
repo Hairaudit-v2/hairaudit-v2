@@ -11,6 +11,9 @@ import {
   normalizeLocale,
 } from "@/lib/i18n/constants";
 import { getTranslation } from "@/lib/i18n/getTranslation";
+import { getReportGlossaryLabel } from "@/lib/i18n/reportTerminology";
+import { defaultReportOutputLocale, describeLocaleIntent, normalizeUiLocale } from "@/lib/i18n/localeContexts";
+import { createEmptyReportTranslationPlan } from "@/lib/i18n/reportTranslationBlueprint";
 import { localeFromAcceptLanguage } from "@/lib/seo/localeMetadata";
 
 test("getDefaultLocale returns en", () => {
@@ -91,6 +94,33 @@ test("localeFromAcceptLanguage: unknown languages fall back to en", () => {
 test("localeFromAcceptLanguage: null or empty is en", () => {
   assert.equal(localeFromAcceptLanguage(null), "en");
   assert.equal(localeFromAcceptLanguage(""), "en");
+});
+
+test("getReportGlossaryLabel: Spanish donor management term", () => {
+  assert.equal(getReportGlossaryLabel("donorManagement", "es"), "Manejo del donante");
+});
+
+test("localeContexts: default report output is English", () => {
+  assert.equal(defaultReportOutputLocale(), "en");
+});
+
+test("localeContexts: describeLocaleIntent fills defaults", () => {
+  const intent = describeLocaleIntent("es");
+  assert.equal(intent.ui, "es");
+  assert.equal(intent.reportOutput, "en");
+  assert.equal(intent.source, "und");
+});
+
+test("normalizeUiLocale: invalid → en", () => {
+  assert.equal(normalizeUiLocale("fr"), "en");
+});
+
+test("createEmptyReportTranslationPlan: blueprint defaults", () => {
+  const plan = createEmptyReportTranslationPlan("es");
+  assert.equal(plan.targetLocale, "es");
+  assert.equal(plan.status, "none");
+  assert.equal(plan.sourceLocale, "und");
+  assert.deepEqual(plan.sections, {});
 });
 
 test("getTranslation: marketing meta resolves Spanish when present", () => {

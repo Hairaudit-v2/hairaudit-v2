@@ -166,6 +166,10 @@ Public marketing UI (no SEO metadata changes, no locale routes): **`marketing.*`
 
 **Still later (not batch 7):** other static marketing routes (`/about`, `/faq`, program pages), **`professionals/*` article bodies**, **`/professionals/apply`** cards, **`GlobalHairIntelligenceSection`** internal node labels, tier badge spellings in **`CertifiedClinicsSection`**.
 
+## Batch 9 (implemented — architecture only)
+
+**Report-adjacent i18n groundwork** (no report body / PDF / AI changes): **`localeContexts.ts`** (UI vs report-output vs source locale), **`reportTranslationBlueprint.ts`** (future translation plan types), **`reportTerminology.ts`** + **`reportGlossary.*`** in `en`/`es` (controlled labels, not wired to generators). **`docs/i18n-report-translation-pipeline.md`**. **`REPORT_CONTENT_DEFAULT_LOCALE`** and `report.ts` JSDoc updated.
+
 ## Batch 8 (implemented)
 
 **SEO metadata** for pages already localized in Batch 7: **`marketing.meta.*`** (`title` / `description`) in `en`/`es`. **`createLocalizedPageMetadata`** + **`resolvePublicSeoLocale`** (`src/lib/seo/localeMetadata.ts`): cookie `hairaudit.preferred_language` (mirrored from client via **`syncSeoLocaleCookie`**) then **`Accept-Language`**, default English. **`generateMetadata`** on `/`, `/how-it-works`, `/professionals`, `/sample-report`. Hreflang/localized canonical **not** implemented (same URL); see **`docs/i18n-seo-discoverability.md`**.

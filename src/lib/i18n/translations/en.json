@@ -367,6 +367,14 @@
       "correctionDocBody": "Collect standardized images and operative records before any corrective commitments."
     }
   },
+  "reportGlossary": {
+    "donorManagement": "Donor management",
+    "graftHandling": "Graft handling",
+    "implantationTechnique": "Implantation technique",
+    "density": "Density",
+    "transection": "Transection",
+    "documentationQuality": "Documentation quality"
+  },
   "dashboard": {
     "shared": {
       "createCaseDefault": "Create new audit case",

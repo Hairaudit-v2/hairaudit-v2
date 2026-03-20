@@ -367,6 +367,14 @@
       "correctionDocBody": "Recopile imágenes estandarizadas y registros operatorios antes de comprometerse con correcciones."
     }
   },
+  "reportGlossary": {
+    "donorManagement": "Manejo del donante",
+    "graftHandling": "Manejo de injertos",
+    "implantationTechnique": "Técnica de implantación",
+    "density": "Densidad",
+    "transection": "Transección",
+    "documentationQuality": "Calidad de la documentación"
+  },
   "dashboard": {
     "shared": {
       "createCaseDefault": "Crear nuevo caso de auditoría",
