@@ -1,4 +1,4 @@
-# Report translation pipeline (Batch 9 — architecture only)
+# Report translation pipeline (Batch 9 + Batch 17 groundwork only)
 
 This document describes how **UI language**, **report/output language**, and **source language** are separated conceptually, what remains **English-only today**, and how multilingual audit delivery could evolve **without** the current Batch 9 groundwork touching live generators.
 
@@ -29,8 +29,12 @@ See `src/lib/i18n/localeContexts.ts` and `REPORT_CONTENT_DEFAULT_LOCALE` in `src
 - `ReportTranslationStatus` — e.g. `none` → `pending` → `machine` → `human_reviewed` → `validated`
 - `ReportTranslatedSectionId` — coarse sections (executive summary, findings, …)
 - `ReportTranslationPlan` — `sourceLocale`, `targetLocale`, per-section review flags, provenance
+- `ReportNarrativeTranslationStatus` — `not_requested` → `pending_generation` → `generated_unreviewed` → `reviewed_approved` → `stale_due_to_source_change`
+- `ReportNarrativeTranslationSection` / `ReportNarrativeTranslationBundle` — future per-section translated narrative overlay contract tied to an immutable report snapshot
 
 Nothing in finalize, Inngest, or PDF builders reads this yet. Introducing DB columns or JSON should be a **separate, additive migration** with product sign-off.
+
+See `docs/i18n-translated-narrative-contract.md` for the Batch 17 narrative-specific lifecycle, storage, and review guidance.
 
 ## Glossary / terminology (config only)
 
@@ -39,7 +43,7 @@ Nothing in finalize, Inngest, or PDF builders reads this yet. Introducing DB col
 ## Planned stages for real report translation (future work)
 
 1. **Report UI chrome** — headings, static labels, download buttons: extend dashboard/report components with `useI18n` / `getTranslation`, reuse `reportGlossary` where concepts must stay consistent.
-2. **Structured report JSON + overlays** — store English canonical narrative; optional `ReportTranslationPlan` + translated blocks per section; render layer picks locale.
+2. **Structured report JSON + overlays** — store English canonical narrative; optional `ReportTranslationPlan` / `ReportNarrativeTranslationBundle` + translated blocks per section; render layer picks locale.
 3. **AI-generated paragraphs** — offline or gated jobs that populate translated sections with `translationProvenance`; clinical review before `validated`.
 4. **PDF** — separate template pass or post-process from structured translated HTML; keep one canonical English snapshot for compliance if required.
 5. **Validation** — `human_reviewed` / `validated` flags in blueprint; block public release of non-validated clinical copy where policy requires it.

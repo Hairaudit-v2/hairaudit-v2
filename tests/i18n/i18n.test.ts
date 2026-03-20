@@ -15,7 +15,14 @@ import { resolveAuditPrompt, resolveAuditSectionTitle } from "@/lib/audit/auditD
 import { getIntakeFieldOptionLabel, getIntakeFieldPrompt, getTranslation } from "@/lib/i18n/getTranslation";
 import { getReportGlossaryLabel } from "@/lib/i18n/reportTerminology";
 import { defaultReportOutputLocale, describeLocaleIntent, normalizeUiLocale } from "@/lib/i18n/localeContexts";
-import { createEmptyReportTranslationPlan, createPatientSafeSummaryShellBlueprint } from "@/lib/i18n/reportTranslationBlueprint";
+import {
+  canServeReviewedNarrativeTranslation,
+  createEmptyReportNarrativeTranslationBundle,
+  createEmptyReportTranslationPlan,
+  createPatientSafeSummaryShellBlueprint,
+  getReportNarrativeTranslationPolicy,
+  isReportNarrativeTranslationStale,
+} from "@/lib/i18n/reportTranslationBlueprint";
 import { buildPatientSafeSummaryObservations } from "@/lib/reports/patientSafeSummary";
 import { localeFromAcceptLanguage } from "@/lib/seo/localeMetadata";
 
@@ -129,6 +136,62 @@ test("createEmptyReportTranslationPlan: blueprint defaults", () => {
   assert.equal(plan.status, "none");
   assert.equal(plan.sourceLocale, "und");
   assert.deepEqual(plan.sections, {});
+});
+
+test("createEmptyReportNarrativeTranslationBundle: additive defaults stay English-sourced", () => {
+  const bundle = createEmptyReportNarrativeTranslationBundle("es");
+  assert.equal(bundle.targetLocale, "es");
+  assert.equal(bundle.sourceNarrativeLocale, "en");
+  assert.equal(bundle.storage.scope, "report_version_snapshot");
+  assert.deepEqual(bundle.sections, {});
+});
+
+test("getReportNarrativeTranslationPolicy: patient-visible narrative requires review", () => {
+  const policy = getReportNarrativeTranslationPolicy("findings");
+  assert.equal(policy.category, "patient_visible_clinical");
+  assert.equal(policy.machineTranslationAllowed, true);
+  assert.equal(policy.humanReviewRequirement, "required");
+  assert.equal(policy.patientVisible, true);
+});
+
+test("isReportNarrativeTranslationStale: version marker changes mark translation stale", () => {
+  assert.equal(
+    isReportNarrativeTranslationStale({
+      sourceSnapshot: { text: "English findings text", contentVersion: "report:v1:findings" },
+      currentSourceText: "English findings text",
+      currentContentVersion: "report:v2:findings",
+    }),
+    true
+  );
+});
+
+test("isReportNarrativeTranslationStale: whitespace-only differences are ignored", () => {
+  assert.equal(
+    isReportNarrativeTranslationStale({
+      sourceSnapshot: { text: "Line one\n\nLine two" },
+      currentSourceText: "  Line one Line two  ",
+    }),
+    false
+  );
+});
+
+test("canServeReviewedNarrativeTranslation: requires approved reviewed text", () => {
+  assert.equal(
+    canServeReviewedNarrativeTranslation({
+      status: "reviewed_approved",
+      translatedText: "Resumen traducido",
+      review: { status: "approved" },
+    }),
+    true
+  );
+  assert.equal(
+    canServeReviewedNarrativeTranslation({
+      status: "generated_unreviewed",
+      translatedText: "Resumen traducido",
+      review: { status: "not_reviewed" },
+    }),
+    false
+  );
 });
 
 test("createPatientSafeSummaryShellBlueprint: remains English narrative only", () => {
