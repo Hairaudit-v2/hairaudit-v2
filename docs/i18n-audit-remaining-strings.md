@@ -20,7 +20,13 @@
 | `SiteFooter.tsx` | Column headings, link labels, descriptions | **done (batch 4)** | Client + `nav.footer.*` |
 | `BetaBanner.tsx` | Beta disclaimer paragraph | **done (batch 4)** | `nav.betaBanner.*` |
 | `app/layout.tsx` | Skip link text | **done (batch 3)** | `SkipLinkI18n` + `nav.skipToMain` |
-| `app/page.tsx` (home) | Hero, CTAs, sections | **later** | Large surface; separate batch |
+| `app/page.tsx` (home) | Hero, CTAs, sections | **done (batch 7)** | `HomePageMarketing` + `marketing.home.*`; server page keeps metadata / auth redirect |
+| `how-it-works/page.tsx` | Marketing flow | **done (batch 7)** | `HowItWorksMarketing` + `marketing.howItWorks.*` |
+| `professionals/page.tsx` + hub cards | Index title, cards | **done (batch 7)** | `ProfessionalsHub` + `marketing.professionals.*` |
+| `ProfessionalsShell.tsx` | Sidebar + footer links | **done (batch 7)** | Same namespace; subpages still pass English article `title` / `intro` |
+| `sample-report/page.tsx` | Page chrome (hero, sections, labels) | **done (batch 7)** | `SampleReportMarketing` + `marketing.sampleReport.*`; sample finding paragraphs / reco bullets stay English |
+| `ReviewProcessReassurance.tsx` | Post-submit reassurance | **done (batch 7)** | `marketing.shared.*` |
+| `CertifiedClinicsSection.tsx` | Cert teaser section | **done (batch 7)** | `marketing.home.certified*` |
 
 ---
 
@@ -153,3 +159,9 @@ Patient portal: next-action panel, delete-draft control, graft integrity card UI
 Auth and account shell: **`auth.*`** (common, login, auditor, signup, recovery, magic link) and **`account.betaAccess.*`** in `en`/`es`. Wired: `/login`, `/login/auditor`, `/signup`, `/auth/recovery`, `/auth/magic-link` client, `/beta-access-message` via `BetaAccessMessageClient`. Small **doctor onboarding** header: `dashboard.doctor.onboardingPageTitle` / `onboardingPageSubtitle` + `DoctorOnboardingPageHeader`. Layout **metadata** for login/signup remains English (no route-locale pattern).
 
 **Follow-up (later):** clinic **`layout.tsx`** server nav labels, **patient intake/forms** module-by-module, **`ClinicProfileBuilder`** / heavy profile surfaces, **`DoctorOnboardingForm`** fields.
+
+## Batch 7 (implemented)
+
+Public marketing UI (no SEO metadata changes, no locale routes): **`marketing.*`** in `en`/`es` with namespaces `shared`, `home`, `howItWorks`, `professionals`, `sampleReport`. Wired via client modules under `components/marketing/*`, **`ReviewProcessReassurance`**, **`CertifiedClinicsSection`**, and **`ProfessionalsShell`** (nav/footer). Sample report **demo** finding/recommendation body copy remains English; **ES `es.json`:** repaired `account` / `dashboard` nesting and aligned `marketing` + new `sampleReport.correction*` keys.
+
+**Still later (not batch 7):** other static marketing routes (`/about`, `/faq`, program pages), **`professionals/*` article bodies**, **`/professionals/apply`** cards, **`GlobalHairIntelligenceSection`** internal node labels, tier badge spellings in **`CertifiedClinicsSection`**.

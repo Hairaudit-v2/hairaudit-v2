@@ -1,14 +1,20 @@
-import Link from "next/link";
+"use client";
 
-const links = [
-  { href: "/professionals", label: "Overview" },
-  { href: "/professionals/apply", label: "Create Profile" },
-  { href: "/professionals/methodology", label: "Methodology" },
-  { href: "/professionals/scoring-framework", label: "Scoring Framework" },
-  { href: "/professionals/evidence-standards", label: "Evidence Standards" },
-  { href: "/professionals/clinical-participation", label: "Clinical Participation" },
-  { href: "/professionals/legal-documentation", label: "Legal Documentation" },
-  { href: "/professionals/auditor-standards", label: "Auditor Standards" },
+import Link from "next/link";
+import type { ReactNode } from "react";
+import { useMemo } from "react";
+import { useI18n } from "@/components/i18n/I18nProvider";
+import type { TranslationKey } from "@/lib/i18n/translationKeys";
+
+const NAV_ITEMS: { href: string; labelKey: TranslationKey }[] = [
+  { href: "/professionals", labelKey: "marketing.professionals.navOverview" },
+  { href: "/professionals/apply", labelKey: "marketing.professionals.navCreateProfile" },
+  { href: "/professionals/methodology", labelKey: "marketing.professionals.navMethodology" },
+  { href: "/professionals/scoring-framework", labelKey: "marketing.professionals.navScoring" },
+  { href: "/professionals/evidence-standards", labelKey: "marketing.professionals.navEvidence" },
+  { href: "/professionals/clinical-participation", labelKey: "marketing.professionals.navParticipation" },
+  { href: "/professionals/legal-documentation", labelKey: "marketing.professionals.navLegal" },
+  { href: "/professionals/auditor-standards", labelKey: "marketing.professionals.navAuditor" },
 ];
 
 export default function ProfessionalsShell({
@@ -20,14 +26,25 @@ export default function ProfessionalsShell({
   currentPath: string;
   title: string;
   intro: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
+  const { t } = useI18n();
+
+  const links = useMemo(
+    () =>
+      NAV_ITEMS.map((item) => ({
+        ...item,
+        label: t(item.labelKey),
+      })),
+    [t]
+  );
+
   return (
     <div className="grid lg:grid-cols-[250px_1fr] gap-8 lg:gap-10">
       <aside className="lg:sticky lg:top-8 lg:self-start">
         <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-4">
           <p className="text-xs uppercase tracking-wider text-slate-500 font-semibold px-2 pb-2">
-            Professional section
+            {t("marketing.professionals.sidebarSection")}
           </p>
           <nav className="space-y-1">
             {links.map((item) => {
@@ -55,13 +72,13 @@ export default function ProfessionalsShell({
         <p className="mt-4 text-slate-400 max-w-3xl">{intro}</p>
         <div className="mt-8">{children}</div>
         <p className="mt-10 text-sm text-slate-500">
-          Looking for the patient overview?{" "}
+          {t("marketing.professionals.footerPatient")}{" "}
           <Link href="/how-it-works" className="text-amber-400 hover:text-amber-300 transition-colors">
-            Return to How It Works
+            {t("marketing.professionals.footerHowItWorks")}
           </Link>
           {" · "}
           <Link href="/signup" className="text-cyan-300 hover:text-cyan-200 transition-colors">
-            Create Clinic or Doctor Profile
+            {t("marketing.professionals.footerCreateProfile")}
           </Link>
           .
         </p>

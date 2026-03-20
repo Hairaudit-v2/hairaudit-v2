@@ -3,7 +3,10 @@
  * Clickable cards linking to certificate placeholder view.
  */
 
+"use client";
+
 import Link from "next/link";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { DEMO_CERTIFICATES } from "@/lib/certificates/demoCertificates";
 import { getCertificationLabel } from "@/lib/clinics/certificationCopy";
 
@@ -25,6 +28,8 @@ function tierToLabel(tier: string): string {
 }
 
 export default function CertifiedClinicsSection() {
+  const { t } = useI18n();
+
   return (
     <section
       className="relative px-4 sm:px-6 py-16 sm:py-20 border-t border-slate-700/60"
@@ -35,17 +40,15 @@ export default function CertifiedClinicsSection() {
           id="certified-clinics-heading"
           className="text-2xl sm:text-3xl font-bold text-white tracking-tight"
         >
-          Certification certificates
+          {t("marketing.home.certifiedTitle")}
         </h2>
-        <p className="mt-3 text-slate-400 max-w-xl">
-          Sample recognition certificates across tiers. Click to view the printable certificate.
-        </p>
+        <p className="mt-3 text-slate-400 max-w-xl">{t("marketing.home.certifiedSubtitle")}</p>
         <div className="mt-6">
           <Link
             href="/certificates/demo?tier=platinum"
             className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-stone-200/20 border border-stone-400/40 text-stone-200 text-sm font-medium hover:bg-stone-200/30 hover:border-stone-400/60 transition-colors"
           >
-            View sample Platinum certificate
+            {t("marketing.home.certifiedCtaPlatinum")}
           </Link>
         </div>
         <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
@@ -65,12 +68,13 @@ export default function CertifiedClinicsSection() {
               </h3>
               {cert.score != null && (
                 <p className="mt-2 text-sm text-slate-500">
-                  Score: {cert.score.toFixed(1)}/100
-                  {cert.caseCount != null && ` · ${cert.caseCount} cases`}
+                  {t("marketing.home.certifiedScoreLabel")} {cert.score.toFixed(1)}/100
+                  {cert.caseCount != null &&
+                    ` · ${cert.caseCount} ${t("marketing.home.certifiedCasesSuffix")}`}
                 </p>
               )}
               <span className="mt-4 text-xs font-medium text-cyan-400 group-hover:text-cyan-300">
-                View certificate →
+                {t("marketing.home.certifiedViewCert")}
               </span>
             </Link>
           ))}
@@ -80,7 +84,7 @@ export default function CertifiedClinicsSection() {
             href="/clinics"
             className="text-sm text-cyan-400 hover:text-cyan-300 font-medium transition-colors"
           >
-            Explore certified clinics →
+            {t("marketing.home.certifiedExplore")}
           </Link>
         </p>
       </div>
