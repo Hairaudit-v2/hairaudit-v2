@@ -22,6 +22,12 @@ import {
   type OverrideRowWithVisibility,
   type SectionFeedbackRow,
 } from "@/lib/auditor/visibility";
+import {
+  computePatientImageEvidenceQualityFromCaseUploads,
+  PATIENT_IMAGE_EVIDENCE_QUALITY_GROUP_ORDER,
+  PATIENT_IMAGE_EVIDENCE_QUALITY_LABELS,
+} from "@/lib/audit/patientImageEvidenceConfidence";
+import { isInternalImageEvidenceQualityPanelEnabled } from "@/lib/features/enableInternalImageEvidenceQualityPanel";
 
 function createSupabaseAdmin() {
   return createClient(
@@ -166,6 +172,15 @@ export default async function ReportHtmlPage({
 
   if (upErr) {
     console.error("uploads error:", upErr.message);
+  }
+
+  let imageEvidenceQualityForReport: ReturnType<typeof computePatientImageEvidenceQualityFromCaseUploads> | null = null;
+  if (sessionRole === "auditor" && isInternalImageEvidenceQualityPanelEnabled()) {
+    try {
+      imageEvidenceQualityForReport = computePatientImageEvidenceQualityFromCaseUploads(uploads ?? []);
+    } catch (e) {
+      console.error("[reports/html] image evidence quality compute failed", { caseId, error: e });
+    }
   }
 
   const bucket = process.env.CASE_FILES_BUCKET || "case-files";
@@ -630,6 +645,93 @@ export default async function ReportHtmlPage({
                         </td>
                       </tr>
                     )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            {sessionRole === "auditor" && imageEvidenceQualityForReport && (
+              <div
+                style={{
+                  marginTop: 14,
+                  padding: 12,
+                  border: "1px solid #dde3ea",
+                  borderRadius: 10,
+                  background: "#f4f6f9",
+                  fontSize: 12,
+                }}
+              >
+                <div style={{ fontSize: 11, color: "#555", marginBottom: 8, fontWeight: 600 }}>
+                  Image evidence sufficiency (informational — not scored)
+                </div>
+                <p style={{ margin: "0 0 10px", fontSize: 11, color: "#666", lineHeight: 1.45 }}>
+                  Patient-submitted photo group coverage for review and debugging. Does not change scores, weights, or eligibility.
+                </p>
+                <div style={{ marginBottom: 10, color: "#444" }}>
+                  <strong>Overall summary:</strong> {imageEvidenceQualityForReport.overall.summaryLevel}
+                  {" · "}
+                  <strong>Extended optional categories:</strong>{" "}
+                  {imageEvidenceQualityForReport.overall.hasExtendedEvidence ? "yes" : "no"}
+                </div>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11 }}>
+                  <thead>
+                    <tr>
+                      <th
+                        style={{
+                          border: "1px solid #ccc",
+                          padding: 6,
+                          textAlign: "left",
+                          background: "#e8ebf0",
+                        }}
+                      >
+                        Group
+                      </th>
+                      <th
+                        style={{
+                          border: "1px solid #ccc",
+                          padding: 6,
+                          textAlign: "left",
+                          background: "#e8ebf0",
+                        }}
+                      >
+                        Level
+                      </th>
+                      <th
+                        style={{
+                          border: "1px solid #ccc",
+                          padding: 6,
+                          textAlign: "left",
+                          background: "#e8ebf0",
+                        }}
+                      >
+                        Rationale
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {PATIENT_IMAGE_EVIDENCE_QUALITY_GROUP_ORDER.map((id) => {
+                      const g = imageEvidenceQualityForReport.groups[id];
+                      return (
+                        <tr key={id}>
+                          <td style={{ border: "1px solid #ddd", padding: 6, verticalAlign: "top" }}>
+                            {PATIENT_IMAGE_EVIDENCE_QUALITY_LABELS[id]}
+                          </td>
+                          <td
+                            style={{
+                              border: "1px solid #ddd",
+                              padding: 6,
+                              verticalAlign: "top",
+                              textTransform: "capitalize",
+                            }}
+                          >
+                            {g.level}
+                            {g.count > 0 ? ` (n=${g.count})` : ""}
+                          </td>
+                          <td style={{ border: "1px solid #ddd", padding: 6, verticalAlign: "top", color: "#555" }}>
+                            {g.rationale}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

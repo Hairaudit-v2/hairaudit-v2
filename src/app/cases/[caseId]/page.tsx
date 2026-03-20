@@ -29,6 +29,9 @@ import ForensicCaseTimelineViewer from "@/components/reports/ForensicCaseTimelin
 import PatientNextActionPanel from "@/components/patient/PatientNextActionPanel";
 import { BENCHMARKING_GLOBAL_STANDARDS } from "@/lib/benchmarkingCopy";
 import CaseNotFoundRecovery from "@/components/case/CaseNotFoundRecovery";
+import PatientImageEvidenceQualityPanel from "@/components/reports/PatientImageEvidenceQualityPanel";
+import { computePatientImageEvidenceQualityFromCaseUploads } from "@/lib/audit/patientImageEvidenceConfidence";
+import { isInternalImageEvidenceQualityPanelEnabled } from "@/lib/features/enableInternalImageEvidenceQualityPanel";
 
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { tryCreateSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -309,6 +312,16 @@ export default async function Page({
 
   // Case-scoped access flags (auditor sees all)
   const isAuditor = role === "auditor";
+  let patientImageEvidenceQuality: ReturnType<typeof computePatientImageEvidenceQualityFromCaseUploads> | null = null;
+  if (isAuditor && isInternalImageEvidenceQualityPanelEnabled()) {
+    try {
+      patientImageEvidenceQuality = computePatientImageEvidenceQualityFromCaseUploads(
+        (uploads ?? []) as { id?: string | null; type?: string | null; storage_path?: string | null }[]
+      );
+    } catch (e) {
+      console.error(LOG_PREFIX, "patientImageEvidenceQuality compute failed", { caseId, error: e });
+    }
+  }
   const isPatientForCase = user.id === c.user_id || user.id === c.patient_id;
   const isDoctorForCase = user.id === c.doctor_id;
   const isClinicForCase = user.id === c.clinic_id;
@@ -838,6 +851,10 @@ export default async function Page({
           </div>
         </div>
       </section>
+
+      {patientImageEvidenceQuality && (
+        <PatientImageEvidenceQualityPanel result={patientImageEvidenceQuality} />
+      )}
 
       {/* Graft Integrity: auditor sees full review panel; patient sees approved/pending card */}
       {isAuditor && (

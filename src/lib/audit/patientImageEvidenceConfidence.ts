@@ -8,6 +8,7 @@ import type {
   PatientImageEvidenceGroupBucket,
   PatientImageEvidenceGroupsResult,
 } from "@/lib/audit/patientAiImageEvidence";
+import { buildPatientImageEvidenceGroups } from "@/lib/audit/patientAiImageEvidence";
 import { PATIENT_UPLOAD_CATEGORY_DEFS } from "@/lib/patientPhotoCategoryConfig";
 
 const ALL_GROUP_IDS: PatientAiEvidenceGroupId[] = [
@@ -218,13 +219,18 @@ function computeOverallSummary(perGroup: Record<PatientAiEvidenceGroupId, Patien
   return "limited";
 }
 
-const GROUP_LABEL: Record<PatientAiEvidenceGroupId, string> = {
+/** Human labels for review UI (same order as `ALL_GROUP_IDS`). */
+export const PATIENT_IMAGE_EVIDENCE_QUALITY_LABELS: Record<PatientAiEvidenceGroupId, string> = {
   baseline_evidence: "Baseline evidence",
   donor_monitoring_evidence: "Donor monitoring evidence",
   surgical_evidence: "Surgical evidence",
   graft_handling_evidence: "Graft handling evidence",
   followup_outcome_evidence: "Follow-up outcome evidence",
 };
+
+export const PATIENT_IMAGE_EVIDENCE_QUALITY_GROUP_ORDER: readonly PatientAiEvidenceGroupId[] = ALL_GROUP_IDS;
+
+const GROUP_LABEL = PATIENT_IMAGE_EVIDENCE_QUALITY_LABELS;
 
 /**
  * Build sufficiency + confidence annotations from Stage-4 grouping output.
@@ -289,4 +295,26 @@ export function formatPatientImageEvidenceConfidenceForPrompt(result: PatientIma
   }
 
   return lines.join("\n");
+}
+
+type CaseUploadRow = {
+  id?: string | null;
+  type?: string | null;
+  storage_path?: string | null;
+};
+
+/**
+ * Deterministic sufficiency from case `uploads` rows (no prepared manifest).
+ * For internal review only; uses the same grouping rules as Stage 4 with grouping enabled.
+ */
+export function computePatientImageEvidenceQualityFromCaseUploads(uploads: CaseUploadRow[]): PatientImageEvidenceConfidenceResult {
+  const groups = buildPatientImageEvidenceGroups({
+    enabled: true,
+    uploads: uploads.map((u) => ({
+      id: u.id,
+      type: u.type,
+      storage_path: u.storage_path,
+    })),
+  });
+  return buildPatientImageEvidenceConfidence(groups);
 }

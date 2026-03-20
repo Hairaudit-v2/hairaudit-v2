@@ -8,8 +8,10 @@ import assert from "node:assert/strict";
 import { buildPatientImageEvidenceGroups } from "@/lib/audit/patientAiImageEvidence";
 import {
   buildPatientImageEvidenceConfidence,
+  computePatientImageEvidenceQualityFromCaseUploads,
   formatPatientImageEvidenceConfidenceForPrompt,
 } from "@/lib/audit/patientImageEvidenceConfidence";
+import { isInternalImageEvidenceQualityPanelEnabled } from "@/lib/features/enableInternalImageEvidenceQualityPanel";
 import { canSubmit } from "@/lib/auditPhotoSchemas";
 
 function groupsFor(uploads: { id: string; type: string }[]) {
@@ -153,4 +155,26 @@ test("formatPatientImageEvidenceConfidenceForPrompt mentions overall and omits n
   assert.ok(t.includes("Overall evidence depth"));
   assert.ok(t.includes("Baseline evidence"));
   assert.ok(!t.includes("Graft handling evidence"));
+});
+
+test("computePatientImageEvidenceQualityFromCaseUploads matches grouped confidence", () => {
+  const uploads = [
+    { id: "1", type: "patient_photo:preop_front" },
+    { id: "2", type: "patient_photo:graft_tray_closeup" },
+  ];
+  const fromCase = computePatientImageEvidenceQualityFromCaseUploads(uploads);
+  const g = buildPatientImageEvidenceGroups({ enabled: true, uploads });
+  const direct = buildPatientImageEvidenceConfidence(g);
+  assert.deepEqual(fromCase, direct);
+});
+
+test("legacy uploads only: case helper still returns safe overall", () => {
+  const q = computePatientImageEvidenceQualityFromCaseUploads([]);
+  assert.equal(q.overall.summaryLevel, "limited");
+  assert.equal(q.groups.baseline_evidence.level, "none");
+});
+
+test("internal evidence quality panel flag: default on, opt-out with false", () => {
+  assert.equal(isInternalImageEvidenceQualityPanelEnabled({ ENABLE_INTERNAL_IMAGE_EVIDENCE_QUALITY_PANEL: "false" }), false);
+  assert.equal(isInternalImageEvidenceQualityPanelEnabled({}), true);
 });
