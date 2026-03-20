@@ -1,6 +1,11 @@
 "use client";
 
 import { useI18n } from "@/components/i18n/I18nProvider";
+import type { SupportedLocale } from "@/lib/i18n/constants";
+import {
+  resolvePatientSafeSummaryDisclosureState,
+  type PatientSafeSummaryFallbackReason,
+} from "@/lib/reports/patientSafeSummaryDisclosure";
 import type { PatientSafeSummaryObservation } from "@/lib/reports/patientSafeSummary";
 
 function scoreChip(score?: number | null) {
@@ -16,13 +21,22 @@ export default function PatientSafeSummaryShell({
   score,
   observations,
   translatedNarrativeActive = false,
+  requestedLocale = "en",
+  fallbackReason,
 }: {
   statusLabel: string;
   score?: number | null;
   observations: PatientSafeSummaryObservation[];
   translatedNarrativeActive?: boolean;
+  requestedLocale?: SupportedLocale;
+  fallbackReason?: PatientSafeSummaryFallbackReason;
 }) {
   const { t } = useI18n();
+  const disclosureState = resolvePatientSafeSummaryDisclosureState({
+    requestedLocale,
+    translatedNarrativeActive,
+    fallbackReason,
+  });
 
   const stageLabel = (stage: PatientSafeSummaryObservation["stage"]) =>
     t(`dashboard.patient.safeSummary.stages.${stage}`);
@@ -36,16 +50,20 @@ export default function PatientSafeSummaryShell({
               {t("dashboard.patient.safeSummary.badges.localizedShell")}
             </span>
             <span className="rounded-full border border-white/15 bg-white/5 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-200">
-              {translatedNarrativeActive
+              {disclosureState === "translated_pilot_active"
                 ? t("dashboard.patient.safeSummary.badges.translatedNarrativePilot")
-                : t("dashboard.patient.safeSummary.badges.englishNarrative")}
+                : disclosureState === "english_source_translation_unavailable"
+                  ? t("dashboard.patient.safeSummary.badges.translationAvailability")
+                  : t("dashboard.patient.safeSummary.badges.englishNarrative")}
             </span>
           </div>
           <h2 className="mt-3 text-lg font-semibold text-white">{t("dashboard.patient.safeSummary.title")}</h2>
           <p className="mt-1 text-sm text-slate-200/80">
-            {translatedNarrativeActive
+            {disclosureState === "translated_pilot_active"
               ? t("dashboard.patient.safeSummary.subtitleTranslated")
-              : t("dashboard.patient.safeSummary.subtitle")}
+              : disclosureState === "english_source_translation_unavailable"
+                ? t("dashboard.patient.safeSummary.subtitleTranslationUnavailable")
+                : t("dashboard.patient.safeSummary.subtitle")}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -61,9 +79,11 @@ export default function PatientSafeSummaryShell({
       <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-4">
         <h3 className="text-sm font-semibold text-white">{t("dashboard.patient.safeSummary.observationsTitle")}</h3>
         <p className="mt-1 text-xs text-slate-300/80">
-          {translatedNarrativeActive
+          {disclosureState === "translated_pilot_active"
             ? t("dashboard.patient.safeSummary.observationsHintTranslated")
-            : t("dashboard.patient.safeSummary.observationsHint")}
+            : disclosureState === "english_source_translation_unavailable"
+              ? t("dashboard.patient.safeSummary.observationsHintTranslationUnavailable")
+              : t("dashboard.patient.safeSummary.observationsHint")}
         </p>
 
         {observations.length === 0 ? (
@@ -86,9 +106,11 @@ export default function PatientSafeSummaryShell({
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
         <p className="text-xs leading-relaxed text-slate-300/80">
-          {translatedNarrativeActive
+          {disclosureState === "translated_pilot_active"
             ? t("dashboard.patient.safeSummary.disclaimerTranslated")
-            : t("dashboard.patient.safeSummary.disclaimer")}
+            : disclosureState === "english_source_translation_unavailable"
+              ? t("dashboard.patient.safeSummary.disclaimerTranslationUnavailable")
+              : t("dashboard.patient.safeSummary.disclaimer")}
         </p>
         <p className="text-xs font-medium text-cyan-100">{t("dashboard.patient.safeSummary.actionPrompt")}</p>
       </div>

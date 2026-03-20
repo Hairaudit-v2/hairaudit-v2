@@ -170,3 +170,20 @@ The ops panel now shows:
 - persisted review note
 
 This remains auditor-only internal tooling and is not shown to patients.
+
+## Batch 22 patient-facing trust/disclosure refinement
+
+Batch 22 refines patient-facing summary disclosure copy while preserving the same pilot serving logic.
+
+Patient-facing summary disclosure now clearly distinguishes:
+
+- translated Spanish summary currently active
+- English source summary shown by default
+- English source summary shown because translated availability can vary
+
+Guidelines used in this pass:
+
+- calm, non-alarming wording
+- no technical/internal trace details shown to patients
+- explicit reminder that English source remains authoritative
+- clear note that translation availability can vary by case/review state

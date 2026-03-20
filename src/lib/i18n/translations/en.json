@@ -619,19 +619,23 @@
         "title": "Patient-safe summary",
         "subtitle": "Localized framing is shown here. Generated clinical observation text remains in English for now.",
         "subtitleTranslated": "Localized framing is shown here. This case is using the Spanish patient-safe summary translation pilot while English remains the source record.",
+        "subtitleTranslationUnavailable": "Localized framing is shown here. The English source summary is currently shown because translated summary availability can vary by case and review status.",
         "statusLabel": "Status:",
         "scoreLabel": "Score:",
         "observationsTitle": "Structured observations",
         "observationsHint": "These items come from the current report summary, but only the shell labels are translated in this phase.",
         "observationsHintTranslated": "These items come from the current report summary and are being shown through the bounded Spanish patient-safe summary translation pilot.",
+        "observationsHintTranslationUnavailable": "These items come from the report summary and are currently shown from the English source version.",
         "noObservations": "No structured summary observations are available yet for this case.",
         "disclaimer": "This summary shell is localized for easier navigation. Generated narrative, findings, and recommendations are still shown in their original English output.",
         "disclaimerTranslated": "Spanish translated summary text is shown only for this patient-safe pilot surface. The English source summary remains authoritative, and the full report is unchanged.",
+        "disclaimerTranslationUnavailable": "When a translated summary is not currently available, we show the English source summary so your case information remains consistent.",
         "actionPrompt": "Use the report actions on this page to open or download the full report.",
         "badges": {
           "localizedShell": "Localized shell",
           "englishNarrative": "English narrative",
-          "translatedNarrativePilot": "Spanish summary pilot"
+          "translatedNarrativePilot": "Spanish summary pilot",
+          "translationAvailability": "English source shown"
         },
         "stages": {
           "preop": "Pre-op",

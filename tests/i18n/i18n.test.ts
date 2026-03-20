@@ -34,6 +34,7 @@ import {
   resolvePatientSafeSummaryNarrativePresentation,
   validatePatientSafeSummaryReviewAction,
 } from "@/lib/reports/patientSafeSummaryNarrativeTranslation";
+import { resolvePatientSafeSummaryDisclosureState } from "@/lib/reports/patientSafeSummaryDisclosure";
 import { createLocalizedPageMetadata, localeFromAcceptLanguage } from "@/lib/seo/localeMetadata";
 import {
   buildLocalizedPublicPathname,
@@ -422,6 +423,32 @@ test("validatePatientSafeSummaryReviewAction: rejection requires rationale note"
   assert.equal(validatePatientSafeSummaryReviewAction({ action: "reset_review" }).ok, true);
   assert.equal(validatePatientSafeSummaryReviewAction({ action: "reject", reviewNotes: "Needs terminology correction." }).ok, true);
   assert.equal(validatePatientSafeSummaryReviewAction({ action: "reject", reviewNotes: "   " }).ok, false);
+});
+
+test("resolvePatientSafeSummaryDisclosureState: translated state when pilot text is active", () => {
+  const state = resolvePatientSafeSummaryDisclosureState({
+    requestedLocale: "es",
+    translatedNarrativeActive: true,
+  });
+  assert.equal(state, "translated_pilot_active");
+});
+
+test("resolvePatientSafeSummaryDisclosureState: English default for unsupported locale", () => {
+  const state = resolvePatientSafeSummaryDisclosureState({
+    requestedLocale: "en",
+    translatedNarrativeActive: false,
+    fallbackReason: "unsupported_locale",
+  });
+  assert.equal(state, "english_source_default");
+});
+
+test("resolvePatientSafeSummaryDisclosureState: Spanish fallback shows translation-availability disclosure", () => {
+  const state = resolvePatientSafeSummaryDisclosureState({
+    requestedLocale: "es",
+    translatedNarrativeActive: false,
+    fallbackReason: "generation_failed",
+  });
+  assert.equal(state, "english_source_translation_unavailable");
 });
 
 test("formatTemplate: replaces placeholders", () => {

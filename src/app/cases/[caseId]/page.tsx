@@ -697,6 +697,8 @@ export default async function Page({
               score={latestReportDisplayScore}
               observations={patientSafeSummaryNarrative.observations}
               translatedNarrativeActive={patientSafeSummaryNarrative.translatedNarrativeActive}
+              requestedLocale={seoLocale}
+              fallbackReason={patientSafeSummaryNarrative.fallbackReason}
             />
           )}
           {isAuditor && latestReport && (
