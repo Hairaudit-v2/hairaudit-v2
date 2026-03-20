@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { type AuditMode } from "@/lib/pdf/reportBuilder";
 import { runAIAudit } from "@/lib/ai/audit";
 import { buildPatientImageEvidenceGroups } from "@/lib/audit/patientAiImageEvidence";
+import { buildPatientImageEvidenceConfidence } from "@/lib/audit/patientImageEvidenceConfidence";
 import { isAiExtendedImageEvidenceEnabled } from "@/lib/features/enableAiExtendedImageEvidence";
 import { runGraftIntegrityModelEstimate } from "@/lib/ai/graftIntegrity";
 import { runDoctorScoringNarrative, DEFAULT_PROTOCOL_CATALOG, DEFAULT_TRAINING_MODULE_CATALOG } from "@/lib/ai/runDoctorScoringNarrative";
@@ -751,6 +752,7 @@ export const runAudit = inngest.createFunction(
           prepared_path?: string;
         }[],
       });
+      const patientImageEvidenceConfidence = buildPatientImageEvidenceConfidence(patientImageEvidenceGroups);
 
       return await runAIAudit({
         patient_answers: patientAnswers,
@@ -766,7 +768,7 @@ export const runAudit = inngest.createFunction(
         failedImageKeys: (preparedVision.manifest.errors ?? []).map((e) => String(e).split(":")[0] ?? String(e)),
         requestedImageCount: imageIngestionStats.selected_count,
         auditMode: aiAuditMode,
-        ...(patientImageEvidenceGroups.enabled ? { patientImageEvidenceGroups } : {}),
+        ...(aiExtendedEvidence ? { patientImageEvidenceGroups, patientImageEvidenceConfidence } : {}),
       });
     });
 

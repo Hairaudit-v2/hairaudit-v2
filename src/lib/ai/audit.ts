@@ -8,6 +8,10 @@ import {
   formatPatientImageEvidenceGroupsForPrompt,
   type PatientImageEvidenceGroupsResult,
 } from "@/lib/audit/patientAiImageEvidence";
+import {
+  formatPatientImageEvidenceConfidenceForPrompt,
+  type PatientImageEvidenceConfidenceResult,
+} from "@/lib/audit/patientImageEvidenceConfidence";
 
 export interface PatientBaseline {
   patient_age: number;
@@ -125,6 +129,11 @@ export type AIAuditInput = {
    * Does not change scoring; omitted when AI extended evidence flag is off.
    */
   patientImageEvidenceGroups?: PatientImageEvidenceGroupsResult | null;
+  /**
+   * Stage 5 (optional): deterministic sufficiency labels for grouped patient photos (prompt context only).
+   * Omitted when AI extended evidence flag is off.
+   */
+  patientImageEvidenceConfidence?: PatientImageEvidenceConfidenceResult | null;
 };
 
 export type AIAuditResult = {
@@ -860,6 +869,11 @@ export async function runAIAudit(input: AIAuditInput): Promise<AIAuditResult> {
       ? `\n## Patient image evidence groups (reference layout only)\n${formatPatientImageEvidenceGroupsForPrompt(input.patientImageEvidenceGroups)}\n`
       : "";
 
+  const patientImageEvidenceConfidenceAddon =
+    input.patientImageEvidenceGroups?.enabled && input.patientImageEvidenceConfidence
+      ? `\n## Patient image evidence sufficiency (reference only)\n${formatPatientImageEvidenceConfidenceForPrompt(input.patientImageEvidenceConfidence)}\n`
+      : "";
+
   const systemPrompt = `You are an expert hair transplant auditor producing a forensic audit for HairAudit + Follicle Intelligence.
 
 ## Safety + legal guardrails (STRICT)
@@ -984,7 +998,7 @@ Safety:
         `Auto-detected missing photos: ${autoMissingPhotos.length ? autoMissingPhotos.join(", ") : "(none)"}\n\n` +
         `## Patient baseline\n${baselineBlock}\n\n` +
         `## Enhanced patient answers (structured)\n${enhancedPatientBlock}\n\n` +
-        `## Patient answers\n${patientBlock}\n\n${patientImageEvidenceGroupsAddon}` +
+        `## Patient answers\n${patientBlock}\n\n${patientImageEvidenceGroupsAddon}${patientImageEvidenceConfidenceAddon}` +
         `## Doctor answers\n${doctorBlock}\n\n## Clinic answers\n${clinicBlock}\n\n` +
         `Return a forensic audit that strictly conforms to the provided JSON Schema (no extra keys).`,
     },
