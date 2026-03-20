@@ -8,6 +8,10 @@ import {
 } from "@/lib/photoCategories";
 import UploadedThumb from "@/components/uploads/UploadedThumb";
 import ExtendedPatientPhotoUploadGroups from "@/components/patient/ExtendedPatientPhotoUploadGroups";
+import PatientImageEvidenceNudgeCallout from "@/components/patient/PatientImageEvidenceNudgeCallout";
+import { computePatientImageEvidenceQualityFromCaseUploads } from "@/lib/audit/patientImageEvidenceConfidence";
+import { buildPatientImageEvidenceUploadNudges } from "@/lib/audit/patientImageEvidenceUploadNudges";
+import { isPatientImageEvidenceNudgesEnabled } from "@/lib/features/enablePatientImageEvidenceNudges";
 
 /* ---------------- Types ---------------- */
 
@@ -60,6 +64,14 @@ export default function PatientPhotoUpload({
       .filter((c) => c.required)
       .every((c) => (uploadsByCategory[c.key]?.length ?? 0) > 0);
   }, [uploadsByCategory]);
+
+  const evidenceNudges = useMemo(() => {
+    if (!isPatientImageEvidenceNudgesEnabled()) return [];
+    const q = computePatientImageEvidenceQualityFromCaseUploads(
+      uploads.map((u) => ({ id: u.id, type: u.type, storage_path: u.storage_path }))
+    );
+    return buildPatientImageEvidenceUploadNudges(q);
+  }, [uploads]);
 
   async function uploadFiles(category: PatientPhotoCategory, files: File[]) {
     if (isLocked || !files.length) return;
@@ -120,6 +132,8 @@ export default function PatientPhotoUpload({
           </div>
         )}
       </header>
+
+      {evidenceNudges.length > 0 ? <PatientImageEvidenceNudgeCallout nudges={evidenceNudges} /> : null}
 
       <div className="space-y-4">
         {PATIENT_PHOTO_CATEGORIES.map((cat) => (

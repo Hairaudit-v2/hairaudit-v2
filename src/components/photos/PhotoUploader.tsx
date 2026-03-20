@@ -18,6 +18,10 @@ import {
 } from "@/lib/photoSchemas";
 import UploadedThumb from "@/components/uploads/UploadedThumb";
 import ExtendedPatientPhotoUploadGroups from "@/components/patient/ExtendedPatientPhotoUploadGroups";
+import PatientImageEvidenceNudgeCallout from "@/components/patient/PatientImageEvidenceNudgeCallout";
+import { computePatientImageEvidenceQualityFromCaseUploads } from "@/lib/audit/patientImageEvidenceConfidence";
+import { buildPatientImageEvidenceUploadNudges } from "@/lib/audit/patientImageEvidenceUploadNudges";
+import { isPatientImageEvidenceNudgesEnabled } from "@/lib/features/enablePatientImageEvidenceNudges";
 
 type UploadRow = {
   id: string;
@@ -99,6 +103,14 @@ export default function PhotoUploader({
   const requiredKeys = getRequiredKeys(submitterType);
   const missingRequired = requiredKeys.filter((k) => !completed.has(k));
   const canProceed = missingRequired.length === 0;
+
+  const evidenceNudges = useMemo(() => {
+    if (submitterType !== "patient" || !isPatientImageEvidenceNudgesEnabled()) return [];
+    const q = computePatientImageEvidenceQualityFromCaseUploads(
+      uploads.map((u) => ({ id: u.id, type: u.type, storage_path: u.storage_path }))
+    );
+    return buildPatientImageEvidenceUploadNudges(q);
+  }, [submitterType, uploads]);
 
   async function uploadFiles(category: string, files: File[]) {
     if (isLocked || !files.length) return;
@@ -201,6 +213,12 @@ export default function PhotoUploader({
             Case submitted. Photos are locked.
           </div>
         )}
+
+        {submitterType === "patient" && evidenceNudges.length > 0 ? (
+          <div className="mt-4">
+            <PatientImageEvidenceNudgeCallout nudges={evidenceNudges} />
+          </div>
+        ) : null}
       </header>
 
       <div className="space-y-4">

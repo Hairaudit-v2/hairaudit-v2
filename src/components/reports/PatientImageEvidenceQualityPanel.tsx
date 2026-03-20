@@ -6,6 +6,8 @@ import {
   PATIENT_IMAGE_EVIDENCE_QUALITY_GROUP_ORDER,
   PATIENT_IMAGE_EVIDENCE_QUALITY_LABELS,
 } from "@/lib/audit/patientImageEvidenceConfidence";
+import { buildPatientImageEvidenceUploadNudges } from "@/lib/audit/patientImageEvidenceUploadNudges";
+import PatientImageEvidenceNudgeCallout from "@/components/patient/PatientImageEvidenceNudgeCallout";
 
 function levelPillClass(level: PatientImageEvidenceSufficiencyLevel): string {
   switch (level) {
@@ -27,6 +29,8 @@ export default function PatientImageEvidenceQualityPanel({
 }: {
   result: PatientImageEvidenceConfidenceResult;
 }) {
+  const uploadNudges = buildPatientImageEvidenceUploadNudges(result);
+
   return (
     <section
       className="mt-6 rounded-2xl border border-slate-700/80 bg-slate-900/50 p-5"
@@ -71,6 +75,15 @@ export default function PatientImageEvidenceQualityPanel({
           );
         })}
       </ul>
+
+      {uploadNudges.length > 0 ? (
+        <div className="mt-5 pt-4 border-t border-slate-800/80">
+          <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-slate-500">
+            Suggested optional uploads (review)
+          </p>
+          <PatientImageEvidenceNudgeCallout nudges={uploadNudges} variant="auditor" />
+        </div>
+      ) : null}
     </section>
   );
 }
