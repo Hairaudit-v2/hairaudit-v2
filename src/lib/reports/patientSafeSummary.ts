@@ -14,8 +14,9 @@ export type PatientSafeSummaryObservation = {
 };
 
 /**
- * Generated narrative remains canonical English for now. This helper only structures
- * report-summary excerpts so app-owned framing can be localized safely.
+ * Generated narrative source remains canonical English. A later bounded render-layer
+ * pilot may serve translated patient-safe summary observations, but this helper still
+ * structures the English source summary only.
  */
 export const PATIENT_SAFE_SUMMARY_NARRATIVE_MODE = "english_generated" as const;
 

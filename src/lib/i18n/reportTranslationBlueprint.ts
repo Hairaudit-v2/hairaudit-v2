@@ -15,6 +15,7 @@ export type ReportTranslationStatus =
 /** Coarse sections that could be translated independently in a future pipeline. */
 export type ReportTranslatedSectionId =
   | "patientSafeSummaryShell"
+  | "patientSafeSummaryNarrative"
   | "executiveSummary"
   | "findings"
   | "recommendations"
@@ -170,6 +171,12 @@ export const REPORT_NARRATIVE_TRANSLATION_POLICIES: Record<
 > = {
   patientSafeSummaryShell: {
     category: "app_owned_shell",
+    machineTranslationAllowed: true,
+    humanReviewRequirement: "recommended",
+    patientVisible: true,
+  },
+  patientSafeSummaryNarrative: {
+    category: "patient_safe_generated",
     machineTranslationAllowed: true,
     humanReviewRequirement: "recommended",
     patientVisible: true,

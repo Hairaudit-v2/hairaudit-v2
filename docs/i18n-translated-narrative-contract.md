@@ -1,6 +1,8 @@
 # Translated narrative contract (Batch 17)
 
-This batch defines the future contract for translated report narrative content without enabling live AI translation, translated PDFs, or patient-visible narrative switching.
+This batch defines the future contract for translated report narrative content without enabling broad live AI translation, translated PDFs, or report-wide patient-visible narrative switching.
+
+Batch 19 later adds one narrow live exception for the patient-safe summary pilot only. See `docs/i18n-patient-safe-summary-translation-pilot.md`.
 
 ## Current boundary
 

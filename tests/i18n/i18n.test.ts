@@ -24,6 +24,13 @@ import {
   isReportNarrativeTranslationStale,
 } from "@/lib/i18n/reportTranslationBlueprint";
 import { buildPatientSafeSummaryObservations } from "@/lib/reports/patientSafeSummary";
+import {
+  canServePatientSafeSummaryNarrativeTranslation,
+  createPatientSafeSummaryNarrativeContentVersion,
+  createPatientSafeSummaryNarrativeSourceSnapshot,
+  getPatientSafeSummaryPilotTargetLocale,
+  PATIENT_SAFE_SUMMARY_TRANSLATION_SECTION_ID,
+} from "@/lib/reports/patientSafeSummaryNarrativeTranslation";
 import { createLocalizedPageMetadata, localeFromAcceptLanguage } from "@/lib/seo/localeMetadata";
 import {
   buildLocalizedPublicPathname,
@@ -151,6 +158,154 @@ test("buildPublicLocaleLanguageAlternates: future distinct locale URLs get full 
     es: "/es/how-it-works",
     "x-default": "/how-it-works",
   });
+});
+
+test("getPatientSafeSummaryPilotTargetLocale: only Spanish is live in pilot", () => {
+  assert.equal(getPatientSafeSummaryPilotTargetLocale("es"), "es");
+  assert.equal(getPatientSafeSummaryPilotTargetLocale("en"), null);
+});
+
+test("createPatientSafeSummaryNarrativeSourceSnapshot: binds source to report version", () => {
+  const snapshot = createPatientSafeSummaryNarrativeSourceSnapshot({
+    observations: [{ stage: "day0", text: "Healing irregularity noted near day 0 recipient zone." }],
+    reportId: "report-123",
+    reportVersion: 4,
+  });
+  assert.equal(snapshot.locale, "en");
+  assert.equal(snapshot.contentVersion, createPatientSafeSummaryNarrativeContentVersion("report-123", 4));
+  assert.match(snapshot.text, /\[day0\]/);
+});
+
+test("canServePatientSafeSummaryNarrativeTranslation: serves recommended-review pilot translation when fresh", () => {
+  const sourceSnapshot = createPatientSafeSummaryNarrativeSourceSnapshot({
+    observations: [{ stage: "preop", text: "Pre-op donor photos show mild asymmetry." }],
+    reportId: "report-123",
+    reportVersion: 2,
+  });
+  assert.equal(
+    canServePatientSafeSummaryNarrativeTranslation({
+      section: {
+        sectionId: PATIENT_SAFE_SUMMARY_TRANSLATION_SECTION_ID,
+        sourceLocale: "en",
+        targetLocale: "es",
+        status: "generated_unreviewed",
+        policy: {
+          category: "patient_safe_generated",
+          machineTranslationAllowed: true,
+          humanReviewRequirement: "recommended",
+          patientVisible: true,
+        },
+        sourceSnapshot,
+        translatedText: "Las fotos preoperatorias del área donante muestran una leve asimetría.",
+        review: { status: "not_reviewed" },
+      },
+      requestedLocale: "es",
+      currentSourceText: sourceSnapshot.text,
+      currentContentVersion: sourceSnapshot.contentVersion ?? "",
+      translatedItems: ["Las fotos preoperatorias del área donante muestran una leve asimetría."],
+      sourceObservationCount: 1,
+    }),
+    true
+  );
+});
+
+test("canServePatientSafeSummaryNarrativeTranslation: stale source falls back", () => {
+  const sourceSnapshot = createPatientSafeSummaryNarrativeSourceSnapshot({
+    observations: [{ stage: "preop", text: "Pre-op donor photos show mild asymmetry." }],
+    reportId: "report-123",
+    reportVersion: 2,
+  });
+  assert.equal(
+    canServePatientSafeSummaryNarrativeTranslation({
+      section: {
+        sectionId: PATIENT_SAFE_SUMMARY_TRANSLATION_SECTION_ID,
+        sourceLocale: "en",
+        targetLocale: "es",
+        status: "generated_unreviewed",
+        policy: {
+          category: "patient_safe_generated",
+          machineTranslationAllowed: true,
+          humanReviewRequirement: "recommended",
+          patientVisible: true,
+        },
+        sourceSnapshot,
+        translatedText: "Las fotos preoperatorias del área donante muestran una leve asimetría.",
+        review: { status: "not_reviewed" },
+      },
+      requestedLocale: "es",
+      currentSourceText: sourceSnapshot.text,
+      currentContentVersion: createPatientSafeSummaryNarrativeContentVersion("report-123", 3),
+      translatedItems: ["Las fotos preoperatorias del área donante muestran una leve asimetría."],
+      sourceObservationCount: 1,
+    }),
+    false
+  );
+});
+
+test("canServePatientSafeSummaryNarrativeTranslation: unsupported locale does not serve pilot text", () => {
+  const sourceSnapshot = createPatientSafeSummaryNarrativeSourceSnapshot({
+    observations: [{ stage: "preop", text: "Pre-op donor photos show mild asymmetry." }],
+    reportId: "report-123",
+    reportVersion: 2,
+  });
+  assert.equal(
+    canServePatientSafeSummaryNarrativeTranslation({
+      section: {
+        sectionId: PATIENT_SAFE_SUMMARY_TRANSLATION_SECTION_ID,
+        sourceLocale: "en",
+        targetLocale: "es",
+        status: "reviewed_approved",
+        policy: {
+          category: "patient_safe_generated",
+          machineTranslationAllowed: true,
+          humanReviewRequirement: "recommended",
+          patientVisible: true,
+        },
+        sourceSnapshot,
+        translatedText: "Las fotos preoperatorias del área donante muestran una leve asimetría.",
+        review: { status: "approved" },
+      },
+      requestedLocale: "en",
+      currentSourceText: sourceSnapshot.text,
+      currentContentVersion: sourceSnapshot.contentVersion ?? "",
+      translatedItems: ["Las fotos preoperatorias del área donante muestran una leve asimetría."],
+      sourceObservationCount: 1,
+    }),
+    false
+  );
+});
+
+test("canServePatientSafeSummaryNarrativeTranslation: rejected review never serves", () => {
+  const sourceSnapshot = createPatientSafeSummaryNarrativeSourceSnapshot({
+    observations: [{ stage: "preop", text: "Pre-op donor photos show mild asymmetry." }],
+    reportId: "report-123",
+    reportVersion: 2,
+  });
+  assert.equal(
+    canServePatientSafeSummaryNarrativeTranslation({
+      section: {
+        sectionId: PATIENT_SAFE_SUMMARY_TRANSLATION_SECTION_ID,
+        sourceLocale: "en",
+        targetLocale: "es",
+        status: "reviewed_approved",
+        policy: {
+          category: "patient_safe_generated",
+          machineTranslationAllowed: true,
+          humanReviewRequirement: "recommended",
+          patientVisible: true,
+        },
+        sourceSnapshot,
+        translatedText: "Las fotos preoperatorias del área donante muestran una leve asimetría.",
+        review: { status: "rejected" },
+      },
+      requestedLocale: "es",
+      currentSourceText: sourceSnapshot.text,
+      currentContentVersion: sourceSnapshot.contentVersion ?? "",
+      translatedItems: ["Las fotos preoperatorias del área donante muestran una leve asimetría."],
+      sourceObservationCount: 1,
+    }),
+    false
+  );
 });
 
 test("formatTemplate: replaces placeholders", () => {

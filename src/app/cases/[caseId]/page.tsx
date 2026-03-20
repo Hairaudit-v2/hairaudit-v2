@@ -61,6 +61,7 @@ import { isMissingFeatureError } from "@/lib/db/isMissingFeatureError";
 import { getTranslation } from "@/lib/i18n/getTranslation";
 import type { TranslationKey } from "@/lib/i18n/translationKeys";
 import { buildPatientSafeSummaryObservations } from "@/lib/reports/patientSafeSummary";
+import { resolvePatientSafeSummaryNarrativePresentation } from "@/lib/reports/patientSafeSummaryNarrativeTranslation";
 import { resolvePublicSeoLocale } from "@/lib/seo/localeMetadata";
 
 function scoreChipClass(score: number | null | undefined) {
@@ -541,6 +542,14 @@ export default async function Page({
     Array.isArray(graftIntegrityEstimate?.limitations) ? (graftIntegrityEstimate.limitations as string[]) : [];
   const giiNotes = typeof graftIntegrityEstimate?.auditor_notes === "string" ? (graftIntegrityEstimate.auditor_notes as string) : null;
   const summaryObservations = buildPatientSafeSummaryObservations(latestSummary);
+  const patientSafeSummaryNarrative = await resolvePatientSafeSummaryNarrativePresentation({
+    db: admin,
+    caseId: c.id,
+    reportId: latestReport?.id,
+    reportVersion: latestReport?.version,
+    requestedLocale: seoLocale,
+    sourceObservations: summaryObservations,
+  });
 
   const uploadEntryPath = showDoctorFlow
     ? `/cases/${c.id}/doctor/photos`
@@ -685,7 +694,8 @@ export default async function Page({
             <PatientSafeSummaryShell
               statusLabel={statusDisplayLabel}
               score={latestReportDisplayScore}
-              observations={summaryObservations}
+              observations={patientSafeSummaryNarrative.observations}
+              translatedNarrativeActive={patientSafeSummaryNarrative.translatedNarrativeActive}
             />
           )}
 

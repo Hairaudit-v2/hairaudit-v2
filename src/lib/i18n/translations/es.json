@@ -618,16 +618,20 @@
       "safeSummary": {
         "title": "Resumen seguro para el paciente",
         "subtitle": "Aquí se muestra solo la estructura localizada. El texto clínico generado sigue mostrándose en inglés por ahora.",
+        "subtitleTranslated": "Aquí se muestra la estructura localizada. Este caso usa el piloto de traducción al español del resumen seguro para el paciente, mientras que el inglés sigue siendo el registro fuente.",
         "statusLabel": "Estado:",
         "scoreLabel": "Puntuación:",
         "observationsTitle": "Observaciones estructuradas",
         "observationsHint": "Estos elementos provienen del resumen actual del informe, pero en esta fase solo se traduce la estructura visual.",
+        "observationsHintTranslated": "Estos elementos provienen del resumen actual del informe y se muestran mediante el piloto limitado de traducción al español del resumen seguro para el paciente.",
         "noObservations": "Aún no hay observaciones estructuradas disponibles para este caso.",
         "disclaimer": "Esta estructura del resumen está localizada para facilitar la lectura. La narrativa generada, los hallazgos y las recomendaciones siguen mostrándose en su salida original en inglés.",
+        "disclaimerTranslated": "El texto traducido al español se muestra solo en esta superficie piloto segura para el paciente. El resumen fuente en inglés sigue siendo el autoritativo y el informe completo no cambia.",
         "actionPrompt": "Use las acciones del informe en esta página para abrir o descargar el informe completo.",
         "badges": {
           "localizedShell": "Estructura localizada",
-          "englishNarrative": "Narrativa en inglés"
+          "englishNarrative": "Narrativa en inglés",
+          "translatedNarrativePilot": "Piloto de resumen en español"
         },
         "stages": {
           "preop": "Preoperatorio",

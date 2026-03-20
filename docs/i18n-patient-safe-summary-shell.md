@@ -1,4 +1,4 @@
-# Patient-safe summary shell (Batch 16)
+# Patient-safe summary shell (Batch 16 + Batch 19 pilot note)
 
 ## What is localized now
 
@@ -21,7 +21,7 @@ The following content is still shown exactly as it comes from the current report
 - PDF output
 - rubric-driven report content
 
-No scoring, finalize, storage, or PDF generation behavior was changed in this batch.
+Batch 19 adds one narrow exception: the patient case-page summary observations may be shown through a Spanish translated-narrative pilot when a fresh, allowed translation overlay exists. The English source summary remains authoritative, and full report / PDF behavior is unchanged.
 
 ## Runtime boundary
 
@@ -32,6 +32,8 @@ No scoring, finalize, storage, or PDF generation behavior was changed in this ba
 ## Additive readiness only
 
 `src/lib/i18n/reportTranslationBlueprint.ts` now includes a small `PatientSafeSummaryShellBlueprint` helper plus `patientSafeSummaryShell` as a future translation section id. These are **blueprint-only** markers for later work and are not read by current generators.
+
+See `docs/i18n-patient-safe-summary-translation-pilot.md` for the live Batch 19 pilot details.
 
 ## Next step
 
