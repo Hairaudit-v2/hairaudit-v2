@@ -32,6 +32,14 @@ import CaseNotFoundRecovery from "@/components/case/CaseNotFoundRecovery";
 import PatientImageEvidenceQualityPanel from "@/components/reports/PatientImageEvidenceQualityPanel";
 import { computePatientImageEvidenceQualityFromCaseUploads } from "@/lib/audit/patientImageEvidenceConfidence";
 import { isInternalImageEvidenceQualityPanelEnabled } from "@/lib/features/enableInternalImageEvidenceQualityPanel";
+import { buildClinicEvidencePromptsFromSufficiency } from "@/lib/audit/clinicEvidencePromptsFromSufficiency";
+import type { ClinicEvidencePrompt } from "@/lib/audit/clinicEvidencePromptsFromSufficiency";
+import { buildFollowupTimelineFromPatientUploads } from "@/lib/audit/followupTimelineFromPatientUploads";
+import type { FollowupTimelineResult } from "@/lib/audit/followupTimelineFromPatientUploads";
+import { isClinicEvidencePromptsEnabled } from "@/lib/features/enableClinicEvidencePrompts";
+import { isFollowupTimelineEnabled } from "@/lib/features/enableFollowupTimeline";
+import ClinicEvidencePromptPanel from "@/components/clinic/ClinicEvidencePromptPanel";
+import FollowupTimelinePanel from "@/components/clinic/FollowupTimelinePanel";
 
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { tryCreateSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -325,6 +333,31 @@ export default async function Page({
   const isPatientForCase = user.id === c.user_id || user.id === c.patient_id;
   const isDoctorForCase = user.id === c.doctor_id;
   const isClinicForCase = user.id === c.clinic_id;
+
+  const clinicEvidencePromptsFlag = isClinicEvidencePromptsEnabled();
+  const followupTimelineFlag = isFollowupTimelineEnabled();
+  let clinicEvidencePrompts: ClinicEvidencePrompt[] = [];
+  let clinicFollowupTimeline: FollowupTimelineResult | null = null;
+  if (isClinicForCase && (clinicEvidencePromptsFlag || followupTimelineFlag)) {
+    try {
+      const patientPhotoUploads = (uploads ?? []).filter((u) => String((u as { type?: string }).type ?? "").startsWith("patient_photo:"));
+      const q = computePatientImageEvidenceQualityFromCaseUploads(
+        patientPhotoUploads as { id?: string | null; type?: string | null; storage_path?: string | null }[]
+      );
+      if (clinicEvidencePromptsFlag) {
+        clinicEvidencePrompts = buildClinicEvidencePromptsFromSufficiency(q);
+      }
+      if (followupTimelineFlag) {
+        clinicFollowupTimeline = buildFollowupTimelineFromPatientUploads(patientPhotoUploads);
+      }
+    } catch (e) {
+      console.error(LOG_PREFIX, "clinic stage 8 evidence compute failed", { caseId, error: e });
+    }
+  }
+
+  const showClinicEvidencePromptPanel =
+    isClinicForCase && clinicEvidencePromptsFlag && clinicEvidencePrompts.length > 0;
+  const showFollowupTimelinePanel = isClinicForCase && followupTimelineFlag && clinicFollowupTimeline !== null;
 
   const showPatientFlow = isAuditor || isPatientForCase;
   const showDoctorFlow = isAuditor || isDoctorForCase;
@@ -781,6 +814,15 @@ export default async function Page({
           defaultDoctorName={doctorLabel}
         />
       )}
+
+      {showClinicEvidencePromptPanel || showFollowupTimelinePanel ? (
+        <section className="mt-6 grid gap-6 lg:grid-cols-2">
+          {showClinicEvidencePromptPanel ? <ClinicEvidencePromptPanel prompts={clinicEvidencePrompts} /> : null}
+          {showFollowupTimelinePanel && clinicFollowupTimeline ? (
+            <FollowupTimelinePanel timeline={clinicFollowupTimeline} />
+          ) : null}
+        </section>
+      ) : null}
 
       <section className="mt-6 grid gap-6 lg:grid-cols-2">
         <div className="grid gap-6">

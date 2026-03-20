@@ -19,13 +19,15 @@ export type PatientImageEvidenceUploadNudge = {
 };
 
 /** Higher-signal areas first when capping how many nudges we show */
-const NUDGE_PRIORITY: readonly PatientAiEvidenceGroupId[] = [
+export const PATIENT_IMAGE_EVIDENCE_NUDGE_PRIORITY: readonly PatientAiEvidenceGroupId[] = [
   "followup_outcome_evidence",
   "graft_handling_evidence",
   "surgical_evidence",
   "donor_monitoring_evidence",
   "baseline_evidence",
 ] as const;
+
+const NUDGE_PRIORITY = PATIENT_IMAGE_EVIDENCE_NUDGE_PRIORITY;
 
 const MAX_SPECIFIC_NUDGES = 5;
 
@@ -86,7 +88,7 @@ function recommendationForGroup(
   }
 }
 
-function allGroupedCountsZero(result: PatientImageEvidenceConfidenceResult): boolean {
+export function areAllPatientImageEvidenceGroupCountsZero(result: PatientImageEvidenceConfidenceResult): boolean {
   return NUDGE_PRIORITY.every((id) => result.groups[id].count === 0);
 }
 
@@ -96,7 +98,7 @@ function allGroupedCountsZero(result: PatientImageEvidenceConfidenceResult): boo
 export function buildPatientImageEvidenceUploadNudges(
   result: PatientImageEvidenceConfidenceResult
 ): PatientImageEvidenceUploadNudge[] {
-  if (allGroupedCountsZero(result)) {
+  if (areAllPatientImageEvidenceGroupCountsZero(result)) {
     return [
       {
         groupId: "general",
