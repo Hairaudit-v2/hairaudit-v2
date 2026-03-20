@@ -2,6 +2,8 @@ import { inngest } from "./client";
 import { createClient } from "@supabase/supabase-js";
 import { type AuditMode } from "@/lib/pdf/reportBuilder";
 import { runAIAudit } from "@/lib/ai/audit";
+import { buildPatientImageEvidenceGroups } from "@/lib/audit/patientAiImageEvidence";
+import { isAiExtendedImageEvidenceEnabled } from "@/lib/features/enableAiExtendedImageEvidence";
 import { runGraftIntegrityModelEstimate } from "@/lib/ai/graftIntegrity";
 import { runDoctorScoringNarrative, DEFAULT_PROTOCOL_CATALOG, DEFAULT_TRAINING_MODULE_CATALOG } from "@/lib/ai/runDoctorScoringNarrative";
 import { notifyPatientAuditFailed, notifyAuditorAuditFailed, notifyPatientReportReady, notifyAuditorNewAuditSubmitted } from "@/lib/email";
@@ -734,6 +736,22 @@ export const runAudit = inngest.createFunction(
               (enhanced && typeof enhanced === "object" ? (enhanced as any).baseline : null)) as Record<string, unknown> | null | undefined)
           : null;
 
+      const aiExtendedEvidence = isAiExtendedImageEvidenceEnabled();
+      const patientImageEvidenceGroups = buildPatientImageEvidenceGroups({
+        enabled: aiExtendedEvidence,
+        uploads: uploads as {
+          id?: string | null;
+          type?: string | null;
+          storage_path?: string | null;
+        }[],
+        preparedImages: (preparedVision.manifest.prepared_images ?? []) as {
+          upload_id: string;
+          category: string;
+          original_path?: string;
+          prepared_path?: string;
+        }[],
+      });
+
       return await runAIAudit({
         patient_answers: patientAnswers,
         doctor_answers: existingSummary.doctor_answers as Record<string, unknown> | null,
@@ -748,6 +766,7 @@ export const runAudit = inngest.createFunction(
         failedImageKeys: (preparedVision.manifest.errors ?? []).map((e) => String(e).split(":")[0] ?? String(e)),
         requestedImageCount: imageIngestionStats.selected_count,
         auditMode: aiAuditMode,
+        ...(patientImageEvidenceGroups.enabled ? { patientImageEvidenceGroups } : {}),
       });
     });
 

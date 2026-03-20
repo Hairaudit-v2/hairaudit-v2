@@ -4,6 +4,10 @@
 
 import OpenAI from "openai";
 import { maxTokensParam } from "@/lib/ai/openaiTokenCompat";
+import {
+  formatPatientImageEvidenceGroupsForPrompt,
+  type PatientImageEvidenceGroupsResult,
+} from "@/lib/audit/patientAiImageEvidence";
 
 export interface PatientBaseline {
   patient_age: number;
@@ -116,6 +120,11 @@ export type AIAuditInput = {
   requestedImageCount?: number;
   /** patient = evaluate only patient evidence; full = require doctor/clinic for benchmarking */
   auditMode?: AuditMode;
+  /**
+   * Stage 4 (optional): deterministic grouping of patient_photo uploads for prompt context only.
+   * Does not change scoring; omitted when AI extended evidence flag is off.
+   */
+  patientImageEvidenceGroups?: PatientImageEvidenceGroupsResult | null;
 };
 
 export type AIAuditResult = {
@@ -846,6 +855,11 @@ export async function runAIAudit(input: AIAuditInput): Promise<AIAuditResult> {
   const baselineBlock = formatPatientBaselineForPrompt(input.patient_baseline);
   const enhancedPatientBlock = formatEnhancedPatientAnswersForPrompt(input.enhanced_patient_answers);
 
+  const patientImageEvidenceGroupsAddon =
+    input.patientImageEvidenceGroups?.enabled && input.patientImageEvidenceGroups.hasAnyGroupedEvidence
+      ? `\n## Patient image evidence groups (reference layout only)\n${formatPatientImageEvidenceGroupsForPrompt(input.patientImageEvidenceGroups)}\n`
+      : "";
+
   const systemPrompt = `You are an expert hair transplant auditor producing a forensic audit for HairAudit + Follicle Intelligence.
 
 ## Safety + legal guardrails (STRICT)
@@ -970,7 +984,8 @@ Safety:
         `Auto-detected missing photos: ${autoMissingPhotos.length ? autoMissingPhotos.join(", ") : "(none)"}\n\n` +
         `## Patient baseline\n${baselineBlock}\n\n` +
         `## Enhanced patient answers (structured)\n${enhancedPatientBlock}\n\n` +
-        `## Patient answers\n${patientBlock}\n\n## Doctor answers\n${doctorBlock}\n\n## Clinic answers\n${clinicBlock}\n\n` +
+        `## Patient answers\n${patientBlock}\n\n${patientImageEvidenceGroupsAddon}` +
+        `## Doctor answers\n${doctorBlock}\n\n## Clinic answers\n${clinicBlock}\n\n` +
         `Return a forensic audit that strictly conforms to the provided JSON Schema (no extra keys).`,
     },
   ];
