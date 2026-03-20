@@ -44,6 +44,10 @@ import FollowupReminderReadinessPanel from "@/components/clinic/FollowupReminder
 import { buildFollowupReminderReadinessFromTimeline } from "@/lib/audit/followupReminderReadinessFromTimeline";
 import type { FollowupReminderReadiness } from "@/lib/audit/followupReminderReadinessFromTimeline";
 import { isClinicFollowupReminderReadinessEnabled } from "@/lib/features/enableFollowupReminderReadiness";
+import { isClinicFollowupReminderDraftsEnabled } from "@/lib/features/enableFollowupReminderDrafts";
+import { buildFollowupReminderDraftsFromReadiness } from "@/lib/audit/followupReminderDraftsFromReadiness";
+import type { FollowupReminderDraft } from "@/lib/audit/followupReminderDraftsFromReadiness";
+import FollowupReminderDraftsPanel from "@/components/clinic/FollowupReminderDraftsPanel";
 
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { tryCreateSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -341,9 +345,10 @@ export default async function Page({
   const clinicEvidencePromptsFlag = isClinicEvidencePromptsEnabled();
   const followupTimelineFlag = isFollowupTimelineEnabled();
   const followupReminderReadinessFlag = isClinicFollowupReminderReadinessEnabled();
+  const followupReminderDraftsFlag = isClinicFollowupReminderDraftsEnabled();
   let clinicEvidencePrompts: ClinicEvidencePrompt[] = [];
   let clinicFollowupTimeline: FollowupTimelineResult | null = null;
-  if (isClinicForCase && (clinicEvidencePromptsFlag || followupTimelineFlag || followupReminderReadinessFlag)) {
+  if (isClinicForCase && (clinicEvidencePromptsFlag || followupTimelineFlag || followupReminderReadinessFlag || followupReminderDraftsFlag)) {
     try {
       const patientPhotoUploads = (uploads ?? []).filter((u) => String((u as { type?: string }).type ?? "").startsWith("patient_photo:"));
       const q = computePatientImageEvidenceQualityFromCaseUploads(
@@ -352,7 +357,7 @@ export default async function Page({
       if (clinicEvidencePromptsFlag) {
         clinicEvidencePrompts = buildClinicEvidencePromptsFromSufficiency(q);
       }
-      if (followupTimelineFlag || followupReminderReadinessFlag) {
+      if (followupTimelineFlag || followupReminderReadinessFlag || followupReminderDraftsFlag) {
         clinicFollowupTimeline = buildFollowupTimelineFromPatientUploads(patientPhotoUploads);
       }
     } catch (e) {
@@ -459,7 +464,7 @@ export default async function Page({
     monthsFromBucket(normalizedPatient?.months_since ? String(normalizedPatient.months_since) : null);
 
   let clinicFollowupReminderReadiness: FollowupReminderReadiness | null = null;
-  if (isClinicForCase && followupReminderReadinessFlag && clinicFollowupTimeline) {
+  if (isClinicForCase && (followupReminderReadinessFlag || followupReminderDraftsFlag) && clinicFollowupTimeline) {
     try {
       clinicFollowupReminderReadiness = buildFollowupReminderReadinessFromTimeline(clinicFollowupTimeline, {
         monthsPostOpEstimate: monthsSinceSurgery,
@@ -468,11 +473,26 @@ export default async function Page({
       console.error(LOG_PREFIX, "followup reminder readiness compute failed", { caseId, error: e });
     }
   }
+
+  let clinicFollowupReminderDrafts: FollowupReminderDraft[] = [];
+  if (isClinicForCase && followupReminderDraftsFlag && clinicFollowupReminderReadiness) {
+    try {
+      clinicFollowupReminderDrafts = buildFollowupReminderDraftsFromReadiness(clinicFollowupReminderReadiness, {
+        caseId: c.id,
+        generatedAt: new Date().toISOString(),
+      });
+    } catch (e) {
+      console.error(LOG_PREFIX, "followup reminder drafts compute failed", { caseId, error: e });
+    }
+  }
+
   const showFollowupReminderReadinessPanel =
     isClinicForCase &&
     followupReminderReadinessFlag &&
     clinicFollowupReminderReadiness != null &&
     clinicFollowupReminderReadiness.summaryLines.length > 0;
+  const showFollowupReminderDraftsPanel =
+    isClinicForCase && followupReminderDraftsFlag && clinicFollowupReminderDrafts.length > 0;
 
   const auditType = c.audit_type ?? (c.clinic_id ? "clinic" : c.doctor_id ? "doctor" : "patient");
   const auditSource =
@@ -837,7 +857,10 @@ export default async function Page({
         />
       )}
 
-      {showClinicEvidencePromptPanel || showFollowupTimelinePanel || showFollowupReminderReadinessPanel ? (
+      {showClinicEvidencePromptPanel ||
+      showFollowupTimelinePanel ||
+      showFollowupReminderReadinessPanel ||
+      showFollowupReminderDraftsPanel ? (
         <section className="mt-6 grid gap-6 lg:grid-cols-2">
           {showClinicEvidencePromptPanel ? <ClinicEvidencePromptPanel prompts={clinicEvidencePrompts} /> : null}
           {showFollowupTimelinePanel && clinicFollowupTimeline ? (
@@ -846,6 +869,11 @@ export default async function Page({
           {showFollowupReminderReadinessPanel && clinicFollowupReminderReadiness ? (
             <div className="lg:col-span-2">
               <FollowupReminderReadinessPanel readiness={clinicFollowupReminderReadiness} />
+            </div>
+          ) : null}
+          {showFollowupReminderDraftsPanel ? (
+            <div className="lg:col-span-2">
+              <FollowupReminderDraftsPanel drafts={clinicFollowupReminderDrafts} />
             </div>
           ) : null}
         </section>
