@@ -5,6 +5,9 @@
  * Use for showing patients where their score sits across capture points.
  */
 
+import { formatTemplate } from "@/lib/i18n/formatTemplate";
+import { useI18n } from "@/components/i18n/I18nProvider";
+
 type AreaScore = {
   title: string;
   score: number;
@@ -35,6 +38,11 @@ export default function ScoreAreaGraph({
   sectionTitles = {},
   compact = false,
 }: ScoreAreaGraphProps) {
+  const { t } = useI18n();
+
+  const levelLabel = (l: "High" | "Medium" | "Low") =>
+    l === "High" ? t("reports.chrome.levelHigh") : l === "Medium" ? t("reports.chrome.levelMedium") : t("reports.chrome.levelLow");
+
   const domainOrder = [
     "consultation_indication",
     "donor_management",
@@ -79,8 +87,8 @@ export default function ScoreAreaGraph({
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4">
-      <h2 className="font-semibold text-slate-900 mb-1">Score by area</h2>
-      <p className="text-xs text-slate-500 mb-3">Your score for each capture point (out of 5, with level)</p>
+      <h2 className="font-semibold text-slate-900 mb-1">{t("reports.chrome.scoreByAreaTitle")}</h2>
+      <p className="text-xs text-slate-500 mb-3">{t("reports.chrome.scoreByAreaSubtitle")}</p>
 
       {areaScores.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -104,7 +112,7 @@ export default function ScoreAreaGraph({
                 <span className={`font-semibold ${
                   a.level === "High" ? "text-emerald-600" : a.level === "Medium" ? "text-amber-600" : "text-red-600"
                 }`}>
-                  {a.level} level
+                  {formatTemplate(t("reports.chrome.scoreLevelSuffix"), { level: levelLabel(a.level) })}
                 </span>
               </div>
             </div>
@@ -114,7 +122,7 @@ export default function ScoreAreaGraph({
 
       {sectionScoresList.length > 0 && !compact && (
         <div className="mt-4 pt-4 border-t border-slate-100">
-          <div className="text-xs font-semibold text-slate-500 mb-2">Detailed section scores</div>
+          <div className="text-xs font-semibold text-slate-500 mb-2">{t("reports.chrome.detailedSectionScores")}</div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
             {sectionScoresList.map((a) => (
               <div
@@ -132,7 +140,7 @@ export default function ScoreAreaGraph({
                 </div>
                 <div className="flex justify-between text-[10px] text-slate-500">
                   <span>{a.outOf5}/5</span>
-                  <span className="font-medium">{a.level}</span>
+                  <span className="font-medium">{levelLabel(a.level)}</span>
                 </div>
               </div>
             ))}

@@ -1,4 +1,5 @@
 export * from "./constants";
+export * from "./formatTemplate";
 export * from "./getTranslation";
 export * from "./localeContexts";
 export * from "./report";

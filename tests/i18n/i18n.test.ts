@@ -10,6 +10,7 @@ import {
   isSupportedLocale,
   normalizeLocale,
 } from "@/lib/i18n/constants";
+import { formatTemplate } from "@/lib/i18n/formatTemplate";
 import { getTranslation } from "@/lib/i18n/getTranslation";
 import { getReportGlossaryLabel } from "@/lib/i18n/reportTerminology";
 import { defaultReportOutputLocale, describeLocaleIntent, normalizeUiLocale } from "@/lib/i18n/localeContexts";
@@ -94,6 +95,11 @@ test("localeFromAcceptLanguage: unknown languages fall back to en", () => {
 test("localeFromAcceptLanguage: null or empty is en", () => {
   assert.equal(localeFromAcceptLanguage(null), "en");
   assert.equal(localeFromAcceptLanguage(""), "en");
+});
+
+test("formatTemplate: replaces placeholders", () => {
+  assert.equal(formatTemplate("{{count}} items", { count: 3 }), "3 items");
+  assert.equal(formatTemplate("Score {{score}}", { score: 72 }), "Score 72");
 });
 
 test("getReportGlossaryLabel: Spanish donor management term", () => {

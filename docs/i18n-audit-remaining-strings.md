@@ -166,6 +166,10 @@ Public marketing UI (no SEO metadata changes, no locale routes): **`marketing.*`
 
 **Still later (not batch 7):** other static marketing routes (`/about`, `/faq`, program pages), **`professionals/*` article bodies**, **`/professionals/apply`** cards, **`GlobalHairIntelligenceSection`** internal node labels, tier badge spellings in **`CertifiedClinicsSection`**.
 
+## Batch 10 (implemented)
+
+**Report page chrome only** (HTML `/reports/.../html`, case **Latest report** section, **VersionHistoryDrawer**, **LatestReportCard**, **ReportShareButton**, **DownloadReport** errors/labels, **ScoreAreaGraph** headings/levels, **demo-report** marketing shell): top-level **`reports.*`** in `en`/`es` (`chrome`, `actions`, `status`, `errors`; nested `chrome.html`, `chrome.demo`). Server surfaces use **`resolvePublicSeoLocale`** + **`getTranslation`**; client uses **`useI18n`**. **`formatTemplate`** for `{{count}}` / `{{score}}` / `{{version}}`. Generated findings, AI text, rubric titles from payload, and PDF pipelines unchanged.
+
 ## Batch 9 (implemented — architecture only)
 
 **Report-adjacent i18n groundwork** (no report body / PDF / AI changes): **`localeContexts.ts`** (UI vs report-output vs source locale), **`reportTranslationBlueprint.ts`** (future translation plan types), **`reportTerminology.ts`** + **`reportGlossary.*`** in `en`/`es` (controlled labels, not wired to generators). **`docs/i18n-report-translation-pipeline.md`**. **`REPORT_CONTENT_DEFAULT_LOCALE`** and `report.ts` JSDoc updated.

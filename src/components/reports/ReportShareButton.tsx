@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useI18n } from "@/components/i18n/I18nProvider";
 
 type Props = {
   /** When set, copies the case page URL to clipboard. When unset, shows "Coming soon". */
@@ -10,6 +11,7 @@ type Props = {
 };
 
 export default function ReportShareButton({ caseId, variant = "default" }: Props) {
+  const { t } = useI18n();
   const [copied, setCopied] = useState(false);
   const [showComingSoon, setShowComingSoon] = useState(false);
 
@@ -30,7 +32,11 @@ export default function ReportShareButton({ caseId, variant = "default" }: Props
     setTimeout(() => setShowComingSoon(false), 2000);
   }
 
-  const label = copied ? "Link copied" : showComingSoon ? "Coming soon" : "Share report";
+  const label = copied
+    ? t("reports.actions.linkCopied")
+    : showComingSoon
+      ? t("reports.actions.comingSoon")
+      : t("reports.actions.shareReport");
   const baseClass =
     variant === "compact"
       ? "rounded-lg border border-white/20 bg-white/10 px-2.5 py-1.5 text-xs font-medium text-slate-100 hover:bg-white/15"

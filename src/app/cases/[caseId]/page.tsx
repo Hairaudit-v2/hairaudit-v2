@@ -35,6 +35,9 @@ import { tryCreateSupabaseAdminClient } from "@/lib/supabase/admin";
 import { parseRole, USER_ROLES } from "@/lib/roles";
 import { resolveAuditorRole } from "@/lib/auth/isAuditor";
 import { isMissingFeatureError } from "@/lib/db/isMissingFeatureError";
+import { getTranslation } from "@/lib/i18n/getTranslation";
+import type { TranslationKey } from "@/lib/i18n/translationKeys";
+import { resolvePublicSeoLocale } from "@/lib/seo/localeMetadata";
 
 function scoreChipClass(score: number | null | undefined) {
   if (typeof score !== "number") return "border-slate-300/25 bg-slate-300/10 text-slate-100";
@@ -100,6 +103,9 @@ export default async function Page({
     throw e;
   }
   if (!user) redirect("/login");
+
+  const seoLocale = await resolvePublicSeoLocale();
+  const tr = (key: TranslationKey) => getTranslation(key, seoLocale);
 
   let admin: ReturnType<typeof tryCreateSupabaseAdminClient>;
   try {
@@ -316,13 +322,13 @@ export default async function Page({
   const isCompleteWithReport = status === "complete" && hasReportPdf;
   const isProcessing = status === "submitted" || status === "processing";
   const statusDisplayLabel = isCompleteWithReport
-    ? "Report Ready"
+    ? tr("dashboard.reports.statusReportReady")
     : isProcessing
-      ? "Processing"
+      ? tr("dashboard.reports.statusProcessing")
       : status === "audit_failed"
-        ? "Audit failed"
+        ? tr("dashboard.reports.statusAuditFailed")
         : status === "complete"
-          ? "Complete"
+          ? tr("dashboard.reports.statusComplete")
           : status.replaceAll("_", " ");
   const statusPill =
     isCompleteWithReport
@@ -606,7 +612,9 @@ export default async function Page({
               </div>
               <div className={`rounded-xl border p-3 ${scoreChipClass(typeof reportScore === "number" ? reportScore : null)}`}>
                 <p className="text-xs uppercase tracking-wide text-slate-400">Score</p>
-                <p className="mt-1 text-lg font-semibold text-white">{reportScore ?? "Pending"}</p>
+                <p className="mt-1 text-lg font-semibold text-white">
+                  {reportScore ?? tr("reports.status.pending")}
+                </p>
               </div>
               <div className="rounded-xl border border-cyan-300/25 bg-cyan-300/10 p-3">
                 <p className="text-xs uppercase tracking-wide text-slate-400">Confidence</p>
@@ -640,12 +648,16 @@ export default async function Page({
                 {showPatientFlow ? "Upload Photos" : "Upload Evidence"}
               </Link>
               <div className="rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm">
-                <p className="mb-1 text-xs uppercase tracking-wide text-slate-400">Run Audit</p>
+                <p className="mb-1 text-xs uppercase tracking-wide text-slate-400">{tr("reports.chrome.runAuditLabel")}</p>
                 <SubmitButton caseId={c.id} caseStatus={c.status ?? "draft"} submittedAt={c.submitted_at} compact />
               </div>
               <div className="rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm">
-                <p className="mb-2 text-xs uppercase tracking-wide text-slate-400">Download Report</p>
-                {latestReport?.pdf_path ? <DownloadReport pdfPath={latestReport.pdf_path} /> : <p className="text-xs text-slate-300/70">No PDF yet.</p>}
+                <p className="mb-2 text-xs uppercase tracking-wide text-slate-400">{tr("reports.chrome.downloadReportLabel")}</p>
+                {latestReport?.pdf_path ? (
+                  <DownloadReport pdfPath={latestReport.pdf_path} label={tr("reports.actions.downloadPdf")} />
+                ) : (
+                  <p className="text-xs text-slate-300/70">{tr("reports.chrome.noPdfYet")}</p>
+                )}
               </div>
               <div className="rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm">
                 <p className="mb-1 text-xs uppercase tracking-wide text-slate-400">Rerun Tracking</p>
@@ -954,7 +966,7 @@ export default async function Page({
       <section className="mt-6 rounded-2xl border border-slate-700 bg-slate-900 p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-lg font-semibold text-white">Latest Report</h2>
+            <h2 className="text-lg font-semibold text-white">{tr("reports.chrome.latestReportSectionTitle")}</h2>
             <p className="mt-0.5 text-xs text-slate-400">{BENCHMARKING_GLOBAL_STANDARDS}</p>
             {repErr && <p className="text-sm text-rose-300">{repErr.message}</p>}
           </div>

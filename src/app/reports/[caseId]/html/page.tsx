@@ -9,6 +9,10 @@ import { buildRubricTitles } from "@/lib/audit/rubricTitles";
 import { buildReportViewModel, normalizeAuditMode, type AuditMode } from "@/lib/pdf/reportBuilder";
 import { resolveAuditModeFromCaseAccess } from "@/lib/reports/accessMode";
 import { verifyRenderToken } from "@/lib/reports/internalRenderToken";
+import { formatTemplate } from "@/lib/i18n/formatTemplate";
+import { getTranslation } from "@/lib/i18n/getTranslation";
+import type { TranslationKey } from "@/lib/i18n/translationKeys";
+import { resolvePublicSeoLocale } from "@/lib/seo/localeMetadata";
 import { applyAuditorOverridesToSummary, type OverrideRow } from "@/lib/auditor/applyOverrides";
 import {
   filterReportVisibleOverrides,
@@ -82,6 +86,8 @@ export default async function ReportHtmlPage({
   searchParams?: Promise<{ token?: string; auditMode?: string }>;
 }) {
   const { caseId } = await params;
+  const seoLocale = await resolvePublicSeoLocale();
+  const tc = (key: TranslationKey) => getTranslation(key, seoLocale);
   const sp = (await (searchParams ?? Promise.resolve({}))) as { token?: string; auditMode?: string };
   const token = sp?.token ?? "";
   const requestedAuditMode = normalizeAuditMode(sp?.auditMode);
@@ -114,8 +120,8 @@ export default async function ReportHtmlPage({
   if (caseErr || !c) {
     return (
       <div style={{ padding: 24, fontFamily: "Arial, sans-serif" }}>
-        <h1>Report</h1>
-        <p>Case not found.</p>
+        <h1>{tc("reports.chrome.caseNotFoundTitle")}</h1>
+        <p>{tc("reports.chrome.caseNotFoundBody")}</p>
         <p style={{ fontFamily: "monospace" }}>{caseId}</p>
       </div>
     );
@@ -272,7 +278,7 @@ export default async function ReportHtmlPage({
     <html>
       <head>
         <meta charSet="utf-8" />
-        <title>HairAudit Report</title>
+        <title>{tc("reports.chrome.html.documentTitle")}</title>
         <style>{`
           @page { size: A4; margin: 16mm 14mm; }
           body { font-family: Arial, sans-serif; color: #111; }
@@ -301,37 +307,41 @@ export default async function ReportHtmlPage({
             <div className="brand">
               <div className="logo">HA</div>
               <div>
-                <h1>Clinical Audit Report</h1>
-                <div className="muted">HairAudit — Independent surgical assessment</div>
-                <div className="muted" style={{ marginTop: 2 }}>Generated using structured evaluation protocols · {new Date().toLocaleString()}</div>
+                <h1>{tc("reports.chrome.html.pageTitle")}</h1>
+                <div className="muted">{tc("reports.chrome.html.tagline")}</div>
+                <div className="muted" style={{ marginTop: 2 }}>
+                  {tc("reports.chrome.html.generatedLinePrefix")} {new Date().toLocaleString()}
+                </div>
               </div>
             </div>
             <div className="muted" style={{ textAlign: "right" }}>
-              Case ID<br />
+              {tc("reports.chrome.html.caseIdLabel")}
+              <br />
               <span style={{ fontFamily: "monospace" }}>{caseId}</span>
             </div>
           </div>
 
           <div className="section">
-            <div className="muted">Case title</div>
-            <div style={{ fontSize: 16, fontWeight: 700 }}>{c.title ?? "Untitled case"}</div>
+            <div className="muted">{tc("reports.chrome.html.caseTitleLabel")}</div>
+            <div style={{ fontSize: 16, fontWeight: 700 }}>{c.title ?? tc("reports.chrome.untitledCase")}</div>
             <div className="muted" style={{ marginTop: 6 }}>
-              Status: {c.status} • Created: {new Date(c.created_at).toLocaleString()}
+              {tc("reports.chrome.html.statusPrefix")} {c.status} • {tc("reports.chrome.html.createdPrefix")}{" "}
+              {new Date(c.created_at).toLocaleString()}
             </div>
           </div>
 
           <div className="section">
-            <h2 style={{ fontSize: 16, margin: 0 }}>Uploads</h2>
+            <h2 style={{ fontSize: 16, margin: 0 }}>{tc("reports.chrome.html.uploadsHeading")}</h2>
 
             {(!uploads || uploads.length === 0) ? (
-              <div className="muted" style={{ marginTop: 8 }}>No uploads attached.</div>
+              <div className="muted" style={{ marginTop: 8 }}>{tc("reports.chrome.html.noUploads")}</div>
             ) : (
               <table>
                 <thead>
                   <tr>
-                    <th>Type</th>
-                    <th>Storage Path</th>
-                    <th>Uploaded</th>
+                    <th>{tc("reports.chrome.html.colType")}</th>
+                    <th>{tc("reports.chrome.html.colStoragePath")}</th>
+                    <th>{tc("reports.chrome.html.colUploaded")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -348,14 +358,21 @@ export default async function ReportHtmlPage({
 
             {signedImages.length > 0 && (
               <>
-                <h3 style={{ fontSize: 14, marginTop: 14, marginBottom: 0 }}>Image gallery</h3>
+                <h3 style={{ fontSize: 14, marginTop: 14, marginBottom: 0 }}>{tc("reports.chrome.html.imageGalleryHeading")}</h3>
                 <div className="gallery">
                   {signedImages.map((img) => (
                     <div className="imgCard" key={img.id}>
                       {img.signedUrl ? (
-                        <img src={img.signedUrl} alt={img.type ? img.type.replace(/^patient_photo:|^doctor_photo:|^clinic_photo:/, "").replace(/_/g, " ") : "Case evidence image"} />
+                        <img
+                          src={img.signedUrl}
+                          alt={
+                            img.type
+                              ? img.type.replace(/^patient_photo:|^doctor_photo:|^clinic_photo:/, "").replace(/_/g, " ")
+                              : tc("reports.chrome.html.imageAltFallback")
+                          }
+                        />
                       ) : (
-                        <div className="muted">Image URL unavailable</div>
+                        <div className="muted">{tc("reports.chrome.html.imageUnavailable")}</div>
                       )}
                       <div className="muted" style={{ marginTop: 6, fontFamily: "monospace" }}>
                         {img.storage_path}
@@ -368,10 +385,10 @@ export default async function ReportHtmlPage({
           </div>
 
           <div className="section">
-            <h2 style={{ fontSize: 16, margin: 0 }}>Summary</h2>
+            <h2 style={{ fontSize: 16, margin: 0 }}>{tc("reports.chrome.html.summaryHeading")}</h2>
             <div style={{ display: "flex", gap: 12, marginTop: 10, flexWrap: "wrap" }}>
               <div style={{ flex: 1, minWidth: 140, border: "1px solid #ddd", borderRadius: 14, padding: 12, background: "#f8f8f8" }}>
-                <div style={{ fontSize: 11, color: "#555" }}>Overall score</div>
+                <div style={{ fontSize: 11, color: "#555" }}>{tc("reports.chrome.html.overallScore")}</div>
                 <div style={{ fontSize: 28, fontWeight: 900, marginTop: 6 }}>
                   {summary.score ?? "—"}
                 </div>
@@ -379,21 +396,21 @@ export default async function ReportHtmlPage({
               <div style={{ flex: 2, minWidth: 200, border: "1px solid #ddd", borderRadius: 14, padding: 12 }}>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                   <div>
-                    <div style={{ fontSize: 11, color: "#555" }}>Donor quality</div>
+                    <div style={{ fontSize: 11, color: "#555" }}>{tc("reports.chrome.html.donorQualityLabel")}</div>
                     <div style={{ fontWeight: 700, marginTop: 4 }}>{summary.donor_quality ?? "—"}</div>
                   </div>
                   <div>
-                    <div style={{ fontSize: 11, color: "#555" }}>Graft survival estimate</div>
+                    <div style={{ fontSize: 11, color: "#555" }}>{tc("reports.chrome.html.graftSurvivalLabel")}</div>
                     <div style={{ fontWeight: 700, marginTop: 4 }}>{summary.graft_survival_estimate ?? "—"}</div>
                   </div>
                 </div>
-                <div style={{ marginTop: 10, fontSize: 11, color: "#555" }}>Notes</div>
+                <div style={{ marginTop: 10, fontSize: 11, color: "#555" }}>{tc("reports.chrome.html.notesLabel")}</div>
                 <div style={{ marginTop: 4 }}>{summary.notes ?? "—"}</div>
               </div>
             </div>
             {findings.length > 0 && (
               <div style={{ marginTop: 12 }}>
-                <div style={{ fontSize: 11, color: "#555" }}>Key findings</div>
+                <div style={{ fontSize: 11, color: "#555" }}>{tc("reports.chrome.html.keyFindingsLabel")}</div>
                 <ul style={{ marginTop: 6, paddingLeft: 18 }}>
                   {findings.map((f, i) => (
                     <li key={i}>{f}</li>
@@ -404,35 +421,41 @@ export default async function ReportHtmlPage({
 
             {forensic && (
               <div style={{ marginTop: 12 }}>
-                <div style={{ fontSize: 11, color: "#555" }}>Forensic audit (AI)</div>
+                <div style={{ fontSize: 11, color: "#555" }}>{tc("reports.chrome.html.forensicAuditHeading")}</div>
                 <table style={{ marginTop: 6 }}>
                   <thead>
                     <tr>
-                      <th>Item</th>
-                      <th>Assessment</th>
-                      <th>Evidence / notes</th>
+                      <th>{tc("reports.chrome.html.tableColItem")}</th>
+                      <th>{tc("reports.chrome.html.tableColAssessment")}</th>
+                      <th>{tc("reports.chrome.html.tableColEvidence")}</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr>
-                      <td>Overall</td>
+                      <td>{tc("reports.chrome.html.rowOverall")}</td>
                       <td>
-                        Score: {forensic.overall_score ?? summary.score ?? "—"}{" "}
-                        {forensic.confidence_label ? `• Confidence: ${forensic.confidence_label}` : ""}
+                        {tc("reports.chrome.html.scorePrefix")} {forensic.overall_score ?? summary.score ?? "—"}{" "}
+                        {forensic.confidence_label
+                          ? `• ${tc("reports.chrome.html.confidencePrefix")} ${forensic.confidence_label}`
+                          : ""}
                       </td>
                       <td>
                         {forensic.summary ? forensic.summary : <span className="muted">—</span>}
                       </td>
                     </tr>
                     <tr>
-                      <td>Key findings</td>
-                      <td>{Array.isArray(forensic.key_findings) ? `${forensic.key_findings.length} items` : "—"}</td>
+                      <td>{tc("reports.chrome.html.rowKeyFindings")}</td>
+                      <td>
+                        {Array.isArray(forensic.key_findings)
+                          ? formatTemplate(tc("reports.chrome.html.itemsCount"), { count: forensic.key_findings.length })
+                          : "—"}
+                      </td>
                       <td>
                         {Array.isArray(forensic.key_findings) && forensic.key_findings.length > 0 ? (
                           <ul style={{ margin: 0, paddingLeft: 18 }}>
                             {forensic.key_findings.slice(0, 6).map((f, i) => (
                               <li key={i}>
-                                <strong>{f.title ?? "Finding"}</strong>
+                                <strong>{f.title ?? tc("reports.chrome.html.findingFallback")}</strong>
                                 {f.severity ? ` (${f.severity})` : ""}
                                 {f.impact ? ` — ${f.impact}` : ""}
                               </li>
@@ -444,14 +467,18 @@ export default async function ReportHtmlPage({
                       </td>
                     </tr>
                     <tr>
-                      <td>Red flags</td>
-                      <td>{Array.isArray(forensic.red_flags) ? `${forensic.red_flags.length} items` : "—"}</td>
+                      <td>{tc("reports.chrome.html.rowRedFlags")}</td>
+                      <td>
+                        {Array.isArray(forensic.red_flags)
+                          ? formatTemplate(tc("reports.chrome.html.itemsCount"), { count: forensic.red_flags.length })
+                          : "—"}
+                      </td>
                       <td>
                         {Array.isArray(forensic.red_flags) && forensic.red_flags.length > 0 ? (
                           <ul style={{ margin: 0, paddingLeft: 18 }}>
                             {forensic.red_flags.slice(0, 6).map((f, i) => (
                               <li key={i}>
-                                <strong>{f.flag ?? "Flag"}</strong>
+                                <strong>{f.flag ?? tc("reports.chrome.html.flagFallback")}</strong>
                                 {f.why_it_matters ? ` — ${f.why_it_matters}` : ""}
                               </li>
                             ))}
@@ -462,8 +489,14 @@ export default async function ReportHtmlPage({
                       </td>
                     </tr>
                     <tr>
-                      <td>Per-photo observations</td>
-                      <td>{Array.isArray(forensic.photo_observations) ? `${forensic.photo_observations.length} photos` : "—"}</td>
+                      <td>{tc("reports.chrome.html.rowPhotoObservations")}</td>
+                      <td>
+                        {Array.isArray(forensic.photo_observations)
+                          ? formatTemplate(tc("reports.chrome.html.photosCount"), {
+                              count: forensic.photo_observations.length,
+                            })
+                          : "—"}
+                      </td>
                       <td>
                         {Array.isArray(forensic.photo_observations) && forensic.photo_observations.length > 0 ? (
                           <ul style={{ margin: 0, paddingLeft: 18 }}>
@@ -481,27 +514,43 @@ export default async function ReportHtmlPage({
                     </tr>
                     {isAuditorMode && Array.isArray(domainV1) && domainV1.length > 0 && (
                       <tr>
-                        <td>Domains (v1)</td>
+                        <td>{tc("reports.chrome.html.rowDomainsV1")}</td>
                         <td>
-                          {benchmark?.eligible ? "Benchmark eligible" : "Not benchmark eligible"}
-                          {benchmark?.gate_version ? ` • Gate: ${benchmark.gate_version}` : ""}
+                          {benchmark?.eligible
+                            ? tc("reports.chrome.html.benchmarkEligible")
+                            : tc("reports.chrome.html.benchmarkNotEligible")}
+                          {benchmark?.gate_version
+                            ? ` • ${tc("reports.chrome.html.gatePrefix")} ${benchmark.gate_version}`
+                            : ""}
                         </td>
                         <td>
                           {(forensic as any)?.overall_scores_v1 && (
                             <div style={{ marginBottom: 10 }}>
-                              <div><strong>Performance Score:</strong> {(forensic as any).overall_scores_v1?.performance_score ?? "—"}</div>
-                              <div><strong>Confidence:</strong> {(forensic as any).overall_scores_v1?.confidence_grade ?? "—"} {typeof (forensic as any).overall_scores_v1?.confidence_multiplier === "number" ? `(${(forensic as any).overall_scores_v1.confidence_multiplier.toFixed(2)})` : ""}</div>
-                              <div><strong>Benchmark Score:</strong> {(forensic as any).overall_scores_v1?.benchmark_score ?? "—"}</div>
+                              <div>
+                                <strong>{tc("reports.chrome.html.performanceScoreLabel")}</strong>{" "}
+                                {(forensic as any).overall_scores_v1?.performance_score ?? "—"}
+                              </div>
+                              <div>
+                                <strong>{tc("reports.chrome.html.confidenceGradeLabel")}</strong>{" "}
+                                {(forensic as any).overall_scores_v1?.confidence_grade ?? "—"}{" "}
+                                {typeof (forensic as any).overall_scores_v1?.confidence_multiplier === "number"
+                                  ? `(${(forensic as any).overall_scores_v1.confidence_multiplier.toFixed(2)})`
+                                  : ""}
+                              </div>
+                              <div>
+                                <strong>{tc("reports.chrome.html.benchmarkScoreLabel")}</strong>{" "}
+                                {(forensic as any).overall_scores_v1?.benchmark_score ?? "—"}
+                              </div>
                             </div>
                           )}
                           <table style={{ width: "100%", borderCollapse: "collapse" }}>
                             <thead>
                               <tr>
-                                <th>Domain</th>
-                                <th>Raw</th>
-                                <th>Conf</th>
-                                <th>Grade</th>
-                                <th>Weighted</th>
+                                <th>{tc("reports.chrome.html.domainColDomain")}</th>
+                                <th>{tc("reports.chrome.html.domainColRaw")}</th>
+                                <th>{tc("reports.chrome.html.domainColConf")}</th>
+                                <th>{tc("reports.chrome.html.domainColGrade")}</th>
+                                <th>{tc("reports.chrome.html.domainColWeighted")}</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -518,7 +567,7 @@ export default async function ReportHtmlPage({
                           </table>
                           {Array.isArray(benchmark?.reasons) && benchmark!.reasons!.length > 0 && (
                             <div style={{ marginTop: 8 }}>
-                              <div className="muted">Eligibility reasons</div>
+                              <div className="muted">{tc("reports.chrome.html.eligibilityReasons")}</div>
                               <ul style={{ marginTop: 6, paddingLeft: 18 }}>
                                 {benchmark!.reasons!.slice(0, 6).map((r, idx) => (
                                   <li key={idx}>{r}</li>
@@ -528,11 +577,12 @@ export default async function ReportHtmlPage({
                           )}
                           {Array.isArray((forensic as any)?.tiers_v1) && (forensic as any).tiers_v1.length > 0 && (
                             <div style={{ marginTop: 10 }}>
-                              <div className="muted">Tier (v1)</div>
+                              <div className="muted">{tc("reports.chrome.html.tierV1")}</div>
                               <ul style={{ marginTop: 6, paddingLeft: 18 }}>
                                 {(forensic as any).tiers_v1.slice(0, 3).map((t: any, idx: number) => (
                                   <li key={idx}>
-                                    <strong>{t.title}</strong>: {t.eligible ? "Eligible" : "Not yet"} {Array.isArray(t.reasons) && t.reasons.length ? `— ${t.reasons[0]}` : ""}
+                                    <strong>{t.title}</strong>: {t.eligible ? tc("reports.chrome.html.tierEligible") : tc("reports.chrome.html.tierNotYet")}{" "}
+                                    {Array.isArray(t.reasons) && t.reasons.length ? `— ${t.reasons[0]}` : ""}
                                   </li>
                                 ))}
                               </ul>
@@ -543,22 +593,34 @@ export default async function ReportHtmlPage({
                     )}
                     {isAuditorMode && (forensic as any)?.completeness_index_v1 && (
                       <tr>
-                        <td>Completeness index (v1)</td>
+                        <td>{tc("reports.chrome.html.rowCompletenessV1")}</td>
                         <td>{(forensic as any).completeness_index_v1?.score ?? "—"} / 100</td>
                         <td>
-                          <div className="muted">Based on submitted documentation.</div>
+                          <div className="muted">{tc("reports.chrome.html.completenessBasedOnDocs")}</div>
                           <ul style={{ marginTop: 6, paddingLeft: 18 }}>
-                            <li>Photos: {(forensic as any).completeness_index_v1?.breakdown?.photo_coverage?.score ?? "—"} / 45</li>
-                            <li>Structured metadata: {(forensic as any).completeness_index_v1?.breakdown?.structured_metadata?.score ?? "—"} / 35</li>
-                            <li>Numeric precision: {(forensic as any).completeness_index_v1?.breakdown?.numeric_precision?.score ?? "—"} / 10</li>
-                            <li>Verification evidence: {(forensic as any).completeness_index_v1?.breakdown?.verification_evidence?.score ?? "—"} / 10</li>
+                            <li>
+                              {tc("reports.chrome.html.completenessPhotos")}{" "}
+                              {(forensic as any).completeness_index_v1?.breakdown?.photo_coverage?.score ?? "—"} / 45
+                            </li>
+                            <li>
+                              {tc("reports.chrome.html.completenessStructured")}{" "}
+                              {(forensic as any).completeness_index_v1?.breakdown?.structured_metadata?.score ?? "—"} / 35
+                            </li>
+                            <li>
+                              {tc("reports.chrome.html.completenessNumeric")}{" "}
+                              {(forensic as any).completeness_index_v1?.breakdown?.numeric_precision?.score ?? "—"} / 10
+                            </li>
+                            <li>
+                              {tc("reports.chrome.html.completenessVerification")}{" "}
+                              {(forensic as any).completeness_index_v1?.breakdown?.verification_evidence?.score ?? "—"} / 10
+                            </li>
                           </ul>
                         </td>
                       </tr>
                     )}
                     {Array.isArray(forensic.data_quality?.limitations) && forensic.data_quality!.limitations!.length > 0 && (
                       <tr>
-                        <td>Limitations</td>
+                        <td>{tc("reports.chrome.html.rowLimitations")}</td>
                         <td colSpan={2}>
                           <ul style={{ margin: 0, paddingLeft: 18 }}>
                             {forensic.data_quality!.limitations!.slice(0, 12).map((t, i) => (
@@ -575,7 +637,7 @@ export default async function ReportHtmlPage({
             {/* Auditor change summary and per-domain notes — only report-visible overrides/feedback */}
             {hasReportVisibleOverrides && auditorChangeSummaryLines.length > 0 && (
               <div style={{ marginTop: 16, padding: 12, border: "1px solid #ccc", borderRadius: 10, background: "#fafafa" }}>
-                <div style={{ fontSize: 11, color: "#555", marginBottom: 6 }}>Auditor change summary</div>
+                <div style={{ fontSize: 11, color: "#555", marginBottom: 6 }}>{tc("reports.chrome.html.auditorChangeSummary")}</div>
                 <ul style={{ margin: 0, paddingLeft: 18 }}>
                   {auditorChangeSummaryLines.map((line, i) => (
                     <li key={i} style={{ marginBottom: 4 }}>{line}</li>
@@ -589,7 +651,7 @@ export default async function ReportHtmlPage({
                 .filter((x) => x.note.length > 0);
               return domainNotes.length > 0 ? (
                 <div style={{ marginTop: 16, padding: 12, border: "1px solid #ccc", borderRadius: 10, background: "#fafafa" }}>
-                  <div style={{ fontSize: 11, color: "#555", marginBottom: 6 }}>Auditor notes</div>
+                  <div style={{ fontSize: 11, color: "#555", marginBottom: 6 }}>{tc("reports.chrome.html.auditorNotesHeading")}</div>
                   <ul style={{ margin: 0, paddingLeft: 18 }}>
                     {domainNotes.map((x, i) => (
                       <li key={i} style={{ marginBottom: 6 }}>
@@ -616,8 +678,9 @@ export default async function ReportHtmlPage({
           </div>
 
           <div className="footer">
-            HairAudit — advancing transparency in hair restoration.<br />
-            This report is informational and not a medical diagnosis.
+            {tc("reports.chrome.html.footerLine1")}
+            <br />
+            {tc("reports.chrome.html.footerLine2")}
           </div>
         </div>
       </body>
