@@ -66,7 +66,8 @@
       "createCaseDefault": "Crear nuevo caso de auditoría",
       "startNewAudit": "Iniciar nueva auditoría",
       "signOut": "Cerrar sesión",
-      "comingSoon": "Pronto"
+      "comingSoon": "Pronto",
+      "comingSoonBadge": "Próximamente"
     },
     "patient": {
       "heroTitle": "Su panel de inteligencia quirúrgica",
@@ -114,7 +115,36 @@
       "checklistTitle": "Primeros pasos",
       "checklistSubtitle": "Siga estos pasos para completar su primer caso y contribuir a una evaluación comparativa transparente.",
       "whyMattersLead": "Por qué importa.",
-      "whyMattersBody": "Participar en HairAudit ayuda a comparar resultados y mejorar la transparencia. Sus casos documentados contribuyen al reconocimiento basado en evidencia y aclaran las expectativas de pacientes y colegas."
+      "whyMattersBody": "Participar en HairAudit ayuda a comparar resultados y mejorar la transparencia. Sus casos documentados contribuyen al reconocimiento basado en evidencia y aclaran las expectativas de pacientes y colegas.",
+      "comingSoonEyebrow": "Próximamente",
+      "placeholderBackToOverview": "Volver al resumen",
+      "placeholders": {
+        "common": {
+          "goToOverview": "Ir al resumen"
+        },
+        "publicProfile": {
+          "title": "Ajustes del perfil público",
+          "description": "Los ajustes de perfil y visibilidad para su aparición en clasificaciones y en el directorio llegarán pronto. Sus casos enviados ya contribuyen a la evaluación comparativa.",
+          "altCta": "Ver clasificaciones de médicos"
+        },
+        "training": {
+          "title": "Portal de formación",
+          "description": "Se planean módulos dirigidos para mejorar la documentación y la preparación ante auditorías. Por ahora, use los comentarios de auditoría en cada informe de caso para reforzar sus envíos."
+        },
+        "defaults": {
+          "title": "Valores quirúrgicos predeterminados",
+          "description": "Guardar respuestas predeterminadas (p. ej., método de extracción, solución de conservación) para reutilizarlas en varios casos está previsto. Por ahora, introduzca los valores en cada formulario médico del caso."
+        },
+        "reports": {
+          "title": "Centro de informes de auditoría",
+          "description": "Un único lugar para ver todos sus informes de auditoría y acciones pendientes llegará pronto. Por ahora, abra cualquier caso desde su resumen para ver el informe y resolver los comentarios."
+        },
+        "upload": {
+          "title": "Carga masiva",
+          "description": "Se planea un asistente dedicado para añadir varios casos en un solo flujo. Por ahora, cree casos desde su resumen y complete el formulario y las fotos de cada uno.",
+          "altCta": "Crear un caso"
+        }
+      }
     },
     "clinic": {
       "overviewTitle": "Resumen de inteligencia clínica",
@@ -129,7 +159,27 @@
       "sidebarPortalLabel": "Portal de clínica",
       "sidebarPortalTagline": "Contribuciones invitadas y casos enviados",
       "openPortalNav": "Abrir navegación del portal",
-      "closePortalNav": "Cerrar navegación del portal"
+      "closePortalNav": "Cerrar navegación del portal",
+      "placeholderBackToOverview": "Volver al resumen",
+      "placeholderManageProfile": "Gestionar perfil de la clínica",
+      "placeholderInvitedContributions": "Contribuciones invitadas",
+      "placeholders": {
+        "settings": {
+          "title": "Ajustes",
+          "subtitle": "Configuración del portal y controles operativos predeterminados.",
+          "recommendation": "Los ajustes admitirán permisos por rol, visibilidad predeterminada y controles de modo white-label. Ya puede controlar la visibilidad a nivel de caso desde Contribuciones invitadas."
+        },
+        "benchmarking": {
+          "title": "Evaluación comparativa",
+          "subtitle": "Inteligencia de evaluación comparativa de clínicas y médicos.",
+          "recommendation": "Esta zona mostrará segmentos de referencia, umbrales de confianza e inteligencia de tendencias. Hasta que el módulo esté activo, use la clasificación de la clínica y Contribuciones invitadas / Casos enviados para seguir la preparación."
+        },
+        "training": {
+          "title": "Formación",
+          "subtitle": "Módulos internos de control de calidad y formación.",
+          "recommendation": "Este módulo será el centro de formación de su clínica, combinando inteligencia de casos, cumplimiento de protocolos y guías de calidad reproducibles."
+        }
+      }
     }
   }
 }

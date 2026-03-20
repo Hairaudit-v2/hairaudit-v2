@@ -66,7 +66,8 @@
       "createCaseDefault": "Create new audit case",
       "startNewAudit": "Start New Audit",
       "signOut": "Sign out",
-      "comingSoon": "Soon"
+      "comingSoon": "Soon",
+      "comingSoonBadge": "Coming Soon"
     },
     "patient": {
       "heroTitle": "Your Surgical Intelligence Dashboard",
@@ -114,7 +115,36 @@
       "checklistTitle": "Getting started",
       "checklistSubtitle": "Follow these steps to complete your first case and contribute to transparent benchmarking.",
       "whyMattersLead": "Why this matters.",
-      "whyMattersBody": "Participation in HairAudit helps benchmark outcomes and improve transparency. Your documented cases contribute to evidence-based recognition and help set clearer expectations for patients and peers."
+      "whyMattersBody": "Participation in HairAudit helps benchmark outcomes and improve transparency. Your documented cases contribute to evidence-based recognition and help set clearer expectations for patients and peers.",
+      "comingSoonEyebrow": "Coming soon",
+      "placeholderBackToOverview": "Back to overview",
+      "placeholders": {
+        "common": {
+          "goToOverview": "Go to overview"
+        },
+        "publicProfile": {
+          "title": "Public profile settings",
+          "description": "Profile and visibility settings for how you appear on leaderboards and in the directory are coming soon. Your submitted cases already contribute to benchmarking.",
+          "altCta": "View doctor leaderboards"
+        },
+        "training": {
+          "title": "Training portal",
+          "description": "Targeted modules to improve documentation and audit readiness are planned. For now, use the audit feedback on each case report to strengthen your submissions."
+        },
+        "defaults": {
+          "title": "Surgical defaults",
+          "description": "Saving default answers (e.g. extraction method, holding solution) to reuse across cases is planned. For now, set values per case on each case’s doctor form."
+        },
+        "reports": {
+          "title": "Audit reports hub",
+          "description": "A single place to see all your audit reports and pending actions is coming soon. For now, open any case from your overview to view its report and resolve feedback."
+        },
+        "upload": {
+          "title": "Bulk upload",
+          "description": "A dedicated upload wizard for adding multiple cases in one flow is planned. For now, create cases from your overview and complete the form and photos for each case.",
+          "altCta": "Create a case"
+        }
+      }
     },
     "clinic": {
       "overviewTitle": "Clinic Intelligence Overview",
@@ -129,7 +159,27 @@
       "sidebarPortalLabel": "Clinic Portal",
       "sidebarPortalTagline": "Invited Contributions & Submitted Cases",
       "openPortalNav": "Open Portal Nav",
-      "closePortalNav": "Close Portal Nav"
+      "closePortalNav": "Close Portal Nav",
+      "placeholderBackToOverview": "Back to Overview",
+      "placeholderManageProfile": "Manage Clinic Profile",
+      "placeholderInvitedContributions": "Invited Contributions",
+      "placeholders": {
+        "settings": {
+          "title": "Settings",
+          "subtitle": "Portal configuration and default operational controls.",
+          "recommendation": "Settings will support role permissions, default visibility behavior, and white-label mode controls. You can already control case-level visibility from Invited Contributions."
+        },
+        "benchmarking": {
+          "title": "Benchmarking",
+          "subtitle": "Clinic and doctor benchmarking intelligence.",
+          "recommendation": "This area will expose benchmark segments, confidence gating, and trend intelligence. Until this module is live, use the clinic leaderboard and Invited Contributions / Submitted Cases to monitor readiness."
+        },
+        "training": {
+          "title": "Training",
+          "subtitle": "Internal QA and training intelligence modules.",
+          "recommendation": "This module will become your clinic's training hub, combining case intelligence, protocol adherence, and repeatable quality playbooks."
+        }
+      }
     }
   }
 }

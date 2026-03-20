@@ -1,11 +1,5 @@
-import PortalPlaceholderPanel from "@/components/clinic-portal/PortalPlaceholderPanel";
+import ClinicPortalPlaceholder from "@/components/clinic-portal/ClinicPortalPlaceholder";
 
 export default function SettingsPlaceholderPage() {
-  return (
-    <PortalPlaceholderPanel
-      title="Settings"
-      subtitle="Portal configuration and default operational controls."
-      recommendation="Settings will support role permissions, default visibility behavior, and white-label mode controls. You can already control case-level visibility from Invited Contributions."
-    />
-  );
+  return <ClinicPortalPlaceholder variant="settings" />;
 }

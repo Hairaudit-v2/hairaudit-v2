@@ -42,8 +42,9 @@
 | `DoctorDashboardProduction.tsx` | "Untitled case", status labels | **later** | Data-adjacent; keep English or future `common.*` |
 | `DoctorOnboardingChecklist.tsx` | Title, subtitle, "Why this matters" | **done (batch 2)** | `checklist*` / `whyMatters*` keys |
 | `DoctorOnboardingForm.tsx`, `doctor/onboarding/page.tsx` | Form labels | **later** | Larger form batch |
-| `DoctorParticipationSummaryCard.tsx`, `DoctorComingSoon.tsx` | Card copy | **later** | — |
-| `doctor/reports/page.tsx`, `upload`, `training`, etc. | Page titles, empty states | **later** | Many files |
+| `DoctorParticipationSummaryCard.tsx` | Card copy | **later** | — |
+| `DoctorComingSoon.tsx`, placeholder doctor routes | Coming-soon panels | **done (batch 5)** | `dashboard.doctor.placeholders.*`, `comingSoonEyebrow`, `placeholderBackToOverview` |
+| `PortalPlaceholderPanel`, clinic settings/benchmarking/training | Placeholder pages | **done (batch 5)** | `dashboard.clinic.placeholders.*`, shared badge |
 
 ---
 
@@ -122,9 +123,9 @@
 3. **`SurgicalEcosystemFooterBand`** — client; band title, aria labels, ecosystem role tags (`ecosystemTag*`)
 4. **`CrossPlatformLink`** — client; `nav.footer.crossPlatform*` + `nav.ecosystem.exploreHa` for FI-mode CTA
 
-## Recommended **next batch (batch 5 candidates)**
+## Batch 5 (implemented)
 
-1. **Clinic `layout.tsx`** server-driven nav item labels (needs pattern for server + i18n)
-2. **Patient `page.tsx`** / **login** — module-by-module
+1. **`PortalPlaceholderPanel`** + **`ClinicPortalPlaceholder`** — clinic settings / benchmarking / training placeholders: shared badge `dashboard.shared.comingSoonBadge`; clinic chrome keys `placeholderBackToOverview`, `placeholderManageProfile`, `placeholderInvitedContributions`; per-page copy under `dashboard.clinic.placeholders.*`.
+2. **`DoctorComingSoon`** + **`DoctorComingSoonPlaceholder`** — eyebrow + back link; placeholder pages (public profile, training, defaults, reports hub, upload) under `dashboard.doctor.placeholders.*` (+ `common.goToOverview` for shared secondary CTA).
 
-**Follow-up (later):** clinic `layout.tsx` server nav labels, patient `page.tsx` modules, login/auth copy.
+**Follow-up (later):** clinic **`layout.tsx`** server nav labels, **patient `page.tsx`** modules, **login/auth** copy, **`ClinicProfileBuilder`** / heavy profile surfaces.
