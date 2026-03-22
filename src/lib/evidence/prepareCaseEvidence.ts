@@ -1,6 +1,7 @@
 import sharp from "sharp";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { inferCanonicalPhotoCategory } from "@/lib/photos/classification";
+import { isPatientUploadAuditExcluded } from "@/lib/uploads/patientPhotoAuditMeta";
 
 type UploadRow = {
   id: string;
@@ -50,6 +51,22 @@ const REQUIRED_EVIDENCE_CATEGORIES = [
   "day0_recipient",
   "day0_donor",
 ] as const;
+
+/**
+ * Map prepared-image canonical categories onto REQUIRED_EVIDENCE_CATEGORIES slots.
+ * Baseline audit buckets (`patient_current_*` / `current_*`) satisfy the same preop_* coverage
+ * as explicit `preop_*` uploads. Aggregate day-of bucket counts toward recipient slot only.
+ */
+function expandManifestRequiredCoverage(categories: Set<string>): Set<string> {
+  const out = new Set(categories);
+  const has = (c: string) => out.has(c);
+  if (has("current_front") || has("patient_current_front")) out.add("preop_front");
+  if (has("current_top") || has("patient_current_top")) out.add("preop_top");
+  if (has("current_donor_rear") || has("patient_current_donor_rear")) out.add("preop_donor_rear");
+  if (has("day0_recipient") || has("any_day0")) out.add("day0_recipient");
+  if (has("day0_donor")) out.add("day0_donor");
+  return out;
+}
 
 function isImageUpload(type: string): boolean {
   const t = String(type ?? "").toLowerCase();
@@ -162,6 +179,7 @@ export async function prepareCaseEvidenceManifest(args: {
   const errors: string[] = [];
 
   for (const upload of imageUploads) {
+    if (isPatientUploadAuditExcluded(upload)) continue;
     const originalPath = String(upload.storage_path ?? "").trim();
     if (!originalPath) continue;
     const category = inferCanonicalPhotoCategory(upload);
@@ -239,14 +257,17 @@ export async function prepareCaseEvidenceManifest(args: {
     if (!finalized) continue;
   }
 
-  const usefulCategories = new Set(
-    preparedImages
-      .filter((x) => x.quality_label !== "poor")
-      .map((x) => x.category)
+  const usefulCategories = expandManifestRequiredCoverage(
+    new Set(
+      preparedImages
+        .filter((x) => x.quality_label !== "poor")
+        .map((x) => x.category)
+    )
   );
   const missingCategories = REQUIRED_EVIDENCE_CATEGORIES.filter((c) => !usefulCategories.has(c));
+  const selectedForPrepare = imageUploads.filter((u) => !isPatientUploadAuditExcluded(u));
   const qualityScore = normalizeQualityScore({
-    selectedCount: imageUploads.length,
+    selectedCount: selectedForPrepare.length,
     preparedImages,
     missingCategories,
   });

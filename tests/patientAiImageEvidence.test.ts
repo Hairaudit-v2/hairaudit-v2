@@ -14,18 +14,24 @@ import {
 } from "@/lib/audit/patientAiImageEvidence";
 import { isAiExtendedImageEvidenceEnabled } from "@/lib/features/enableAiExtendedImageEvidence";
 import { canSubmit } from "@/lib/auditPhotoSchemas";
-import { PATIENT_UPLOAD_CATEGORY_DEFS } from "@/lib/patientPhotoCategoryConfig";
+import {
+  PATIENT_AUDIT_PHOTO_BUCKET_DEFS,
+  PATIENT_UPLOAD_CATEGORY_DEFS,
+} from "@/lib/patientPhotoCategoryConfig";
 
 test("config: every grouped category exists in PATIENT_UPLOAD_CATEGORY_DEFS", () => {
   __assertAllGroupedCategoriesExistInConfig();
 });
 
-test("grouping spec covers 36 Stage-2 upload keys plus legacy preop/day0 keys used in groups", () => {
+test("grouping spec covers upload keys, audit bucket keys, and legacy preop/day0 keys used in groups", () => {
   const map = __getCategoryToGroupsForTests();
   const keys = Object.keys(map);
   const known = new Set(PATIENT_UPLOAD_CATEGORY_DEFS.map((d) => d.key));
-  for (const k of keys) assert.ok(known.has(k), `unknown category in grouping map: ${k}`);
-  assert.ok(keys.length >= 40);
+  const auditBuckets = new Set(PATIENT_AUDIT_PHOTO_BUCKET_DEFS.map((d) => d.key));
+  for (const k of keys) {
+    assert.ok(known.has(k) || auditBuckets.has(k), `unknown category in grouping map: ${k}`);
+  }
+  assert.ok(keys.length >= 48);
 });
 
 test("flag helper: ENABLE_AI_EXTENDED_IMAGE_EVIDENCE", () => {
@@ -53,6 +59,24 @@ test("legacy baseline: preop_front lands in baseline_evidence only", () => {
   assert.equal(r.groups.baseline_evidence.hasAny, true);
   assert.equal(r.groups.baseline_evidence.items[0]?.category, "preop_front");
   assert.equal(r.groups.donor_monitoring_evidence.hasAny, false);
+});
+
+test("audit bucket baseline: patient_current_front lands in baseline_evidence", () => {
+  const r = buildPatientImageEvidenceGroups({
+    enabled: true,
+    uploads: [{ id: "pcf", type: "patient_photo:patient_current_front", storage_path: "/y" }],
+  });
+  assert.equal(r.groups.baseline_evidence.hasAny, true);
+  assert.equal(r.groups.baseline_evidence.items[0]?.category, "patient_current_front");
+});
+
+test("aggregate day0 bucket lands in surgical and donor_monitoring groups", () => {
+  const r = buildPatientImageEvidenceGroups({
+    enabled: true,
+    uploads: [{ id: "d0", type: "patient_photo:any_day0" }],
+  });
+  assert.equal(r.groups.surgical_evidence.count, 1);
+  assert.equal(r.groups.donor_monitoring_evidence.count, 1);
 });
 
 test("preop_donor_rear in baseline and donor_monitoring", () => {
@@ -140,6 +164,19 @@ test("doctor_photo rows ignored", () => {
     uploads: [{ id: "d", type: "doctor_photo:img_preop_front" }],
   });
   assert.equal(r.totalPatientPhotoUploads, 0);
+});
+
+test("audit_excluded patient_photo rows are skipped for grouping counts", () => {
+  const r = buildPatientImageEvidenceGroups({
+    enabled: true,
+    uploads: [
+      { id: "x", type: "patient_photo:preop_front", metadata: { audit_excluded: true } },
+      { id: "y", type: "patient_photo:preop_top", storage_path: "/z" },
+    ],
+  });
+  assert.equal(r.totalPatientPhotoUploads, 1);
+  assert.equal(r.groups.baseline_evidence.count, 1);
+  assert.equal(r.groups.baseline_evidence.items[0]?.category, "preop_top");
 });
 
 test("formatPatientImageEvidenceGroupsForPrompt empty when no groups populated", () => {

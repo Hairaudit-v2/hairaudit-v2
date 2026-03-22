@@ -18,7 +18,38 @@ function hasAny(s: string, needles: string[]) {
   return needles.some((n) => s.includes(n));
 }
 
+/**
+ * When `upload.type` is a structured `patient_photo:{key}`, prefer the literal key for timeline
+ * and baseline categories. This runs before fuzzy token heuristics so keys like
+ * `postop_month3_donor` are not misclassified as generic donor/postop_healed_*.
+ */
+function patientPhotoCategoryLiteralFromType(upload: UploadLike): string | null {
+  const t = String(upload.type ?? "").toLowerCase();
+  if (!t.startsWith("patient_photo:")) return null;
+  const raw = t.slice("patient_photo:".length).trim();
+  if (!raw || !/^[a-z0-9_]+$/.test(raw)) return null;
+
+  if (
+    raw.startsWith("postop_month") ||
+    raw.startsWith("postop_week") ||
+    raw === "postop_day0" ||
+    raw.startsWith("postop_day1_") ||
+    raw.startsWith("day0_") ||
+    raw.startsWith("preop_") ||
+    raw.startsWith("patient_current_") ||
+    raw.startsWith("any_") ||
+    raw.startsWith("intraop") ||
+    raw.startsWith("graft_")
+  ) {
+    return raw;
+  }
+  return null;
+}
+
 export function inferCanonicalPhotoCategory(upload: UploadLike): string {
+  const literal = patientPhotoCategoryLiteralFromType(upload);
+  if (literal) return literal;
+
   const s = tokenize(upload);
 
   if (hasAny(s, ["donor", "occipital", "rear donor", "donor_rear"])) {
@@ -84,6 +115,28 @@ export function scorePhotoForAudit(upload: UploadLike): number {
     case "postop_healed":
     case "postop_healed_donor":
       return 65;
+    case "postop_month3_front":
+    case "postop_month3_top":
+    case "postop_month3_crown":
+    case "postop_month3_donor":
+    case "postop_month6_front":
+    case "postop_month6_top":
+    case "postop_month6_crown":
+    case "postop_month6_donor":
+    case "postop_month9_front":
+    case "postop_month9_top":
+    case "postop_month9_crown":
+    case "postop_month9_donor":
+    case "postop_month12_front":
+    case "postop_month12_top":
+    case "postop_month12_crown":
+    case "postop_month12_donor":
+    case "postop_week1_recipient":
+    case "postop_week1_donor":
+    case "postop_day1_recipient":
+    case "postop_day1_donor":
+    case "postop_day0":
+      return 72;
     case "current_front":
     case "current_top":
     case "current_donor_rear":
@@ -121,6 +174,17 @@ export function buildAuditImageSelection<T extends UploadLike>(uploads: T[], max
     "preop_right",
     "intraop",
     "postop_healed",
+    "postop_month12_front",
+    "postop_month12_top",
+    "postop_month12_crown",
+    "postop_month6_front",
+    "postop_month6_top",
+    "postop_month6_crown",
+    "postop_month3_front",
+    "postop_month3_top",
+    "postop_month3_crown",
+    "postop_week1_recipient",
+    "postop_day0",
   ];
 
   for (const cat of categoryPriority) {

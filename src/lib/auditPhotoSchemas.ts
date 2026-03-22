@@ -143,6 +143,53 @@ function submitterUsesDoctorSchema(st: SubmitterType): boolean {
   return st === "doctor" || st === "clinic";
 }
 
+/** Raw storage keys from patient_photo:* (lowercase), for timeline-aware scoring. */
+function collectPatientRawStorageKeys(
+  photos: Array<{ type?: string; photo_key?: string; submitter_type?: string }>
+): Set<string> {
+  const keys = new Set<string>();
+  for (const p of photos) {
+    const parsed =
+      "photo_key" in p && p.photo_key
+        ? { submitterType: (p.submitter_type ?? "patient") as SubmitterType, key: p.photo_key }
+        : parsePhotoKey(p.type ?? "");
+    if (!parsed || parsed.submitterType !== "patient") continue;
+    keys.add(parsed.key.trim().toLowerCase());
+  }
+  return keys;
+}
+
+/**
+ * Distinct longitudinal tiers satisfied by at least one upload (storage key).
+ * Used additively for patient evidence letter grade beyond optional bucket counts.
+ */
+function countPatientTimelineTiersSatisfied(rawKeys: Set<string>): number {
+  const hasSome = (pred: (k: string) => boolean) => [...rawKeys].some(pred);
+
+  let tiers = 0;
+  if (hasSome((k) => ["day0_recipient", "day0_donor", "intraop", "any_day0"].includes(k))) tiers += 1;
+  if (
+    hasSome((k) =>
+      [
+        "postop_day0",
+        "postop_day1_recipient",
+        "postop_day1_donor",
+        "postop_week1_recipient",
+        "postop_week1_donor",
+        "any_early_postop_day0_3",
+      ].includes(k)
+    )
+  )
+    tiers += 1;
+  if (hasSome((k) => k.startsWith("postop_month3_"))) tiers += 1;
+  if (hasSome((k) => k.startsWith("postop_month6_"))) tiers += 1;
+  if (hasSome((k) => k.startsWith("postop_month12_"))) tiers += 1;
+  return tiers;
+}
+
+/** Cap how many timeline tiers can lift the patient evidence grade (additive). */
+const MAX_TIMELINE_TIERS_FOR_EVIDENCE_SCORE = 2;
+
 /** Build counts by key for a submitter from photo records */
 export function buildCountsByKey(
   photos: Array<{ type?: string; photo_key?: string; submitter_type?: string }>,
@@ -199,7 +246,9 @@ export function computeEvidenceScore(
   // Patient
   const allRequiredMet = required.every((k) => completed.has(k));
   const additionalKeys = [...PATIENT_ADDITIONAL_FOR_GRADE];
-  const additionalCount = additionalKeys.filter((k) => completed.has(k)).length;
+  /** Optional schema rows use min: 0 — `getCompletedCategories` would mark them complete with no uploads. Grade using actual normalized counts instead. */
+  const counts = buildCountsByKey(photos, submitterType);
+  const additionalCount = additionalKeys.filter((k) => (counts[k] ?? 0) > 0).length;
 
   if (!allRequiredMet) {
     const haveCount = required.filter((k) => completed.has(k)).length;
@@ -207,8 +256,13 @@ export function computeEvidenceScore(
     return "D";
   }
 
-  if (additionalCount >= 3) return "A";
-  if (additionalCount >= 1) return "B";
+  const rawKeys = collectPatientRawStorageKeys(photos);
+  const timelineTiers = countPatientTimelineTiersSatisfied(rawKeys);
+  const strength =
+    additionalCount + Math.min(MAX_TIMELINE_TIERS_FOR_EVIDENCE_SCORE, timelineTiers);
+
+  if (strength >= 3) return "A";
+  if (strength >= 1) return "B";
   return "C";
 }
 

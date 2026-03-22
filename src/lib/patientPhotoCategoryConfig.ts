@@ -340,6 +340,7 @@ export const PATIENT_UPLOAD_CATEGORY_DEFS = [
     accept: "image/*",
     maxFiles: 6,
     minFiles: 0,
+    mapsToAuditEvidenceKey: "any_early_postop_day0_3",
   },
   {
     key: "postop_week1_donor",
@@ -354,6 +355,7 @@ export const PATIENT_UPLOAD_CATEGORY_DEFS = [
     accept: "image/*",
     maxFiles: 6,
     minFiles: 0,
+    mapsToAuditEvidenceKey: "any_early_postop_day0_3",
   },
   {
     key: "postop_month3_donor",
@@ -424,6 +426,7 @@ export const PATIENT_UPLOAD_CATEGORY_DEFS = [
     accept: "image/*",
     maxFiles: 6,
     minFiles: 0,
+    mapsToAuditEvidenceKey: "any_early_postop_day0_3",
   },
   {
     key: "postop_week1_recipient",
@@ -438,6 +441,7 @@ export const PATIENT_UPLOAD_CATEGORY_DEFS = [
     accept: "image/*",
     maxFiles: 6,
     minFiles: 0,
+    mapsToAuditEvidenceKey: "any_early_postop_day0_3",
   },
   {
     key: "intraop_extraction",

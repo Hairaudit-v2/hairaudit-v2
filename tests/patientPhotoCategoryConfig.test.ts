@@ -22,6 +22,7 @@ import {
 import {
   canSubmit,
   computeEvidenceDetails,
+  computeEvidenceScore,
   getCompletedCategories,
   PATIENT_REQUIRED_KEYS,
 } from "@/lib/auditPhotoSchemas";
@@ -49,6 +50,10 @@ const EXPECTED_LEGACY_MAP_ENTRIES: Record<string, string> = {
   day0_donor: "any_day0",
   intraop: "any_day0",
   postop_day0: "any_early_postop_day0_3",
+  postop_day1_recipient: "any_early_postop_day0_3",
+  postop_day1_donor: "any_early_postop_day0_3",
+  postop_week1_recipient: "any_early_postop_day0_3",
+  postop_week1_donor: "any_early_postop_day0_3",
 };
 
 test("REQUIRED_PATIENT_UPLOAD_CATEGORY_KEYS matches historical eight required categories", () => {
@@ -67,10 +72,20 @@ test("buildPatientUploadToAuditKeyMap matches pre-refactor PATIENT_LEGACY_MAP en
   }
 });
 
-test("Stage-2 hidden keys are not added to legacy audit map", () => {
+test("Stage-2 hidden keys: only defs with mapsToAuditEvidenceKey appear in legacy audit map", () => {
   const map = buildPatientUploadToAuditKeyMap();
-  for (const k of STAGE2_HIDDEN_PATIENT_UPLOAD_KEYS) {
-    assert.equal(map[k], undefined);
+  for (const d of PATIENT_UPLOAD_CATEGORY_DEFS) {
+    if (!d.visibleInUi) {
+      const target =
+        "mapsToAuditEvidenceKey" in d && d.mapsToAuditEvidenceKey != null
+          ? d.mapsToAuditEvidenceKey
+          : undefined;
+      assert.equal(
+        map[d.key],
+        target,
+        `hidden key ${d.key} should map to ${String(target)}`
+      );
+    }
   }
 });
 
@@ -180,4 +195,35 @@ test("getCompletedCategories patient: minimal three uploads completes required a
   for (const k of PATIENT_REQUIRED_KEYS) {
     assert.ok(done.has(k), `expected missing bucket ${k}`);
   }
+});
+
+test("computeEvidenceScore: required-only patient uploads stay grade C without timeline extras", () => {
+  const photos = [
+    { type: "patient_photo:patient_current_front" },
+    { type: "patient_photo:patient_current_top" },
+    { type: "patient_photo:patient_current_donor_rear" },
+  ];
+  assert.equal(computeEvidenceScore("patient", photos), "C");
+});
+
+test("computeEvidenceScore: early healing map + month milestones lift grade via timeline tiers", () => {
+  const photos = [
+    { type: "patient_photo:patient_current_front" },
+    { type: "patient_photo:patient_current_top" },
+    { type: "patient_photo:patient_current_donor_rear" },
+    { type: "patient_photo:postop_week1_recipient" },
+    { type: "patient_photo:postop_month3_front" },
+    { type: "patient_photo:postop_month6_top" },
+  ];
+  assert.equal(computeEvidenceScore("patient", photos), "A");
+});
+
+test("computeEvidenceScore: postop_week1 maps to any_early and counts as optional bucket", () => {
+  const photos = [
+    { type: "patient_photo:preop_front" },
+    { type: "patient_photo:preop_top" },
+    { type: "patient_photo:preop_donor_rear" },
+    { type: "patient_photo:postop_week1_donor" },
+  ];
+  assert.equal(computeEvidenceScore("patient", photos), "B");
 });

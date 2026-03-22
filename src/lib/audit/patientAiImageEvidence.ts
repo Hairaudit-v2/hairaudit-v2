@@ -1,14 +1,15 @@
 /**
- * Deterministic grouping of patient photo uploads for AI audit context only.
- * Does not affect scoring, canSubmit, or legacy audit bucket rules.
+ * Deterministic grouping of patient photo uploads for AI audit context.
+ * Patient evidence letter grades and `canSubmit` live in `auditPhotoSchemas`; this module only shapes AI prompt groupings.
  */
 
-import { PATIENT_UPLOAD_CATEGORY_DEFS } from "@/lib/patientPhotoCategoryConfig";
+import { PATIENT_AUDIT_PHOTO_BUCKET_DEFS, PATIENT_UPLOAD_CATEGORY_DEFS } from "@/lib/patientPhotoCategoryConfig";
 import {
   PATIENT_PHOTO_CATEGORY_ALIASES,
   PatientPhotoCategorySchema,
   resolveCategoryForValidation,
 } from "@/lib/photoCategories";
+import { isPatientUploadAuditExcluded } from "@/lib/uploads/patientPhotoAuditMeta";
 
 export type PatientAiEvidenceGroupId =
   | "baseline_evidence"
@@ -69,6 +70,23 @@ const CATEGORY_TO_GROUPS: Readonly<Record<string, readonly PatientAiEvidenceGrou
   const GRAFT: PatientAiEvidenceGroupId[] = ["graft_handling_evidence"];
   const FOLLOW: PatientAiEvidenceGroupId[] = ["followup_outcome_evidence"];
   const BASELINE_AND_DONOR: PatientAiEvidenceGroupId[] = ["baseline_evidence", "donor_monitoring_evidence"];
+  const SURG_AND_DONOR: PatientAiEvidenceGroupId[] = ["surgical_evidence", "donor_monitoring_evidence"];
+
+  for (const c of [
+    "patient_current_front",
+    "patient_current_top",
+    "patient_current_left",
+    "patient_current_right",
+    "patient_current_crown",
+  ]) {
+    add(c, BASELINE_ONLY);
+  }
+  add("patient_current_donor_rear", BASELINE_AND_DONOR);
+  add("any_preop", BASELINE_ONLY);
+  add("any_day0", SURG_AND_DONOR);
+  add("any_early_postop_day0_3", SURG);
+  add("intraop", SURG);
+  add("postop_day0", SURG);
 
   for (const c of [
     "preop_front",
@@ -150,6 +168,7 @@ const CATEGORY_TO_GROUPS: Readonly<Record<string, readonly PatientAiEvidenceGrou
 })();
 
 const KNOWN_CATEGORY_KEYS = new Set<string>(PATIENT_UPLOAD_CATEGORY_DEFS.map((d) => d.key));
+const KNOWN_AUDIT_BUCKET_KEYS = new Set<string>(PATIENT_AUDIT_PHOTO_BUCKET_DEFS.map((d) => d.key));
 
 /** @internal Exported for tests — assert config and grouping stay aligned. */
 export function __getCategoryToGroupsForTests(): Readonly<Record<string, readonly PatientAiEvidenceGroupId[]>> {
@@ -183,6 +202,7 @@ export type BuildPatientImageEvidenceGroupsArgs = {
     id?: string | null;
     type?: string | null;
     storage_path?: string | null;
+    metadata?: Record<string, unknown> | null;
   }>;
   preparedImages?: PreparedRow[] | null;
 };
@@ -215,6 +235,7 @@ export function buildPatientImageEvidenceGroups(
     const type = String(u.type ?? "");
     const cat = storageCategoryKeyFromPatientUploadType(type);
     if (cat === null) continue;
+    if (isPatientUploadAuditExcluded(u)) continue;
     totalPatient += 1;
 
     const groupIds = CATEGORY_TO_GROUPS[cat];
@@ -276,8 +297,10 @@ export function formatPatientImageEvidenceGroupsForPrompt(result: PatientImageEv
 /** @internal Verify every grouped category exists in shared config. */
 export function __assertAllGroupedCategoriesExistInConfig(): void {
   for (const cat of Object.keys(CATEGORY_TO_GROUPS)) {
-    if (!KNOWN_CATEGORY_KEYS.has(cat)) {
-      throw new Error(`patientAiImageEvidence: category ${cat} not in PATIENT_UPLOAD_CATEGORY_DEFS`);
+    if (!KNOWN_CATEGORY_KEYS.has(cat) && !KNOWN_AUDIT_BUCKET_KEYS.has(cat)) {
+      throw new Error(
+        `patientAiImageEvidence: category ${cat} not in PATIENT_UPLOAD_CATEGORY_DEFS or PATIENT_AUDIT_PHOTO_BUCKET_DEFS`
+      );
     }
   }
 }
