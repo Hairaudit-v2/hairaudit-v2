@@ -22,15 +22,6 @@ import {
 
 export const runtime = "nodejs";
 
-// Allow larger uploads: 10MB limit for batch uploads
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: "10mb",
-    },
-  },
-};
-
 /** Unified patient categories: includes both schema (legacy buckets) and all extended (Stage 2) categories */
 const PATIENT_AUDIT_PHOTO_KEYS = new Set([
   ...PATIENT_PHOTO_SCHEMA.map((c) => c.key),

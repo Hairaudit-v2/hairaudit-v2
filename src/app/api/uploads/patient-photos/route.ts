@@ -18,15 +18,6 @@ import { PATIENT_UPLOAD_CATEGORY_DEFS, type PatientUploadCategoryKey } from "@/l
 
 export const runtime = "nodejs";
 
-// Allow larger uploads: 10MB limit for batch uploads
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: "10mb",
-    },
-  },
-};
-
 /** All valid patient upload categories (standard + extended/Stage 2) */
 const ALL_PATIENT_CATEGORIES: Set<string> = new Set(PATIENT_UPLOAD_CATEGORY_DEFS.map((d) => d.key));
 
