@@ -80,14 +80,17 @@ export async function GET(_req: Request, ctx: { params: Promise<{ reportId: stri
     }
 
     const filename = safeDownloadFilename(report.id);
+    const { blob } = file;
     const headers = new Headers({
       "Content-Type": "application/pdf",
       "Content-Disposition": `attachment; filename="${filename}"`,
       "Cache-Control": "private, no-store",
-      "Content-Length": String(file.arrayBuffer.byteLength),
+      "Content-Length": String(blob.size),
     });
 
-    return new NextResponse(file.arrayBuffer, { status: 200, headers });
+    // Stream the PDF so we avoid buffering the whole file as ArrayBuffer and start sending sooner on large reports.
+    const body = typeof blob.stream === "function" ? blob.stream() : blob;
+    return new NextResponse(body, { status: 200, headers });
   } catch (e) {
     console.error("[reports/download] unexpected error", e);
     return NextResponse.json({ error: "Something went wrong" }, { status: 500 });

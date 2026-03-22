@@ -5,6 +5,8 @@ export function buildPdfUrl(args: {
   auditMode?: string;
   token: string;
   baseUrl: string;
+  /** Optional; included for PDF benchmark logs only (token remains the auth gate). */
+  reportId?: string | null;
 }): string {
   const auditMode: AuditMode = normalizeAuditMode(args.auditMode);
   const base = (args.baseUrl || "").replace(/\/+$/, "");
@@ -14,6 +16,8 @@ export function buildPdfUrl(args: {
     token: args.token,
     cb: String(Date.now()),
   });
+  const rid = String(args.reportId ?? "").trim();
+  if (rid) params.set("reportId", rid);
   return `${base}/api/print/report?${params.toString()}`;
 }
 

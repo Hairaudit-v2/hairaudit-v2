@@ -8,6 +8,7 @@ import {
 import { buildPdfUrl } from "@/lib/reports/pdfUrl";
 import { signRenderToken } from "@/lib/reports/internalRenderToken";
 import { generateReportPdfFromUrl } from "@/lib/pdf/generateReportPdf";
+import { pdfEnvConfig } from "@/lib/pdf/pdfEnvConfig";
 import { getBaseUrl } from "@/lib/reports/getBaseUrl";
 import rubric from "@/lib/audit/rubrics/hairaudit_clinical_v1.json";
 import {
@@ -143,7 +144,7 @@ export async function renderAndUploadPdfForCase(args: {
   // Load the report summary for this version (deterministic: no fallback)
   const { data: reportRow } = await supabase
     .from("reports")
-    .select("summary, created_at, version, status, pdf_path")
+    .select("id, summary, created_at, version, status, pdf_path")
     .eq("case_id", caseId)
     .eq("version", version)
     .maybeSingle();
@@ -294,7 +295,7 @@ export async function renderAndUploadPdfForCase(args: {
     images,
   };
 
-  const renderer = process.env.PDF_RENDERER === "pdfkit" ? "pdfkit" : "playwright";
+  const renderer = pdfEnvConfig.getPdfRenderer();
 
   let pdfBuffer: Buffer;
 
@@ -318,7 +319,8 @@ export async function renderAndUploadPdfForCase(args: {
     });
 
     const baseUrl = getBaseUrl(args.baseUrl);
-    const url = buildPdfUrl({ caseId, auditMode, token, baseUrl });
+    const reportId = String((reportRow as { id?: string }).id ?? "").trim() || null;
+    const url = buildPdfUrl({ caseId, auditMode, token, baseUrl, reportId });
 
     pdfBuffer = await generateReportPdfFromUrl(url);
   }

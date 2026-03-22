@@ -1,6 +1,16 @@
+import { maybePostProcessAuditPdf } from "@/lib/pdf/maybePostProcessAuditPdf";
+import { pdfEnvConfig } from "@/lib/pdf/pdfEnvConfig";
+import { getQpdfReadiness } from "@/lib/pdf/qpdfReadiness";
+import {
+  logPdfGenerationBenchmark,
+  parsePrintStatsFromPreflightHeaders,
+  shouldLogPdfBenchmark,
+} from "@/lib/pdf/pdfGenerationMetrics";
+
 export async function generateReportPdfFromUrl(url: string): Promise<Buffer> {
+  const startedAt = Date.now();
+
   // Hard guardrail: our PDF rendering MUST only ever print the dedicated print route.
-  // This prevents regressions where we accidentally print legacy HTML pages.
   let parsed: URL | null = null;
   try {
     parsed = new URL(url);
@@ -11,13 +21,18 @@ export async function generateReportPdfFromUrl(url: string): Promise<Buffer> {
   const isDemoReport = String(path).includes("/api/print/demo-report");
   const isEliteReport = String(path).includes("/api/print/report");
 
+  let caseId: string | null = null;
+  let reportId: string | null = null;
+  let template: "elite" | "demo" = "demo";
+
   if (!isDemoReport && !isEliteReport) {
     throw new Error(
       `PDF render refused: non-print URL. Expected '/api/print/report' or '/api/print/demo-report', got '${String(path)}'`
     );
   }
   if (parsed && isEliteReport) {
-    const caseId = parsed.searchParams.get("caseId");
+    caseId = parsed.searchParams.get("caseId");
+    reportId = parsed.searchParams.get("reportId");
     const auditMode = parsed.searchParams.get("auditMode");
     const token = parsed.searchParams.get("token");
     if (!caseId || !auditMode || !token) {
@@ -25,6 +40,9 @@ export async function generateReportPdfFromUrl(url: string): Promise<Buffer> {
         `PDF render refused: missing required params (caseId/auditMode/token) in '${parsed.pathname}'`
       );
     }
+    template = "elite";
+  } else if (isDemoReport) {
+    template = "demo";
   }
 
   console.log("[PDF] print url:", url);
@@ -42,7 +60,6 @@ export async function generateReportPdfFromUrl(url: string): Promise<Buffer> {
       }
     : undefined;
 
-  // Preflight check: ensure we are hitting the elite print renderer
   const preflight = await fetch(url, {
     headers: extraHTTPHeaders as HeadersInit | undefined,
   }).catch((err: unknown) => {
@@ -79,6 +96,21 @@ export async function generateReportPdfFromUrl(url: string): Promise<Buffer> {
     );
   }
 
+  const printStats = parsePrintStatsFromPreflightHeaders(preflight.headers);
+
+  if (pdfEnvConfig.isInstrumentationEnabled()) {
+    console.info("[pdf-gen] preflight print stats", {
+      imageCount: printStats.imageCount,
+      sourceBytes: printStats.sourceBytes,
+      optimizedBytes: printStats.optimizedBytes,
+      fallbackCount: printStats.fallbackCount,
+      skippedReencode: printStats.skippedReencode,
+      processedFull: printStats.processedFull,
+      truncated: printStats.truncated,
+      preflightHtmlBytes: printStats.preflightHtmlBytes,
+    });
+  }
+
   const browser = isServerless
     ? await (async () => {
         const [{ chromium }, chromiumPack] = await Promise.all([
@@ -102,7 +134,6 @@ export async function generateReportPdfFromUrl(url: string): Promise<Buffer> {
     const page = await context.newPage();
     await page.goto(url, { waitUntil: "networkidle" });
 
-    // Guardrail: never upload a PDF of Vercel auth/login gates.
     const gateText = (await page.locator("body").innerText().catch(() => "")).slice(0, 4000);
     const looksLikeGate =
       /vercel|authentication required|password protected|login|sign in/i.test(gateText) &&
@@ -113,13 +144,54 @@ export async function generateReportPdfFromUrl(url: string): Promise<Buffer> {
 
     await page.emulateMedia({ media: "print" });
 
+    const scale = pdfEnvConfig.getPlaywrightScale();
     const pdf = await page.pdf({
       format: "A4",
       printBackground: true,
       margin: { top: "16mm", right: "14mm", bottom: "16mm", left: "14mm" },
+      scale,
     });
 
-    return Buffer.from(pdf);
+    const rawPdf = Buffer.from(pdf);
+    const post = await maybePostProcessAuditPdf(rawPdf);
+
+    if (pdfEnvConfig.isInstrumentationEnabled()) {
+      console.info("[pdf-gen] output", {
+        pdfBytes: post.buffer.length,
+        scale,
+        linearized: post.linearized,
+      });
+    }
+
+    if (shouldLogPdfBenchmark()) {
+      const readiness = await getQpdfReadiness();
+      logPdfGenerationBenchmark(
+        {
+          event: "pdf_generation_complete",
+          template,
+          caseId,
+          reportId,
+          imageCount: printStats.imageCount,
+          sourceBytes: printStats.sourceBytes,
+          optimizedBytes: printStats.optimizedBytes,
+          skippedReencode: printStats.skippedReencode,
+          processedFull: printStats.processedFull,
+          truncated: printStats.truncated,
+          fallbackCount: printStats.fallbackCount,
+          preflightHtmlBytes: printStats.preflightHtmlBytes,
+          rawPdfBytes: rawPdf.length,
+          finalPdfBytes: post.buffer.length,
+          durationMs: Date.now() - startedAt,
+          linearized: post.linearized,
+          linearizationRequested: pdfEnvConfig.isLinearizationEnabled(),
+          scale,
+        },
+        readiness,
+        pdfEnvConfig.isBenchmarkMode()
+      );
+    }
+
+    return Buffer.from(post.buffer);
   } finally {
     await browser.close();
   }

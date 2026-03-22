@@ -38,6 +38,7 @@ export type EliteReportViewModel = {
   highlights: string[];
   risks: string[];
   radar?: EliteRadarVm;
+  /** Evidence images: `signedUrl` is a print-optimized data URL or a signed storage URL. */
   photosByCategory: Record<string, { signedUrl: string | null; label: string }[]>;
   doctorBlockHtml?: string;
   debugFooter?: string;
@@ -834,7 +835,18 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       padding: 6px;
       border-bottom: 1px solid rgba(203,213,225,0.6);
     }
-    .evidencePhotoCard img { display: block; width: 100%; height: 160px; object-fit: cover; border-radius: 8px; }
+    .evidencePhotoCard img {
+      display: block;
+      width: 100%;
+      max-width: 100%;
+      height: 160px;
+      max-height: 160px;
+      object-fit: cover;
+      object-position: center;
+      border-radius: 8px;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
     .evidencePhotoCard .imgLabel {
       font-size: 10px;
       font-weight: 700;
@@ -892,7 +904,15 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       box-shadow: 0 4px 12px rgba(15,23,42,0.04);
       page-break-inside: avoid; break-inside: avoid;
     }
-    .forensicPhoto img { display:block; width:100%; height:160px; object-fit:cover; }
+    .forensicPhoto img {
+      display: block;
+      width: 100%;
+      max-width: 100%;
+      height: 160px;
+      max-height: 160px;
+      object-fit: cover;
+      object-position: center;
+    }
     .forensicPhoto figcaption { font-size:10px; color: var(--muted); padding:8px 10px; min-height: 32px; background: #f9fbff; border-top: 1px solid rgba(203,213,225,0.5); font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
     .limitPanel { margin-top: 12px; border: 1px solid #bfdbfe; border-radius: 12px; padding: 10px; background: #eff6ff; font-size: 11px; color: #1e3a8a; }
 
@@ -974,7 +994,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       .infoGrid { margin-top: 24px; gap: 16px; }
       .riskStrip { grid-template-columns: 1fr 1fr; margin-top: 22px; gap: 12px; }
       .executiveDivider { margin-top: 24px; margin-bottom: 18px; }
-      .forensicPhoto img, .evidencePhotoCard img { height: 140px; }
+      .forensicPhoto img, .evidencePhotoCard img { height: 140px; max-height: 140px; }
       .evidenceGroup, .evidenceObsPanel, .evidenceLimitationsPanel, .evidencePhotoCard { break-inside: avoid; page-break-inside: avoid; }
       .evidencePhotoGrid { gap: 10px; }
       .footer { page-break-inside: avoid; margin-top: 14px; padding-top: 6px; }

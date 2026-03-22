@@ -8,6 +8,7 @@ import { buildReportViewModel, normalizeAuditMode, type AuditMode } from "@/lib/
 import { resolveAuditModeFromCaseAccess } from "@/lib/reports/accessMode";
 import { verifyRenderToken } from "@/lib/reports/internalRenderToken";
 import { effectivePatientPhotoCategoryKey } from "@/lib/uploads/patientPhotoAuditMeta";
+import { pdfEnvConfig } from "@/lib/pdf/pdfEnvConfig";
 
 /* Admin client (NO cookies, NO sessions — Playwright safe) */
 function supabaseAdmin() {
@@ -428,7 +429,7 @@ export async function GET(req: Request) {
       `
       : "";
 
-  const pdfDebugEnabled = String(process.env.PDF_DEBUG ?? "").toLowerCase() === "true";
+  const pdfDebugEnabled = pdfEnvConfig.isPdfDebugEnabled();
   const debugFooter = pdfDebugEnabled
     ? `
     <div class="footerDebug">

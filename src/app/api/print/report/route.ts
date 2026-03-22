@@ -4,7 +4,7 @@ import { buildReportViewModel, normalizeAuditMode, type AuditMode, type AuditRep
 import { verifyRenderToken } from "@/lib/reports/internalRenderToken";
 import { renderEliteReportHtml } from "@/lib/reports/EliteReportHtml";
 import rubric from "@/lib/audit/rubrics/hairaudit_clinical_v1.json";
-import { inferCanonicalPhotoCategory, photoCategoryGroup } from "@/lib/photos/classification";
+import { buildElitePrintPhotosByCategory } from "@/lib/pdf/elitePrintPhotoPipeline";
 import {
   deriveDomainScoresFromSections,
   deriveDomainScoresHeuristic,
@@ -12,6 +12,7 @@ import {
   toNumberRecord,
 } from "@/lib/reports/pdfReadiness";
 import { loadLatestEvidenceManifest } from "@/lib/evidence/prepareCaseEvidence";
+import { pdfEnvConfig } from "@/lib/pdf/pdfEnvConfig";
 
 function clamp100(n: number) {
   return Math.max(0, Math.min(100, n));
@@ -127,87 +128,31 @@ export async function GET(req: Request) {
     });
   }
   const bucket = process.env.CASE_FILES_BUCKET || "case-files";
-  const photosByCategory: Record<string, { signedUrl: string | null; label: string }[]> = {};
   const manifest = await loadLatestEvidenceManifest({
     supabase: supabase as any,
     caseId,
     status: "ready",
   });
 
-  if (manifest?.prepared_images?.length) {
-    const signedPrepared = await Promise.all(
-      manifest.prepared_images.map(async (item) => {
-        const path = String(item.prepared_path ?? "");
-        if (!path) return { ...item, signedUrl: null };
-        const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, 60 * 10);
-        if (error) {
-          console.error("prepared signed url error:", error.message);
-          return { ...item, signedUrl: null };
-        }
-        return { ...item, signedUrl: data?.signedUrl ?? null };
-      })
-    );
-    for (const u of signedPrepared) {
-      const canonical = String((u as any)?.category ?? "uncategorized");
-      const cat = `${photoCategoryGroup(canonical)} - ${canonical.replaceAll("_", " ")}`;
-      const label = String((u as any)?.category ?? "prepared evidence");
-      photosByCategory[cat] = photosByCategory[cat] || [];
-      photosByCategory[cat].push({ signedUrl: (u as any).signedUrl ?? null, label });
-    }
-  } else {
-    // Legacy fallback while manifests backfill.
-    const { data: uploads, error: upErr } = await supabase
-      .from("uploads")
-      .select("id, type, storage_path, metadata, created_at")
-      .eq("case_id", caseId)
-      .order("created_at", { ascending: true });
+  const { photosByCategory, stats: printPhotoStats } = await buildElitePrintPhotosByCategory({
+    supabase: supabase as any,
+    bucket,
+    caseId,
+    manifest: manifest ?? null,
+  });
 
-    if (upErr) {
-      console.error("uploads error:", upErr.message);
-    }
-
-    const imageUploads = (uploads ?? []).filter((u) => {
-      const t = String(u.type ?? "").toLowerCase();
-      return (
-        t.startsWith("patient_photo:") ||
-        t.includes("image") ||
-        t.includes("photo") ||
-        t.includes("jpg") ||
-        t.includes("jpeg") ||
-        t.includes("png") ||
-        t.includes("webp")
-      );
+  const pdfInstrumentation = pdfEnvConfig.isInstrumentationEnabled();
+  if (pdfInstrumentation) {
+    console.info("[pdf-print]", {
+      caseId,
+      imageCount: printPhotoStats.imageCount,
+      sourceBytesTotal: printPhotoStats.sourceBytesTotal,
+      optimizedBytesTotal: printPhotoStats.optimizedBytesTotal,
+      fallbackToSignedUrlCount: printPhotoStats.fallbackToSignedUrlCount,
+      imagesSkippedReencode: printPhotoStats.imagesSkippedReencode,
+      imagesProcessedFull: printPhotoStats.imagesProcessedFull,
+      imagesTruncated: printPhotoStats.imagesTruncated,
     });
-
-    const signedImages = await Promise.all(
-      imageUploads.map(async (u) => {
-        const path = String(u.storage_path ?? "");
-        if (!path) return { ...u, signedUrl: null };
-
-        const { data, error } = await supabase.storage
-          .from(bucket)
-          .createSignedUrl(path, 60 * 10);
-
-        if (error) {
-          console.error("signed url error:", error.message);
-          return { ...u, signedUrl: null };
-        }
-
-        return {
-          ...u,
-          signedUrl: data?.signedUrl ?? null,
-        };
-      })
-    );
-    for (const u of signedImages) {
-      const canonical = inferCanonicalPhotoCategory(u as any);
-      const cat = `${photoCategoryGroup(canonical)} - ${canonical.replaceAll("_", " ")}`;
-      const label =
-        String((u as any)?.metadata?.label ?? "").trim() ||
-        String((u as any)?.type ?? "photo");
-      photosByCategory[cat] = photosByCategory[cat] || [];
-      photosByCategory[cat].push({ signedUrl: (u as any).signedUrl ?? null, label });
-    }
   }
 
   // Load latest report summary
@@ -487,7 +432,7 @@ export async function GET(req: Request) {
     (summary?.confidence_label as string | undefined) ??
     "medium";
 
-  const pdfDebugEnabled = String(process.env.PDF_DEBUG ?? "").toLowerCase() === "true";
+  const pdfDebugEnabled = pdfEnvConfig.isPdfDebugEnabled();
   const debugFooter =
     pdfDebugEnabled && latestReport
       ? `Renderer: playwright • Mode: ${mode} • Case: ${caseId} v${String(
@@ -565,6 +510,7 @@ export async function GET(req: Request) {
   };
 
   const html = renderEliteReportHtml(eliteVm);
+  const htmlUtf8Bytes = Buffer.byteLength(html, "utf8");
 
   return new NextResponse(html, {
     headers: {
@@ -572,6 +518,14 @@ export async function GET(req: Request) {
       "Cache-Control": "no-store",
       "X-Report-Template": "elite",
       "X-Audit-Mode": mode,
+      "X-Pdf-Print-Html-Bytes": String(htmlUtf8Bytes),
+      "X-Pdf-Print-Image-Count": String(printPhotoStats.imageCount),
+      "X-Pdf-Print-Source-Bytes": String(printPhotoStats.sourceBytesTotal),
+      "X-Pdf-Print-Optimized-Bytes": String(printPhotoStats.optimizedBytesTotal),
+      "X-Pdf-Print-Fallback-Count": String(printPhotoStats.fallbackToSignedUrlCount),
+      "X-Pdf-Print-Skipped-Reencode": String(printPhotoStats.imagesSkippedReencode),
+      "X-Pdf-Print-Processed-Full": String(printPhotoStats.imagesProcessedFull),
+      "X-Pdf-Print-Truncated": String(printPhotoStats.imagesTruncated),
     },
   });
 }

@@ -7,6 +7,7 @@ import type PDFKit from "pdfkit";
 import { HA_HOME } from "@/config/platform-links";
 import { auditorPatientPhotoCategoryLabel } from "@/lib/auditor/auditorPatientPhotoCategories";
 import { effectivePatientPhotoCategoryKey } from "@/lib/uploads/patientPhotoAuditMeta";
+import { pdfEnvConfig } from "@/lib/pdf/pdfEnvConfig";
 
 // Brand colours (from globals.css)
 const SLATE_900 = "#0f172a";
@@ -1407,7 +1408,7 @@ export async function buildAuditReportPdf(
     doc.text(`Build: ${sha}`, MARGIN, doc.y + 36);
   }
 
-  const pdfDebugEnabled = String(process.env.PDF_DEBUG ?? "").toLowerCase() === "true";
+  const pdfDebugEnabled = pdfEnvConfig.isPdfDebugEnabled();
   if (pdfDebugEnabled) {
     doc.moveDown(2);
     doc.fillColor(SLATE_400).fontSize(8);
