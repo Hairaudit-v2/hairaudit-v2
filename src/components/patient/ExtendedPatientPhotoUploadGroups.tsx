@@ -7,7 +7,9 @@ import type { PatientUploadCategoryKey } from "@/lib/patientPhotoCategoryConfig"
 import {
   getPatientExtendedUploadGroupsResolved,
   PATIENT_EXTENDED_UPLOAD_MICROCOPY,
+  type PatientExtendedUploadGroupId,
 } from "@/lib/patientExtendedUploadUi";
+import { orderExtendedUploadGroupsByHint } from "@/lib/patientPhoto/patientPhotoUploadGuidance";
 
 type UploadRow = {
   id: string;
@@ -32,6 +34,7 @@ export default function ExtendedPatientPhotoUploadGroups({
   onUpload,
   onDeleted,
   skin = "audit",
+  extendedGroupOrderHint,
 }: {
   /** When unset, uses NEXT_PUBLIC_ENABLE_EXTENDED_PATIENT_UPLOADS. */
   enabled?: boolean;
@@ -41,11 +44,17 @@ export default function ExtendedPatientPhotoUploadGroups({
   onUpload: (category: PatientUploadCategoryKey, files: File[]) => void;
   onDeleted: (uploadId: string) => void;
   skin?: Skin;
+  /** Intake-driven accordion order (additive); default order when omitted. */
+  extendedGroupOrderHint?: readonly PatientExtendedUploadGroupId[] | null;
 }) {
   const enabled = enabledProp ?? isExtendedPatientUploadsEnabled();
   if (!enabled) return null;
 
-  const groups = getPatientExtendedUploadGroupsResolved();
+  const baseGroups = getPatientExtendedUploadGroupsResolved();
+  const groups =
+    extendedGroupOrderHint && extendedGroupOrderHint.length > 0
+      ? orderExtendedUploadGroupsByHint(baseGroups, extendedGroupOrderHint)
+      : baseGroups;
   const shell =
     skin === "audit"
       ? "rounded-xl border border-slate-200 bg-slate-50/40"

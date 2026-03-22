@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import PatientPhotoUpload from "../patient/photos/patient-photo-upload";
+import { loadPatientPhotoStageGuidanceForCase } from "@/lib/patientPhoto/loadPatientPhotoStageGuidanceForCase";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 
 export default async function Page({
@@ -32,6 +33,8 @@ export default async function Page({
     .eq("case_id", caseId)
     .order("created_at", { ascending: false });
 
+  const patientPhotoStageGuidance = await loadPatientPhotoStageGuidanceForCase(supabase, caseId);
+
   return (
     <div style={{ padding: 24, maxWidth: 980, margin: "0 auto" }}>
       <div style={{ marginBottom: 12 }}>
@@ -43,6 +46,7 @@ export default async function Page({
         initialUploads={uploads ?? []}
         caseStatus={c.status}
         submittedAt={c.submitted_at}
+        patientPhotoStageGuidance={patientPhotoStageGuidance}
       />
     </div>
   );

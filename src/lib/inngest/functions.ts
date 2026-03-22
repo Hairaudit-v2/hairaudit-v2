@@ -8,10 +8,12 @@ import { isAiExtendedImageEvidenceEnabled } from "@/lib/features/enableAiExtende
 import { runGraftIntegrityModelEstimate } from "@/lib/ai/graftIntegrity";
 import { runDoctorScoringNarrative, DEFAULT_PROTOCOL_CATALOG, DEFAULT_TRAINING_MODULE_CATALOG } from "@/lib/ai/runDoctorScoringNarrative";
 import { notifyPatientAuditFailed, notifyAuditorAuditFailed, notifyPatientReportReady, notifyAuditorNewAuditSubmitted } from "@/lib/email";
-import { canSubmit } from "@/lib/auditPhotoSchemas";
 import { computeDomainScoresV1, computeDoctorAiContextV1 } from "@/lib/benchmarks/domainScoring";
 import { renderAndUploadPdfForCase } from "@/lib/reports/renderPdfInternal";
 import { normalizeIntakeFormData, toNestedForApi } from "@/lib/intake/normalizeIntakeFormData";
+import { normalizedPatientAnswersFromReportRow } from "@/lib/patient/answersFromReportRow";
+import { evaluatePatientPhotoSubmitGate } from "@/lib/patientPhoto/patientPhotoReadinessPolicy";
+import { isPatientPhotoStageAwareSubmitEnabled } from "@/lib/features/enablePatientPhotoStageAwareSubmit";
 import { shouldGeneratePdf } from "@/lib/reports/pdfReadiness";
 import {
   loadPreparedModelImageInputs,
@@ -68,16 +70,6 @@ function pickClaimedGrafts(patientAnswers: Record<string, unknown> | null): numb
 
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
-}
-
-function normalizePatientAnswersForAudit(raw: Record<string, unknown> | null): Record<string, unknown> | null {
-  if (!raw || typeof raw !== "object") return null;
-  const flat = normalizeIntakeFormData(raw);
-  const nested = toNestedForApi(flat);
-  return {
-    ...raw,
-    ...nested,
-  };
 }
 
 type PipelinePhaseStatus =
@@ -638,7 +630,27 @@ export const runAudit = inngest.createFunction(
     const uploadsForEvidenceScoring = uploads.filter(
       (u) => !String(u.type ?? "").startsWith("patient_photo:") || !isPatientUploadAuditExcluded(u)
     );
-    if (!canSubmit("patient", patientPhotosForAudit.map((u) => ({ type: u.type })))) {
+
+    const reportRowForPhotoGate = await step.run("load-report-row-for-patient-photo-gate", async () => {
+      const { data, error } = await supabase
+        .from("reports")
+        .select("summary, patient_audit_version, patient_audit_v2")
+        .eq("case_id", caseId)
+        .order("version", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw new Error(`reports load failed (photo gate): ${error.message}`);
+      return data ?? null;
+    });
+
+    const patientAnswersForPhotoGate = normalizedPatientAnswersFromReportRow(reportRowForPhotoGate);
+    const photoSubmitGate = evaluatePatientPhotoSubmitGate({
+      uploadRows: uploads,
+      patientAnswers: patientAnswersForPhotoGate,
+      stageAwareSubmitEnabled: isPatientPhotoStageAwareSubmitEnabled(),
+    });
+
+    if (!photoSubmitGate.allowed) {
       // Mark case “needs_more_info” or revert to draft
       await step.run("mark-missing", async () => {
         await supabase
@@ -646,7 +658,12 @@ export const runAudit = inngest.createFunction(
           .update({ status: "draft" })
           .eq("id", caseId);
       });
-      throw new Error("Missing required patient photos (Current Front, Top, Donor rear)");
+      const alt = photoSubmitGate.alternateKeysRequired;
+      const altHint =
+        isPatientPhotoStageAwareSubmitEnabled() && alt?.length
+          ? ` Or upload one photo each for: ${alt.join(", ")} (outcome path for your recovery stage).`
+          : "";
+      throw new Error(`Missing required patient photos (Current Front, Top, Donor rear).${altHint}`);
     }
 
     // 5) Load existing report summary (patient/doctor/clinic answers)
@@ -661,15 +678,9 @@ export const runAudit = inngest.createFunction(
 
       if (error) throw new Error(`reports load failed: ${error.message}`);
       const s = (data?.summary ?? {}) as Record<string, unknown>;
-      const savedV2 =
-        (data as { patient_audit_version?: number; patient_audit_v2?: Record<string, unknown> | null } | null)
-          ?.patient_audit_version === 2 &&
-        (data as { patient_audit_v2?: Record<string, unknown> | null } | null)?.patient_audit_v2 &&
-        typeof (data as { patient_audit_v2?: Record<string, unknown> | null } | null)?.patient_audit_v2 === "object"
-          ? ((data as { patient_audit_v2?: Record<string, unknown> | null }).patient_audit_v2 as Record<string, unknown>)
-          : null;
-      const summaryPatient = (s.patient_answers ?? null) as Record<string, unknown> | null;
-      const patientAnswers = normalizePatientAnswersForAudit(savedV2 ?? summaryPatient);
+      const patientAnswers = normalizedPatientAnswersFromReportRow(
+        data as Parameters<typeof normalizedPatientAnswersFromReportRow>[0]
+      );
       return {
         patient_answers: patientAnswers,
         doctor_answers: s.doctor_answers ?? null,

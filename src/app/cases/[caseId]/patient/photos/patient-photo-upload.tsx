@@ -12,6 +12,7 @@ import PatientImageEvidenceNudgeCallout from "@/components/patient/PatientImageE
 import { computePatientImageEvidenceQualityFromCaseUploads } from "@/lib/audit/patientImageEvidenceConfidence";
 import { buildPatientImageEvidenceUploadNudges } from "@/lib/audit/patientImageEvidenceUploadNudges";
 import { isPatientImageEvidenceNudgesEnabled } from "@/lib/features/enablePatientImageEvidenceNudges";
+import type { PatientPhotoUploadGuidancePanel } from "@/lib/patientPhoto/patientPhotoUploadGuidance";
 
 /* ---------------- Types ---------------- */
 
@@ -38,11 +39,13 @@ export default function PatientPhotoUpload({
   initialUploads,
   caseStatus,
   submittedAt,
+  patientPhotoStageGuidance,
 }: {
   caseId: string;
   initialUploads: UploadRow[];
   caseStatus: string;
   submittedAt?: string | null;
+  patientPhotoStageGuidance?: PatientPhotoUploadGuidancePanel | null;
 }) {
   const [uploads, setUploads] = useState(initialUploads);
   const [busyCats, setBusyCats] = useState<Record<string, boolean>>({});
@@ -135,6 +138,16 @@ export default function PatientPhotoUpload({
 
       {evidenceNudges.length > 0 ? <PatientImageEvidenceNudgeCallout nudges={evidenceNudges} /> : null}
 
+      {patientPhotoStageGuidance ? (
+        <div
+          className="rounded-lg border border-sky-200 bg-sky-50/90 p-4 text-sm text-gray-900"
+          role="note"
+        >
+          <p className="font-semibold">{patientPhotoStageGuidance.title}</p>
+          <p className="mt-1 leading-relaxed text-gray-700">{patientPhotoStageGuidance.body}</p>
+        </div>
+      ) : null}
+
       <div className="space-y-4">
         {PATIENT_PHOTO_CATEGORIES.map((cat) => (
           <PhotoCategoryCard
@@ -162,6 +175,7 @@ export default function PatientPhotoUpload({
         onUpload={uploadFiles}
         onDeleted={deleteUpload}
         skin="legacy"
+        extendedGroupOrderHint={patientPhotoStageGuidance?.extendedGroupOrderHint}
       />
 
       <footer className="flex items-center justify-between pt-3 border-t text-sm">

@@ -10,6 +10,20 @@ import {
   computeEvidenceDetails,
 } from "@/lib/auditPhotoSchemas";
 import { getUserRole } from "@/lib/case-access";
+import { normalizedPatientAnswersFromReportRow } from "@/lib/patient/answersFromReportRow";
+import { evaluatePatientPhotoSubmitGate } from "@/lib/patientPhoto/patientPhotoReadinessPolicy";
+import { isPatientPhotoStageAwareSubmitEnabled } from "@/lib/features/enablePatientPhotoStageAwareSubmit";
+import { filterPatientPhotosForAuditUse } from "@/lib/uploads/patientPhotoAuditMeta";
+
+function buildPhotosForPatientScoring(
+  rows: Array<{ type?: string | null; metadata?: unknown }>
+): Array<{ type: string | null | undefined }> {
+  const nonPatient = rows.filter((u) => !String(u.type ?? "").toLowerCase().startsWith("patient_photo:"));
+  const patientOk = filterPatientPhotosForAuditUse(
+    rows.filter((u) => String(u.type ?? "").toLowerCase().startsWith("patient_photo:"))
+  );
+  return [...nonPatient, ...patientOk].map((u) => ({ type: u.type }));
+}
 
 function supabaseAdmin() {
   return createClient(
@@ -64,25 +78,53 @@ export async function POST(req: Request) {
 
     const { data: uploads } = await admin
       .from("uploads")
-      .select("type")
+      .select("type, metadata")
       .eq("case_id", caseId);
 
-    const photos = (uploads ?? []).map((u) => ({ type: u.type }));
+    const uploadRows = uploads ?? [];
+    const photosForEvidence = uploadRows.map((u) => ({ type: u.type }));
 
     const submitterType = c.audit_type === "doctor" ? "doctor" : c.audit_type === "clinic" ? "clinic" : "patient";
-    if (submitterType === "patient" && !canSubmit("patient", photos)) {
-      return NextResponse.json(
-        { error: "Upload required patient photos first (Current Front, Top, Donor rear). Go to Step 2: Add your photos." },
-        { status: 400 }
-      );
+    let patientPhotoGateForMeta: ReturnType<typeof evaluatePatientPhotoSubmitGate> | null = null;
+
+    if (submitterType === "patient") {
+      const { data: reportRow } = await admin
+        .from("reports")
+        .select("summary, patient_audit_version, patient_audit_v2")
+        .eq("case_id", caseId)
+        .order("version", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      const patientAnswers = normalizedPatientAnswersFromReportRow(reportRow);
+      const photoGate = evaluatePatientPhotoSubmitGate({
+        uploadRows,
+        patientAnswers,
+        stageAwareSubmitEnabled: isPatientPhotoStageAwareSubmitEnabled(),
+      });
+      patientPhotoGateForMeta = photoGate;
+
+      if (!photoGate.allowed) {
+        const alt = photoGate.alternateKeysRequired;
+        const altLine =
+          isPatientPhotoStageAwareSubmitEnabled() && alt?.length
+            ? ` Or add one photo each for outcome categories: ${alt.join(", ")}.`
+            : "";
+        return NextResponse.json(
+          {
+            error: `Upload required patient photos first (Current Front, Top, Donor rear).${altLine} Go to Step 2: Add your photos.`,
+          },
+          { status: 400 }
+        );
+      }
     }
-    if (submitterType === "doctor" && !canSubmit("doctor", photos)) {
+    if (submitterType === "doctor" && !canSubmit("doctor", photosForEvidence)) {
       return NextResponse.json(
         { error: "Upload required clinical evidence photos before submission." },
         { status: 400 }
       );
     }
-    if (submitterType === "clinic" && !canSubmit("clinic", photos)) {
+    if (submitterType === "clinic" && !canSubmit("clinic", photosForEvidence)) {
       return NextResponse.json(
         { error: "Upload required clinic evidence photos before submission (same categories as doctor audit)." },
         { status: 400 }
@@ -97,13 +139,31 @@ export async function POST(req: Request) {
       );
     }
 
-    const patientScore = submitterType === "patient" ? computeEvidenceScore("patient", photos) : null;
+    const photosForPatientScoring =
+      submitterType === "patient" ? buildPhotosForPatientScoring(uploadRows) : photosForEvidence;
+
+    const patientScore =
+      submitterType === "patient" ? computeEvidenceScore("patient", photosForPatientScoring) : null;
     const patientConfidence = patientScore ? computeConfidenceLabel(patientScore) : null;
-    const patientDetails = submitterType === "patient" ? computeEvidenceDetails("patient", photos) : null;
+    const patientDetailsBase =
+      submitterType === "patient" ? computeEvidenceDetails("patient", photosForPatientScoring) : null;
+    const patientDetails =
+      patientDetailsBase && patientPhotoGateForMeta
+        ? {
+            ...patientDetailsBase,
+            photo_submit_gate: {
+              via_baseline: patientPhotoGateForMeta.viaBaseline,
+              via_alternate_outcome: patientPhotoGateForMeta.viaAlternateOutcome,
+              stage_aware_evaluated: patientPhotoGateForMeta.stageAwareEvaluated,
+              months_since: patientPhotoGateForMeta.monthsSince,
+              alternate_keys_required: patientPhotoGateForMeta.alternateKeysRequired,
+            },
+          }
+        : patientDetailsBase;
 
     let doctorScore: EvidenceScore | null = null;
     let doctorConfidence: string | null = null;
-    const doctorPhotos = photos.filter((p) => String(p.type ?? "").startsWith("doctor_photo:"));
+    const doctorPhotos = uploadRows.filter((p) => String(p.type ?? "").startsWith("doctor_photo:"));
     if (doctorPhotos.length > 0 || submitterType === "doctor") {
       const score: EvidenceScore = computeEvidenceScore("doctor", doctorPhotos);
       doctorScore = score;
@@ -112,7 +172,7 @@ export async function POST(req: Request) {
 
     let clinicScore: EvidenceScore | null = null;
     let clinicConfidence: string | null = null;
-    const clinicPhotos = photos.filter((p) => String(p.type ?? "").startsWith("clinic_photo:"));
+    const clinicPhotos = uploadRows.filter((p) => String(p.type ?? "").startsWith("clinic_photo:"));
     if (clinicPhotos.length > 0 || submitterType === "clinic") {
       const score: EvidenceScore = computeEvidenceScore("clinic", clinicPhotos);
       clinicScore = score;

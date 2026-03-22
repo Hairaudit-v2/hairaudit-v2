@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import PhotoUploader from "@/components/photos/PhotoUploader";
+import { loadPatientPhotoStageGuidanceForCase } from "@/lib/patientPhoto/loadPatientPhotoStageGuidanceForCase";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 
 type PageProps = { params: Promise<{ caseId: string }> };
@@ -34,6 +35,8 @@ export default async function Page({ params }: PageProps) {
     String(u.type ?? "").startsWith("patient_photo:")
   );
 
+  const patientPhotoStageGuidance = await loadPatientPhotoStageGuidanceForCase(supabase, caseId);
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-6">
       <div className="mb-4">
@@ -54,6 +57,7 @@ export default async function Page({ params }: PageProps) {
         backHref={`/cases/${caseId}/patient/questions`}
         nextHref={`/cases/${caseId}`}
         nextLabel="3. Submit for audit"
+        patientPhotoStageGuidance={patientPhotoStageGuidance}
       />
     </div>
   );

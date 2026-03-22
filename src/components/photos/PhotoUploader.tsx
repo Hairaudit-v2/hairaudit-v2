@@ -22,6 +22,7 @@ import PatientImageEvidenceNudgeCallout from "@/components/patient/PatientImageE
 import { computePatientImageEvidenceQualityFromCaseUploads } from "@/lib/audit/patientImageEvidenceConfidence";
 import { buildPatientImageEvidenceUploadNudges } from "@/lib/audit/patientImageEvidenceUploadNudges";
 import { isPatientImageEvidenceNudgesEnabled } from "@/lib/features/enablePatientImageEvidenceNudges";
+import type { PatientPhotoUploadGuidancePanel } from "@/lib/patientPhoto/patientPhotoUploadGuidance";
 
 type UploadRow = {
   id: string;
@@ -62,6 +63,7 @@ export default function PhotoUploader({
   nextHref,
   nextLabel = "Continue",
   hideFooter,
+  patientPhotoStageGuidance,
 }: {
   caseId: string;
   submitterType: SubmitterType;
@@ -72,6 +74,8 @@ export default function PhotoUploader({
   nextHref?: string;
   nextLabel?: string;
   hideFooter?: boolean;
+  /** Intake-driven guidance + optional extended-group order (flagged server-side). */
+  patientPhotoStageGuidance?: PatientPhotoUploadGuidancePanel | null;
 }) {
   const [uploads, setUploads] = useState(initialUploads);
   const [busyCats, setBusyCats] = useState<Record<string, boolean>>({});
@@ -219,6 +223,16 @@ export default function PhotoUploader({
             <PatientImageEvidenceNudgeCallout nudges={evidenceNudges} />
           </div>
         ) : null}
+
+        {submitterType === "patient" && patientPhotoStageGuidance ? (
+          <div
+            className="mt-4 rounded-lg border border-sky-200 bg-sky-50/90 p-4 text-sm text-slate-800"
+            role="note"
+          >
+            <p className="font-semibold text-slate-900">{patientPhotoStageGuidance.title}</p>
+            <p className="mt-1 leading-relaxed text-slate-700">{patientPhotoStageGuidance.body}</p>
+          </div>
+        ) : null}
       </header>
 
       <div className="space-y-4">
@@ -259,6 +273,7 @@ export default function PhotoUploader({
           }}
           onDeleted={deleteUpload}
           skin="audit"
+          extendedGroupOrderHint={patientPhotoStageGuidance?.extendedGroupOrderHint}
         />
       )}
 
