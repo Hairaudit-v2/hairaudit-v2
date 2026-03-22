@@ -1,8 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import PatientPhotoUpload from "../patient/photos/patient-photo-upload";
+import UnifiedPatientUploader from "@/components/patient/UnifiedPatientUploader";
 import { loadPatientPhotoStageGuidanceForCase } from "@/lib/patientPhoto/loadPatientPhotoStageGuidanceForCase";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
+
+export const metadata = {
+  title: "Patient Photos | HairAudit",
+};
 
 export default async function Page({
   params,
@@ -33,21 +37,35 @@ export default async function Page({
     .eq("case_id", caseId)
     .order("created_at", { ascending: false });
 
+  const patientUploads = (uploads ?? []).filter((u) =>
+    String(u.type ?? "").startsWith("patient_photo:")
+  );
+
   const patientPhotoStageGuidance = await loadPatientPhotoStageGuidanceForCase(supabase, caseId);
 
   return (
-    <div style={{ padding: 24, maxWidth: 980, margin: "0 auto" }}>
-      <div style={{ marginBottom: 12 }}>
-        <Link href={`/cases/${caseId}`}>← Back to case</Link>
-      </div>
+    <main className="min-h-screen bg-white py-8">
+      <div className="max-w-3xl mx-auto">
+        <div className="mb-4 px-4">
+          <Link
+            href={`/cases/${caseId}`}
+            className="text-sm text-slate-600 hover:text-slate-900"
+          >
+            ← Back to case
+          </Link>
+        </div>
 
-      <PatientPhotoUpload
-        caseId={caseId}
-        initialUploads={uploads ?? []}
-        caseStatus={c.status}
-        submittedAt={c.submitted_at}
-        patientPhotoStageGuidance={patientPhotoStageGuidance}
-      />
-    </div>
+        <UnifiedPatientUploader
+          caseId={caseId}
+          initialUploads={patientUploads}
+          caseStatus={c.status ?? "draft"}
+          submittedAt={c.submitted_at}
+          patientPhotoStageGuidance={patientPhotoStageGuidance}
+          backHref={`/cases/${caseId}`}
+          nextHref={`/cases/${caseId}`}
+          uploadApiUrl="/api/uploads/patient-photos"
+        />
+      </div>
+    </main>
   );
 }
