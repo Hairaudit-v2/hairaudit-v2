@@ -11,7 +11,10 @@ import {
 } from "@/lib/auditPhotoSchemas";
 import { getUserRole } from "@/lib/case-access";
 import { normalizedPatientAnswersFromReportRow } from "@/lib/patient/answersFromReportRow";
-import { evaluatePatientPhotoSubmitGate } from "@/lib/patientPhoto/patientPhotoReadinessPolicy";
+import {
+  evaluatePatientPhotoSubmitGate,
+  PATIENT_ALTERNATE_OUTCOME_SUBMIT_HINT,
+} from "@/lib/patientPhoto/patientPhotoReadinessPolicy";
 import { isPatientPhotoStageAwareSubmitEnabled } from "@/lib/features/enablePatientPhotoStageAwareSubmit";
 import { filterPatientPhotosForAuditUse } from "@/lib/uploads/patientPhotoAuditMeta";
 
@@ -105,10 +108,9 @@ export async function POST(req: Request) {
       patientPhotoGateForMeta = photoGate;
 
       if (!photoGate.allowed) {
-        const alt = photoGate.alternateKeysRequired;
         const altLine =
-          isPatientPhotoStageAwareSubmitEnabled() && alt?.length
-            ? ` Or add one photo each for outcome categories: ${alt.join(", ")}.`
+          isPatientPhotoStageAwareSubmitEnabled() && photoGate.stageAwareEvaluated
+            ? ` Or ${PATIENT_ALTERNATE_OUTCOME_SUBMIT_HINT}`
             : "";
         return NextResponse.json(
           {
@@ -157,6 +159,7 @@ export async function POST(req: Request) {
               stage_aware_evaluated: patientPhotoGateForMeta.stageAwareEvaluated,
               months_since: patientPhotoGateForMeta.monthsSince,
               alternate_keys_required: patientPhotoGateForMeta.alternateKeysRequired,
+              alternate_supporting_one_of: patientPhotoGateForMeta.alternateSupportingOneOf,
             },
           }
         : patientDetailsBase;

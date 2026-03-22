@@ -12,7 +12,10 @@ import { computeDomainScoresV1, computeDoctorAiContextV1 } from "@/lib/benchmark
 import { renderAndUploadPdfForCase } from "@/lib/reports/renderPdfInternal";
 import { normalizeIntakeFormData, toNestedForApi } from "@/lib/intake/normalizeIntakeFormData";
 import { normalizedPatientAnswersFromReportRow } from "@/lib/patient/answersFromReportRow";
-import { evaluatePatientPhotoSubmitGate } from "@/lib/patientPhoto/patientPhotoReadinessPolicy";
+import {
+  evaluatePatientPhotoSubmitGate,
+  PATIENT_ALTERNATE_OUTCOME_SUBMIT_HINT,
+} from "@/lib/patientPhoto/patientPhotoReadinessPolicy";
 import { isPatientPhotoStageAwareSubmitEnabled } from "@/lib/features/enablePatientPhotoStageAwareSubmit";
 import { shouldGeneratePdf } from "@/lib/reports/pdfReadiness";
 import {
@@ -658,10 +661,9 @@ export const runAudit = inngest.createFunction(
           .update({ status: "draft" })
           .eq("id", caseId);
       });
-      const alt = photoSubmitGate.alternateKeysRequired;
       const altHint =
-        isPatientPhotoStageAwareSubmitEnabled() && alt?.length
-          ? ` Or upload one photo each for: ${alt.join(", ")} (outcome path for your recovery stage).`
+        isPatientPhotoStageAwareSubmitEnabled() && photoSubmitGate.stageAwareEvaluated
+          ? ` Or ${PATIENT_ALTERNATE_OUTCOME_SUBMIT_HINT}`
           : "";
       throw new Error(`Missing required patient photos (Current Front, Top, Donor rear).${altHint}`);
     }
