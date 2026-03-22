@@ -2,17 +2,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { tryCreateSupabaseAdminClient } from "@/lib/supabase/admin";
 import { canAccessCase } from "@/lib/case-access";
-
-function extractCaseIdFromPath(p: string): string {
-  const raw = String(p ?? "").trim();
-  if (!raw) return "";
-  const normalized = raw.replace(/^https?:\/\/[^/]+/i, "");
-  const parts = normalized.split("/").filter(Boolean);
-  if (parts[0] === "cases" && parts[1]) return parts[1];
-  if (parts[0] === "reports" && parts[1]) return parts[1];
-  if (/^[0-9a-fA-F-]{36}$/.test(parts[0] ?? "")) return parts[0] ?? "";
-  return parts[0] ?? "";
-}
+import { extractCaseIdFromPdfPath } from "@/lib/reports/pdfPathCaseId";
 
 export async function GET(req: Request) {
   try {
@@ -30,7 +20,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const caseId = extractCaseIdFromPath(pdfPath);
+    const caseId = extractCaseIdFromPdfPath(pdfPath);
     if (!caseId) return NextResponse.json({ error: "Invalid path" }, { status: 400 });
 
     const admin = tryCreateSupabaseAdminClient();

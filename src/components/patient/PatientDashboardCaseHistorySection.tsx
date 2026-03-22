@@ -31,9 +31,11 @@ function resolveStatusLabel(
 export default function PatientDashboardCaseHistorySection({
   cases,
   pdfByCase,
+  reportIdByCase,
 }: {
   cases: PatientCaseRow[] | null | undefined;
   pdfByCase: Record<string, string>;
+  reportIdByCase: Record<string, string>;
 }) {
   const { t } = useI18n();
   const list = cases ?? [];
@@ -64,6 +66,7 @@ export default function PatientDashboardCaseHistorySection({
             const status = String(c.status ?? "draft");
             const canDeleteDraft = status === "draft" && !c.submitted_at;
             const pdfPath = pdfByCase[c.id];
+            const reportId = reportIdByCase[c.id];
             const isReportReady = status === "complete" && Boolean(pdfPath);
             const isProcessing = status === "submitted" || status === "processing";
 
@@ -102,7 +105,13 @@ export default function PatientDashboardCaseHistorySection({
                     </div>
 
                     <div className="mt-4">
-                      <PatientNextActionPanel status={status} caseId={c.id} pdfPath={pdfPath} variant="dashboard" />
+                      <PatientNextActionPanel
+                        status={status}
+                        caseId={c.id}
+                        pdfPath={pdfPath}
+                        reportId={reportId}
+                        variant="dashboard"
+                      />
                     </div>
                   </div>
 

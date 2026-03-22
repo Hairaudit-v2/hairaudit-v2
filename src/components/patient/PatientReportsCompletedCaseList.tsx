@@ -14,9 +14,11 @@ export type PatientReportCaseRow = {
 export default function PatientReportsCompletedCaseList({
   cases,
   pdfByCase,
+  reportIdByCase,
 }: {
   cases: PatientReportCaseRow[];
   pdfByCase: Record<string, string>;
+  reportIdByCase: Record<string, string>;
 }) {
   const { t } = useI18n();
 
@@ -24,6 +26,7 @@ export default function PatientReportsCompletedCaseList({
     <ul className="relative mt-6 space-y-3">
       {cases.map((c) => {
         const pdfPath = pdfByCase[c.id];
+        const reportId = reportIdByCase[c.id];
         const isReportReady = Boolean(pdfPath);
 
         return (
@@ -62,7 +65,9 @@ export default function PatientReportsCompletedCaseList({
                       >
                         {t("dashboard.reports.viewReport")}
                       </Link>
-                      <DownloadReport pdfPath={pdfPath} label={t("dashboard.reports.downloadPdf")} />
+                      {reportId ? (
+                        <DownloadReport reportId={reportId} label={t("dashboard.reports.downloadPdf")} />
+                      ) : null}
                       <ReportShareButton caseId={c.id} variant="default" />
                     </div>
                     <p className="mt-2 text-xs leading-relaxed text-slate-400/90">{t("dashboard.reports.shareHint")}</p>

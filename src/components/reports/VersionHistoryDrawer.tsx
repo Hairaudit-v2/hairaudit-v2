@@ -24,23 +24,8 @@ function scoreClass(score?: number) {
 export default function VersionHistoryDrawer({ reports }: { reports: ReportRow[] }) {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
-  const [busyId, setBusyId] = useState<string | null>(null);
 
   const history = useMemo(() => (Array.isArray(reports) ? reports : []), [reports]);
-
-  async function openPdf(path: string, reportId: string) {
-    setBusyId(reportId);
-    try {
-      const res = await fetch(`/api/reports/signed-url?path=${encodeURIComponent(path)}`);
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok || !json?.url) throw new Error(json?.error ?? t("reports.errors.openReportFailed"));
-      window.open(json.url, "_blank", "noopener,noreferrer");
-    } catch (error) {
-      alert((error as Error)?.message ?? t("reports.errors.openReportFailed"));
-    } finally {
-      setBusyId(null);
-    }
-  }
 
   return (
     <>
@@ -104,20 +89,30 @@ export default function VersionHistoryDrawer({ reports }: { reports: ReportRow[]
                       <p className="text-xs text-slate-400">{new Date(report.created_at).toLocaleString()}</p>
 
                       <div className="mt-3 flex gap-2">
-                        <button
-                          onClick={() => report.pdf_path && openPdf(report.pdf_path, report.id)}
-                          disabled={!report.pdf_path || busyId === report.id}
-                          className="rounded-md border border-cyan-300/25 bg-cyan-300/10 px-3 py-1.5 text-xs font-medium text-cyan-100 disabled:opacity-50"
-                        >
-                          {busyId === report.id ? t("reports.actions.opening") : t("reports.actions.download")}
-                        </button>
-                        <button
-                          onClick={() => report.pdf_path && openPdf(report.pdf_path, report.id)}
-                          disabled={!report.pdf_path || busyId === report.id}
-                          className="rounded-md border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-medium text-slate-200 disabled:opacity-50"
-                        >
-                          {t("reports.actions.view")}
-                        </button>
+                        {report.pdf_path ? (
+                          <a
+                            href={`/api/reports/${encodeURIComponent(report.id)}/download`}
+                            className="rounded-md border border-cyan-300/25 bg-cyan-300/10 px-3 py-1.5 text-xs font-medium text-cyan-100"
+                          >
+                            {t("reports.actions.download")}
+                          </a>
+                        ) : (
+                          <span className="rounded-md border border-cyan-300/25 bg-cyan-300/10 px-3 py-1.5 text-xs font-medium text-cyan-100 opacity-50">
+                            {t("reports.actions.download")}
+                          </span>
+                        )}
+                        {report.pdf_path ? (
+                          <a
+                            href={`/api/reports/${encodeURIComponent(report.id)}/download`}
+                            className="rounded-md border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-medium text-slate-200"
+                          >
+                            {t("reports.actions.view")}
+                          </a>
+                        ) : (
+                          <span className="rounded-md border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-medium text-slate-200 opacity-50">
+                            {t("reports.actions.view")}
+                          </span>
+                        )}
                       </div>
                     </div>
                   );

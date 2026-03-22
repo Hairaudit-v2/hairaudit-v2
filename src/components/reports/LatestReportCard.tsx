@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { formatTemplate } from "@/lib/i18n/formatTemplate";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import ReportShareButton from "./ReportShareButton";
@@ -26,22 +25,7 @@ type Props = { report: LatestReport | null; caseId?: string | null; displayScore
 
 export default function LatestReportCard({ report, caseId, displayScore }: Props) {
   const { t } = useI18n();
-  const [busy, setBusy] = useState(false);
-
-  async function openPdf() {
-    if (!report?.pdf_path) return;
-    setBusy(true);
-    try {
-      const res = await fetch(`/api/reports/signed-url?path=${encodeURIComponent(report.pdf_path)}`);
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok || !json?.url) throw new Error(json?.error ?? t("reports.errors.openReportFailed"));
-      window.open(json.url, "_blank", "noopener,noreferrer");
-    } catch (error) {
-      alert((error as Error)?.message ?? t("reports.errors.openReportFailed"));
-    } finally {
-      setBusy(false);
-    }
-  }
+  const pdfHref = report?.pdf_path ? `/api/reports/${encodeURIComponent(report.id)}/download` : null;
 
   if (!report) {
     return <p className="text-sm text-slate-300/80">{t("reports.actions.noReportYet")}</p>;
@@ -69,20 +53,30 @@ export default function LatestReportCard({ report, caseId, displayScore }: Props
       </div>
       <p className="text-xs text-slate-400">{new Date(report.created_at).toLocaleString()}</p>
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <button
-          onClick={openPdf}
-          disabled={!report.pdf_path || busy}
-          className="rounded-md border border-cyan-300/30 bg-cyan-300/15 px-3 py-1.5 text-xs font-medium text-cyan-100 disabled:opacity-50"
-        >
-          {busy ? t("reports.actions.opening") : t("reports.actions.downloadPdf")}
-        </button>
-        <button
-          onClick={openPdf}
-          disabled={!report.pdf_path || busy}
-          className="rounded-md border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-medium text-slate-100 disabled:opacity-50"
-        >
-          {busy ? t("reports.actions.opening") : t("reports.actions.viewReport")}
-        </button>
+        {pdfHref ? (
+          <a
+            href={pdfHref}
+            className="rounded-md border border-cyan-300/30 bg-cyan-300/15 px-3 py-1.5 text-xs font-medium text-cyan-100"
+          >
+            {t("reports.actions.downloadPdf")}
+          </a>
+        ) : (
+          <span className="rounded-md border border-cyan-300/30 bg-cyan-300/15 px-3 py-1.5 text-xs font-medium text-cyan-100 opacity-50">
+            {t("reports.actions.downloadPdf")}
+          </span>
+        )}
+        {pdfHref ? (
+          <a
+            href={pdfHref}
+            className="rounded-md border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-medium text-slate-100"
+          >
+            {t("reports.actions.viewReport")}
+          </a>
+        ) : (
+          <span className="rounded-md border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-medium text-slate-100 opacity-50">
+            {t("reports.actions.viewReport")}
+          </span>
+        )}
         <ReportShareButton caseId={caseId} variant="compact" />
       </div>
       <p className="mt-2 text-xs text-slate-400/80">{t("reports.actions.useHintContext")}</p>

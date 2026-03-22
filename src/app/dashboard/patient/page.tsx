@@ -100,21 +100,25 @@ export default async function PatientDashboardPage() {
     (cases ?? []).find((c) => Boolean(c.submitted_at) || ["submitted", "processing", "complete", "audit_failed"].includes(String(c.status ?? ""))) ??
     null;
 
-  // Latest report pdf_path per case (for "Report Ready" and Download PDF on dashboard).
+  // Latest report pdf_path + id per case (for "Report Ready" and Download PDF on dashboard).
   const caseIds = (cases ?? []).map((c) => c.id);
   const pdfByCase: Record<string, string> = {};
+  const reportIdByCase: Record<string, string> = {};
   if (caseIds.length > 0) {
     const { data: reportRows } = await admin
       .from("reports")
-      .select("case_id, pdf_path, version")
+      .select("id, case_id, pdf_path, version")
       .in("case_id", caseIds)
       .in("status", ["complete", "pdf_ready"])
       .not("pdf_path", "is", null)
       .order("version", { ascending: false });
     for (const r of reportRows ?? []) {
-      const cid = (r as { case_id: string; pdf_path: string }).case_id;
-      const path = (r as { case_id: string; pdf_path: string }).pdf_path;
-      if (cid && path && !pdfByCase[cid]) pdfByCase[cid] = path;
+      const row = r as { id: string; case_id: string; pdf_path: string };
+      const path = String(row.pdf_path ?? "").trim();
+      if (row.case_id && path && !pdfByCase[row.case_id]) {
+        pdfByCase[row.case_id] = path;
+        reportIdByCase[row.case_id] = row.id;
+      }
     }
   }
 
@@ -249,7 +253,7 @@ export default async function PatientDashboardPage() {
         <PatientDashboardWhyMattersSection />
       </section>
 
-      <PatientDashboardCaseHistorySection cases={cases} pdfByCase={pdfByCase} />
+      <PatientDashboardCaseHistorySection cases={cases} pdfByCase={pdfByCase} reportIdByCase={reportIdByCase} />
     </div>
   );
 }

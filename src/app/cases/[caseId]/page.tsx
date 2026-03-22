@@ -702,6 +702,7 @@ export default async function Page({
               status={status}
               caseId={c.id}
               pdfPath={(latestReport as { pdf_path?: string } | null)?.pdf_path}
+              reportId={latestReport?.id}
               variant="case"
             />
           )}
@@ -785,8 +786,8 @@ export default async function Page({
               </div>
               <div className="rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm">
                 <p className="mb-2 text-xs uppercase tracking-wide text-slate-400">{tr("reports.chrome.downloadReportLabel")}</p>
-                {latestReport?.pdf_path ? (
-                  <DownloadReport pdfPath={latestReport.pdf_path} label={tr("reports.actions.downloadPdf")} />
+                {latestReport?.pdf_path && latestReport.id ? (
+                  <DownloadReport reportId={latestReport.id} label={tr("reports.actions.downloadPdf")} />
                 ) : (
                   <p className="text-xs text-slate-300/70">{tr("reports.chrome.noPdfYet")}</p>
                 )}

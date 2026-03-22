@@ -14,6 +14,8 @@ export type PatientNextActionPanelProps = {
   caseId: string;
   /** PDF path when status is complete and report has a PDF (optional) */
   pdfPath?: string | null;
+  /** Latest completed report row id for server-side PDF download */
+  reportId?: string;
   variant?: PatientNextActionVariant;
 };
 
@@ -29,6 +31,7 @@ export default function PatientNextActionPanel({
   status,
   caseId,
   pdfPath,
+  reportId,
   variant = "case",
 }: PatientNextActionPanelProps) {
   const { t } = useI18n();
@@ -143,7 +146,7 @@ export default function PatientNextActionPanel({
           >
             {t("dashboard.reports.viewReport")}
           </Link>
-          <DownloadReport pdfPath={pdfPath} label={t("dashboard.reports.downloadPdf")} />
+          {reportId ? <DownloadReport reportId={reportId} label={t("dashboard.reports.downloadPdf")} /> : null}
           <ReportShareButton caseId={caseId} variant={compact ? "compact" : "default"} />
         </div>
         <p className={compact ? "mt-2 text-xs text-slate-400/90" : "mt-3 text-xs text-slate-400/90"}>
