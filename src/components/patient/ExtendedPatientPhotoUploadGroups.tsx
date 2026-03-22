@@ -36,7 +36,11 @@ export default function ExtendedPatientPhotoUploadGroups({
   skin = "audit",
   extendedGroupOrderHint,
 }: {
-  /** When unset, uses NEXT_PUBLIC_ENABLE_EXTENDED_PATIENT_UPLOADS. */
+  /**
+   * Optional override when env is off: pass `true` to force extended UI (e.g. stories).
+   * When `NEXT_PUBLIC_ENABLE_EXTENDED_PATIENT_UPLOADS` is true, extended UI always shows;
+   * passing `false` does not disable (env wins).
+   */
   enabled?: boolean;
   locked: boolean;
   busyCats: Record<string, boolean>;
@@ -47,7 +51,8 @@ export default function ExtendedPatientPhotoUploadGroups({
   /** Intake-driven accordion order (additive); default order when omitted. */
   extendedGroupOrderHint?: readonly PatientExtendedUploadGroupId[] | null;
 }) {
-  const enabled = enabledProp ?? isExtendedPatientUploadsEnabled();
+  const envEnabled = isExtendedPatientUploadsEnabled();
+  const enabled = envEnabled || enabledProp === true;
   if (!enabled) return null;
 
   const baseGroups = getPatientExtendedUploadGroupsResolved();
@@ -66,6 +71,19 @@ export default function ExtendedPatientPhotoUploadGroups({
 
   return (
     <section className={`mt-8 space-y-4 ${skin === "audit" ? "border-t border-slate-200 pt-8" : "border-t border-gray-200 pt-8"}`}>
+      {/* TEMP: remove after extended-upload verification */}
+      <div
+        className="rounded-lg border-2 border-fuchsia-500 bg-fuchsia-50 p-3 font-mono text-xs text-fuchsia-950"
+        data-debug="extended-patient-uploads"
+      >
+        <p className="font-bold">Extended patient uploads mounted</p>
+        <ul className="mt-1 list-inside list-disc space-y-0.5">
+          <li>envEnabled: {String(envEnabled)}</li>
+          <li>enabled: {String(enabled)}</li>
+          <li>resolved groups: {groups.length}</li>
+        </ul>
+      </div>
+
       <div className={`rounded-lg p-4 ${shell}`}>
         <p className={`text-xs font-semibold uppercase tracking-wide ${skin === "audit" ? "text-slate-500" : "text-gray-500"}`}>
           {PATIENT_EXTENDED_UPLOAD_MICROCOPY.eyebrow}
@@ -76,7 +94,7 @@ export default function ExtendedPatientPhotoUploadGroups({
       </div>
 
       {groups.map((group) => (
-        <details key={group.id} className={`group ${shell}`}>
+        <details key={group.id} className={`group ${shell}`} defaultOpen>
           <summary className={summaryCls}>
             <span className="flex items-center justify-between gap-2">
               <span>
