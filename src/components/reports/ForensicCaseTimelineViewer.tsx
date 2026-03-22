@@ -1,6 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { auditorPatientPhotoCategoryLabel } from "@/lib/auditor/auditorPatientPhotoCategories";
+import {
+  effectivePatientPhotoCategoryKey,
+  isPatientUploadAuditExcluded,
+  storagePathPatientCategoryFolder,
+} from "@/lib/uploads/patientPhotoAuditMeta";
 
 type TimelineStage =
   | "preop"
@@ -19,6 +25,7 @@ type UploadRow = {
   type: string;
   storage_path: string;
   created_at?: string;
+  metadata?: Record<string, unknown> | null;
 };
 
 type StageItem = {
@@ -83,7 +90,8 @@ function maturityFromMonths(months: number | null): MaturityStatus {
 
 function mapUploadToStage(upload: UploadRow, monthsSinceSurgery: number | null): { stage: TimelineStage; reason: string } {
   const t = String(upload.type ?? "").toLowerCase();
-  const key = t.includes(":") ? t.split(":")[1] : t;
+  const eff = effectivePatientPhotoCategoryKey(upload);
+  const key = t.startsWith("patient_photo:") && eff != null ? eff : t.includes(":") ? t.split(":")[1] : t;
 
   if (key.includes("preop") || key.includes("pre-op") || key.includes("pre_procedure") || key.includes("any_preop")) {
     return { stage: "preop", reason: "pre-op key detected" };
@@ -243,16 +251,20 @@ export default function ForensicCaseTimelineViewer(props: {
         alerts.push(`Missing ${label}`);
       }
     }
-    const hasDay0Donor = stageItems.some((s) => s.stage === "day0" && s.upload.type.toLowerCase().includes("donor"));
+    const hasDay0Donor = stageItems.some((s) => {
+      if (s.stage !== "day0") return false;
+      const k = effectivePatientPhotoCategoryKey(s.upload);
+      return k != null && k.includes("donor");
+    });
     if (!hasDay0Donor) alerts.push("Missing Day 0 donor evidence");
 
     const needsMonth6Donor = (props.monthsSinceSurgery ?? 0) >= 6;
     if (needsMonth6Donor) {
-      const hasSixMonthDonor = stageItems.some(
-        (s) =>
-          s.stage === "month_4_6" &&
-          (s.upload.type.toLowerCase().includes("donor") || s.upload.storage_path.toLowerCase().includes("donor"))
-      );
+      const hasSixMonthDonor = stageItems.some((s) => {
+        if (s.stage !== "month_4_6") return false;
+        const k = effectivePatientPhotoCategoryKey(s.upload);
+        return k != null && k.includes("donor");
+      });
       if (!hasSixMonthDonor) alerts.push("Missing 6-month donor photos");
     }
     return alerts;
@@ -412,20 +424,52 @@ export default function ForensicCaseTimelineViewer(props: {
               <div className="mt-2 rounded-lg border border-slate-700 bg-slate-950 p-4 text-sm text-slate-400">No images tagged to this stage.</div>
             ) : (
               <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                {selectedItems.slice(0, 9).map((item) => (
-                  <article key={item.upload.id} className="overflow-hidden rounded-lg border border-slate-700 bg-slate-950">
-                    <div className="aspect-square bg-slate-800/70">
-                      {signedUrls[item.upload.id] ? (
-                        <img src={signedUrls[item.upload.id] as string} alt={item.upload.type.replace(/^patient_photo:|^doctor_photo:|^clinic_photo:/, "").replace(/_/g, " ")} className="h-full w-full object-cover" />
-                      ) : (
-                        <div className="flex h-full items-center justify-center text-xs text-slate-500">Preview unavailable</div>
-                      )}
-                    </div>
-                    <div className="p-2">
-                      <p className="truncate text-[11px] text-slate-300">{item.upload.type.replace(/^patient_photo:|^doctor_photo:|^clinic_photo:/, "")}</p>
-                    </div>
-                  </article>
-                ))}
+                {selectedItems.slice(0, 9).map((item) => {
+                  const eff = effectivePatientPhotoCategoryKey(item.upload);
+                  const typeKey =
+                    eff ??
+                    String(item.upload.type ?? "")
+                      .replace(/^patient_photo:|^doctor_photo:|^clinic_photo:/i, "")
+                      .trim();
+                  const label =
+                    eff != null ? auditorPatientPhotoCategoryLabel(eff) : typeKey.replace(/_/g, " ") || "upload";
+                  const excluded = isPatientUploadAuditExcluded(item.upload);
+                  const pathFolder = storagePathPatientCategoryFolder(item.upload.storage_path);
+                  const folderDrift =
+                    eff != null && pathFolder != null && pathFolder !== eff
+                      ? `Storage folder: ${pathFolder} (differs from effective category)`
+                      : null;
+                  return (
+                    <article
+                      key={item.upload.id}
+                      className={`overflow-hidden rounded-lg border bg-slate-950 ${
+                        excluded ? "border-rose-500/50 ring-1 ring-rose-500/20" : "border-slate-700"
+                      }`}
+                    >
+                      <div className="aspect-square bg-slate-800/70 relative">
+                        {signedUrls[item.upload.id] ? (
+                          <img src={signedUrls[item.upload.id] as string} alt={label} className="h-full w-full object-cover" />
+                        ) : (
+                          <div className="flex h-full items-center justify-center text-xs text-slate-500">Preview unavailable</div>
+                        )}
+                        {excluded ? (
+                          <span className="absolute left-1 top-1 rounded bg-rose-600/90 px-1.5 py-0.5 text-[9px] font-bold uppercase text-white">
+                            Excluded
+                          </span>
+                        ) : null}
+                      </div>
+                      <div className="p-2 space-y-0.5">
+                        <p className="truncate text-[11px] font-medium text-slate-200">{label}</p>
+                        {eff != null ? (
+                          <p className="truncate font-mono text-[10px] text-slate-500">{eff}</p>
+                        ) : (
+                          <p className="truncate font-mono text-[10px] text-slate-500">{item.upload.type}</p>
+                        )}
+                        {folderDrift ? <p className="text-[9px] leading-tight text-amber-200/90">{folderDrift}</p> : null}
+                      </div>
+                    </article>
+                  );
+                })}
               </div>
             )}
           </div>

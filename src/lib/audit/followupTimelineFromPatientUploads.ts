@@ -3,7 +3,7 @@
  * Does not affect scoring, canSubmit, or required uploads.
  */
 
-import { storageCategoryKeyFromPatientUploadType } from "@/lib/audit/patientAiImageEvidence";
+import { resolvePatientPhotoCategoryKeyFromUpload } from "@/lib/audit/patientAiImageEvidence";
 
 export type FollowupTimelineStageId = "day1" | "week1" | "month3" | "month6" | "month9" | "month12";
 
@@ -70,11 +70,10 @@ function categoryMatchesStage(cat: string, stage: FollowupTimelineStageId): bool
   }
 }
 
-function collectPatientPhotoCategories(uploads: Array<{ type?: string | null }>): string[] {
+function collectPatientPhotoCategories(uploads: Array<{ type?: string | null; metadata?: unknown }>): string[] {
   const cats: string[] = [];
   for (const u of uploads) {
-    const t = String(u.type ?? "");
-    const cat = storageCategoryKeyFromPatientUploadType(t);
+    const cat = resolvePatientPhotoCategoryKeyFromUpload(u);
     if (cat) cats.push(cat);
   }
   return cats;
@@ -91,7 +90,7 @@ function stageCompletion(stage: FollowupTimelineStageId, categories: readonly st
  * if they are the first missing milestone (linear fill).
  */
 export function buildFollowupTimelineFromPatientUploads(
-  uploads: Array<{ type?: string | null }>
+  uploads: Array<{ type?: string | null; metadata?: unknown }>
 ): FollowupTimelineResult {
   const categories = collectPatientPhotoCategories(uploads);
   const completedFlags = STAGE_ORDER.map((id) => {

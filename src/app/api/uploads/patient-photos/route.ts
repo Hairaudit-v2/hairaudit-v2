@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { normalizePatientPhotoCategory } from "@/lib/photoCategories";
+import { applyPatientPhotoCategoryFields } from "@/lib/uploads/patientPhotoCategoryIntegrity";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 
 export const runtime = "nodejs"; // we use Buffer
@@ -116,19 +117,23 @@ export async function POST(req: Request) {
         return NextResponse.json({ ok: false, error: up.error.message }, { status: 500 });
       }
 
+      const { type: patientPhotoType, metadata: patientPhotoMetadata } = applyPatientPhotoCategoryFields(
+        normalizedCategory,
+        {
+          original_name: f.name,
+          mime: f.type,
+          size: f.size,
+        }
+      );
+
       const { data: row, error: insErr } = await supabase
         .from("uploads")
         .insert({
           case_id: caseId,
           user_id: userId,
-          type: `patient_photo:${normalizedCategory}`,
+          type: patientPhotoType,
           storage_path: storagePath,
-          metadata: {
-            category: normalizedCategory,
-            original_name: f.name,
-            mime: f.type,
-            size: f.size,
-          },
+          metadata: patientPhotoMetadata,
         })
         .select("id, case_id, user_id, type, storage_path, metadata, created_at")
         .maybeSingle();

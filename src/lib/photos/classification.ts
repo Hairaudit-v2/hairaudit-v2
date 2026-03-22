@@ -1,3 +1,5 @@
+import { effectivePatientPhotoCategoryKey } from "@/lib/uploads/patientPhotoAuditMeta";
+
 type UploadLike = {
   type?: string | null;
   storage_path?: string | null;
@@ -6,7 +8,8 @@ type UploadLike = {
 
 function tokenize(upload: UploadLike): string {
   const type = String(upload.type ?? "").toLowerCase();
-  const path = String(upload.storage_path ?? "").toLowerCase();
+  // Do not use storage_path for patient_photo:* — path folder can disagree with DB after auditor reassignment.
+  const path = type.startsWith("patient_photo:") ? "" : String(upload.storage_path ?? "").toLowerCase();
   const meta = upload.metadata ?? {};
   const category = String(meta.category ?? "").toLowerCase();
   const label = String(meta.label ?? "").toLowerCase();
@@ -19,35 +22,15 @@ function hasAny(s: string, needles: string[]) {
 }
 
 /**
- * When `upload.type` is a structured `patient_photo:{key}`, prefer the literal key for timeline
- * and baseline categories. This runs before fuzzy token heuristics so keys like
- * `postop_month3_donor` are not misclassified as generic donor/postop_healed_*.
+ * When `upload.type` is `patient_photo:{key}`, use DB-backed category (metadata.category or type suffix)
+ * before any fuzzy heuristics so corrected assignments and arbitrary valid keys are not overridden by path tokens.
  */
-function patientPhotoCategoryLiteralFromType(upload: UploadLike): string | null {
-  const t = String(upload.type ?? "").toLowerCase();
-  if (!t.startsWith("patient_photo:")) return null;
-  const raw = t.slice("patient_photo:".length).trim();
-  if (!raw || !/^[a-z0-9_]+$/.test(raw)) return null;
-
-  if (
-    raw.startsWith("postop_month") ||
-    raw.startsWith("postop_week") ||
-    raw === "postop_day0" ||
-    raw.startsWith("postop_day1_") ||
-    raw.startsWith("day0_") ||
-    raw.startsWith("preop_") ||
-    raw.startsWith("patient_current_") ||
-    raw.startsWith("any_") ||
-    raw.startsWith("intraop") ||
-    raw.startsWith("graft_")
-  ) {
-    return raw;
-  }
-  return null;
+function patientPhotoCategoryLiteralFromUpload(upload: UploadLike): string | null {
+  return effectivePatientPhotoCategoryKey(upload);
 }
 
 export function inferCanonicalPhotoCategory(upload: UploadLike): string {
-  const literal = patientPhotoCategoryLiteralFromType(upload);
+  const literal = patientPhotoCategoryLiteralFromUpload(upload);
   if (literal) return literal;
 
   const s = tokenize(upload);

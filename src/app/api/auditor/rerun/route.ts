@@ -24,6 +24,7 @@ const REASONS = [
   "updated_model_or_prompt",
   "auditor_review_request",
   "data_inconsistency",
+  "corrected_patient_photos",
 ] as const;
 
 type ActionType = (typeof ACTION_TYPES)[number];

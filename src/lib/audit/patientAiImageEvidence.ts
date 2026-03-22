@@ -9,7 +9,7 @@ import {
   PatientPhotoCategorySchema,
   resolveCategoryForValidation,
 } from "@/lib/photoCategories";
-import { isPatientUploadAuditExcluded } from "@/lib/uploads/patientPhotoAuditMeta";
+import { effectivePatientPhotoCategoryKey, isPatientUploadAuditExcluded } from "@/lib/uploads/patientPhotoAuditMeta";
 
 export type PatientAiEvidenceGroupId =
   | "baseline_evidence"
@@ -188,6 +188,18 @@ export function storageCategoryKeyFromPatientUploadType(type: string): string | 
   return raw;
 }
 
+/** Resolve grouping/alias key using DB-backed category when present (metadata.category or type suffix). */
+export function resolvePatientPhotoCategoryKeyFromUpload(row: {
+  type?: string | null;
+  metadata?: unknown;
+}): string | null {
+  const eff = effectivePatientPhotoCategoryKey(row);
+  if (eff != null) {
+    return storageCategoryKeyFromPatientUploadType(`patient_photo:${eff}`);
+  }
+  return storageCategoryKeyFromPatientUploadType(String(row.type ?? ""));
+}
+
 function emptyBuckets(): Record<PatientAiEvidenceGroupId, PatientImageEvidenceGroupBucket> {
   const g = {} as Record<PatientAiEvidenceGroupId, PatientImageEvidenceGroupBucket>;
   for (const id of ALL_GROUP_IDS) {
@@ -233,7 +245,7 @@ export function buildPatientImageEvidenceGroups(
 
   for (const u of args.uploads) {
     const type = String(u.type ?? "");
-    const cat = storageCategoryKeyFromPatientUploadType(type);
+    const cat = resolvePatientPhotoCategoryKeyFromUpload(u);
     if (cat === null) continue;
     if (isPatientUploadAuditExcluded(u)) continue;
     totalPatient += 1;

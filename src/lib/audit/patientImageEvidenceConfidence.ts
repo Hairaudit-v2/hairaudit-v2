@@ -10,6 +10,7 @@ import type {
 } from "@/lib/audit/patientAiImageEvidence";
 import { buildPatientImageEvidenceGroups } from "@/lib/audit/patientAiImageEvidence";
 import { PATIENT_UPLOAD_CATEGORY_DEFS } from "@/lib/patientPhotoCategoryConfig";
+import { isPatientUploadAuditExcluded } from "@/lib/uploads/patientPhotoAuditMeta";
 
 const ALL_GROUP_IDS: PatientAiEvidenceGroupId[] = [
   "baseline_evidence",
@@ -301,6 +302,7 @@ type CaseUploadRow = {
   id?: string | null;
   type?: string | null;
   storage_path?: string | null;
+  metadata?: Record<string, unknown> | null;
 };
 
 /**
@@ -308,12 +310,14 @@ type CaseUploadRow = {
  * For internal review only; uses the same grouping rules as Stage 4 with grouping enabled.
  */
 export function computePatientImageEvidenceQualityFromCaseUploads(uploads: CaseUploadRow[]): PatientImageEvidenceConfidenceResult {
+  const forAudit = uploads.filter((u) => !isPatientUploadAuditExcluded(u));
   const groups = buildPatientImageEvidenceGroups({
     enabled: true,
-    uploads: uploads.map((u) => ({
+    uploads: forAudit.map((u) => ({
       id: u.id,
       type: u.type,
       storage_path: u.storage_path,
+      metadata: u.metadata ?? null,
     })),
   });
   return buildPatientImageEvidenceConfidence(groups);

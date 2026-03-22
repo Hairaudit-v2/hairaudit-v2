@@ -17,6 +17,8 @@ import {
   toNumberRecord,
 } from "@/lib/reports/pdfReadiness";
 import { loadLatestEvidenceManifest } from "@/lib/evidence/prepareCaseEvidence";
+import { auditorPatientPhotoCategoryLabel } from "@/lib/auditor/auditorPatientPhotoCategories";
+import { effectivePatientPhotoCategoryKey } from "@/lib/uploads/patientPhotoAuditMeta";
 
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
@@ -90,12 +92,15 @@ async function downloadImagesForCase(args: {
       if (error || !data) continue;
       const ab = await data.arrayBuffer();
       const buffer = Buffer.from(ab);
+      const eff = effectivePatientPhotoCategoryKey(u as { type?: string; metadata?: unknown });
       const label =
-        String((u as any)?.metadata?.label ?? "")
-          .trim() ||
-        String((u as any)?.metadata?.category ?? "")
-          .trim() ||
-        String((u as any)?.type ?? "photo");
+        eff != null
+          ? auditorPatientPhotoCategoryLabel(eff)
+          : String((u as any)?.metadata?.label ?? "")
+              .trim() ||
+            String((u as any)?.metadata?.category ?? "")
+              .trim() ||
+            String((u as any)?.type ?? "photo");
       out.push({ buffer, label, type: String((u as any)?.type ?? "") });
     } catch {
       // Ignore individual image failures; PDF should still render.

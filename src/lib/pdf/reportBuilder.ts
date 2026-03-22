@@ -5,6 +5,8 @@
 
 import type PDFKit from "pdfkit";
 import { HA_HOME } from "@/config/platform-links";
+import { auditorPatientPhotoCategoryLabel } from "@/lib/auditor/auditorPatientPhotoCategories";
+import { effectivePatientPhotoCategoryKey } from "@/lib/uploads/patientPhotoAuditMeta";
 
 // Brand colours (from globals.css)
 const SLATE_900 = "#0f172a";
@@ -1428,7 +1430,7 @@ export async function fetchReportImages(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   supabase: any,
   bucket: string,
-  uploads: Array<{ type?: string; storage_path?: string }>
+  uploads: Array<{ type?: string; storage_path?: string; metadata?: Record<string, unknown> | null }>
 ): Promise<ReportImage[]> {
   const results: ReportImage[] = [];
   for (const u of uploads) {
@@ -1439,7 +1441,9 @@ export async function fetchReportImages(
       const { data } = await supabase.storage.from(bucket).download(path);
       if (!data) continue;
       const buffer = Buffer.from(await data.arrayBuffer());
-      const label = type.replace(/^patient_photo:|doctor_photo:/, "").replace(/_/g, " ");
+      const eff = effectivePatientPhotoCategoryKey(u);
+      const label =
+        eff != null ? auditorPatientPhotoCategoryLabel(eff) : type.replace(/^patient_photo:|doctor_photo:/, "").replace(/_/g, " ");
       results.push({ buffer, label, type });
     } catch {
       // Skip failed downloads (wrong format or missing)

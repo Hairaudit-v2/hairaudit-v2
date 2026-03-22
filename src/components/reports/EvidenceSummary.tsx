@@ -5,6 +5,7 @@ import {
   DOCTOR_PHOTO_SCHEMA,
   PATIENT_PHOTO_SCHEMA,
 } from "@/lib/auditPhotoSchemas";
+import { isPatientUploadAuditExcluded } from "@/lib/uploads/patientPhotoAuditMeta";
 
 type CaseWithEvidence = {
   evidence_score_patient?: string | null;
@@ -14,7 +15,7 @@ type CaseWithEvidence = {
   evidence_details?: Record<string, unknown> | null;
 };
 
-type UploadRow = { type: string };
+type UploadRow = { type: string; metadata?: unknown };
 
 export default function EvidenceSummary({
   caseRow,
@@ -36,7 +37,9 @@ export default function EvidenceSummary({
 
   if (!hasPatient && !hasDoctor) return null;
 
-  const patientPhotos = uploads.filter((u) => u.type?.startsWith("patient_photo:"));
+  const patientPhotos = uploads.filter(
+    (u) => u.type?.startsWith("patient_photo:") && !isPatientUploadAuditExcluded(u)
+  );
   const doctorPhotos = uploads.filter((u) => u.type?.startsWith("doctor_photo:"));
 
   const patientCounts = buildCountsByKey(patientPhotos.map((p) => ({ type: p.type })), "patient");

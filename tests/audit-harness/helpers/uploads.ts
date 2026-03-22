@@ -7,6 +7,10 @@ import type { SubmissionType } from "../config/canonicalMappings";
 import { uploadTypePrefix } from "../config/canonicalMappings";
 import { getDefaultImageBuffer } from "./imageBuffer";
 import { normalizePatientPhotoCategory } from "@/lib/photoCategories";
+import {
+  applyPatientPhotoCategoryFields,
+  syncPatientPhotoMetadataCategoryToType,
+} from "@/lib/uploads/patientPhotoCategoryIntegrity";
 import * as path from "path";
 import * as fs from "fs";
 
@@ -40,7 +44,6 @@ export async function uploadFileForCategory(
         })()
       : category;
   const prefix = uploadTypePrefix(submissionType);
-  const type = `${prefix}${canonicalCategory}`;
 
   let data: Buffer;
   let contentType = "image/jpeg";
@@ -66,6 +69,16 @@ export async function uploadFileForCategory(
   });
   if (upErr) throw new Error(`storage upload failed: ${upErr.message}`);
 
+  const baseMeta = {
+    original_name: originalName,
+    mime: contentType,
+    size: data.length,
+  };
+  const { type, metadata } =
+    submissionType === "patient"
+      ? applyPatientPhotoCategoryFields(canonicalCategory, baseMeta)
+      : { type: `${prefix}${canonicalCategory}`, metadata: { ...baseMeta, category: canonicalCategory } };
+
   const { data: row, error: insErr } = await supabase
     .from("uploads")
     .insert({
@@ -73,12 +86,7 @@ export async function uploadFileForCategory(
       user_id: userId,
       type,
       storage_path: storagePath,
-      metadata: {
-        category: canonicalCategory,
-        original_name: originalName,
-        mime: contentType,
-        size: data.length,
-      },
+      metadata,
     })
     .select("id, type, storage_path")
     .single();
@@ -135,6 +143,13 @@ export async function insertLegacyUploadRow(
     storage_path: string;
   }
 ): Promise<{ type: string }> {
+  const legacyMeta = syncPatientPhotoMetadataCategoryToType(options.type, {
+    category: options.type.split(":")[1],
+    original_name: "legacy.jpg",
+    mime: "image/jpeg",
+    size: 0,
+  });
+
   const { data, error } = await supabase
     .from("uploads")
     .insert({
@@ -142,7 +157,7 @@ export async function insertLegacyUploadRow(
       user_id: options.userId,
       type: options.type,
       storage_path: options.storage_path,
-      metadata: { category: options.type.split(":")[1], original_name: "legacy.jpg", mime: "image/jpeg", size: 0 },
+      metadata: legacyMeta,
     })
     .select("type")
     .single();

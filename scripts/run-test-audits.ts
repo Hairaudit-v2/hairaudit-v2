@@ -22,6 +22,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { inngest } from "../src/lib/inngest/client";
 import { type PatientPhotoCategory } from "../src/lib/photoCategories";
+import { applyPatientPhotoCategoryFields } from "../src/lib/uploads/patientPhotoCategoryIntegrity";
 import { validatePatientAuditV2, type PatientAuditV2 } from "../src/lib/patientAuditSchema";
 import * as fs from "node:fs";
 import * as fsp from "node:fs/promises";
@@ -740,18 +741,19 @@ async function uploadPatientPhoto(supabase: SupabaseClient, caseId: string, user
   });
   if (up.error) throw new Error(`Storage upload failed: ${up.error.message}`);
 
+  const { type: patientType, metadata: patientMeta } = applyPatientPhotoCategoryFields(String(category), {
+    original_name: fileName,
+    mime: contentType,
+    size: buffer.length,
+    test_audit: true,
+  });
+
   const { error: insErr } = await supabase.from("uploads").insert({
     case_id: caseId,
     user_id: userId,
-    type: `patient_photo:${category}`,
+    type: patientType,
     storage_path: storagePath,
-    metadata: {
-      category,
-      original_name: fileName,
-      mime: contentType,
-      size: buffer.length,
-      test_audit: true,
-    },
+    metadata: patientMeta,
   });
   if (insErr) throw new Error(`uploads insert failed: ${insErr.message}`);
 

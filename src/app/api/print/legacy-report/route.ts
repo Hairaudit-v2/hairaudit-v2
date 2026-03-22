@@ -7,6 +7,7 @@ import { scoreAudit } from "@/lib/audit/score";
 import { buildReportViewModel, normalizeAuditMode, type AuditMode } from "@/lib/pdf/reportBuilder";
 import { resolveAuditModeFromCaseAccess } from "@/lib/reports/accessMode";
 import { verifyRenderToken } from "@/lib/reports/internalRenderToken";
+import { effectivePatientPhotoCategoryKey } from "@/lib/uploads/patientPhotoAuditMeta";
 
 /* Admin client (NO cookies, NO sessions — Playwright safe) */
 function supabaseAdmin() {
@@ -183,13 +184,13 @@ export async function GET(req: Request) {
     })
   );
 
-  // Group by category (from metadata.category OR from type prefix)
+  // Group by effective patient_photo category (DB metadata + type; not storage path folder)
   const byCategory: Record<string, any[]> = {};
   for (const u of signedImages) {
-    const metaCat = (u as any)?.metadata?.category;
     const type = String((u as any)?.type ?? "");
+    const eff = effectivePatientPhotoCategoryKey(u as { type?: string; metadata?: unknown });
     const typeCat = type.startsWith("patient_photo:") ? type.split(":")[1] : null;
-    const cat = metaCat || typeCat || "uncategorized";
+    const cat = eff ?? typeCat ?? "uncategorized";
     byCategory[cat] = byCategory[cat] || [];
     byCategory[cat].push(u);
   }

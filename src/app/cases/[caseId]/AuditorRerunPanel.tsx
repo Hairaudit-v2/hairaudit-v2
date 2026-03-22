@@ -21,6 +21,7 @@ const REASON_LABELS: Record<string, string> = {
   updated_model_or_prompt: "Updated model or prompt",
   auditor_review_request: "Auditor review request",
   data_inconsistency: "Data inconsistency found",
+  corrected_patient_photos: "Corrected patient photos (categories / exclusions)",
 };
 
 const REASONS = Object.keys(REASON_LABELS) as string[];

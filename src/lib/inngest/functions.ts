@@ -20,6 +20,7 @@ import {
 } from "@/lib/evidence/prepareCaseEvidence";
 import { computeAuditorReviewEligibility, computeProvisionalFromScore, computeAwardContributionWeight } from "@/lib/auditor/eligibility";
 import { refreshTransparencyMetricsForCase } from "@/lib/transparency/refreshOrchestration";
+import { isPatientUploadAuditExcluded } from "@/lib/uploads/patientPhotoAuditMeta";
 
 function supabaseAdmin() {
   return createClient(
@@ -160,29 +161,39 @@ function classifyEvidenceCoverage(params: {
   const donorRear = params.donor.some((u) => {
     const t = String(u.type ?? "").toLowerCase();
     const cat = String(u?.metadata?.category ?? "").toLowerCase();
-    const path = String(u.storage_path ?? "").toLowerCase();
-    return cat.includes("donor_rear") || cat.includes("donor") || t.includes("donor") || path.includes("donor_rear") || path.includes("donor");
+    return (
+      cat.includes("donor_rear") ||
+      t.includes("donor_rear") ||
+      cat.includes("preop_donor_rear") ||
+      t.includes("preop_donor_rear") ||
+      cat.includes("patient_current_donor_rear") ||
+      t.includes("patient_current_donor_rear")
+    );
   });
 
   const donorIntraOrDay0 = params.donor.some((u) => {
     const t = String(u.type ?? "").toLowerCase();
     const cat = String(u?.metadata?.category ?? "").toLowerCase();
-    const path = String(u.storage_path ?? "").toLowerCase();
-    return t.includes("day0_donor") || cat.includes("day0_donor") || t.includes("intraop") || cat.includes("intraop") || path.includes("day0") || path.includes("intraop");
+    return (
+      t.includes("day0_donor") ||
+      cat.includes("day0_donor") ||
+      t.includes("intraop") ||
+      cat.includes("intraop") ||
+      cat.includes("any_day0") ||
+      t.includes("any_day0")
+    );
   });
 
   const recipientDay0 = params.recipient.some((u) => {
     const t = String(u.type ?? "").toLowerCase();
     const cat = String(u?.metadata?.category ?? "").toLowerCase();
-    const path = String(u.storage_path ?? "").toLowerCase();
-    return t.includes("day0_recipient") || cat.includes("day0_recipient") || cat.includes("any_day0") || path.includes("day0");
+    return t.includes("day0_recipient") || cat.includes("day0_recipient") || cat.includes("any_day0") || t.includes("any_day0");
   });
 
   const recipientIntra = params.recipient.some((u) => {
     const t = String(u.type ?? "").toLowerCase();
     const cat = String(u?.metadata?.category ?? "").toLowerCase();
-    const path = String(u.storage_path ?? "").toLowerCase();
-    return t.includes("intraop") || cat.includes("intraop") || path.includes("intraop");
+    return t.includes("intraop") || cat.includes("intraop");
   });
 
   const recipientEarly = params.recipient.some((u) => {
@@ -613,7 +624,7 @@ export const runAudit = inngest.createFunction(
     const uploads = await step.run("load-uploads", async () => {
       const { data, error } = await supabase
         .from("uploads")
-        .select("id, type, storage_path, created_at")
+        .select("id, type, storage_path, metadata, created_at")
         .eq("case_id", caseId)
         .order("created_at", { ascending: false });
 
@@ -622,7 +633,12 @@ export const runAudit = inngest.createFunction(
     });
 
     const patientPhotos = uploads.filter((u) => String(u.type ?? "").startsWith("patient_photo:"));
-    if (!canSubmit("patient", patientPhotos.map((u) => ({ type: u.type })))) {
+    const patientPhotosForAudit = patientPhotos.filter((u) => !isPatientUploadAuditExcluded(u));
+    /** Patient rows marked audit-excluded are omitted everywhere we score or prepare evidence from uploads. */
+    const uploadsForEvidenceScoring = uploads.filter(
+      (u) => !String(u.type ?? "").startsWith("patient_photo:") || !isPatientUploadAuditExcluded(u)
+    );
+    if (!canSubmit("patient", patientPhotosForAudit.map((u) => ({ type: u.type })))) {
       // Mark case “needs_more_info” or revert to draft
       await step.run("mark-missing", async () => {
         await supabase
@@ -688,7 +704,11 @@ export const runAudit = inngest.createFunction(
     const imageIngestionStats = {
       manifest_id: preparedVision.manifest.id,
       status: preparedVision.manifest.status,
-      selected_count: uploads.filter((u) => isImageUpload(String(u.type ?? ""))).length,
+      selected_count: uploads.filter((u) => {
+        if (!isImageUpload(String(u.type ?? ""))) return false;
+        if (String(u.type ?? "").startsWith("patient_photo:") && isPatientUploadAuditExcluded(u)) return false;
+        return true;
+      }).length,
       prepared_count: preparedVision.manifest.prepared_images.length,
       failed_count: (preparedVision.manifest.errors ?? []).length,
       quality_score: Number(preparedVision.manifest.quality_score ?? 0),
@@ -762,6 +782,7 @@ export const runAudit = inngest.createFunction(
           id?: string | null;
           type?: string | null;
           storage_path?: string | null;
+          metadata?: Record<string, unknown> | null;
         }[],
         preparedImages: manifestPrepared,
       });
@@ -878,7 +899,7 @@ export const runAudit = inngest.createFunction(
               const doctorAnswers = existingSummary.doctor_answers as Record<string, unknown> | null;
 
               const ctx = computeDoctorAiContextV1({
-                uploads: uploads as any,
+                uploads: uploadsForEvidenceScoring as any,
                 doctorAnswersRaw: (doctorAnswers as any) ?? null,
                 doctorId: (c as any)?.doctor_id ?? null,
                 clinicId: (c as any)?.clinic_id ?? null,
@@ -922,7 +943,7 @@ export const runAudit = inngest.createFunction(
     const v1 = await step.run("compute-v1-domains", async () => {
       return computeDomainScoresV1({
         ai: aiResult as any,
-        uploads: uploads as any,
+        uploads: uploadsForEvidenceScoring as any,
         caseRow: {
           evidence_score_doctor: (c as any)?.evidence_score_doctor ?? null,
           evidence_score_patient: (c as any)?.evidence_score_patient ?? null,

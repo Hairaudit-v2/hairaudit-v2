@@ -166,7 +166,7 @@ export default async function ReportHtmlPage({
 
   const { data: uploads, error: upErr } = await supabase
     .from("uploads")
-    .select("id, type, storage_path, created_at")
+    .select("id, type, storage_path, metadata, created_at")
     .eq("case_id", caseId)
     .order("created_at", { ascending: true });
 

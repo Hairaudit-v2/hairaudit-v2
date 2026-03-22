@@ -53,6 +53,8 @@ import FollowupReminderManualSendPanel from "@/components/clinic/FollowupReminde
 import { isClinicFollowupManualSendEnabled } from "@/lib/features/enableFollowupReminderManualSend";
 import type { FollowupReminderSendLogRow } from "@/lib/audit/followupReminderSendPayload";
 import PatientSafeSummaryTranslationOpsPanel from "./PatientSafeSummaryTranslationOpsPanel";
+import AuditorPatientImageManager from "./AuditorPatientImageManager";
+import { isPatientUploadAuditExcluded } from "@/lib/uploads/patientPhotoAuditMeta";
 
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { tryCreateSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -276,7 +278,7 @@ export default async function Page({
 
   const { data: uploads, error: upErr } = await db
     .from("uploads")
-    .select("id, type, storage_path, created_at")
+    .select("id, type, storage_path, metadata, created_at")
     .eq("case_id", c.id)
     .order("created_at", { ascending: false });
 
@@ -339,7 +341,12 @@ export default async function Page({
   if (isAuditor && isInternalImageEvidenceQualityPanelEnabled()) {
     try {
       patientImageEvidenceQuality = computePatientImageEvidenceQualityFromCaseUploads(
-        (uploads ?? []) as { id?: string | null; type?: string | null; storage_path?: string | null }[]
+        (uploads ?? []) as {
+          id?: string | null;
+          type?: string | null;
+          storage_path?: string | null;
+          metadata?: Record<string, unknown> | null;
+        }[]
       );
     } catch (e) {
       console.error(LOG_PREFIX, "patientImageEvidenceQuality compute failed", { caseId, error: e });
@@ -358,9 +365,17 @@ export default async function Page({
   let clinicFollowupTimeline: FollowupTimelineResult | null = null;
   if (isClinicForCase && (clinicEvidencePromptsFlag || followupTimelineFlag || followupReminderReadinessFlag || followupReminderDraftsFlag)) {
     try {
-      const patientPhotoUploads = (uploads ?? []).filter((u) => String((u as { type?: string }).type ?? "").startsWith("patient_photo:"));
+      const patientPhotoUploads = (uploads ?? []).filter((u) => {
+        if (!String((u as { type?: string }).type ?? "").startsWith("patient_photo:")) return false;
+        return !isPatientUploadAuditExcluded(u as { type?: string | null; metadata?: unknown });
+      });
       const q = computePatientImageEvidenceQualityFromCaseUploads(
-        patientPhotoUploads as { id?: string | null; type?: string | null; storage_path?: string | null }[]
+        patientPhotoUploads as {
+          id?: string | null;
+          type?: string | null;
+          storage_path?: string | null;
+          metadata?: Record<string, unknown> | null;
+        }[]
       );
       if (clinicEvidencePromptsFlag) {
         clinicEvidencePrompts = buildClinicEvidencePromptsFromSufficiency(q);
@@ -798,6 +813,12 @@ export default async function Page({
           giiLimitations={giiLimitations}
           aiObservations={summaryObservations}
         />
+      )}
+
+      {isAuditor && (
+        <div className="mt-6">
+          <AuditorPatientImageManager caseId={c.id} />
+        </div>
       )}
 
       {isAuditor && (
