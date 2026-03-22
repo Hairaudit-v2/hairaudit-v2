@@ -53,6 +53,12 @@ export default function ExtendedPatientPhotoUploadGroups({
 }) {
   const envEnabled = isExtendedPatientUploadsEnabled();
   const enabled = envEnabled || enabledProp === true;
+
+  /** Default expanded (undefined → open); TEMP verification — remove with debug banner. */
+  const [detailsOpenById, setDetailsOpenById] = useState<
+    Partial<Record<PatientExtendedUploadGroupId, boolean>>
+  >({});
+
   if (!enabled) return null;
 
   const baseGroups = getPatientExtendedUploadGroupsResolved();
@@ -94,7 +100,17 @@ export default function ExtendedPatientPhotoUploadGroups({
       </div>
 
       {groups.map((group) => (
-        <details key={group.id} className={`group ${shell}`} defaultOpen>
+        <details
+          key={group.id}
+          className={`group ${shell}`}
+          open={detailsOpenById[group.id] ?? true}
+          onToggle={(e) => {
+            setDetailsOpenById((prev) => ({
+              ...prev,
+              [group.id]: e.currentTarget.open,
+            }));
+          }}
+        >
           <summary className={summaryCls}>
             <span className="flex items-center justify-between gap-2">
               <span>
