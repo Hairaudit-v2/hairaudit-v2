@@ -54,11 +54,6 @@ export default function ExtendedPatientPhotoUploadGroups({
   const envEnabled = isExtendedPatientUploadsEnabled();
   const enabled = envEnabled || enabledProp === true;
 
-  /** Default expanded (undefined → open); TEMP verification — remove with debug banner. */
-  const [detailsOpenById, setDetailsOpenById] = useState<
-    Partial<Record<PatientExtendedUploadGroupId, boolean>>
-  >({});
-
   if (!enabled) return null;
 
   const baseGroups = getPatientExtendedUploadGroupsResolved();
@@ -77,19 +72,6 @@ export default function ExtendedPatientPhotoUploadGroups({
 
   return (
     <section className={`mt-8 space-y-4 ${skin === "audit" ? "border-t border-slate-200 pt-8" : "border-t border-gray-200 pt-8"}`}>
-      {/* TEMP: remove after extended-upload verification */}
-      <div
-        className="rounded-lg border-2 border-fuchsia-500 bg-fuchsia-50 p-3 font-mono text-xs text-fuchsia-950"
-        data-debug="extended-patient-uploads"
-      >
-        <p className="font-bold">Extended patient uploads mounted</p>
-        <ul className="mt-1 list-inside list-disc space-y-0.5">
-          <li>envEnabled: {String(envEnabled)}</li>
-          <li>enabled: {String(enabled)}</li>
-          <li>resolved groups: {groups.length}</li>
-        </ul>
-      </div>
-
       <div className={`rounded-lg p-4 ${shell}`}>
         <p className={`text-xs font-semibold uppercase tracking-wide ${skin === "audit" ? "text-slate-500" : "text-gray-500"}`}>
           {PATIENT_EXTENDED_UPLOAD_MICROCOPY.eyebrow}
@@ -100,17 +82,7 @@ export default function ExtendedPatientPhotoUploadGroups({
       </div>
 
       {groups.map((group) => (
-        <details
-          key={group.id}
-          className={`group ${shell}`}
-          open={detailsOpenById[group.id] ?? true}
-          onToggle={(e) => {
-            setDetailsOpenById((prev) => ({
-              ...prev,
-              [group.id]: e.currentTarget.open,
-            }));
-          }}
-        >
+        <details key={group.id} className={`group ${shell}`}>
           <summary className={summaryCls}>
             <span className="flex items-center justify-between gap-2">
               <span>

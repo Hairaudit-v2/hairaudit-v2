@@ -30,6 +30,19 @@ test("feature flag: off unless env is exactly 'true' (case-insensitive)", () => 
   assert.equal(isExtendedPatientUploadsEnabled({ [ENABLE_EXTENDED_PATIENT_UPLOADS]: "TRUE" }), true);
 });
 
+test("feature flag: no-arg path reads literal NEXT_PUBLIC key (matches client bundle inlining)", () => {
+  const prev = process.env.NEXT_PUBLIC_ENABLE_EXTENDED_PATIENT_UPLOADS;
+  try {
+    process.env.NEXT_PUBLIC_ENABLE_EXTENDED_PATIENT_UPLOADS = "true";
+    assert.equal(isExtendedPatientUploadsEnabled(), true);
+    process.env.NEXT_PUBLIC_ENABLE_EXTENDED_PATIENT_UPLOADS = "false";
+    assert.equal(isExtendedPatientUploadsEnabled(), false);
+  } finally {
+    if (prev === undefined) delete process.env.NEXT_PUBLIC_ENABLE_EXTENDED_PATIENT_UPLOADS;
+    else process.env.NEXT_PUBLIC_ENABLE_EXTENDED_PATIENT_UPLOADS = prev;
+  }
+});
+
 test("PATIENT_EXTENDED_UPLOAD_GROUP_SPECS covers 36 Stage-2 keys once", () => {
   const all = PATIENT_EXTENDED_UPLOAD_GROUP_SPECS.flatMap((g) => [...g.keys]);
   assert.equal(all.length, 36);

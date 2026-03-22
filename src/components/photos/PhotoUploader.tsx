@@ -22,7 +22,6 @@ import PatientImageEvidenceNudgeCallout from "@/components/patient/PatientImageE
 import { computePatientImageEvidenceQualityFromCaseUploads } from "@/lib/audit/patientImageEvidenceConfidence";
 import { buildPatientImageEvidenceUploadNudges } from "@/lib/audit/patientImageEvidenceUploadNudges";
 import { isPatientImageEvidenceNudgesEnabled } from "@/lib/features/enablePatientImageEvidenceNudges";
-import { isExtendedPatientUploadsEnabled } from "@/lib/features/enableExtendedPatientUploads";
 import type { PatientPhotoUploadGuidancePanel } from "@/lib/patientPhoto/patientPhotoUploadGuidance";
 
 type UploadRow = {
@@ -235,21 +234,6 @@ export default function PhotoUploader({
           </div>
         ) : null}
       </header>
-
-      {/* TEMP: remove after PhotoUploader / extended-upload verification (patient route diagnostics) */}
-      {submitterType === "patient" ? (
-        <div
-          className="rounded-lg border-2 border-cyan-500 bg-cyan-50 p-3 font-mono text-xs text-cyan-950"
-          data-debug="photo-uploader-patient"
-        >
-          <p className="font-bold">PhotoUploader (patient surface)</p>
-          <ul className="mt-1 list-inside list-disc space-y-0.5">
-            <li>submitterType: {submitterType}</li>
-            <li>patientPhotoStageGuidance present: {String(Boolean(patientPhotoStageGuidance))}</li>
-            <li>isExtendedPatientUploadsEnabled(): {String(isExtendedPatientUploadsEnabled())}</li>
-          </ul>
-        </div>
-      ) : null}
 
       <div className="space-y-4">
         {schema.map((def) => {
