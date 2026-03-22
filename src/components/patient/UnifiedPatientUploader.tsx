@@ -106,78 +106,102 @@ export default function UnifiedPatientUploader({
     async (category: PatientPhotoCategory, files: File[]) => {
       if (isLocked || !files.length) return;
 
-      // Validate file count
-      if (files.length > UPLOAD_LIMITS.MAX_FILES_PER_REQUEST) {
-        setUploadStatus((prev) => ({
-          ...prev,
-          [category]: {
-            status: "error",
-            category,
-            message: `Maximum ${UPLOAD_LIMITS.MAX_FILES_PER_REQUEST} files per upload`,
-          },
-        }));
-        return;
-      }
-
       setGlobalError(null);
+      const totalFiles = files.length;
+      let successCount = 0;
+      let errorCount = 0;
+      const errors: string[] = [];
+
       setUploadStatus((prev) => ({
         ...prev,
         [category]: { status: "uploading", category, progress: 0 },
       }));
 
-      try {
-        await uploadQueue.execute(async () => {
-          const fd = new FormData();
-          fd.append("caseId", caseId);
-          fd.append("category", category);
-          files.forEach((f) => fd.append("files[]", f));
+      // Upload files sequentially to stay under Vercel 4.5MB limit
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        
+        try {
+          await uploadQueue.execute(async () => {
+            const fd = new FormData();
+            fd.append("caseId", caseId);
+            fd.append("category", category);
+            fd.append("files[]", file);
 
-          const res = await fetch(uploadApiUrl, {
-            method: "POST",
-            body: fd,
-          });
-
-          const json = await res.json().catch(() => ({}));
-
-          if (!res.ok) {
-            const errorMsg = json?.error ?? "Upload failed";
-            console.error(`Upload failed for ${category}:`, { error: errorMsg, code: json?.code, requestId: json?.requestId });
-            throw new Error(formatUploadErrorForUser({ code: json?.code ?? "UNKNOWN_ERROR", message: errorMsg, retryable: false }));
-          }
-
-          // Success - add new uploads to state
-          if (json.saved?.length) {
-            setUploads((prev) => [...json.saved, ...prev]);
-          }
-
-          // Track partial success (some files may have failed)
-          if (json.errors?.length) {
-            console.warn(`Partial upload success for ${category}:`, json.errors);
-          }
-
-          setUploadStatus((prev) => ({
-            ...prev,
-            [category]: { status: "success", category },
-          }));
-
-          // Clear success status after delay
-          setTimeout(() => {
-            setUploadStatus((prev) => {
-              if (prev[category]?.status === "success") {
-                const { [category]: _, ...rest } = prev;
-                return rest;
-              }
-              return prev;
+            const res = await fetch(uploadApiUrl, {
+              method: "POST",
+              body: fd,
             });
-          }, 3000);
-        });
-      } catch (e: unknown) {
-        const msg = (e as Error)?.message ?? "Upload failed";
+
+            const json = await res.json().catch(() => ({}));
+
+            if (!res.ok) {
+              const errorMsg = json?.error ?? "Upload failed";
+              console.error(`Upload failed for ${category}/${file.name}:`, { error: errorMsg, code: json?.code, requestId: json?.requestId });
+              throw new Error(formatUploadErrorForUser({ code: json?.code ?? "UNKNOWN_ERROR", message: errorMsg, retryable: false }));
+            }
+
+            // Success - add new uploads to state
+            if (json.saved?.length) {
+              setUploads((prev) => [...json.saved, ...prev]);
+            }
+
+            successCount++;
+            
+            // Update progress
+            setUploadStatus((prev) => ({
+              ...prev,
+              [category]: { 
+                status: "uploading", 
+                category, 
+                progress: Math.round(((i + 1) / totalFiles) * 100) 
+              },
+            }));
+          });
+        } catch (e: unknown) {
+          errorCount++;
+          const msg = (e as Error)?.message ?? "Upload failed";
+          errors.push(`${file.name}: ${msg}`);
+        }
+      }
+
+      // Final status update
+      if (errorCount === 0) {
         setUploadStatus((prev) => ({
           ...prev,
-          [category]: { status: "error", category, message: msg },
+          [category]: { status: "success", category },
         }));
+      } else if (successCount === 0) {
+        setUploadStatus((prev) => ({
+          ...prev,
+          [category]: { 
+            status: "error", 
+            category, 
+            message: errors[0] ?? "All uploads failed" 
+          },
+        }));
+      } else {
+        // Partial success
+        setUploadStatus((prev) => ({
+          ...prev,
+          [category]: { 
+            status: "success", 
+            category,
+          },
+        }));
+        console.warn(`Partial upload success for ${category}:`, errors);
       }
+
+      // Clear success status after delay
+      setTimeout(() => {
+        setUploadStatus((prev) => {
+          if (prev[category]?.status === "success" || prev[category]?.status === "error") {
+            const { [category]: _, ...rest } = prev;
+            return rest;
+          }
+          return prev;
+        });
+      }, 3000);
     },
     [caseId, isLocked, uploadApiUrl]
   );

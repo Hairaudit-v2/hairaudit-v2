@@ -42,9 +42,9 @@ export const DEFAULT_RETRY_CONFIG: RetryConfig = {
 };
 
 export const UPLOAD_LIMITS = {
-  MAX_FILES_PER_REQUEST: 10,
+  MAX_FILES_PER_REQUEST: 1, // Single file per request to stay under Vercel 4.5MB limit
   MAX_CONCURRENT_UPLOADS: 3,
-  MAX_FILE_SIZE_MB: 50,
+  MAX_FILE_SIZE_MB: 4, // Max 4MB per file to stay under Vercel limit
 };
 
 /**
