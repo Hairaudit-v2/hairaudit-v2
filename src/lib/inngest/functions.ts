@@ -27,6 +27,9 @@ import { computeAuditorReviewEligibility, computeProvisionalFromScore, computeAw
 import { refreshTransparencyMetricsForCase } from "@/lib/transparency/refreshOrchestration";
 import { isPatientUploadAuditExcluded } from "@/lib/uploads/patientPhotoAuditMeta";
 
+/** Must match `REASONS` in `src/app/api/auditor/rerun/route.ts`. */
+const AUDITOR_RERUN_REASON_CORRECTED_PATIENT_PHOTOS = "corrected_patient_photos";
+
 function supabaseAdmin() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -540,9 +543,15 @@ export const runAudit = inngest.createFunction(
   },
   [{ event: "case/submitted" }, { event: "case/audit-only-requested" }],
   async ({ event, step, logger }) => {
-    const data = event.data as { caseId: string; userId: string };
+    const data = event.data as {
+      caseId: string;
+      userId: string;
+      /** Set when `runAudit` is invoked from `auditor/rerun` (not on normal submit). */
+      auditorRerunReason?: string | null;
+    };
     const caseId = data.caseId;
     const userId = data.userId ?? "";
+    const auditorRerunReason = data.auditorRerunReason ?? null;
 
     const supabase = supabaseAdmin();
 
@@ -653,7 +662,19 @@ export const runAudit = inngest.createFunction(
       stageAwareSubmitEnabled: isPatientPhotoStageAwareSubmitEnabled(),
     });
 
-    if (!photoSubmitGate.allowed) {
+    const relaxedAuditorPatientPhotoGate =
+      auditorRerunReason === AUDITOR_RERUN_REASON_CORRECTED_PATIENT_PHOTOS &&
+      patientPhotosForAudit.length > 0;
+    if (relaxedAuditorPatientPhotoGate && !photoSubmitGate.allowed) {
+      logger.warn("runAudit: strict patient photo submit gate bypassed (auditor corrected patient photos)", {
+        caseId,
+        viaBaseline: photoSubmitGate.viaBaseline,
+        viaAlternateOutcome: photoSubmitGate.viaAlternateOutcome,
+        activePatientPhotoCount: patientPhotosForAudit.length,
+      });
+    }
+
+    if (!photoSubmitGate.allowed && !relaxedAuditorPatientPhotoGate) {
       // Mark case “needs_more_info” or revert to draft
       await step.run("mark-missing", async () => {
         await supabase
@@ -1485,7 +1506,7 @@ export const auditorRerun = inngest.createFunction(
         case "regenerate_ai_audit": {
           const result = await step.invoke("invoke-audit", {
             function: runAudit,
-            data: { caseId, userId: triggeredBy },
+            data: { caseId, userId: triggeredBy, auditorRerunReason: data.reason },
           });
           const ver = (result as any)?.version;
           const sourceReportVersion = data.sourceReportVersion != null ? Number(data.sourceReportVersion) : null;
@@ -1625,7 +1646,7 @@ export const auditorRerun = inngest.createFunction(
           });
           const auditResult = await step.invoke("invoke-audit-full", {
             function: runAudit,
-            data: { caseId, userId: triggeredBy },
+            data: { caseId, userId: triggeredBy, auditorRerunReason: data.reason },
           });
           const ver = (auditResult as any)?.version;
           const sourceReportVersionFull = data.sourceReportVersion != null ? Number(data.sourceReportVersion) : null;

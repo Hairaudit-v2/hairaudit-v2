@@ -115,10 +115,16 @@ export default function AuditorPatientImageManager({ caseId }: { caseId: string 
     <section className="rounded-2xl border border-slate-700 bg-slate-900 p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-base font-semibold text-white">Patient photo corrections</h2>
+          <h2 className="text-base font-semibold text-white">
+            Patient photo corrections
+            <span className="ml-2 rounded-md border border-slate-600 bg-slate-800 px-2 py-0.5 font-mono text-xs font-normal text-slate-300">
+              {uploads.length} upload{uploads.length === 1 ? "" : "s"}
+            </span>
+          </h2>
           <p className="mt-1 text-xs text-slate-400">
             Reassign categories (updates audit metadata; storage path unchanged). Rename is auditor-facing only. Excluded images
-            stay visible here but are skipped by automated audit preparation.
+            stay visible here but are skipped by automated audit preparation. Photos are grouped by effective category—scroll through
+            every section to see all rows; the count above matches the API.
           </p>
         </div>
         <button
