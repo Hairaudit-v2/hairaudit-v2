@@ -127,7 +127,7 @@ export async function prepareCaseEvidenceManifest(args: {
   bucket: string;
   uploads?: UploadRow[];
   logger?: { warn?: (msg: string, data?: Record<string, unknown>) => void; error?: (msg: string, data?: Record<string, unknown>) => void };
-}): Promise<{ manifest: CaseEvidenceManifest; modelInputs: PreparedModelImageInput[] }> {
+}): Promise<{ manifest: CaseEvidenceManifest }> {
   const { supabase, caseId, bucket, logger } = args;
   const uploads: UploadRow[] =
     args.uploads ??
@@ -159,7 +159,6 @@ export async function prepareCaseEvidenceManifest(args: {
   }
 
   const preparedImages: PreparedImageManifestItem[] = [];
-  const modelInputs: PreparedModelImageInput[] = [];
   const errors: string[] = [];
 
   for (const upload of imageUploads) {
@@ -210,15 +209,6 @@ export async function prepareCaseEvidenceManifest(args: {
           mime_type: "image/jpeg",
           quality_label: quality.label,
           notes: quality.notes.join(", "),
-        });
-
-        modelInputs.push({
-          uploadId,
-          sourceKey: preparedPath,
-          category,
-          qualityLabel: quality.label,
-          mimeType: "image/jpeg",
-          dataBase64: optimized.data.toString("base64"),
         });
 
         finalized = true;
@@ -282,7 +272,38 @@ export async function prepareCaseEvidenceManifest(args: {
 
   return {
     manifest: finalRow as CaseEvidenceManifest,
-    modelInputs,
   };
+}
+
+/** Load prepared JPEGs from storage as base64 for model calls. Kept out of `prepareCaseEvidenceManifest` so Inngest `step.run` outputs stay under payload limits. */
+export async function loadPreparedModelImageInputs(args: {
+  supabase: SupabaseClient;
+  bucket: string;
+  items: PreparedImageManifestItem[];
+}): Promise<PreparedModelImageInput[]> {
+  const { supabase, bucket, items } = args;
+  const out: PreparedModelImageInput[] = [];
+  for (const item of items) {
+    const preparedPath = String(item.prepared_path ?? "").trim();
+    if (!preparedPath) continue;
+    const downloadRes = await withTimeout(
+      supabase.storage.from(bucket).download(preparedPath),
+      12_000,
+      `Timeout downloading prepared image: ${preparedPath}`
+    );
+    if (downloadRes.error || !downloadRes.data) continue;
+    const buf = Buffer.from(
+      await withTimeout(downloadRes.data.arrayBuffer(), 10_000, `Timeout reading prepared image: ${preparedPath}`)
+    );
+    out.push({
+      uploadId: item.upload_id,
+      sourceKey: preparedPath,
+      category: item.category,
+      qualityLabel: item.quality_label,
+      mimeType: item.mime_type || "image/jpeg",
+      dataBase64: buf.toString("base64"),
+    });
+  }
+  return out;
 }
 

@@ -13,7 +13,11 @@ import { computeDomainScoresV1, computeDoctorAiContextV1 } from "@/lib/benchmark
 import { renderAndUploadPdfForCase } from "@/lib/reports/renderPdfInternal";
 import { normalizeIntakeFormData, toNestedForApi } from "@/lib/intake/normalizeIntakeFormData";
 import { shouldGeneratePdf } from "@/lib/reports/pdfReadiness";
-import { prepareCaseEvidenceManifest } from "@/lib/evidence/prepareCaseEvidence";
+import {
+  loadPreparedModelImageInputs,
+  prepareCaseEvidenceManifest,
+  type PreparedImageManifestItem,
+} from "@/lib/evidence/prepareCaseEvidence";
 import { computeAuditorReviewEligibility, computeProvisionalFromScore, computeAwardContributionWeight } from "@/lib/auditor/eligibility";
 import { refreshTransparencyMetricsForCase } from "@/lib/transparency/refreshOrchestration";
 
@@ -376,7 +380,7 @@ export const runGraftIntegrityEstimate = inngest.createFunction(
 
     // 2) Reuse the same deterministic evidence preparation pipeline.
     const preparedEvidence = await step.run("prepare-case-evidence", async () => {
-      return await prepareCaseEvidenceManifest({
+      const { manifest } = await prepareCaseEvidenceManifest({
         supabase,
         caseId,
         bucket: BUCKET,
@@ -385,17 +389,10 @@ export const runGraftIntegrityEstimate = inngest.createFunction(
           error: (message, data) => logger.error(message, data),
         },
       });
+      return { manifest };
     });
 
     const preparedImages = preparedEvidence.manifest.prepared_images ?? [];
-    const donorPrepared = preparedEvidence.modelInputs.filter((img) => {
-      const c = String(img.category || "").toLowerCase();
-      return c.includes("donor");
-    });
-    const recipientPrepared = preparedEvidence.modelInputs.filter((img) => {
-      const c = String(img.category || "").toLowerCase();
-      return c.includes("recipient") || c.includes("intraop") || c.includes("postop");
-    });
 
     const { score: evidenceScore, recommendedMissingPhotos } = classifyEvidenceCoverage({
       claimedGrafts,
@@ -420,13 +417,24 @@ export const runGraftIntegrityEstimate = inngest.createFunction(
 
     // 3) Run model + persist. This function is independent of the main audit flow.
     const modelOut = await step.run("run-gii-model", async () => {
+      const donorItems = preparedImages
+        .filter((img) => String(img.category || "").toLowerCase().includes("donor"))
+        .slice(0, 10);
+      const recipientItems = preparedImages
+        .filter((img) => {
+          const c = String(img.category || "").toLowerCase();
+          return c.includes("recipient") || c.includes("intraop") || c.includes("postop");
+        })
+        .slice(0, 10);
+      const donorPrepared = await loadPreparedModelImageInputs({ supabase, bucket: BUCKET, items: donorItems });
+      const recipientPrepared = await loadPreparedModelImageInputs({ supabase, bucket: BUCKET, items: recipientItems });
       return await runGraftIntegrityModelEstimate({
         claimed_grafts: claimedGrafts,
-        donor: donorPrepared.slice(0, 10).map((img) => ({
+        donor: donorPrepared.map((img) => ({
           key: img.sourceKey,
           dataUrl: `data:${img.mimeType};base64,${img.dataBase64}`,
         })),
-        recipient: recipientPrepared.slice(0, 10).map((img) => ({
+        recipient: recipientPrepared.map((img) => ({
           key: img.sourceKey,
           dataUrl: `data:${img.mimeType};base64,${img.dataBase64}`,
         })),
@@ -456,8 +464,11 @@ export const runGraftIntegrityEstimate = inngest.createFunction(
       claimedGrafts,
       confidence: adjusted.confidence,
       evidenceScore,
-      donorImages: donorPrepared.length,
-      recipientImages: recipientPrepared.length,
+      donorImages: preparedImages.filter((img) => String(img.category || "").toLowerCase().includes("donor")).length,
+      recipientImages: preparedImages.filter((img) => {
+        const c = String(img.category || "").toLowerCase();
+        return c.includes("recipient") || c.includes("intraop") || c.includes("postop");
+      }).length,
     });
 
     return { ok: true, caseId };
@@ -656,7 +667,7 @@ export const runAudit = inngest.createFunction(
 
     // 5) Deterministic evidence preparation stage (shared by AI audit + graft integrity + PDF).
     const preparedVision = await step.run("prepare-case-evidence", async () => {
-      return await prepareCaseEvidenceManifest({
+      const { manifest } = await prepareCaseEvidenceManifest({
         supabase,
         caseId,
         bucket: BUCKET,
@@ -672,6 +683,7 @@ export const runAudit = inngest.createFunction(
           error: (message, data) => logger.error(message, data),
         },
       });
+      return { manifest };
     });
     const imageIngestionStats = {
       manifest_id: preparedVision.manifest.id,
@@ -738,6 +750,12 @@ export const runAudit = inngest.createFunction(
           : null;
 
       const aiExtendedEvidence = isAiExtendedImageEvidenceEnabled();
+      const manifestPrepared = (preparedVision.manifest.prepared_images ?? []) as PreparedImageManifestItem[];
+      const modelInputs = await loadPreparedModelImageInputs({
+        supabase,
+        bucket: BUCKET,
+        items: manifestPrepared,
+      });
       const patientImageEvidenceGroups = buildPatientImageEvidenceGroups({
         enabled: aiExtendedEvidence,
         uploads: uploads as {
@@ -745,12 +763,7 @@ export const runAudit = inngest.createFunction(
           type?: string | null;
           storage_path?: string | null;
         }[],
-        preparedImages: (preparedVision.manifest.prepared_images ?? []) as {
-          upload_id: string;
-          category: string;
-          original_path?: string;
-          prepared_path?: string;
-        }[],
+        preparedImages: manifestPrepared,
       });
       const patientImageEvidenceConfidence = buildPatientImageEvidenceConfidence(patientImageEvidenceGroups);
 
@@ -760,7 +773,7 @@ export const runAudit = inngest.createFunction(
         clinic_answers: existingSummary.clinic_answers as Record<string, unknown> | null,
         enhanced_patient_answers: (enhanced as any) ?? null,
         patient_baseline: (baseline as any) ?? null,
-        imageInputs: preparedVision.modelInputs.map((img) => ({
+        imageInputs: modelInputs.map((img) => ({
           sourceKey: img.sourceKey,
           mimeType: img.mimeType,
           dataBase64: img.dataBase64,
@@ -970,7 +983,7 @@ export const runAudit = inngest.createFunction(
     const missingCategories = aiResult.data_quality?.missing_photos ?? [];
     const missingCount = Array.isArray(missingCategories) ? missingCategories.length : 0;
     const obs = Array.isArray(aiResult.photo_observations) ? aiResult.photo_observations : [];
-    const totalViews = obs.length || preparedVision.modelInputs.length || 0;
+    const totalViews = obs.length || (preparedVision.manifest.prepared_images ?? []).length || 0;
     const knownViews = obs.filter((p: any) => String(p?.suspected_view ?? "") && String(p?.suspected_view ?? "") !== "unknown").length;
     const viewSuccessRate = totalViews > 0 ? knownViews / totalViews : 0;
     const deriveConfidence = () => {
