@@ -809,6 +809,12 @@ export const runAudit = inngest.createFunction(
         supabase,
         bucket: BUCKET,
         items: manifestPrepared,
+        maxItems: 10,
+        caseId,
+        logger: {
+          info: (msg, data) => logger.info(msg, data ?? {}),
+          warn: (msg, data) => logger.warn(msg, data ?? {}),
+        },
       });
       const patientImageEvidenceGroups = buildPatientImageEvidenceGroups({
         enabled: aiExtendedEvidence,

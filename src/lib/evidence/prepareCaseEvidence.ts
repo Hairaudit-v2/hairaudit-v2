@@ -296,25 +296,113 @@ export async function prepareCaseEvidenceManifest(args: {
   };
 }
 
+/**
+ * Sort prepared images for AI model input with graft tray prioritization.
+ * Priority: graft_tray_closeup > img_graft_tray_closeup > graft_tray_overview > img_graft_tray_overview > others by quality
+ */
+function sortPreparedImagesForModel(items: PreparedImageManifestItem[]): PreparedImageManifestItem[] {
+  const graftTrayPriority = new Map<string, number>([
+    ["graft_tray_closeup", 1],
+    ["img_graft_tray_closeup", 2],
+    ["graft_tray_overview", 3],
+    ["img_graft_tray_overview", 4],
+    ["graft_sorting", 5],
+    ["graft_hydration_solution", 6],
+    ["graft_count_board", 7],
+  ]);
+
+  return [...items].sort((a, b) => {
+    const aIsGraft = graftTrayPriority.has(a.category);
+    const bIsGraft = graftTrayPriority.has(b.category);
+
+    // Both are graft tray - sort by priority
+    if (aIsGraft && bIsGraft) {
+      return (graftTrayPriority.get(a.category) ?? 99) - (graftTrayPriority.get(b.category) ?? 99);
+    }
+
+    // Only a is graft tray - comes first
+    if (aIsGraft) return -1;
+    // Only b is graft tray - comes first
+    if (bIsGraft) return 1;
+
+    // Neither is graft tray - sort by quality (usable > weak > poor)
+    const qualityOrder = { usable: 0, weak: 1, poor: 2 };
+    return qualityOrder[a.quality_label] - qualityOrder[b.quality_label];
+  });
+}
+
 /** Load prepared JPEGs from storage as base64 for model calls. Kept out of `prepareCaseEvidenceManifest` so Inngest `step.run` outputs stay under payload limits. */
 export async function loadPreparedModelImageInputs(args: {
   supabase: SupabaseClient;
   bucket: string;
   items: PreparedImageManifestItem[];
+  logger?: { warn?: (msg: string, data?: Record<string, unknown>) => void; info?: (msg: string, data?: Record<string, unknown>) => void };
+  maxItems?: number;
+  caseId?: string;
 }): Promise<PreparedModelImageInput[]> {
-  const { supabase, bucket, items } = args;
+  const { supabase, bucket, items, logger, maxItems = 10, caseId } = args;
+
+  // Sort with graft tray prioritization
+  const sortedItems = sortPreparedImagesForModel(items);
+
+  // Count graft tray images before limiting
+  const graftTrayCategories = new Set([
+    "graft_tray_closeup",
+    "graft_tray_overview",
+    "img_graft_tray_closeup",
+    "img_graft_tray_overview",
+    "graft_sorting",
+    "graft_hydration_solution",
+    "graft_count_board",
+  ]);
+  const totalGraftTray = sortedItems.filter((i) => graftTrayCategories.has(i.category)).length;
+
+  // Limit to max (default 10 for AI model)
+  const itemsToLoad = sortedItems.slice(0, maxItems);
+  const selectedGraftTray = itemsToLoad.filter((i) => graftTrayCategories.has(i.category)).length;
+
+  // Debug logging
+  const logContext = caseId ? ` ${caseId}` : "";
+  if (logger?.info) {
+    logger.info(`[loadPreparedModelImageInputs${logContext}] Selection summary`, {
+      totalItems: items.length,
+      selectedItems: itemsToLoad.length,
+      totalGraftTrayImages: totalGraftTray,
+      selectedGraftTrayImages: selectedGraftTray,
+      maxItems,
+      fallbackUsed: totalGraftTray === 0,
+    });
+  }
+
+  // Guard: warn if graft tray images exist but weren't selected
+  if (totalGraftTray > 0 && selectedGraftTray === 0) {
+    const warnMsg = `[loadPreparedModelImageInputs${logContext}] WARNING: ${totalGraftTray} graft tray images available but 0 selected in top ${maxItems}`;
+    if (logger?.warn) {
+      logger.warn(warnMsg, {
+        totalGraftTray,
+        topCategories: itemsToLoad.slice(0, 5).map((i) => i.category),
+      });
+    } else {
+      // eslint-disable-next-line no-console
+      console.warn(warnMsg);
+    }
+  }
+
   const out: PreparedModelImageInput[] = [];
-  for (const item of items) {
+  for (const item of itemsToLoad) {
     const preparedPath = String(item.prepared_path ?? "").trim();
     if (!preparedPath) continue;
     const downloadRes = await withTimeout(
       supabase.storage.from(bucket).download(preparedPath),
       12_000,
-      `Timeout downloading prepared image: ${preparedPath}`
+      `Timeout downloading image: ${preparedPath}`
     );
-    if (downloadRes.error || !downloadRes.data) continue;
+    if (downloadRes.error || !downloadRes.data) {
+      logger?.warn?.(`Failed to download prepared image: ${preparedPath}`, { error: downloadRes.error?.message });
+      continue;
+    }
     const buf = Buffer.from(
-      await withTimeout(downloadRes.data.arrayBuffer(), 10_000, `Timeout reading prepared image: ${preparedPath}`)
+      await withTimeout(downloadRes.data.arrayBuffer(), 10_000, `Timeout reading image: ${preparedPath}`)
     );
     out.push({
       uploadId: item.upload_id,
