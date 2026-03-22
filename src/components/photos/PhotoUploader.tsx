@@ -120,26 +120,50 @@ export default function PhotoUploader({
     if (isLocked || !files.length) return;
 
     setBusyCats((p) => ({ ...p, [category]: true }));
+    
+    const errors: string[] = [];
+    let successCount = 0;
+    
     try {
-      const fd = new FormData();
-      fd.append("caseId", caseId);
-      fd.append("submitterType", submitterType);
-      fd.append("category", category);
-      files.forEach((f) => fd.append("files[]", f));
+      // Upload files sequentially to stay under Vercel 4.5MB limit
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        
+        try {
+          const fd = new FormData();
+          fd.append("caseId", caseId);
+          fd.append("submitterType", submitterType);
+          fd.append("category", category);
+          fd.append("files[]", file);
 
-      const res = await fetch("/api/uploads/audit-photos", {
-        method: "POST",
-        body: fd,
-      });
+          const res = await fetch("/api/uploads/audit-photos", {
+            method: "POST",
+            body: fd,
+          });
 
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json?.error ?? "Upload failed");
+          const json = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            throw new Error(json?.error ?? `Upload failed for ${file.name}`);
+          }
 
-      if (json.saved?.length) {
-        setUploads((prev) => [...json.saved, ...prev]);
+          if (json.saved?.length) {
+            setUploads((prev) => [...json.saved, ...prev]);
+          }
+          successCount++;
+        } catch (e: unknown) {
+          const msg = (e as Error)?.message ?? "Upload failed";
+          errors.push(`${file.name}: ${msg}`);
+        }
       }
-    } catch (e: unknown) {
-      alert((e as Error)?.message ?? "Upload failed");
+      
+      // Show summary if there were errors
+      if (errors.length > 0) {
+        if (successCount === 0) {
+          alert(`Upload failed:\n${errors[0]}`);
+        } else {
+          console.warn(`Partial upload success:`, errors);
+        }
+      }
     } finally {
       setBusyCats((p) => ({ ...p, [category]: false }));
     }
