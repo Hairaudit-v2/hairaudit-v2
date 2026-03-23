@@ -2,6 +2,9 @@
 
 import React, { useMemo, useState } from "react";
 import UploadedThumb from "./UploadedThumb";
+import EvidenceUploadGuidancePanel from "@/components/patient/EvidenceUploadGuidancePanel";
+import { evaluateEvidence, type CasePhotoInput } from "@/lib/evidence/evidenceEvaluator";
+import { getHighlightKeysIntersectingCategories } from "@/lib/evidence/evidenceUploadUiHints";
 
 type CategoryDef = { key: string; title: string; required?: boolean; help?: string; tips?: readonly string[]; maxFiles: number; accept: string };
 
@@ -54,6 +57,27 @@ export default function CategoryPhotoUpload({
     return map;
   }, [uploads, typePrefix]);
 
+  const categoryKeys = useMemo(() => categories.map((c) => c.key), [categories]);
+
+  const evidenceUi = useMemo(() => {
+    const photos: CasePhotoInput[] = uploads.map((u) => ({
+      type: u.type,
+      metadata:
+        u.metadata && typeof u.metadata === "object" && !Array.isArray(u.metadata)
+          ? (u.metadata as { category?: string | null })
+          : undefined,
+    }));
+    try {
+      const result = evaluateEvidence(photos);
+      return {
+        result,
+        highlightKeys: getHighlightKeysIntersectingCategories(result, categoryKeys),
+      };
+    } catch {
+      return null;
+    }
+  }, [uploads, categoryKeys]);
+
   async function uploadFiles(category: string, files: File[]) {
     if (isLocked || !files.length) return;
     setBusyCats((p) => ({ ...p, [category]: true }));
@@ -88,8 +112,15 @@ export default function CategoryPhotoUpload({
 
   return (
     <div className="space-y-6">
-      {categories.map((cat) => (
-        <section key={cat.key} className={`rounded-xl border p-4 space-y-3 ${isLocked ? "opacity-60" : ""}`}>
+      {evidenceUi ? (
+        <EvidenceUploadGuidancePanel result={evidenceUi.result} />
+      ) : null}
+      {categories.map((cat) => {
+        const emphasize = evidenceUi?.highlightKeys.has(cat.key) ?? false;
+        const borderCls =
+          emphasize && !isLocked ? "border-amber-400 ring-2 ring-amber-400/70 bg-amber-50/25" : "border-gray-200";
+        return (
+        <section key={cat.key} className={`rounded-xl border p-4 space-y-3 ${borderCls} ${isLocked ? "opacity-60" : ""}`}>
           <h2 className="font-semibold">
             {cat.title} {cat.required && <span className="text-xs text-amber-700">(required)</span>}
           </h2>
@@ -137,7 +168,8 @@ export default function CategoryPhotoUpload({
             </div>
           )}
         </section>
-      ))}
+        );
+      })}
     </div>
   );
 }

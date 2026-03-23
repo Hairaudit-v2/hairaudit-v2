@@ -1,4 +1,6 @@
 import type { ReportViewModel } from "@/lib/pdf/reportBuilder";
+import type { EvidenceEvaluationResult } from "@/lib/evidence/evidenceEvaluator";
+import { domainCardScoreLabelWhenNoScore } from "@/lib/evidence/evidenceMissingCopy";
 import { buildSurgicalFingerprintSummary } from "@/lib/reports/surgicalFingerprint";
 import { renderRadarSvg, clamp01, clamp100 } from "@/lib/reports/radarSvg";
 
@@ -40,6 +42,8 @@ export type EliteReportViewModel = {
   radar?: EliteRadarVm;
   /** Evidence images: `signedUrl` is a print-optimized data URL or a signed storage URL. */
   photosByCategory: Record<string, { signedUrl: string | null; label: string }[]>;
+  /** Optional: when present, domain cards with no numeric score show missing-evidence detail instead of a generic label. */
+  evidenceEvaluation?: EvidenceEvaluationResult | null;
   doctorBlockHtml?: string;
   debugFooter?: string;
 };
@@ -53,11 +57,31 @@ function esc(s: string) {
     .replaceAll("'", "&#039;");
 }
 
+function metricTextImpliesWeakEvidence(s: string): boolean {
+  const t = String(s ?? "").toLowerCase();
+  return t.includes("insufficient") || t.startsWith("missing required evidence");
+}
+
 export function renderEliteReportHtml(vm: EliteReportViewModel): string {
-  const { caseId, generatedAt, version, metrics, areaDomains, sectionScores, highlights, risks, radar, photosByCategory, doctorBlockHtml, debugFooter } = vm;
+  const {
+    caseId,
+    generatedAt,
+    version,
+    metrics,
+    evidenceEvaluation,
+    areaDomains,
+    sectionScores,
+    highlights,
+    risks,
+    radar,
+    photosByCategory,
+    doctorBlockHtml,
+    debugFooter,
+  } = vm;
   const overallScore = typeof vm.viewModel.score === "number" && Number.isFinite(vm.viewModel.score) ? vm.viewModel.score : null;
   const viewModelExt = vm.viewModel as ReportViewModel & {
     model?: string;
+    evidenceCoverageScore?: number | null;
     confidencePanel?: {
       confidenceScore?: number;
       confidenceLabel?: string;
@@ -125,6 +149,11 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
         : null;
   const confidencePct = confidenceNumeric == null ? null : Math.round(clamp01(confidenceNumeric) * 100);
   const confidenceScorePct = confidencePct == null ? "N/A" : `${confidencePct}%`;
+  const ecsRaw = viewModelExt.evidenceCoverageScore;
+  const evidenceCoverageDisplay =
+    typeof ecsRaw === "number" && Number.isFinite(ecsRaw)
+      ? `Evidence Coverage: ${Math.round(Math.max(0, Math.min(100, ecsRaw)))}%`
+      : null;
   const confidenceBand =
     confidencePct == null ? "Limited" : confidencePct >= 80 ? "High" : confidencePct >= 60 ? "Moderate" : "Low";
   const modelVersion = String(viewModelExt.model ?? version ? `v${String(version ?? "")}` : "N/A").trim();
@@ -203,12 +232,15 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       const guidance = String(matchingFindings[0]?.recommended_next_step ?? "").trim() || domain.monitoring;
       const scoreWidth = score == null ? 10 : Math.max(5, Math.min(100, Math.round(score)));
       const scoreClass = score == null ? "low" : score >= 80 ? "high" : score >= 60 ? "medium" : "low";
-      const scoreLabel = score == null ? "Insufficient evidence" : `${Math.round(score)} / 100`;
+      const scoreLabel =
+        score == null ? domainCardScoreLabelWhenNoScore(domain.title, evidenceEvaluation ?? null) : `${Math.round(score)} / 100`;
+      const domainScoreValueClass =
+        score == null && scoreLabel.startsWith("Missing required evidence") ? "domainScoreValue domainScoreValueWrap" : "domainScoreValue";
       return `
         <div class="domainCard ${idx % 2 ? "domainAlt" : ""}">
           <div class="domainTop">
             <h3>${esc(domain.title)}</h3>
-            <div class="domainScoreValue">${esc(scoreLabel)}</div>
+            <div class="${domainScoreValueClass}">${esc(scoreLabel)}</div>
           </div>
           <div class="bar"><div class="barFill ${scoreClass}" style="width:${scoreWidth}%;"></div></div>
           <div class="microTitle">Observation</div>
@@ -255,7 +287,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
   const donorRisk =
     /high|elevated|poor/i.test(`${metrics.transectionRisk} ${metrics.donorQuality}`) ? "Watch" : "Stable";
   const recipientConsistency =
-    /insufficient|uneven|variable/i.test(`${metrics.implantationDensity} ${metrics.hairlineNaturalness}`)
+    /insufficient|uneven|variable|missing required evidence/i.test(`${metrics.implantationDensity} ${metrics.hairlineNaturalness}`)
       ? "Mixed"
       : "Consistent";
   const docCompleteness =
@@ -288,6 +320,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
         <div class="panelTitle">AI Confidence</div>
         <div class="kpiValue">${esc(confidenceScorePct)}</div>
         <div class="kpiSub">${esc(confidenceBand)} confidence band</div>
+        ${evidenceCoverageDisplay ? `<div class="kpiSub" style="margin-top:10px;font-weight:700;color:#0f2344;">${esc(evidenceCoverageDisplay)}</div>` : ""}
         <div class="miniText">Confidence reflects visual evidence clarity and completeness across submitted documentation.</div>
       </div>
       <div class="panelCard">
@@ -384,7 +417,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
 
   const patientGuidance = domains.map((d) => d.monitoring).slice(0, 4);
   const predictiveOutlook =
-    metrics.graftSurvival.toLowerCase().includes("insufficient")
+    metricTextImpliesWeakEvidence(metrics.graftSurvival)
       ? "Current visual evidence supports only a low-confidence graft survival outlook estimate."
       : `Observed implantation and density patterns appear broadly consistent with a ${esc(metrics.graftSurvival)} graft survival expectation range.`;
 
@@ -769,6 +802,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     .domainTop { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
     .domainTop h3 { margin:0; font-size: 14px; }
     .domainScoreValue { font-size: 12px; font-weight: 800; color: #0f172a; white-space: nowrap; }
+    .domainScoreValueWrap { white-space: normal; max-width: 58%; text-align: right; word-break: break-word; line-height: 1.35; }
     .bar { margin-top: 8px; height: 8px; background: #e7edf6; border-radius: 999px; overflow: hidden; }
     .barFill { height: 100%; border-radius: 999px; }
     .barFill.high { background: #059669; }

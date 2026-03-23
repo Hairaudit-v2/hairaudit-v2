@@ -26,6 +26,7 @@ import {
 import { computeAuditorReviewEligibility, computeProvisionalFromScore, computeAwardContributionWeight } from "@/lib/auditor/eligibility";
 import { refreshTransparencyMetricsForCase } from "@/lib/transparency/refreshOrchestration";
 import { isPatientUploadAuditExcluded } from "@/lib/uploads/patientPhotoAuditMeta";
+import { evaluateEvidence } from "@/lib/evidence/evidenceEvaluator";
 
 /** Must match `REASONS` in `src/app/api/auditor/rerun/route.ts`. */
 const AUDITOR_RERUN_REASON_CORRECTED_PATIENT_PHOTOS = "corrected_patient_photos";
@@ -47,6 +48,23 @@ function toIntOrNull(v: unknown): number | null {
   const n = typeof v === "string" ? Number(v.replace(/[^0-9.]/g, "")) : Number(v);
   if (!Number.isFinite(n)) return null;
   return Math.max(0, Math.round(n));
+}
+
+function overallEvidenceCoverageFromUploads(
+  uploads: ReadonlyArray<{ type?: string | null; metadata?: unknown }>
+): number {
+  const photos = uploads.map((u) => ({
+    type: u.type,
+    metadata:
+      u.metadata && typeof u.metadata === "object" && !Array.isArray(u.metadata)
+        ? (u.metadata as { category?: string | null })
+        : undefined,
+  }));
+  try {
+    return evaluateEvidence(photos).overallCoverageScore;
+  } catch {
+    return 0;
+  }
 }
 
 function getNested(obj: unknown, path: string): unknown {
@@ -872,6 +890,7 @@ export const runAudit = inngest.createFunction(
       });
 
       await step.run("insert-audit-failed-report", async () => {
+        const evidenceCoverageScore = overallEvidenceCoverageFromUploads(uploads);
         const { error } = await supabase.from("reports").insert({
           case_id: caseId,
           version: failedVersion,
@@ -884,6 +903,7 @@ export const runAudit = inngest.createFunction(
           summary: {
             ...existingSummary,
             image_ingestion_stats: imageIngestionStats,
+            evidenceCoverageScore,
             score: 0,
             donor_quality: "Cannot assess",
             graft_survival_estimate: "Unknown",
@@ -1178,9 +1198,12 @@ export const runAudit = inngest.createFunction(
         delete (doctorAnswersBase as any).scoring_version;
       }
 
+      const evidenceCoverageScore = overallEvidenceCoverageFromUploads(uploads);
+
       const summary = {
         ...existingSummary,
         image_ingestion_stats: imageIngestionStats,
+        evidenceCoverageScore,
         doctor_answers: doctorAnswersBase,
         score: aiResult.score,
         donor_quality: aiResult.donor_quality,

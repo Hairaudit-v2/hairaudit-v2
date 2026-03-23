@@ -19,10 +19,13 @@ import {
 import UploadedThumb from "@/components/uploads/UploadedThumb";
 import ExtendedPatientPhotoUploadGroups from "@/components/patient/ExtendedPatientPhotoUploadGroups";
 import PatientImageEvidenceNudgeCallout from "@/components/patient/PatientImageEvidenceNudgeCallout";
+import EvidenceUploadGuidancePanel from "@/components/patient/EvidenceUploadGuidancePanel";
 import { computePatientImageEvidenceQualityFromCaseUploads } from "@/lib/audit/patientImageEvidenceConfidence";
 import { buildPatientImageEvidenceUploadNudges } from "@/lib/audit/patientImageEvidenceUploadNudges";
 import { isPatientImageEvidenceNudgesEnabled } from "@/lib/features/enablePatientImageEvidenceNudges";
 import type { PatientPhotoUploadGuidancePanel } from "@/lib/patientPhoto/patientPhotoUploadGuidance";
+import { evaluateEvidence, type CasePhotoInput } from "@/lib/evidence/evidenceEvaluator";
+import { getUploadHighlightKeys } from "@/lib/evidence/evidenceUploadUiHints";
 
 type UploadRow = {
   id: string;
@@ -115,6 +118,25 @@ export default function PhotoUploader({
     );
     return buildPatientImageEvidenceUploadNudges(q);
   }, [submitterType, uploads]);
+
+  const evidenceUi = useMemo(() => {
+    const photos: CasePhotoInput[] = uploads.map((u) => ({
+      type: u.type,
+      metadata:
+        u.metadata && typeof u.metadata === "object" && !Array.isArray(u.metadata)
+          ? (u.metadata as { category?: string | null })
+          : undefined,
+    }));
+    try {
+      const result = evaluateEvidence(photos);
+      return {
+        result,
+        highlightKeys: getUploadHighlightKeys(submitterType, result),
+      };
+    } catch {
+      return null;
+    }
+  }, [uploads, submitterType]);
 
   async function uploadFiles(category: string, files: File[]) {
     if (isLocked || !files.length) return;
@@ -248,6 +270,12 @@ export default function PhotoUploader({
           </div>
         ) : null}
 
+        {evidenceUi ? (
+          <div className="mt-4">
+            <EvidenceUploadGuidancePanel result={evidenceUi.result} />
+          </div>
+        ) : null}
+
         {submitterType === "patient" && patientPhotoStageGuidance ? (
           <div
             className="mt-4 rounded-lg border border-sky-200 bg-sky-50/90 p-4 text-sm text-slate-800"
@@ -278,6 +306,7 @@ export default function PhotoUploader({
               existing={uploadsByCategory[def.key] ?? []}
               busy={!!busyCats[def.key]}
               locked={isLocked}
+              emphasize={evidenceUi?.highlightKeys.has(def.key) ?? false}
               showCantProvide={def.required === false && submitterType === "patient"}
               onSkip={() => toggleSkipped(def.key)}
               onUpload={(files) => uploadFiles(def.key, files)}
@@ -298,6 +327,7 @@ export default function PhotoUploader({
           onDeleted={deleteUpload}
           skin="audit"
           extendedGroupOrderHint={patientPhotoStageGuidance?.extendedGroupOrderHint}
+          highlightCategoryKeys={submitterType === "patient" ? evidenceUi?.highlightKeys : undefined}
         />
       )}
 
@@ -391,6 +421,7 @@ function PhotoCategoryCard({
   existing,
   busy,
   locked,
+  emphasize,
   showCantProvide,
   onSkip,
   onUpload,
@@ -407,15 +438,20 @@ function PhotoCategoryCard({
   existing: UploadRow[];
   busy: boolean;
   locked: boolean;
+  emphasize?: boolean;
   showCantProvide: boolean;
   onSkip: () => void;
   onUpload: (files: File[]) => void;
   onDeleted: (id: string) => void;
 }) {
   const [drag, setDrag] = useState(false);
+  const borderCls =
+    emphasize && !locked
+      ? "border-amber-400 ring-2 ring-amber-400/70 bg-amber-50/25"
+      : "border-slate-200";
   return (
     <section
-      className={`rounded-xl border p-4 space-y-3 ${locked ? "opacity-60" : ""}`}
+      className={`rounded-xl border p-4 space-y-3 ${borderCls} ${locked ? "opacity-60" : ""}`}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="font-semibold">

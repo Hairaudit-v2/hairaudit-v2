@@ -35,6 +35,7 @@ export default function ExtendedPatientPhotoUploadGroups({
   onDeleted,
   skin = "audit",
   extendedGroupOrderHint,
+  highlightCategoryKeys,
 }: {
   /**
    * Optional override when env is off: pass `true` to force extended UI (e.g. stories).
@@ -50,6 +51,8 @@ export default function ExtendedPatientPhotoUploadGroups({
   skin?: Skin;
   /** Intake-driven accordion order (additive); default order when omitted. */
   extendedGroupOrderHint?: readonly PatientExtendedUploadGroupId[] | null;
+  /** Optional: emphasize optional category cards that would help close evidence gaps (advisory). */
+  highlightCategoryKeys?: ReadonlySet<string>;
 }) {
   const envEnabled = isExtendedPatientUploadsEnabled();
   const enabled = envEnabled || enabledProp === true;
@@ -117,6 +120,7 @@ export default function ExtendedPatientPhotoUploadGroups({
                 existing={uploadsByCategory[cat.key] ?? []}
                 busy={!!busyCats[cat.key]}
                 locked={locked}
+                emphasize={highlightCategoryKeys?.has(cat.key) ?? false}
                 onUpload={(files) => onUpload(k, files)}
                 onDeleted={onDeleted}
               />
@@ -141,6 +145,7 @@ function OptionalCategoryCard({
   existing,
   busy,
   locked,
+  emphasize,
   onUpload,
   onDeleted,
 }: {
@@ -155,6 +160,7 @@ function OptionalCategoryCard({
   existing: UploadRow[];
   busy: boolean;
   locked: boolean;
+  emphasize?: boolean;
   onUpload: (files: File[]) => void;
   onDeleted: (id: string) => void;
 }) {
@@ -162,8 +168,17 @@ function OptionalCategoryCard({
   const border = skin === "audit" ? "border-slate-100" : "border-gray-100";
   const muted = skin === "audit" ? "text-slate-600" : "text-gray-600";
 
+  const emphasisRing =
+    emphasize && !locked
+      ? skin === "audit"
+        ? "ring-2 ring-amber-400/90 border-amber-300/80 bg-amber-50/30 shadow-sm"
+        : "ring-2 ring-amber-400/90 border-amber-300/80 bg-amber-50/40 shadow-sm"
+      : "";
+
   return (
-    <section className={`rounded-lg border ${border} bg-white/60 p-3 space-y-2 ${locked ? "opacity-60" : ""}`}>
+    <section
+      className={`rounded-lg border ${border} bg-white/60 p-3 space-y-2 ${locked ? "opacity-60" : ""} ${emphasisRing}`}
+    >
       <h3 className={`text-sm font-semibold ${skin === "audit" ? "text-slate-800" : "text-gray-900"}`}>
         {title}{" "}
         <span className={`text-xs font-normal ${muted}`}>(optional)</span>

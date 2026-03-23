@@ -9,6 +9,8 @@ import { resolveAuditModeFromCaseAccess } from "@/lib/reports/accessMode";
 import { verifyRenderToken } from "@/lib/reports/internalRenderToken";
 import { effectivePatientPhotoCategoryKey } from "@/lib/uploads/patientPhotoAuditMeta";
 import { pdfEnvConfig } from "@/lib/pdf/pdfEnvConfig";
+import { evaluateEvidence, type EvidenceEvaluationResult } from "@/lib/evidence/evidenceEvaluator";
+import { enrichLegacyKeyMetricsRecord } from "@/lib/evidence/evidenceMissingCopy";
 
 /* Admin client (NO cookies, NO sessions — Playwright safe) */
 function supabaseAdmin() {
@@ -249,7 +251,7 @@ export async function GET(req: Request) {
     "medium";
 
   // Key metrics: use existing stored values if present; otherwise leave blank for now
-  const metrics = {
+  const metricsBase = {
     donor_quality: summary.donor_quality ?? summary?.key_metrics?.donor_quality ?? "—",
     graft_survival_estimate:
       summary.graft_survival_estimate ?? summary?.key_metrics?.graft_survival_estimate ?? "—",
@@ -258,6 +260,21 @@ export async function GET(req: Request) {
     hairline_naturalness: summary?.key_metrics?.hairline_naturalness ?? "—",
     donor_scar_visibility: summary?.key_metrics?.donor_scar_visibility ?? "—",
   };
+
+  let legacyEvidenceEvaluation: EvidenceEvaluationResult | null = null;
+  try {
+    const { data: uploadRows, error: legacyEvErr } = await supabase
+      .from("uploads")
+      .select("type, metadata")
+      .eq("case_id", caseId);
+    if (!legacyEvErr && uploadRows) {
+      legacyEvidenceEvaluation = evaluateEvidence(uploadRows as Parameters<typeof evaluateEvidence>[0]);
+    }
+  } catch {
+    legacyEvidenceEvaluation = null;
+  }
+
+  const metrics = enrichLegacyKeyMetricsRecord(metricsBase, legacyEvidenceEvaluation);
 
   // Component scores for area graphs (domain + section level)
   const compDomainsBase = toNumberRecord(

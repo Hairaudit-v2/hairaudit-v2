@@ -132,6 +132,8 @@ export type AuditReportContent = {
   findings?: string[];
   model?: string;
   uploadCount?: number;
+  /** 0–100 surgical image evidence coverage (`evaluateEvidence` overall); not mixed into model confidence. */
+  evidenceCoverageScore?: number | null;
   confidencePanel?: {
     photoCount: number;
     missingCategories?: string[];
@@ -688,6 +690,9 @@ function addConfidencePanel(doc: PDFKit.PDFDocument, content: AuditReportContent
     { k: "Photos", v: String(photoCount) },
     { k: "Missing categories", v: missingText },
     { k: "Model confidence", v: `${confidencePct}%` },
+    ...(typeof content.evidenceCoverageScore === "number" && Number.isFinite(content.evidenceCoverageScore)
+      ? [{ k: "Evidence coverage", v: `${Math.round(Math.max(0, Math.min(100, content.evidenceCoverageScore)))}%` }]
+      : []),
     { k: "Confidence label", v: confidenceLabel },
     { k: "Limitations", v: limitationsText },
   ];

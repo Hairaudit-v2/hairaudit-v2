@@ -30,6 +30,7 @@ import PatientNextActionPanel from "@/components/patient/PatientNextActionPanel"
 import PatientSafeSummaryShell from "@/components/patient/PatientSafeSummaryShell";
 import { BENCHMARKING_GLOBAL_STANDARDS } from "@/lib/benchmarkingCopy";
 import CaseNotFoundRecovery from "@/components/case/CaseNotFoundRecovery";
+import EvidenceCoveragePanel from "@/components/audit/EvidenceCoveragePanel";
 import PatientImageEvidenceQualityPanel from "@/components/reports/PatientImageEvidenceQualityPanel";
 import { computePatientImageEvidenceQualityFromCaseUploads } from "@/lib/audit/patientImageEvidenceConfidence";
 import { isInternalImageEvidenceQualityPanelEnabled } from "@/lib/features/enableInternalImageEvidenceQualityPanel";
@@ -54,6 +55,7 @@ import { isClinicFollowupManualSendEnabled } from "@/lib/features/enableFollowup
 import type { FollowupReminderSendLogRow } from "@/lib/audit/followupReminderSendPayload";
 import PatientSafeSummaryTranslationOpsPanel from "./PatientSafeSummaryTranslationOpsPanel";
 import AuditorPatientImageManager from "./AuditorPatientImageManager";
+import { evaluateEvidence } from "@/lib/evidence/evidenceEvaluator";
 import { isPatientUploadAuditExcluded } from "@/lib/uploads/patientPhotoAuditMeta";
 
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
@@ -654,6 +656,21 @@ export default async function Page({
         ? missingPatientRequired
         : missingDoctorRequired;
 
+  let caseEvidenceEvaluation: ReturnType<typeof evaluateEvidence> | null = null;
+  try {
+    caseEvidenceEvaluation = evaluateEvidence((uploads ?? []) as Parameters<typeof evaluateEvidence>[0]);
+  } catch {
+    caseEvidenceEvaluation = null;
+  }
+  const evidenceCoverageScoreFromReport = (() => {
+    const n = Number((latestSummary as { evidenceCoverageScore?: unknown } | null)?.evidenceCoverageScore);
+    if (Number.isFinite(n) && n >= 0) return Math.round(Math.max(0, Math.min(100, n)));
+    return null;
+  })();
+  const evidenceCoverageDashboardPct =
+    evidenceCoverageScoreFromReport ?? caseEvidenceEvaluation?.overallCoverageScore ?? null;
+  const evidenceCoverageResult = isAuditor && caseEvidenceEvaluation ? caseEvidenceEvaluation : null;
+
   return (
     <div className="mx-auto mt-4 max-w-[1200px] rounded-3xl border border-slate-800 bg-slate-950 px-4 pb-10 pt-4 shadow-2xl sm:px-6">
       <div className="flex flex-wrap items-center gap-3">
@@ -940,6 +957,12 @@ export default async function Page({
         </section>
       ) : null}
 
+      {isAuditor && evidenceCoverageResult ? (
+        <div className="mt-6">
+          <EvidenceCoveragePanel result={evidenceCoverageResult} />
+        </div>
+      ) : null}
+
       <section className="mt-6 grid gap-6 lg:grid-cols-2">
         <div className="grid gap-6">
           <EvidenceSummary caseRow={c} uploads={uploads ?? []} />
@@ -961,6 +984,9 @@ export default async function Page({
             <div className="rounded-lg border border-slate-700 bg-slate-800/80 p-2 text-xs text-slate-200">Technical data sufficiency: {technicalDataSufficiency}</div>
             <div className="rounded-lg border border-slate-700 bg-slate-800/80 p-2 text-xs text-slate-200">Manual audit readiness score: {manualAuditReadinessScore ?? "N/A"}</div>
             <div className="rounded-lg border border-slate-700 bg-slate-800/80 p-2 text-xs text-slate-200">Confidence estimate: {confidenceEstimateNum != null ? `${confidenceEstimateNum}%` : String(confidenceLabel).toUpperCase()}</div>
+            <div className="rounded-lg border border-slate-700 bg-slate-800/80 p-2 text-xs text-slate-200">
+              Evidence Coverage: {evidenceCoverageDashboardPct != null ? `${evidenceCoverageDashboardPct}%` : "N/A"}
+            </div>
             <div className="rounded-lg border border-slate-700 bg-slate-800/80 p-2 text-xs text-slate-200">
               Missing critical evidence flags: {missingCriticalEvidenceFlags.length ? missingCriticalEvidenceFlags.join(", ") : "none"}
             </div>

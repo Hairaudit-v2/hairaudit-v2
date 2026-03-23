@@ -13,6 +13,8 @@ import {
 } from "@/lib/reports/pdfReadiness";
 import { loadLatestEvidenceManifest } from "@/lib/evidence/prepareCaseEvidence";
 import { pdfEnvConfig } from "@/lib/pdf/pdfEnvConfig";
+import { evaluateEvidence, type EvidenceEvaluationResult } from "@/lib/evidence/evidenceEvaluator";
+import { enrichKeyMetricsAfterNormalize } from "@/lib/evidence/evidenceMissingCopy";
 
 function clamp100(n: number) {
   return Math.max(0, Math.min(100, n));
@@ -223,7 +225,7 @@ export async function GET(req: Request) {
 
   const risks = Array.isArray(summary.risks) ? summary.risks : [];
 
-  const metrics = {
+  const metricsRaw = {
     donorQuality: normalizeMetric(
       summary.donor_quality ?? summary?.key_metrics?.donor_quality
     ),
@@ -242,6 +244,21 @@ export async function GET(req: Request) {
       summary?.key_metrics?.donor_scar_visibility
     ),
   };
+
+  let evidenceEvaluation: EvidenceEvaluationResult | null = null;
+  try {
+    const { data: uploadRows, error: upEvErr } = await supabase
+      .from("uploads")
+      .select("type, metadata")
+      .eq("case_id", caseId);
+    if (!upEvErr && uploadRows) {
+      evidenceEvaluation = evaluateEvidence(uploadRows as Parameters<typeof evaluateEvidence>[0]);
+    }
+  } catch {
+    evidenceEvaluation = null;
+  }
+
+  const metrics = enrichKeyMetricsAfterNormalize(metricsRaw, evidenceEvaluation);
 
   const areaDomains =
     domainOrder.length > 0
@@ -379,6 +396,14 @@ export async function GET(req: Request) {
     graftIntegrity = undefined;
   }
 
+  const summaryEvCov = Number((summary as { evidenceCoverageScore?: unknown })?.evidenceCoverageScore);
+  const evidenceCoverageScoreForReport =
+    Number.isFinite(summaryEvCov) && summaryEvCov >= 0
+      ? clamp100(Math.round(summaryEvCov))
+      : evidenceEvaluation != null
+        ? evidenceEvaluation.overallCoverageScore
+        : null;
+
   const content = {
     caseId,
     version: Number(latestReport?.version ?? 1),
@@ -387,6 +412,7 @@ export async function GET(req: Request) {
       : new Date().toLocaleString(),
     auditMode: mode,
     score: overall,
+    evidenceCoverageScore: evidenceCoverageScoreForReport,
     donorQuality: metrics.donorQuality,
     graftSurvival: metrics.graftSurvival,
     notes: typeof summary?.notes === "string" ? summary.notes : undefined,
@@ -499,6 +525,7 @@ export async function GET(req: Request) {
     grade,
     confidenceLabel,
     metrics,
+    evidenceEvaluation,
     areaDomains,
     sectionScores: sectionScoreItems,
     highlights,

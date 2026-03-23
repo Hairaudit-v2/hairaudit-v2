@@ -31,10 +31,15 @@ export default function LatestReportCard({ report, caseId, displayScore }: Props
     return <p className="text-sm text-slate-300/80">{t("reports.actions.noReportYet")}</p>;
   }
 
-  const summary = (report.summary ?? {}) as { score?: number };
+  const summary = (report.summary ?? {}) as { score?: number; evidenceCoverageScore?: unknown };
   const rawScore = typeof summary.score === "number" ? summary.score : undefined;
   const score = typeof displayScore === "number" ? displayScore : rawScore;
   const processing = !report.pdf_path && report.status !== "failed";
+  const evCovRaw = Number(summary.evidenceCoverageScore);
+  const evidenceCoverageLine =
+    Number.isFinite(evCovRaw) && evCovRaw >= 0
+      ? `Evidence Coverage: ${Math.round(Math.max(0, Math.min(100, evCovRaw)))}%`
+      : null;
 
   const scorePillLabel =
     typeof score === "number"
@@ -52,6 +57,9 @@ export default function LatestReportCard({ report, caseId, displayScore }: Props
         <span className={`rounded-md border px-2 py-0.5 text-xs font-semibold ${scoreChip(score)}`}>{scorePillLabel}</span>
       </div>
       <p className="text-xs text-slate-400">{new Date(report.created_at).toLocaleString()}</p>
+      {evidenceCoverageLine ? (
+        <p className="mt-1 text-xs font-medium text-teal-200/90">{evidenceCoverageLine}</p>
+      ) : null}
       <div className="mt-3 flex flex-wrap items-center gap-2">
         {pdfHref ? (
           <a

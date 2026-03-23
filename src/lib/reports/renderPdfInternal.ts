@@ -20,6 +20,8 @@ import {
 import { loadLatestEvidenceManifest } from "@/lib/evidence/prepareCaseEvidence";
 import { auditorPatientPhotoCategoryLabel } from "@/lib/auditor/auditorPatientPhotoCategories";
 import { effectivePatientPhotoCategoryKey } from "@/lib/uploads/patientPhotoAuditMeta";
+import { evaluateEvidence, type EvidenceEvaluationResult } from "@/lib/evidence/evidenceEvaluator";
+import { enrichKeyMetricsAfterNormalize } from "@/lib/evidence/evidenceMissingCopy";
 
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
@@ -240,6 +242,18 @@ export async function renderAndUploadPdfForCase(args: {
       : [];
   const missingPenalty = clamp((missingCategories.length || 0) / 6, 0, 1) * 0.25;
   const images = await downloadImagesForCase({ supabase, bucket, caseId });
+  let pdfKitEvidenceEvaluation: EvidenceEvaluationResult | null = null;
+  try {
+    const { data: uploadRows, error: evErr } = await supabase
+      .from("uploads")
+      .select("type, metadata")
+      .eq("case_id", caseId);
+    if (!evErr && uploadRows) {
+      pdfKitEvidenceEvaluation = evaluateEvidence(uploadRows as Parameters<typeof evaluateEvidence>[0]);
+    }
+  } catch {
+    pdfKitEvidenceEvaluation = null;
+  }
   const photoCount = photoCountStored || images.length || 0;
   const photoFactor = clamp(photoCount / 6, 0, 1);
   const derivedConfidence = clamp(0.45 + 0.35 * photoFactor - missingPenalty, 0.45, 0.92);
@@ -251,14 +265,35 @@ export async function renderAndUploadPdfForCase(args: {
     Array.isArray(summary?.highlights) ? summary.highlights :
     [];
 
+  const keyMetricsRaw = enrichKeyMetricsAfterNormalize(
+    {
+      donorQuality: normalizeMetric(summary?.donor_quality ?? summary?.key_metrics?.donor_quality),
+      graftSurvival: normalizeMetric(summary?.graft_survival_estimate ?? summary?.key_metrics?.graft_survival_estimate),
+      transectionRisk: normalizeMetric(summary?.key_metrics?.transection_risk),
+      implantationDensity: normalizeMetric(summary?.key_metrics?.implantation_density),
+      hairlineNaturalness: normalizeMetric(summary?.key_metrics?.hairline_naturalness),
+      donorScarVisibility: normalizeMetric(summary?.key_metrics?.donor_scar_visibility),
+    },
+    pdfKitEvidenceEvaluation
+  );
+
+  const summaryEvCovPdf = Number((summary as { evidenceCoverageScore?: unknown })?.evidenceCoverageScore);
+  const evidenceCoverageScorePdf =
+    Number.isFinite(summaryEvCovPdf) && summaryEvCovPdf >= 0
+      ? Math.round(Math.max(0, Math.min(100, summaryEvCovPdf)))
+      : pdfKitEvidenceEvaluation != null
+        ? pdfKitEvidenceEvaluation.overallCoverageScore
+        : null;
+
   const content: AuditReportContent = {
     caseId,
     version: Number(version),
     generatedAt: reportRow?.created_at ? new Date(reportRow.created_at).toLocaleString() : new Date().toLocaleString(),
     auditMode,
     score: overall,
-    donorQuality: normalizeMetric(summary?.donor_quality ?? summary?.key_metrics?.donor_quality),
-    graftSurvival: normalizeMetric(summary?.graft_survival_estimate ?? summary?.key_metrics?.graft_survival_estimate),
+    evidenceCoverageScore: evidenceCoverageScorePdf,
+    donorQuality: keyMetricsRaw.donorQuality,
+    graftSurvival: keyMetricsRaw.graftSurvival,
     notes: typeof summary?.notes === "string" ? summary.notes : undefined,
     findings,
     model: String(forensic?.model ?? summary?.model ?? ""),
