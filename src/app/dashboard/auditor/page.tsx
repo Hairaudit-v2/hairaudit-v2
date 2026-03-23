@@ -24,7 +24,7 @@ import {
   shouldFallbackToEnglishInQueue,
   type PatientSafeSummaryTranslationQueueItem,
 } from "@/lib/reports/patientSafeSummaryTranslationQueue";
-import { hasClinicAnswersInSummary } from "@/lib/reports/hasClinicAnswersInSummary";
+import { hasClinicAnswersInSummary } from "@/lib/reports/patientSafeSummary";
 
 export const revalidate = 60;
 

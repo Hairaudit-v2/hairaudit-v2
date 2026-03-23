@@ -65,9 +65,11 @@ import { resolveAuditorRole } from "@/lib/auth/isAuditor";
 import { isMissingFeatureError } from "@/lib/db/isMissingFeatureError";
 import { getTranslation } from "@/lib/i18n/getTranslation";
 import type { TranslationKey } from "@/lib/i18n/translationKeys";
-import { buildPatientSafeSummaryObservations } from "@/lib/reports/patientSafeSummary";
+import {
+  buildPatientSafeSummaryObservations,
+  hasClinicAnswersInSummary,
+} from "@/lib/reports/patientSafeSummary";
 import { resolvePatientSafeSummaryNarrativePresentation } from "@/lib/reports/patientSafeSummaryNarrativeTranslation";
-import { hasClinicAnswersInSummary } from "@/lib/reports/hasClinicAnswersInSummary";
 import { resolvePublicSeoLocale } from "@/lib/seo/localeMetadata";
 
 function scoreChipClass(score: number | null | undefined) {

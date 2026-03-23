@@ -68,7 +68,7 @@ type DashboardCase = {
   clinicName: string | null;
   patientName: string | null;
   assignedAuditorName: string | null;
-  /** From latest report summary.clinic_answers (see hasClinicAnswersInSummary). */
+  /** From latest report summary.clinic_answers (see hasClinicAnswersInSummary in patientSafeSummary). */
   hasClinicAnswers: boolean;
   flags: CaseFlags;
   section: SectionStatus;
