@@ -14,14 +14,14 @@ const PATIENT_REQUIRED_CATEGORIES = [
 ] as const;
 
 const CATEGORY_LABELS: Record<string, string> = {
-  preop_front: "Pre-op: Front",
-  preop_left: "Pre-op: Left side",
-  preop_right: "Pre-op: Right side",
-  preop_top: "Pre-op: Top",
-  preop_crown: "Pre-op: Crown",
-  preop_donor_rear: "Pre-op: Donor (rear)",
-  day0_recipient: "Day-of surgery: Recipient",
-  day0_donor: "Day-of surgery: Donor",
+  preop_front: "Before Surgery — Front View",
+  preop_left: "Before Surgery — Left Side",
+  preop_right: "Before Surgery — Right Side",
+  preop_top: "Before Surgery — Top View",
+  preop_crown: "Before Surgery — Crown",
+  preop_donor_rear: "Before Surgery — Back of Head",
+  day0_recipient: "Surgery Day — Hairline",
+  day0_donor: "Surgery Day — Back of Head",
 };
 
 type UploadRow = {

@@ -153,8 +153,8 @@ test("formatPatientImageEvidenceConfidenceForPrompt mentions overall and omits n
   const c = buildPatientImageEvidenceConfidence(g);
   const t = formatPatientImageEvidenceConfidenceForPrompt(c);
   assert.ok(t.includes("Overall evidence depth"));
-  assert.ok(t.includes("Baseline evidence"));
-  assert.ok(!t.includes("Graft handling evidence"));
+  assert.ok(t.includes("Before Surgery — documented angles"));
+  assert.ok(!t.includes("Grafts on the tray"));
 });
 
 test("computePatientImageEvidenceQualityFromCaseUploads matches grouped confidence", () => {

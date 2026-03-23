@@ -12,22 +12,47 @@ type UploadItem = {
 };
 
 const REQUIRED_PREOP = [
-  { id: "preop_front", label: "Pre-op Front" },
-  { id: "preop_left", label: "Pre-op Left" },
-  { id: "preop_right", label: "Pre-op Right" },
-  { id: "preop_top", label: "Pre-op Top" },
-  { id: "preop_crown", label: "Pre-op Crown" },
-  { id: "preop_donor_back", label: "Pre-op Donor (Rear)" },
+  { id: "preop_front", label: "Before Surgery — Front View" },
+  { id: "preop_left", label: "Before Surgery — Left Side" },
+  { id: "preop_right", label: "Before Surgery — Right Side" },
+  { id: "preop_top", label: "Before Surgery — Top View" },
+  { id: "preop_crown", label: "Before Surgery — Crown" },
+  { id: "preop_donor_back", label: "Before Surgery — Back of Head" },
 ];
 
 const REQUIRED_DAY0 = [
-  { id: "day0_recipient", label: "Day-of Surgery Recipient (post-implant)" },
-  { id: "day0_donor", label: "Day-of Surgery Donor (post-extraction)" },
+  { id: "day0_recipient", label: "Surgery Day — Hairline" },
+  { id: "day0_donor", label: "Surgery Day — Back of Head" },
 ];
+
+const LEGACY_FOLLOWUP_ANGLE_LABELS: Record<string, string> = {
+  front: "Front View",
+  left: "Left Side",
+  right: "Right Side",
+  top: "Top View",
+  crown: "Crown",
+  donor_back: "Back of Head",
+};
+
+function legacyOptionalFollowupLabel(id: string): string {
+  const m = id.match(/^(day7|m1|m3|m6)_(.+)$/);
+  if (!m) return id.replaceAll("_", " ");
+  const [, milestone, angle] = m;
+  const band =
+    milestone === "day7"
+      ? "1 Week Photos"
+      : milestone === "m1"
+        ? "1 Month Photos"
+        : milestone === "m3"
+          ? "3 Month Photos"
+          : "6 Month Photos";
+  const angleLabel = LEGACY_FOLLOWUP_ANGLE_LABELS[angle] ?? angle.replaceAll("_", " ");
+  return `${band} — ${angleLabel}`;
+}
 
 const OPTIONAL_FOLLOWUPS = [
   {
-    title: "7 Days Post",
+    title: "1 Week Photos (Optional)",
     items: [
       "day7_front",
       "day7_left",
@@ -35,10 +60,10 @@ const OPTIONAL_FOLLOWUPS = [
       "day7_top",
       "day7_crown",
       "day7_donor_back",
-    ].map((id) => ({ id, label: id.replaceAll("_", " ") })),
+    ].map((id) => ({ id, label: legacyOptionalFollowupLabel(id) })),
   },
   {
-    title: "1 Month Post",
+    title: "1 Month Photos (Optional)",
     items: [
       "m1_front",
       "m1_left",
@@ -46,10 +71,10 @@ const OPTIONAL_FOLLOWUPS = [
       "m1_top",
       "m1_crown",
       "m1_donor_back",
-    ].map((id) => ({ id, label: id.replaceAll("_", " ") })),
+    ].map((id) => ({ id, label: legacyOptionalFollowupLabel(id) })),
   },
   {
-    title: "3 Months Post",
+    title: "3 Month Photos (Optional)",
     items: [
       "m3_front",
       "m3_left",
@@ -57,10 +82,10 @@ const OPTIONAL_FOLLOWUPS = [
       "m3_top",
       "m3_crown",
       "m3_donor_back",
-    ].map((id) => ({ id, label: id.replaceAll("_", " ") })),
+    ].map((id) => ({ id, label: legacyOptionalFollowupLabel(id) })),
   },
   {
-    title: "6 Months Post",
+    title: "6 Month Photos (Optional)",
     items: [
       "m6_front",
       "m6_left",
@@ -68,7 +93,7 @@ const OPTIONAL_FOLLOWUPS = [
       "m6_top",
       "m6_crown",
       "m6_donor_back",
-    ].map((id) => ({ id, label: id.replaceAll("_", " ") })),
+    ].map((id) => ({ id, label: legacyOptionalFollowupLabel(id) })),
   },
 ];
 
@@ -135,6 +160,10 @@ export default function PatientPhotoUpload({ caseId }: { caseId: string }) {
         }}
       >
         <div style={{ fontWeight: 900, marginBottom: 6 }}>Basic Audit Photo Checklist</div>
+        <div style={{ color: "#555", marginBottom: 8 }}>
+          All required angles in the first section are Before Surgery photos (taken before your transplant). Surgery Day and
+          follow-up use After Surgery / Progress timing.
+        </div>
         <div style={{ color: "#555" }}>
           Completed: <b>{completion.done}</b> / {completion.total}
         </div>
@@ -145,12 +174,12 @@ export default function PatientPhotoUpload({ caseId }: { caseId: string }) {
         ) : null}
       </div>
 
-      <Section title="Required: Pre-op Photos" items={REQUIRED_PREOP} busy={busy} hasAny={hasAny} onUpload={upload} />
+      <Section title="Before Surgery (Required)" items={REQUIRED_PREOP} busy={busy} hasAny={hasAny} onUpload={upload} />
 
-      <Section title="Required: Day-of Surgery Photos" items={REQUIRED_DAY0} busy={busy} hasAny={hasAny} onUpload={upload} />
+      <Section title="Surgery Day (Required)" items={REQUIRED_DAY0} busy={busy} hasAny={hasAny} onUpload={upload} />
 
       <details style={{ border: "1px solid #e6e8ee", borderRadius: 16, padding: 14 }}>
-        <summary style={{ cursor: "pointer", fontWeight: 900 }}>Optional follow-ups</summary>
+        <summary style={{ cursor: "pointer", fontWeight: 900 }}>After Surgery / Progress Photos (Optional)</summary>
         <div style={{ marginTop: 12, display: "grid", gap: 12 }}>
           {OPTIONAL_FOLLOWUPS.map((grp) => (
             <Section key={grp.title} title={grp.title} items={grp.items} busy={busy} hasAny={hasAny} onUpload={upload} />

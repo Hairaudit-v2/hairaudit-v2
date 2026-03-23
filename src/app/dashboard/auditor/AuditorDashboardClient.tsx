@@ -68,6 +68,8 @@ type DashboardCase = {
   clinicName: string | null;
   patientName: string | null;
   assignedAuditorName: string | null;
+  /** From latest report summary.clinic_answers (see hasClinicAnswersInSummary). */
+  hasClinicAnswers: boolean;
   flags: CaseFlags;
   section: SectionStatus;
   source: AuditSource;
@@ -235,6 +237,9 @@ function CaseRowView({
         <div>{getDefaultAuditType(row.base)}</div>
         <div className="text-xs text-slate-500 capitalize">Source: {row.source}</div>
       </td>
+      <td className="px-3 py-3 text-sm text-slate-700 whitespace-nowrap" title="Structured clinic answers on latest report summary">
+        {row.hasClinicAnswers ? "Clinic: ✓" : "Clinic: —"}
+      </td>
       <td className="px-3 py-3 text-sm text-slate-700">{formatDate(row.submissionDate)}</td>
       <td className="px-3 py-3 text-sm">
         <div className="inline-flex rounded-md bg-slate-100 px-2 py-0.5 text-slate-700">{row.section.replaceAll("_", " ")}</div>
@@ -327,6 +332,7 @@ export default function AuditorDashboardClient(props: {
   assignedAuditorNameById: Record<string, string>;
   clinicNameByCaseId: Record<string, string>;
   patientNameByCaseId: Record<string, string>;
+  hasClinicAnswersByCaseId: Record<string, boolean>;
 }) {
   const router = useRouter();
   const [auditTypeTab, setAuditTypeTab] = useState<"all" | AuditType>("all");
@@ -338,6 +344,7 @@ export default function AuditorDashboardClient(props: {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [assignedFilter, setAssignedFilter] = useState("");
+  const [clinicDataFilter, setClinicDataFilter] = useState<"" | "with" | "without">("");
   const [archiveSearch, setArchiveSearch] = useState("");
   const [modal, setModal] = useState<ActionModalState>({ kind: "none" });
   const [reason, setReason] = useState("");
@@ -364,6 +371,7 @@ export default function AuditorDashboardClient(props: {
         clinicName: props.clinicNameByCaseId[base.id] ?? null,
         patientName: props.patientNameByCaseId[base.id] ?? null,
         assignedAuditorName: base.assigned_auditor_id ? props.assignedAuditorNameById[base.assigned_auditor_id] ?? null : null,
+        hasClinicAnswers: props.hasClinicAnswersByCaseId[base.id] ?? false,
         flags,
         section,
         source,
@@ -385,6 +393,8 @@ export default function AuditorDashboardClient(props: {
       if (auditTypeFilter && caseType !== auditTypeFilter) return false;
       if (sourceFilter && row.source !== sourceFilter) return false;
       if (tagFilter && !row.tags.includes(tagFilter)) return false;
+      if (clinicDataFilter === "with" && !row.hasClinicAnswers) return false;
+      if (clinicDataFilter === "without" && row.hasClinicAnswers) return false;
 
       const text = search.trim().toLowerCase();
       if (text) {
@@ -411,7 +421,7 @@ export default function AuditorDashboardClient(props: {
 
       return true;
     });
-  }, [allRows, auditTypeTab, statusFilter, auditTypeFilter, sourceFilter, tagFilter, search, dateFrom, dateTo, assignedFilter]);
+  }, [allRows, auditTypeTab, statusFilter, auditTypeFilter, sourceFilter, tagFilter, clinicDataFilter, search, dateFrom, dateTo, assignedFilter]);
 
   const activeRows = filteredRows.filter((r) => !r.base.archived_at);
   const archiveRows = filteredRows.filter((r) => !!r.base.archived_at);
@@ -557,6 +567,15 @@ export default function AuditorDashboardClient(props: {
               </option>
             ))}
           </select>
+          <select
+            value={clinicDataFilter}
+            onChange={(e) => setClinicDataFilter(e.target.value as "" | "with" | "without")}
+            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          >
+            <option value="">Clinic data: All</option>
+            <option value="with">With clinic data</option>
+            <option value="without">Without clinic data</option>
+          </select>
         </div>
       </div>
 
@@ -587,11 +606,12 @@ export default function AuditorDashboardClient(props: {
             <div className="px-4 py-6 text-sm text-slate-500">No cases in this section.</div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[980px]">
+              <table className="w-full min-w-[1040px]">
                 <thead>
                   <tr className="border-b border-slate-200 bg-white text-left text-xs uppercase tracking-wide text-slate-500">
                     <th className="px-3 py-2">Case ID</th>
                     <th className="px-3 py-2">Audit Type</th>
+                    <th className="px-3 py-2">Clinic</th>
                     <th className="px-3 py-2">Submission Date</th>
                     <th className="px-3 py-2">Status</th>
                     <th className="px-3 py-2">Confidence Score</th>
@@ -651,11 +671,12 @@ export default function AuditorDashboardClient(props: {
           <div className="px-4 py-6 text-sm text-slate-500">No archived cases found.</div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[980px]">
+            <table className="w-full min-w-[1040px]">
               <thead>
                 <tr className="border-b border-slate-200 bg-white text-left text-xs uppercase tracking-wide text-slate-500">
                   <th className="px-3 py-2">Case ID</th>
                   <th className="px-3 py-2">Audit Type</th>
+                  <th className="px-3 py-2">Clinic</th>
                   <th className="px-3 py-2">Submission Date</th>
                   <th className="px-3 py-2">Status</th>
                   <th className="px-3 py-2">Confidence Score</th>
@@ -670,6 +691,9 @@ export default function AuditorDashboardClient(props: {
                   <tr key={row.base.id} className="border-b border-slate-200 align-top">
                     <td className="px-3 py-3 font-mono text-xs text-slate-700">{row.base.id.slice(0, 8)}…</td>
                     <td className="px-3 py-3 text-sm text-slate-800 capitalize">{getDefaultAuditType(row.base)}</td>
+                    <td className="px-3 py-3 text-sm text-slate-700 whitespace-nowrap" title="Structured clinic answers on latest report summary">
+                      {row.hasClinicAnswers ? "Clinic: ✓" : "Clinic: —"}
+                    </td>
                     <td className="px-3 py-3 text-sm text-slate-700">{formatDate(row.submissionDate)}</td>
                     <td className="px-3 py-3 text-sm text-slate-700">Archived</td>
                     <td className="px-3 py-3 text-sm text-slate-700">{pct(row.gii?.confidence)}</td>

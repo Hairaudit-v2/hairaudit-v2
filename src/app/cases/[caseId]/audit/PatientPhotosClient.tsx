@@ -95,7 +95,7 @@ export default function PatientPhotosClient({ caseId }: { caseId: string }) {
     <div style={{ marginTop: 22 }}>
       <h2 style={{ fontSize: 18, fontWeight: 800 }}>Patient Photos</h2>
       <p style={{ color: "#555", marginTop: 6 }}>
-        Upload all required Basic Audit photos: pre-op (front, left, right, top, crown, donor rear) and day-of surgery (recipient + donor). The audit score gets more accurate with better photos.
+        Upload before-surgery angles, then surgery-day photos, using the labels on each category. The audit score gets more accurate with clearer photos.
       </p>
 
       {missing.length ? (

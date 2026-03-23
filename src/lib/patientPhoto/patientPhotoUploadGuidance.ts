@@ -36,36 +36,36 @@ function bodyForMonths(months: PatientIntakeMonthsSince | null): { title: string
   if (!months) {
     return {
       title: "Photo tips",
-      body: "Upload clear baseline views (front, top, donor rear) if you have them. Add day-of and follow-up photos in the optional sections when available—they strengthen your audit.",
+      body: "Before Surgery: use the angles on this page (front, top, back of head, then left, right, and crown) as marked required. After Surgery / Progress: Surgery Day, then 3 Month Photos, 6 Month Photos, and so on when you reach those times.",
     };
   }
   if (months === "under_3") {
     return {
       title: "Early recovery",
-      body: "Baseline (before surgery) photos are ideal when available. If you are still early after surgery, also add day-of or first-week images in the optional sections below.",
+      body: "Before Surgery photos help if you have them. After surgery, add Surgery Day and Early Healing shots in the optional sections when you can.",
     };
   }
   if (months === "3_6") {
     return {
-      title: "Roughly 3–6 months post-op",
-      body: "Include ~3-month outcome angles (front, top, donor) when you can. Baseline pre-op photos are still valuable if you have them. Use optional sections for other milestones.",
+      title: "About 3–6 months after surgery",
+      body: "3 Month Photos (front, top, back of head) are very useful now. Before Surgery photos still help. Use the progress section for other months.",
     };
   }
   if (months === "6_9") {
     return {
-      title: "Roughly 6–9 months post-op",
-      body: "~6-month outcome photos (front, top, donor) are especially useful. Add 9-month views in optional progress sections if you have them.",
+      title: "About 6–9 months after surgery",
+      body: "6 Month Photos are very useful now. Add 9 Month Photos in the optional sections when you have them.",
     };
   }
   if (months === "9_12") {
     return {
-      title: "Roughly 9–12 months post-op",
-      body: "9–12 month outcome documentation helps reviewers assess maturity. Use the progress-tracking section for month-marked uploads.",
+      title: "About 9–12 months after surgery",
+      body: "9 Month Photos and 12 Month Photos are very useful. Use the progress section when you upload.",
     };
   }
   return {
-    title: "12+ months post-op",
-    body: "Long-term outcome photos (12-month style front/top/donor) are most informative now, alongside any earlier milestones you can provide.",
+    title: "12 months or more after surgery",
+    body: "12 Month Photos are very useful now. Add Before Surgery or earlier progress photos if you still have them.",
   };
 }
 

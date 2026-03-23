@@ -28,6 +28,20 @@ import {
   PATIENT_IMAGE_EVIDENCE_QUALITY_LABELS,
 } from "@/lib/audit/patientImageEvidenceConfidence";
 import { isInternalImageEvidenceQualityPanelEnabled } from "@/lib/features/enableInternalImageEvidenceQualityPanel";
+import { auditorPatientPhotoCategoryLabel } from "@/lib/auditor/auditorPatientPhotoCategories";
+import { effectivePatientPhotoCategoryKey } from "@/lib/uploads/patientPhotoAuditMeta";
+
+function reportUploadImageAlt(u: { type?: string | null; metadata?: unknown }): string {
+  const t = String(u.type ?? "");
+  if (t.toLowerCase().startsWith("patient_photo:")) {
+    const eff = effectivePatientPhotoCategoryKey(u);
+    if (eff) return auditorPatientPhotoCategoryLabel(eff);
+  }
+  return t
+    .replace(/^patient_photo:|^doctor_photo:|^clinic_photo:/i, "")
+    .replace(/_/g, " ")
+    .trim();
+}
 
 type Summary = {
   score?: number | string;
@@ -370,11 +384,7 @@ export default async function ReportHtmlPage({
                       {img.signedUrl ? (
                         <img
                           src={img.signedUrl}
-                          alt={
-                            img.type
-                              ? img.type.replace(/^patient_photo:|^doctor_photo:|^clinic_photo:/, "").replace(/_/g, " ")
-                              : tc("reports.chrome.html.imageAltFallback")
-                          }
+                          alt={img.type ? reportUploadImageAlt(img) : tc("reports.chrome.html.imageAltFallback")}
                         />
                       ) : (
                         <div className="muted">{tc("reports.chrome.html.imageUnavailable")}</div>

@@ -253,7 +253,13 @@ export default function PhotoUploader({
           </div>
           {missingRequired.length > 0 && (
             <div className="text-sm text-amber-700">
-              Missing required: {missingRequired.join(", ")}
+              Missing required:{" "}
+              {missingRequired
+                .map((k) => schema.find((d) => d.key === k)?.title ?? k)
+                .join(", ")}
+              <span className="mt-0.5 block font-mono text-xs text-amber-800/90">
+                {missingRequired.join(", ")}
+              </span>
             </div>
           )}
         </div>

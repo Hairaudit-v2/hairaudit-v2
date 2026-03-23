@@ -14,6 +14,29 @@ import { buildPatientImageEvidenceUploadNudges } from "@/lib/audit/patientImageE
 import { isPatientImageEvidenceNudgesEnabled } from "@/lib/features/enablePatientImageEvidenceNudges";
 import type { PatientPhotoUploadGuidancePanel } from "@/lib/patientPhoto/patientPhotoUploadGuidance";
 
+/** Visual grouping only — same keys and submit rules as flat `PATIENT_PHOTO_CATEGORIES`. */
+const PATIENT_PHOTO_SECTIONS: {
+  heading: string;
+  sub: string;
+  keys: readonly PatientPhotoCategory[];
+}[] = [
+  {
+    heading: "Before Surgery — Main angles (Required)",
+    sub: "Photos taken before your transplant: front, top, and back of head. Use the same three angles you will repeat over time (for example after surgery).",
+    keys: ["preop_front", "preop_top", "preop_donor_rear"],
+  },
+  {
+    heading: "Before Surgery Photos (Optional)",
+    sub: "These are photos taken before your hair transplant (left, right, and crown). They are still required for the Basic Audit checklist.",
+    keys: ["preop_left", "preop_right", "preop_crown"],
+  },
+  {
+    heading: "After Surgery / Progress Photos (Optional)",
+    sub: "Surgery-day slots are required where marked; other items in this section are optional add-ons (during procedure, first few days). Later-month photos are in the optional sections below.",
+    keys: ["day0_recipient", "day0_donor", "intraop", "postop_day0"],
+  },
+];
+
 /* ---------------- Types ---------------- */
 
 type UploadRow = {
@@ -76,6 +99,12 @@ export default function PatientPhotoUpload({
     return buildPatientImageEvidenceUploadNudges(q);
   }, [uploads]);
 
+  const categoryByKey = useMemo(() => {
+    const m = new Map<PatientPhotoCategory, (typeof PATIENT_PHOTO_CATEGORIES)[number]>();
+    for (const c of PATIENT_PHOTO_CATEGORIES) m.set(c.key, c);
+    return m;
+  }, []);
+
   async function uploadFiles(category: PatientPhotoCategory, files: File[]) {
     if (isLocked || !files.length) return;
 
@@ -125,9 +154,11 @@ export default function PatientPhotoUpload({
     <div className="mx-auto max-w-3xl p-4 space-y-6">
       <header className="space-y-2">
         <h1 className="text-2xl font-semibold">Upload Patient Photos</h1>
-        <p className="text-sm text-gray-600">
-          Clear photos help validate donor quality, graft placement, and likely growth.
+        <p className="text-sm text-gray-800">
+          Use the sections below: two <strong>Before Surgery</strong> groups (main angles, then left, right, and crown), then{" "}
+          <strong>After Surgery / Progress</strong> (surgery day and early healing).
         </p>
+        <p className="text-sm text-gray-600">Use bright indoor light. Hold the phone steady. No filters.</p>
 
         {isLocked && (
           <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm">
@@ -148,23 +179,40 @@ export default function PatientPhotoUpload({
         </div>
       ) : null}
 
-      <div className="space-y-4">
-        {PATIENT_PHOTO_CATEGORIES.map((cat) => (
-          <PhotoCategoryCard
-            key={cat.key}
-            category={cat.key}
-            title={cat.title}
-            required={cat.required}
-            help={cat.help}
-            tips={cat.tips}
-            existing={uploadsByCategory[cat.key] ?? []}
-            maxFiles={cat.maxFiles}
-            accept={cat.accept}
-            busy={!!busyCats[cat.key]}
-            locked={isLocked}
-            onUpload={(files) => uploadFiles(cat.key, files)}
-            onDeleted={deleteUpload}
-          />
+      <div className="space-y-8">
+        {PATIENT_PHOTO_SECTIONS.map((section, sIdx) => (
+          <div
+            key={section.heading}
+            className={`space-y-4 ${sIdx > 0 ? "pt-6 border-t border-gray-200" : ""}`}
+          >
+            <div className="space-y-1">
+              <h2 className="text-lg font-semibold text-gray-900">{section.heading}</h2>
+              <p className="text-sm text-gray-600">{section.sub}</p>
+            </div>
+            <div className="space-y-4">
+              {section.keys.map((key) => {
+                const cat = categoryByKey.get(key);
+                if (!cat) return null;
+                return (
+                  <PhotoCategoryCard
+                    key={cat.key}
+                    category={cat.key}
+                    title={cat.title}
+                    required={cat.required}
+                    help={cat.help}
+                    tips={cat.tips}
+                    existing={uploadsByCategory[cat.key] ?? []}
+                    maxFiles={cat.maxFiles}
+                    accept={cat.accept}
+                    busy={!!busyCats[cat.key]}
+                    locked={isLocked}
+                    onUpload={(files) => uploadFiles(cat.key, files)}
+                    onDeleted={deleteUpload}
+                  />
+                );
+              })}
+            </div>
+          </div>
         ))}
       </div>
 
@@ -231,8 +279,12 @@ function PhotoCategoryCard(props: {
   return (
     <section className={`rounded-xl border p-4 space-y-3 ${props.locked ? "opacity-60" : ""}`}>
       <h2 className="font-semibold">
-        {props.title}{" "}
-        {props.required && <span className="text-xs text-amber-700">(required)</span>}
+        {props.title}
+        {props.required ? (
+          <span className="ml-2 text-xs font-normal text-amber-800">(Required)</span>
+        ) : (
+          <span className="ml-2 text-xs font-normal text-gray-500">(Optional)</span>
+        )}
       </h2>
 
       <p className="text-sm text-gray-600">{props.help}</p>

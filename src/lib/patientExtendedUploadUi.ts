@@ -28,9 +28,8 @@ export type PatientExtendedUploadGroupSpec = {
 export const PATIENT_EXTENDED_UPLOAD_GROUP_SPECS = [
   {
     id: "donor_monitoring",
-    title: "Donor monitoring",
-    groupDescription:
-      "Helps assess shock loss, over-harvesting, localized thinning, and recovery pattern.",
+    title: "Before Surgery & Surgery Day — back of head",
+    groupDescription: "Before Surgery donor views, then Surgery Day and later back-of-head progress (1 Week Photos, 3 Month Photos, …).",
     keys: [
       "preop_donor_left",
       "preop_donor_right",
@@ -49,15 +48,14 @@ export const PATIENT_EXTENDED_UPLOAD_GROUP_SPECS = [
   },
   {
     id: "early_recovery",
-    title: "Early recovery",
-    groupDescription: "Helps assess immediate donor and recipient healing response.",
+    title: "Day After Surgery & 1 Week Photos",
+    groupDescription: "Day After Surgery and 1 Week Photos for hairline and back of head.",
     keys: ["postop_day1_recipient", "postop_week1_recipient"],
   },
   {
     id: "intraoperative_evidence",
-    title: "Intra-operative evidence",
-    groupDescription:
-      "Helps assess extraction quality, site creation, and implantation technique.",
+    title: "Surgery Day — during procedure",
+    groupDescription: "Photos from during your procedure, if your clinic shared them.",
     keys: [
       "intraop_extraction",
       "intraop_donor_closeup",
@@ -67,8 +65,8 @@ export const PATIENT_EXTENDED_UPLOAD_GROUP_SPECS = [
   },
   {
     id: "graft_handling_evidence",
-    title: "Graft handling evidence",
-    groupDescription: "Helps assess graft organization, hydration, and handling quality.",
+    title: "Grafts on the tray",
+    groupDescription: "Photos of how grafts were kept and counted, if you have them.",
     keys: [
       "graft_tray_overview",
       "graft_tray_closeup",
@@ -79,8 +77,8 @@ export const PATIENT_EXTENDED_UPLOAD_GROUP_SPECS = [
   },
   {
     id: "progress_tracking",
-    title: "Progress tracking",
-    groupDescription: "Helps assess growth progression and long-term cosmetic outcome.",
+    title: "3 Month Photos, 6 Month Photos, and more",
+    groupDescription: "Photos from about 3, 6, 9, and 12 months after surgery.",
     keys: [
       "postop_month3_front",
       "postop_month3_top",
@@ -118,6 +116,6 @@ export function getPatientExtendedUploadGroupsResolved(): PatientExtendedUploadG
 
 /** Copy for the extended block header (Stage 3). */
 export const PATIENT_EXTENDED_UPLOAD_MICROCOPY = {
-  eyebrow: "Optional but strongly recommended",
-  body: "These images help HairAudit assess donor recovery, graft handling, and long-term outcomes more accurately.",
+  eyebrow: "Before Surgery Photos (Optional)",
+  body: "Extra Before Surgery angles, Surgery Day detail, Early Healing, and 3 / 6 / 9 / 12 Month Photos live below. None of this block is required to submit your case.",
 } as const;

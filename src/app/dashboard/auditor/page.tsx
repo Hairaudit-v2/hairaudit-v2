@@ -24,6 +24,7 @@ import {
   shouldFallbackToEnglishInQueue,
   type PatientSafeSummaryTranslationQueueItem,
 } from "@/lib/reports/patientSafeSummaryTranslationQueue";
+import { hasClinicAnswersInSummary } from "@/lib/reports/hasClinicAnswersInSummary";
 
 export const revalidate = 60;
 
@@ -179,6 +180,13 @@ export default async function AuditorDashboardPage({
         summary: (r.summary ?? null) as Record<string, unknown> | null,
       });
     }
+  }
+
+  const hasClinicAnswersByCaseId: Record<string, boolean> = {};
+  for (const c of cases) {
+    const cid = String(c.id);
+    const rep = reportByCase.get(cid);
+    hasClinicAnswersByCaseId[cid] = hasClinicAnswersInSummary(rep?.summary ?? null);
   }
 
   const evidenceByCase = new Map<string, EvidenceDashboardRow>();
@@ -423,6 +431,7 @@ export default async function AuditorDashboardPage({
         assignedAuditorNameById={Object.fromEntries(assignedAuditorNameById.entries())}
         clinicNameByCaseId={clinicNameByCaseId}
         patientNameByCaseId={patientNameByCaseId}
+        hasClinicAnswersByCaseId={hasClinicAnswersByCaseId}
       />
     </div>
   );

@@ -6,6 +6,7 @@ import {
   normalizeDoctorNarrative,
   type NormalizedDoctorNarrative,
 } from "@/lib/scoring/normalizeDoctorNarrative";
+import { auditorPatientPhotoCategoryLabel } from "@/lib/auditor/auditorPatientPhotoCategories";
 
 function pillForBasis(b: EvidenceBasis) {
   const label =
@@ -99,7 +100,8 @@ export default function DoctorScoringNarrativeCard({
         if (key.startsWith("doctor_photo:")) {
           label = `Missing doctor photo: ${key.replace("doctor_photo:", "")}`;
         } else if (key.startsWith("patient_photo:")) {
-          label = `Missing patient photo: ${key.replace("patient_photo:", "")}`;
+          const slug = key.replace("patient_photo:", "").trim();
+          label = `Missing patient photo: ${auditorPatientPhotoCategoryLabel(slug)} (${slug})`;
         } else if (key.startsWith("doctor_answers:")) {
           label = `Missing doctor field: ${key.replace("doctor_answers:", "")}`;
         }

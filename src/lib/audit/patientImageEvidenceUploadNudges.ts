@@ -40,48 +40,48 @@ function recommendationForGroup(
   switch (groupId) {
     case "baseline_evidence":
       if (level === "none") {
-        return "Add pre-operative front, top, crown, or donor baseline views if you have not already—clearer baselines help reviewers compare over time.";
+        return "If you can, add Before Surgery photos: front, top, crown, and back of head. More angles help.";
       }
       if (level === "limited") {
-        return "Baseline evidence is limited—add more scalp and donor baseline angles for fuller context.";
+        return "You could add more Before Surgery angles of your scalp and back of head.";
       }
-      return "Optional: add a few more baseline views to further strengthen pre-op documentation.";
+      return "Optional: add a few more Before Surgery views if you have them.";
 
     case "donor_monitoring_evidence":
       if (level === "none") {
-        return "Donor monitoring evidence is absent—if you can, add day-of or follow-up donor photos.";
+        return "If you can, add photos of the back of your head from surgery day or later months.";
       }
       if (level === "limited") {
-        return "Donor monitoring evidence is limited—add donor side views or follow-up donor images at another timepoint.";
+        return "You could add more photos of the back or sides of your head from another time.";
       }
-      return "Optional: add donor images from another recovery phase for richer monitoring.";
+      return "Optional: add another photo of the back of your head from a different time if you have one.";
 
     case "surgical_evidence":
       if (level === "none") {
-        return "Surgical-phase evidence is absent—day-of or intraoperative photos help when available.";
+        return "If you have them, add Surgery Day photos (during the procedure or right after).";
       }
       if (level === "limited") {
-        return "Surgical evidence is limited—add another surgical-phase view when you can.";
+        return "You could add one more Surgery Day photo when you can.";
       }
-      return "Optional: broaden surgical-phase documentation with an additional angle.";
+      return "Optional: add another Surgery Day angle if you have it.";
 
     case "graft_handling_evidence":
       if (level === "none") {
-        return "Graft handling evidence is absent—tray, sorting, or hydration images strengthen technical review if available.";
+        return "If your clinic shared them, add photos of grafts on the tray, sorting, or liquid they sat in.";
       }
       if (level === "limited") {
-        return "Graft handling evidence is limited—add images from another handling step (e.g. tray close-up, sorting, or solution).";
+        return "You could add another photo of grafts (tray, sorting, or liquid) if you have one.";
       }
-      return "Optional: add another graft-handling category for fuller technical context.";
+      return "Optional: add one more graft tray–type photo if you have it.";
 
     case "followup_outcome_evidence":
       if (level === "none") {
-        return "Follow-up outcome evidence is absent—when you reach them, add 3-, 6-, or 12-month progress photos.";
+        return "When you reach those times, add 3 Month Photos, 6 Month Photos, or 12 Month Photos if you can.";
       }
       if (level === "limited") {
-        return "Follow-up outcome evidence is limited—6- or 12-month images especially help long-term assessment.";
+        return "6 Month Photos or 12 Month Photos would help if you have them.";
       }
-      return "Optional: add another follow-up month or angle to strengthen longitudinal documentation.";
+      return "Optional: add another month or angle in the progress section if you have it.";
 
     default:
       return null;
@@ -104,7 +104,7 @@ export function buildPatientImageEvidenceUploadNudges(
         groupId: "general",
         areaLabel: "Optional enhancements",
         recommendation:
-          "When you’re ready, extra photos in the sections below can strengthen your audit over time—none are required to submit.",
+          "When you are ready, you can add extra photos in the sections below. None are required to submit.",
       },
     ];
   }

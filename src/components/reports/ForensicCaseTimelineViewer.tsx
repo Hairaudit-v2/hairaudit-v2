@@ -48,13 +48,13 @@ type TimelineObservation = {
 };
 
 const STAGES: StageInfo[] = [
-  { key: "preop", label: "Pre-op", short: "Pre-op" },
-  { key: "day0", label: "Day 0", short: "Day 0" },
+  { key: "preop", label: "Before Surgery", short: "Pre" },
+  { key: "day0", label: "Surgery Day", short: "Day 0" },
   { key: "early_healing", label: "Early Healing", short: "Early" },
-  { key: "month_1_3", label: "1–3 months", short: "1-3m" },
-  { key: "month_4_6", label: "4–6 months", short: "4-6m" },
-  { key: "month_7_12", label: "7–12 months", short: "7-12m" },
-  { key: "month_12_plus", label: "12m+", short: "12m+" },
+  { key: "month_1_3", label: "1–3 Month Photos", short: "1–3m" },
+  { key: "month_4_6", label: "4–6 Month Photos", short: "4–6m" },
+  { key: "month_7_12", label: "7–12 Month Photos", short: "7–12m" },
+  { key: "month_12_plus", label: "12+ Month Photos", short: "12m+" },
 ];
 
 function monthLabel(v: number | null) {
@@ -461,9 +461,9 @@ export default function ForensicCaseTimelineViewer(props: {
                       <div className="p-2 space-y-0.5">
                         <p className="truncate text-[11px] font-medium text-slate-200">{label}</p>
                         {eff != null ? (
-                          <p className="truncate font-mono text-[10px] text-slate-500">{eff}</p>
+                          <p className="truncate font-mono text-[10px] text-slate-500">Key: {eff}</p>
                         ) : (
-                          <p className="truncate font-mono text-[10px] text-slate-500">{item.upload.type}</p>
+                          <p className="truncate font-mono text-[10px] text-slate-500">Type: {item.upload.type}</p>
                         )}
                         {folderDrift ? <p className="text-[9px] leading-tight text-amber-200/90">{folderDrift}</p> : null}
                       </div>

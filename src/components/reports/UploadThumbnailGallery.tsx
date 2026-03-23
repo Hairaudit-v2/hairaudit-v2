@@ -114,10 +114,12 @@ export default function UploadThumbnailGallery({ uploads }: { uploads: UploadRow
                 ) : null}
               </div>
               <div className="p-3">
-                <p className="truncate text-xs font-medium uppercase tracking-wide text-slate-300">{typeLabel}</p>
+                <p className="truncate text-xs font-medium text-slate-200">{typeLabel}</p>
                 {eff != null ? (
-                  <p className="mt-0.5 truncate font-mono text-[10px] text-slate-500">{eff}</p>
-                ) : null}
+                  <p className="mt-0.5 truncate font-mono text-[10px] text-slate-500">Key: {eff}</p>
+                ) : (
+                  <p className="mt-0.5 truncate font-mono text-[10px] text-slate-500">Type: {upload.type}</p>
+                )}
                 {folderNote ? <p className="mt-0.5 truncate text-[10px] text-amber-200/85">{folderNote}</p> : null}
                 <p className="mt-1 truncate text-[11px] text-slate-500">{upload.storage_path}</p>
               </div>

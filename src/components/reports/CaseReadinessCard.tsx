@@ -10,9 +10,9 @@ const REQUIRED_KEY_LABELS: Record<string, string> = {
   img_preop_donor_rear: "Pre-op donor rear",
   img_immediate_postop_recipient: "Immediate post-op recipient",
   img_immediate_postop_donor: "Immediate post-op donor",
-  patient_current_front: "Current front",
-  patient_current_top: "Current top",
-  patient_current_donor_rear: "Current donor rear",
+  patient_current_front: "Your Hair Today — Front View (Required)",
+  patient_current_top: "Your Hair Today — Top View (Required)",
+  patient_current_donor_rear: "Your Hair Today — Back of Head (Required)",
 };
 
 type CaseReadinessCardProps = {

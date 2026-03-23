@@ -139,7 +139,10 @@ export default function AuditorPatientImageManager({ caseId }: { caseId: string 
       {missingRequired.length > 0 ? (
         <div className="mt-3 rounded-lg border border-amber-500/35 bg-amber-500/10 px-3 py-2 text-xs text-amber-100">
           <span className="font-semibold">Required patient photo slots still empty (non-excluded only): </span>
-          {missingRequired.join(", ")}
+          {missingRequired.map((k) => auditorPatientPhotoCategoryLabel(k)).join(", ")}
+          <span className="mt-1 block font-mono text-[10px] text-amber-200/80">
+            Keys: {missingRequired.join(", ")}
+          </span>
         </div>
       ) : (
         <div className="mt-3 rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-100">
@@ -172,9 +175,9 @@ export default function AuditorPatientImageManager({ caseId }: { caseId: string 
       <div className="mt-4 space-y-6">
         {byCategory.map(([cat, rows]) => (
           <div key={cat}>
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <h3 className="text-xs font-semibold text-slate-200">
               {auditorPatientPhotoCategoryLabel(cat)}
-              <span className="ml-2 font-mono font-normal text-slate-600">({cat})</span>
+              <span className="mt-0.5 block font-mono text-[10px] font-normal text-slate-500">Key: {cat}</span>
             </h3>
             <ul className="mt-2 space-y-2">
               {rows.map((u) => {

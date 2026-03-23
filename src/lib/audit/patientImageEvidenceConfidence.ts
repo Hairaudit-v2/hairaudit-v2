@@ -222,11 +222,11 @@ function computeOverallSummary(perGroup: Record<PatientAiEvidenceGroupId, Patien
 
 /** Human labels for review UI (same order as `ALL_GROUP_IDS`). */
 export const PATIENT_IMAGE_EVIDENCE_QUALITY_LABELS: Record<PatientAiEvidenceGroupId, string> = {
-  baseline_evidence: "Baseline evidence",
-  donor_monitoring_evidence: "Donor monitoring evidence",
-  surgical_evidence: "Surgical evidence",
-  graft_handling_evidence: "Graft handling evidence",
-  followup_outcome_evidence: "Follow-up outcome evidence",
+  baseline_evidence: "Before Surgery — documented angles",
+  donor_monitoring_evidence: "Back of Head — Surgery Day through milestones",
+  surgical_evidence: "Surgery Day — OR and scalp documentation",
+  graft_handling_evidence: "Grafts on the tray",
+  followup_outcome_evidence: "3 / 6 / 9 / 12 Month Photos",
 };
 
 export const PATIENT_IMAGE_EVIDENCE_QUALITY_GROUP_ORDER: readonly PatientAiEvidenceGroupId[] = ALL_GROUP_IDS;
