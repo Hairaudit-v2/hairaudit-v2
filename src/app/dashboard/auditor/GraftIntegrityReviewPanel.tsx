@@ -128,11 +128,14 @@ export default function GraftIntegrityReviewPanel(props: {
   const [thumbs, setThumbs] = useState<Record<string, string | null>>({});
 
   async function loadLatestEstimates() {
+    const caseIds = props.cases.map((c) => String(c.id)).filter(Boolean);
+    const scopeIds = caseIds.length ? caseIds : ["00000000-0000-0000-0000-000000000000"];
+
     const primaryRes = await supabase
       .from("graft_integrity_estimates")
       .select(giiSelectWithEvidence)
-      .order("created_at", { ascending: false })
-      .limit(200);
+      .in("case_id", scopeIds)
+      .order("created_at", { ascending: false });
 
     if (!primaryRes.error) {
       return Array.isArray(primaryRes.data) ? (primaryRes.data as AuditorGiiRow[]) : [];
@@ -142,8 +145,8 @@ export default function GraftIntegrityReviewPanel(props: {
       const fallbackRes = await supabase
         .from("graft_integrity_estimates")
         .select(giiSelectFallback)
-        .order("created_at", { ascending: false })
-        .limit(200);
+        .in("case_id", scopeIds)
+        .order("created_at", { ascending: false });
       if (fallbackRes.error) return null;
       return Array.isArray(fallbackRes.data) ? (fallbackRes.data as AuditorGiiRow[]) : [];
     }
@@ -151,28 +154,55 @@ export default function GraftIntegrityReviewPanel(props: {
     return null;
   }
 
+  const scopedCaseIdsKey = props.cases.map((c) => String(c.id)).join(",");
+
   useEffect(() => {
-    const channel = supabase
-      .channel("gii-auditor")
-      .on("postgres_changes", { event: "*", schema: "public", table: "graft_integrity_estimates" }, async () => {
-        const data = await loadLatestEstimates();
-        if (!Array.isArray(data)) return;
-        // Keep the latest row per case_id
-        const byCase = new Map<string, AuditorGiiRow>();
-        for (const r of data as any[]) {
-          const cid = String(r.case_id);
-          if (!byCase.has(cid)) byCase.set(cid, r as AuditorGiiRow);
+    setEstimates(props.initialEstimates ?? []);
+  }, [scopedCaseIdsKey]);
+
+  useEffect(() => {
+    const scopeIds = props.cases.map((c) => String(c.id)).filter(Boolean);
+    const singleCaseId = scopeIds.length === 1 ? scopeIds[0] : null;
+    const changeFilter =
+      singleCaseId && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(singleCaseId)
+        ? { event: "*" as const, schema: "public" as const, table: "graft_integrity_estimates" as const, filter: `case_id=eq.${singleCaseId}` }
+        : { event: "*" as const, schema: "public" as const, table: "graft_integrity_estimates" as const };
+
+    const channel = supabase.channel("gii-auditor").on("postgres_changes", changeFilter, async () => {
+      const data = await loadLatestEstimates();
+      if (!Array.isArray(data)) return;
+      const byCase = new Map<string, AuditorGiiRow>();
+      for (const r of data as any[]) {
+        const cid = String(r.case_id);
+        if (!byCase.has(cid)) byCase.set(cid, r as AuditorGiiRow);
+      }
+      const fetchedList = Array.from(byCase.values());
+      const fetchedByCase = new Map(fetchedList.map((e) => [String(e.case_id), e]));
+
+      setEstimates((prev) => {
+        if (scopeIds.length === 0) return prev;
+        const next: AuditorGiiRow[] = [];
+        for (const cid of scopeIds) {
+          const fromFetch = fetchedByCase.get(cid);
+          if (fromFetch) next.push(fromFetch);
+          else {
+            const fromPrev = prev.find((e) => String(e.case_id) === cid);
+            if (fromPrev) next.push(fromPrev);
+          }
         }
-        setEstimates(Array.from(byCase.values()));
-      })
-      .subscribe();
+        return next;
+      });
+    });
+
+    void channel.subscribe();
 
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [supabase]);
+  }, [supabase, scopedCaseIdsKey]);
 
-  const caseById = useMemo(() => new Map(props.cases.map((c) => [c.id, c])), [props.cases]);
+  /** Keys must match `String(e.case_id)` from estimates so rows join correctly. */
+  const caseById = useMemo(() => new Map(props.cases.map((c) => [String(c.id), c])), [props.cases]);
 
   const latestByCase = useMemo(() => {
     const m = new Map<string, AuditorGiiRow>();

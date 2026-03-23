@@ -1,16 +1,12 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import rubric from "@/lib/audit/rubrics/hairaudit_patient_basic_v1.json";
 import { buildEmptyAnswers } from "@/lib/audit/template";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 console.log("rubric loaded:", rubric?.rubric_id, "domains:", rubric?.domains?.length);
 
 function supabaseAdmin() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { persistSession: false, autoRefreshToken: false } }
-  );
+  return createSupabaseAdminClient();
 }
 
 // GET /api/audit/seed-answers  (health check)

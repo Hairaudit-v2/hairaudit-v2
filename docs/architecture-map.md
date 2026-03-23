@@ -172,6 +172,7 @@ HairAudit
 - Reports/print: `/api/reports/signed-url`, `/api/print/report`, `/api/print/legacy-report`
 - Auditor: `/api/auditor/rerun`, `/api/auditor/graft-integrity/review`
 - Internal PDF: `/api/internal/build-pdf`, `/api/internal/render-pdf`
+- Internal GII backfill: `/api/internal/gii-historical-backfill` (guarded; enqueues `internal/gii-historical-backfill` Inngest workflow)
 - Jobs endpoint: `/api/inngest`
 
 ---
@@ -184,11 +185,13 @@ HairAudit
 | `run-graft-integrity-estimate` | `case/submitted`, `case/graft-integrity-only-requested` | GII range estimation pipeline |
 | `run-pdf-rebuild` | `case/pdf-rebuild-requested` | Rebuild PDF for latest complete/pdf_ready report |
 | `auditor-rerun` | `auditor/rerun` | Action dispatcher invoking other functions |
+| `historical-gii-backfill` | `internal/gii-historical-backfill` | Sequential GII reruns for historical cases (rate-limited steps) |
 
 Producer routes:
 
 - `/api/submit` -> emits `case/submitted`
-- `/api/auditor/rerun` -> emits `auditor/rerun`
+- `/api/auditor/rerun` -> emits `auditor/rerun` (session auditors, or guarded internal: `x-internal-key` + `ALLOW_GII_BACKFILL` / `INTERNAL_BACKFILL_KEY` / `GII_BACKFILL_TRIGGERED_BY`; see `scripts/backfill-graft-integrity-cases.ts`)
+- `/api/internal/gii-historical-backfill` -> emits `internal/gii-historical-backfill` (batch enqueue; same guards)
 
 ---
 

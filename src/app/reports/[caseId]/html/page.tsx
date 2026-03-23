@@ -1,6 +1,6 @@
-import { createClient } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { parseRole } from "@/lib/roles";
 import rubric from "@/lib/audit/rubrics/hairaudit_clinical_v1.json";
 import { scoreAudit } from "@/lib/audit/score";
@@ -28,16 +28,6 @@ import {
   PATIENT_IMAGE_EVIDENCE_QUALITY_LABELS,
 } from "@/lib/audit/patientImageEvidenceConfidence";
 import { isInternalImageEvidenceQualityPanelEnabled } from "@/lib/features/enableInternalImageEvidenceQualityPanel";
-
-function createSupabaseAdmin() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    {
-      auth: { persistSession: false, autoRefreshToken: false },
-    }
-  );
-}
 
 type Summary = {
   score?: number | string;
@@ -115,7 +105,7 @@ export default async function ReportHtmlPage({
     sessionRole = parseRole((user.user_metadata as Record<string, unknown>)?.role) || "patient";
   }
 
-  const supabase = createSupabaseAdmin();
+  const supabase = createSupabaseAdminClient();
 
   const { data: c, error: caseErr } = await supabase
     .from("cases")

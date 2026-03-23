@@ -29,6 +29,7 @@
   },
   "include": [
     "next-env.d.ts",
+    "scripts/backfill-graft-integrity-cases.ts",
     "src/**/*.ts",
     "src/**/*.tsx",
     ".next/types/**/*.ts",

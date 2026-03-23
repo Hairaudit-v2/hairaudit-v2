@@ -1,7 +1,8 @@
 /* eslint-disable no-console */
 
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import * as crypto from "node:crypto";
+import { createSupabaseAdminClient } from "../../src/lib/supabase/admin";
 
 export type TestPatientIdentity = {
   userId: string;
@@ -28,14 +29,7 @@ function env(name: string): string | null {
 }
 
 export function createSupabaseServiceClient(): SupabaseClient {
-  const url = env("NEXT_PUBLIC_SUPABASE_URL") ?? env("SUPABASE_URL");
-  const key = env("SUPABASE_SERVICE_ROLE_KEY");
-  if (!url || !key) {
-    throw new Error(
-      "Missing env. Required for scripts: NEXT_PUBLIC_SUPABASE_URL (or SUPABASE_URL) and SUPABASE_SERVICE_ROLE_KEY."
-    );
-  }
-  return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+  return createSupabaseAdminClient();
 }
 
 export async function ensureCasesIsTestColumnOrThrow(supabase: SupabaseClient): Promise<void> {

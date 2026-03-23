@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { parseRole } from "@/lib/roles";
 import rubric from "@/lib/audit/rubrics/hairaudit_clinical_v1.json";
 import { scoreAudit } from "@/lib/audit/score";
@@ -12,11 +12,7 @@ import { pdfEnvConfig } from "@/lib/pdf/pdfEnvConfig";
 
 /* Admin client (NO cookies, NO sessions — Playwright safe) */
 function supabaseAdmin() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { persistSession: false, autoRefreshToken: false } }
-  );
+  return createSupabaseAdminClient();
 }
 
 /* Escape helper (HTML-safe) */

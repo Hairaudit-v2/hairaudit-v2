@@ -1,5 +1,5 @@
 import { inngest } from "./client";
-import { createClient } from "@supabase/supabase-js";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { type AuditMode } from "@/lib/pdf/reportBuilder";
 import { runAIAudit } from "@/lib/ai/audit";
 import { buildPatientImageEvidenceGroups } from "@/lib/audit/patientAiImageEvidence";
@@ -31,11 +31,7 @@ import { isPatientUploadAuditExcluded } from "@/lib/uploads/patientPhotoAuditMet
 const AUDITOR_RERUN_REASON_CORRECTED_PATIENT_PHOTOS = "corrected_patient_photos";
 
 function supabaseAdmin() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { persistSession: false, autoRefreshToken: false } }
-  );
+  return createSupabaseAdminClient();
 }
 
 const BUCKET = process.env.CASE_FILES_BUCKET || "case-files";

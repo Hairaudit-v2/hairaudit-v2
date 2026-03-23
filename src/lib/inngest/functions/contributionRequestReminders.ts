@@ -1,5 +1,5 @@
-import { createClient } from "@supabase/supabase-js";
 import { inngest } from "@/lib/inngest/client";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import {
   CONTRIBUTION_REMINDER_TIMING,
   getContributionRequestById,
@@ -14,9 +14,7 @@ import {
 import { sendFinalCourtesyContributionEmail, sendReminderContributionEmail } from "@/lib/transparency/emails";
 
 function supabaseAdmin() {
-  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
+  return createSupabaseAdminClient();
 }
 
 type ContributionRequestCreatedEvent = {

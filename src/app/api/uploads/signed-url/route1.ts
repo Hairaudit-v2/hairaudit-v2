@@ -1,12 +1,6 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
-
-const admin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { persistSession: false } }
-);
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 // GET /api/uploads/signed-url?uploadId=...
 export async function GET(req: Request) {
@@ -26,6 +20,8 @@ export async function GET(req: Request) {
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const admin = createSupabaseAdminClient();
 
   // Load upload + case
   const { data: upload } = await admin

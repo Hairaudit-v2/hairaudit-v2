@@ -19,7 +19,8 @@
     "seed:patients": "tsx scripts/seedPatientAudits.ts",
     "test:certification": "tsx scripts/testCertification.ts",
     "test:auditor-overrides": "tsx --test tests/auditorOverrides.test.ts",
-    "test:i18n": "tsx --test tests/i18n/i18n.test.ts"
+    "test:i18n": "tsx --test tests/i18n/i18n.test.ts",
+    "backfill:gii": "tsx scripts/backfill-graft-integrity-cases.ts"
   },
   "dependencies": {
     "@sparticuz/chromium": "^143.0.4",

@@ -5,11 +5,11 @@
  * Usage: npm run seed:patients -- [--count=30] [--low-quality-clinic] [--high-end-clinic] [--technician-driven] [--inflated-graft-count]
  * (The extra -- is required so npm forwards flags to the script.)
  *
- * Requires: NODE_ENV !== "production", NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+ * Requires: NODE_ENV !== "production", NEXT_PUBLIC_SUPABASE_URL (or SUPABASE_URL), SUPABASE_SERVICE_ROLE_KEY
  * Optional: SEED_OWNER_USER_ID (UUID of dev user to own created cases; if missing, script will try to use first case or create cases without owner in dev)
  */
 
-import { createClient } from "@supabase/supabase-js";
+import { tryCreateSupabaseAdminClient } from "../src/lib/supabase/admin";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -382,10 +382,11 @@ async function main() {
 
   loadEnvLocal();
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) {
-    console.error("Missing env: NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required.");
+  const supabase = tryCreateSupabaseAdminClient();
+  if (!supabase) {
+    console.error(
+      "Missing env: NEXT_PUBLIC_SUPABASE_URL (or SUPABASE_URL) and SUPABASE_SERVICE_ROLE_KEY are required."
+    );
     process.exit(1);
   }
 
@@ -396,10 +397,6 @@ async function main() {
 
   const { count, scenario } = parseArgs();
   console.log(`Seeding ${count} patient audit(s). Scenario flags:`, scenario);
-
-  const supabase = createClient(url, key, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
 
   let ownerUserId: string | null = ownerId ?? null;
   if (!ownerUserId) {

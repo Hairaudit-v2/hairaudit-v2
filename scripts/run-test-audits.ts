@@ -19,7 +19,8 @@
  */
 /* eslint-disable no-console */
 
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { createSupabaseAdminClient } from "../src/lib/supabase/admin";
 import { inngest } from "../src/lib/inngest/client";
 import { type PatientPhotoCategory } from "../src/lib/photoCategories";
 import { applyPatientPhotoCategoryFields } from "../src/lib/uploads/patientPhotoCategoryIntegrity";
@@ -662,12 +663,7 @@ async function writeJson(p: string, obj: unknown) {
 }
 
 function supabaseAdmin(): SupabaseClient {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) {
-    throw new Error("Missing env: NEXT_PUBLIC_SUPABASE_URL (or SUPABASE_URL) and SUPABASE_SERVICE_ROLE_KEY are required.");
-  }
-  return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+  return createSupabaseAdminClient();
 }
 
 async function upsertDraftAnswers(supabase: SupabaseClient, caseId: string, patientAnswers: Record<string, unknown>) {
