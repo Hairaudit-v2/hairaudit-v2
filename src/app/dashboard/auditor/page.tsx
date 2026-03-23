@@ -215,8 +215,8 @@ export default async function AuditorDashboardPage({
     const primaryRes = await admin
       .from("graft_integrity_estimates")
       .select(giiSelectWithEvidence)
-      .order("created_at", { ascending: false })
-      .limit(200);
+      .in("case_id", caseIds.length ? caseIds : ["00000000-0000-0000-0000-000000000000"])
+      .order("created_at", { ascending: false });
 
     if (!primaryRes.error) {
       for (const r of (primaryRes.data ?? []) as GiiDashboardRow[]) {
@@ -227,8 +227,8 @@ export default async function AuditorDashboardPage({
       const fallbackRes = await admin
         .from("graft_integrity_estimates")
         .select(giiSelectFallback)
-        .order("created_at", { ascending: false })
-        .limit(200);
+        .in("case_id", caseIds.length ? caseIds : ["00000000-0000-0000-0000-000000000000"])
+        .order("created_at", { ascending: false });
 
       if (!fallbackRes.error) {
         for (const r of (fallbackRes.data ?? []) as GiiDashboardRow[]) {
