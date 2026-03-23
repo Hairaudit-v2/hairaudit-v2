@@ -14,6 +14,10 @@ import {
 import { loadLatestEvidenceManifest } from "@/lib/evidence/prepareCaseEvidence";
 import { pdfEnvConfig } from "@/lib/pdf/pdfEnvConfig";
 import { evaluateEvidence, type EvidenceEvaluationResult } from "@/lib/evidence/evidenceEvaluator";
+import {
+  buildEvidenceIntelligencePayload,
+  parseEvidenceIntelligencePayload,
+} from "@/lib/evidence/evidenceIntelligencePayload";
 import { enrichKeyMetricsAfterNormalize } from "@/lib/evidence/evidenceMissingCopy";
 
 function clamp100(n: number) {
@@ -246,17 +250,25 @@ export async function GET(req: Request) {
   };
 
   let evidenceEvaluation: EvidenceEvaluationResult | null = null;
+  let uploadRowsForEvidence: Parameters<typeof evaluateEvidence>[0] | null = null;
   try {
     const { data: uploadRows, error: upEvErr } = await supabase
       .from("uploads")
       .select("type, metadata")
       .eq("case_id", caseId);
     if (!upEvErr && uploadRows) {
-      evidenceEvaluation = evaluateEvidence(uploadRows as Parameters<typeof evaluateEvidence>[0]);
+      uploadRowsForEvidence = uploadRows as Parameters<typeof evaluateEvidence>[0];
+      evidenceEvaluation = evaluateEvidence(uploadRowsForEvidence);
     }
   } catch {
     evidenceEvaluation = null;
   }
+
+  const evidenceIntelligence =
+    parseEvidenceIntelligencePayload(
+      (summary as { evidenceIntelligence?: unknown } | null)?.evidenceIntelligence
+    ) ??
+    (uploadRowsForEvidence?.length ? buildEvidenceIntelligencePayload(uploadRowsForEvidence) : null);
 
   const metrics = enrichKeyMetricsAfterNormalize(metricsRaw, evidenceEvaluation);
 
@@ -526,6 +538,7 @@ export async function GET(req: Request) {
     confidenceLabel,
     metrics,
     evidenceEvaluation,
+    evidenceIntelligence: evidenceIntelligence ?? undefined,
     areaDomains,
     sectionScores: sectionScoreItems,
     highlights,

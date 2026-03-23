@@ -1,6 +1,10 @@
 import type { ReportViewModel } from "@/lib/pdf/reportBuilder";
 import type { EvidenceEvaluationResult } from "@/lib/evidence/evidenceEvaluator";
-import { domainCardScoreLabelWhenNoScore } from "@/lib/evidence/evidenceMissingCopy";
+import {
+  normalizeEvidenceIntelligenceMissingDisplay,
+  type EvidenceIntelligencePayload,
+} from "@/lib/evidence/evidenceIntelligencePayload";
+import { domainCardScoreLabelWhenNoScore, isGenericInsufficientMetricText } from "@/lib/evidence/evidenceMissingCopy";
 import { buildSurgicalFingerprintSummary } from "@/lib/reports/surgicalFingerprint";
 import { renderRadarSvg, clamp01, clamp100 } from "@/lib/reports/radarSvg";
 
@@ -44,6 +48,8 @@ export type EliteReportViewModel = {
   photosByCategory: Record<string, { signedUrl: string | null; label: string }[]>;
   /** Optional: when present, domain cards with no numeric score show missing-evidence detail instead of a generic label. */
   evidenceEvaluation?: EvidenceEvaluationResult | null;
+  /** Optional snapshot from summary or rebuilt at print time; omit for legacy PDF parity. */
+  evidenceIntelligence?: EvidenceIntelligencePayload | null;
   doctorBlockHtml?: string;
   debugFooter?: string;
 };
@@ -55,6 +61,16 @@ function esc(s: string) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+/** Max two items inline, then "+N more" (Evidence Intelligence / key-metric explainers). */
+function formatMissingEvidenceCompact(missing: readonly string[]): string {
+  const norm = missing.map((x) => normalizeEvidenceIntelligenceMissingDisplay(String(x))).filter(Boolean);
+  if (norm.length === 0) return "";
+  const shown = norm.slice(0, 2).join(", ");
+  const rest = norm.length - 2;
+  if (rest <= 0) return shown;
+  return `${shown} (+${rest} more)`;
 }
 
 function metricTextImpliesWeakEvidence(s: string): boolean {
@@ -75,6 +91,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     risks,
     radar,
     photosByCategory,
+    evidenceIntelligence,
     doctorBlockHtml,
     debugFooter,
   } = vm;
@@ -301,19 +318,117 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       ${compactStatus("Implantation Pattern Confidence", implantConfidence === "High" ? "good" : implantConfidence === "Moderate" ? "note" : "watch", implantConfidence)}
     </div>
   `;
+  const keyMetricExplainer = (value: string, metricKey: string) => {
+    const m = evidenceIntelligence?.metrics?.[metricKey];
+    const v = String(value ?? "");
+    if (!m?.missing?.length) return "";
+    if (!isGenericInsufficientMetricText(v)) return "";
+    if (v.toLowerCase().startsWith("missing required evidence")) return "";
+    return `<span class="metricExplainer">Missing required evidence: ${esc(formatMissingEvidenceCompact(m.missing))}</span>`;
+  };
+  const keyMetricRow = (label: string, value: string, metricKey: string) =>
+    `<div><span>${esc(label)}</span><div class="metricValWrap"><b>${esc(value)}</b>${keyMetricExplainer(value, metricKey)}</div></div>`;
+
   const keyMetricsCard = `
     <div class="metricCard keyMetricCard">
       <div class="metricTitle">Key Metrics</div>
       <div class="metricList">
-        <div><span>Donor quality</span><b>${esc(metrics.donorQuality)}</b></div>
-        <div><span>Survival estimate</span><b>${esc(metrics.graftSurvival)}</b></div>
-        <div><span>Transection risk</span><b>${esc(metrics.transectionRisk)}</b></div>
-        <div><span>Implant density</span><b>${esc(metrics.implantationDensity)}</b></div>
-        <div><span>Hairline naturalness</span><b>${esc(metrics.hairlineNaturalness)}</b></div>
-        <div><span>Donor scar visibility</span><b>${esc(metrics.donorScarVisibility)}</b></div>
+        ${keyMetricRow("Donor quality", metrics.donorQuality, "donor_quality")}
+        ${keyMetricRow("Survival estimate", metrics.graftSurvival, "graft_handling")}
+        ${keyMetricRow("Transection risk", metrics.transectionRisk, "transection_risk")}
+        ${keyMetricRow("Implant density", metrics.implantationDensity, "implant_density")}
+        ${keyMetricRow("Hairline naturalness", metrics.hairlineNaturalness, "hairline_naturalness")}
+        ${keyMetricRow("Donor scar visibility", metrics.donorScarVisibility, "donor_scar_visibility")}
       </div>
     </div>
   `;
+
+  const eiLayerMetrics = [
+    { id: "donor_quality", title: "Donor quality" },
+    { id: "transection_risk", title: "Transection risk" },
+    { id: "hairline_naturalness", title: "Hairline naturalness" },
+    { id: "implant_density", title: "Implant density" },
+    { id: "donor_scar_visibility", title: "Donor scar visibility" },
+    { id: "graft_handling", title: "Graft handling" },
+  ] as const;
+
+  const evidenceIntelligenceLayerHtml = evidenceIntelligence
+    ? (() => {
+        const ei = evidenceIntelligence;
+        const cov = Math.round(clamp100(ei.coverageScore));
+        const rows = eiLayerMetrics
+          .map(({ id, title }) => {
+            const m = ei.metrics[id];
+            if (!m) return "";
+            const statusLabel =
+              m.status === "complete" ? "Complete" : m.status === "partial" ? "Partial" : "Insufficient";
+            const statusClass =
+              m.status === "complete" ? "eiComplete" : m.status === "partial" ? "eiPartial" : "eiInsufficient";
+            const frac = `${m.provided} / ${m.required} inputs`;
+            const showMissingRow = m.status !== "complete" && m.missing.length > 0;
+            const missingLine = showMissingRow
+              ? `<div class="eiMissingLine">Missing: ${esc(formatMissingEvidenceCompact(m.missing))}</div>`
+              : "";
+            return `<div class="eiMetricRow"><div class="eiMetricTitle"><span class="eiBadge ${statusClass}">${esc(statusLabel)}</span><b>${esc(title)}</b></div><div class="eiFrac">${esc(frac)}</div>${missingLine}</div>`;
+          })
+          .join("");
+        const uniqueMissing: string[] = [];
+        const seen = new Set<string>();
+        for (const { id } of eiLayerMetrics) {
+          const miss = ei.metrics[id]?.missing;
+          if (!miss) continue;
+          for (const x of miss) {
+            const normalized = normalizeEvidenceIntelligenceMissingDisplay(String(x));
+            const t = normalized.trim();
+            if (!t || seen.has(t)) continue;
+            seen.add(t);
+            uniqueMissing.push(t);
+          }
+        }
+        const maxSummaryItems = 4;
+        const summaryListItems = uniqueMissing.slice(0, maxSummaryItems);
+        const summaryOverflow = uniqueMissing.length - summaryListItems.length;
+        const summaryBlock =
+          uniqueMissing.length > 0
+            ? `<div class="eiSummaryTitle">Recommended adds:</div><ul class="eiSummaryList">${summaryListItems
+                .map((x) => `<li>${esc(x)}</li>`)
+                .join("")}${
+                summaryOverflow > 0
+                  ? `<li class="eiSummaryMore">+${summaryOverflow} more documentation ${summaryOverflow === 1 ? "gap" : "gaps"}</li>`
+                  : ""
+              }</ul>`
+            : `<div class="eiSummaryTitle">Documentation status</div><div class="eiSummaryNone">No additional documentation gaps were flagged for the tracked surgical metrics above.</div>`;
+        const slotLine =
+          ei.expectedCount > 0
+            ? `<div class="eiCountLine">${ei.providedCount} / ${ei.expectedCount} required documentation slots satisfied (aggregate).</div>`
+            : "";
+        return `
+    <div class="eiLayer metricCard">
+      <div class="metricTitle">Evidence Intelligence Layer</div>
+      <div class="eiCoverageHead">
+        <div class="eiCoverageMain">Evidence Coverage: ${cov}%</div>
+        <div class="eiCoverageSub">Share of required visual documentation available for metric interpretation.</div>
+        ${slotLine}
+      </div>
+      <div class="eiMetricList">${rows}</div>
+      <div class="eiSummaryBox">
+        ${summaryBlock}
+      </div>
+    </div>`;
+      })()
+    : "";
+
+  const dataIntegrityEiNote =
+    evidenceIntelligence && evidenceIntelligence.expectedCount > 0
+      ? `<div class="miniText eiDataIntegrityRef">Evidence Intelligence: ${Math.round(
+          clamp100(evidenceIntelligence.coverageScore)
+        )}% coverage · ${evidenceIntelligence.providedCount} / ${evidenceIntelligence.expectedCount} documentation slots (aggregate).</div>`
+      : evidenceIntelligence
+        ? `<div class="miniText eiDataIntegrityRef">Evidence Intelligence: ${Math.round(
+            clamp100(evidenceIntelligence.coverageScore)
+          )}% coverage (see Key Metrics section for per-metric detail).</div>`
+        : "";
+
   const confidenceIntegrityCards = `
     <div class="infoGrid evidenceInfoGrid">
       <div class="panelCard">
@@ -334,6 +449,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
           <li>Missing categories: ${missingCats.length > 0 ? esc(missingCats.join(", ")) : "None reported"}</li>
         </ul>
         <div class="miniText">Evidence completeness: ${allPhotos.length >= 6 ? "sufficient for broader interpretation." : "limited for high-confidence interpretation."}</div>
+        ${dataIntegrityEiNote}
       </div>
     </div>
   `;
@@ -724,9 +840,36 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     .metricTitle, .panelTitle { font-size: 12px; color: var(--muted); margin-bottom: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; }
     .radarPanel .panelTitle { font-size: 15px; font-weight: 800; letter-spacing: .07em; margin: 0 0 4px 0; color: #0f2344; text-transform: uppercase; }
     .metricList { display:grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; }
-    .metricList div { display:flex; justify-content:space-between; gap:10px; font-size: 11px; flex-wrap: wrap; }
-    .metricList span { color: var(--muted); }
-    .metricList b { color: var(--ink); word-break: break-word; overflow-wrap: break-word; max-width: 65%; text-align: right; }
+    .metricList > div { display:flex; justify-content:space-between; gap:10px; font-size: 11px; flex-wrap: wrap; align-items: flex-start; }
+    .metricList > div > span:first-child { color: var(--muted); flex: 0 1 auto; }
+    .metricValWrap {
+      display: flex; flex-direction: column; align-items: flex-end; max-width: 65%; text-align: right; gap: 0;
+    }
+    .metricValWrap b { color: var(--ink); word-break: break-word; overflow-wrap: break-word; max-width: 100%; text-align: right; }
+    .metricExplainer { font-size: 9px; color: #637793; margin-top: 3px; line-height: 1.35; max-width: 100%; text-align: right; }
+    .eiLayer { margin-bottom: 14px; page-break-inside: avoid; break-inside: avoid; }
+    .eiLayer.metricCard { padding: 10px 11px; }
+    .eiCoverageHead { margin-bottom: 2px; }
+    .eiCoverageMain { font-size: 15px; font-weight: 800; color: #0f2344; letter-spacing: -0.02em; line-height: 1.2; }
+    .eiCoverageSub { font-size: 9.5px; color: var(--muted); margin-top: 3px; line-height: 1.35; max-width: 100%; }
+    .eiCountLine { font-size: 9.5px; color: #4e678b; margin-top: 5px; font-weight: 600; line-height: 1.3; }
+    .eiMetricList { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; }
+    .eiMetricRow { border: 1px solid #e8eef5; border-radius: 6px; padding: 5px 8px; background: #fafcfe; page-break-inside: avoid; }
+    .eiMetricTitle { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 10.5px; line-height: 1.25; }
+    .eiMetricTitle b { color: var(--ink); font-weight: 700; }
+    .eiBadge { font-size: 7px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; padding: 1px 5px; border-radius: 3px; flex-shrink: 0; line-height: 1.2; }
+    .eiComplete { background: #ecfdf5; color: #166534; border: 1px solid #a7f3d0; }
+    .eiPartial { background: #fffbeb; color: #92400e; border: 1px solid #fcd34d; }
+    .eiInsufficient { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+    .eiFrac { font-size: 9.5px; color: var(--muted); margin-top: 2px; line-height: 1.25; }
+    .eiMissingLine { font-size: 8.5px; color: #5a6d85; margin-top: 3px; line-height: 1.3; }
+    .eiSummaryBox { margin-top: 8px; border: 1px dashed #c9d6e8; border-radius: 6px; padding: 6px 8px; background: #f8fafc; page-break-inside: avoid; }
+    .eiSummaryTitle { font-size: 9.5px; font-weight: 700; color: #1e3a5f; margin-bottom: 3px; line-height: 1.3; }
+    .eiSummaryList { margin: 0; padding-left: 14px; font-size: 9px; color: #334155; line-height: 1.35; }
+    .eiSummaryList li { margin: 1px 0; }
+    .eiSummaryMore { list-style: disc; color: #64748b; font-style: italic; }
+    .eiSummaryNone { font-size: 9px; color: #4e678b; line-height: 1.35; }
+    .eiDataIntegrityRef { margin-top: 10px; padding-top: 8px; border-top: 1px solid #e6edf3; }
     .radarPanel {
       margin-top: 0;
       margin-bottom: 0;
@@ -1110,6 +1253,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       </div>
       <div class="sectionDivider"></div>
       ${keyMetricsCard}
+      ${evidenceIntelligenceLayerHtml}
       <div class="domainGrid">${domainCards}</div>
     </div>
 
