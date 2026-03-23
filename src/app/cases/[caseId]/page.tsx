@@ -67,6 +67,7 @@ import { getTranslation } from "@/lib/i18n/getTranslation";
 import type { TranslationKey } from "@/lib/i18n/translationKeys";
 import { buildPatientSafeSummaryObservations } from "@/lib/reports/patientSafeSummary";
 import { resolvePatientSafeSummaryNarrativePresentation } from "@/lib/reports/patientSafeSummaryNarrativeTranslation";
+import { hasClinicAnswersInSummary } from "@/lib/reports/hasClinicAnswersInSummary";
 import { resolvePublicSeoLocale } from "@/lib/seo/localeMetadata";
 
 function scoreChipClass(score: number | null | undefined) {
@@ -968,7 +969,7 @@ export default async function Page({
           <EvidenceSummary caseRow={c} uploads={uploads ?? []} />
           <CaseReadinessCard
             hasDoctorAnswers={!!latestDoctorAnswers && Object.keys(latestDoctorAnswers).filter((k) => k !== "field_provenance").length > 0}
-            hasClinicAnswers={!!latestClinicAnswers && Object.keys(latestClinicAnswers).filter((k) => k !== "field_provenance").length > 0}
+            hasClinicAnswers={hasClinicAnswersInSummary(latestSummary)}
             missingRequiredPhotoCategories={missingRequiredPhotoCategories}
             submitterType={showDoctorFlow ? "doctor" : "patient"}
             fieldProvenance={(latestDoctorAnswers?.field_provenance as Record<string, string> | undefined) ?? null}
