@@ -10,6 +10,8 @@ import PatientDashboardUnlockSection from "@/components/patient/PatientDashboard
 import PatientDashboardWhyMattersSection from "@/components/patient/PatientDashboardWhyMattersSection";
 import PatientDashboardCaseHistorySection from "@/components/patient/PatientDashboardCaseHistorySection";
 import PatientGraftIntegrityRolloutNotice from "@/components/patient/PatientGraftIntegrityRolloutNotice";
+import PatientDashboardHliGuideCard from "@/components/patient/PatientDashboardHliGuideCard";
+import { firstCaseOpenForSubmit, patientHasSubmittedAudit } from "@/lib/patient/caseSubmitStatus";
 
 function isMissingFeatureError(error: unknown): boolean {
   const e = error as { status?: number; code?: string; message?: string } | null;
@@ -208,6 +210,16 @@ export default async function PatientDashboardPage() {
 
   const showConversionPrompt = Boolean(nextCase?.id) && completionPct < 70;
 
+  const hliGuideUnlocked = patientHasSubmittedAudit(cases ?? []);
+  const openSubmitCase = firstCaseOpenForSubmit(
+    (cases ?? []).map((c) => ({
+      id: c.id,
+      status: c.status,
+      submitted_at: c.submitted_at,
+    }))
+  );
+  const hliGuideSubmitCtaHref = openSubmitCase ? `/cases/${openSubmitCase.id}` : "/request-review";
+
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6">
       <PatientDashboardI18nIntro
@@ -236,6 +248,8 @@ export default async function PatientDashboardPage() {
                 currentStatus: modules.currentStatus,
               }}
             />
+
+            <PatientDashboardHliGuideCard unlocked={hliGuideUnlocked} submitCtaHref={hliGuideSubmitCtaHref} />
 
             {graftIntegrityInitial ? (
               <GraftIntegrityCard

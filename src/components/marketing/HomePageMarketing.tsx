@@ -4,6 +4,7 @@ import Link from "next/link";
 import nextDynamic from "next/dynamic";
 import TrackedLink from "@/components/analytics/TrackedLink";
 import CertifiedClinicsSection from "@/components/home/CertifiedClinicsSection";
+import PatientReportValueProposition from "@/components/marketing/PatientReportValueProposition";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { StepIcons } from "@/components/ui/StepIcons";
 import type { TranslationKey } from "@/lib/i18n/translationKeys";
@@ -114,6 +115,8 @@ export default function HomePageMarketing() {
           </div>
         </div>
       </section>
+
+      <PatientReportValueProposition />
 
       <GlobalHairIntelligenceSection
         variant="hairaudit"

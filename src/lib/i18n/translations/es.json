@@ -268,7 +268,30 @@
       "certifiedScoreLabel": "Puntuación:",
       "certifiedCasesSuffix": "casos",
       "certifiedViewCert": "Ver certificado →",
-      "certifiedExplore": "Explorar clínicas certificadas →"
+      "certifiedExplore": "Explorar clínicas certificadas →",
+      "patientReportValue": {
+        "eyebrow": "Informes para pacientes",
+        "headline": "Auditoría independiente. Orientación clara para el paciente.",
+        "lead": "HairAudit sigue siendo una auditoría forense independiente y basada en evidencia. Los informes para pacientes ahora combinan esos hallazgos con interpretación accesible y orientación a largo plazo—siempre al margen del marketing de clínicas o de la comparación entre cirujanos.",
+        "bullet1": "Hallazgos independientes basados en sus imágenes, cronología y criterios de puntuación.",
+        "bullet2": "Interpretación en lenguaje claro sobre qué respalda la evidencia, dónde hay límites de confianza y por qué importa.",
+        "bullet3": "Orientación a largo plazo sobre salud del cabello nativo y protección del donante en el contexto de su auditoría—no relleno genérico de cuidados posteriores.",
+        "bullet4": "Qué vigilar con el tiempo para detectar cambios pronto y tratarlos adecuadamente con su médico.",
+        "feature1Title": "Hallazgos independientes",
+        "feature1Desc": "Conclusiones estructuradas ligadas a evidencia visible y estándares de auditoría—apartadas del relato de cualquier clínica tratante.",
+        "feature2Title": "Explicaciones claras",
+        "feature2Desc": "Lenguaje médicamente informado con límites explícitos: qué queda demostrado, qué es incierto y qué requeriría más datos.",
+        "feature3Title": "Proteja el cabello que le queda",
+        "feature3Desc": "Orientación duradera para preservar densidad nativa y reserva donante tras la cirugía, enmarcada a su caso—no una lista única para todos.",
+        "feature4Title": "Sepa qué vigilar",
+        "feature4Desc": "Señales en el tiempo: estabilidad, posibles regresiones y documentación que apoye un seguimiento informado con su equipo médico.",
+        "guideEyebrow": "¿Aún no está listo para una auditoría completa?",
+        "guideTitle": "Guía gratuita de protección capilar posoperatoria",
+        "guideBody": "Recurso educativo práctico para quienes quieren primero una orientación estructurada tras la cirugía. Redactado por Hair Longevity Institute para complementar—no sustituir—la atención clínica.",
+        "guideCta": "Obtener la guía",
+        "guideAttribution": "Autor: Hair Longevity Institute (HLI).",
+        "guideFootnote": "HLI ofrece apoyo educativo. HairAudit sigue siendo la auditoría independiente; el contenido de la guía no influye en hallazgos ni puntuaciones de la auditoría."
+      }
     },
     "howItWorks": {
       "heroTitle": "Cómo HairAudit revisa su cirugía",
@@ -394,7 +417,13 @@
       "correctionNextLabel": "Siguiente etapa",
       "correctionNextBody": "Refinamiento de irregularidades de la línea frontal y planificación por zonas.",
       "correctionDocLabel": "Documentación primero",
-      "correctionDocBody": "Recopile imágenes estandarizadas y registros operatorios antes de comprometerse con correcciones."
+      "correctionDocBody": "Recopile imágenes estandarizadas y registros operatorios antes de comprometerse con correcciones.",
+      "patientGuidanceEyebrow": "Alcance del informe para pacientes",
+      "patientGuidanceTitle": "También en su informe para pacientes",
+      "patientGuidanceLead": "Junto a la auditoría forense independiente, recibirá:",
+      "patientGuidanceLi1": "Orientación a largo plazo para preservar el cabello nativo, en contexto de su evidencia y hallazgos",
+      "patientGuidanceLi2": "Educación en protección del donante alineada con lo que documenta la auditoría—no tranquilidad promocional",
+      "patientGuidanceLi3": "Consejos de seguimiento en el tiempo para apoyar las conversaciones con su médico"
     }
   },
   "reportGlossary": {
@@ -670,6 +699,23 @@
         "inProgress": "En curso",
         "completeQuestionsCta": "Completar cuestionario de inteligencia",
         "addPhotosCta": "Añadir fotos"
+      },
+      "hliGuide": {
+        "eyebrow": "Recompensa educativa para pacientes",
+        "titleLocked": "Desbloquee su guía gratuita para pacientes",
+        "titleUnlocked": "Su guía está desbloqueada",
+        "bodyLocked": "Envíe su auditoría gratuita para acceder a la Guía de protección capilar posoperatoria de Hair Longevity Institute.",
+        "bodyUnlocked": "Su auditoría ha sido enviada. Ya puede descargar la Guía de protección capilar posoperatoria de Hair Longevity Institute.",
+        "successLine": "Su envío ha desbloqueado este recurso educativo.",
+        "lockedLabel": "Envíe la auditoría para desbloquear",
+        "lockedCta": "Enviar mi auditoría gratuita",
+        "unlockedCta": "Descargar guía (PDF)",
+        "bullet1": "Protección del cabello nativo",
+        "bullet2": "Preservación del donante",
+        "bullet3": "Opciones de tratamiento explicadas",
+        "bullet4": "Qué vigilar con el tiempo",
+        "hliAttribution": "Guía redactada por Hair Longevity Institute (HLI) con fines educativos para pacientes.",
+        "boundaryNote": "HairAudit gestiona su auditoría y revisión independientes. HLI aporta solo la guía; no modifica los hallazgos de la auditoría."
       },
       "unlock": {
         "sectionTitle": "Vista previa: qué desbloqueará",

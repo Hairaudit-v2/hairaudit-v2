@@ -4,6 +4,7 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import ReviewProcessReassurance from "@/components/seo/ReviewProcessReassurance";
+import SampleReportPatientGuidanceCallout from "@/components/marketing/SampleReportPatientGuidanceCallout";
 import TrackedLink from "@/components/analytics/TrackedLink";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import type { TranslationKey } from "@/lib/i18n/translationKeys";
@@ -250,6 +251,8 @@ export default function SampleReportMarketing() {
             </div>
           </ScrollReveal>
         </section>
+
+        <SampleReportPatientGuidanceCallout />
 
         <section id="inside-report" className="px-4 sm:px-6 py-14 sm:py-18">
           <div className="mx-auto max-w-6xl">

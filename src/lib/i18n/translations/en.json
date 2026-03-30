@@ -268,7 +268,30 @@
       "certifiedScoreLabel": "Score:",
       "certifiedCasesSuffix": "cases",
       "certifiedViewCert": "View certificate →",
-      "certifiedExplore": "Explore certified clinics →"
+      "certifiedExplore": "Explore certified clinics →",
+      "patientReportValue": {
+        "eyebrow": "Patient reports",
+        "headline": "Independent audit. Clear patient guidance.",
+        "lead": "HairAudit stays an independent, evidence-based forensic audit. Patient reports now pair those findings with patient-friendly interpretation and long-term orientation—always distinct from clinic marketing or surgeon benchmarking.",
+        "bullet1": "Independent findings grounded in your images, timeline, and scoring criteria.",
+        "bullet2": "Plain-language interpretation of what the evidence supports, where confidence is limited, and why it matters.",
+        "bullet3": "Long-term guidance oriented to native hair health and donor protection in the context of your audit—not generic aftercare filler.",
+        "bullet4": "What to monitor over time so changes are noticed early and discussed appropriately with your clinician.",
+        "feature1Title": "Independent findings",
+        "feature1Desc": "Structured conclusions tied to visible evidence and audit standards—separate from any treating clinic’s narrative.",
+        "feature2Title": "Clear explanations",
+        "feature2Desc": "Medically informed language with explicit limits: what is demonstrated, what is uncertain, and what would require additional data.",
+        "feature3Title": "Protect your remaining hair",
+        "feature3Desc": "Durable orientation to safeguarding native density and donor reserve after surgery, framed to your case—not a one-size checklist.",
+        "feature4Title": "Know what to monitor",
+        "feature4Desc": "Time-based cues for stability, regression signals, and documentation that supports informed follow-up with your medical team.",
+        "guideEyebrow": "Not ready for a full audit?",
+        "guideTitle": "Free Post-Operative Hair Protection Guide",
+        "guideBody": "A practical educational resource for patients who want structured post-surgical orientation first. Written by Hair Longevity Institute to complement—not replace—clinical care.",
+        "guideCta": "Get the guide",
+        "guideAttribution": "Author: Hair Longevity Institute (HLI).",
+        "guideFootnote": "HLI provides educational support. HairAudit remains the independent audit; guide content does not influence audit findings or scoring."
+      }
     },
     "howItWorks": {
       "heroTitle": "How HairAudit Reviews Your Surgery",
@@ -394,7 +417,13 @@
       "correctionNextLabel": "Next stage",
       "correctionNextBody": "Hairline irregularity refinement and zone-specific planning.",
       "correctionDocLabel": "Documentation first",
-      "correctionDocBody": "Collect standardized images and operative records before any corrective commitments."
+      "correctionDocBody": "Collect standardized images and operative records before any corrective commitments.",
+      "patientGuidanceEyebrow": "Patient report scope",
+      "patientGuidanceTitle": "Also in your patient report",
+      "patientGuidanceLead": "Alongside the independent forensic audit, you receive:",
+      "patientGuidanceLi1": "Long-term preservation guidance for native hair, in context of your evidence and findings",
+      "patientGuidanceLi2": "Donor protection education aligned with what the audit documents—not promotional reassurance",
+      "patientGuidanceLi3": "Time-based monitoring advice to support follow-up conversations with your clinician"
     }
   },
   "reportGlossary": {
@@ -670,6 +699,23 @@
         "inProgress": "In progress",
         "completeQuestionsCta": "Complete Intelligence Questions",
         "addPhotosCta": "Add photos"
+      },
+      "hliGuide": {
+        "eyebrow": "Patient education reward",
+        "titleLocked": "Unlock your free patient guide",
+        "titleUnlocked": "Your guide is unlocked",
+        "bodyLocked": "Submit your free audit to access the Post-Operative Hair Protection Guide from Hair Longevity Institute.",
+        "bodyUnlocked": "Your audit has been submitted. You can now download the Post-Operative Hair Protection Guide from Hair Longevity Institute.",
+        "successLine": "Your submission unlocked this educational resource.",
+        "lockedLabel": "Submit audit to unlock",
+        "lockedCta": "Submit your free audit",
+        "unlockedCta": "Download guide (PDF)",
+        "bullet1": "Native hair protection",
+        "bullet2": "Donor preservation",
+        "bullet3": "Treatment options explained",
+        "bullet4": "What to monitor over time",
+        "hliAttribution": "Guide authored by Hair Longevity Institute (HLI) for patient education.",
+        "boundaryNote": "HairAudit runs your independent audit and review. HLI provides the guide only; it does not change audit findings."
       },
       "unlock": {
         "sectionTitle": "Preview: what you’ll unlock",
