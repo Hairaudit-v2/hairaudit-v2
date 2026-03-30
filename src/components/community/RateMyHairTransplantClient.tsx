@@ -113,8 +113,12 @@ async function buildShareCardBlob(params: {
   });
 }
 
+const MAX_BEFORE = 3;
+const MAX_AFTER = 3;
+
 export default function RateMyHairTransplantClient() {
-  const [files, setFiles] = useState<File[]>([]);
+  const [beforeFiles, setBeforeFiles] = useState<File[]>([]);
+  const [afterFiles, setAfterFiles] = useState<File[]>([]);
   const [monthsSinceProcedure, setMonthsSinceProcedure] = useState<string>("");
   const [concernLevel, setConcernLevel] = useState<"low" | "medium" | "high">("low");
   const [allowCommunityShare, setAllowCommunityShare] = useState(false);
@@ -122,25 +126,30 @@ export default function RateMyHairTransplantClient() {
   const [error, setError] = useState<string>("");
   const [result, setResult] = useState<CommunityCase | null>(null);
 
-  const previews = useMemo(() => files.map((f) => URL.createObjectURL(f)), [files]);
+  const beforePreviews = useMemo(() => beforeFiles.map((f) => URL.createObjectURL(f)), [beforeFiles]);
+  const afterPreviews = useMemo(() => afterFiles.map((f) => URL.createObjectURL(f)), [afterFiles]);
 
   useEffect(() => {
     return () => {
-      previews.forEach((url) => URL.revokeObjectURL(url));
+      beforePreviews.forEach((url) => URL.revokeObjectURL(url));
+      afterPreviews.forEach((url) => URL.revokeObjectURL(url));
     };
-  }, [previews]);
+  }, [beforePreviews, afterPreviews]);
 
   async function submitCase() {
     setSubmitting(true);
     setError("");
     try {
-      if (!files.length) {
-        setError("Please upload at least one photo.");
+      if (!beforeFiles.length || !afterFiles.length) {
+        setError(
+          "Choose at least one before surgery photo and one after surgery / current photo—both are required for a before-and-after comparison."
+        );
         setSubmitting(false);
         return;
       }
 
-      const imageDataUrls = await Promise.all(files.slice(0, 6).map((file) => readFileAsDataUrl(file)));
+      const orderedFiles = [...beforeFiles, ...afterFiles];
+      const imageDataUrls = await Promise.all(orderedFiles.map((file) => readFileAsDataUrl(file)));
       const res = await fetch("/api/community-cases", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -187,49 +196,163 @@ export default function RateMyHairTransplantClient() {
     if (!result || !navigator.share) return;
     const shareUrl = `${window.location.origin}/case/${result.id}`;
     await navigator.share({
-      title: "My HairAudit Score",
-      text: `My HairAudit Score is ${result.overall_score}/100`,
+      title: "HairAudit: my outcome summary",
+      text: `HairAudit rapid before-and-after outcome summary: ${result.overall_score}/100`,
       url: shareUrl,
     });
   }
 
   return (
-    <section className="mt-10 rounded-2xl border border-white/10 bg-white/5 p-6">
-      <h2 className="text-2xl font-semibold text-white">Upload photos and get your score</h2>
-      <p className="mt-3 text-slate-300">
-        Upload clear photos (up to 6 images). HairAudit generates a simplified score summary.
+    <section className="mt-10 rounded-2xl border border-white/10 bg-white/5 p-6 min-w-0">
+      <h2 className="text-2xl font-semibold text-white text-balance">Upload: before, after, and timing</h2>
+      <p className="mt-3 text-slate-300 leading-relaxed text-pretty break-words">
+        This step compares how you looked <span className="text-slate-200">before surgery</span> with how
+        you look <span className="text-slate-200">after surgery or today</span>. Please add{" "}
+        <span className="text-slate-200">at least one before surgery photo</span>,{" "}
+        <span className="text-slate-200">at least one after surgery / current photo</span>, and{" "}
+        <span className="text-slate-200">approximately how long it has been since your procedure</span>{" "}
+        (recommended—see note below).
       </p>
 
-      <div className="mt-6 grid gap-4">
-        <label className="text-sm text-slate-200">
-          Photos
+      <div className="mt-6 grid gap-6">
+        <div className="rounded-xl border border-white/10 bg-slate-950/40 p-4 min-w-0">
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+            <label htmlFor="rmht-before-input" className="text-sm font-medium text-slate-100 cursor-pointer">
+              Before surgery photos
+            </label>
+            <span className="text-xs font-normal text-amber-200/90">Required</span>
+          </div>
+          <p id="rmht-before-help" className="mt-1 font-normal text-slate-400 text-xs leading-relaxed">
+            Photos taken <strong className="font-medium text-slate-300">before</strong> your transplant:
+            hairline, top, sides, or donor area—whatever shows your starting point. Similar angles to your
+            after surgery / current photos make the comparison easiest to read.
+          </p>
           <input
+            id="rmht-before-input"
             type="file"
             accept="image/*"
             multiple
-            className="mt-2 block w-full text-sm text-slate-300 file:mr-4 file:rounded-lg file:border-0 file:bg-slate-800 file:px-3 file:py-2 file:text-slate-100"
+            aria-describedby="rmht-before-help rmht-before-status"
+            aria-required
+            className="mt-2 block w-full min-w-0 max-w-full text-sm text-slate-300 file:mr-4 file:rounded-lg file:border-0 file:bg-slate-800 file:px-3 file:py-2 file:text-slate-100 file:max-w-[min(100%,12rem)] file:truncate"
             onChange={(e) => {
-              const chosen = Array.from(e.target.files ?? []).slice(0, 6);
-              setFiles(chosen);
+              const chosen = Array.from(e.target.files ?? []).slice(0, MAX_BEFORE);
+              setBeforeFiles(chosen);
             }}
           />
-        </label>
+          <p id="rmht-before-status" className="mt-2 text-xs text-slate-500 leading-relaxed" aria-live="polite">
+            {beforeFiles.length === 0
+              ? "No files added yet. Use the file picker above to add at least one before surgery photo."
+              : `${beforeFiles.length} before surgery ${beforeFiles.length === 1 ? "photo" : "photos"} selected (up to ${MAX_BEFORE}).`}
+          </p>
+          {beforeFiles.length > 0 ? (
+            <ul
+              className="mt-2 space-y-0.5 border-t border-white/5 pt-2 text-xs text-slate-500"
+              aria-label="Selected before surgery file names"
+            >
+              {beforeFiles.map((f, i) => (
+                <li key={`${f.name}-${i}`} className="min-w-0 truncate" title={f.name}>
+                  {f.name}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
 
-        <label className="text-sm text-slate-200">
-          Months since procedure (optional)
+        <div className="rounded-xl border border-white/10 bg-slate-950/40 p-4 min-w-0">
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+            <label htmlFor="rmht-after-input" className="text-sm font-medium text-slate-100 cursor-pointer">
+              After surgery / current photos
+            </label>
+            <span className="text-xs font-normal text-amber-200/90">Required</span>
+          </div>
+          <p id="rmht-after-help" className="mt-1 font-normal text-slate-400 text-xs leading-relaxed">
+            Recent photos with the <strong className="font-medium text-slate-300">same kinds of views</strong>{" "}
+            as your before surgery photos—how your hairline, density, and donor area look{" "}
+            <strong className="font-medium text-slate-300">now</strong>. These are compared directly to your
+            before surgery photos.
+          </p>
           <input
-            type="number"
-            min={0}
-            max={240}
-            value={monthsSinceProcedure}
-            onChange={(e) => setMonthsSinceProcedure(e.target.value)}
-            className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100"
+            id="rmht-after-input"
+            type="file"
+            accept="image/*"
+            multiple
+            aria-describedby="rmht-after-help rmht-after-status"
+            aria-required
+            className="mt-2 block w-full min-w-0 max-w-full text-sm text-slate-300 file:mr-4 file:rounded-lg file:border-0 file:bg-slate-800 file:px-3 file:py-2 file:text-slate-100 file:max-w-[min(100%,12rem)] file:truncate"
+            onChange={(e) => {
+              const chosen = Array.from(e.target.files ?? []).slice(0, MAX_AFTER);
+              setAfterFiles(chosen);
+            }}
           />
-        </label>
+          <p id="rmht-after-status" className="mt-2 text-xs text-slate-500 leading-relaxed" aria-live="polite">
+            {afterFiles.length === 0
+              ? "No files added yet. Add at least one after surgery / current photo so we can compare to your before surgery photos."
+              : `${afterFiles.length} after surgery / current ${afterFiles.length === 1 ? "photo" : "photos"} selected (up to ${MAX_AFTER}).`}
+          </p>
+          {afterFiles.length > 0 ? (
+            <ul
+              className="mt-2 space-y-0.5 border-t border-white/5 pt-2 text-xs text-slate-500"
+              aria-label="Selected after surgery / current file names"
+            >
+              {afterFiles.map((f, i) => (
+                <li key={`${f.name}-${i}`} className="min-w-0 truncate" title={f.name}>
+                  {f.name}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
 
-        <label className="text-sm text-slate-200">
-          Current concern level
+        <div className="rounded-xl border border-white/10 bg-slate-950/40 p-4 space-y-3">
+          <p
+            id="rmht-timing-note"
+            className="text-xs text-slate-300 leading-relaxed border-l-2 border-amber-400/50 pl-3 text-pretty break-words"
+          >
+            <span className="font-medium text-slate-200">Why timing matters:</span> transplant results change
+            month by month. Approximate time since surgery helps place your after surgery / current photos in
+            the right context—so expectations stay fair and the read stays sensible.
+          </p>
+          <div>
+            <label htmlFor="rmht-months-input" className="text-sm font-medium text-slate-100 block cursor-pointer">
+              Approximate time since surgery
+            </label>
+            <p id="rmht-months-help" className="mt-1 text-xs text-slate-400 leading-relaxed">
+              Optional but recommended. Enter whole months since your procedure; a rough estimate is fine.
+            </p>
+            <input
+              id="rmht-months-input"
+              type="number"
+              min={0}
+              max={240}
+              placeholder="Number of months (e.g. 9)"
+              value={monthsSinceProcedure}
+              onChange={(e) => setMonthsSinceProcedure(e.target.value)}
+              aria-describedby={
+                monthsSinceProcedure
+                  ? "rmht-timing-note rmht-months-help"
+                  : "rmht-timing-note rmht-months-help rmht-months-status"
+              }
+              className="mt-2 w-full min-w-0 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100 placeholder:text-slate-600"
+            />
+            {monthsSinceProcedure === "" ? (
+              <p id="rmht-months-status" className="mt-2 text-xs text-slate-500">
+                No value added yet—optional; adding months improves context for your summary.
+              </p>
+            ) : null}
+          </div>
+        </div>
+
+        <div>
+          <label htmlFor="rmht-concern-select" className="text-sm font-medium text-slate-100 cursor-pointer">
+            How you&apos;re feeling about the result
+          </label>
+          <p id="rmht-concern-help" className="mt-1 text-xs text-slate-400 leading-relaxed">
+            Optional. Helps calibrate tone for your summary; not a medical assessment.
+          </p>
           <select
+            id="rmht-concern-select"
+            aria-describedby="rmht-concern-help"
             value={concernLevel}
             onChange={(e) => setConcernLevel(e.target.value as "low" | "medium" | "high")}
             className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100"
@@ -238,53 +361,123 @@ export default function RateMyHairTransplantClient() {
             <option value="medium">Medium concern</option>
             <option value="high">High concern</option>
           </select>
-        </label>
+        </div>
 
-        <label className="inline-flex items-start gap-3 text-sm text-slate-200">
+        <label htmlFor="rmht-gallery-share" className="inline-flex items-start gap-3 text-sm text-slate-200 cursor-pointer">
           <input
+            id="rmht-gallery-share"
             type="checkbox"
             checked={allowCommunityShare}
             onChange={(e) => setAllowCommunityShare(e.target.checked)}
-            className="mt-1"
+            className="mt-1 shrink-0"
           />
-          <span>
-            Allow my case to be shared anonymously in the HairAudit community gallery.
+          <span className="text-pretty break-words">
+            Allow this summary to appear anonymously in the HairAudit community gallery.
           </span>
         </label>
       </div>
 
-      {previews.length > 0 && (
-        <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {previews.map((src, i) => (
-            <img
-              key={`${src}-${i}`}
-              src={src}
-              alt=""
-              width={224}
-              height={112}
-              className="h-28 w-full rounded-xl object-cover border border-white/10"
-            />
-          ))}
+      {(beforePreviews.length > 0 || afterPreviews.length > 0) && (
+        <div className="mt-6 space-y-5">
+          {beforePreviews.length > 0 ? (
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                Before surgery photos (preview)
+              </p>
+              <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {beforePreviews.map((src, i) => (
+                  <img
+                    key={`b-${src}-${i}`}
+                    src={src}
+                    alt={`Selected before surgery photo preview ${i + 1} of ${beforePreviews.length}`}
+                    width={224}
+                    height={112}
+                    className="h-28 w-full rounded-xl object-cover border border-white/10"
+                  />
+                ))}
+              </div>
+            </div>
+          ) : null}
+          {afterPreviews.length > 0 ? (
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                After surgery / current photos (preview)
+              </p>
+              <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {afterPreviews.map((src, i) => (
+                  <img
+                    key={`a-${src}-${i}`}
+                    src={src}
+                    alt={`Selected after surgery or current photo preview ${i + 1} of ${afterPreviews.length}`}
+                    width={224}
+                    height={112}
+                    className="h-28 w-full rounded-xl object-cover border border-white/10"
+                  />
+                ))}
+              </div>
+            </div>
+          ) : null}
         </div>
       )}
 
-      <div className="mt-6">
+      <div className="mt-6 min-w-0">
         <button
           type="button"
           disabled={submitting}
           onClick={submitCase}
-          className="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors disabled:opacity-60"
+          className="inline-flex w-full sm:w-auto max-w-full items-center justify-center px-4 sm:px-6 py-3 rounded-2xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors disabled:opacity-60 text-center text-sm sm:text-base leading-snug sm:leading-normal focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900/50"
         >
-          {submitting ? "Generating score..." : "Get Your Hair Transplant Score"}
+          {submitting ? (
+            <>
+              <span className="sm:hidden">Generating…</span>
+              <span className="hidden sm:inline">Generating your outcome summary…</span>
+            </>
+          ) : (
+            <>
+              <span className="sm:hidden">Get outcome summary</span>
+              <span className="hidden sm:inline">Get rapid before-and-after outcome summary</span>
+            </>
+          )}
         </button>
+        <p className="mt-3 max-w-xl text-xs text-slate-400 leading-relaxed text-pretty break-words">
+          Both required photo sections above need at least one file. When you continue, we build your summary
+          in a few moments—no extra upload steps.
+        </p>
+        <p className="mt-2 max-w-xl text-xs text-slate-500 leading-relaxed text-pretty break-words">
+          For step-by-step intake, deeper review, and a shareable score suited to formal use, use{" "}
+          <Link
+            href="/request-review"
+            className="text-amber-200/90 hover:text-amber-100 underline-offset-2 hover:underline rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
+          >
+            Request a formal HairAudit quality review
+          </Link>
+          .
+        </p>
       </div>
 
-      {error && <p className="mt-4 text-sm text-rose-300">{error}</p>}
+      {error ? (
+        <p className="mt-4 text-sm text-rose-300 text-pretty break-words" role="alert">
+          {error}
+        </p>
+      ) : null}
 
       {result && (
         <div className="mt-8 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 p-5">
-          <h3 className="text-xl font-semibold text-emerald-100">Your simplified score summary</h3>
-          <p className="mt-3 text-emerald-50/90">{result.summary}</p>
+          <h3 className="text-xl font-semibold text-emerald-100 text-balance">
+            Your rapid before-and-after outcome summary
+          </h3>
+          <p className="mt-3 text-emerald-50/90 text-pretty break-words">{result.summary}</p>
+          <p className="mt-3 text-xs text-emerald-50/75 leading-relaxed text-pretty break-words">
+            Built for speed—not the full structured HairAudit quality pathway. When you want complete intake, a
+            thorough review, and a shareable score for serious conversations, use{" "}
+            <Link
+              href="/request-review"
+              className="text-emerald-200 underline-offset-2 hover:underline rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-200"
+            >
+              Request a formal HairAudit quality review
+            </Link>
+            .
+          </p>
 
           <div className="mt-5 grid sm:grid-cols-2 gap-4 text-sm text-emerald-50/95">
             <p>- Hairline Design: {result.hairline_design_score}</p>
@@ -329,8 +522,9 @@ export default function RateMyHairTransplantClient() {
             ) : null}
           </div>
 
-          <p className="mt-4 text-xs text-emerald-50/80">
-            Share safely: remove identifying details before posting screenshots or images.
+          <p className="mt-4 text-xs text-emerald-50/80 text-pretty break-words">
+            Share safely: crop or hide identifying details before posting screenshots or before-and-after
+            photos.
           </p>
         </div>
       )}
