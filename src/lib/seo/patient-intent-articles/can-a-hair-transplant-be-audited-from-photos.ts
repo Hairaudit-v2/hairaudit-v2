@@ -102,7 +102,7 @@ export const canAHairTransplantBeAuditedFromPhotosArticle: PatientIntentArticle 
         },
         {
           type: "p",
-          text: "This gives the reviewer a much better chance of assessing visible patterns responsibly. Process questions are covered in our [FAQ](/faq).",
+          text: "This gives the reviewer a much better chance of assessing visible patterns responsibly. Process questions are covered in our [FAQ](/faq). For organising dates, angles, and files, see [how to document a hair transplant problem properly](/how-to-document-a-hair-transplant-problem-properly).",
         },
       ],
     },
@@ -110,5 +110,10 @@ export const canAHairTransplantBeAuditedFromPhotosArticle: PatientIntentArticle 
   faqs: [],
   ctaLead: "Want to know what your photos can actually show?",
   ctaSupporting: "Submit your case for an independent HairAudit review.",
-  relatedSlugs: ["what-photos-are-needed-for-a-proper-hair-transplant-review", "when-is-a-hair-transplant-final"],
+  relatedSlugs: [
+    "what-photos-are-needed-for-a-proper-hair-transplant-review",
+    "how-to-document-a-hair-transplant-problem-properly",
+    "when-should-you-seek-an-independent-hair-transplant-review",
+    "when-is-a-hair-transplant-final",
+  ],
 };

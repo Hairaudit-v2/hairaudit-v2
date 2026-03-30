@@ -1,124 +1,170 @@
 import type { PatientIntentArticle } from "./types";
 
-/**
- * Supports internal links from Batch 1 pack; body consolidates photo guidance
- * repeated across those pages (donor set, timeline, quality, upload list).
- */
 export const whatPhotosAreNeededArticle: PatientIntentArticle = {
   slug: "what-photos-are-needed-for-a-proper-hair-transplant-review",
   pathname: "/what-photos-are-needed-for-a-proper-hair-transplant-review",
   seoTitle: "What Photos Are Needed for a Proper Hair Transplant Review? | HairAudit",
   metaDescription:
-    "Checklist of donor, recipient, and timeline photos that help an independent HairAudit review—plus lighting, angles, and what weak evidence looks like.",
+    "What photos are needed for a proper hair transplant review? Learn which angles, timelines, and image types help support a stronger independent assessment.",
   h1: "What Photos Are Needed for a Proper Hair Transplant Review?",
   intro:
-    "Independent review depends on what you can show. A structured photo set—donor and recipient, multiple dates, and consistent angles—usually supports much clearer conclusions than a single snapshot. This page pulls together the photo guidance referenced across our patient guides so you know what to gather before you submit.",
+    "A good review depends on good evidence. Many patients want to know whether their photos are enough to assess donor appearance, recipient patterning, growth, density, or hairline concerns. In most cases, the answer is not about one “perfect” photo, but about having the right set of photos across the right angles and time points. This page explains what helps create a stronger independent review and why incomplete photo sets can limit confidence.",
   sections: [
     {
-      id: "why-timeline",
-      heading: "Why timelines matter more than one photo",
+      id: "why-quality",
+      heading: "Why photo quality matters",
       blocks: [
         {
           type: "p",
-          text: "Comparing stages over time usually gives a clearer picture than judging from one isolated moment. Early donor appearance can be misleading; the same is true for recipient density while shedding and regrowth are still unfolding.",
+          text: "A responsible review can only assess what is visible. Lighting, angle, distance, hair length, dryness or wetness, and image sharpness all affect what can be interpreted. Poor-quality or inconsistent photos can make density, donor thinning, or hairline design look better or worse than they really are.",
         },
         {
           type: "p",
-          text: "If you are unsure whether it is too early to judge growth, read [when is a hair transplant result final](/when-is-a-hair-transplant-final). For shedding versus poor survival, see [shock loss vs graft failure](/shock-loss-vs-graft-failure).",
+          text: "This does not mean every patient needs professional photography. It means a structured and consistent photo set is usually more useful than a random collection of images taken under different conditions.",
         },
       ],
     },
     {
       id: "donor-photos",
-      heading: "Donor area: views that help most",
+      heading: "The most useful donor photos",
       blocks: [
         {
           type: "p",
-          text: "To assess donor concerns properly, the most helpful photo set usually includes:",
+          text: "Donor assessment is stronger when patients provide:",
         },
         {
           type: "ul",
           items: [
-            "rear donor photos in even lighting",
-            "left and right donor views",
-            "photos at more than one hair length if available",
-            "close-up donor images where thinning is most visible",
-            "time-based follow-up images rather than one isolated photo",
+            "rear donor view",
+            "left donor side",
+            "right donor side",
+            "close-up donor images where concerns are strongest",
+            "repeat donor photos over time if the issue is long-term thinning or patchiness",
           ],
         },
         {
           type: "p",
-          text: "For what those patterns may mean, see [overharvested donor area: what to look for](/overharvested-donor-area).",
+          text: "When donor concerns are involved, hair length matters too. A donor may look different at a short cut compared with a longer style.",
         },
       ],
     },
     {
-      id: "recipient-timeline",
-      heading: "Recipient area: a useful follow-up sequence",
+      id: "recipient-photos",
+      heading: "The most useful recipient photos",
       blocks: [
         {
           type: "p",
-          text: "When the question is whether growth looks on track or unusually weak, a practical timeline often includes:",
+          text: "For recipient assessment, the strongest set usually includes:",
         },
         {
           type: "ul",
           items: [
-            "pre-operative photos",
-            "day 0 recipient photos",
-            "early healing photos",
-            "3-month follow-up",
-            "6-month follow-up",
-            "12-month follow-up where available",
+            "straight frontal view",
+            "left and right oblique views",
+            "side profile views",
+            "top-down view where possible",
+            "close-up images of the most concerning zone",
           ],
         },
-      ],
-    },
-    {
-      id: "quality",
-      heading: "Lighting, angle, and quality",
-      blocks: [
         {
           type: "p",
-          text: "Not all photos are equally useful. Lighting, distance, angle, hair length, dryness or wetness, and image sharpness all affect what can be interpreted. Poor-quality photos can create false reassurance or false concern.",
-        },
-        {
-          type: "p",
-          text: "Consistent lighting matters. Harsh shadows, wet hair, or inconsistent angles can make donor or recipient density look worse or better than it really is. Consistent angles and timeline-based documentation are especially valuable.",
+          text: "This helps assess density balance, design, transition zones, and visible patterning more responsibly.",
         },
       ],
     },
     {
-      id: "strongest-set",
-      heading: "The strongest combined set for review",
+      id: "timeline",
+      heading: "Why timeline matters",
       blocks: [
         {
           type: "p",
-          text: "The strongest review usually comes from evidence that includes:",
+          text: "A review is much stronger when it includes more than one timepoint. Useful stages may include:",
         },
         {
           type: "ul",
           items: [
-            "pre-operative views",
+            "pre-operative",
+            "day 0 recipient",
+            "early healing",
+            "3 months",
+            "6 months",
+            "12 months or later where available",
+          ],
+        },
+        {
+          type: "p",
+          text: "Different concerns become more assessable at different stages. Day 0 helps with pattern/design interpretation. Later follow-up helps with growth and cosmetic outcome.",
+        },
+      ],
+    },
+    {
+      id: "day-zero",
+      heading: "What day 0 photos can be especially useful for",
+      blocks: [
+        {
+          type: "p",
+          text: "Day 0 images can be extremely valuable for assessing recipient site distribution, spacing patterns, hairline design, and visible implantation logic. They cannot predict final growth on their own, but they can show whether the visible surgical pattern appears coherent, mixed, or concerning.",
+        },
+      ],
+    },
+    {
+      id: "common-mistakes",
+      heading: "Common photo mistakes",
+      blocks: [
+        {
+          type: "p",
+          text: "Common issues that weaken assessment include:",
+        },
+        {
+          type: "ul",
+          items: [
+            "dark lighting",
+            "wet hair without comparison dry views",
+            "only one angle",
+            "blurred close-ups",
+            "no donor photos",
+            "no timeline progression",
+            "inconsistent styling across follow-up images",
+          ],
+        },
+        {
+          type: "p",
+          text: "These do not make review impossible, but they may reduce confidence.",
+        },
+      ],
+    },
+    {
+      id: "strongest-upload",
+      heading: "What to upload if you want the strongest review",
+      blocks: [
+        {
+          type: "p",
+          text: "The strongest submission usually includes:",
+        },
+        {
+          type: "ul",
+          items: [
+            "pre-op photos",
             "donor rear and side views",
             "day 0 recipient photos",
-            "follow-up photos at meaningful intervals",
-            "close-up or macro images where available",
+            "follow-up timeline photos",
+            "close-ups of the main concern",
+            "operative details if available",
           ],
         },
         {
           type: "p",
-          text: "Patients usually get the strongest review when they also submit clear donor photos, clear recipient photos, timeline images, any day 0 evidence, and operative details if available. The more complete the evidence, the more confidently interpretation can be explained—always within the limits described in [can a hair transplant be audited from photos](/can-a-hair-transplant-be-audited-from-photos).",
+          text: "For how to organise evidence over time, read [how to document a hair transplant problem properly](/how-to-document-a-hair-transplant-problem-properly). Limits of photo-only review are explained in [can a hair transplant be audited from photos](/can-a-hair-transplant-be-audited-from-photos). You can [request a review](/request-review), preview a [sample report](/sample-report), or read the [FAQ](/faq).",
         },
       ],
     },
   ],
   faqs: [],
-  ctaLead: "Ready to submit your photo set?",
-  ctaSupporting:
-    "Request an independent HairAudit review, or preview how findings are written in a sample report first.",
+  ctaLead: "Want to submit the strongest possible case?",
+  ctaSupporting: "Use this guide, then request an independent HairAudit review.",
   relatedSlugs: [
+    "how-to-document-a-hair-transplant-problem-properly",
     "can-a-hair-transplant-be-audited-from-photos",
-    "overharvested-donor-area",
-    "shock-loss-vs-graft-failure",
+    "when-should-you-seek-an-independent-hair-transplant-review",
   ],
 };
