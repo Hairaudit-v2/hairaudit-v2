@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { trackCta } from "@/lib/analytics/trackCta";
+import { stashPendingAuthCtaContext } from "@/lib/analytics/authAttribution";
 
 type TrackedLinkProps = {
   href: string;
@@ -25,7 +26,10 @@ export default function TrackedLink({
       prefetch={prefetch}
       className={className}
       onClick={() => {
-        if (eventName) trackCta(eventName, { href });
+        if (eventName) {
+          trackCta(eventName, { href });
+          stashPendingAuthCtaContext(eventName, href);
+        }
       }}
     >
       {children}

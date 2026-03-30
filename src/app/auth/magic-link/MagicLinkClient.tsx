@@ -1,22 +1,43 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { trackAuthFunnel } from "@/lib/analytics/authFunnel";
 
 export default function MagicLinkClient() {
   const { t } = useI18n();
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const [msg, setMsg] = useState(() => t("auth.magicLink.signingIn"));
+  const pathCtx = useRef<{ pathname: string; search: string } | null>(null);
 
   useEffect(() => {
     let mounted = true;
+    const pathname = window.location.pathname;
+    const search = window.location.search;
+    pathCtx.current = { pathname, search };
+    trackAuthFunnel(
+      "auth_callback_view",
+      { auth_exchange: "hash_fragment", auth_surface: "magic_link" },
+      { pathname, search }
+    );
 
     async function completeMagicLink() {
+      const ctx = pathCtx.current ?? { pathname, search };
       const existing = await supabase.auth.getSession();
       if (existing.data.session) {
+        trackAuthFunnel(
+          "auth_session_success",
+          { auth_exchange: "existing_session", auth_surface: "magic_link" },
+          ctx
+        );
+        trackAuthFunnel(
+          "auth_dashboard_redirect_success",
+          { auth_target: "/dashboard", auth_surface: "magic_link" },
+          ctx
+        );
         // /dashboard redirects to role-specific dashboard (clinic/doctor/auditor/patient)
         window.location.replace("/dashboard");
         return;
@@ -35,6 +56,16 @@ export default function MagicLinkClient() {
           refresh_token: refreshToken,
         });
         if (!error) {
+          trackAuthFunnel(
+            "auth_session_success",
+            { auth_exchange: "hash_fragment", auth_surface: "magic_link" },
+            ctx
+          );
+          trackAuthFunnel(
+            "auth_dashboard_redirect_success",
+            { auth_target: "/dashboard", auth_surface: "magic_link" },
+            ctx
+          );
           // /dashboard applies role-based redirect (clinic/doctor/auditor/patient)
           window.location.replace("/dashboard");
           return;
@@ -42,6 +73,11 @@ export default function MagicLinkClient() {
       }
 
       if (mounted) {
+        trackAuthFunnel(
+          "auth_session_failed",
+          { auth_reason: "invalid_or_expired_magic_link", auth_surface: "magic_link" },
+          ctx
+        );
         setMsg(t("auth.magicLink.invalidOrExpired"));
       }
     }

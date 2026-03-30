@@ -74,6 +74,12 @@ export async function GET(request: Request) {
         error,
       });
     }
+
+    const handoff = crypto.randomUUID();
+    const post = new URL("/auth/post-callback", origin);
+    post.searchParams.set("next", redirectPath);
+    post.searchParams.set("handoff", handoff);
+    return NextResponse.redirect(post.toString());
   }
 
   return NextResponse.redirect(`${origin}${redirectPath}`);

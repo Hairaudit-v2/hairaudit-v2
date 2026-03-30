@@ -1,5 +1,6 @@
 import "./globals.css";
 import ClientAnalytics from "@/components/analytics/ClientAnalytics";
+import AuthAttributionRecorder from "@/components/analytics/AuthAttributionRecorder";
 import { logAuthEnvHealthOnce } from "@/lib/auth/validateAuthEnv";
 import RecoveryHashRouter from "@/components/RecoveryHashRouter";
 import MainContentTarget from "@/components/a11y/MainContentTarget";
@@ -8,6 +9,7 @@ import { I18nProvider } from "@/components/i18n/I18nProvider";
 import I18nHtmlLang from "@/components/i18n/I18nHtmlLang";
 import SkipLinkI18n from "@/components/i18n/SkipLinkI18n";
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { SITE_URL } from "@/lib/constants";
 
 const metadataBaseUrl =
@@ -59,6 +61,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <BetaBanner />
           <MainContentTarget />
           <RecoveryHashRouter />
+          <Suspense fallback={null}>
+            <AuthAttributionRecorder />
+          </Suspense>
           {children}
           <ClientAnalytics />
         </I18nProvider>

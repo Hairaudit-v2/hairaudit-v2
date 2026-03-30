@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import SiteHeader from "@/components/SiteHeader";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { getCanonicalAppUrl } from "@/lib/auth/redirects";
+import { trackAuthFunnel } from "@/lib/analytics/authFunnel";
 
 export default function LoginPage() {
   const { t } = useI18n();
@@ -22,6 +23,31 @@ export default function LoginPage() {
   // Magic-link emails may return an auth `code` (not only hash tokens). Always route
   // through /auth/callback so the server exchanges the code for a session.
   const magicLinkRedirectTo = `${appUrl}/auth/callback`;
+  const funnelPageTracked = useRef(false);
+
+  useEffect(() => {
+    if (funnelPageTracked.current) return;
+    funnelPageTracked.current = true;
+    const path = window.location.pathname;
+    const search = window.location.search;
+    trackAuthFunnel("auth_page_view", { auth_surface: "login" }, { pathname: path, search });
+
+    const err = new URLSearchParams(search.startsWith("?") ? search.slice(1) : search).get("error");
+    if (err === "auth_callback_failed") {
+      const dedupeKey = `hairaudit:auth_cb_fail:${search}`;
+      try {
+        if (sessionStorage.getItem(dedupeKey)) return;
+        sessionStorage.setItem(dedupeKey, "1");
+      } catch {
+        /* ignore */
+      }
+      trackAuthFunnel(
+        "auth_session_failed",
+        { auth_reason: "auth_callback_exchange_failed", auth_surface: "login" },
+        { pathname: path, search }
+      );
+    }
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -36,6 +62,13 @@ export default function LoginPage() {
 
   async function signInWithProvider(provider: "google") {
     setMsg(null);
+    const path = window.location.pathname;
+    const search = window.location.search;
+    trackAuthFunnel(
+      "auth_email_submit",
+      { auth_method: `oauth_${provider}`, auth_surface: "login" },
+      { pathname: path, search }
+    );
     setBusyProvider(provider);
 
     const { error } = await supabase.auth.signInWithOAuth({
@@ -60,6 +93,18 @@ export default function LoginPage() {
     if (error) {
       setMsg(`❌ ${error.message}`);
     } else {
+      const path = window.location.pathname;
+      const search = window.location.search;
+      trackAuthFunnel(
+        "auth_session_success",
+        { auth_method: "password", auth_surface: "login" },
+        { pathname: path, search }
+      );
+      trackAuthFunnel(
+        "auth_dashboard_redirect_success",
+        { auth_target: "/dashboard", auth_surface: "login" },
+        { pathname: path, search }
+      );
       window.location.href = "/dashboard";
     }
     setBusyProvider(null);
@@ -71,6 +116,9 @@ export default function LoginPage() {
       setMsg(t("auth.login.enterEmailMagicLink"));
       return;
     }
+    const path = window.location.pathname;
+    const search = window.location.search;
+    trackAuthFunnel("auth_email_submit", { auth_method: "magic_link", auth_surface: "login" }, { pathname: path, search });
     setBusyProvider("email");
 
     const { error } = await supabase.auth.signInWithOtp({
@@ -79,8 +127,14 @@ export default function LoginPage() {
     });
 
     if (error) {
+      trackAuthFunnel(
+        "auth_magic_link_send_failed",
+        { auth_surface: "login", auth_error_code: (error as { code?: string }).code },
+        { pathname: path, search }
+      );
       setMsg(`❌ ${error.message}`);
     } else {
+      trackAuthFunnel("auth_magic_link_sent", { auth_surface: "login" }, { pathname: path, search });
       setMsg(t("auth.login.magicLinkSent"));
     }
     setBusyProvider(null);

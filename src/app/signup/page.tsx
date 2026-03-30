@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -8,6 +8,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import SiteHeader from "@/components/SiteHeader";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { getCanonicalAppUrl, dashboardPathForRole } from "@/lib/auth/redirects";
+import { trackAuthFunnel } from "@/lib/analytics/authFunnel";
 
 type SignupRole = "patient" | "doctor" | "clinic";
 
@@ -23,6 +24,16 @@ function SignUpForm({ initialRole = "patient" }: { initialRole?: SignupRole }) {
   const [busy, setBusy] = useState(false);
   const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
   const [resending, setResending] = useState<null | "confirm" | "magic">(null);
+
+  useEffect(() => {
+    const path = window.location.pathname;
+    const search = window.location.search;
+    trackAuthFunnel(
+      "auth_page_view",
+      { auth_surface: "signup", auth_signup_role: signupRole },
+      { pathname: path, search }
+    );
+  }, [signupRole]);
 
   async function signUp(e: React.FormEvent) {
     e.preventDefault();
@@ -101,6 +112,20 @@ function SignUpForm({ initialRole = "patient" }: { initialRole?: SignupRole }) {
       console.warn("[signup] profile upsert request after signup threw", { error: profileErr });
     }
 
+    {
+      const path = window.location.pathname;
+      const search = window.location.search;
+      trackAuthFunnel(
+        "auth_session_success",
+        { auth_method: "password_signup", auth_surface: "signup", auth_signup_role: signupRole },
+        { pathname: path, search }
+      );
+      trackAuthFunnel(
+        "auth_dashboard_redirect_success",
+        { auth_target: "/dashboard", auth_surface: "signup", auth_signup_role: signupRole },
+        { pathname: path, search }
+      );
+    }
     router.push("/dashboard");
     router.refresh();
     setAwaitingConfirmation(false);
@@ -143,6 +168,13 @@ function SignUpForm({ initialRole = "patient" }: { initialRole?: SignupRole }) {
       setMsg(t("auth.signup.enterEmailMagic"));
       return;
     }
+    const path = window.location.pathname;
+    const search = window.location.search;
+    trackAuthFunnel(
+      "auth_email_submit",
+      { auth_method: "magic_link", auth_surface: "signup", auth_signup_role: signupRole },
+      { pathname: path, search }
+    );
     setResending("magic");
     setMsg(null);
     try {
@@ -155,9 +187,19 @@ function SignUpForm({ initialRole = "patient" }: { initialRole?: SignupRole }) {
         options: { emailRedirectTo },
       });
       if (error) throw error;
+      trackAuthFunnel(
+        "auth_magic_link_sent",
+        { auth_surface: "signup", auth_signup_role: signupRole },
+        { pathname: path, search }
+      );
       setMsgKind("success");
       setMsg(t("auth.signup.magicSent"));
     } catch (error: unknown) {
+      trackAuthFunnel(
+        "auth_magic_link_send_failed",
+        { auth_surface: "signup", auth_signup_role: signupRole },
+        { pathname: path, search }
+      );
       setMsgKind("error");
       setMsg(`❌ ${(error as Error)?.message ?? t("auth.signup.magicFailed")}`);
     } finally {
