@@ -3,16 +3,16 @@ import type { PatientIntentArticle } from "./types";
 export const whatPhotosAreNeededArticle: PatientIntentArticle = {
   slug: "what-photos-are-needed-for-a-proper-hair-transplant-review",
   pathname: "/what-photos-are-needed-for-a-proper-hair-transplant-review",
-  seoTitle: "What Photos Are Needed for a Proper Hair Transplant Review? | HairAudit",
+  seoTitle: "Hair Transplant Review Photo Checklist: Angles & Timeline | HairAudit",
   metaDescription:
-    "What photos are needed for a proper hair transplant review? Learn which angles, timelines, and image types help support a stronger independent assessment.",
+    "Practical checklist: donor and recipient angles, day 0 captures, follow-up months, and common mistakes—so your submission matches what independent reviewers can use.",
   h1: "What Photos Are Needed for a Proper Hair Transplant Review?",
   intro:
-    "A good review depends on good evidence. Many patients want to know whether their photos are enough to assess donor appearance, recipient patterning, growth, density, or hairline concerns. In most cases, the answer is not about one “perfect” photo, but about having the right set of photos across the right angles and time points. This page explains what helps create a stronger independent review and why incomplete photo sets can limit confidence.",
+    "This is the practical shot-and-timeline checklist for building a submission reviewers can actually use. For the separate question of what conclusions are fair from pictures in principle—and what no audit should claim without an exam—read [can a hair transplant be audited from photos](/can-a-hair-transplant-be-audited-from-photos). For naming files, dating folders, and keeping lighting consistent over months, read [how to document a hair transplant problem properly](/how-to-document-a-hair-transplant-problem-properly). Most strong reviews are built from the right set across angles and dates, not one perfect selfie.",
   sections: [
     {
       id: "why-quality",
-      heading: "Why photo quality matters",
+      heading: "Why reviewers need comparable, repeatable images",
       blocks: [
         {
           type: "p",
@@ -135,7 +135,7 @@ export const whatPhotosAreNeededArticle: PatientIntentArticle = {
     },
     {
       id: "strongest-upload",
-      heading: "What to upload if you want the strongest review",
+      heading: "Submission checklist: what to upload",
       blocks: [
         {
           type: "p",

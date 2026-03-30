@@ -3,16 +3,16 @@ import type { PatientIntentArticle } from "./types";
 export const whenShouldYouSeekAnIndependentHairTransplantReviewArticle: PatientIntentArticle = {
   slug: "when-should-you-seek-an-independent-hair-transplant-review",
   pathname: "/when-should-you-seek-an-independent-hair-transplant-review",
-  seoTitle: "When Should You Seek an Independent Hair Transplant Review? | HairAudit",
+  seoTitle: "When to Seek an Independent Hair Transplant Review: Decision Guide | HairAudit",
   metaDescription:
-    "Not sure whether to seek a second opinion on your hair transplant? Learn when an independent review may help, and what questions it can clarify.",
+    "Decision guide: mixed clinic advice, corrective surgery planning, donor or design worries that will not settle—when structured independent review is worth it and what it clarifies.",
   h1: "When Should You Seek an Independent Hair Transplant Review?",
   intro:
-    "Not every worry after surgery needs an urgent formal review. But not every concern should be brushed aside either. Patients often seek independent review when they are unsure whether what they are seeing is normal, when they are receiving conflicting opinions, or when they want a clearer interpretation of the visible evidence before making further decisions.",
+    "This page is for choosing when to move from education into a formal, structured assessment—not for listing every possible warning sign or explaining recovery week by week. If you are still framing “is this normal?”, start with [is my hair transplant normal?](/is-my-hair-transplant-normal); if you want a pattern checklist, read [bad hair transplant: signs patients often miss](/bad-hair-transplant-signs). Here the focus is decision triggers: conflicting guidance, persistent mismatch between advice and your photos, donor or growth concerns that stay unexplained, and planning another procedure.",
   sections: [
     {
       id: "uncertainty",
-      heading: "When uncertainty is the main problem",
+      heading: "When you cannot sort worry into a clear category",
       blocks: [
         {
           type: "p",
@@ -130,7 +130,7 @@ export const whenShouldYouSeekAnIndependentHairTransplantReviewArticle: PatientI
         },
         {
           type: "p",
-          text: "Photo preparation: [what photos are needed for a proper hair transplant review](/what-photos-are-needed-for-a-proper-hair-transplant-review), [how to document a hair transplant problem properly](/how-to-document-a-hair-transplant-problem-properly). Wider sign patterns: [bad hair transplant: signs patients often miss](/bad-hair-transplant-signs). Scope of photos: [can a hair transplant be audited from photos](/can-a-hair-transplant-be-audited-from-photos). [Request an independent HairAudit review](/request-review) or [preview a sample HairAudit report](/sample-report).",
+          text: "Evidence prep: [what photos are needed for a proper hair transplant review](/what-photos-are-needed-for-a-proper-hair-transplant-review) (shot list) and [how to document a hair transplant problem properly](/how-to-document-a-hair-transplant-problem-properly) (timeline and files). Photo scope and honesty: [can a hair transplant be audited from photos](/can-a-hair-transplant-be-audited-from-photos). [Request an independent HairAudit review](/request-review) or [preview a sample HairAudit report](/sample-report).",
         },
       ],
     },
@@ -140,9 +140,9 @@ export const whenShouldYouSeekAnIndependentHairTransplantReviewArticle: PatientI
   ctaSupporting:
     "Request an independent HairAudit review and get a structured assessment of the visible evidence.",
   relatedSlugs: [
-    "can-a-hair-transplant-be-audited-from-photos",
-    "when-is-a-hair-transplant-final",
+    "is-my-hair-transplant-normal",
     "bad-hair-transplant-signs",
+    "what-photos-are-needed-for-a-proper-hair-transplant-review",
     "how-to-document-a-hair-transplant-problem-properly",
   ],
 };

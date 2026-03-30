@@ -3,12 +3,12 @@ import type { PatientIntentArticle } from "./types";
 export const isMyHairTransplantNormalArticle: PatientIntentArticle = {
   slug: "is-my-hair-transplant-normal",
   pathname: "/is-my-hair-transplant-normal",
-  seoTitle: "Is My Hair Transplant Normal? | HairAudit",
+  seoTitle: "Is My Hair Transplant Normal? Recovery Timeline & Phases | HairAudit",
   metaDescription:
-    "Worried your hair transplant does not look right? Learn what may still be normal, what can look worse before it looks better, and when review may help.",
+    "Recovery-phase guide: what often looks alarming but fits a typical timeline, when “normal” still is not your ideal outcome, and when to escalate.",
   h1: "Is My Hair Transplant Normal?",
   intro:
-    "One of the most common questions after surgery is also one of the hardest to answer in one sentence: is this normal? The reason patients ask it so often is because hair transplant recovery can be visually confusing. A result may look worse before it looks better, weak before it looks fuller, or strange before it settles into a more natural pattern. This page explains what may still be normal, what deserves closer attention, and when an independent review may help.",
+    "This page is about whether what you are seeing fits a typical recovery trajectory—shedding, regrowth speed, temporary asymmetry, and late maturation—not a catalogue of design flaws. For a structured list of visible warning patterns (hairline edge, donor patchiness, density imbalance), read [bad hair transplant: signs patients often miss](/bad-hair-transplant-signs). Here the focus is timing: what can still be normal at each stage, what may justify closer concern as months pass, and when structured review helps separate normal variation from stronger signals.",
   sections: [
     {
       id: "why-question-common",
@@ -72,15 +72,15 @@ export const isMyHairTransplantNormalArticle: PatientIntentArticle = {
     },
     {
       id: "when-review-helps",
-      heading: "When an independent review may help",
+      heading: "When timeline uncertainty should move to a formal review decision",
       blocks: [
         {
           type: "p",
-          text: "If you feel unsure, if you are getting mixed messages, or if you want a calmer and more structured interpretation of the evidence, an independent review may help clarify whether the visible concern seems limited, mixed, or more meaningful.",
+          text: "If the calendar does not match what you were told to expect, or reassurance no longer fits what you see in consistent photos, an independent review may help classify whether concern is still compatible with normal variation. For the decision layer—mixed clinic advice, revision planning, disputes—read [when should you seek an independent hair transplant review?](/when-should-you-seek-an-independent-hair-transplant-review).",
         },
         {
           type: "p",
-          text: "[Request an independent HairAudit review](/request-review). [Shock Loss vs Graft Failure After Hair Transplant](/shock-loss-vs-graft-failure). [When Is a Hair Transplant Result Final?](/when-is-a-hair-transplant-final). [Bad Hair Transplant: Signs Patients Often Miss](/bad-hair-transplant-signs). [FAQ](/faq).",
+          text: "[Request an independent HairAudit review](/request-review). [Shock loss vs graft failure after hair transplant](/shock-loss-vs-graft-failure). [When is a hair transplant result final?](/when-is-a-hair-transplant-final). [Bad hair transplant: signs patients often miss](/bad-hair-transplant-signs). [FAQ](/faq).",
         },
       ],
     },
@@ -92,5 +92,6 @@ export const isMyHairTransplantNormalArticle: PatientIntentArticle = {
     "shock-loss-vs-graft-failure",
     "when-is-a-hair-transplant-final",
     "bad-hair-transplant-signs",
+    "when-should-you-seek-an-independent-hair-transplant-review",
   ],
 };

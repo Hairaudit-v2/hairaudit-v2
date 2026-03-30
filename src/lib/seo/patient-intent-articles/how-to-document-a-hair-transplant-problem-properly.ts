@@ -3,12 +3,12 @@ import type { PatientIntentArticle } from "./types";
 export const howToDocumentAHairTransplantProblemProperlyArticle: PatientIntentArticle = {
   slug: "how-to-document-a-hair-transplant-problem-properly",
   pathname: "/how-to-document-a-hair-transplant-problem-properly",
-  seoTitle: "How to Document a Hair Transplant Problem Properly | HairAudit",
+  seoTitle: "How to Document a Hair Transplant Problem: Timeline & Files | HairAudit",
   metaDescription:
-    "Think something is wrong with your hair transplant? Learn how to document donor, density, and hairline concerns properly with stronger photos and timeline evidence.",
+    "Workflow guide: consistent lighting and angles over time, dating and folder habits, saving operative notes—so evidence tells a clear story beyond the raw shot list.",
   h1: "How to Document a Hair Transplant Problem Properly",
   intro:
-    "When patients feel something may be wrong with a transplant, they often start collecting photos in an unstructured way. That is understandable, but it can make later review harder. Good documentation is not just about taking more photos. It is about taking the right photos, at the right stages, in a way that makes visible concerns easier to interpret over time.",
+    "This page focuses on how to build a coherent evidence trail—consistency, dating, organising files, and keeping context—not which donor or recipient angles to capture. For the angle-by-angle checklist, use [what photos are needed for a proper hair transplant review](/what-photos-are-needed-for-a-proper-hair-transplant-review). For what photo-based conclusions can fairly claim, read [can a hair transplant be audited from photos](/can-a-hair-transplant-be-audited-from-photos). Unstructured dumps of images are common; structured timelines are what make review calmer and more accurate.",
   sections: [
     {
       id: "why-documentation",
@@ -158,7 +158,7 @@ export const howToDocumentAHairTransplantProblemProperlyArticle: PatientIntentAr
         },
         {
           type: "p",
-          text: "These do not replace photos, but they can strengthen context. A full photo checklist is in [what photos are needed for a proper hair transplant review](/what-photos-are-needed-for-a-proper-hair-transplant-review). Evidence limits: [can a hair transplant be audited from photos](/can-a-hair-transplant-be-audited-from-photos). If you are unsure about timing, see [when should you seek an independent hair transplant review](/when-should-you-seek-an-independent-hair-transplant-review). [Request an independent HairAudit review](/request-review) when you are ready.",
+          text: "These do not replace photos, but they can strengthen context. Pair this workflow with the shot list in [what photos are needed for a proper hair transplant review](/what-photos-are-needed-for-a-proper-hair-transplant-review). Evidence limits: [can a hair transplant be audited from photos](/can-a-hair-transplant-be-audited-from-photos). Decision timing: [when should you seek an independent hair transplant review](/when-should-you-seek-an-independent-hair-transplant-review). [Request an independent HairAudit review](/request-review) when you are ready.",
         },
       ],
     },

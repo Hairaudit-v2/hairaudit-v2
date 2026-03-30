@@ -3,12 +3,12 @@ import type { PatientIntentArticle } from "./types";
 export const canAHairTransplantBeAuditedFromPhotosArticle: PatientIntentArticle = {
   slug: "can-a-hair-transplant-be-audited-from-photos",
   pathname: "/can-a-hair-transplant-be-audited-from-photos",
-  seoTitle: "Can a Hair Transplant Be Audited From Photos? | HairAudit",
+  seoTitle: "Can a Hair Transplant Be Audited From Photos? Scope & Limits | HairAudit",
   metaDescription:
-    "Can photos show graft failure, donor damage, or bad design? What independent, photo-based HairAudit review can assess—and what it cannot claim from pictures alone.",
+    "What conclusions are fair from photos alone versus what needs an exam or records—limits of photo-based HairAudit review, without duplicating the angle-by-angle checklist.",
   h1: "Can a Hair Transplant Be Audited From Photos?",
   intro:
-    "Many patients ask whether photos are enough to judge a transplant result. In many cases, photos can provide useful evidence about donor appearance, recipient patterning, density balance, hairline design, documentation quality, and visible healing or growth concerns. But photos also have limits. A responsible review should be clear about both what can be assessed and what cannot be claimed with confidence.",
+    "This page answers what kinds of conclusions are fair from photographs alone—and which claims would overstep the evidence. It is not the step-by-step shot checklist; for donor angles, recipient views, and follow-up months, use [what photos are needed for a proper hair transplant review](/what-photos-are-needed-for-a-proper-hair-transplant-review). For organising dates and files over time, use [how to document a hair transplant problem properly](/how-to-document-a-hair-transplant-problem-properly). Photos can still support useful judgements about visible donor pattern, recipient design, density balance, and timeline consistency when quality is adequate.",
   sections: [
     {
       id: "what-photos-can-assess",
@@ -46,25 +46,11 @@ export const canAHairTransplantBeAuditedFromPhotosArticle: PatientIntentArticle 
     },
     {
       id: "most-useful-sets",
-      heading: "Which photo sets are most useful",
+      heading: "Evidence categories—not the full checklist",
       blocks: [
         {
           type: "p",
-          text: "The strongest review usually comes from a photo set that includes:",
-        },
-        {
-          type: "ul",
-          items: [
-            "pre-operative views",
-            "donor rear and side views",
-            "day 0 recipient photos",
-            "follow-up photos at meaningful intervals",
-            "close-up or macro images where available",
-          ],
-        },
-        {
-          type: "p",
-          text: "The more complete the evidence, the stronger the confidence of the interpretation. A step-by-step checklist is on [what photos are needed for a proper hair transplant review](/what-photos-are-needed-for-a-proper-hair-transplant-review).",
+          text: "Stronger reviews usually draw on pre-op context, donor views, day 0 recipient documentation, and dated follow-ups—not a single dramatic angle. The detailed month-by-month and zone-by-zone list lives on [what photos are needed for a proper hair transplant review](/what-photos-are-needed-for-a-proper-hair-transplant-review); this section only names the broad buckets so scope-and-limits stays distinct from the checklist page.",
         },
       ],
     },
@@ -84,25 +70,11 @@ export const canAHairTransplantBeAuditedFromPhotosArticle: PatientIntentArticle 
     },
     {
       id: "what-to-upload",
-      heading: "What to upload if you want the strongest review",
+      heading: "Where to find upload guidance",
       blocks: [
         {
           type: "p",
-          text: "Patients usually get the strongest review when they submit:",
-        },
-        {
-          type: "ul",
-          items: [
-            "clear donor photos",
-            "clear recipient photos",
-            "timeline images",
-            "any day 0 evidence",
-            "operative details if available",
-          ],
-        },
-        {
-          type: "p",
-          text: "This gives the reviewer a much better chance of assessing visible patterns responsibly. Process questions are covered in our [FAQ](/faq). For organising dates, angles, and files, see [how to document a hair transplant problem properly](/how-to-document-a-hair-transplant-problem-properly).",
+          text: "Practical upload guidance is intentionally kept on companion pages so this article stays about limits and honesty: use [what photos are needed for a proper hair transplant review](/what-photos-are-needed-for-a-proper-hair-transplant-review) for the checklist and [how to document a hair transplant problem properly](/how-to-document-a-hair-transplant-problem-properly) for timeline habits. Process questions are in our [FAQ](/faq).",
         },
       ],
     },
@@ -114,6 +86,6 @@ export const canAHairTransplantBeAuditedFromPhotosArticle: PatientIntentArticle 
     "what-photos-are-needed-for-a-proper-hair-transplant-review",
     "how-to-document-a-hair-transplant-problem-properly",
     "when-should-you-seek-an-independent-hair-transplant-review",
-    "when-is-a-hair-transplant-final",
+    "is-my-hair-transplant-normal",
   ],
 };

@@ -135,7 +135,11 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
       <SiteHeader />
 
       <main className="relative flex-1">
-        <article className="px-4 sm:px-6 py-12 sm:py-16 lg:py-20">
+        <article
+          className="px-4 sm:px-6 py-12 sm:py-16 lg:py-20"
+          data-analytics-scope="patient-intent-guide"
+          data-patient-guide={articleSlug}
+        >
           <div className="max-w-3xl mx-auto">
             <nav className="mb-8" aria-label="Breadcrumb">
               <Link
@@ -170,6 +174,7 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
                   <Link
                     href="/request-review"
                     className="text-amber-400 hover:text-amber-300 font-medium underline underline-offset-2"
+                    data-cta="patient-guide-next-request-review"
                   >
                     Request an independent review
                   </Link>
@@ -178,12 +183,17 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
                   <Link
                     href="/sample-report"
                     className="text-amber-400 hover:text-amber-300 font-medium underline underline-offset-2"
+                    data-cta="patient-guide-next-sample-report"
                   >
                     View a sample report
                   </Link>
                 </li>
                 <li className="sm:after:content-['·'] sm:after:px-2 sm:after:text-slate-600 sm:last:after:content-none">
-                  <Link href="/faq" className="text-amber-400 hover:text-amber-300 font-medium underline underline-offset-2">
+                  <Link
+                    href="/faq"
+                    className="text-amber-400 hover:text-amber-300 font-medium underline underline-offset-2"
+                    data-cta="patient-guide-next-faq"
+                  >
                     FAQ
                   </Link>
                 </li>
@@ -191,6 +201,7 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
                   <Link
                     href="/hair-transplant-problems"
                     className="text-slate-400 hover:text-slate-200 underline underline-offset-2"
+                    data-cta="patient-guide-next-hub"
                   >
                     All patient guides
                   </Link>
@@ -231,18 +242,21 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
                 <Link
                   href="/request-review"
                   className="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors"
+                  data-cta="patient-guide-cta-request-review"
                 >
                   Request an independent review
                 </Link>
                 <Link
                   href="/sample-report"
                   className="inline-flex items-center justify-center px-6 py-3 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
+                  data-cta="patient-guide-cta-sample-report"
                 >
                   View sample report
                 </Link>
                 <Link
                   href="/faq"
                   className="inline-flex items-center justify-center px-6 py-3 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
+                  data-cta="patient-guide-cta-faq"
                 >
                   FAQ
                 </Link>

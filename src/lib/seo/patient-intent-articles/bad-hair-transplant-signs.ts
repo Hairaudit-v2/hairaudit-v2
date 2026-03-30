@@ -3,12 +3,12 @@ import type { PatientIntentArticle } from "./types";
 export const badHairTransplantSignsArticle: PatientIntentArticle = {
   slug: "bad-hair-transplant-signs",
   pathname: "/bad-hair-transplant-signs",
-  seoTitle: "Bad Hair Transplant: Signs Patients Often Miss | HairAudit",
+  seoTitle: "Bad Hair Transplant Signs: Visible Patterns Patients Overlook | HairAudit",
   metaDescription:
-    "Worried your hair transplant looks wrong? Learn easy-to-miss warning signs, what can still be normal during recovery, and when an independent HairAudit review helps.",
+    "A pattern-led guide to donor thinning, hairline edge issues, density imbalance, and other visible clues patients overlook—not a recovery timeline explainer.",
   h1: "Bad Hair Transplant: Signs Patients Often Miss",
   intro:
-    "Not every disappointing hair transplant result is obvious straight away. Some issues become more noticeable only as swelling settles, native hair changes, or the grafts begin to grow. Patients often feel that something seems “off” before they can explain exactly why. This page breaks down the signs patients often miss, what may still be part of a normal timeline, and when an independent review may help clarify the situation.",
+    "This page maps specific visible patterns—donor, hairline, density, angle, and blending—that often explain why a result feels wrong before patients can name the issue. It is not mainly about whether you are still in a normal healing phase; for that framing, read [is my hair transplant normal?](/is-my-hair-transplant-normal). Here the focus is which cosmetic and technical signals tend to show up late or get missed early, and how they connect to stronger photo documentation.",
   sections: [
     {
       id: "what-bad-means",
@@ -90,15 +90,11 @@ export const badHairTransplantSignsArticle: PatientIntentArticle = {
     },
     {
       id: "photos-limits",
-      heading: "What photos can and cannot show",
+      heading: "Linking these signs to photo evidence",
       blocks: [
         {
           type: "p",
-          text: "Photos may reveal visible pattern problems, donor thinning, weak design choices, and poor documentation quality. But they cannot prove every surgical detail or exact growth percentage. A responsible review needs to explain both the visible evidence and the limitations.",
-        },
-        {
-          type: "p",
-          text: "Read [can a hair transplant be audited from photos](/can-a-hair-transplant-be-audited-from-photos) for a direct summary of scope and limits.",
+          text: "Once you can name a pattern, photos help show whether it is visible and consistent over time. For the rules of what conclusions are fair from pictures alone—not a shot list—read [can a hair transplant be audited from photos](/can-a-hair-transplant-be-audited-from-photos). For angles and dates, use [what photos are needed for a proper hair transplant review](/what-photos-are-needed-for-a-proper-hair-transplant-review).",
         },
       ],
     },
@@ -112,7 +108,7 @@ export const badHairTransplantSignsArticle: PatientIntentArticle = {
         },
         {
           type: "p",
-          text: "You can [Request an independent HairAudit review](/request-review), [view a sample HairAudit report](/sample-report), or browse the [FAQ](/faq). The [patient guides hub](/hair-transplant-problems) lists quick topic pages and full guides by theme.",
+          text: "You can [Request an independent HairAudit review](/request-review), [view a sample HairAudit report](/sample-report), or browse the [FAQ](/faq). If you are deciding whether now is the right time for formal review, see [when should you seek an independent hair transplant review?](/when-should-you-seek-an-independent-hair-transplant-review). The [patient guides hub](/hair-transplant-problems) lists quick topic pages and full guides by theme.",
         },
       ],
     },
@@ -121,9 +117,9 @@ export const badHairTransplantSignsArticle: PatientIntentArticle = {
   ctaLead: "Concerned about your result?",
   ctaSupporting: "Request an independent HairAudit review based on your photos and documentation.",
   relatedSlugs: [
-    "shock-loss-vs-graft-failure",
-    "when-is-a-hair-transplant-final",
+    "is-my-hair-transplant-normal",
     "when-should-you-seek-an-independent-hair-transplant-review",
+    "what-photos-are-needed-for-a-proper-hair-transplant-review",
     "overharvested-donor-area",
   ],
 };

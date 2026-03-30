@@ -74,7 +74,10 @@ export default function HairTransplantProblemsHubPage() {
 
       <SiteHeader />
 
-      <main className="relative flex-1 px-4 sm:px-6 py-16 sm:py-20">
+      <main
+        className="relative flex-1 px-4 sm:px-6 py-16 sm:py-20"
+        data-analytics-scope="patient-guides-hub"
+      >
         <div className="max-w-5xl mx-auto">
           <ScrollReveal>
             <nav className="mb-6" aria-label="Breadcrumb">
@@ -100,18 +103,21 @@ export default function HairTransplantProblemsHubPage() {
               <Link
                 href="/request-review"
                 className="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors"
+                data-cta="patient-guides-hub-hero-request-review"
               >
                 Request an independent review
               </Link>
               <Link
                 href="/sample-report"
                 className="inline-flex items-center justify-center px-6 py-3 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
+                data-cta="patient-guides-hub-hero-sample-report"
               >
                 View a sample report
               </Link>
               <Link
                 href="/faq"
                 className="inline-flex items-center justify-center px-6 py-3 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
+                data-cta="patient-guides-hub-hero-faq"
               >
                 FAQ
               </Link>
@@ -212,11 +218,19 @@ export default function HairTransplantProblemsHubPage() {
               <h2 className="text-xl font-semibold text-white">Ready for structured, independent assessment?</h2>
               <p className="mt-3 text-slate-300 leading-relaxed">
                 If something still feels off after reading, submit photos and timeline for a medical review that does not depend on your clinic’s narrative. Preview a{" "}
-                <Link href="/sample-report" className="text-amber-400 hover:text-amber-300 font-medium underline underline-offset-2">
+                <Link
+                  href="/sample-report"
+                  className="text-amber-400 hover:text-amber-300 font-medium underline underline-offset-2"
+                  data-cta="patient-guides-hub-footer-inline-sample-report"
+                >
                   sample HairAudit report
                 </Link>{" "}
                 or read the{" "}
-                <Link href="/faq" className="text-amber-400 hover:text-amber-300 font-medium underline underline-offset-2">
+                <Link
+                  href="/faq"
+                  className="text-amber-400 hover:text-amber-300 font-medium underline underline-offset-2"
+                  data-cta="patient-guides-hub-footer-inline-faq"
+                >
                   FAQ
                 </Link>{" "}
                 first if that helps.
@@ -225,18 +239,21 @@ export default function HairTransplantProblemsHubPage() {
                 <Link
                   href="/request-review"
                   className="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors"
+                  data-cta="patient-guides-hub-footer-request-review"
                 >
                   Request an independent review
                 </Link>
                 <Link
                   href="/sample-report"
                   className="inline-flex items-center justify-center px-6 py-3 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
+                  data-cta="patient-guides-hub-footer-sample-report"
                 >
                   View a sample report
                 </Link>
                 <Link
                   href="/faq"
                   className="inline-flex items-center justify-center px-6 py-3 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
+                  data-cta="patient-guides-hub-footer-faq"
                 >
                   FAQ
                 </Link>
