@@ -12,15 +12,20 @@ import { femaleHairlineTransplantConcernsArticle } from "./female-hairline-trans
 import { hairDirectionAndAngleAfterTransplantArticle } from "./hair-direction-and-angle-after-transplant";
 import { hairTransplantDensityTooLowArticle } from "./hair-transplant-density-too-low";
 import { hairTransplantRepairAfterOverseasSurgeryArticle } from "./hair-transplant-repair-after-overseas-surgery";
+import { hairTransplantSecondOpinionVsClinicOpinionArticle } from "./hair-transplant-second-opinion-vs-clinic-opinion";
 import { hairTransplantGraftFailureWhatPhotosCanAndCannotShowArticle } from "./hair-transplant-graft-failure-what-photos-can-and-cannot-show";
 import { isMyHairTransplantNormalArticle } from "./is-my-hair-transplant-normal";
 import { howManyGraftsIsTooManyArticle } from "./how-many-grafts-is-too-many";
 import { howToDocumentAHairTransplantProblemProperlyArticle } from "./how-to-document-a-hair-transplant-problem-properly";
+import { howToPrepareForAHairTransplantComplaintOrDisputeArticle } from "./how-to-prepare-for-a-hair-transplant-complaint-or-dispute";
+import { howToReadAHairauditReportArticle } from "./how-to-read-a-hairaudit-report";
 import { howToThinkAboutRealisticHairTransplantExpectationsArticle } from "./how-to-think-about-realistic-hair-transplant-expectations";
 import { overharvestedDonorAreaArticle } from "./overharvested-donor-area";
 import { rowPatterningAfterHairTransplantArticle } from "./row-patterning-after-hair-transplant";
+import { shouldYouTrustAClinicAssessmentOfItsOwnWorkArticle } from "./should-you-trust-a-clinic-assessment-of-its-own-work";
 import { shockLossVsGraftFailureArticle } from "./shock-loss-vs-graft-failure";
 import { templeWorkAndFrontalFramingArticle } from "./temple-work-and-frontal-framing";
+import { whatAnIndependentHairTransplantAuditCanAndCannotDoArticle } from "./what-an-independent-hair-transplant-audit-can-and-cannot-do";
 import { wetHairVsDryHairAfterTransplantArticle } from "./wet-hair-vs-dry-hair-after-transplant";
 import { thinkingAboutASecondHairTransplantArticle } from "./thinking-about-a-second-hair-transplant";
 import { unnaturalHairlineAfterHairTransplantArticle } from "./unnatural-hairline-after-hair-transplant";
@@ -63,6 +68,11 @@ const patientIntentArticlesList: PatientIntentArticle[] = [
   afroHairTransplantDensityPlanningArticle,
   hairTransplantRepairAfterOverseasSurgeryArticle,
   beardOrBodyHairTransplantQuestionsArticle,
+  hairTransplantSecondOpinionVsClinicOpinionArticle,
+  howToPrepareForAHairTransplantComplaintOrDisputeArticle,
+  whatAnIndependentHairTransplantAuditCanAndCannotDoArticle,
+  howToReadAHairauditReportArticle,
+  shouldYouTrustAClinicAssessmentOfItsOwnWorkArticle,
 ];
 
 export const patientIntentArticlesBySlug: Record<string, PatientIntentArticle> =
