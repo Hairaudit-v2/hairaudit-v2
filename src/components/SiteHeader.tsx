@@ -30,6 +30,7 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
   const navItems = [
     { href: "/", label: t("nav.home") },
     { href: "/how-it-works", label: t("nav.howItWorks") },
+    { href: "/hair-transplant-problems", label: t("nav.patientGuides") },
     { href: "/request-review", label: t("nav.requestReview") },
     { href: "/demo-report", label: t("nav.sampleReport") },
     { href: "/clinics", label: t("nav.clinics") },

@@ -2,6 +2,7 @@
   "nav": {
     "home": "Inicio",
     "howItWorks": "Cómo funciona",
+    "patientGuides": "Guías para pacientes",
     "requestReview": "Solicitar revisión",
     "sampleReport": "Informe de ejemplo",
     "clinics": "Clínicas",
@@ -35,6 +36,7 @@
       "sectionCompany": "Empresa",
       "sectionLegal": "Legal",
       "sectionPlatformEcosystem": "Ecosistema de plataforma",
+      "linkPatientGuides": "Guías sobre trasplante capilar",
       "linkFaq": "Preguntas frecuentes",
       "linkVerifiedProgram": "Programa de cirujanos verificados",
       "linkCreateProfile": "Crear perfil de clínica o médico",

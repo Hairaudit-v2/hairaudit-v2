@@ -2,6 +2,7 @@
   "nav": {
     "home": "Home",
     "howItWorks": "How It Works",
+    "patientGuides": "Patient guides",
     "requestReview": "Request Review",
     "sampleReport": "Sample Report",
     "clinics": "Clinics",
@@ -35,6 +36,7 @@
       "sectionCompany": "Company",
       "sectionLegal": "Legal",
       "sectionPlatformEcosystem": "Platform Ecosystem",
+      "linkPatientGuides": "Hair transplant guides",
       "linkFaq": "FAQ",
       "linkVerifiedProgram": "Verified Surgeon Program",
       "linkCreateProfile": "Create Clinic or Doctor Profile",

@@ -67,6 +67,11 @@ export default function SiteFooter({ theme = "default" }: SiteFooterProps) {
                   {t("nav.footer.linkFaq")}
                 </Link>
               </li>
+              <li>
+                <Link href="/hair-transplant-problems" className={linkClass}>
+                  {t("nav.footer.linkPatientGuides")}
+                </Link>
+              </li>
             </ul>
           </div>
           <div>
