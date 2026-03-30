@@ -7,6 +7,13 @@ import {
 import { domainCardScoreLabelWhenNoScore, isGenericInsufficientMetricText } from "@/lib/evidence/evidenceMissingCopy";
 import { buildSurgicalFingerprintSummary } from "@/lib/reports/surgicalFingerprint";
 import { renderRadarSvg, clamp01, clamp100 } from "@/lib/reports/radarSvg";
+import {
+  buildPatientNarrative,
+  getPatientNarrativeState,
+  type PatientNarrativeDomainId,
+} from "@/lib/reports/patientNarrativeTemplates";
+import { buildPatientLongTermHairEducation } from "@/lib/reports/patientLongTermHairEducation";
+import { buildPatientWhatToMonitorOverTime } from "@/lib/reports/patientWhatToMonitorOverTime";
 
 type AreaScoreItem = {
   title: string;
@@ -194,36 +201,69 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       .map((s) => s.score);
     return average(secScores);
   };
-  const domains = [
+  const isPatientFacing = vm.viewModel.auditMode === "patient";
+  const domains: Array<{
+    title: string;
+    match: string[];
+    clinical: string;
+    monitoring: string;
+    patientDomainId: PatientNarrativeDomainId | null;
+  }> = [
     {
       title: "Donor Management",
       match: ["donor"],
       clinical: "Donor management patterns may influence long-term donor preservation and visual uniformity.",
       monitoring: "Monitor donor density and visible donor homogeneity over the next 6-12 months.",
+      patientDomainId: "donor_management",
     },
     {
       title: "Recipient Site Design",
       match: ["recipient", "hairline", "naturalness", "design"],
       clinical: "Recipient site distribution can influence naturalness and zone-to-zone balance.",
       monitoring: "Monitor transition softness, frontal framing, and regional blending during growth cycles.",
+      patientDomainId: "recipient_site_design",
     },
     {
       title: "Graft Handling",
       match: ["graft", "hydrat", "viability", "storage", "out-of-body"],
       clinical: "Graft handling consistency may influence viability and downstream growth quality.",
       monitoring: "Where evidence is limited, request procedural details or additional intra-operative documentation.",
+      patientDomainId: "graft_handling",
     },
     {
       title: "Implantation Technique",
       match: ["implant", "placement", "spacing", "angle", "density"],
       clinical: "Implantation spacing and angle coherence can influence visual density and native blending.",
       monitoring: "Track maturing density pattern and directional consistency between regions.",
+      patientDomainId: "implantation_technique",
     },
     {
       title: "Documentation Quality",
       match: ["document", "aftercare", "safety", "evidence", "photo"],
       clinical: "Documentation quality determines confidence in all pattern-based interpretations.",
       monitoring: "Add missing captures where possible to improve future confidence and longitudinal comparability.",
+      patientDomainId: "documentation_quality",
+    },
+    {
+      title: "Hairline Transition",
+      match: ["hairline", "transition", "frontal", "edge", "naturalness"],
+      clinical: "Hairline transition quality affects frontal naturalness and social-distance realism.",
+      monitoring: "Monitor hairline softness at conversational distance across months 4-12.",
+      patientDomainId: "hairline_transition",
+    },
+    {
+      title: "Density Consistency",
+      match: ["density", "distribution", "coverage", "consistency", "implantation_density"],
+      clinical: "Density consistency influences whether coverage appears balanced across zones.",
+      monitoring: "Track region-to-region density progression every 6-8 weeks.",
+      patientDomainId: "density_consistency",
+    },
+    {
+      title: "Direction and Angle Coherence",
+      match: ["direction", "angle", "coherence", "flow", "orientation"],
+      clinical: "Direction-angle coherence affects native blending and styling behavior.",
+      monitoring: "Reassess flow patterns in dry and styled states at regular timepoints.",
+      patientDomainId: "direction_angle_coherence",
     },
   ];
   const domainCards = domains
@@ -247,6 +287,34 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
         .filter(Boolean)
         .slice(0, 3);
       const guidance = String(matchingFindings[0]?.recommended_next_step ?? "").trim() || domain.monitoring;
+      const findingText = `${String(matchingFindings[0]?.title ?? "")} ${String(matchingFindings[0]?.impact ?? "")}`.toLowerCase();
+      const hasConcern =
+        /concern|risk|flag|irregular|overharvest|uneven|discordant|deficit|poor|warning/.test(findingText) || (score != null && score < 50);
+      const confidenceBandForPatient: "high" | "moderate" | "low" | "limited" =
+        score == null
+          ? "limited"
+          : confidencePct == null
+            ? "limited"
+            : confidencePct >= 80
+              ? "high"
+              : confidencePct >= 60
+                ? "moderate"
+                : confidencePct >= 45
+                  ? "low"
+                  : "limited";
+      const patientNarrative =
+        isPatientFacing && domain.patientDomainId
+          ? buildPatientNarrative({
+              domainId: domain.patientDomainId,
+              state: getPatientNarrativeState({
+                score,
+                evidenceCount: evidence.length,
+                hasConcern,
+                confidenceBand: confidenceBandForPatient,
+              }),
+              confidenceBand: confidenceBandForPatient,
+            })
+          : null;
       const scoreWidth = score == null ? 10 : Math.max(5, Math.min(100, Math.round(score)));
       const scoreClass = score == null ? "low" : score >= 80 ? "high" : score >= 60 ? "medium" : "low";
       const scoreLabel =
@@ -260,18 +328,28 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
             <div class="${domainScoreValueClass}">${esc(scoreLabel)}</div>
           </div>
           <div class="bar"><div class="barFill ${scoreClass}" style="width:${scoreWidth}%;"></div></div>
-          <div class="microTitle">Observation</div>
-          <p class="miniText">${esc(observation)}</p>
-          <div class="microTitle">Why It Matters</div>
-          <p class="miniText">${esc(domain.clinical)}</p>
+          <div class="microTitle">${isPatientFacing ? "Clinical finding" : "Observation"}</div>
+          <p class="miniText">${esc(patientNarrative?.clinicalFinding ?? observation)}</p>
+          ${
+            isPatientFacing
+              ? `<div class="microTitle">Plain-English meaning</div><p class="miniText">${esc(patientNarrative?.plainEnglishMeaning ?? "Interpretation is based on currently available image evidence.")}</p>`
+              : ""
+          }
+          <div class="microTitle">${isPatientFacing ? "Why this matters for your result" : "Why It Matters"}</div>
+          <p class="miniText">${esc(isPatientFacing ? patientNarrative?.patientImplication ?? domain.clinical : domain.clinical)}</p>
           <div class="microTitle">Evidence</div>
           <ul class="microList">
             ${(evidence.length ? evidence : ["No high-confidence evidence bullets were available for this domain."])
               .map((item) => `<li>${esc(item)}</li>`)
               .join("")}
           </ul>
-          <div class="microTitle">Monitoring Guidance</div>
-          <p class="miniText">${esc(guidance)}</p>
+          ${
+            isPatientFacing
+              ? `<div class="microTitle">Confidence explanation</div><p class="miniText">${esc(patientNarrative?.confidenceExplanation ?? "Evidence quality in this section is limited; this is not the same as a poor outcome.")}</p>`
+              : ""
+          }
+          <div class="microTitle">${isPatientFacing ? "Monitoring guidance" : "Monitoring Guidance"}</div>
+          <p class="miniText">${esc(isPatientFacing ? patientNarrative?.followUpAdvice ?? guidance : guidance)}</p>
         </div>
       `;
     })
@@ -485,7 +563,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     if (key === "postop") return "Follow-up imagery provides longitudinal context for healing and growth pattern evaluation.";
     return "Submitted captures were reviewed for category-specific visual context.";
   };
-  const groupConfidence = (items: { signedUrl: string; label: string }[], key: string): "high" | "moderate" | "limited" => {
+  const groupConfidence = (items: { signedUrl: string; label: string }[]): "high" | "moderate" | "limited" => {
     const n = items.length;
     if (n >= 2 && (confidencePct == null || confidencePct >= 70)) return "high";
     if (n >= 1 && (confidencePct == null || confidencePct >= 50)) return "moderate";
@@ -494,7 +572,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
   const photoGroups = evidenceGroups.length
     ? evidenceGroups
         .map((g) => {
-          const conf = groupConfidence(g.items, g.key);
+          const conf = groupConfidence(g.items);
           const confClass = conf === "high" ? "high" : conf === "moderate" ? "moderate" : "limited";
           const confLabel = conf === "high" ? "High" : conf === "moderate" ? "Moderate" : "Limited";
           const obs = groupObservation(g.key);
@@ -532,6 +610,57 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     : `<div class="emptyState">No photo evidence groups were available for this report.</div>`;
 
   const patientGuidance = domains.map((d) => d.monitoring).slice(0, 4);
+  const longTermEducationCard = isPatientFacing
+    ? (() => {
+        const edu = buildPatientLongTermHairEducation();
+        return `
+      <div class="listCard patientEduCard" style="margin-top:12px;">
+        <div class="listTitle">${esc(edu.sectionTitle)}</div>
+        <div class="patientEduBody">
+          <p class="miniText patientEduLine">${esc(edu.intro)}</p>
+          <p class="miniText patientEduLine">${esc(edu.whyLongTermMatters)}</p>
+          <div class="patientEduSubhead microTitle">${esc(edu.donorAgeingTitle)}</div>
+          <p class="miniText patientEduLine">${esc(edu.donorAgeingExplanation)}</p>
+          <div class="patientEduGrid">
+          ${edu.options
+            .map(
+              (option) => `
+            <div class="patientEduOption">
+              <div class="microTitle patientEduOptionTitle">${esc(option.title)}</div>
+              <p class="miniText patientEduOptionLine"><b>What it is:</b> ${esc(option.whatItIs)}</p>
+              <p class="miniText patientEduOptionLine"><b>Why it may matter:</b> ${esc(option.whyItMayMatter)}</p>
+              <p class="miniText patientEduOptionLine"><b>Long-term preservation goal:</b> ${esc(option.longTermGoal)}</p>
+            </div>`
+            )
+            .join("")}
+          </div>
+          <div class="patientEduCallout">${esc(edu.calloutLine)}</div>
+          <p class="miniText patientEduLine patientEduClosing">${esc(edu.closing)}</p>
+        </div>
+      </div>`;
+      })()
+    : "";
+  const whatToMonitorOverTimeCard = isPatientFacing
+    ? (() => {
+        const mon = buildPatientWhatToMonitorOverTime();
+        return `
+      <div class="listCard patientMonitorCard" style="margin-top:12px;">
+        <div class="listTitle">${esc(mon.sectionTitle)}</div>
+        <p class="miniText patientEduLine">${esc(mon.intro)}</p>
+        <div class="patientTimelineGrid">
+          ${mon.periods
+            .map(
+              (p) => `
+          <div class="patientTimelineCell">
+            <div class="patientTimelineLabel">${esc(p.label)}</div>
+            <ul>${p.bullets.map((b) => `<li>${esc(b)}</li>`).join("")}</ul>
+          </div>`
+            )
+            .join("")}
+        </div>
+      </div>`;
+      })()
+    : "";
   const predictiveOutlook =
     metricTextImpliesWeakEvidence(metrics.graftSurvival)
       ? "Current visual evidence supports only a low-confidence graft survival outlook estimate."
@@ -1130,6 +1259,72 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     .iconOutlook { color: #6d28d9; }
     .emptyState { font-size: 11px; color: var(--muted); border: 1px dashed #cbd5e1; border-radius: 10px; padding: 10px; background: #fff; }
     .miniText { margin-top: 6px; font-size: 11px; color: var(--ink); line-height: 1.5; }
+    .listCard.patientEduCard,
+    .listCard.patientMonitorCard { break-inside: auto; page-break-inside: auto; }
+    .patientEduBody { max-width: 100%; }
+    .patientEduLine { margin-top: 5px; line-height: 1.48; max-width: 52em; }
+    .patientEduBody > .patientEduLine:first-child { margin-top: 0; }
+    .patientEduSubhead { margin-top: 12px; margin-bottom: 4px; }
+    .patientEduGrid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 11px;
+      margin-top: 13px;
+    }
+    .patientEduOption {
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 11px 13px;
+      background: linear-gradient(180deg, #fafdff 0%, #ffffff 100%);
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+    .patientEduOptionTitle { margin-top: 0; margin-bottom: 5px; letter-spacing: 0.04em; }
+    .patientEduOptionLine { margin-top: 4px; font-size: 10.5px; line-height: 1.44; max-width: none; }
+    .patientEduCallout {
+      margin-top: 13px;
+      padding: 9px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(213, 164, 58, 0.38);
+      background: linear-gradient(180deg, #fffbeb 0%, #fffdf8 100%);
+      font-size: 11px;
+      font-weight: 800;
+      color: #92400e;
+      text-align: center;
+      letter-spacing: 0.02em;
+      line-height: 1.4;
+    }
+    .patientEduClosing { margin-top: 11px; }
+    .patientTimelineGrid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .patientTimelineCell {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 12px;
+      background: linear-gradient(180deg, #fafcfe 0%, #ffffff 100%);
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+    .patientTimelineLabel {
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #0f2344;
+      margin-bottom: 6px;
+    }
+    .patientTimelineCell ul {
+      margin: 0;
+      padding-left: 16px;
+      font-size: 10.5px;
+      line-height: 1.44;
+      color: var(--ink);
+    }
+    .patientTimelineCell li { margin: 3px 0; }
     p, li { orphans: 3; widows: 3; }
     .footer {
       margin-top: 18px;
@@ -1152,7 +1347,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       .hero { padding: 24px; break-inside: avoid; }
       .section { margin-top: 14px; padding: 12px; }
       .section.pageBreak { margin-top: 0; }
-      .domainGrid, .forensicGrid, .premiumGrid, .fpGrid { grid-template-columns: 1fr; }
+      .domainGrid, .forensicGrid, .premiumGrid, .fpGrid, .patientEduGrid, .patientTimelineGrid { grid-template-columns: 1fr; }
       .fpGrid { grid-template-columns: 1fr; }
       .p1Section { margin-top: 26px; }
       .p1Zone { margin-top: 26px; margin-bottom: 24px; padding: 22px; }
@@ -1177,6 +1372,8 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       .footer { page-break-inside: avoid; margin-top: 14px; padding-top: 6px; }
       .sectionDivider { margin: 8px 0 10px; }
       .domainCard, .listCard, .forensicPhoto, .premCard, .fpCard, .radarPanel, .fingerprintSection, .photoGroup { break-inside: avoid-page; page-break-inside: avoid; }
+      .listCard.patientEduCard,
+      .listCard.patientMonitorCard { break-inside: auto; page-break-inside: auto; }
     }
   </style>
 </head>
@@ -1320,6 +1517,8 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
         <div class="listTitle"><span class="iconGuide">●</span> Patient Guidance</div>
         <ul>${patientGuidance.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>
       </div>
+      ${longTermEducationCard}
+      ${whatToMonitorOverTimeCard}
       <div class="listCard" style="margin-top:12px;">
         <div class="listTitle"><span class="iconOutlook">●</span> Predictive Outlook</div>
         <div class="miniText">${predictiveOutlook}</div>
