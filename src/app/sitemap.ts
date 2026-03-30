@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/constants";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { patientIntentArticlePathnames } from "@/lib/seo/patient-intent-articles";
 
 const PUBLIC_ROUTES = [
   "/",
@@ -10,6 +11,7 @@ const PUBLIC_ROUTES = [
   "/demo-report",
   "/audit-examples",
   "/hair-transplant-problems",
+  ...patientIntentArticlePathnames,
   "/hair-transplant-too-thin",
   "/hair-transplant-not-growing",
   "/hair-transplant-donor-overharvested",

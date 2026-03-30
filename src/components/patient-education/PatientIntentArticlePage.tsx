@@ -1,0 +1,264 @@
+import Link from "next/link";
+import type { ReactNode } from "react";
+import SiteHeader from "@/components/SiteHeader";
+import SiteFooter from "@/components/SiteFooter";
+import ReviewProcessReassurance from "@/components/seo/ReviewProcessReassurance";
+import MedicalProcedureFaqSchema from "@/components/seo/MedicalProcedureFaqSchema";
+import { getPatientIntentArticle } from "@/lib/seo/patient-intent-articles";
+import type { PatientIntentArticleBlock } from "@/lib/seo/patient-intent-articles/types";
+import { patientIssueLibrary } from "@/lib/patientEducationIssues";
+
+type ResolvedRelated = {
+  pathname: string;
+  h1: string;
+  metaDescription: string;
+};
+
+function resolveRelatedGuide(slug: string): ResolvedRelated | null {
+  const intent = getPatientIntentArticle(slug);
+  if (intent) {
+    return {
+      pathname: intent.pathname,
+      h1: intent.h1,
+      metaDescription: intent.metaDescription,
+    };
+  }
+  const issue = patientIssueLibrary.find((item) => item.slug === slug);
+  if (issue) {
+    return {
+      pathname: `/${issue.slug}`,
+      h1: issue.title,
+      metaDescription: issue.description,
+    };
+  }
+  return null;
+}
+
+const LINK_IN_TEXT = /\[([^\]]+)\]\(([^)]+)\)/g;
+
+function LinkedText({ text }: { text: string }): ReactNode {
+  const parts: ReactNode[] = [];
+  let last = 0;
+  let match: RegExpExecArray | null;
+  const re = new RegExp(LINK_IN_TEXT.source, "g");
+  let key = 0;
+  while ((match = re.exec(text)) !== null) {
+    if (match.index > last) {
+      parts.push(text.slice(last, match.index));
+    }
+    parts.push(
+      <Link
+        key={key++}
+        href={match[2]}
+        className="text-amber-400 hover:text-amber-300 underline underline-offset-2 font-medium"
+      >
+        {match[1]}
+      </Link>
+    );
+    last = match.index + match[0].length;
+  }
+  if (last < text.length) {
+    parts.push(text.slice(last));
+  }
+  return parts.length === 1 && typeof parts[0] === "string" ? parts[0] : <>{parts}</>;
+}
+
+function ArticleBodyBlock({ block }: { block: PatientIntentArticleBlock }) {
+  if (block.type === "p") {
+    return (
+      <p className="text-slate-300 leading-relaxed">
+        <LinkedText text={block.text} />
+      </p>
+    );
+  }
+  if (block.type === "h3") {
+    return <h3 className="text-lg font-semibold text-white mt-6 mb-2">{block.text}</h3>;
+  }
+  return (
+    <ul className="mt-4 space-y-2 text-slate-300 list-none pl-0">
+      {block.items.map((item) => (
+        <li key={item} className="flex gap-2">
+          <span className="text-amber-400 shrink-0">-</span>
+          <span className="leading-relaxed">
+            <LinkedText text={item} />
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+type PatientIntentArticlePageProps = {
+  articleSlug: string;
+};
+
+export default function PatientIntentArticlePage({ articleSlug }: PatientIntentArticlePageProps) {
+  const article = getPatientIntentArticle(articleSlug);
+  if (!article) return null;
+
+  const related = article.relatedSlugs
+    .map((slug) => resolveRelatedGuide(slug))
+    .filter((r): r is ResolvedRelated => r != null);
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: article.h1,
+    description: article.metaDescription,
+    author: {
+      "@type": "Organization",
+      name: "HairAudit",
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "HairAudit",
+    },
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col bg-[#0a0a0f] text-slate-100">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <MedicalProcedureFaqSchema
+        pageName={article.h1}
+        pageDescription={article.metaDescription}
+        faqs={article.faqs}
+      />
+
+      <div className="fixed inset-0 pointer-events-none" aria-hidden>
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(251,191,36,0.06),transparent)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_80%_60%,rgba(139,92,246,0.05),transparent)]" />
+      </div>
+
+      <SiteHeader />
+
+      <main className="relative flex-1">
+        <article className="px-4 sm:px-6 py-12 sm:py-16 lg:py-20">
+          <div className="max-w-3xl mx-auto">
+            <nav className="mb-8" aria-label="Breadcrumb">
+              <Link
+                href="/"
+                className="text-sm text-slate-500 hover:text-slate-300 transition-colors"
+              >
+                Home
+              </Link>
+              <span className="text-slate-600 mx-2">/</span>
+              <Link
+                href="/hair-transplant-problems"
+                className="text-sm text-slate-500 hover:text-slate-300 transition-colors"
+              >
+                Hair transplant concerns
+              </Link>
+              <span className="text-slate-600 mx-2">/</span>
+              <span className="text-slate-400 text-sm">{article.h1}</span>
+            </nav>
+
+            <p className="text-xs font-semibold uppercase tracking-wider text-amber-300">
+              Patient guide
+            </p>
+            <h1 className="mt-3 text-3xl sm:text-4xl lg:text-[2.5rem] font-bold tracking-tight text-white leading-[1.15]">
+              {article.h1}
+            </h1>
+            <p className="mt-6 text-lg text-slate-300 leading-relaxed">{article.intro}</p>
+          </div>
+
+          <div className="max-w-3xl mx-auto mt-12 space-y-14 sm:space-y-16">
+            {article.sections.map((section) => (
+              <section
+                key={section.heading}
+                id={section.id}
+                className="scroll-mt-24 border-t border-white/10 pt-10 sm:pt-12"
+              >
+                <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+                  {section.heading}
+                </h2>
+                <div className="mt-6 space-y-4">
+                  {section.blocks.map((block, i) => (
+                    <ArticleBodyBlock key={i} block={block} />
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
+
+          <div className="max-w-3xl mx-auto mt-16 sm:mt-20">
+            <div className="rounded-2xl border border-amber-300/25 bg-gradient-to-br from-amber-500/10 to-transparent p-6 sm:p-8">
+              <h2 className="text-xl font-semibold text-white">
+                {article.ctaLead ?? "Independent review on HairAudit"}
+              </h2>
+              <p className="mt-3 text-slate-300 leading-relaxed">
+                {article.ctaSupporting ??
+                  "If you want a structured, evidence-based read of your photos and timeline—without clinic marketing—submit your case for review. You can also review a sample report or read answers to common questions first."}
+              </p>
+              <div className="mt-6 flex flex-col sm:flex-row flex-wrap gap-3">
+                <Link
+                  href="/request-review"
+                  className="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors"
+                >
+                  Request Review
+                </Link>
+                <Link
+                  href="/sample-report"
+                  className="inline-flex items-center justify-center px-6 py-3 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
+                >
+                  Sample Report
+                </Link>
+                <Link
+                  href="/faq"
+                  className="inline-flex items-center justify-center px-6 py-3 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
+                >
+                  FAQ
+                </Link>
+              </div>
+              <ReviewProcessReassurance className="mt-6" />
+            </div>
+          </div>
+
+          {related.length > 0 ? (
+            <div className="max-w-3xl mx-auto mt-12 sm:mt-14">
+              <h2 className="text-lg font-semibold text-white">Related guides</h2>
+              <ul className="mt-4 space-y-3">
+                {related.map((a) => (
+                  <li key={a.pathname}>
+                    <Link
+                      href={a.pathname}
+                      className="text-amber-400 hover:text-amber-300 font-medium underline underline-offset-2"
+                    >
+                      {a.h1}
+                    </Link>
+                    <p className="text-sm text-slate-500 mt-1">{a.metaDescription}</p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
+          <div className="max-w-3xl mx-auto mt-12 sm:mt-14 pb-8">
+            <h2 className="text-lg font-semibold text-white">More on HairAudit</h2>
+            <ul className="mt-4 flex flex-col sm:flex-row sm:flex-wrap gap-3 text-sm">
+              <li>
+                <Link href="/how-it-works" className="text-slate-400 hover:text-slate-200">
+                  How it works
+                </Link>
+              </li>
+              <li>
+                <Link href="/methodology" className="text-slate-400 hover:text-slate-200">
+                  How we review your surgery
+                </Link>
+              </li>
+              <li>
+                <Link href="/hair-transplant-problems" className="text-slate-400 hover:text-slate-200">
+                  Hair transplant concerns hub
+                </Link>
+              </li>
+            </ul>
+          </div>
+        </article>
+      </main>
+
+      <SiteFooter />
+    </div>
+  );
+}

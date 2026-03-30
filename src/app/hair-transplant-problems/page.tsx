@@ -6,6 +6,7 @@ import ReviewProcessReassurance from "@/components/seo/ReviewProcessReassurance"
 import MedicalProcedureFaqSchema from "@/components/seo/MedicalProcedureFaqSchema";
 import { createPageMetadata } from "@/lib/seo/pageMetadata";
 import { patientIssueLibrary } from "@/lib/patientEducationIssues";
+import { listPatientIntentArticles } from "@/lib/seo/patient-intent-articles";
 
 const faqs = [
   {
@@ -33,6 +34,8 @@ export const metadata = createPageMetadata({
 });
 
 export default function HairTransplantProblemsHubPage() {
+  const intentGuides = listPatientIntentArticles();
+
   return (
     <div className="min-h-screen flex flex-col bg-[#0a0a0f] text-slate-100">
       <MedicalProcedureFaqSchema
@@ -77,6 +80,29 @@ export default function HairTransplantProblemsHubPage() {
             </section>
           </ScrollReveal>
 
+          <ScrollReveal delay={0.08}>
+            <section className="mt-12">
+              <h2 className="text-xl font-semibold text-white">In-depth patient guides</h2>
+              <p className="mt-3 text-slate-400 max-w-3xl text-sm sm:text-base">
+                Longer reads on timing, donor safety, shock loss, and what photo-based review can
+                clarify—written in the same independent, evidence-aware voice as our reports.
+              </p>
+              <div className="mt-6 grid sm:grid-cols-2 gap-4">
+                {intentGuides.map((guide) => (
+                  <Link
+                    key={guide.slug}
+                    href={guide.pathname}
+                    className="rounded-2xl border border-white/10 bg-white/5 p-5 hover:border-amber-300/60 transition-colors"
+                  >
+                    <h3 className="text-lg font-semibold text-white">{guide.h1}</h3>
+                    <p className="mt-3 text-sm text-slate-300">{guide.metaDescription}</p>
+                    <p className="mt-4 text-sm font-medium text-amber-300">Read guide</p>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          </ScrollReveal>
+
           <ScrollReveal delay={0.1}>
             <section className="mt-8 rounded-2xl border border-white/10 bg-white/5 p-6">
               <h2 className="text-xl font-semibold text-white">Need examples of structured findings?</h2>
@@ -117,14 +143,34 @@ export default function HairTransplantProblemsHubPage() {
               <h2 className="text-xl font-semibold text-white">Request your independent review</h2>
               <p className="mt-3 text-slate-300">
                 If concern remains after reading these guides, submit your case for a structured
-                medical review.
+                medical review. Review a{" "}
+                <Link href="/sample-report" className="text-amber-400 hover:text-amber-300 font-medium">
+                  sample report
+                </Link>{" "}
+                or the{" "}
+                <Link href="/faq" className="text-amber-400 hover:text-amber-300 font-medium">
+                  FAQ
+                </Link>{" "}
+                first if helpful.
               </p>
-              <div className="mt-5">
+              <div className="mt-5 flex flex-col sm:flex-row flex-wrap gap-3">
                 <Link
                   href="/request-review"
                   className="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors"
                 >
                   Request Review
+                </Link>
+                <Link
+                  href="/sample-report"
+                  className="inline-flex items-center justify-center px-6 py-3 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
+                >
+                  Sample Report
+                </Link>
+                <Link
+                  href="/faq"
+                  className="inline-flex items-center justify-center px-6 py-3 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
+                >
+                  FAQ
                 </Link>
               </div>
               <ReviewProcessReassurance className="mt-6" />
