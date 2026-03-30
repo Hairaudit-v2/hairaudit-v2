@@ -158,7 +158,7 @@ export const howToDocumentAHairTransplantProblemProperlyArticle: PatientIntentAr
         },
         {
           type: "p",
-          text: "These do not replace photos, but they can strengthen context. A full photo checklist is in [what photos are needed for a proper hair transplant review](/what-photos-are-needed-for-a-proper-hair-transplant-review). Evidence limits: [can a hair transplant be audited from photos](/can-a-hair-transplant-be-audited-from-photos). If you are unsure about timing, see [when should you seek an independent hair transplant review](/when-should-you-seek-an-independent-hair-transplant-review). [Request a review](/request-review) when you are ready.",
+          text: "These do not replace photos, but they can strengthen context. A full photo checklist is in [what photos are needed for a proper hair transplant review](/what-photos-are-needed-for-a-proper-hair-transplant-review). Evidence limits: [can a hair transplant be audited from photos](/can-a-hair-transplant-be-audited-from-photos). If you are unsure about timing, see [when should you seek an independent hair transplant review](/when-should-you-seek-an-independent-hair-transplant-review). [Request an independent HairAudit review](/request-review) when you are ready.",
         },
       ],
     },

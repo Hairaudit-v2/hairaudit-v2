@@ -111,7 +111,7 @@ export const unnaturalHairlineAfterHairTransplantArticle: PatientIntentArticle =
         },
         {
           type: "p",
-          text: "For how timing affects judgement, read [when is a hair transplant result final](/when-is-a-hair-transplant-final). For naturalness overall, see [what makes a hair transplant look natural](/what-makes-a-hair-transplant-look-natural), [hair direction and angle after transplant](/hair-direction-and-angle-after-transplant), and [temple work and frontal framing](/temple-work-and-frontal-framing). You can [request a review](/request-review) or preview a [sample report](/sample-report).",
+          text: "For how timing affects judgement, read [when is a hair transplant result final](/when-is-a-hair-transplant-final). For naturalness overall, see [what makes a hair transplant look natural](/what-makes-a-hair-transplant-look-natural), [hair direction and angle after transplant](/hair-direction-and-angle-after-transplant), and [temple work and frontal framing](/temple-work-and-frontal-framing). You can [Request an independent HairAudit review](/request-review) or [preview a sample HairAudit report](/sample-report).",
         },
       ],
     },

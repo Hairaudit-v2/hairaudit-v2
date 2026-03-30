@@ -5,7 +5,7 @@ export const canAHairTransplantBeAuditedFromPhotosArticle: PatientIntentArticle 
   pathname: "/can-a-hair-transplant-be-audited-from-photos",
   seoTitle: "Can a Hair Transplant Be Audited From Photos? | HairAudit",
   metaDescription:
-    "Can photos reveal graft failure, donor issues, or poor design? Learn what a photo-based independent review can assess — and where the limits are.",
+    "Can photos show graft failure, donor damage, or bad design? What independent, photo-based HairAudit review can assess—and what it cannot claim from pictures alone.",
   h1: "Can a Hair Transplant Be Audited From Photos?",
   intro:
     "Many patients ask whether photos are enough to judge a transplant result. In many cases, photos can provide useful evidence about donor appearance, recipient patterning, density balance, hairline design, documentation quality, and visible healing or growth concerns. But photos also have limits. A responsible review should be clear about both what can be assessed and what cannot be claimed with confidence.",

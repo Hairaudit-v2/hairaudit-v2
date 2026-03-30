@@ -80,7 +80,7 @@ export const whyHairCalibreMattersMoreThanPatientsThinkArticle: PatientIntentArt
         },
         {
           type: "p",
-          text: "[Request a review](/request-review). [Hair Transplant Density Too Low: Delay or Quality Problem?](/hair-transplant-density-too-low). [How Many Grafts Is Too Many?](/how-many-grafts-is-too-many). [Donor Reserve and Future Options: Why Long-Term Planning Matters](/donor-reserve-and-future-options). [Sample report](/sample-report).",
+          text: "[Request an independent HairAudit review](/request-review). [Hair Transplant Density Too Low: Delay or Quality Problem?](/hair-transplant-density-too-low). [How Many Grafts Is Too Many?](/how-many-grafts-is-too-many). [Donor Reserve and Future Options: Why Long-Term Planning Matters](/donor-reserve-and-future-options). [sample HairAudit report](/sample-report).",
         },
       ],
     },

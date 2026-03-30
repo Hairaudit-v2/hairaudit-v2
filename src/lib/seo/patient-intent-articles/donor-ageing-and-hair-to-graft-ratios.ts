@@ -64,7 +64,7 @@ export const donorAgeingAndHairToGraftRatiosArticle: PatientIntentArticle = {
         },
         {
           type: "p",
-          text: "[Can a hair transplant be audited from photos](/can-a-hair-transplant-be-audited-from-photos), [request a review](/request-review), [sample report](/sample-report).",
+          text: "[Can a hair transplant be audited from photos](/can-a-hair-transplant-be-audited-from-photos), [Request an independent HairAudit review](/request-review), [sample HairAudit report](/sample-report).",
         },
       ],
     },

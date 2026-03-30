@@ -83,7 +83,7 @@ export const afroHairTransplantDensityPlanningArticle: PatientIntentArticle = {
         },
         {
           type: "p",
-          text: "[Request a review](/request-review). [Hair Transplant Density Too Low: Delay or Quality Problem?](/hair-transplant-density-too-low). [What Makes a Hair Transplant Look Natural?](/what-makes-a-hair-transplant-look-natural). [How Many Grafts Is Too Many?](/how-many-grafts-is-too-many). [Sample report](/sample-report).",
+          text: "[Request an independent HairAudit review](/request-review). [Hair Transplant Density Too Low: Delay or Quality Problem?](/hair-transplant-density-too-low). [What Makes a Hair Transplant Look Natural?](/what-makes-a-hair-transplant-look-natural). [How Many Grafts Is Too Many?](/how-many-grafts-is-too-many). [sample HairAudit report](/sample-report).",
         },
       ],
     },

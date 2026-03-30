@@ -5,7 +5,7 @@ export const whenIsAHairTransplantFinalArticle: PatientIntentArticle = {
   pathname: "/when-is-a-hair-transplant-final",
   seoTitle: "When Is a Hair Transplant Result Final? Timeline Explained | HairAudit",
   metaDescription:
-    "When can a hair transplant be judged properly? Learn the usual healing and growth timeline, what may still change, and when review becomes more meaningful.",
+    "When can you judge a hair transplant fairly? Usual healing and growth timelines, what may still change, and when an independent HairAudit review is most meaningful.",
   h1: "When Is a Hair Transplant Result Final?",
   intro:
     "Many patients want to know when they can judge whether a transplant has worked well. The honest answer is that different parts of the outcome become assessable at different times. Some concerns can be discussed early, while others need patience until growth and maturation are further along. This page explains the timeline more clearly so patients know what can reasonably be judged — and when.",
@@ -100,7 +100,7 @@ export const whenIsAHairTransplantFinalArticle: PatientIntentArticle = {
         },
         {
           type: "p",
-          text: "For shedding versus survival concerns, see [shock loss vs graft failure](/shock-loss-vs-graft-failure). You can [request a review](/request-review), open a [sample report](/sample-report), or read the [FAQ](/faq).",
+          text: "For shedding versus survival concerns, see [shock loss vs graft failure](/shock-loss-vs-graft-failure). You can [Request an independent HairAudit review](/request-review), [view a sample HairAudit report](/sample-report), or read the [FAQ](/faq).",
         },
       ],
     },
@@ -108,5 +108,9 @@ export const whenIsAHairTransplantFinalArticle: PatientIntentArticle = {
   faqs: [],
   ctaLead: "Want help understanding whether it’s too early to judge your result?",
   ctaSupporting: "Request an independent review based on your timeline and photos.",
-  relatedSlugs: ["shock-loss-vs-graft-failure", "what-photos-are-needed-for-a-proper-hair-transplant-review"],
+  relatedSlugs: [
+    "shock-loss-vs-graft-failure",
+    "what-photos-are-needed-for-a-proper-hair-transplant-review",
+    "is-my-hair-transplant-normal",
+  ],
 };

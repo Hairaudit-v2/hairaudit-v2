@@ -107,7 +107,7 @@ export const canAnOverharvestedDonorBeCorrectedArticle: PatientIntentArticle = {
         },
         {
           type: "p",
-          text: "[Request a review](/request-review). [Overharvested Donor Area: What to Look For](/overharvested-donor-area). [Donor Reserve and Future Options: Why Long-Term Planning Matters](/donor-reserve-and-future-options). [Thinking About a Second Hair Transplant? Read This First](/thinking-about-a-second-hair-transplant). [Sample report](/sample-report).",
+          text: "[Request an independent HairAudit review](/request-review). [Overharvested Donor Area: What to Look For](/overharvested-donor-area). [Donor Reserve and Future Options: Why Long-Term Planning Matters](/donor-reserve-and-future-options). [Thinking About a Second Hair Transplant? Read This First](/thinking-about-a-second-hair-transplant). [sample HairAudit report](/sample-report).",
         },
       ],
     },

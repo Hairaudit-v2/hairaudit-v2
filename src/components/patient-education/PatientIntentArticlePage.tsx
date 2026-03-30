@@ -149,7 +149,7 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
                 href="/hair-transplant-problems"
                 className="text-sm text-slate-500 hover:text-slate-300 transition-colors"
               >
-                Hair transplant concerns
+                Patient guides
               </Link>
               <span className="text-slate-600 mx-2">/</span>
               <span className="text-slate-400 text-sm">{article.h1}</span>
@@ -162,6 +162,41 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
               {article.h1}
             </h1>
             <p className="mt-6 text-lg text-slate-300 leading-relaxed">{article.intro}</p>
+
+            <div className="mt-8 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-4 sm:px-5 sm:py-5">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Next steps</p>
+              <ul className="mt-3 flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-x-1 sm:gap-y-2 text-sm text-slate-300">
+                <li className="sm:after:content-['·'] sm:after:px-2 sm:after:text-slate-600 sm:last:after:content-none">
+                  <Link
+                    href="/request-review"
+                    className="text-amber-400 hover:text-amber-300 font-medium underline underline-offset-2"
+                  >
+                    Request an independent review
+                  </Link>
+                </li>
+                <li className="sm:after:content-['·'] sm:after:px-2 sm:after:text-slate-600 sm:last:after:content-none">
+                  <Link
+                    href="/sample-report"
+                    className="text-amber-400 hover:text-amber-300 font-medium underline underline-offset-2"
+                  >
+                    View a sample report
+                  </Link>
+                </li>
+                <li className="sm:after:content-['·'] sm:after:px-2 sm:after:text-slate-600 sm:last:after:content-none">
+                  <Link href="/faq" className="text-amber-400 hover:text-amber-300 font-medium underline underline-offset-2">
+                    FAQ
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/hair-transplant-problems"
+                    className="text-slate-400 hover:text-slate-200 underline underline-offset-2"
+                  >
+                    All patient guides
+                  </Link>
+                </li>
+              </ul>
+            </div>
           </div>
 
           <div className="max-w-3xl mx-auto mt-12 space-y-14 sm:space-y-16">
@@ -190,20 +225,20 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
               </h2>
               <p className="mt-3 text-slate-300 leading-relaxed">
                 {article.ctaSupporting ??
-                  "If you want a structured, evidence-based read of your photos and timeline—without clinic marketing—submit your case for review. You can also review a sample report or read answers to common questions first."}
+                  "If you want a structured, evidence-based read of your photos and timeline—independent of clinic marketing—submit your case for review. You can also view a sample report or read the FAQ first."}
               </p>
               <div className="mt-6 flex flex-col sm:flex-row flex-wrap gap-3">
                 <Link
                   href="/request-review"
                   className="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors"
                 >
-                  Request Review
+                  Request an independent review
                 </Link>
                 <Link
                   href="/sample-report"
                   className="inline-flex items-center justify-center px-6 py-3 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
                 >
-                  Sample Report
+                  View sample report
                 </Link>
                 <Link
                   href="/faq"
@@ -228,7 +263,7 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
                     >
                       {a.h1}
                     </Link>
-                    <p className="text-sm text-slate-500 mt-1">{a.metaDescription}</p>
+                    <p className="text-sm text-slate-500 mt-1 line-clamp-2">{a.metaDescription}</p>
                   </li>
                 ))}
               </ul>
@@ -250,7 +285,7 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
               </li>
               <li>
                 <Link href="/hair-transplant-problems" className="text-slate-400 hover:text-slate-200">
-                  Hair transplant concerns hub
+                  Patient guides hub
                 </Link>
               </li>
             </ul>

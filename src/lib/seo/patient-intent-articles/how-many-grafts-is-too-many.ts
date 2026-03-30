@@ -105,7 +105,7 @@ export const howManyGraftsIsTooManyArticle: PatientIntentArticle = {
         },
         {
           type: "p",
-          text: "[Request a review](/request-review). [Overharvested Donor Area: What to Look For](/overharvested-donor-area). [Donor ageing and hair-to-graft ratios](/donor-ageing-and-hair-to-graft-ratios). [Donor Reserve and Future Options: Why Long-Term Planning Matters](/donor-reserve-and-future-options). [Sample report](/sample-report).",
+          text: "[Request an independent HairAudit review](/request-review). [Overharvested Donor Area: What to Look For](/overharvested-donor-area). [Donor ageing and hair-to-graft ratios](/donor-ageing-and-hair-to-graft-ratios). [Donor Reserve and Future Options: Why Long-Term Planning Matters](/donor-reserve-and-future-options). [sample HairAudit report](/sample-report).",
         },
       ],
     },

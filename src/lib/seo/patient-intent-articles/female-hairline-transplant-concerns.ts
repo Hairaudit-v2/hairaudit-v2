@@ -108,7 +108,7 @@ export const femaleHairlineTransplantConcernsArticle: PatientIntentArticle = {
         },
         {
           type: "p",
-          text: "[Request a review](/request-review). [Unnatural Hairline After Hair Transplant: What Patients Notice First](/unnatural-hairline-after-hair-transplant). [What Makes a Hair Transplant Look Natural?](/what-makes-a-hair-transplant-look-natural). [Temple Work and Frontal Framing: Why Small Errors Show](/temple-work-and-frontal-framing). [Sample report](/sample-report).",
+          text: "[Request an independent HairAudit review](/request-review). [Unnatural Hairline After Hair Transplant: What Patients Notice First](/unnatural-hairline-after-hair-transplant). [What Makes a Hair Transplant Look Natural?](/what-makes-a-hair-transplant-look-natural). [Temple Work and Frontal Framing: Why Small Errors Show](/temple-work-and-frontal-framing). [FAQ](/faq). [sample HairAudit report](/sample-report).",
         },
       ],
     },

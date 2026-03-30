@@ -154,7 +154,7 @@ export const whatPhotosAreNeededArticle: PatientIntentArticle = {
         },
         {
           type: "p",
-          text: "For how to organise evidence over time, read [how to document a hair transplant problem properly](/how-to-document-a-hair-transplant-problem-properly). Limits of photo-only review are explained in [can a hair transplant be audited from photos](/can-a-hair-transplant-be-audited-from-photos). You can [request a review](/request-review), preview a [sample report](/sample-report), or read the [FAQ](/faq).",
+          text: "For how to organise evidence over time, read [how to document a hair transplant problem properly](/how-to-document-a-hair-transplant-problem-properly). Limits of photo-only review are explained in [can a hair transplant be audited from photos](/can-a-hair-transplant-be-audited-from-photos). You can [Request an independent HairAudit review](/request-review), [preview a sample HairAudit report](/sample-report), or read the [FAQ](/faq).",
         },
       ],
     },

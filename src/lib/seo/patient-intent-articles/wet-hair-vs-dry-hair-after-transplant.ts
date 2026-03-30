@@ -84,7 +84,7 @@ export const wetHairVsDryHairAfterTransplantArticle: PatientIntentArticle = {
         },
         {
           type: "p",
-          text: "[Request a review](/request-review). [Hair Transplant Density Too Low: Delay or Quality Problem?](/hair-transplant-density-too-low). [Why Does My Hair Transplant Look Worse in Bright Light?](/why-does-my-hair-transplant-look-worse-in-bright-light). [When Is a Hair Transplant Result Final?](/when-is-a-hair-transplant-final). [Sample report](/sample-report).",
+          text: "[Request an independent HairAudit review](/request-review). [Hair Transplant Density Too Low: Delay or Quality Problem?](/hair-transplant-density-too-low). [Why Does My Hair Transplant Look Worse in Bright Light?](/why-does-my-hair-transplant-look-worse-in-bright-light). [When Is a Hair Transplant Result Final?](/when-is-a-hair-transplant-final). [sample HairAudit report](/sample-report).",
         },
       ],
     },

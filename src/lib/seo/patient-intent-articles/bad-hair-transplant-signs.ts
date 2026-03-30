@@ -5,7 +5,7 @@ export const badHairTransplantSignsArticle: PatientIntentArticle = {
   pathname: "/bad-hair-transplant-signs",
   seoTitle: "Bad Hair Transplant: Signs Patients Often Miss | HairAudit",
   metaDescription:
-    "Worried your hair transplant looks wrong? Learn the signs patients often miss, what may still be normal, and when an independent review may help.",
+    "Worried your hair transplant looks wrong? Learn easy-to-miss warning signs, what can still be normal during recovery, and when an independent HairAudit review helps.",
   h1: "Bad Hair Transplant: Signs Patients Often Miss",
   intro:
     "Not every disappointing hair transplant result is obvious straight away. Some issues become more noticeable only as swelling settles, native hair changes, or the grafts begin to grow. Patients often feel that something seems “off” before they can explain exactly why. This page breaks down the signs patients often miss, what may still be part of a normal timeline, and when an independent review may help clarify the situation.",
@@ -112,7 +112,7 @@ export const badHairTransplantSignsArticle: PatientIntentArticle = {
         },
         {
           type: "p",
-          text: "You can [request a review](/request-review), review a [sample report](/sample-report), or browse the [FAQ](/faq). The [hair transplant concerns hub](/hair-transplant-problems) lists shorter topic guides as well.",
+          text: "You can [Request an independent HairAudit review](/request-review), [view a sample HairAudit report](/sample-report), or browse the [FAQ](/faq). The [patient guides hub](/hair-transplant-problems) lists quick topic pages and full guides by theme.",
         },
       ],
     },
@@ -120,5 +120,10 @@ export const badHairTransplantSignsArticle: PatientIntentArticle = {
   faqs: [],
   ctaLead: "Concerned about your result?",
   ctaSupporting: "Request an independent HairAudit review based on your photos and documentation.",
-  relatedSlugs: ["shock-loss-vs-graft-failure", "when-is-a-hair-transplant-final", "overharvested-donor-area"],
+  relatedSlugs: [
+    "shock-loss-vs-graft-failure",
+    "when-is-a-hair-transplant-final",
+    "when-should-you-seek-an-independent-hair-transplant-review",
+    "overharvested-donor-area",
+  ],
 };

@@ -90,7 +90,7 @@ export const hairTransplantRepairAfterOverseasSurgeryArticle: PatientIntentArtic
         },
         {
           type: "p",
-          text: "[Request a review](/request-review). [How to Document a Hair Transplant Problem Properly](/how-to-document-a-hair-transplant-problem-properly). [Thinking About a Second Hair Transplant? Read This First](/thinking-about-a-second-hair-transplant). [Donor Reserve and Future Options: Why Long-Term Planning Matters](/donor-reserve-and-future-options). [Sample report](/sample-report).",
+          text: "[Request an independent HairAudit review](/request-review). [How to Document a Hair Transplant Problem Properly](/how-to-document-a-hair-transplant-problem-properly). [Thinking About a Second Hair Transplant? Read This First](/thinking-about-a-second-hair-transplant). [Donor Reserve and Future Options: Why Long-Term Planning Matters](/donor-reserve-and-future-options). [sample HairAudit report](/sample-report).",
         },
       ],
     },

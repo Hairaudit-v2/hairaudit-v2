@@ -94,7 +94,7 @@ export const templeWorkAndFrontalFramingArticle: PatientIntentArticle = {
         },
         {
           type: "p",
-          text: "See [unnatural hairline after hair transplant](/unnatural-hairline-after-hair-transplant), [what makes a hair transplant look natural](/what-makes-a-hair-transplant-look-natural), and [hair direction and angle after transplant](/hair-direction-and-angle-after-transplant). [Request a review](/request-review) or review a [sample report](/sample-report).",
+          text: "See [unnatural hairline after hair transplant](/unnatural-hairline-after-hair-transplant), [what makes a hair transplant look natural](/what-makes-a-hair-transplant-look-natural), and [hair direction and angle after transplant](/hair-direction-and-angle-after-transplant). [Request an independent HairAudit review](/request-review) or [view a sample HairAudit report](/sample-report).",
         },
       ],
     },

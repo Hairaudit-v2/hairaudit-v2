@@ -96,7 +96,7 @@ export const thinkingAboutASecondHairTransplantArticle: PatientIntentArticle = {
         },
         {
           type: "p",
-          text: "[Request a review](/request-review). [Donor Reserve and Future Options: Why Long-Term Planning Matters](/donor-reserve-and-future-options). [How Many Grafts Is Too Many?](/how-many-grafts-is-too-many). [Overharvested Donor Area: What to Look For](/overharvested-donor-area). [Sample report](/sample-report).",
+          text: "[Request an independent HairAudit review](/request-review). [Donor Reserve and Future Options: Why Long-Term Planning Matters](/donor-reserve-and-future-options). [How Many Grafts Is Too Many?](/how-many-grafts-is-too-many). [Overharvested Donor Area: What to Look For](/overharvested-donor-area). [sample HairAudit report](/sample-report).",
         },
       ],
     },

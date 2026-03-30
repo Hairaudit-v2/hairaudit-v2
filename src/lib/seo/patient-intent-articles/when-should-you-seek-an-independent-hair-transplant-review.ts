@@ -130,7 +130,7 @@ export const whenShouldYouSeekAnIndependentHairTransplantReviewArticle: PatientI
         },
         {
           type: "p",
-          text: "Photo preparation: [what photos are needed for a proper hair transplant review](/what-photos-are-needed-for-a-proper-hair-transplant-review), [how to document a hair transplant problem properly](/how-to-document-a-hair-transplant-problem-properly). Wider sign patterns: [bad hair transplant: signs patients often miss](/bad-hair-transplant-signs). Scope of photos: [can a hair transplant be audited from photos](/can-a-hair-transplant-be-audited-from-photos). [Request a review](/request-review) or preview a [sample report](/sample-report).",
+          text: "Photo preparation: [what photos are needed for a proper hair transplant review](/what-photos-are-needed-for-a-proper-hair-transplant-review), [how to document a hair transplant problem properly](/how-to-document-a-hair-transplant-problem-properly). Wider sign patterns: [bad hair transplant: signs patients often miss](/bad-hair-transplant-signs). Scope of photos: [can a hair transplant be audited from photos](/can-a-hair-transplant-be-audited-from-photos). [Request an independent HairAudit review](/request-review) or [preview a sample HairAudit report](/sample-report).",
         },
       ],
     },
@@ -143,5 +143,6 @@ export const whenShouldYouSeekAnIndependentHairTransplantReviewArticle: PatientI
     "can-a-hair-transplant-be-audited-from-photos",
     "when-is-a-hair-transplant-final",
     "bad-hair-transplant-signs",
+    "how-to-document-a-hair-transplant-problem-properly",
   ],
 };

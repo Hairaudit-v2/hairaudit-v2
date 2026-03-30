@@ -90,7 +90,7 @@ export const howToReadAHairauditReportArticle: PatientIntentArticle = {
         },
         {
           type: "p",
-          text: "[Request a review](/request-review). [Sample report](/sample-report). [What an Independent Hair Transplant Audit Can and Cannot Do](/what-an-independent-hair-transplant-audit-can-and-cannot-do). [FAQ](/faq).",
+          text: "[Request an independent HairAudit review](/request-review). [sample HairAudit report](/sample-report). [What an Independent Hair Transplant Audit Can and Cannot Do](/what-an-independent-hair-transplant-audit-can-and-cannot-do). [FAQ](/faq).",
         },
       ],
     },

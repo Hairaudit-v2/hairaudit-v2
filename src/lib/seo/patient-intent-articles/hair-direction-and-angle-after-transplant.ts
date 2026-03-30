@@ -96,7 +96,7 @@ export const hairDirectionAndAngleAfterTransplantArticle: PatientIntentArticle =
         },
         {
           type: "p",
-          text: "Related guides: [what makes a hair transplant look natural](/what-makes-a-hair-transplant-look-natural), [row patterning after hair transplant](/row-patterning-after-hair-transplant), [unnatural hairline after hair transplant](/unnatural-hairline-after-hair-transplant). [Request a review](/request-review) or preview a [sample report](/sample-report).",
+          text: "Related guides: [what makes a hair transplant look natural](/what-makes-a-hair-transplant-look-natural), [row patterning after hair transplant](/row-patterning-after-hair-transplant), [unnatural hairline after hair transplant](/unnatural-hairline-after-hair-transplant). [Request an independent HairAudit review](/request-review) or [preview a sample HairAudit report](/sample-report).",
         },
       ],
     },

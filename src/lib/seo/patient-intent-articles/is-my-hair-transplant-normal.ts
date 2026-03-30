@@ -80,7 +80,7 @@ export const isMyHairTransplantNormalArticle: PatientIntentArticle = {
         },
         {
           type: "p",
-          text: "[Request a review](/request-review). [Shock Loss vs Graft Failure After Hair Transplant](/shock-loss-vs-graft-failure). [When Is a Hair Transplant Result Final?](/when-is-a-hair-transplant-final). [Bad Hair Transplant: Signs Patients Often Miss](/bad-hair-transplant-signs). [FAQ](/faq).",
+          text: "[Request an independent HairAudit review](/request-review). [Shock Loss vs Graft Failure After Hair Transplant](/shock-loss-vs-graft-failure). [When Is a Hair Transplant Result Final?](/when-is-a-hair-transplant-final). [Bad Hair Transplant: Signs Patients Often Miss](/bad-hair-transplant-signs). [FAQ](/faq).",
         },
       ],
     },

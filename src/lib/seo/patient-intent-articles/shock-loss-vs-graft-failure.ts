@@ -86,7 +86,7 @@ export const shockLossVsGraftFailureArticle: PatientIntentArticle = {
         },
         {
           type: "p",
-          text: "Our focused guide on [hair transplant graft failure](/hair-transplant-graft-failure) covers signs and next steps in a shorter format.",
+          text: "For a shorter read on poor growth and red flags, see [hair transplant graft failure: signs and next steps](/hair-transplant-graft-failure).",
         },
       ],
     },

@@ -101,7 +101,7 @@ export const donorReserveAndFutureOptionsArticle: PatientIntentArticle = {
         },
         {
           type: "p",
-          text: "[Request a review](/request-review). [Overharvested Donor Area: What to Look For](/overharvested-donor-area). [Thinking About a Second Hair Transplant? Read This First](/thinking-about-a-second-hair-transplant). [How Many Grafts Is Too Many?](/how-many-grafts-is-too-many). [Sample report](/sample-report).",
+          text: "[Request an independent HairAudit review](/request-review). [Overharvested Donor Area: What to Look For](/overharvested-donor-area). [Thinking About a Second Hair Transplant? Read This First](/thinking-about-a-second-hair-transplant). [How Many Grafts Is Too Many?](/how-many-grafts-is-too-many). [sample HairAudit report](/sample-report).",
         },
       ],
     },

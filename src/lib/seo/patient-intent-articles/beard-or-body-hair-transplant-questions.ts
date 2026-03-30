@@ -98,7 +98,7 @@ export const beardOrBodyHairTransplantQuestionsArticle: PatientIntentArticle = {
         },
         {
           type: "p",
-          text: "[Request a review](/request-review). [Donor Reserve and Future Options: Why Long-Term Planning Matters](/donor-reserve-and-future-options). [Thinking About a Second Hair Transplant? Read This First](/thinking-about-a-second-hair-transplant). [How Many Grafts Is Too Many?](/how-many-grafts-is-too-many). [Sample report](/sample-report).",
+          text: "[Request an independent HairAudit review](/request-review). [Donor Reserve and Future Options: Why Long-Term Planning Matters](/donor-reserve-and-future-options). [Thinking About a Second Hair Transplant? Read This First](/thinking-about-a-second-hair-transplant). [How Many Grafts Is Too Many?](/how-many-grafts-is-too-many). [FAQ](/faq). [sample HairAudit report](/sample-report).",
         },
       ],
     },

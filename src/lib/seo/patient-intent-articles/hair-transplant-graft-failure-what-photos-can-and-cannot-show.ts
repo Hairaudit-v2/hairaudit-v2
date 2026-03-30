@@ -124,7 +124,7 @@ export const hairTransplantGraftFailureWhatPhotosCanAndCannotShowArticle: Patien
         },
         {
           type: "p",
-          text: "Broader framing: [can a hair transplant be audited from photos](/can-a-hair-transplant-be-audited-from-photos). Shorter graft overview: [hair transplant graft failure](/hair-transplant-graft-failure). [Request a review](/request-review). Questions: [FAQ](/faq).",
+          text: "Broader framing: [can a hair transplant be audited from photos](/can-a-hair-transplant-be-audited-from-photos). Shorter graft overview: [hair transplant graft failure](/hair-transplant-graft-failure). [Request an independent HairAudit review](/request-review). Questions: [FAQ](/faq).",
         },
       ],
     },

@@ -111,7 +111,7 @@ export const shouldYouTrustAClinicAssessmentOfItsOwnWorkArticle: PatientIntentAr
         },
         {
           type: "p",
-          text: "[Request a review](/request-review). [Hair Transplant Second Opinion vs Clinic Opinion: What's the Difference?](/hair-transplant-second-opinion-vs-clinic-opinion). [What an Independent Hair Transplant Audit Can and Cannot Do](/what-an-independent-hair-transplant-audit-can-and-cannot-do). [How to Prepare for a Hair Transplant Complaint or Dispute](/how-to-prepare-for-a-hair-transplant-complaint-or-dispute). [Sample report](/sample-report).",
+          text: "[Request an independent HairAudit review](/request-review). [Hair Transplant Second Opinion vs Clinic Opinion: What's the Difference?](/hair-transplant-second-opinion-vs-clinic-opinion). [What an Independent Hair Transplant Audit Can and Cannot Do](/what-an-independent-hair-transplant-audit-can-and-cannot-do). [How to Prepare for a Hair Transplant Complaint or Dispute](/how-to-prepare-for-a-hair-transplant-complaint-or-dispute). [sample HairAudit report](/sample-report).",
         },
       ],
     },

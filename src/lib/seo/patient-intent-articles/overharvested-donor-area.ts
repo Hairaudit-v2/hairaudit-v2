@@ -118,7 +118,7 @@ export const overharvestedDonorAreaArticle: PatientIntentArticle = {
         },
         {
           type: "p",
-          text: "For a wider view of recipient and donor warning signs, read [bad hair transplant: signs patients often miss](/bad-hair-transplant-signs). You can [request a review](/request-review), review a [sample report](/sample-report), or browse the [FAQ](/faq) when you are ready.",
+          text: "For a wider view of recipient and donor warning signs, read [bad hair transplant: signs patients often miss](/bad-hair-transplant-signs). You can [Request an independent HairAudit review](/request-review), [view a sample HairAudit report](/sample-report), or browse the [FAQ](/faq) when you are ready.",
         },
       ],
     },

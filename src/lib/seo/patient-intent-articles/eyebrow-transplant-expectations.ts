@@ -103,7 +103,7 @@ export const eyebrowTransplantExpectationsArticle: PatientIntentArticle = {
         },
         {
           type: "p",
-          text: "[Request a review](/request-review). [What Makes a Hair Transplant Look Natural?](/what-makes-a-hair-transplant-look-natural). [Hair Direction and Angle After Transplant: Why It Matters](/hair-direction-and-angle-after-transplant). [Sample report](/sample-report).",
+          text: "[Request an independent HairAudit review](/request-review). [What Makes a Hair Transplant Look Natural?](/what-makes-a-hair-transplant-look-natural). [Hair Direction and Angle After Transplant: Why It Matters](/hair-direction-and-angle-after-transplant). [FAQ](/faq). [sample HairAudit report](/sample-report).",
         },
       ],
     },

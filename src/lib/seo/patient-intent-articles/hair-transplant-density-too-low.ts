@@ -5,7 +5,7 @@ export const hairTransplantDensityTooLowArticle: PatientIntentArticle = {
   pathname: "/hair-transplant-density-too-low",
   seoTitle: "Hair Transplant Density Too Low: Delay or Quality Problem? | HairAudit",
   metaDescription:
-    "Does your hair transplant look too thin? Learn what low density may mean, when it may still be too early to judge, and when review may help.",
+    "Thin-looking transplant: normal maturation or a real density problem? What low density can mean, when it is too early to judge, and when independent HairAudit review helps.",
   h1: "Hair Transplant Density Too Low: Delay or Quality Problem?",
   intro:
     "Low density is one of the most common reasons patients become disappointed with a transplant result. But low density does not always mean the same thing. Sometimes it reflects a timeline issue. Sometimes it reflects planning limitations. Sometimes it reflects a quality concern. This page helps separate those possibilities more clearly.",
@@ -127,7 +127,7 @@ export const hairTransplantDensityTooLowArticle: PatientIntentArticle = {
         },
         {
           type: "p",
-          text: "See [when is a hair transplant result final](/when-is-a-hair-transplant-final), [shock loss vs graft failure](/shock-loss-vs-graft-failure), and [can a hair transplant be audited from photos](/can-a-hair-transplant-be-audited-from-photos). A compact guide on thin results: [hair transplant too thin](/hair-transplant-too-thin). [Request a review](/request-review) or open a [sample report](/sample-report).",
+          text: "See [when is a hair transplant result final](/when-is-a-hair-transplant-final), [shock loss vs graft failure](/shock-loss-vs-graft-failure), and [can a hair transplant be audited from photos](/can-a-hair-transplant-be-audited-from-photos). A compact guide on thin results: [hair transplant too thin](/hair-transplant-too-thin). [Request an independent HairAudit review](/request-review) or [view a sample HairAudit report](/sample-report).",
         },
       ],
     },
@@ -139,11 +139,7 @@ export const hairTransplantDensityTooLowArticle: PatientIntentArticle = {
     "when-is-a-hair-transplant-final",
     "shock-loss-vs-graft-failure",
     "can-a-hair-transplant-be-audited-from-photos",
-    "hair-transplant-too-thin",
     "bad-crown-result-after-hair-transplant",
     "how-many-grafts-is-too-many",
-    "why-does-my-hair-transplant-look-worse-in-bright-light",
-    "wet-hair-vs-dry-hair-after-transplant",
-    "how-to-think-about-realistic-hair-transplant-expectations",
   ],
 };

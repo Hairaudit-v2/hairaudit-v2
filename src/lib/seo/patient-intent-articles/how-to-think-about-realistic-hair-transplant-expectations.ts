@@ -106,7 +106,7 @@ export const howToThinkAboutRealisticHairTransplantExpectationsArticle: PatientI
         },
         {
           type: "p",
-          text: "[Request a review](/request-review). [When Is a Hair Transplant Result Final?](/when-is-a-hair-transplant-final). [Why Hair Calibre Matters More Than Patients Think](/why-hair-calibre-matters-more-than-patients-think). [Donor Reserve and Future Options: Why Long-Term Planning Matters](/donor-reserve-and-future-options). [Sample report](/sample-report).",
+          text: "[Request an independent HairAudit review](/request-review). [When Is a Hair Transplant Result Final?](/when-is-a-hair-transplant-final). [Why Hair Calibre Matters More Than Patients Think](/why-hair-calibre-matters-more-than-patients-think). [Donor Reserve and Future Options: Why Long-Term Planning Matters](/donor-reserve-and-future-options). [sample HairAudit report](/sample-report).",
         },
       ],
     },

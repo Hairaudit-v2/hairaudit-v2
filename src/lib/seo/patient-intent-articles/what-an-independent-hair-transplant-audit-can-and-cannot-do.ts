@@ -114,7 +114,7 @@ export const whatAnIndependentHairTransplantAuditCanAndCannotDoArticle: PatientI
         },
         {
           type: "p",
-          text: "[Request a review](/request-review). [Can a Hair Transplant Be Audited From Photos?](/can-a-hair-transplant-be-audited-from-photos). [What Photos Are Needed for a Proper Hair Transplant Review?](/what-photos-are-needed-for-a-proper-hair-transplant-review). [Sample report](/sample-report). [FAQ](/faq).",
+          text: "[Request an independent HairAudit review](/request-review). [Can a Hair Transplant Be Audited From Photos?](/can-a-hair-transplant-be-audited-from-photos). [What Photos Are Needed for a Proper Hair Transplant Review?](/what-photos-are-needed-for-a-proper-hair-transplant-review). [sample HairAudit report](/sample-report). [FAQ](/faq).",
         },
       ],
     },

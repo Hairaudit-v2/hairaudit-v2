@@ -123,7 +123,7 @@ export const howToPrepareForAHairTransplantComplaintOrDisputeArticle: PatientInt
         },
         {
           type: "p",
-          text: "[Request a review](/request-review). [How to Document a Hair Transplant Problem Properly](/how-to-document-a-hair-transplant-problem-properly). [What Photos Are Needed for a Proper Hair Transplant Review?](/what-photos-are-needed-for-a-proper-hair-transplant-review). [When Should You Seek an Independent Hair Transplant Review?](/when-should-you-seek-an-independent-hair-transplant-review). [Sample report](/sample-report).",
+          text: "[Request an independent HairAudit review](/request-review). [How to Document a Hair Transplant Problem Properly](/how-to-document-a-hair-transplant-problem-properly). [What Photos Are Needed for a Proper Hair Transplant Review?](/what-photos-are-needed-for-a-proper-hair-transplant-review). [When Should You Seek an Independent Hair Transplant Review?](/when-should-you-seek-an-independent-hair-transplant-review). [sample HairAudit report](/sample-report).",
         },
       ],
     },

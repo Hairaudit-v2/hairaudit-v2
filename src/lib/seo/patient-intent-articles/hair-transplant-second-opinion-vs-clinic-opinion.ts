@@ -94,7 +94,7 @@ export const hairTransplantSecondOpinionVsClinicOpinionArticle: PatientIntentArt
         },
         {
           type: "p",
-          text: "[Request a review](/request-review). [When Should You Seek an Independent Hair Transplant Review?](/when-should-you-seek-an-independent-hair-transplant-review). [Can a Hair Transplant Be Audited From Photos?](/can-a-hair-transplant-be-audited-from-photos). [Sample report](/sample-report). [FAQ](/faq).",
+          text: "[Request an independent HairAudit review](/request-review). [When Should You Seek an Independent Hair Transplant Review?](/when-should-you-seek-an-independent-hair-transplant-review). [Can a Hair Transplant Be Audited From Photos?](/can-a-hair-transplant-be-audited-from-photos). [sample HairAudit report](/sample-report). [FAQ](/faq).",
         },
       ],
     },

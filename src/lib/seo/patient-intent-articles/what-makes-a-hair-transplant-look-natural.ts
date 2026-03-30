@@ -88,7 +88,7 @@ export const whatMakesAHairTransplantLookNaturalArticle: PatientIntentArticle = 
         },
         {
           type: "p",
-          text: "See [when is a hair transplant result final](/when-is-a-hair-transplant-final). You can [request a review](/request-review) or open a [sample report](/sample-report) when you want structured documentation.",
+          text: "See [when is a hair transplant result final](/when-is-a-hair-transplant-final). You can [Request an independent HairAudit review](/request-review) or [view a sample HairAudit report](/sample-report) when you want structured documentation.",
         },
       ],
     },
