@@ -1,4 +1,5 @@
 import "./globals.css";
+import GoogleTagManager from "@/components/analytics/GoogleTagManager";
 import ClientAnalytics from "@/components/analytics/ClientAnalytics";
 import AuthAttributionRecorder from "@/components/analytics/AuthAttributionRecorder";
 import { logAuthEnvHealthOnce } from "@/lib/auth/validateAuthEnv";
@@ -55,6 +56,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="min-h-screen">
+        <GoogleTagManager />
         <I18nProvider>
           <I18nHtmlLang />
           <SkipLinkI18n />
