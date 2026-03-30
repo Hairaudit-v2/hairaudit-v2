@@ -126,5 +126,11 @@ export const overharvestedDonorAreaArticle: PatientIntentArticle = {
   faqs: [],
   ctaLead: "Worried your donor looks thinner than expected?",
   ctaSupporting: "Request an independent review of your donor photos and documentation.",
-  relatedSlugs: ["shock-loss-vs-graft-failure", "bad-hair-transplant-signs", "what-photos-are-needed-for-a-proper-hair-transplant-review"],
+  relatedSlugs: [
+    "donor-reserve-and-future-options",
+    "can-an-overharvested-donor-be-corrected",
+    "how-many-grafts-is-too-many",
+    "shock-loss-vs-graft-failure",
+    "what-photos-are-needed-for-a-proper-hair-transplant-review",
+  ],
 };

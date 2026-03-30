@@ -116,6 +116,16 @@ export default function RateMyHairTransplantPage() {
             <section className="mt-8">
               <h2 className="text-xl font-semibold text-white">Explore quality education pages</h2>
               <div className="mt-4 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <Link
+                  href="/is-my-hair-transplant-normal"
+                  className="rounded-2xl border border-white/10 bg-white/5 p-5 hover:border-emerald-300/60 transition-colors"
+                >
+                  <h3 className="font-semibold text-white">Is My Hair Transplant Normal?</h3>
+                  <p className="mt-2 text-sm text-slate-300">
+                    What may still be normal, what can look worse before it looks better, and when review
+                    may help.
+                  </p>
+                </Link>
                 {validationFunnelPages.map((page) => (
                   <Link
                     key={page.slug}

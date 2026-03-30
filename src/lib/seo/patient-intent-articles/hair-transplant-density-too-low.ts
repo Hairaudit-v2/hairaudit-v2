@@ -140,5 +140,10 @@ export const hairTransplantDensityTooLowArticle: PatientIntentArticle = {
     "shock-loss-vs-graft-failure",
     "can-a-hair-transplant-be-audited-from-photos",
     "hair-transplant-too-thin",
+    "bad-crown-result-after-hair-transplant",
+    "how-many-grafts-is-too-many",
+    "why-does-my-hair-transplant-look-worse-in-bright-light",
+    "wet-hair-vs-dry-hair-after-transplant",
+    "how-to-think-about-realistic-hair-transplant-expectations",
   ],
 };

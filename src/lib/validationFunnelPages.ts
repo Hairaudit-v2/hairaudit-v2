@@ -14,38 +14,6 @@ export type ValidationPageContent = {
 
 export const validationFunnelPages: ValidationPageContent[] = [
   {
-    slug: "is-my-hair-transplant-normal",
-    title: "Is My Hair Transplant Normal?",
-    description:
-      "Understand what normal healing and strong transplant quality look like with clear patient-friendly guidance.",
-    intro:
-      "Many patients ask this even when they are not worried. A structured review can confirm whether your timeline and appearance are consistent with strong surgical quality.",
-    excellentSignals: [
-      "Growth follows expected timing across months.",
-      "Hairline direction and softness look natural at normal viewing distance.",
-      "Donor area remains balanced without obvious patchiness.",
-      "Recipient density improves with even visual distribution.",
-    ],
-    highQualityExamples: [
-      "Month 1 to 3 shedding followed by clear month 4 to 6 regrowth trend.",
-      "Frontal line that blends with surrounding hair instead of looking sharp or pluggy.",
-      "Donor area that remains suitable for normal haircut choices.",
-    ],
-    faq: [
-      {
-        question: "Can a normal result still look uneven early on?",
-        answer:
-          "Yes. Early months can look uneven. Final appearance usually needs 9 to 12 months for proper evaluation.",
-      },
-      {
-        question: "Why get reviewed if my result looks good?",
-        answer:
-          "Independent validation gives structured documentation and confidence for your records and future planning.",
-      },
-    ],
-    suggestedScore: 84,
-  },
-  {
     slug: "great-hair-transplants",
     title: "Great Hair Transplants: What Makes Them Great?",
     description:

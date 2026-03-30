@@ -123,5 +123,7 @@ export const shockLossVsGraftFailureArticle: PatientIntentArticle = {
     "when-is-a-hair-transplant-final",
     "hair-transplant-graft-failure",
     "what-photos-are-needed-for-a-proper-hair-transplant-review",
+    "is-my-hair-transplant-normal",
+    "why-does-my-hair-transplant-look-worse-in-bright-light",
   ],
 };

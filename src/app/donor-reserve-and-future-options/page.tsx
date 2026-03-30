@@ -1,6 +1,6 @@
 import PatientIntentArticlePage from "@/components/patient-education/PatientIntentArticlePage";
 import { createPageMetadata } from "@/lib/seo/pageMetadata";
-import { isMyHairTransplantNormalArticle as article } from "@/lib/seo/patient-intent-articles/is-my-hair-transplant-normal";
+import { donorReserveAndFutureOptionsArticle as article } from "@/lib/seo/patient-intent-articles/donor-reserve-and-future-options";
 
 export const metadata = createPageMetadata({
   title: article.seoTitle,
@@ -8,6 +8,6 @@ export const metadata = createPageMetadata({
   pathname: article.pathname,
 });
 
-export default function IsMyHairTransplantNormalPage() {
+export default function DonorReserveAndFutureOptionsPage() {
   return <PatientIntentArticlePage articleSlug={article.slug} />;
 }

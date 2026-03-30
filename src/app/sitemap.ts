@@ -18,7 +18,6 @@ const PUBLIC_ROUTES = [
   "/hair-transplant-graft-failure",
   "/bad-hair-transplant-hairline",
   "/rate-my-hair-transplant",
-  "/is-my-hair-transplant-normal",
   "/great-hair-transplants",
   "/best-hair-transplant-results",
   "/community-results",
