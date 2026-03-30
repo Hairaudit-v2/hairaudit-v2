@@ -38,16 +38,27 @@ function GuideCard({
   title,
   description,
   linkLabel,
+  hubCardType,
+  hubCardSlug,
+  hubThemeId,
 }: {
   href: string;
   title: string;
   description: string;
   linkLabel: string;
+  hubCardType: "quick-topic" | "in-depth";
+  hubCardSlug: string;
+  hubThemeId?: string;
 }) {
   return (
     <Link
       href={href}
       className="rounded-2xl border border-white/10 bg-white/5 p-5 hover:border-amber-300/60 transition-colors flex flex-col h-full"
+      data-cta="patient-guides-hub-card"
+      data-hub-card-type={hubCardType}
+      data-hub-card-slug={hubCardSlug}
+      data-cta-destination={href}
+      {...(hubThemeId ? { "data-hub-theme": hubThemeId } : {})}
     >
       <h3 className="text-lg font-semibold text-white leading-snug">{title}</h3>
       <p className="mt-3 text-sm text-slate-300 leading-relaxed flex-1 line-clamp-4">{description}</p>
@@ -99,11 +110,15 @@ export default function HairTransplantProblemsHubPage() {
               Use the short topic pages for a fast orientation, then open the in-depth guides grouped by theme. Every guide is written in the same evidence-aware voice as our reports.
             </p>
 
-            <div className="mt-8 flex flex-col sm:flex-row flex-wrap gap-3">
+            <div
+              className="mt-8 flex flex-col sm:flex-row flex-wrap gap-3"
+              data-analytics-region="patient-guides-hub-hero-ctas"
+            >
               <Link
                 href="/request-review"
                 className="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors"
                 data-cta="patient-guides-hub-hero-request-review"
+                data-cta-destination="/request-review"
               >
                 Request an independent review
               </Link>
@@ -111,6 +126,7 @@ export default function HairTransplantProblemsHubPage() {
                 href="/sample-report"
                 className="inline-flex items-center justify-center px-6 py-3 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
                 data-cta="patient-guides-hub-hero-sample-report"
+                data-cta-destination="/sample-report"
               >
                 View a sample report
               </Link>
@@ -118,6 +134,7 @@ export default function HairTransplantProblemsHubPage() {
                 href="/faq"
                 className="inline-flex items-center justify-center px-6 py-3 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
                 data-cta="patient-guides-hub-hero-faq"
+                data-cta-destination="/faq"
               >
                 FAQ
               </Link>
@@ -132,7 +149,7 @@ export default function HairTransplantProblemsHubPage() {
               <p className="mt-3 text-slate-400 max-w-3xl text-sm sm:text-base leading-relaxed">
                 Shorter pages on frequent search questions. Pair them with the themed guides below when you want more depth.
               </p>
-              <div className="mt-6 grid sm:grid-cols-2 gap-4">
+              <div className="mt-6 grid sm:grid-cols-2 gap-4" data-analytics-region="patient-guides-hub-quick-topics">
                 {patientIssueLibrary.map((issue) => (
                   <GuideCard
                     key={issue.slug}
@@ -140,6 +157,8 @@ export default function HairTransplantProblemsHubPage() {
                     title={issue.title}
                     description={issue.description}
                     linkLabel="Open quick guide"
+                    hubCardType="quick-topic"
+                    hubCardSlug={issue.slug}
                   />
                 ))}
               </div>
@@ -164,7 +183,10 @@ export default function HairTransplantProblemsHubPage() {
                   {section.title}
                 </h3>
                 <p className="mt-2 text-sm sm:text-base text-slate-400 max-w-3xl leading-relaxed">{section.description}</p>
-                <div className="mt-5 grid sm:grid-cols-2 gap-4">
+                <div
+                  className="mt-5 grid sm:grid-cols-2 gap-4"
+                  data-analytics-region={`patient-guides-hub-theme-${section.id}`}
+                >
                   {section.guides.map((guide) => (
                     <GuideCard
                       key={guide.slug}
@@ -172,6 +194,9 @@ export default function HairTransplantProblemsHubPage() {
                       title={guide.h1}
                       description={guide.metaDescription}
                       linkLabel="Read full guide"
+                      hubCardType="in-depth"
+                      hubCardSlug={guide.slug}
+                      hubThemeId={section.id}
                     />
                   ))}
                 </div>
@@ -185,10 +210,12 @@ export default function HairTransplantProblemsHubPage() {
               <p className="mt-3 text-slate-300 leading-relaxed">
                 The audit example library shows how structured findings, evidence limits, and next steps appear in practice.
               </p>
-              <div className="mt-5">
+              <div className="mt-5" data-analytics-region="patient-guides-hub-audit-examples">
                 <Link
                   href="/audit-examples"
                   className="inline-flex items-center justify-center px-6 py-3 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
+                  data-cta="patient-guides-hub-audit-examples"
+                  data-cta-destination="/audit-examples"
                 >
                   Browse audit examples
                 </Link>
@@ -202,10 +229,12 @@ export default function HairTransplantProblemsHubPage() {
               <p className="mt-3 text-emerald-50/90 leading-relaxed">
                 Use the dedicated quality pathway for objective confirmation and a shareable score.
               </p>
-              <div className="mt-5">
+              <div className="mt-5" data-analytics-region="patient-guides-hub-rate-my">
                 <Link
                   href="/rate-my-hair-transplant"
                   className="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-emerald-500 text-slate-900 font-semibold hover:bg-emerald-400 transition-colors"
+                  data-cta="patient-guides-hub-rate-my-transplant"
+                  data-cta-destination="/rate-my-hair-transplant"
                 >
                   How good is my hair transplant?
                 </Link>
@@ -214,7 +243,10 @@ export default function HairTransplantProblemsHubPage() {
           </ScrollReveal>
 
           <ScrollReveal delay={0.24}>
-            <section className="mt-8 rounded-2xl border border-amber-300/25 bg-gradient-to-br from-amber-500/10 to-transparent p-6 sm:p-8">
+            <section
+              className="mt-8 rounded-2xl border border-amber-300/25 bg-gradient-to-br from-amber-500/10 to-transparent p-6 sm:p-8"
+              data-analytics-region="patient-guides-hub-footer-assessment"
+            >
               <h2 className="text-xl font-semibold text-white">Ready for structured, independent assessment?</h2>
               <p className="mt-3 text-slate-300 leading-relaxed">
                 If something still feels off after reading, submit photos and timeline for a medical review that does not depend on your clinic’s narrative. Preview a{" "}
@@ -222,6 +254,7 @@ export default function HairTransplantProblemsHubPage() {
                   href="/sample-report"
                   className="text-amber-400 hover:text-amber-300 font-medium underline underline-offset-2"
                   data-cta="patient-guides-hub-footer-inline-sample-report"
+                  data-cta-destination="/sample-report"
                 >
                   sample HairAudit report
                 </Link>{" "}
@@ -230,16 +263,21 @@ export default function HairTransplantProblemsHubPage() {
                   href="/faq"
                   className="text-amber-400 hover:text-amber-300 font-medium underline underline-offset-2"
                   data-cta="patient-guides-hub-footer-inline-faq"
+                  data-cta-destination="/faq"
                 >
                   FAQ
                 </Link>{" "}
                 first if that helps.
               </p>
-              <div className="mt-6 flex flex-col sm:flex-row flex-wrap gap-3">
+              <div
+                className="mt-6 flex flex-col sm:flex-row flex-wrap gap-3"
+                data-analytics-region="patient-guides-hub-footer-ctas"
+              >
                 <Link
                   href="/request-review"
                   className="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors"
                   data-cta="patient-guides-hub-footer-request-review"
+                  data-cta-destination="/request-review"
                 >
                   Request an independent review
                 </Link>
@@ -247,6 +285,7 @@ export default function HairTransplantProblemsHubPage() {
                   href="/sample-report"
                   className="inline-flex items-center justify-center px-6 py-3 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
                   data-cta="patient-guides-hub-footer-sample-report"
+                  data-cta-destination="/sample-report"
                 >
                   View a sample report
                 </Link>
@@ -254,6 +293,7 @@ export default function HairTransplantProblemsHubPage() {
                   href="/faq"
                   className="inline-flex items-center justify-center px-6 py-3 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
                   data-cta="patient-guides-hub-footer-faq"
+                  data-cta-destination="/faq"
                 >
                   FAQ
                 </Link>

@@ -7,6 +7,7 @@ import MedicalProcedureFaqSchema from "@/components/seo/MedicalProcedureFaqSchem
 import { getPatientIntentArticle } from "@/lib/seo/patient-intent-articles";
 import type { PatientIntentArticleBlock } from "@/lib/seo/patient-intent-articles/types";
 import { patientIssueLibrary } from "@/lib/patientEducationIssues";
+import { isPatientGuideRequestReviewHref } from "@/lib/analytics/patientGuideMeasurement";
 
 type ResolvedRelated = {
   pathname: string;
@@ -36,7 +37,7 @@ function resolveRelatedGuide(slug: string): ResolvedRelated | null {
 
 const LINK_IN_TEXT = /\[([^\]]+)\]\(([^)]+)\)/g;
 
-function LinkedText({ text }: { text: string }): ReactNode {
+function LinkedText({ text, guideSlug }: { text: string; guideSlug: string }): ReactNode {
   const parts: ReactNode[] = [];
   let last = 0;
   let match: RegExpExecArray | null;
@@ -46,11 +47,21 @@ function LinkedText({ text }: { text: string }): ReactNode {
     if (match.index > last) {
       parts.push(text.slice(last, match.index));
     }
+    const href = match[2];
+    const bodyRequestReview =
+      guideSlug && isPatientGuideRequestReviewHref(href)
+        ? {
+            "data-cta": "patient-guide-body-request-review" as const,
+            "data-patient-guide": guideSlug,
+            "data-cta-destination": "/request-review" as const,
+          }
+        : null;
     parts.push(
       <Link
         key={key++}
-        href={match[2]}
+        href={href}
         className="text-amber-400 hover:text-amber-300 underline underline-offset-2 font-medium"
+        {...(bodyRequestReview ?? {})}
       >
         {match[1]}
       </Link>
@@ -63,11 +74,11 @@ function LinkedText({ text }: { text: string }): ReactNode {
   return parts.length === 1 && typeof parts[0] === "string" ? parts[0] : <>{parts}</>;
 }
 
-function ArticleBodyBlock({ block }: { block: PatientIntentArticleBlock }) {
+function ArticleBodyBlock({ block, guideSlug }: { block: PatientIntentArticleBlock; guideSlug: string }) {
   if (block.type === "p") {
     return (
       <p className="text-slate-300 leading-relaxed">
-        <LinkedText text={block.text} />
+        <LinkedText text={block.text} guideSlug={guideSlug} />
       </p>
     );
   }
@@ -80,7 +91,7 @@ function ArticleBodyBlock({ block }: { block: PatientIntentArticleBlock }) {
         <li key={item} className="flex gap-2">
           <span className="text-amber-400 shrink-0">-</span>
           <span className="leading-relaxed">
-            <LinkedText text={item} />
+            <LinkedText text={item} guideSlug={guideSlug} />
           </span>
         </li>
       ))}
@@ -152,6 +163,9 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
               <Link
                 href="/hair-transplant-problems"
                 className="text-sm text-slate-500 hover:text-slate-300 transition-colors"
+                data-cta="patient-guide-breadcrumb-hub"
+                data-patient-guide={articleSlug}
+                data-cta-destination="/hair-transplant-problems"
               >
                 Patient guides
               </Link>
@@ -167,7 +181,10 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
             </h1>
             <p className="mt-6 text-lg text-slate-300 leading-relaxed">{article.intro}</p>
 
-            <div className="mt-8 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-4 sm:px-5 sm:py-5">
+            <div
+              className="mt-8 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-4 sm:px-5 sm:py-5"
+              data-analytics-region="patient-guide-next-steps"
+            >
               <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Next steps</p>
               <ul className="mt-3 flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-x-1 sm:gap-y-2 text-sm text-slate-300">
                 <li className="sm:after:content-['·'] sm:after:px-2 sm:after:text-slate-600 sm:last:after:content-none">
@@ -175,6 +192,8 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
                     href="/request-review"
                     className="text-amber-400 hover:text-amber-300 font-medium underline underline-offset-2"
                     data-cta="patient-guide-next-request-review"
+                    data-cta-destination="/request-review"
+                    data-patient-guide={articleSlug}
                   >
                     Request an independent review
                   </Link>
@@ -184,6 +203,8 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
                     href="/sample-report"
                     className="text-amber-400 hover:text-amber-300 font-medium underline underline-offset-2"
                     data-cta="patient-guide-next-sample-report"
+                    data-cta-destination="/sample-report"
+                    data-patient-guide={articleSlug}
                   >
                     View a sample report
                   </Link>
@@ -193,6 +214,8 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
                     href="/faq"
                     className="text-amber-400 hover:text-amber-300 font-medium underline underline-offset-2"
                     data-cta="patient-guide-next-faq"
+                    data-cta-destination="/faq"
+                    data-patient-guide={articleSlug}
                   >
                     FAQ
                   </Link>
@@ -202,6 +225,8 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
                     href="/hair-transplant-problems"
                     className="text-slate-400 hover:text-slate-200 underline underline-offset-2"
                     data-cta="patient-guide-next-hub"
+                    data-cta-destination="/hair-transplant-problems"
+                    data-patient-guide={articleSlug}
                   >
                     All patient guides
                   </Link>
@@ -222,7 +247,7 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
                 </h2>
                 <div className="mt-6 space-y-4">
                   {section.blocks.map((block, i) => (
-                    <ArticleBodyBlock key={i} block={block} />
+                    <ArticleBodyBlock key={i} block={block} guideSlug={articleSlug} />
                   ))}
                 </div>
               </section>
@@ -230,7 +255,10 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
           </div>
 
           <div className="max-w-3xl mx-auto mt-16 sm:mt-20">
-            <div className="rounded-2xl border border-amber-300/25 bg-gradient-to-br from-amber-500/10 to-transparent p-6 sm:p-8">
+            <div
+              className="rounded-2xl border border-amber-300/25 bg-gradient-to-br from-amber-500/10 to-transparent p-6 sm:p-8"
+              data-analytics-region="patient-guide-primary-cta"
+            >
               <h2 className="text-xl font-semibold text-white">
                 {article.ctaLead ?? "Independent review on HairAudit"}
               </h2>
@@ -243,6 +271,8 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
                   href="/request-review"
                   className="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors"
                   data-cta="patient-guide-cta-request-review"
+                  data-cta-destination="/request-review"
+                  data-patient-guide={articleSlug}
                 >
                   Request an independent review
                 </Link>
@@ -250,6 +280,8 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
                   href="/sample-report"
                   className="inline-flex items-center justify-center px-6 py-3 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
                   data-cta="patient-guide-cta-sample-report"
+                  data-cta-destination="/sample-report"
+                  data-patient-guide={articleSlug}
                 >
                   View sample report
                 </Link>
@@ -257,6 +289,8 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
                   href="/faq"
                   className="inline-flex items-center justify-center px-6 py-3 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
                   data-cta="patient-guide-cta-faq"
+                  data-cta-destination="/faq"
+                  data-patient-guide={articleSlug}
                 >
                   FAQ
                 </Link>
@@ -266,7 +300,10 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
           </div>
 
           {related.length > 0 ? (
-            <div className="max-w-3xl mx-auto mt-12 sm:mt-14">
+            <div
+              className="max-w-3xl mx-auto mt-12 sm:mt-14"
+              data-analytics-region="patient-guide-related-guides"
+            >
               <h2 className="text-lg font-semibold text-white">Related guides</h2>
               <ul className="mt-4 space-y-3">
                 {related.map((a) => (
@@ -274,6 +311,10 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
                     <Link
                       href={a.pathname}
                       className="text-amber-400 hover:text-amber-300 font-medium underline underline-offset-2"
+                      data-cta="patient-guide-related"
+                      data-patient-guide={articleSlug}
+                      data-related-guide={a.pathname.replace(/^\//, "")}
+                      data-cta-destination={a.pathname}
                     >
                       {a.h1}
                     </Link>
@@ -284,21 +325,42 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
             </div>
           ) : null}
 
-          <div className="max-w-3xl mx-auto mt-12 sm:mt-14 pb-8">
+          <div
+            className="max-w-3xl mx-auto mt-12 sm:mt-14 pb-8"
+            data-analytics-region="patient-guide-footer-links"
+          >
             <h2 className="text-lg font-semibold text-white">More on HairAudit</h2>
             <ul className="mt-4 flex flex-col sm:flex-row sm:flex-wrap gap-3 text-sm">
               <li>
-                <Link href="/how-it-works" className="text-slate-400 hover:text-slate-200">
+                <Link
+                  href="/how-it-works"
+                  className="text-slate-400 hover:text-slate-200"
+                  data-cta="patient-guide-footer-how-it-works"
+                  data-patient-guide={articleSlug}
+                  data-cta-destination="/how-it-works"
+                >
                   How it works
                 </Link>
               </li>
               <li>
-                <Link href="/methodology" className="text-slate-400 hover:text-slate-200">
+                <Link
+                  href="/methodology"
+                  className="text-slate-400 hover:text-slate-200"
+                  data-cta="patient-guide-footer-methodology"
+                  data-patient-guide={articleSlug}
+                  data-cta-destination="/methodology"
+                >
                   How we review your surgery
                 </Link>
               </li>
               <li>
-                <Link href="/hair-transplant-problems" className="text-slate-400 hover:text-slate-200">
+                <Link
+                  href="/hair-transplant-problems"
+                  className="text-slate-400 hover:text-slate-200"
+                  data-cta="patient-guide-footer-hub"
+                  data-patient-guide={articleSlug}
+                  data-cta-destination="/hair-transplant-problems"
+                >
                   Patient guides hub
                 </Link>
               </li>
