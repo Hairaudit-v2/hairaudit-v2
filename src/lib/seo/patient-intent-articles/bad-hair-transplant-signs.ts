@@ -70,7 +70,7 @@ export const badHairTransplantSignsArticle: PatientIntentArticle = {
         },
         {
           type: "p",
-          text: "These issues may become clearer only after the early healing phase has passed. Donor-specific patterns are covered in [overharvested donor area: what to look for](/overharvested-donor-area).",
+          text: "These issues may become clearer only after the early healing phase has passed. Donor-specific patterns are covered in [overharvested donor area: what to look for](/overharvested-donor-area). For design and naturalness reads, see [what makes a hair transplant look natural](/what-makes-a-hair-transplant-look-natural), [unnatural hairline after a hair transplant](/unnatural-hairline-after-hair-transplant), [temple work and frontal framing](/temple-work-and-frontal-framing), [hair direction and angle after transplant](/hair-direction-and-angle-after-transplant), and [row patterning after hair transplant](/row-patterning-after-hair-transplant).",
         },
       ],
     },
