@@ -6,8 +6,6 @@ export const PLATFORM = {
   FI_URL: "https://follicleintelligence.ai",
   HA_URL: "https://www.hairaudit.com",
   HLI_URL: "https://hairlongevityinstitute.com",
-  /** Patient lead magnet; replace with the canonical guide landing or file URL when published. */
-  HLI_POST_OP_HAIR_PROTECTION_GUIDE_URL: "https://hairlongevityinstitute.com",
   IIOHR_URL: "https://iiohr.com",
 } as const;
 

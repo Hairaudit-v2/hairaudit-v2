@@ -286,11 +286,11 @@
         "feature4Title": "Sepa qué vigilar",
         "feature4Desc": "Señales en el tiempo: estabilidad, posibles regresiones y documentación que apoye un seguimiento informado con su equipo médico.",
         "guideEyebrow": "¿Aún no está listo para una auditoría completa?",
-        "guideTitle": "Guía gratuita de protección capilar posoperatoria",
-        "guideBody": "Recurso educativo práctico para quienes quieren primero una orientación estructurada tras la cirugía. Redactado por Hair Longevity Institute para complementar—no sustituir—la atención clínica.",
-        "guideCta": "Obtener la guía",
-        "guideAttribution": "Autor: Hair Longevity Institute (HLI).",
-        "guideFootnote": "HLI ofrece apoyo educativo. HairAudit sigue siendo la auditoría independiente; el contenido de la guía no influye en hallazgos ni puntuaciones de la auditoría."
+        "guideTitle": "Envíe su auditoría gratuita para desbloquear la Guía de protección capilar posoperatoria",
+        "guideBody": "Una guía educativa práctica de Hair Longevity Institute para pacientes que buscan orientación estructurada tras la cirugía, pautas a largo plazo para proteger el cabello y una visión más clara de qué vigilar con el tiempo.",
+        "guideCta": "Enviar mi auditoría gratuita",
+        "guideSupportingLine": "La guía estará disponible después de enviar su auditoría.",
+        "guideFootnote": "Hair Longevity Institute proporciona la guía educativa. HairAudit sigue siendo la plataforma de auditoría independiente. El contenido de la guía no influye en los hallazgos de la auditoría, la puntuación ni los resultados de la revisión."
       }
     },
     "howItWorks": {

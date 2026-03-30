@@ -1,8 +1,7 @@
 "use client";
 
-import { trackCta } from "@/lib/analytics/trackCta";
+import TrackedLink from "@/components/analytics/TrackedLink";
 import { useI18n } from "@/components/i18n/I18nProvider";
-import { PLATFORM } from "@/lib/constants/platform";
 import type { TranslationKey } from "@/lib/i18n/translationKeys";
 
 const BULLET_KEYS = [
@@ -30,8 +29,6 @@ const FEATURE_KEYS: { titleKey: TranslationKey; descKey: TranslationKey }[] = [
     descKey: "marketing.home.patientReportValue.feature4Desc",
   },
 ];
-
-const GUIDE_HREF = PLATFORM.HLI_POST_OP_HAIR_PROTECTION_GUIDE_URL;
 
 export default function PatientReportValueProposition() {
   const { t } = useI18n();
@@ -88,20 +85,18 @@ export default function PatientReportValueProposition() {
             {t("marketing.home.patientReportValue.guideBody")}
           </p>
           <div className="mt-6">
-            <a
-              href={GUIDE_HREF}
-              target="_blank"
-              rel="noopener noreferrer"
+            <TrackedLink
+              href="/request-review"
+              eventName="cta_submit_free_audit_unlock_guide_home"
               className="inline-flex items-center justify-center px-6 py-3 rounded-2xl border border-amber-400/40 bg-amber-500/15 text-amber-100 font-semibold text-sm hover:bg-amber-500/25 transition-colors"
-              onClick={() => trackCta("cta_hli_post_op_guide_home", { href: GUIDE_HREF })}
             >
               {t("marketing.home.patientReportValue.guideCta")}
-            </a>
+            </TrackedLink>
           </div>
-          <p className="mt-4 text-xs text-slate-500 leading-relaxed max-w-2xl">
-            {t("marketing.home.patientReportValue.guideAttribution")}
+          <p className="mt-4 text-xs text-slate-400 leading-relaxed max-w-2xl">
+            {t("marketing.home.patientReportValue.guideSupportingLine")}
           </p>
-          <p className="mt-2 text-xs text-slate-500 leading-relaxed max-w-2xl">
+          <p className="mt-3 text-xs text-slate-500 leading-relaxed max-w-2xl">
             {t("marketing.home.patientReportValue.guideFootnote")}
           </p>
         </div>
