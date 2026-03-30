@@ -8,7 +8,7 @@ export const howManyGraftsIsTooManyArticle: PatientIntentArticle = {
     "How many grafts is too many in a hair transplant? Learn why the answer depends on donor quality, planning, and long-term strategy — not just numbers.",
   h1: "How Many Grafts Is Too Many?",
   intro:
-    "Patients often focus on graft numbers because they are one of the few concrete figures discussed during transplant planning. But a high graft number is not automatically good, and a low graft number is not automatically poor. The real question is whether the graft count was appropriate for the patient’s donor quality, recipient goals, and long-term strategy. This page explains why “too many” is not a simple universal number.",
+    "Patients often focus on graft numbers because they are one of the few concrete figures discussed during transplant planning. But a high graft number is not automatically good, and a low graft number is not automatically poor. The real question is whether the graft count was appropriate for the patient's donor quality, recipient goals, and long-term strategy. This page explains why \"too many\" is not a simple universal number.",
   sections: [
     {
       id: "graft-count-misleading",
@@ -69,10 +69,6 @@ export const howManyGraftsIsTooManyArticle: PatientIntentArticle = {
           type: "p",
           text: "Cosmetic impact depends not only on how many grafts were moved, but how many hairs those grafts contained. A patient with a lower hair-to-graft ratio may get less visible density from the same graft number. That is why raw numbers alone can mislead patients.",
         },
-        {
-          type: "p",
-          text: "For more on how donor characteristics and hair-to-graft logic interact with visible outcomes, see [donor ageing and hair-to-graft ratios](/donor-ageing-and-hair-to-graft-ratios).",
-        },
       ],
     },
     {
@@ -97,10 +93,6 @@ export const howManyGraftsIsTooManyArticle: PatientIntentArticle = {
           type: "p",
           text: "A large session that solves a short-term cosmetic concern but weakens long-term planning may not be a strategic success.",
         },
-        {
-          type: "p",
-          text: "See [donor reserve and future options](/donor-reserve-and-future-options) and [overharvested donor area: what to look for](/overharvested-donor-area).",
-        },
       ],
     },
     {
@@ -113,7 +105,7 @@ export const howManyGraftsIsTooManyArticle: PatientIntentArticle = {
         },
         {
           type: "p",
-          text: "[Request a review](/request-review) or open a [sample report](/sample-report).",
+          text: "[Request a review](/request-review). [Overharvested Donor Area: What to Look For](/overharvested-donor-area). [Donor ageing and hair-to-graft ratios](/donor-ageing-and-hair-to-graft-ratios). [Donor Reserve and Future Options: Why Long-Term Planning Matters](/donor-reserve-and-future-options). [Sample report](/sample-report).",
         },
       ],
     },

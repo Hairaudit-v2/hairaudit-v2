@@ -28,10 +28,6 @@ export const howToThinkAboutRealisticHairTransplantExpectationsArticle: PatientI
           type: "p",
           text: "A result that looks disappointing at 4 months may look much better at 12 months. Patients who expect immediate fullness often feel let down even when the timeline is still normal.",
         },
-        {
-          type: "p",
-          text: "[When is a hair transplant result final](/when-is-a-hair-transplant-final).",
-        },
       ],
     },
     {
@@ -110,7 +106,7 @@ export const howToThinkAboutRealisticHairTransplantExpectationsArticle: PatientI
         },
         {
           type: "p",
-          text: "[Why hair calibre matters more than patients think](/why-hair-calibre-matters-more-than-patients-think), [donor reserve and future options](/donor-reserve-and-future-options). [Request a review](/request-review), [sample report](/sample-report).",
+          text: "[Request a review](/request-review). [When Is a Hair Transplant Result Final?](/when-is-a-hair-transplant-final). [Why Hair Calibre Matters More Than Patients Think](/why-hair-calibre-matters-more-than-patients-think). [Donor Reserve and Future Options: Why Long-Term Planning Matters](/donor-reserve-and-future-options). [Sample report](/sample-report).",
         },
       ],
     },

@@ -36,7 +36,7 @@ export const isMyHairTransplantNormalArticle: PatientIntentArticle = {
       blocks: [
         {
           type: "p",
-          text: "A result can still fall within a normal recovery pattern without matching the patient’s hopes yet. “Normal” does not necessarily mean “final” or “fully satisfactory.” It simply means the visible changes do not yet clearly point to an abnormal problem.",
+          text: "A result can still fall within a normal recovery pattern without matching the patient's hopes yet. \"Normal\" does not necessarily mean \"final\" or \"fully satisfactory.\" It simply means the visible changes do not yet clearly point to an abnormal problem.",
         },
       ],
     },
@@ -68,10 +68,6 @@ export const isMyHairTransplantNormalArticle: PatientIntentArticle = {
           type: "p",
           text: "Whether something is normal depends heavily on when the photo was taken. A concern that is too early to judge at 8 weeks may become more meaningful at 8 or 12 months. Context matters.",
         },
-        {
-          type: "p",
-          text: "See [when is a hair transplant result final](/when-is-a-hair-transplant-final) and [shock loss vs graft failure](/shock-loss-vs-graft-failure).",
-        },
       ],
     },
     {
@@ -84,7 +80,7 @@ export const isMyHairTransplantNormalArticle: PatientIntentArticle = {
         },
         {
           type: "p",
-          text: "[Bad hair transplant: signs patients often miss](/bad-hair-transplant-signs). [Request a review](/request-review), [FAQ](/faq).",
+          text: "[Request a review](/request-review). [Shock Loss vs Graft Failure After Hair Transplant](/shock-loss-vs-graft-failure). [When Is a Hair Transplant Result Final?](/when-is-a-hair-transplant-final). [Bad Hair Transplant: Signs Patients Often Miss](/bad-hair-transplant-signs). [FAQ](/faq).",
         },
       ],
     },

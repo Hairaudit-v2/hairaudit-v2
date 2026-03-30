@@ -8,7 +8,7 @@ export const donorReserveAndFutureOptionsArticle: PatientIntentArticle = {
     "Why does donor reserve matter after a hair transplant? Learn how donor planning affects future options, correction work, and long-term strategy.",
   h1: "Donor Reserve and Future Options: Why Long-Term Planning Matters",
   intro:
-    "One of the most important concepts in hair transplantation is donor reserve. The donor area is not just the source of today’s grafts. It is the source of potential future options as well. That is why good planning is not only about what can be done now, but what should still remain possible later.",
+    "One of the most important concepts in hair transplantation is donor reserve. The donor area is not just the source of today's grafts. It is the source of potential future options as well. That is why good planning is not only about what can be done now, but what should still remain possible later.",
   sections: [
     {
       id: "what-donor-reserve-means",
@@ -67,7 +67,7 @@ export const donorReserveAndFutureOptionsArticle: PatientIntentArticle = {
       blocks: [
         {
           type: "p",
-          text: "Patients often focus on solving the visible problem in front of them. That is natural. But donor reserve forces a longer view. A choice that improves today’s appearance may still be questionable if it leaves too little flexibility for tomorrow.",
+          text: "Patients often focus on solving the visible problem in front of them. That is natural. But donor reserve forces a longer view. A choice that improves today's appearance may still be questionable if it leaves too little flexibility for tomorrow.",
         },
       ],
     },
@@ -89,10 +89,6 @@ export const donorReserveAndFutureOptionsArticle: PatientIntentArticle = {
             "a second surgery is already being discussed",
           ],
         },
-        {
-          type: "p",
-          text: "See [thinking about a second hair transplant? read this first](/thinking-about-a-second-hair-transplant) and [how many grafts is too many](/how-many-grafts-is-too-many).",
-        },
       ],
     },
     {
@@ -105,7 +101,7 @@ export const donorReserveAndFutureOptionsArticle: PatientIntentArticle = {
         },
         {
           type: "p",
-          text: "[Overharvested donor area: what to look for](/overharvested-donor-area). [Request a review](/request-review) or open a [sample report](/sample-report).",
+          text: "[Request a review](/request-review). [Overharvested Donor Area: What to Look For](/overharvested-donor-area). [Thinking About a Second Hair Transplant? Read This First](/thinking-about-a-second-hair-transplant). [How Many Grafts Is Too Many?](/how-many-grafts-is-too-many). [Sample report](/sample-report).",
         },
       ],
     },

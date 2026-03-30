@@ -72,10 +72,6 @@ export const wetHairVsDryHairAfterTransplantArticle: PatientIntentArticle = {
           type: "p",
           text: "Wet hair can make an early result look especially weak before maturation is complete. If hairs are still thin and immature, the wet-hair view may exaggerate how poor the density seems at that stage.",
         },
-        {
-          type: "p",
-          text: "[When is a hair transplant result final](/when-is-a-hair-transplant-final).",
-        },
       ],
     },
     {
@@ -88,7 +84,7 @@ export const wetHairVsDryHairAfterTransplantArticle: PatientIntentArticle = {
         },
         {
           type: "p",
-          text: "[Hair transplant density too low](/hair-transplant-density-too-low), [why does my hair transplant look worse in bright light](/why-does-my-hair-transplant-look-worse-in-bright-light). [Request a review](/request-review), [sample report](/sample-report).",
+          text: "[Request a review](/request-review). [Hair Transplant Density Too Low: Delay or Quality Problem?](/hair-transplant-density-too-low). [Why Does My Hair Transplant Look Worse in Bright Light?](/why-does-my-hair-transplant-look-worse-in-bright-light). [When Is a Hair Transplant Result Final?](/when-is-a-hair-transplant-final). [Sample report](/sample-report).",
         },
       ],
     },

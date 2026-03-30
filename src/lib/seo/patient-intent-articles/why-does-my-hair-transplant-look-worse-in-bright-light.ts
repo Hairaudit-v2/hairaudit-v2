@@ -99,10 +99,6 @@ export const whyDoesMyHairTransplantLookWorseInBrightLightArticle: PatientIntent
           type: "p",
           text: "A structured comparison is often more informative than one dramatic image.",
         },
-        {
-          type: "p",
-          text: "[Wet hair vs dry hair after transplant: why density looks different](/wet-hair-vs-dry-hair-after-transplant), [hair transplant density too low](/hair-transplant-density-too-low), [row patterning after hair transplant](/row-patterning-after-hair-transplant).",
-        },
       ],
     },
     {
@@ -115,7 +111,7 @@ export const whyDoesMyHairTransplantLookWorseInBrightLightArticle: PatientIntent
         },
         {
           type: "p",
-          text: "[Request a review](/request-review), [sample report](/sample-report).",
+          text: "[Request a review](/request-review). [Hair Transplant Density Too Low: Delay or Quality Problem?](/hair-transplant-density-too-low). [Row Patterning After Hair Transplant: What It Means](/row-patterning-after-hair-transplant). [Wet Hair vs Dry Hair After Transplant: Why Density Looks Different](/wet-hair-vs-dry-hair-after-transplant). [Sample report](/sample-report).",
         },
       ],
     },

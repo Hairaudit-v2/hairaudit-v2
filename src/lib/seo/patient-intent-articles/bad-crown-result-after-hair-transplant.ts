@@ -119,7 +119,7 @@ export const badCrownResultAfterHairTransplantArticle: PatientIntentArticle = {
         },
         {
           type: "p",
-          text: "For density questions, see [hair transplant density too low](/hair-transplant-density-too-low). For timing, see [when is a hair transplant result final](/when-is-a-hair-transplant-final). For what photos can support, see [can a hair transplant be audited from photos](/can-a-hair-transplant-be-audited-from-photos). You can [request a review](/request-review) or open a [sample report](/sample-report).",
+          text: "[Request a review](/request-review). [Hair Transplant Density Too Low: Delay or Quality Problem?](/hair-transplant-density-too-low). [When Is a Hair Transplant Result Final?](/when-is-a-hair-transplant-final). [Can a Hair Transplant Be Audited From Photos?](/can-a-hair-transplant-be-audited-from-photos). [Sample report](/sample-report).",
         },
       ],
     },

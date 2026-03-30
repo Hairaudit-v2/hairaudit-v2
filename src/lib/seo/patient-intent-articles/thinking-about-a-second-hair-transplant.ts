@@ -64,10 +64,6 @@ export const thinkingAboutASecondHairTransplantArticle: PatientIntentArticle = {
           type: "p",
           text: "A second transplant is always limited by what donor quality and quantity remain. If donor reserve is already reduced, conservative planning becomes much more important. The donor should be treated as a strategic asset, not an unlimited supply.",
         },
-        {
-          type: "p",
-          text: "Read [donor reserve and future options](/donor-reserve-and-future-options), [how many grafts is too many](/how-many-grafts-is-too-many), and [overharvested donor area: what to look for](/overharvested-donor-area).",
-        },
       ],
     },
     {
@@ -100,7 +96,7 @@ export const thinkingAboutASecondHairTransplantArticle: PatientIntentArticle = {
         },
         {
           type: "p",
-          text: "[Request a review](/request-review) or review a [sample report](/sample-report) when you want structured, non-promotional documentation first.",
+          text: "[Request a review](/request-review). [Donor Reserve and Future Options: Why Long-Term Planning Matters](/donor-reserve-and-future-options). [How Many Grafts Is Too Many?](/how-many-grafts-is-too-many). [Overharvested Donor Area: What to Look For](/overharvested-donor-area). [Sample report](/sample-report).",
         },
       ],
     },

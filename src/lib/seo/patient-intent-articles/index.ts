@@ -1,12 +1,17 @@
 import type { PatientIntentArticle } from "./types";
+import { afroHairTransplantDensityPlanningArticle } from "./afro-hair-transplant-density-planning";
 import { badCrownResultAfterHairTransplantArticle } from "./bad-crown-result-after-hair-transplant";
 import { badHairTransplantSignsArticle } from "./bad-hair-transplant-signs";
+import { beardOrBodyHairTransplantQuestionsArticle } from "./beard-or-body-hair-transplant-questions";
 import { canAHairTransplantBeAuditedFromPhotosArticle } from "./can-a-hair-transplant-be-audited-from-photos";
 import { canAnOverharvestedDonorBeCorrectedArticle } from "./can-an-overharvested-donor-be-corrected";
 import { donorAgeingAndHairToGraftRatiosArticle } from "./donor-ageing-and-hair-to-graft-ratios";
 import { donorReserveAndFutureOptionsArticle } from "./donor-reserve-and-future-options";
+import { eyebrowTransplantExpectationsArticle } from "./eyebrow-transplant-expectations";
+import { femaleHairlineTransplantConcernsArticle } from "./female-hairline-transplant-concerns";
 import { hairDirectionAndAngleAfterTransplantArticle } from "./hair-direction-and-angle-after-transplant";
 import { hairTransplantDensityTooLowArticle } from "./hair-transplant-density-too-low";
+import { hairTransplantRepairAfterOverseasSurgeryArticle } from "./hair-transplant-repair-after-overseas-surgery";
 import { hairTransplantGraftFailureWhatPhotosCanAndCannotShowArticle } from "./hair-transplant-graft-failure-what-photos-can-and-cannot-show";
 import { isMyHairTransplantNormalArticle } from "./is-my-hair-transplant-normal";
 import { howManyGraftsIsTooManyArticle } from "./how-many-grafts-is-too-many";
@@ -53,6 +58,11 @@ const patientIntentArticlesList: PatientIntentArticle[] = [
   wetHairVsDryHairAfterTransplantArticle,
   whyHairCalibreMattersMoreThanPatientsThinkArticle,
   howToThinkAboutRealisticHairTransplantExpectationsArticle,
+  femaleHairlineTransplantConcernsArticle,
+  eyebrowTransplantExpectationsArticle,
+  afroHairTransplantDensityPlanningArticle,
+  hairTransplantRepairAfterOverseasSurgeryArticle,
+  beardOrBodyHairTransplantQuestionsArticle,
 ];
 
 export const patientIntentArticlesBySlug: Record<string, PatientIntentArticle> =

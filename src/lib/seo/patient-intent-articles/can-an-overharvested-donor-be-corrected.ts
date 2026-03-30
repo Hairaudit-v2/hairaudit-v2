@@ -48,7 +48,7 @@ export const canAnOverharvestedDonorBeCorrectedArticle: PatientIntentArticle = {
             "how much thinning is visible",
             "whether the donor is truly overharvested or just healing",
             "whether donor quality is still strong or already pressured",
-            "whether the patient’s expectations are realistic",
+            "whether the patient's expectations are realistic",
             "whether further surgery would help or worsen the situation",
           ],
         },
@@ -107,7 +107,7 @@ export const canAnOverharvestedDonorBeCorrectedArticle: PatientIntentArticle = {
         },
         {
           type: "p",
-          text: "Start with [overharvested donor area: what to look for](/overharvested-donor-area), [donor reserve and future options](/donor-reserve-and-future-options), and [thinking about a second hair transplant? read this first](/thinking-about-a-second-hair-transplant). [Request a review](/request-review) or open a [sample report](/sample-report).",
+          text: "[Request a review](/request-review). [Overharvested Donor Area: What to Look For](/overharvested-donor-area). [Donor Reserve and Future Options: Why Long-Term Planning Matters](/donor-reserve-and-future-options). [Thinking About a Second Hair Transplant? Read This First](/thinking-about-a-second-hair-transplant). [Sample report](/sample-report).",
         },
       ],
     },
