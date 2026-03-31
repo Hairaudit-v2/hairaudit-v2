@@ -3,6 +3,12 @@ export type PatientIssueContent = {
   title: string;
   description: string;
   intro: string;
+  /** Direct answer for search / answer engines; plain language, no hype. */
+  shortAnswer?: string;
+  /** One paragraph: scope of this short page vs long-form guides. */
+  whatThisPageExplains?: string;
+  /** Limits of photo-only interpretation for this topic. */
+  photosCannotConfirm?: string[];
   explanations: string[];
   summaryPoints: string[];
   seekReviewPoints: string[];
@@ -69,6 +75,15 @@ export const patientIssueLibrary: PatientIssueContent[] = [
       "Shedding and slow regrowth are common early. This short guide frames when limited growth may still fit normal variation—and when structured review helps interpret your photos fairly.",
     intro:
       "After surgery, shedding is common and regrowth can start gradually; timelines vary. This page highlights useful mileposts without turning anxiety into a premature verdict. For shedding versus longer-term yield, read [shock loss vs graft failure](/shock-loss-vs-graft-failure). For a timeline-focused discussion of when delay is more concerning, read [when is hair transplant growth delay normal vs concerning?](/when-is-hair-transplant-growth-delay-normal-vs-concerning).",
+    shortAnswer:
+      "A hair transplant can look like it is “not growing” for many months while recovery is still normal—especially during shedding and early fine regrowth. Worry becomes more justified when there is very little visible progress well into the later part of the usual maturation window, judged with dated photos rather than memory alone.",
+    whatThisPageExplains:
+      "This is a concise issue landing page: it frames typical timing and when concern is more reasonable. Deeper timelines, comparisons, and evidence limits live in the linked patient guides—not here.",
+    photosCannotConfirm: [
+      "Whether individual follicles are alive or dead (photos show visible growth patterns, not microscopic biology).",
+      "The exact cause of slow growth without operative context and a consistent photo series.",
+      "Final cosmetic outcome from a single snapshot or mismatched lighting and angles.",
+    ],
     explanations: [
       "A common pattern is shedding in the first months, then gradual regrowth as fine hairs emerge and thicken—speed differs between people.",
       "If improvement stays very limited across later follow-up photos, the timeline may deserve closer scrutiny alongside day 0 documentation and donor context.",
@@ -117,6 +132,15 @@ export const patientIssueLibrary: PatientIssueContent[] = [
       "FUE donor areas can look patchy or thin for several reasons, including normal healing and haircut effects. Learn what may suggest overharvesting versus appearance that may still settle, and when independent review helps.",
     intro:
       "Patients often search specifically about the FUE donor area. Some post-operative change is expected; uneven extraction or aggressive harvesting can produce lasting donor thinning. This short page orients you quickly. For donor patterns and documentation, read [overharvested donor area: what to look for](/overharvested-donor-area). For typical healing versus appearances that merit scrutiny, read [normal donor healing after FUE](/normal-donor-healing-after-fue).",
+    shortAnswer:
+      "A patchy or thin-looking donor after FUE can reflect normal healing, haircut and lighting effects, or—once the long-term pattern is clear—concentrated extraction and donor overuse. The distinction depends on timeline, photo consistency, and how the donor looks once inflammation has settled—not on one worried rear view alone.",
+    whatThisPageExplains:
+      "This page gives a fast orientation and when to read deeper guides. It does not replace long-form explanations of donor patterns, documentation, or independent audit scope.",
+    photosCannotConfirm: [
+      "Exact graft counts removed or remaining donor reserve without clinical measurement tools.",
+      "Whether discomfort or numbness is benign vs pathological (not visible in photos).",
+      "Final donor homogeneity from early post-op redness or crusting alone.",
+    ],
     explanations: [
       "Overharvesting often appears as uneven density, visible patchiness, or scalp show-through in the donor when hair is worn short—but lighting and length change perception.",
       "Not every thin donor appearance means severe structural loss. A timeline helps distinguish healing-related change from long-term homogeneity problems.",
@@ -211,6 +235,15 @@ export const patientIssueLibrary: PatientIssueContent[] = [
       "Worried grafts did not survive? How timing, shedding, and visible growth interact—what photos may suggest, what they cannot prove alone, and how independent review structures evidence (not a diagnosis).",
     intro:
       "\"Failed transplant\" is not one narrow pattern. Poor growth can overlap with normal delay, shock shedding, or unmet density expectations. This concise page focuses on survival concerns and timing. Compare shedding with longer-term yield in [shock loss vs graft failure](/shock-loss-vs-graft-failure). For evidence limits from photography, read [hair transplant graft failure: what photos can and cannot show](/hair-transplant-graft-failure-what-photos-can-and-cannot-show). If you are weighing revision versus waiting, see [repair vs wait after poor hair transplant growth](/repair-vs-wait-after-poor-hair-transplant-growth).",
+    shortAnswer:
+      "Disappointing growth can mean normal delay, shock shedding, or weaker yield—but “graft failure” is not something photos alone can label with certainty. A fair read weights timeline, day-0 documentation, follow-up series, and what is visible at each stage, then states confidence and limits clearly.",
+    whatThisPageExplains:
+      "This short page orients you on survival concerns and links to comparisons and long-form evidence guides. For step-by-step photo documentation, use the guides linked below—not a duplicate full article here.",
+    photosCannotConfirm: [
+      "Exact survival percentage or count of non-viable grafts.",
+      "Microscopic transection, graft hydration, or intra-operative handling quality.",
+      "A single definitive biological cause of poor visible growth.",
+    ],
     explanations: [
       "Low survival can be partial or widespread and may involve multiple technical and healing factors; photos cannot prove every microscopic detail.",
       "The same sparse appearance can mean different things at different months—timing matters when interpreting concern.",

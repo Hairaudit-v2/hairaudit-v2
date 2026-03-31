@@ -7,6 +7,11 @@ import MedicalProcedureFaqSchema from "@/components/seo/MedicalProcedureFaqSchem
 import BreadcrumbListSchema from "@/components/seo/BreadcrumbListSchema";
 import { resolvePatientGuideLink } from "@/lib/seo/resolvePatientGuideLink";
 import { PatientEducationLinkedText } from "@/components/patient-education/PatientEducationLinkedText";
+import {
+  GeoContextLine,
+  GeoPhotosCannotConfirm,
+  GeoShortAnswer,
+} from "@/components/patient-education/GeoContentBlocks";
 
 type FAQItem = {
   question: string;
@@ -18,6 +23,9 @@ type IssueEducationPageProps = {
   title: string;
   description: string;
   intro: string;
+  shortAnswer?: string;
+  whatThisPageExplains?: string;
+  photosCannotConfirm?: string[];
   explanations: string[];
   summaryPoints: string[];
   seekReviewPoints: string[];
@@ -31,6 +39,9 @@ export default function IssueEducationPage({
   title,
   description,
   intro,
+  shortAnswer,
+  whatThisPageExplains,
+  photosCannotConfirm,
   explanations,
   summaryPoints,
   seekReviewPoints,
@@ -86,6 +97,19 @@ export default function IssueEducationPage({
             <p className="mt-5 text-slate-300 max-w-3xl leading-relaxed">
               <PatientEducationLinkedText text={intro} guideSlug="" />
             </p>
+            {shortAnswer ? (
+              <GeoShortAnswer>
+                <PatientEducationLinkedText text={shortAnswer} guideSlug="" />
+              </GeoShortAnswer>
+            ) : null}
+            {whatThisPageExplains ? (
+              <GeoContextLine label="What this page helps explain">
+                <PatientEducationLinkedText text={whatThisPageExplains} guideSlug="" />
+              </GeoContextLine>
+            ) : null}
+            {photosCannotConfirm && photosCannotConfirm.length > 0 ? (
+              <GeoPhotosCannotConfirm items={photosCannotConfirm} />
+            ) : null}
           </ScrollReveal>
 
           {relatedGuides.length > 0 ? (

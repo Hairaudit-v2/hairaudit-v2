@@ -9,6 +9,14 @@ export const whenIsHairTransplantGrowthDelayNormalVsConcerningArticle: PatientIn
   h1: "When Is Hair Transplant Growth Delay Normal vs Concerning?",
   intro:
     "Slow growth terrifies patients because it feels like proof something failed. In reality, regrowth curves vary widely, and early cosmetic thinness is common. The useful question is not “am I anxious?” but “at this stage, does my timeline still plausibly fit normal variation, or does the photographic story justify closer scrutiny?” This page gives a practical way to think about that distinction without turning worry into a premature verdict.",
+  shortAnswer:
+    "Some patients simply regrow more slowly; shock shedding can also delay how improvement looks. Concern is more proportionate when dated photos show very little meaningful progression well into the later part of the usual maturation window—not when a single early month looks thin. The comparison is delay (slow but moving) vs poor yield (stuck or clearly inadequate for stage).",
+  keyTakeaways: [
+    "Separate how you feel from what a comparable photo series shows over time.",
+    "Early thinness often overlaps with normal variation; late thinness usually weighs more.",
+    "Use [shock loss vs graft failure](/shock-loss-vs-graft-failure) before assuming non-survival.",
+    "Independent review organizes the timeline story; treatment decisions stay with your clinician.",
+  ],
   sections: [
     {
       id: "two-different-problems",

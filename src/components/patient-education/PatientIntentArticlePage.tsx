@@ -9,6 +9,7 @@ import { getPatientIntentArticle } from "@/lib/seo/patient-intent-articles";
 import type { PatientIntentArticleBlock } from "@/lib/seo/patient-intent-articles/types";
 import { resolvePatientGuideLink } from "@/lib/seo/resolvePatientGuideLink";
 import { PatientEducationLinkedText } from "@/components/patient-education/PatientEducationLinkedText";
+import { GeoKeyTakeaways, GeoShortAnswer } from "@/components/patient-education/GeoContentBlocks";
 
 function ArticleBodyBlock({ block, guideSlug }: { block: PatientIntentArticleBlock; guideSlug: string }) {
   if (block.type === "p") {
@@ -134,6 +135,14 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
               {article.h1}
             </h1>
             <p className="mt-6 text-lg text-slate-300 leading-relaxed">{article.intro}</p>
+            {article.shortAnswer ? (
+              <GeoShortAnswer>
+                <PatientEducationLinkedText text={article.shortAnswer} guideSlug={articleSlug} />
+              </GeoShortAnswer>
+            ) : null}
+            {article.keyTakeaways && article.keyTakeaways.length > 0 ? (
+              <GeoKeyTakeaways items={article.keyTakeaways} />
+            ) : null}
 
             <div
               className="mt-8 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-4 sm:px-5 sm:py-5"

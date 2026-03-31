@@ -9,6 +9,14 @@ export const shockLossVsGraftFailureArticle: PatientIntentArticle = {
   h1: "Shock Loss vs Graft Failure After Hair Transplant",
   intro:
     "One of the most common sources of anxiety after surgery is shedding. Patients often worry that transplanted grafts have failed when what they are seeing may still be part of a normal recovery pattern. At the same time, not every poor-growth outcome should be dismissed as simple shock loss. Understanding the difference can help patients avoid unnecessary panic while also recognizing when a closer review may be justified.",
+  shortAnswer:
+    "Shock loss is usually temporary shedding of shafts (transplanted and sometimes native) after stress or surgery; many follicles can still be viable underneath. Graft failure is concern about poor survival or yield over time—visible density that does not materialize as expected when the timeline is mature enough to judge. The two can look alike early; timing and a consistent photo series are what separate them more reliably than a single worried month.",
+  keyTakeaways: [
+    "Early shedding alone does not prove graft failure.",
+    "Poor growth late in the usual maturation window deserves more structured scrutiny.",
+    "Photos help most when stages are dated and angles and lighting are comparable.",
+    "Independent review documents visible patterns and states confidence limits—it does not replace your surgeon’s clinical exam.",
+  ],
   sections: [
     {
       id: "what-shock-loss",

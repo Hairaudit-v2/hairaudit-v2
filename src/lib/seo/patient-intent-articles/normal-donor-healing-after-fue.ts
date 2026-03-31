@@ -9,6 +9,14 @@ export const normalDonorHealingAfterFueArticle: PatientIntentArticle = {
   h1: "Normal Donor Healing After FUE: What Often Looks Concerning (But Is Not Always)",
   intro:
     "The donor area after FUE can look red, speckled, or temporarily thinner while follicles recover and hair regrows at different speeds. Patients often worry about overharvesting when they are still seeing normal post-operative change. This guide separates common healing appearances from donor patterns that may warrant a more structured look at your photos—not a diagnosis, but clearer framing of what the visible evidence can support.",
+  shortAnswer:
+    "Early FUE donor redness, crusting, and a dotted or thinner look often fit normal healing, especially with short hair and harsh lighting. Overharvesting concerns are more about long-term homogeneity, concentrated patchiness once healing has settled, and how the donor reads across dated photos—not about how alarming a single early-week image feels.",
+  keyTakeaways: [
+    "Timeline matters: early roughness is not the same conversation as late donor depletion patterns.",
+    "Hair length and lighting change how ‘thin’ the donor appears in photos.",
+    "For contrast, read [overharvested donor area: what to look for](/overharvested-donor-area) and the short [donor overharvesting overview](/hair-transplant-donor-overharvested)—with consistent dated photos.",
+    "Photo review clarifies what the evidence supports; it does not replace clinical donor metrics.",
+  ],
   sections: [
     {
       id: "why-donor-anxiety",

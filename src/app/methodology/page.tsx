@@ -3,6 +3,7 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { createPageMetadata } from "@/lib/seo/pageMetadata";
 import BreadcrumbListSchema from "@/components/seo/BreadcrumbListSchema";
+import { GeoContextLine, GeoShortAnswer } from "@/components/patient-education/GeoContentBlocks";
 
 export const metadata = createPageMetadata({
   title: "Hair Transplant Audit Methodology | Independent Forensic Review | HairAudit",
@@ -43,6 +44,30 @@ export default function MethodologyPage() {
               Reports explain what the evidence supports, where confidence is limited, and what may help next—not a
               diagnosis or treatment prescription.
             </p>
+            <GeoShortAnswer tone="cyan" title="Short answer">
+              <p>
+                HairAudit applies one independent, evidence-based forensic framework to every case: donor stewardship,
+                recipient growth and density, design and naturalness cues visible in photos, implantation patterns the
+                images can support, and explicit confidence where documentation is thin. AI-assisted analysis supports
+                human clinical review; the output is structured documentation—not a sales assessment and not a substitute
+                for an in-person medical exam.
+              </p>
+            </GeoShortAnswer>
+            <GeoContextLine label="How this differs from a typical clinic opinion">
+              <p>
+                A clinic that performed the procedure can offer useful operative context, but it also has a different
+                position when interpreting the same result. HairAudit does not sell surgery or promote clinics; the audit
+                is framed to describe what the submitted evidence appears to show, where conclusions are strong, and
+                where they are limited. For a patient-facing comparison, read{" "}
+                <Link
+                  href="/hair-transplant-second-opinion-vs-clinic-opinion"
+                  className="text-amber-400 hover:text-amber-300 font-medium"
+                >
+                  second opinion vs clinic opinion
+                </Link>
+                .
+              </p>
+            </GeoContextLine>
           </div>
         </section>
 
@@ -67,6 +92,24 @@ export default function MethodologyPage() {
             <p className="mt-6 text-slate-400">
               This is structured forensic assessment against defined criteria—not a promotional clinic assessment.
             </p>
+            <GeoContextLine label="What photos and a remote audit cannot replace">
+              <p>
+                No photo set proves every microscopic detail of graft handling or exact survival rates. HairAudit states
+                those limits directly and uses confidence scoring so you can see where evidence is complete vs thin.
+                Scope and boundaries are also summarized in{" "}
+                <Link
+                  href="/what-an-independent-hair-transplant-audit-can-and-cannot-do"
+                  className="text-amber-400 hover:text-amber-300 font-medium"
+                >
+                  what an independent hair transplant audit can and cannot do
+                </Link>{" "}
+                and{" "}
+                <Link href="/can-a-hair-transplant-be-audited-from-photos" className="text-amber-400 hover:text-amber-300 font-medium">
+                  auditing from photos
+                </Link>
+                .
+              </p>
+            </GeoContextLine>
           </div>
         </section>
 
@@ -124,8 +167,15 @@ export default function MethodologyPage() {
               </Link>
             </div>
             <p className="mt-5 text-sm text-slate-400">
-              Many patients only realise something may be wrong months after surgery. HairAudit
-              helps you understand whether your result is normal — or if something went wrong.
+              For process detail, see{" "}
+              <Link href="/how-it-works" className="text-amber-400 hover:text-amber-300">
+                how hair transplant audits work
+              </Link>
+              . Patient education and comparisons live in the{" "}
+              <Link href="/hair-transplant-problems" className="text-amber-400 hover:text-amber-300">
+                patient guides hub
+              </Link>
+              —this page stays focused on review framework and trust.
             </p>
           </div>
         </section>

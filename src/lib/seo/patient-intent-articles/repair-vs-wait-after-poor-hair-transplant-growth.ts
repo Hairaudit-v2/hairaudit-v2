@@ -9,6 +9,14 @@ export const repairVsWaitAfterPoorHairTransplantGrowthArticle: PatientIntentArti
   h1: "Repair vs Wait After Poor Hair Transplant Growth",
   intro:
     "When growth looks weak, patients feel pressure to act immediately. Sometimes the right move is patience and better documentation. Sometimes the right move is earlier clarification because the timeline already supports concern, or because you need a neutral record before a difficult conversation. This page is a decision-oriented framework: it does not tell you which procedure to have, but it helps separate emotional urgency from what the timeline and photos can reasonably support.",
+  shortAnswer:
+    "Waiting is often right when you are still in a phase where maturation could reasonably change the look, and your photos are not yet a fair test of final yield. Earlier clarification—not necessarily immediate surgery—can be right when the timeline is already late enough that weak growth is harder to explain as delay, or when you need structured documentation before corrective or dispute conversations.",
+  keyTakeaways: [
+    "Match urgency to stage: premature repair planning can waste donor; endless waiting can delay needed documentation.",
+    "Better photos and dates often clarify the decision more than another anxious mirror check.",
+    "HairAudit can document what the evidence supports; it does not prescribe a repair plan.",
+    "Pair with [when is hair transplant growth delay normal vs concerning?](/when-is-hair-transplant-growth-delay-normal-vs-concerning) and [when is a hair transplant result final](/when-is-a-hair-transplant-final).",
+  ],
   sections: [
     {
       id: "why-both-answers-exist",

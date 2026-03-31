@@ -6,6 +6,7 @@ import MedicalProcedureFaqSchema from "@/components/seo/MedicalProcedureFaqSchem
 import BreadcrumbListSchema from "@/components/seo/BreadcrumbListSchema";
 import { createPageMetadata } from "@/lib/seo/pageMetadata";
 import TrackedLink from "@/components/analytics/TrackedLink";
+import { GeoContextLine, GeoShortAnswer } from "@/components/patient-education/GeoContentBlocks";
 
 export const metadata = createPageMetadata({
   title: "Request a Hair Transplant Review | Secure Upload | HairAudit",
@@ -65,6 +66,28 @@ export default function RequestReviewPage() {
             like a second opinion on donor area, growth, density, design, and technique—whether you have concerns
             or want documentation of quality.
           </p>
+          <GeoContextLine label="What this page is for">
+            <p>
+              This is the conversion path: secure signup and case submission. Long-form education, comparisons, and
+              “what photos can show” guides live in the{" "}
+              <Link href="/hair-transplant-problems" className="text-amber-400 hover:text-amber-300 font-medium">
+                patient guides hub
+              </Link>
+              ; framework and limits are on{" "}
+              <Link href="/methodology" className="text-amber-400 hover:text-amber-300 font-medium">
+                methodology
+              </Link>
+              .
+            </p>
+          </GeoContextLine>
+          <GeoShortAnswer tone="cyan" title="Short answer">
+            <p>
+              You upload photos and case details; HairAudit reviews them through the same independent forensic framework
+              used for every audit, with confidence-aware reporting and clear statement of limits. You receive structured
+              documentation suitable for your own planning and conversations—not clinic marketing and not a remote
+              diagnosis.
+            </p>
+          </GeoShortAnswer>
           <p className="mt-3 text-xs text-amber-300 font-medium">
             Independent review · Secure upload · Not a substitute for in-person medical diagnosis
           </p>

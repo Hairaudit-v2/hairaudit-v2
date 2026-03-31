@@ -26,6 +26,10 @@ export type PatientIntentArticle = {
   metaDescription: string;
   h1: string;
   intro: string;
+  /** Concise, citation-friendly answer (1–3 sentences). Optional GEO field. */
+  shortAnswer?: string;
+  /** Optional extractable bullets after the intro. */
+  keyTakeaways?: string[];
   sections: PatientIntentArticleSection[];
   /** Optional; FAQPage JSON-LD omitted when empty */
   faqs: PatientIntentArticleFaq[];

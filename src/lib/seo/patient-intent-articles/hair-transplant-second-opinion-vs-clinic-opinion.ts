@@ -9,6 +9,14 @@ export const hairTransplantSecondOpinionVsClinicOpinionArticle: PatientIntentArt
   h1: "Hair Transplant Second Opinion vs Clinic Opinion: What's the Difference?",
   intro:
     "When patients become concerned about a result, they often return first to the clinic that performed the procedure. That is understandable. But a clinic opinion and an independent second opinion are not the same thing. Both may have value, but they serve different purposes. This page explains the difference, why the distinction matters, and when independent review may help.",
+  shortAnswer:
+    "A clinic opinion is the provider’s interpretation of their own work and timeline—sometimes accurate and helpful, but not structurally independent. An independent second opinion reviews photos and context from outside that relationship to describe what the visible evidence supports, with explicit limits. Neither replaces in-person diagnosis; they answer different trust and documentation needs.",
+  keyTakeaways: [
+    "Same-party interpretation is different from an external evidence review.",
+    "Clinic context (counts, plan, operative detail) can still be useful alongside independent review.",
+    "Independent review should state what is visible, what is uncertain, and confidence by topic.",
+    "To submit a case, use [Request a hair transplant review](/request-review)—this page is conceptual, not the intake form.",
+  ],
   sections: [
     {
       id: "what-clinic-opinion-usually-is",

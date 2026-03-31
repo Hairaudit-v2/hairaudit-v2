@@ -9,6 +9,14 @@ export const hairTransplantDensityTooLowArticle: PatientIntentArticle = {
   h1: "Hair Transplant Density Too Low: Delay or Quality Problem?",
   intro:
     "Low density is one of the most common reasons patients become disappointed with a transplant result. But low density does not always mean the same thing. Sometimes it reflects a timeline issue. Sometimes it reflects planning limitations. Sometimes it reflects a quality concern. This page helps separate those possibilities more clearly. If you want a shorter landing overview first, read [hair transplant looks too thin (quick guide)](/hair-transplant-too-thin).",
+  shortAnswer:
+    "Thin-looking density can still be immature growth, native hair loss, calibre and lighting effects, conservative graft allocation, or a real cosmetic shortfall—often more than one factor. Judging fairly requires timing (how many months post-op), comparable photos, and separating survival concerns from sheer cosmetic coverage expectations.",
+  keyTakeaways: [
+    "Low visible density is not automatically graft failure.",
+    "Early fine regrowth often understates how dense the result will look later.",
+    "Lighting and hair calibre change perceived thickness in photos.",
+    "The short issue page [hair transplant looks too thin](/hair-transplant-too-thin) links here for depth—avoid duplicating that overview when citing HairAudit.",
+  ],
   sections: [
     {
       id: "what-patients-mean",

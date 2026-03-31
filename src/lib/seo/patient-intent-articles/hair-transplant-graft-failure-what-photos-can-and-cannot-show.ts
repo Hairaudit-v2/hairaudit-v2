@@ -9,6 +9,14 @@ export const hairTransplantGraftFailureWhatPhotosCanAndCannotShowArticle: Patien
   h1: "Graft Survival After a Hair Transplant: What Photos Can and Cannot Show",
   intro:
     "Patients often want a clear answer when growth appears disappointing: did the grafts fail or not? Photos can sometimes support visible concerns around poor yield, uneven growth, or weak progression. But photos do not prove every biological detail. A responsible review needs to explain both what the visible evidence may suggest and what remains uncertain without more information.",
+  shortAnswer:
+    "Photos can support concerns about low visible yield, uneven zones, and weak progression when the timeline and angles are credible—but they cannot prove exact survival rates, microscopic graft quality, or a single biological cause. HairAudit frames findings in confidence-aware language for exactly that reason.",
+  keyTakeaways: [
+    "Strong evidence is usually a multi-stage timeline, not one snapshot.",
+    "Visible sparseness late in maturation weighs more than the same look at three months.",
+    "Operative context and day-0 documentation change how much photos can mean.",
+    "For a short symptom-oriented landing page, see [signs a hair transplant may have failed](/hair-transplant-graft-failure)—this guide is about evidence limits.",
+  ],
   sections: [
     {
       id: "what-patients-mean",
