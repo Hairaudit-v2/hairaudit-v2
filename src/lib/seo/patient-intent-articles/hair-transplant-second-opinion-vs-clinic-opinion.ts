@@ -5,7 +5,7 @@ export const hairTransplantSecondOpinionVsClinicOpinionArticle: PatientIntentArt
   pathname: "/hair-transplant-second-opinion-vs-clinic-opinion",
   seoTitle: "Hair Transplant Second Opinion vs Clinic Opinion: What's the Difference? | HairAudit",
   metaDescription:
-    "What is the difference between a clinic opinion and an independent hair transplant second opinion? Learn why the distinction matters when concerns arise.",
+    "Conceptual guide: how a clinic’s opinion differs from an independent hair transplant second opinion—conflict of interest, evidence framing, and when external review helps. To submit a case, use Request a review (separate intent).",
   h1: "Hair Transplant Second Opinion vs Clinic Opinion: What's the Difference?",
   intro:
     "When patients become concerned about a result, they often return first to the clinic that performed the procedure. That is understandable. But a clinic opinion and an independent second opinion are not the same thing. Both may have value, but they serve different purposes. This page explains the difference, why the distinction matters, and when independent review may help.",

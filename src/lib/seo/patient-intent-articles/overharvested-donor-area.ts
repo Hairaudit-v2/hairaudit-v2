@@ -38,7 +38,7 @@ export const overharvestedDonorAreaArticle: PatientIntentArticle = {
         },
         {
           type: "p",
-          text: "For how shedding and poor growth can be confused, see [shock loss vs graft failure](/shock-loss-vs-graft-failure).",
+          text: "For FUE-focused context on what often settles during routine donor healing, read [normal donor healing after FUE](/normal-donor-healing-after-fue). For how shedding and poor growth can be confused, see [shock loss vs graft failure](/shock-loss-vs-graft-failure).",
         },
       ],
     },
@@ -127,6 +127,8 @@ export const overharvestedDonorAreaArticle: PatientIntentArticle = {
   ctaLead: "Worried your donor looks thinner than expected?",
   ctaSupporting: "Request an independent review of your donor photos and documentation.",
   relatedSlugs: [
+    "normal-donor-healing-after-fue",
+    "hair-transplant-donor-overharvested",
     "donor-reserve-and-future-options",
     "can-an-overharvested-donor-be-corrected",
     "how-many-grafts-is-too-many",

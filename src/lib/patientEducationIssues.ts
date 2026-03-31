@@ -10,85 +10,92 @@ export type PatientIssueContent = {
     question: string;
     answer: string;
   }>;
+  /** Patient-intent article slugs and/or other issue slugs for hub-style cross-links */
+  relatedGuideSlugs?: string[];
 };
 
 export const patientIssueLibrary: PatientIssueContent[] = [
   {
     slug: "hair-transplant-too-thin",
-    title: "Hair Transplant Too Thin: What It Can Mean",
+    title: "Hair Transplant Looks Too Thin (Quick Guide)",
     description:
-      "Patient guide to thin hair transplant results, possible causes, and when to request an independent review.",
+      "Short orientation when a transplant looks thin: typical timelines, how density differs from graft survival, and when independent photo review helps. Links to a long-form density guide for depth.",
     intro:
-      "A thin result does not always mean surgery failed. In some cases, growth is still developing. In other cases, graft placement, graft survival, or planning issues can reduce final density.",
+      "A thin appearance does not always mean surgery failed. Growth can still be maturing; native hair can change; planning and placement can also limit cosmetic density. This page is a concise landing overview. For spacing, calibre, lighting effects, and when judgement is fair, read [hair transplant density too low: delay or quality problem?](/hair-transplant-density-too-low).",
     explanations: [
-      "Most patients need 9 to 12 months to see their final density. If you are early in recovery, thinning may still improve.",
-      "If density is still low after the expected growth window, common causes include low graft survival, low graft count for the area, weak placement strategy, or existing native hair loss progression.",
-      "A structured review helps separate normal recovery from quality concerns by looking at timeline photos, donor evidence, and recipient pattern.",
+      "Many patients need many months before transplanted hair reaches mature calibre and coverage. If you are early in recovery, thinness may still improve.",
+      "If density still looks low after the usual growth window, common contributors include low cosmetic yield from grafts, conservative graft counts for the area, placement strategy, or ongoing native hair thinning—not one single explanation.",
+      "Structured review helps separate timeline effects from quality signals using dated photos, donor context, and recipient pattern—not a mirror snapshot alone.",
     ],
     summaryPoints: [
-      "Thin appearance can be temporary in early months.",
-      "Final thinness can happen from planning or graft survival issues.",
-      "Photo timeline quality affects confidence in conclusions.",
-      "Independent review can clarify whether concern is cosmetic, technical, or both.",
+      "Thin appearance can be temporary early on.",
+      "Persistent thinness can reflect planning, yield, or native hair change.",
+      "Photo timeline quality changes how much can be concluded.",
+      "Independent review clarifies what the evidence supports today.",
     ],
     seekReviewPoints: [
-      "Density remains low at 10 to 12 months post-op.",
-      "Visible scalp remains widespread in transplanted zones.",
-      "Clinic feedback is unclear or inconsistent with your visual evidence.",
-      "You need objective documentation before planning correction.",
+      "Density remains clearly low late in the expected maturation window.",
+      "Visible scalp stays widespread in transplanted zones as months pass.",
+      "Clinic explanations do not match what you see across your timeline.",
+      "You want neutral documentation before corrective discussions.",
     ],
     faqs: [
       {
         question: "How long should I wait before judging final density?",
         answer:
-          "Most results mature over 9 to 12 months. Some patients continue improving slightly after this window.",
+          "Many results mature over roughly nine to twelve months; some change a little beyond that. Your surgeon’s follow-up plan still matters.",
       },
       {
         question: "Can medication affect density outcomes?",
         answer:
-          "Yes. Ongoing native hair loss can change appearance. This can occur even if transplanted grafts survive.",
+          "Yes. Ongoing native hair loss can change appearance even when transplanted grafts survive.",
       },
       {
         question: "Can HairAudit tell me if I need a second surgery?",
         answer:
-          "HairAudit provides independent evidence review and documentation. Treatment decisions should be made with your clinician.",
+          "HairAudit provides independent evidence review and documentation. Treatment decisions belong with your clinician.",
       },
+    ],
+    relatedGuideSlugs: [
+      "hair-transplant-density-too-low",
+      "when-is-a-hair-transplant-final",
+      "why-does-my-hair-transplant-look-worse-in-bright-light",
     ],
   },
   {
     slug: "hair-transplant-not-growing",
-    title: "Hair Transplant Not Growing: Normal Delay or Concern?",
+    title: "Hair Transplant Not Growing: Normal Delay or Red Flag?",
     description:
-      "Patient education on delayed hair transplant growth, red flags, and when independent review is useful.",
+      "Shedding and slow regrowth are common early. This short guide frames when limited growth may still fit normal variation—and when structured review helps interpret your photos fairly.",
     intro:
-      "After surgery, shedding is expected. New growth often starts slowly. If very little growth appears by expected milestones, it may be worth a detailed review.",
+      "After surgery, shedding is common and regrowth can start gradually; timelines vary. This page highlights useful mileposts without turning anxiety into a premature verdict. For shedding versus longer-term yield, read [shock loss vs graft failure](/shock-loss-vs-graft-failure). For a timeline-focused discussion of when delay is more concerning, read [when is hair transplant growth delay normal vs concerning?](/when-is-hair-transplant-growth-delay-normal-vs-concerning).",
     explanations: [
-      "A common pattern is shedding in the first months, then gradual regrowth from around month 3 to month 4 onward.",
-      "By month 6, many patients see clear progress, but full maturity usually takes longer. If growth stays very limited near month 9 or 12, concern increases.",
-      "Poor graft survival, trauma to grafts, recipient scalp factors, and documentation gaps can all affect interpretation.",
+      "A common pattern is shedding in the first months, then gradual regrowth as fine hairs emerge and thicken—speed differs between people.",
+      "If improvement stays very limited across later follow-up photos, the timeline may deserve closer scrutiny alongside day 0 documentation and donor context.",
+      "Poor yield, trauma, healing issues, and missing photos can all affect interpretation—photos do not prove every biological detail alone.",
     ],
     summaryPoints: [
-      "Early shedding is normal and expected.",
-      "Growth timelines vary, but total absence of progress needs attention.",
-      "A full timeline with consistent lighting improves review quality.",
-      "Independent assessment can help determine if delay is within range.",
+      "Early shedding is often part of recovery.",
+      "Growth curves vary; total absence of progress over time raises concern.",
+      "Consistent lighting and angles improve review quality.",
+      "Independent assessment can organize what your timeline appears to show.",
     ],
     seekReviewPoints: [
-      "Very limited growth by month 8 to 10.",
-      "No meaningful cosmetic improvement by month 12.",
-      "Patchy non-growth with visible transplanted zones.",
-      "You want clear evidence before discussing options with a clinic.",
+      "Very limited visible progress well into the later growth window.",
+      "No meaningful cosmetic improvement when maturity would usually be expected.",
+      "Patchy non-growth patterns with uneven zones.",
+      "You want clear evidence before difficult clinic conversations.",
     ],
     faqs: [
       {
-        question: "Is zero growth at month 4 a failure?",
+        question: "Is minimal visible growth at a few months post-op always a failure?",
         answer:
-          "Not always. Some patients show slower starts. The full timeline and surgical context matter.",
+          "Not always. Some patients start slower. Context, shedding history, and dated photos matter.",
       },
       {
         question: "Can shock loss look like failed growth?",
         answer:
-          "Yes. Shock loss can temporarily reduce visible hair and delay perceived improvement.",
+          "Yes. Temporary thinning can delay how improvement looks even when follicles are still viable.",
       },
       {
         question: "What evidence should I upload for review?",
@@ -96,78 +103,89 @@ export const patientIssueLibrary: PatientIssueContent[] = [
           "Pre-op, immediate post-op, donor views, and monthly progress photos with similar angles and lighting.",
       },
     ],
+    relatedGuideSlugs: [
+      "when-is-hair-transplant-growth-delay-normal-vs-concerning",
+      "shock-loss-vs-graft-failure",
+      "when-is-a-hair-transplant-final",
+      "hair-transplant-graft-failure",
+    ],
   },
   {
     slug: "hair-transplant-donor-overharvested",
-    title: "Donor Area Overharvested: Signs and Next Steps",
+    title: "Donor Overharvesting After FUE: Concise Signs & Context",
     description:
-      "Guide to possible donor overharvesting after hair transplant and when to request independent review.",
+      "FUE donor areas can look patchy or thin for several reasons, including normal healing and haircut effects. Learn what may suggest overharvesting versus appearance that may still settle, and when independent review helps.",
     intro:
-      "The donor area should keep a balanced look after extraction. Overharvesting can create patchiness, visible thinning, or reduced future donor reserve.",
+      "Patients often search specifically about the FUE donor area. Some post-operative change is expected; uneven extraction or aggressive harvesting can produce lasting donor thinning. This short page orients you quickly. For donor patterns and documentation, read [overharvested donor area: what to look for](/overharvested-donor-area). For typical healing versus appearances that merit scrutiny, read [normal donor healing after FUE](/normal-donor-healing-after-fue).",
     explanations: [
-      "Overharvesting usually appears as uneven density, moth-eaten appearance, or stronger scalp visibility in the donor zone.",
-      "Not every thin donor appearance means severe damage. Hair length, lighting, and natural donor variation can change how it looks.",
-      "Independent review compares donor photos across time to estimate whether extraction pattern appears conservative or excessive.",
+      "Overharvesting often appears as uneven density, visible patchiness, or scalp show-through in the donor when hair is worn short—but lighting and length change perception.",
+      "Not every thin donor appearance means severe structural loss. A timeline helps distinguish healing-related change from long-term homogeneity problems.",
+      "Independent review compares donor photos over time to describe whether extraction pattern appears conservative, concentrated, or visually disproportionate—within photo limits.",
     ],
     summaryPoints: [
-      "Donor safety is critical for long-term planning.",
-      "Patchy donor zones may indicate concentrated extraction.",
-      "Lighting and haircut length can exaggerate donor concerns.",
-      "A timeline review helps distinguish temporary appearance from structural loss.",
+      "Donor safety affects long-term options.",
+      "Patchy zones may reflect concentrated extraction.",
+      "Hair length and lighting strongly affect donor reads.",
+      "Timeline documentation reduces single-photo misreads.",
     ],
     seekReviewPoints: [
-      "Persistent patchy donor area months after surgery.",
-      "Reduced ability to wear short hair due to visible extraction pattern.",
-      "Concern about limited donor reserve for future repair.",
-      "Need objective records for clinic discussions.",
+      "Persistent patchy donor appearance after healing has settled.",
+      "You avoid short styles because extraction pattern is visible.",
+      "You worry donor reserve is compromised before another procedure.",
+      "You want objective records for clinical discussions.",
     ],
     faqs: [
       {
-        question: "Can donor thinning improve over time?",
+        question: "Can donor thinning look better over time?",
         answer:
-          "Some appearance changes improve as hair grows longer, but true extraction-related loss may remain visible.",
+          "Some appearance changes improve as hair lengthens, but extraction-related homogeneity problems may remain visible.",
       },
       {
         question: "Is overharvesting only an FUE issue?",
         answer:
-          "It is more commonly discussed with FUE extraction patterns, but donor management matters in all surgical planning.",
+          "It is discussed most often with FUE extraction patterns, but donor stewardship matters for any harvesting approach.",
       },
       {
         question: "Can HairAudit measure exact donor depletion?",
         answer:
-          "HairAudit provides structured visual assessment and evidence-based documentation. Exact microscopic counts may require in-person clinical tools.",
+          "HairAudit provides structured visual assessment and documentation. Exact counts may require in-person clinical tools.",
       },
+    ],
+    relatedGuideSlugs: [
+      "overharvested-donor-area",
+      "normal-donor-healing-after-fue",
+      "shock-loss-vs-graft-failure",
     ],
   },
   {
     slug: "bad-hair-transplant-hairline",
-    title: "Bad Hair Transplant Hairline: How to Evaluate It",
+    title: "Hairline Concerns After Hair Transplant (Quick Guide)",
     description:
-      "Patient guide to unnatural hairline concerns after transplant and signs that suggest professional review.",
+      "Shape, angle, density transition, and temple framing affect whether a hairline looks believable. A fast overview—plus when independent review may clarify design and photographic evidence.",
     intro:
-      "An unnatural hairline can come from shape, direction, density, or graft type mismatch. The concern is both cosmetic and technical because hairline design strongly affects natural appearance.",
+      "Hairline concerns are often about softness, proportions, and transitions—not only height. Early results can look harsh before maturation. For a deeper read focused on unnatural patterns, see [unnatural hairline after hair transplant](/unnatural-hairline-after-hair-transplant). For naturalness cues beyond the hairline alone, see [what makes a hair transplant look natural](/what-makes-a-hair-transplant-look-natural).",
     explanations: [
-      "Common concerns include overly straight lines, abrupt density changes, low placement, or incorrect angulation that does not match natural flow.",
-      "A hairline may look harsh in early recovery. Final softness usually improves as growth matures and styling options increase.",
-      "Reviewing close-up frontal photos and side profile angles helps identify whether irregularity is likely temporary or structural.",
+      "Common concerns include an overly straight edge, abrupt density steps, low placement for age and facial balance, or angulation that fights natural flow.",
+      "Some harshness can soften as hair matures, but structural design limits may persist.",
+      "Close frontal and oblique photos help separate temporary recovery appearance from durable design issues.",
     ],
     summaryPoints: [
-      "Hairline design is one of the most visible quality markers.",
-      "Early appearance can change during maturation.",
-      "Direction and softness matter as much as line shape.",
-      "Independent review can document design strengths and limitations clearly.",
+      "The hairline is one of the most visible quality markers.",
+      "Early harshness does not always equal final design failure.",
+      "Direction and transition matter as much as line shape.",
+      "Independent review can document what appears visible in photos.",
     ],
     seekReviewPoints: [
-      "Hairline still appears unnatural near final growth stage.",
-      "Visible pluggy or abrupt transition appearance.",
-      "Design does not match facial proportions or age profile.",
-      "You need clear technical documentation before corrective planning.",
+      "The hairline still looks unnatural late in maturation.",
+      "Pluggy or abrupt transition remains obvious in consistent photos.",
+      "Design feels misaligned with facial proportions.",
+      "You want technical documentation before corrective planning.",
     ],
     faqs: [
       {
         question: "Can a harsh hairline soften naturally?",
         answer:
-          "Sometimes yes, especially while growth matures. If it remains harsh late in recovery, concern is more significant.",
+          "Sometimes, while calibre and styling improve. If harshness persists late in recovery, concern is more significant.",
       },
       {
         question: "Does a low hairline always mean poor surgery?",
@@ -177,50 +195,61 @@ export const patientIssueLibrary: PatientIssueContent[] = [
       {
         question: "Can this be corrected?",
         answer:
-          "Some cases can be improved with corrective planning. HairAudit can provide objective evidence to support that discussion.",
+          "Some cases can improve with careful planning. HairAudit can provide objective evidence to support that discussion.",
       },
+    ],
+    relatedGuideSlugs: [
+      "unnatural-hairline-after-hair-transplant",
+      "what-makes-a-hair-transplant-look-natural",
+      "temple-work-and-frontal-framing",
     ],
   },
   {
     slug: "hair-transplant-graft-failure",
-    title: "Hair Transplant Graft Failure: Signs, Timing & Review",
+    title: "Signs a Hair Transplant May Have Failed: Survival, Timing & Evidence",
     description:
-      "Possible signs of graft failure after a hair transplant, why timing matters, and when an independent HairAudit review can help structure evidence and next steps.",
+      "Worried grafts did not survive? How timing, shedding, and visible growth interact—what photos may suggest, what they cannot prove alone, and how independent review structures evidence (not a diagnosis).",
     intro:
-      "Graft failure means transplanted follicles did not survive or did not produce expected growth. This can be partial or extensive and may involve multiple factors.",
+      "\"Failed transplant\" is not one narrow pattern. Poor growth can overlap with normal delay, shock shedding, or unmet density expectations. This concise page focuses on survival concerns and timing. Compare shedding with longer-term yield in [shock loss vs graft failure](/shock-loss-vs-graft-failure). For evidence limits from photography, read [hair transplant graft failure: what photos can and cannot show](/hair-transplant-graft-failure-what-photos-can-and-cannot-show). If you are weighing revision versus waiting, see [repair vs wait after poor hair transplant growth](/repair-vs-wait-after-poor-hair-transplant-growth).",
     explanations: [
-      "Possible factors include graft handling trauma, prolonged out-of-body time, dehydration, recipient site trauma, infection, or healing complications.",
-      "Visual signs can overlap with delayed growth, so timing matters. A concern at month 4 is different from the same appearance at month 12.",
-      "Independent review helps assess whether the pattern aligns with normal delay, partial failure, or broader quality concerns.",
+      "Low survival can be partial or widespread and may involve multiple technical and healing factors; photos cannot prove every microscopic detail.",
+      "The same sparse appearance can mean different things at different months—timing matters when interpreting concern.",
+      "Independent review describes visible patterns and confidence limits rather than replacing your surgeon’s clinical judgement.",
     ],
     summaryPoints: [
-      "Not all slow growth equals graft failure.",
-      "Failure patterns are interpreted using timing and photo evidence.",
-      "Both technical factors and healing factors can influence survival.",
-      "Clear independent documentation helps with next-step decisions.",
+      "Slow growth is not automatically graft failure.",
+      "Failure-style patterns are interpreted with timeline evidence.",
+      "Technical and healing factors can both affect outcomes.",
+      "Neutral documentation supports next-step conversations.",
     ],
     seekReviewPoints: [
-      "Minimal growth in major transplanted zones near month 12.",
-      "Large mismatch between graft count claim and visible result.",
-      "Signs suggest broad non-survival rather than slow maturation.",
-      "You need a neutral report before corrective consultation.",
+      "Minimal growth in major transplanted zones when maturity would usually be expected.",
+      "Large mismatch between claimed graft count and visible cosmetic yield—documented as well as possible.",
+      "Broad non-survival concern rather than a single slow zone.",
+      "You want a neutral record before corrective consultation.",
     ],
     faqs: [
       {
         question: "Can graft failure be proven from photos alone?",
         answer:
-          "Photos can strongly suggest patterns, but final interpretation depends on evidence quality and timeline completeness.",
+          "Photos can support visible patterns strongly, but conclusions depend on evidence quality and timeline completeness.",
       },
       {
-        question: "Could poor growth still improve after month 12?",
+        question: "Could poor growth still improve after the first year?",
         answer:
-          "Small improvement may occur, but major change after month 12 is less common.",
+          "Meaningful change is less common after late timelines, though small shifts can occur.",
       },
       {
         question: "What is the benefit of independent review?",
         answer:
-          "It gives a structured, unbiased record of findings that you can use in clinical or corrective planning discussions.",
+          "It provides structured, unbiased documentation of what the evidence appears to show—useful for planning discussions.",
       },
+    ],
+    relatedGuideSlugs: [
+      "shock-loss-vs-graft-failure",
+      "hair-transplant-graft-failure-what-photos-can-and-cannot-show",
+      "repair-vs-wait-after-poor-hair-transplant-growth",
+      "when-is-hair-transplant-growth-delay-normal-vs-concerning",
     ],
   },
 ];

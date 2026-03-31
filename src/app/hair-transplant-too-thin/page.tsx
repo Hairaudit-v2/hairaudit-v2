@@ -6,8 +6,9 @@ import { patientIssueLibrary } from "@/lib/patientEducationIssues";
 const issue = patientIssueLibrary.find((item) => item.slug === "hair-transplant-too-thin");
 
 export const metadata = createPageMetadata({
-  title: "Hair Transplant Too Thin | HairAudit",
+  title: issue ? `${issue.title} | HairAudit` : "Hair Transplant Too Thin | HairAudit",
   description:
+    issue?.description ??
     "Learn why a hair transplant can look too thin, what is normal over time, and when to request independent review.",
   pathname: "/hair-transplant-too-thin",
 });

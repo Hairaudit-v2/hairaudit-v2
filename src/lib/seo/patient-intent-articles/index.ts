@@ -34,12 +34,18 @@ import { whatPhotosAreNeededArticle } from "./what-photos-are-needed-for-a-prope
 import { whyDoesMyHairTransplantLookWorseInBrightLightArticle } from "./why-does-my-hair-transplant-look-worse-in-bright-light";
 import { whyHairCalibreMattersMoreThanPatientsThinkArticle } from "./why-hair-calibre-matters-more-than-patients-think";
 import { whenIsAHairTransplantFinalArticle } from "./when-is-a-hair-transplant-final";
+import { whenIsHairTransplantGrowthDelayNormalVsConcerningArticle } from "./when-is-hair-transplant-growth-delay-normal-vs-concerning";
 import { whenShouldYouSeekAnIndependentHairTransplantReviewArticle } from "./when-should-you-seek-an-independent-hair-transplant-review";
+import { normalDonorHealingAfterFueArticle } from "./normal-donor-healing-after-fue";
+import { repairVsWaitAfterPoorHairTransplantGrowthArticle } from "./repair-vs-wait-after-poor-hair-transplant-growth";
 
 const patientIntentArticlesList: PatientIntentArticle[] = [
   overharvestedDonorAreaArticle,
+  normalDonorHealingAfterFueArticle,
   shockLossVsGraftFailureArticle,
   whenIsAHairTransplantFinalArticle,
+  whenIsHairTransplantGrowthDelayNormalVsConcerningArticle,
+  repairVsWaitAfterPoorHairTransplantGrowthArticle,
   canAHairTransplantBeAuditedFromPhotosArticle,
   badHairTransplantSignsArticle,
   whatPhotosAreNeededArticle,

@@ -194,8 +194,8 @@
   "marketing": {
     "meta": {
       "home": {
-        "title": "Auditoría de trasplante capilar | Revisión independiente | HairAudit",
-        "description": "Auditoría forense independiente y basada en evidencia para pacientes: revisión estructurada al estilo segunda opinión del área donante, crecimiento, densidad, diseño, implantación y técnica, con análisis asistido por IA dentro de un marco independiente."
+        "title": "HairAudit | Auditorías y revisiones independientes de trasplante capilar",
+        "description": "HairAudit ofrece auditorías independientes y basadas en evidencia del trasplante capilar—revisión forense del donante, crecimiento, densidad y diseño sin marketing clínico. Explore metodología y guías para pacientes; use Solicitar revisión cuando quiera enviar fotos para un informe estructurado."
       },
       "howItWorks": {
         "title": "Cómo funcionan las auditorías de trasplante capilar | Proceso y evidencia | HairAudit",
@@ -207,7 +207,7 @@
       },
       "sampleReport": {
         "title": "Informe de auditoría de trasplante capilar de ejemplo | HairAudit",
-        "description": "Vista previa de un informe forense HairAudit estructurado: puntuación por dominios, análisis de donante y receptor, notas de técnica y diseño, límites de confianza y próximos pasos en lenguaje claro."
+        "description": "Ejemplo del formato de salida HairAudit: puntuación por dominios, análisis de donante y receptor, notas de técnica y diseño, límites de confianza y próximos pasos en lenguaje claro—recorrido de muestra; para su caso, use Solicitar revisión."
       }
     },
     "shared": {

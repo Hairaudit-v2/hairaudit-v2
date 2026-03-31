@@ -105,6 +105,8 @@ export const thinkingAboutASecondHairTransplantArticle: PatientIntentArticle = {
   ctaLead: "Thinking about another procedure?",
   ctaSupporting: "Request an independent HairAudit review before committing more donor.",
   relatedSlugs: [
+    "repair-vs-wait-after-poor-hair-transplant-growth",
+    "when-is-a-hair-transplant-final",
     "donor-reserve-and-future-options",
     "how-many-grafts-is-too-many",
     "overharvested-donor-area",

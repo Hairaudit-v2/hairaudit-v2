@@ -8,7 +8,7 @@ import BreadcrumbListSchema from "@/components/seo/BreadcrumbListSchema";
 export const metadata = createPageMetadata({
   title: "Hair Transplant Audit FAQ | Process, Privacy & Reports | HairAudit",
   description:
-    "Answers on independent hair transplant audits: forensic review process, AI-assisted analysis within our framework, confidence scores, privacy, what reports include, and patient vs professional pathways.",
+    "HairAudit audit FAQ—process, privacy, confidence scores, what reports include, and common objections. Long-form patient education lives in the guides hub, not on this FAQ page.",
   pathname: "/faq",
 });
 

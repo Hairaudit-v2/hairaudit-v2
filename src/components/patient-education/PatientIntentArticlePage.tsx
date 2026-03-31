@@ -1,5 +1,4 @@
 import Link from "next/link";
-import type { ReactNode } from "react";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import ReviewProcessReassurance from "@/components/seo/ReviewProcessReassurance";
@@ -8,79 +7,14 @@ import BreadcrumbListSchema from "@/components/seo/BreadcrumbListSchema";
 import { getBaseUrl } from "@/lib/seo/baseUrl";
 import { getPatientIntentArticle } from "@/lib/seo/patient-intent-articles";
 import type { PatientIntentArticleBlock } from "@/lib/seo/patient-intent-articles/types";
-import { patientIssueLibrary } from "@/lib/patientEducationIssues";
-import { isPatientGuideRequestReviewHref } from "@/lib/analytics/patientGuideMeasurement";
-
-type ResolvedRelated = {
-  pathname: string;
-  h1: string;
-  metaDescription: string;
-};
-
-function resolveRelatedGuide(slug: string): ResolvedRelated | null {
-  const intent = getPatientIntentArticle(slug);
-  if (intent) {
-    return {
-      pathname: intent.pathname,
-      h1: intent.h1,
-      metaDescription: intent.metaDescription,
-    };
-  }
-  const issue = patientIssueLibrary.find((item) => item.slug === slug);
-  if (issue) {
-    return {
-      pathname: `/${issue.slug}`,
-      h1: issue.title,
-      metaDescription: issue.description,
-    };
-  }
-  return null;
-}
-
-const LINK_IN_TEXT = /\[([^\]]+)\]\(([^)]+)\)/g;
-
-function LinkedText({ text, guideSlug }: { text: string; guideSlug: string }): ReactNode {
-  const parts: ReactNode[] = [];
-  let last = 0;
-  let match: RegExpExecArray | null;
-  const re = new RegExp(LINK_IN_TEXT.source, "g");
-  let key = 0;
-  while ((match = re.exec(text)) !== null) {
-    if (match.index > last) {
-      parts.push(text.slice(last, match.index));
-    }
-    const href = match[2];
-    const bodyRequestReview =
-      guideSlug && isPatientGuideRequestReviewHref(href)
-        ? {
-            "data-cta": "patient-guide-body-request-review" as const,
-            "data-patient-guide": guideSlug,
-            "data-cta-destination": "/request-review" as const,
-          }
-        : null;
-    parts.push(
-      <Link
-        key={key++}
-        href={href}
-        className="text-amber-400 hover:text-amber-300 underline underline-offset-2 font-medium"
-        {...(bodyRequestReview ?? {})}
-      >
-        {match[1]}
-      </Link>
-    );
-    last = match.index + match[0].length;
-  }
-  if (last < text.length) {
-    parts.push(text.slice(last));
-  }
-  return parts.length === 1 && typeof parts[0] === "string" ? parts[0] : <>{parts}</>;
-}
+import { resolvePatientGuideLink } from "@/lib/seo/resolvePatientGuideLink";
+import { PatientEducationLinkedText } from "@/components/patient-education/PatientEducationLinkedText";
 
 function ArticleBodyBlock({ block, guideSlug }: { block: PatientIntentArticleBlock; guideSlug: string }) {
   if (block.type === "p") {
     return (
       <p className="text-slate-300 leading-relaxed">
-        <LinkedText text={block.text} guideSlug={guideSlug} />
+        <PatientEducationLinkedText text={block.text} guideSlug={guideSlug} />
       </p>
     );
   }
@@ -93,7 +27,7 @@ function ArticleBodyBlock({ block, guideSlug }: { block: PatientIntentArticleBlo
         <li key={item} className="flex gap-2">
           <span className="text-amber-400 shrink-0">-</span>
           <span className="leading-relaxed">
-            <LinkedText text={item} guideSlug={guideSlug} />
+            <PatientEducationLinkedText text={item} guideSlug={guideSlug} />
           </span>
         </li>
       ))}
@@ -110,8 +44,8 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
   if (!article) return null;
 
   const related = article.relatedSlugs
-    .map((slug) => resolveRelatedGuide(slug))
-    .filter((r): r is ResolvedRelated => r != null);
+    .map((slug) => resolvePatientGuideLink(slug))
+    .filter((r): r is NonNullable<typeof r> => r != null);
 
   const baseUrl = getBaseUrl();
   const articleUrl = `${baseUrl}${article.pathname}`;

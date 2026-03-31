@@ -21,6 +21,8 @@ export const patientIntentHubThemes: PatientIntentHubTheme[] = [
     slugs: [
       "shock-loss-vs-graft-failure",
       "when-is-a-hair-transplant-final",
+      "when-is-hair-transplant-growth-delay-normal-vs-concerning",
+      "repair-vs-wait-after-poor-hair-transplant-growth",
       "is-my-hair-transplant-normal",
       "wet-hair-vs-dry-hair-after-transplant",
       "why-does-my-hair-transplant-look-worse-in-bright-light",
@@ -53,6 +55,7 @@ export const patientIntentHubThemes: PatientIntentHubTheme[] = [
       "Donor safety, overharvesting, long-term reserve, and what to weigh before a second surgery.",
     slugs: [
       "overharvested-donor-area",
+      "normal-donor-healing-after-fue",
       "can-an-overharvested-donor-be-corrected",
       "donor-reserve-and-future-options",
       "donor-ageing-and-hair-to-graft-ratios",

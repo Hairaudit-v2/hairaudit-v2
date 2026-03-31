@@ -6,8 +6,9 @@ import { patientIssueLibrary } from "@/lib/patientEducationIssues";
 const issue = patientIssueLibrary.find((item) => item.slug === "hair-transplant-not-growing");
 
 export const metadata = createPageMetadata({
-  title: "Hair Transplant Not Growing | HairAudit",
+  title: issue ? `${issue.title} | HairAudit` : "Hair Transplant Not Growing | HairAudit",
   description:
+    issue?.description ??
     "Understand delayed hair transplant growth, normal timelines, and signs that suggest independent review is needed.",
   pathname: "/hair-transplant-not-growing",
 });

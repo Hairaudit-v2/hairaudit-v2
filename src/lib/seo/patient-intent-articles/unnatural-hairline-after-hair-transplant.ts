@@ -8,7 +8,7 @@ export const unnaturalHairlineAfterHairTransplantArticle: PatientIntentArticle =
     "Worried your hairline looks unnatural after transplant? Learn the common signs patients notice, what may still soften over time, and when review may help.",
   h1: "Unnatural Hairline After Hair Transplant: What Patients Notice First",
   intro:
-    "For many patients, the hairline is the most emotionally important part of a transplant result. It is also one of the easiest areas for other people to notice if something looks unnatural. A hairline does not need to be obviously bad to feel “off.” Sometimes the issue is softness, irregularity, temple framing, density transition, or how the hairline fits the face. This page explains what patients commonly notice, what may still soften as the result matures, and when closer review may help.",
+    "For many patients, the hairline is the most emotionally important part of a transplant result. It is also one of the easiest areas for other people to notice if something looks unnatural. A hairline does not need to be obviously bad to feel “off.” Sometimes the issue is softness, irregularity, temple framing, density transition, or how the hairline fits the face. This page explains what patients commonly notice, what may still soften as the result matures, and when closer review may help. For a shorter issue-style overview, see [hairline concerns after hair transplant (quick guide)](/bad-hair-transplant-hairline).",
   sections: [
     {
       id: "what-makes-unnatural",
@@ -120,6 +120,7 @@ export const unnaturalHairlineAfterHairTransplantArticle: PatientIntentArticle =
   ctaLead: "Concerned your hairline looks unnatural?",
   ctaSupporting: "Request an independent HairAudit review.",
   relatedSlugs: [
+    "bad-hair-transplant-hairline",
     "what-makes-a-hair-transplant-look-natural",
     "hair-direction-and-angle-after-transplant",
     "temple-work-and-frontal-framing",

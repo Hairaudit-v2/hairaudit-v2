@@ -8,7 +8,7 @@ export const badHairTransplantSignsArticle: PatientIntentArticle = {
     "A pattern-led guide to donor thinning, hairline edge issues, density imbalance, and other visible clues patients overlook—not a recovery timeline explainer.",
   h1: "Bad Hair Transplant: Signs Patients Often Miss",
   intro:
-    "This page maps specific visible patterns—donor, hairline, density, angle, and blending—that often explain why a result feels wrong before patients can name the issue. It is not mainly about whether you are still in a normal healing phase; for that framing, read [is my hair transplant normal?](/is-my-hair-transplant-normal). Here the focus is which cosmetic and technical signals tend to show up late or get missed early, and how they connect to stronger photo documentation.",
+    "This page maps specific visible patterns—donor, hairline, density, angle, and blending—that often explain why a result feels wrong before patients can name the issue. It is not mainly about whether you are still in a normal healing phase; for that framing, read [is my hair transplant normal?](/is-my-hair-transplant-normal). It is also not mainly about graft survival timing; for that narrow concern, start with [signs a hair transplant may have failed](/hair-transplant-graft-failure). Here the focus is which cosmetic and technical signals tend to show up late or get missed early, and how they connect to stronger photo documentation.",
   sections: [
     {
       id: "what-bad-means",
@@ -118,6 +118,7 @@ export const badHairTransplantSignsArticle: PatientIntentArticle = {
   ctaSupporting: "Request an independent HairAudit review based on your photos and documentation.",
   relatedSlugs: [
     "is-my-hair-transplant-normal",
+    "hair-transplant-graft-failure",
     "when-should-you-seek-an-independent-hair-transplant-review",
     "what-photos-are-needed-for-a-proper-hair-transplant-review",
     "overharvested-donor-area",

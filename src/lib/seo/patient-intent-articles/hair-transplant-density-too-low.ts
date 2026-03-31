@@ -8,7 +8,7 @@ export const hairTransplantDensityTooLowArticle: PatientIntentArticle = {
     "Thin-looking transplant: normal maturation or a real density problem? What low density can mean, when it is too early to judge, and when independent HairAudit review helps.",
   h1: "Hair Transplant Density Too Low: Delay or Quality Problem?",
   intro:
-    "Low density is one of the most common reasons patients become disappointed with a transplant result. But low density does not always mean the same thing. Sometimes it reflects a timeline issue. Sometimes it reflects planning limitations. Sometimes it reflects a quality concern. This page helps separate those possibilities more clearly.",
+    "Low density is one of the most common reasons patients become disappointed with a transplant result. But low density does not always mean the same thing. Sometimes it reflects a timeline issue. Sometimes it reflects planning limitations. Sometimes it reflects a quality concern. This page helps separate those possibilities more clearly. If you want a shorter landing overview first, read [hair transplant looks too thin (quick guide)](/hair-transplant-too-thin).",
   sections: [
     {
       id: "what-patients-mean",
@@ -136,6 +136,7 @@ export const hairTransplantDensityTooLowArticle: PatientIntentArticle = {
   ctaLead: "Think your transplant still looks too thin?",
   ctaSupporting: "Request an independent HairAudit review.",
   relatedSlugs: [
+    "hair-transplant-too-thin",
     "when-is-a-hair-transplant-final",
     "shock-loss-vs-graft-failure",
     "can-a-hair-transplant-be-audited-from-photos",

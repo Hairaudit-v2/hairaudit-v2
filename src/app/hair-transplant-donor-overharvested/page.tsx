@@ -6,8 +6,9 @@ import { patientIssueLibrary } from "@/lib/patientEducationIssues";
 const issue = patientIssueLibrary.find((item) => item.slug === "hair-transplant-donor-overharvested");
 
 export const metadata = createPageMetadata({
-  title: "Donor Overharvested After Hair Transplant | HairAudit",
+  title: issue ? `${issue.title} | HairAudit` : "Donor Overharvested After Hair Transplant | HairAudit",
   description:
+    issue?.description ??
     "Learn donor overharvesting signs after a hair transplant and when an independent review can help.",
   pathname: "/hair-transplant-donor-overharvested",
 });

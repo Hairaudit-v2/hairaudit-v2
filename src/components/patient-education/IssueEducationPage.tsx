@@ -4,6 +4,8 @@ import SiteFooter from "@/components/SiteFooter";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import ReviewProcessReassurance from "@/components/seo/ReviewProcessReassurance";
 import MedicalProcedureFaqSchema from "@/components/seo/MedicalProcedureFaqSchema";
+import { resolvePatientGuideLink } from "@/lib/seo/resolvePatientGuideLink";
+import { PatientEducationLinkedText } from "@/components/patient-education/PatientEducationLinkedText";
 
 type FAQItem = {
   question: string;
@@ -18,6 +20,8 @@ type IssueEducationPageProps = {
   summaryPoints: string[];
   seekReviewPoints: string[];
   faqs: FAQItem[];
+  /** Long-form guides and related issue slugs for anti-cannibalization cross-links */
+  relatedGuideSlugs?: string[];
 };
 
 export default function IssueEducationPage({
@@ -28,7 +32,11 @@ export default function IssueEducationPage({
   summaryPoints,
   seekReviewPoints,
   faqs,
+  relatedGuideSlugs = [],
 }: IssueEducationPageProps) {
+  const relatedGuides = relatedGuideSlugs
+    .map((slug) => resolvePatientGuideLink(slug))
+    .filter((r): r is NonNullable<typeof r> => r != null);
   return (
     <div className="min-h-screen flex flex-col bg-[#0a0a0f] text-slate-100">
       <MedicalProcedureFaqSchema pageName={title} pageDescription={description} faqs={faqs} />
@@ -47,8 +55,36 @@ export default function IssueEducationPage({
               Patient education
             </p>
             <h1 className="mt-3 text-3xl sm:text-4xl font-bold tracking-tight text-white">{title}</h1>
-            <p className="mt-5 text-slate-300 max-w-3xl">{intro}</p>
+            <p className="mt-5 text-slate-300 max-w-3xl leading-relaxed">
+              <PatientEducationLinkedText text={intro} guideSlug="" />
+            </p>
           </ScrollReveal>
+
+          {relatedGuides.length > 0 ? (
+            <ScrollReveal delay={0.04}>
+              <section className="mt-8 rounded-2xl border border-white/10 bg-white/[0.03] p-6">
+                <h2 className="text-lg font-semibold text-white">Related guides</h2>
+                <p className="mt-2 text-sm text-slate-400">
+                  Deeper education on the same topic—structured to avoid repeating this short overview.
+                </p>
+                <ul className="mt-4 space-y-3">
+                  {relatedGuides.map((g) => (
+                    <li key={g.pathname}>
+                      <Link
+                        href={g.pathname}
+                        className="text-amber-400 hover:text-amber-300 font-medium underline underline-offset-2"
+                        data-cta="issue-page-related-guide"
+                        data-cta-destination={g.pathname}
+                      >
+                        {g.h1}
+                      </Link>
+                      <p className="text-sm text-slate-500 mt-1 line-clamp-2">{g.metaDescription}</p>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            </ScrollReveal>
+          ) : null}
 
           <ScrollReveal delay={0.05}>
             <section className="mt-10 rounded-2xl border border-white/10 bg-white/5 p-6">

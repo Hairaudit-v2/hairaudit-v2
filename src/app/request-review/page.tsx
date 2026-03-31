@@ -10,7 +10,7 @@ import TrackedLink from "@/components/analytics/TrackedLink";
 export const metadata = createPageMetadata({
   title: "Request a Hair Transplant Review | Secure Upload | HairAudit",
   description:
-    "Request an independent hair transplant audit: secure photo upload, structured forensic review of donor, growth, density, design, and technique, and a clear report—not clinic marketing.",
+    "Start an independent hair transplant audit: secure photo upload, structured forensic review of donor, growth, density, design, and technique, and a clear report—not clinic marketing.",
   pathname: "/request-review",
 });
 

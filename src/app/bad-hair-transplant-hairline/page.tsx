@@ -6,8 +6,9 @@ import { patientIssueLibrary } from "@/lib/patientEducationIssues";
 const issue = patientIssueLibrary.find((item) => item.slug === "bad-hair-transplant-hairline");
 
 export const metadata = createPageMetadata({
-  title: "Bad Hair Transplant Hairline | HairAudit",
+  title: issue ? `${issue.title} | HairAudit` : "Bad Hair Transplant Hairline | HairAudit",
   description:
+    issue?.description ??
     "Patient-friendly guide to unnatural hair transplant hairline concerns and when to seek independent review.",
   pathname: "/bad-hair-transplant-hairline",
 });

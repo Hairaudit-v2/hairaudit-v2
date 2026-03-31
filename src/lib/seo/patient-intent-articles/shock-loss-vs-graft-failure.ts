@@ -121,6 +121,8 @@ export const shockLossVsGraftFailureArticle: PatientIntentArticle = {
   ctaSupporting: "Request an independent HairAudit review.",
   relatedSlugs: [
     "when-is-a-hair-transplant-final",
+    "when-is-hair-transplant-growth-delay-normal-vs-concerning",
+    "repair-vs-wait-after-poor-hair-transplant-growth",
     "hair-transplant-graft-failure",
     "what-photos-are-needed-for-a-proper-hair-transplant-review",
     "is-my-hair-transplant-normal",
