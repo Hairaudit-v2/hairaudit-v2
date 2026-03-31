@@ -15,7 +15,7 @@ export const hairTransplantGraftFailureWhatPhotosCanAndCannotShowArticle: Patien
     "Strong evidence is usually a multi-stage timeline, not one snapshot.",
     "Visible sparseness late in maturation weighs more than the same look at three months.",
     "Operative context and day-0 documentation change how much photos can mean.",
-    "For a short symptom-oriented landing page, see [signs a hair transplant may have failed](/hair-transplant-graft-failure)—this guide is about evidence limits.",
+    "For a concise symptom-oriented overview first, read [signs a hair transplant may have failed](/hair-transplant-graft-failure); this guide stays on evidence limits.",
   ],
   sections: [
     {

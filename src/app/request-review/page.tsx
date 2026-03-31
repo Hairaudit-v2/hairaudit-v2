@@ -6,7 +6,7 @@ import MedicalProcedureFaqSchema from "@/components/seo/MedicalProcedureFaqSchem
 import BreadcrumbListSchema from "@/components/seo/BreadcrumbListSchema";
 import { createPageMetadata } from "@/lib/seo/pageMetadata";
 import TrackedLink from "@/components/analytics/TrackedLink";
-import { GeoContextLine, GeoShortAnswer } from "@/components/patient-education/GeoContentBlocks";
+import { GeoContextLine } from "@/components/patient-education/GeoContentBlocks";
 
 export const metadata = createPageMetadata({
   title: "Request a Hair Transplant Review | Secure Upload | HairAudit",
@@ -80,14 +80,11 @@ export default function RequestReviewPage() {
               .
             </p>
           </GeoContextLine>
-          <GeoShortAnswer tone="cyan" title="Short answer">
-            <p>
-              You upload photos and case details; HairAudit reviews them through the same independent forensic framework
-              used for every audit, with confidence-aware reporting and clear statement of limits. You receive structured
-              documentation suitable for your own planning and conversations—not clinic marketing and not a remote
-              diagnosis.
-            </p>
-          </GeoShortAnswer>
+          <p className="mt-4 text-sm text-slate-400 max-w-2xl leading-relaxed">
+            You upload photos and case details; we review them with the same independent forensic framework used for
+            every audit. You receive a structured, confidence-aware report for your planning and conversations—not clinic
+            marketing and not a remote diagnosis.
+          </p>
           <p className="mt-3 text-xs text-amber-300 font-medium">
             Independent review · Secure upload · Not a substitute for in-person medical diagnosis
           </p>

@@ -3,7 +3,7 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { createPageMetadata } from "@/lib/seo/pageMetadata";
 import BreadcrumbListSchema from "@/components/seo/BreadcrumbListSchema";
-import { GeoContextLine, GeoShortAnswer } from "@/components/patient-education/GeoContentBlocks";
+import { GeoContextLine } from "@/components/patient-education/GeoContentBlocks";
 
 export const metadata = createPageMetadata({
   title: "Hair Transplant Audit Methodology | Independent Forensic Review | HairAudit",
@@ -36,23 +36,13 @@ export default function MethodologyPage() {
               Hair transplant audit methodology
             </h1>
             <p className="mt-6 text-lg text-slate-400 leading-relaxed">
-              HairAudit uses your photos and case details for an independent, evidence-based forensic audit—structured
-              like a second opinion on donor area, growth, density, design, implantation, and technique. AI-assisted
-              analysis supports the review; clinical reviewers validate findings. The same framework applies to every case.
+              HairAudit uses your photos and case details in an independent, evidence-based forensic audit—structured
+              like a second opinion across donor stewardship, recipient growth and density, design and naturalness visible
+              in photos, implantation cues images can support, and explicit confidence when documentation is incomplete.
+              AI-assisted analysis supports clinical reviewers. Reports explain what the evidence supports, where
+              confidence is limited, and practical next steps—the output is structured documentation, not a sales
+              assessment and not a substitute for in-person medical diagnosis or a treatment prescription.
             </p>
-            <p className="mt-4 text-slate-400">
-              Reports explain what the evidence supports, where confidence is limited, and what may help next—not a
-              diagnosis or treatment prescription.
-            </p>
-            <GeoShortAnswer tone="cyan" title="Short answer">
-              <p>
-                HairAudit applies one independent, evidence-based forensic framework to every case: donor stewardship,
-                recipient growth and density, design and naturalness cues visible in photos, implantation patterns the
-                images can support, and explicit confidence where documentation is thin. AI-assisted analysis supports
-                human clinical review; the output is structured documentation—not a sales assessment and not a substitute
-                for an in-person medical exam.
-              </p>
-            </GeoShortAnswer>
             <GeoContextLine label="How this differs from a typical clinic opinion">
               <p>
                 A clinic that performed the procedure can offer useful operative context, but it also has a different

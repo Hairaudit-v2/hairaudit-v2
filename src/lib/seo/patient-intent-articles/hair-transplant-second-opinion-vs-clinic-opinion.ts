@@ -15,7 +15,7 @@ export const hairTransplantSecondOpinionVsClinicOpinionArticle: PatientIntentArt
     "Same-party interpretation is different from an external evidence review.",
     "Clinic context (counts, plan, operative detail) can still be useful alongside independent review.",
     "Independent review should state what is visible, what is uncertain, and confidence by topic.",
-    "To submit a case, use [Request a hair transplant review](/request-review)—this page is conceptual, not the intake form.",
+    "To submit a case, use [Request a hair transplant review](/request-review)—separate from this conceptual guide.",
   ],
   sections: [
     {

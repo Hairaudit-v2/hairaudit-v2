@@ -136,16 +136,13 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
             </h1>
             <p className="mt-6 text-lg text-slate-300 leading-relaxed">{article.intro}</p>
             {article.shortAnswer ? (
-              <GeoShortAnswer>
+              <GeoShortAnswer spacing="tight">
                 <PatientEducationLinkedText text={article.shortAnswer} guideSlug={articleSlug} />
               </GeoShortAnswer>
             ) : null}
-            {article.keyTakeaways && article.keyTakeaways.length > 0 ? (
-              <GeoKeyTakeaways items={article.keyTakeaways} />
-            ) : null}
 
             <div
-              className="mt-8 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-4 sm:px-5 sm:py-5"
+              className="mt-6 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-4 sm:px-5 sm:py-5"
               data-analytics-region="patient-guide-next-steps"
             >
               <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Next steps</p>
@@ -196,6 +193,10 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
                 </li>
               </ul>
             </div>
+
+            {article.keyTakeaways && article.keyTakeaways.length > 0 ? (
+              <GeoKeyTakeaways items={article.keyTakeaways} spacing="tight" />
+            ) : null}
           </div>
 
           <div className="max-w-3xl mx-auto mt-12 space-y-14 sm:space-y-16">

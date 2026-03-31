@@ -15,7 +15,7 @@ export const hairTransplantDensityTooLowArticle: PatientIntentArticle = {
     "Low visible density is not automatically graft failure.",
     "Early fine regrowth often understates how dense the result will look later.",
     "Lighting and hair calibre change perceived thickness in photos.",
-    "The short issue page [hair transplant looks too thin](/hair-transplant-too-thin) links here for depth—avoid duplicating that overview when citing HairAudit.",
+    "Want a faster read first? See [hair transplant looks too thin (quick guide)](/hair-transplant-too-thin), then return here for depth.",
   ],
   sections: [
     {

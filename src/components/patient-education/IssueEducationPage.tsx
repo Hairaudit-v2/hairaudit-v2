@@ -98,17 +98,17 @@ export default function IssueEducationPage({
               <PatientEducationLinkedText text={intro} guideSlug="" />
             </p>
             {shortAnswer ? (
-              <GeoShortAnswer>
+              <GeoShortAnswer spacing="tight">
                 <PatientEducationLinkedText text={shortAnswer} guideSlug="" />
               </GeoShortAnswer>
             ) : null}
             {whatThisPageExplains ? (
-              <GeoContextLine label="What this page helps explain">
+              <GeoContextLine label="What this page helps explain" variant="inline">
                 <PatientEducationLinkedText text={whatThisPageExplains} guideSlug="" />
               </GeoContextLine>
             ) : null}
             {photosCannotConfirm && photosCannotConfirm.length > 0 ? (
-              <GeoPhotosCannotConfirm items={photosCannotConfirm} />
+              <GeoPhotosCannotConfirm items={photosCannotConfirm} density="compact" />
             ) : null}
           </ScrollReveal>
 
