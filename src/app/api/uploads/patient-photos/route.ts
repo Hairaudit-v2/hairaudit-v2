@@ -4,6 +4,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { normalizePatientPhotoCategory } from "@/lib/photoCategories";
 import { applyPatientPhotoCategoryFields } from "@/lib/uploads/patientPhotoCategoryIntegrity";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
+import { caseSubmitSurfaceOpen } from "@/lib/patient/caseSubmitStatus";
 import {
   UPLOAD_LIMITS,
   validateFileCount,
@@ -218,7 +219,7 @@ export async function POST(req: Request) {
       );
     }
 
-    if (c.submitted_at || c.status === "submitted") {
+    if (!caseSubmitSurfaceOpen({ status: c.status, submitted_at: c.submitted_at })) {
       return NextResponse.json(
         { ok: false, error: "Case submitted and cannot be modified", requestId },
         { status: 409 }

@@ -208,6 +208,10 @@
       "sampleReport": {
         "title": "Informe de auditoría de trasplante capilar de ejemplo | HairAudit",
         "description": "Ejemplo del formato de salida HairAudit: puntuación por dominios, análisis de donante y receptor, notas de técnica y diseño, límites de confianza y próximos pasos en lenguaje claro—recorrido de muestra; para su caso, use Solicitar revisión."
+      },
+      "postOpHairProtectionGuide": {
+        "title": "Guía de protección capilar posoperatoria | Educación para pacientes | HairAudit",
+        "description": "Resumen de la Guía de protección capilar posoperatoria de Hair Longevity Institute para pacientes de trasplante—se desbloquea tras enviar su caso gratuito en HairAudit. Plataforma de auditoría independiente; la guía es solo educativa."
       }
     },
     "shared": {
@@ -297,13 +301,61 @@
         "feature3Desc": "Orientación duradera para preservar densidad nativa y reserva donante tras la cirugía, enmarcada a su caso—no una lista única para todos.",
         "feature4Title": "Sepa qué vigilar",
         "feature4Desc": "Señales en el tiempo: estabilidad, posibles regresiones y documentación que apoye un seguimiento informado con su equipo médico.",
-        "guideEyebrow": "¿Quiere empezar con algo más sencillo?",
-        "guideTitle": "Envíe su caso gratuito y desbloquee la Guía de protección capilar posoperatoria",
-        "guideBody": "Una guía educativa práctica de Hair Longevity Institute para pacientes que buscan orientación estructurada posquirúrgica, estrategias a largo plazo para proteger el cabello y una comprensión más clara de qué vigilar con el tiempo.",
-        "guideCta": "Enviar mi caso gratuito",
-        "guideSupportingLine": "La guía se desbloquea tras su envío.",
-        "guideFootnote": "Hair Longevity Institute proporciona la guía educativa. HairAudit sigue siendo la plataforma de auditoría independiente. El contenido educativo no influye en los hallazgos de la auditoría, la puntuación ni los resultados de la revisión."
+        "guideTeaserEyebrow": "Educación para pacientes",
+        "guideTeaserTitle": "Guía de protección capilar posoperatoria",
+        "guideTeaserLead": "Un PDF educativo práctico de Hair Longevity Institute: orientación estructurada tras la cirugía y estrategias a largo plazo para proteger el cabello en pacientes de trasplante.",
+        "guideTeaserBullet1": "Encuadre de protección del cabello nativo y del área donante tras la cirugía",
+        "guideTeaserBullet2": "Qué observar mes a mes mientras cicatrizan y crece el pelo",
+        "guideTeaserBullet3": "Lenguaje más claro para hablar con su médico",
+        "guideTeaserBullet4": "Se desbloquea automáticamente tras enviar su caso gratuito en HairAudit",
+        "guideTeaserCta": "Ver detalles de la guía",
+        "guideTeaserFootnote": "Hair Longevity Institute proporciona la guía educativa. HairAudit sigue siendo la plataforma de auditoría independiente. El contenido educativo no influye en los hallazgos de la auditoría, la puntuación ni los resultados de la revisión."
       }
+    },
+    "postOpHairProtectionGuide": {
+      "hero": {
+        "eyebrow": "Hair Longevity Institute · Educación para pacientes",
+        "title": "Guía de protección capilar posoperatoria",
+        "subtitleLocked": "Envíe su caso gratuito de trasplante capilar en HairAudit para desbloquear este PDF. La guía se abre en cuanto su caso elegible esté enviado—su auditoría sigue siendo independiente.",
+        "subtitleUnlocked": "Su guía está desbloqueada. Descargue el PDF abajo. HairAudit sigue siendo su plataforma de auditoría independiente; este recurso es solo educativo.",
+        "badgeLocked": "Bloqueada hasta un envío elegible",
+        "badgeUnlocked": "Desbloqueada"
+      },
+      "whatItIs": {
+        "title": "Qué es esta guía",
+        "body": "Un PDF educativo para pacientes, redactado por Hair Longevity Institute (HLI). Complementa—sin sustituir—su revisión forense HairAudit con orientación estructurada tras la cirugía y hábitos duraderos que apoyan el cabello nativo y el cuidado del donante."
+      },
+      "covers": {
+        "title": "Qué incluye la guía",
+        "bullet1": "Orientación posquirúrgica: qué es normal mientras cicatriza y crece el pelo",
+        "bullet2": "Proteger el cabello nativo y la reserva donante en decisiones cotidianas",
+        "bullet3": "Señales de seguimiento a largo plazo para detectar cambios a tiempo",
+        "bullet4": "Cómo plantear tratamientos y seguimiento con su equipo médico",
+        "bullet5": "Lenguaje claro, separado de la puntuación o conclusiones de la auditoría"
+      },
+      "whyMatters": {
+        "title": "Por qué importa después de la cirugía",
+        "body": "La recuperación del trasplante se extiende meses. Una guía estructurada ayuda a distinguir la variación normal de cicatrización de patrones que merecen documentarse o comentarse—con su médico y junto a su revisión de evidencia HairAudit."
+      },
+      "preview": {
+        "title": "Dentro de la guía",
+        "teaser1": "Puntos de control alineados con el tiempo tras el procedimiento",
+        "teaser2": "Hábitos de protección del donante y del pelo nativo, explicados con claridad",
+        "teaser3": "Qué vigilar y cuándo plantear dudas",
+        "teaser4": "Solo educación—sin influir en el resultado de su auditoría HairAudit",
+        "lockedHint": "Los títulos completos y el detalle se desbloquean con el PDF tras el envío."
+      },
+      "access": {
+        "lockedTitle": "Cómo obtener acceso",
+        "lockedBody": "Cree o continúe su caso de paciente en HairAudit y envíelo cuando esté listo. Cuando su caso de trasplante gratuito se envíe correctamente, la guía se desbloquea aquí y en su panel de paciente.",
+        "lockedCta": "Enviar mi caso gratuito",
+        "unlockedTitle": "Descargue su guía",
+        "unlockedBody": "Su caso elegible consta en el sistema. Guarde el PDF para leerlo sin conexión y compártalo solo si lo desea.",
+        "downloadCta": "Descargar guía (PDF)",
+        "secondaryDashboard": "Panel de paciente",
+        "secondaryProgress": "Ver caso y progreso de la auditoría"
+      },
+      "disclaimer": "Hair Longevity Institute proporciona la guía educativa. HairAudit sigue siendo la plataforma de auditoría independiente. El contenido educativo no influye en los hallazgos de la auditoría, la puntuación ni los resultados de la revisión."
     },
     "howItWorks": {
       "heroTitle": "Cómo HairAudit revisa su cirugía",
@@ -716,12 +768,13 @@
         "eyebrow": "Recompensa educativa para pacientes",
         "titleLocked": "Desbloquee su guía gratuita para pacientes",
         "titleUnlocked": "Su guía está desbloqueada",
-        "bodyLocked": "Envíe su auditoría gratuita para acceder a la Guía de protección capilar posoperatoria de Hair Longevity Institute.",
-        "bodyUnlocked": "Su auditoría ha sido enviada. Ya puede descargar la Guía de protección capilar posoperatoria de Hair Longevity Institute.",
-        "successLine": "Su envío ha desbloqueado este recurso educativo.",
-        "lockedLabel": "Envíe la auditoría para desbloquear",
-        "lockedCta": "Enviar mi auditoría gratuita",
+        "bodyLocked": "Envíe su caso gratuito para acceder a la Guía de protección capilar posoperatoria de Hair Longevity Institute.",
+        "bodyUnlocked": "Su caso ha sido enviado. Ya puede descargar la Guía de protección capilar posoperatoria de Hair Longevity Institute.",
+        "successLine": "La guía se desbloquea tras su envío.",
+        "lockedLabel": "Envíe el caso para desbloquear",
+        "lockedCta": "Enviar mi caso gratuito",
         "unlockedCta": "Descargar guía (PDF)",
+        "guideOverviewLink": "Resumen de la guía",
         "bullet1": "Protección del cabello nativo",
         "bullet2": "Preservación del donante",
         "bullet3": "Opciones de tratamiento explicadas",

@@ -11,6 +11,13 @@ const BULLET_KEYS = [
   "marketing.home.patientReportValue.bullet4",
 ] as const satisfies readonly TranslationKey[];
 
+const GUIDE_TEASER_BULLET_KEYS = [
+  "marketing.home.patientReportValue.guideTeaserBullet1",
+  "marketing.home.patientReportValue.guideTeaserBullet2",
+  "marketing.home.patientReportValue.guideTeaserBullet3",
+  "marketing.home.patientReportValue.guideTeaserBullet4",
+] as const satisfies readonly TranslationKey[];
+
 const FEATURE_KEYS: { titleKey: TranslationKey; descKey: TranslationKey }[] = [
   {
     titleKey: "marketing.home.patientReportValue.feature1Title",
@@ -76,28 +83,35 @@ export default function PatientReportValueProposition() {
 
         <div className="mt-14 rounded-3xl border border-amber-500/20 bg-gradient-to-br from-amber-500/[0.07] to-slate-900/60 p-6 sm:p-8">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-400/90">
-            {t("marketing.home.patientReportValue.guideEyebrow")}
+            {t("marketing.home.patientReportValue.guideTeaserEyebrow")}
           </p>
           <h3 className="mt-3 text-xl sm:text-2xl font-bold text-white tracking-tight">
-            {t("marketing.home.patientReportValue.guideTitle")}
+            {t("marketing.home.patientReportValue.guideTeaserTitle")}
           </h3>
           <p className="mt-4 text-slate-300 text-sm sm:text-base leading-relaxed max-w-2xl">
-            {t("marketing.home.patientReportValue.guideBody")}
+            {t("marketing.home.patientReportValue.guideTeaserLead")}
           </p>
+          <ul className="mt-5 space-y-2 text-sm text-slate-300 max-w-2xl">
+            {GUIDE_TEASER_BULLET_KEYS.map((key) => (
+              <li key={key} className="flex gap-2">
+                <span className="text-amber-400/90 shrink-0" aria-hidden>
+                  ·
+                </span>
+                {t(key)}
+              </li>
+            ))}
+          </ul>
           <div className="mt-6">
             <TrackedLink
-              href="/request-review"
-              eventName="cta_submit_free_audit_unlock_guide_home"
+              href="/post-op-hair-protection-guide"
+              eventName="cta_post_op_guide_landing_from_home"
               className="inline-flex items-center justify-center px-6 py-3 rounded-2xl border border-amber-400/40 bg-amber-500/15 text-amber-100 font-semibold text-sm hover:bg-amber-500/25 transition-colors"
             >
-              {t("marketing.home.patientReportValue.guideCta")}
+              {t("marketing.home.patientReportValue.guideTeaserCta")}
             </TrackedLink>
           </div>
-          <p className="mt-4 text-xs text-slate-400 leading-relaxed max-w-2xl">
-            {t("marketing.home.patientReportValue.guideSupportingLine")}
-          </p>
-          <p className="mt-3 text-xs text-slate-500 leading-relaxed max-w-2xl">
-            {t("marketing.home.patientReportValue.guideFootnote")}
+          <p className="mt-4 text-xs text-slate-500 leading-relaxed max-w-2xl">
+            {t("marketing.home.patientReportValue.guideTeaserFootnote")}
           </p>
         </div>
       </div>

@@ -72,7 +72,7 @@ export default function PatientDashboardHliGuideCard({
           ) : null}
         </div>
 
-        <div className="relative mt-5">
+        <div className="relative mt-5 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
           {unlocked ? (
             <a
               href={guideHref}
@@ -91,6 +91,13 @@ export default function PatientDashboardHliGuideCard({
               {t("dashboard.patient.hliGuide.lockedCta")}
             </Link>
           )}
+          <Link
+            href="/post-op-hair-protection-guide"
+            className="inline-flex w-full items-center justify-center rounded-xl border border-white/20 bg-white/5 px-4 py-2.5 text-xs font-medium text-slate-200 transition-colors hover:bg-white/10 sm:w-auto"
+            onClick={() => trackCta("cta_hli_guide_overview_from_dashboard", { href: "/post-op-hair-protection-guide" })}
+          >
+            {t("dashboard.patient.hliGuide.guideOverviewLink")}
+          </Link>
         </div>
 
         <p className="mt-4 text-[11px] leading-relaxed text-slate-400/90">{t("dashboard.patient.hliGuide.hliAttribution")}</p>

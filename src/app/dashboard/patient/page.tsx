@@ -11,7 +11,12 @@ import PatientDashboardWhyMattersSection from "@/components/patient/PatientDashb
 import PatientDashboardCaseHistorySection from "@/components/patient/PatientDashboardCaseHistorySection";
 import PatientGraftIntegrityRolloutNotice from "@/components/patient/PatientGraftIntegrityRolloutNotice";
 import PatientDashboardHliGuideCard from "@/components/patient/PatientDashboardHliGuideCard";
-import { firstCaseOpenForSubmit, patientHasSubmittedAudit } from "@/lib/patient/caseSubmitStatus";
+import {
+  canUnlockPostOpGuide,
+  firstCaseOpenForSubmit,
+  patientHasUnlockedPostOpGuide,
+} from "@/lib/patient/caseSubmitStatus";
+import { fetchPatientCasesForPostOpGuide } from "@/lib/patient/fetchPatientCasesForPostOpGuide";
 
 function isMissingFeatureError(error: unknown): boolean {
   const e = error as { status?: number; code?: string; message?: string } | null;
@@ -91,16 +96,10 @@ export default async function PatientDashboardPage() {
   if (!user) redirect("/login");
 
   const admin = createSupabaseAdminClient();
-  const { data: cases } = await admin
-    .from("cases")
-    .select("id, title, status, created_at, submitted_at")
-    .or(`patient_id.eq.${user.id},and(user_id.eq.${user.id},patient_id.is.null)`)
-    .order("created_at", { ascending: false });
+  const cases = await fetchPatientCasesForPostOpGuide(admin, user.id);
 
   const nextCase = (cases ?? []).find((c) => (c.status ?? "draft") !== "submitted" && !c.submitted_at) ?? (cases?.[0] ?? null);
-  const latestSubmittedCase =
-    (cases ?? []).find((c) => Boolean(c.submitted_at) || ["submitted", "processing", "complete", "audit_failed"].includes(String(c.status ?? ""))) ??
-    null;
+  const latestSubmittedCase = (cases ?? []).find((c) => canUnlockPostOpGuide(c)) ?? null;
 
   // Latest report pdf_path + id per case (for "Report Ready" and Download PDF on dashboard).
   const caseIds = (cases ?? []).map((c) => c.id);
@@ -210,7 +209,7 @@ export default async function PatientDashboardPage() {
 
   const showConversionPrompt = Boolean(nextCase?.id) && completionPct < 70;
 
-  const hliGuideUnlocked = patientHasSubmittedAudit(cases ?? []);
+  const hliGuideUnlocked = patientHasUnlockedPostOpGuide(cases ?? []);
   const openSubmitCase = firstCaseOpenForSubmit(
     (cases ?? []).map((c) => ({
       id: c.id,
@@ -267,7 +266,17 @@ export default async function PatientDashboardPage() {
         <PatientDashboardWhyMattersSection />
       </section>
 
-      <PatientDashboardCaseHistorySection cases={cases} pdfByCase={pdfByCase} reportIdByCase={reportIdByCase} />
+      <PatientDashboardCaseHistorySection
+        cases={cases.map((c) => ({
+          id: c.id,
+          title: c.title ?? null,
+          status: c.status ?? null,
+          created_at: c.created_at ?? "",
+          submitted_at: c.submitted_at ?? null,
+        }))}
+        pdfByCase={pdfByCase}
+        reportIdByCase={reportIdByCase}
+      />
     </div>
   );
 }

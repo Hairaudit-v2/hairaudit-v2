@@ -208,6 +208,10 @@
       "sampleReport": {
         "title": "Sample Hair Transplant Audit Report | HairAudit",
         "description": "Proof of HairAudit report output: scorecard by domain, donor and recipient analysis, technique and design notes, confidence limits, and plain-language next steps—marketing walkthrough of example content; submit your own case via Request a review."
+      },
+      "postOpHairProtectionGuide": {
+        "title": "Post-Operative Hair Protection Guide | Patient Education | HairAudit",
+        "description": "Overview of the Hair Longevity Institute Post-Operative Hair Protection Guide for hair transplant patients—unlocked after you submit your free case on HairAudit. Independent audit platform; educational guide only."
       }
     },
     "shared": {
@@ -297,13 +301,61 @@
         "feature3Desc": "Durable orientation to safeguarding native density and donor reserve after surgery, framed to your case—not a one-size checklist.",
         "feature4Title": "Know what to monitor",
         "feature4Desc": "Time-based cues for stability, regression signals, and documentation that supports informed follow-up with your medical team.",
-        "guideEyebrow": "Want to start with something simpler?",
-        "guideTitle": "Submit your free case and unlock the Post-Operative Hair Protection Guide",
-        "guideBody": "A practical educational guide from Hair Longevity Institute for patients seeking structured post-surgical guidance, long-term hair protection strategies, and a clearer understanding of what to monitor over time.",
-        "guideCta": "Submit your free case",
-        "guideSupportingLine": "The guide is unlocked after your submission.",
-        "guideFootnote": "Hair Longevity Institute provides the educational guide. HairAudit remains the independent audit platform. Educational content does not influence audit findings, scoring, or review outcomes."
+        "guideTeaserEyebrow": "Patient education",
+        "guideTeaserTitle": "Post-Operative Hair Protection Guide",
+        "guideTeaserLead": "A practical educational PDF from Hair Longevity Institute—structured post-surgical orientation and long-term hair protection strategies for transplant patients.",
+        "guideTeaserBullet1": "Native hair and donor-area protection framing after surgery",
+        "guideTeaserBullet2": "What to watch month by month as healing and growth evolve",
+        "guideTeaserBullet3": "Clearer language for discussions with your clinician",
+        "guideTeaserBullet4": "Unlocked automatically after you submit your free HairAudit case",
+        "guideTeaserCta": "View guide details",
+        "guideTeaserFootnote": "Hair Longevity Institute provides the educational guide. HairAudit remains the independent audit platform. Educational content does not influence audit findings, scoring, or review outcomes."
       }
+    },
+    "postOpHairProtectionGuide": {
+      "hero": {
+        "eyebrow": "Hair Longevity Institute · Patient education",
+        "title": "Post-Operative Hair Protection Guide",
+        "subtitleLocked": "Submit your free hair transplant case on HairAudit to unlock this PDF. The guide opens as soon as your eligible case is submitted—your audit still runs independently.",
+        "subtitleUnlocked": "Your guide has been unlocked. Download the PDF below. HairAudit remains your independent audit platform; this resource is educational only.",
+        "badgeLocked": "Locked until eligible submission",
+        "badgeUnlocked": "Unlocked"
+      },
+      "whatItIs": {
+        "title": "What this guide is",
+        "body": "A practical, patient-facing educational PDF authored by Hair Longevity Institute (HLI). It complements—not replaces—your HairAudit forensic review by offering structured orientation after surgery and durable habits that support native hair and donor stewardship."
+      },
+      "covers": {
+        "title": "What the guide covers",
+        "bullet1": "Post-surgical orientation: what is normal to expect as you heal and grow in",
+        "bullet2": "Protecting native hair and donor reserve in everyday decisions",
+        "bullet3": "Long-term monitoring cues so changes are noticed early",
+        "bullet4": "How to think about treatments and follow-up with your medical team",
+        "bullet5": "Plain-language framing that stays separate from audit scoring or conclusions"
+      },
+      "whyMatters": {
+        "title": "Why this matters after surgery",
+        "body": "Hair transplant recovery unfolds over months. A structured guide helps you separate routine healing variation from patterns worth documenting or discussing—with your clinician, and alongside your HairAudit evidence review."
+      },
+      "preview": {
+        "title": "Inside the guide",
+        "teaser1": "Timeline-friendly checkpoints after your procedure",
+        "teaser2": "Donor and native-hair protection habits explained clearly",
+        "teaser3": "What to monitor and when to escalate questions",
+        "teaser4": "Education only—no influence on your HairAudit audit outcome",
+        "lockedHint": "Full section titles and detail unlock with your PDF after submission."
+      },
+      "access": {
+        "lockedTitle": "How to get access",
+        "lockedBody": "Create or continue your patient case on HairAudit and submit it when you are ready. Once your free transplant case is successfully submitted, the guide unlocks here and on your patient dashboard.",
+        "lockedCta": "Submit your free case",
+        "unlockedTitle": "Download your guide",
+        "unlockedBody": "Your eligible case is on file. Save the PDF for offline reading and share only as you choose.",
+        "downloadCta": "Download guide (PDF)",
+        "secondaryDashboard": "Patient dashboard",
+        "secondaryProgress": "View case & audit progress"
+      },
+      "disclaimer": "Hair Longevity Institute provides the educational guide. HairAudit remains the independent audit platform. Educational content does not influence audit findings, scoring, or review outcomes."
     },
     "howItWorks": {
       "heroTitle": "How HairAudit Reviews Your Surgery",
@@ -716,12 +768,13 @@
         "eyebrow": "Patient education reward",
         "titleLocked": "Unlock your free patient guide",
         "titleUnlocked": "Your guide is unlocked",
-        "bodyLocked": "Submit your free audit to access the Post-Operative Hair Protection Guide from Hair Longevity Institute.",
-        "bodyUnlocked": "Your audit has been submitted. You can now download the Post-Operative Hair Protection Guide from Hair Longevity Institute.",
-        "successLine": "Your submission unlocked this educational resource.",
-        "lockedLabel": "Submit audit to unlock",
-        "lockedCta": "Submit your free audit",
+        "bodyLocked": "Submit your free case to access the Post-Operative Hair Protection Guide from Hair Longevity Institute.",
+        "bodyUnlocked": "Your case has been submitted. You can now download the Post-Operative Hair Protection Guide from Hair Longevity Institute.",
+        "successLine": "The guide is unlocked after your submission.",
+        "lockedLabel": "Submit case to unlock",
+        "lockedCta": "Submit your free case",
         "unlockedCta": "Download guide (PDF)",
+        "guideOverviewLink": "Guide overview",
         "bullet1": "Native hair protection",
         "bullet2": "Donor preservation",
         "bullet3": "Treatment options explained",

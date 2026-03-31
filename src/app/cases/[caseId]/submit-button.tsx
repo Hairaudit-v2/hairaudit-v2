@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { caseSubmitSurfaceOpen } from "@/lib/patient/caseSubmitStatus";
 
 export default function SubmitButton({
   caseId,
@@ -18,7 +19,7 @@ export default function SubmitButton({
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  const locked = caseStatus === "submitted" || (!!submittedAt && caseStatus !== "audit_failed");
+  const locked = !caseSubmitSurfaceOpen({ status: caseStatus, submitted_at: submittedAt });
   const isResubmit = caseStatus === "audit_failed";
 
   async function submit() {

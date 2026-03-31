@@ -10,6 +10,7 @@ import { isPatientImageEvidenceNudgesEnabled } from "@/lib/features/enablePatien
 import { computePatientImageEvidenceQualityFromCaseUploads } from "@/lib/audit/patientImageEvidenceConfidence";
 import { buildPatientImageEvidenceUploadNudges } from "@/lib/audit/patientImageEvidenceUploadNudges";
 import PatientImageEvidenceNudgeCallout from "./PatientImageEvidenceNudgeCallout";
+import { caseSubmitSurfaceOpen } from "@/lib/patient/caseSubmitStatus";
 import type { PatientPhotoUploadGuidancePanel } from "@/lib/patientPhoto/patientPhotoUploadGuidance";
 
 type UploadRow = {
@@ -76,7 +77,7 @@ export default function UnifiedPatientUploader({
   const [skippedOptional, setSkippedOptional] = useState<Set<string>>(new Set());
   const [globalError, setGlobalError] = useState<string | null>(null);
 
-  const isLocked = caseStatus === "submitted" || !!submittedAt;
+  const isLocked = !caseSubmitSurfaceOpen({ status: caseStatus, submitted_at: submittedAt });
 
   const uploadsByCategory = useMemo(() => {
     const map: Record<string, UploadRow[]> = {};

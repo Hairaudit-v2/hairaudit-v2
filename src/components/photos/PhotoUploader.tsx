@@ -26,6 +26,7 @@ import { isPatientImageEvidenceNudgesEnabled } from "@/lib/features/enablePatien
 import type { PatientPhotoUploadGuidancePanel } from "@/lib/patientPhoto/patientPhotoUploadGuidance";
 import { evaluateEvidence, type CasePhotoInput } from "@/lib/evidence/evidenceEvaluator";
 import { getUploadHighlightKeys } from "@/lib/evidence/evidenceUploadUiHints";
+import { caseSubmitSurfaceOpen } from "@/lib/patient/caseSubmitStatus";
 
 type UploadRow = {
   id: string;
@@ -86,7 +87,7 @@ export default function PhotoUploader({
 
   const prefix = submitterType === "doctor" ? "doctor_photo" : "patient_photo";
   const schema = submitterType === "doctor" ? DOCTOR_PHOTO_SCHEMA : PATIENT_PHOTO_SCHEMA;
-  const isLocked = caseStatus === "submitted" || !!submittedAt;
+  const isLocked = !caseSubmitSurfaceOpen({ status: caseStatus, submitted_at: submittedAt });
 
   const uploadsByCategory = useMemo(() => {
     const map: Record<string, UploadRow[]> = {};

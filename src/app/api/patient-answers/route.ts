@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
+import { caseSubmitSurfaceOpen } from "@/lib/patient/caseSubmitStatus";
 
 // GET ?caseId=... — load patient answers (v2 preferred, legacy fallback)
 export async function GET(req: Request) {
@@ -83,7 +84,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Case not found" }, { status: 404 });
     }
 
-    if (c.submitted_at || c.status === "submitted") {
+    if (!caseSubmitSurfaceOpen({ status: c.status, submitted_at: c.submitted_at })) {
       return NextResponse.json({ error: "Case already submitted; cannot edit answers" }, { status: 409 });
     }
 

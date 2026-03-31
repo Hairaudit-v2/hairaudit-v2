@@ -22,6 +22,7 @@ import {
   resolvePatientIntakePlaceholder,
   resolvePatientIntakePrompt,
 } from "@/lib/patientIntake/intakeDisplayI18n";
+import { caseSubmitSurfaceOpen } from "@/lib/patient/caseSubmitStatus";
 
 function isNonEmptyObject(v: unknown): v is Record<string, unknown> {
   return !!v && typeof v === "object" && !Array.isArray(v) && Object.keys(v as Record<string, unknown>).length > 0;
@@ -59,7 +60,7 @@ export default function PatientAuditFormClient({
   const [activeStep, setActiveStep] = useState(0);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const hasEditedRef = useRef(false);
-  const locked = caseStatus === "submitted" || !!submittedAt;
+  const locked = !caseSubmitSurfaceOpen({ status: caseStatus, submitted_at: submittedAt });
   const router = useRouter();
   const { t, locale } = useI18n();
 
