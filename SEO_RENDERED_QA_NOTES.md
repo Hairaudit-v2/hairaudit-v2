@@ -54,7 +54,7 @@ When `NEXT_PUBLIC_APP_URL` is unset locally, `metadataBase` / `getBaseUrl()` fal
 | **`FaqPageSchema`** | `FAQPage` only | **`/faq` only** — avoids stacking Service + FAQPage twice on the FAQ route. |
 | **`MedicalProcedureFaqSchema`** | `Service` (audit offering) + optional `FAQPage` if `faqs.length > 0` | Request review, issue template, patient guides, hub, audit-examples, rate-my-hair-transplant, validation education |
 
-**Patient guide (`PatientIntentArticlePage`):** `Article` (headline, url, `mainEntityOfPage`, `inLanguage: en`, publisher/logo) + `MedicalProcedureFaqSchema` (Service + optional FAQ). **Not** duplicate FAQPage types; Service describes the audit product; Article describes the article entity—**truthful, distinct @types**.
+**Patient guide (`PatientIntentArticlePage`):** `Article` (headline, url, `mainEntityOfPage`, `inLanguage: en`, publisher/logo) + **`FaqPageSchema` only when `faqs` are non-empty** (no separate `Service` JSON-LD — avoids duplicating the same headline/description as a faux “Service” named after the article).
 
 **Issue pages (`IssueEducationPage`):** Same Service + FAQ pattern as above; **no Article type** (short landing, not a long-form article schema).
 
@@ -74,7 +74,7 @@ When `NEXT_PUBLIC_APP_URL` is unset locally, `metadataBase` / `getBaseUrl()` fal
 | Clinics / professionals index | `/clinics`, `/professionals` | `createPageMetadata` / localized professionals | BreadcrumbList |
 | Guides hub | `/hair-transplant-problems` | `createPageMetadata` | BreadcrumbList, Service + FAQPage |
 | Issue | `/hair-transplant-graft-failure`, … | `createPageMetadata` from `patientEducationIssues` | BreadcrumbList, Service + FAQPage |
-| Long-form guide | `/shock-loss-vs-graft-failure`, … | `createPageMetadata` from article module | BreadcrumbList, Article, Service (+ FAQ if any) |
+| Long-form guide | `/shock-loss-vs-graft-failure`, … | `createPageMetadata` from article module | BreadcrumbList, Article, FAQPage (if `faqs` non-empty) |
 
 **Localized routes (same URL, different language meta):** `/`, `/sample-report`, `/professionals`, `/how-it-works` per `LOCALIZED_PUBLIC_PATHNAMES` / `createLocalizedPageMetadata`. **No hreflang URLs** until `distinctLocaleUrlsReady` is true in `publicLocaleRouting.ts`.
 
@@ -107,6 +107,7 @@ When `NEXT_PUBLIC_APP_URL` is unset locally, `metadataBase` / `getBaseUrl()` fal
 1. **Sitemap** — `src/app/sitemap.ts`: add `/professionals/methodology`, `scoring-framework`, `evidence-standards`, `clinical-participation`, `legal-documentation`, `auditor-standards` (all public, indexable B2B pages).
 2. **Documentation** — `createPageMetadata` JSDoc in `src/lib/seo/pageMetadata.ts` (pathname + `metadataBase` contract).
 3. **Earlier phase** — issue breadcrumbs + demo-report `BreadcrumbListSchema` (see §5).
+4. **Long-form guide JSON-LD** — `PatientIntentArticlePage`: removed redundant `Service` block that duplicated `Article` headline/description; keep **`Article` + `FaqPageSchema` only** when FAQs exist (`FaqPageSchema` renders nothing when empty).
 
 ---
 

@@ -2,8 +2,8 @@ import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import ReviewProcessReassurance from "@/components/seo/ReviewProcessReassurance";
-import MedicalProcedureFaqSchema from "@/components/seo/MedicalProcedureFaqSchema";
 import BreadcrumbListSchema from "@/components/seo/BreadcrumbListSchema";
+import FaqPageSchema from "@/components/seo/FaqPageSchema";
 import { getBaseUrl } from "@/lib/seo/baseUrl";
 import { getPatientIntentArticle } from "@/lib/seo/patient-intent-articles";
 import type { PatientIntentArticleBlock } from "@/lib/seo/patient-intent-articles/types";
@@ -90,11 +90,7 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <MedicalProcedureFaqSchema
-        pageName={article.h1}
-        pageDescription={article.metaDescription}
-        faqs={article.faqs}
-      />
+      <FaqPageSchema faqs={article.faqs} />
 
       <div className="fixed inset-0 pointer-events-none" aria-hidden>
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(251,191,36,0.06),transparent)]" />
