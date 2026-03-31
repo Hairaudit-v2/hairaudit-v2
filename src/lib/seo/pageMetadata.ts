@@ -9,6 +9,13 @@ type PageMetadataInput = {
   languageAlternates?: Record<string, string>;
 };
 
+/**
+ * Shared App Router metadata: canonical, robots, Open Graph, and Twitter.
+ * - **`pathname`**: site path starting with `/` (no origin). Next.js joins `openGraph.url` and
+ *   `alternates.canonical` with root `metadataBase` from `app/layout.tsx` → absolute URLs in HTML.
+ * - **Do not** pass full origins into `pathname` / `canonicalPathname` unless you intentionally
+ *   override that behavior.
+ */
 export function createPageMetadata({
   title,
   description,

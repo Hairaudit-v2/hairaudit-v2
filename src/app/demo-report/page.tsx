@@ -1,3 +1,4 @@
+import BreadcrumbListSchema from "@/components/seo/BreadcrumbListSchema";
 import { createPageMetadata } from "@/lib/seo/pageMetadata";
 import DemoReportPageContent from "./DemoReportPageContent";
 
@@ -9,5 +10,15 @@ export const metadata = createPageMetadata({
 });
 
 export default function DemoReportPage() {
-  return <DemoReportPageContent />;
+  return (
+    <>
+      <BreadcrumbListSchema
+        items={[
+          { name: "Home", pathname: "/" },
+          { name: "Interactive audit demo", pathname: "/demo-report" },
+        ]}
+      />
+      <DemoReportPageContent />
+    </>
+  );
 }

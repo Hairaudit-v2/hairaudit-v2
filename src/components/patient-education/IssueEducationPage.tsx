@@ -4,6 +4,7 @@ import SiteFooter from "@/components/SiteFooter";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import ReviewProcessReassurance from "@/components/seo/ReviewProcessReassurance";
 import MedicalProcedureFaqSchema from "@/components/seo/MedicalProcedureFaqSchema";
+import BreadcrumbListSchema from "@/components/seo/BreadcrumbListSchema";
 import { resolvePatientGuideLink } from "@/lib/seo/resolvePatientGuideLink";
 import { PatientEducationLinkedText } from "@/components/patient-education/PatientEducationLinkedText";
 
@@ -13,6 +14,7 @@ type FAQItem = {
 };
 
 type IssueEducationPageProps = {
+  slug: string;
   title: string;
   description: string;
   intro: string;
@@ -25,6 +27,7 @@ type IssueEducationPageProps = {
 };
 
 export default function IssueEducationPage({
+  slug,
   title,
   description,
   intro,
@@ -35,10 +38,18 @@ export default function IssueEducationPage({
   relatedGuideSlugs = [],
 }: IssueEducationPageProps) {
   const relatedGuides = relatedGuideSlugs
-    .map((slug) => resolvePatientGuideLink(slug))
+    .map((s) => resolvePatientGuideLink(s))
     .filter((r): r is NonNullable<typeof r> => r != null);
+  const issuePath = slug.startsWith("/") ? slug : `/${slug}`;
   return (
     <div className="min-h-screen flex flex-col bg-[#0a0a0f] text-slate-100">
+      <BreadcrumbListSchema
+        items={[
+          { name: "Home", pathname: "/" },
+          { name: "Patient guides", pathname: "/hair-transplant-problems" },
+          { name: title, pathname: issuePath },
+        ]}
+      />
       <MedicalProcedureFaqSchema pageName={title} pageDescription={description} faqs={faqs} />
 
       <div className="fixed inset-0 pointer-events-none" aria-hidden>
@@ -50,6 +61,23 @@ export default function IssueEducationPage({
 
       <main className="relative flex-1 px-4 sm:px-6 py-16 sm:py-20">
         <div className="max-w-4xl mx-auto">
+          <nav className="mb-8" aria-label="Breadcrumb">
+            <Link
+              href="/"
+              className="text-sm text-slate-500 hover:text-slate-300 transition-colors"
+            >
+              Home
+            </Link>
+            <span className="text-slate-600 mx-2">/</span>
+            <Link
+              href="/hair-transplant-problems"
+              className="text-sm text-slate-500 hover:text-slate-300 transition-colors"
+            >
+              Patient guides
+            </Link>
+            <span className="text-slate-600 mx-2">/</span>
+            <span className="text-slate-400 text-sm">{title}</span>
+          </nav>
           <ScrollReveal>
             <p className="text-xs font-semibold uppercase tracking-wider text-amber-300">
               Patient education
