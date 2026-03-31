@@ -125,6 +125,8 @@ export default function RateMyHairTransplantClient() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string>("");
   const [result, setResult] = useState<CommunityCase | null>(null);
+  /** Avoid SSR/client mismatch: navigator only exists in the browser after mount. */
+  const [canNativeShare, setCanNativeShare] = useState(false);
 
   const beforePreviews = useMemo(() => beforeFiles.map((f) => URL.createObjectURL(f)), [beforeFiles]);
   const afterPreviews = useMemo(() => afterFiles.map((f) => URL.createObjectURL(f)), [afterFiles]);
@@ -135,6 +137,10 @@ export default function RateMyHairTransplantClient() {
       afterPreviews.forEach((url) => URL.revokeObjectURL(url));
     };
   }, [beforePreviews, afterPreviews]);
+
+  useEffect(() => {
+    setCanNativeShare(typeof navigator !== "undefined" && typeof navigator.share === "function");
+  }, []);
 
   async function submitCase() {
     setSubmitting(true);
@@ -193,13 +199,17 @@ export default function RateMyHairTransplantClient() {
   }
 
   async function shareCard() {
-    if (!result || !navigator.share) return;
+    if (!result || typeof navigator === "undefined" || typeof navigator.share !== "function") return;
     const shareUrl = `${window.location.origin}/case/${result.id}`;
-    await navigator.share({
-      title: "HairAudit: my outcome summary",
-      text: `HairAudit rapid before-and-after outcome summary: ${result.overall_score}/100`,
-      url: shareUrl,
-    });
+    try {
+      await navigator.share({
+        title: "HairAudit: my outcome summary",
+        text: `HairAudit rapid before-and-after outcome summary: ${result.overall_score}/100`,
+        url: shareUrl,
+      });
+    } catch {
+      /* user dismissed share sheet or target cancelled */
+    }
   }
 
   return (
@@ -493,29 +503,29 @@ export default function RateMyHairTransplantClient() {
             <button
               type="button"
               onClick={downloadShareCard}
-              className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-white text-slate-900 font-medium hover:bg-slate-100 transition-colors"
+              className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-white text-slate-900 font-medium hover:bg-slate-100 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900/60"
             >
               Download Share Card
             </button>
-            {typeof navigator !== "undefined" && "share" in navigator ? (
+            {canNativeShare ? (
               <button
                 type="button"
                 onClick={shareCard}
-                className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl border border-emerald-200 text-emerald-50 font-medium hover:bg-emerald-200/10 transition-colors"
+                className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl border border-emerald-200 text-emerald-50 font-medium hover:bg-emerald-200/10 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-200"
               >
                 Share
               </button>
             ) : null}
             <Link
               href={`/case/${result.id}`}
-              className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl border border-emerald-200 text-emerald-50 font-medium hover:bg-emerald-200/10 transition-colors"
+              className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl border border-emerald-200 text-emerald-50 font-medium hover:bg-emerald-200/10 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-200"
             >
               View Public Case Page
             </Link>
             {result.is_published ? (
               <Link
                 href="/community-results"
-                className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl border border-emerald-200 text-emerald-50 font-medium hover:bg-emerald-200/10 transition-colors"
+                className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl border border-emerald-200 text-emerald-50 font-medium hover:bg-emerald-200/10 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-200"
               >
                 Open Community Results
               </Link>
