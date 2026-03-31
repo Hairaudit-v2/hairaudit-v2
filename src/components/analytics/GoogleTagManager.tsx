@@ -5,6 +5,11 @@ const GTM_ID_PATTERN = /^GTM-[A-Z0-9]+$/i;
 /**
  * Loads Google Tag Manager when NEXT_PUBLIC_GTM_ID is set (e.g. GTM-XXXX).
  * No-op when unset or malformed.
+ *
+ * Uses `beforeInteractive` (root layout only) so the GTM bootstrap is present in the
+ * initial HTML. With `afterInteractive`, Next defers inline scripts to the client after
+ * hydration—HTML-only crawlers and Tag Coverage often report “not tagged” even though
+ * GTM runs in the browser. Vercel Analytics / Speed Insights stay in ClientAnalytics.
  */
 export default function GoogleTagManager() {
   const raw = process.env.NEXT_PUBLIC_GTM_ID?.trim();
@@ -15,7 +20,7 @@ export default function GoogleTagManager() {
 
   return (
     <>
-      <Script id="google-tag-manager" strategy="afterInteractive">
+      <Script id="google-tag-manager" strategy="beforeInteractive">
         {`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
 new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
 j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
