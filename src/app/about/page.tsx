@@ -5,9 +5,9 @@ import ScrollReveal from "@/components/ui/ScrollReveal";
 import { createPageMetadata } from "@/lib/seo/pageMetadata";
 
 export const metadata = createPageMetadata({
-  title: "About | HairAudit",
+  title: "About HairAudit | Independent Hair Transplant Audits | HairAudit",
   description:
-    "Learn how HairAudit delivers independent, evidence-based review for hair transplant patients and professionals.",
+    "HairAudit is an independent platform for evidence-based forensic hair transplant audits—patients get structured review; clinics and professionals get transparency, QA, and benchmarking context.",
   pathname: "/about",
 });
 

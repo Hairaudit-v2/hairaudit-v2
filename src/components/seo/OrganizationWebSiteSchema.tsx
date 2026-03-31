@@ -8,12 +8,16 @@ export default function OrganizationWebSiteSchema() {
   const baseUrl = getBaseUrl();
   const logoUrl = `${baseUrl}/hairaudit-logo.svg`;
 
+  const orgDescription =
+    "Independent, evidence-based forensic hair transplant audits for patients seeking a structured second-opinion-style review and for clinics seeking transparency and quality assurance.";
+
   const organization = {
     "@context": "https://schema.org",
     "@type": "Organization",
     name: "HairAudit",
     url: baseUrl,
     logo: logoUrl,
+    description: orgDescription,
   };
 
   const webSite = {
@@ -21,8 +25,7 @@ export default function OrganizationWebSiteSchema() {
     "@type": "WebSite",
     name: "HairAudit",
     url: baseUrl,
-    description:
-      "Independent, evidence-based hair transplant review for patients and professionals.",
+    description: orgDescription,
     publisher: {
       "@type": "Organization",
       name: "HairAudit",

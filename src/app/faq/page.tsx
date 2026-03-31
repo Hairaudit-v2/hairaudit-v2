@@ -3,11 +3,12 @@ import SiteFooter from "@/components/SiteFooter";
 import Link from "next/link";
 import { createPageMetadata } from "@/lib/seo/pageMetadata";
 import FaqPageSchema from "@/components/seo/FaqPageSchema";
+import BreadcrumbListSchema from "@/components/seo/BreadcrumbListSchema";
 
 export const metadata = createPageMetadata({
-  title: "FAQ | HairAudit",
+  title: "Hair Transplant Audit FAQ | Process, Privacy & Reports | HairAudit",
   description:
-    "Read common questions about HairAudit reviews, confidence interpretation, privacy, and participation.",
+    "Answers on independent hair transplant audits: forensic review process, AI-assisted analysis within our framework, confidence scores, privacy, what reports include, and patient vs professional pathways.",
   pathname: "/faq",
 });
 
@@ -61,6 +62,12 @@ const faqs = [
 export default function FAQPage() {
   return (
     <div className="min-h-screen flex flex-col bg-[#0a0a0f] text-slate-100">
+      <BreadcrumbListSchema
+        items={[
+          { name: "Home", pathname: "/" },
+          { name: "Hair transplant audit FAQ", pathname: "/faq" },
+        ]}
+      />
       <FaqPageSchema faqs={faqs.map(({ q, a }) => ({ question: q, answer: a }))} />
       <div className="fixed inset-0 pointer-events-none" aria-hidden>
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(251,191,36,0.06),transparent)]" />
@@ -71,11 +78,11 @@ export default function FAQPage() {
       <main className="relative flex-1 px-4 py-16 sm:py-20">
         <div className="max-w-3xl mx-auto">
           <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
-            Frequently Asked Questions
+            Hair transplant audit FAQ
           </h1>
           <p className="mt-4 text-slate-300">
-            Clear answers for patients and professionals about HairAudit process, confidence, privacy,
-            and participation pathways.
+            Process, privacy, reports, and pathways—framed for patients seeking an independent review and for
+            clinics or professionals interested in transparency and standards.
           </p>
           <div className="mt-12 space-y-6">
             {faqs.map(({ q, a }) => (
@@ -85,18 +92,30 @@ export default function FAQPage() {
               </div>
             ))}
           </div>
-          <div className="mt-12 flex flex-col sm:flex-row gap-3">
+          <div className="mt-12 flex flex-col sm:flex-row flex-wrap gap-3">
             <Link
               href="/request-review"
               className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors"
             >
-              Request Review
+              Request a hair transplant audit
+            </Link>
+            <Link
+              href="/demo-report"
+              className="inline-flex items-center justify-center px-6 py-3 rounded-xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
+            >
+              Sample hair transplant audit report
+            </Link>
+            <Link
+              href="/methodology"
+              className="inline-flex items-center justify-center px-6 py-3 rounded-xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
+            >
+              Methodology
             </Link>
             <Link
               href="/professionals"
               className="inline-flex items-center justify-center px-6 py-3 rounded-xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
             >
-              For Professionals
+              Independent audit standards (professionals)
             </Link>
           </div>
         </div>

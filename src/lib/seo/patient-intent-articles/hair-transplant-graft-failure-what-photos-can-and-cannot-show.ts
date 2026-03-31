@@ -3,9 +3,9 @@ import type { PatientIntentArticle } from "./types";
 export const hairTransplantGraftFailureWhatPhotosCanAndCannotShowArticle: PatientIntentArticle = {
   slug: "hair-transplant-graft-failure-what-photos-can-and-cannot-show",
   pathname: "/hair-transplant-graft-failure-what-photos-can-and-cannot-show",
-  seoTitle: "Hair Transplant Graft Failure: What Photos Can and Cannot Show | HairAudit",
+  seoTitle: "Hair Transplant Graft Failure: Photos, Evidence & Independent Review | HairAudit",
   metaDescription:
-    "Can photos prove graft failure after hair transplant? Learn what visible evidence may suggest, what remains limited, and when independent review may help.",
+    "What hair transplant photos may suggest about graft survival, what they cannot prove alone, and how an independent forensic audit frames timing, density, and donor evidence.",
   h1: "Hair Transplant Graft Failure: What Photos Can and Cannot Show",
   intro:
     "Patients often want a clear answer when growth appears disappointing: did the grafts fail or not? Photos can sometimes support visible concerns around poor yield, uneven growth, or weak progression. But photos do not prove every biological detail. A responsible review needs to explain both what the visible evidence may suggest and what remains uncertain without more information.",

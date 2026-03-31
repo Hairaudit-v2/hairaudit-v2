@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import HowItWorksMarketing from "@/components/marketing/HowItWorksMarketing";
+import BreadcrumbListSchema from "@/components/seo/BreadcrumbListSchema";
 import { createLocalizedPageMetadata, resolvePublicSeoLocale } from "@/lib/seo/localeMetadata";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -12,5 +13,15 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default function HowItWorksPage() {
-  return <HowItWorksMarketing />;
+  return (
+    <>
+      <BreadcrumbListSchema
+        items={[
+          { name: "Home", pathname: "/" },
+          { name: "How hair transplant audits work", pathname: "/how-it-works" },
+        ]}
+      />
+      <HowItWorksMarketing />
+    </>
+  );
 }

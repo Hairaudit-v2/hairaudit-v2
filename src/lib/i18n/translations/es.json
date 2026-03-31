@@ -37,6 +37,7 @@
       "sectionLegal": "Legal",
       "sectionPlatformEcosystem": "Ecosistema de plataforma",
       "linkPatientGuides": "Guías sobre trasplante capilar",
+      "linkMethodology": "Metodología y alcance de la revisión",
       "linkFaq": "Preguntas frecuentes",
       "linkVerifiedProgram": "Programa de cirujanos verificados",
       "linkCreateProfile": "Crear perfil de clínica o médico",
@@ -193,20 +194,20 @@
   "marketing": {
     "meta": {
       "home": {
-        "title": "HairAudit",
-        "description": "¿Qué tal está mi trasplante capilar? Obtenga una auditoría gratuita de todos los aspectos de su cirugía, según estándares quirúrgicos reales, no opiniones."
+        "title": "Auditoría de trasplante capilar | Revisión independiente | HairAudit",
+        "description": "Auditoría forense independiente y basada en evidencia para pacientes: revisión estructurada al estilo segunda opinión del área donante, crecimiento, densidad, diseño, implantación y técnica, con análisis asistido por IA dentro de un marco independiente."
       },
       "howItWorks": {
-        "title": "Cómo funciona | HairAudit",
-        "description": "Descubra cómo HairAudit revisa las fotos de su cirugía con análisis estructurado, revisión experta e informes claros."
+        "title": "Cómo funcionan las auditorías de trasplante capilar | Proceso y evidencia | HairAudit",
+        "description": "Cómo HairAudit ofrece revisiones independientes de trasplante capilar: recepción segura de fotos, evaluación forense estructurada, informes con grados de confianza y próximos pasos claros, sin marketing clínico."
       },
       "professionals": {
-        "title": "Para profesionales | HairAudit",
-        "description": "Consulte los estándares de HairAudit sobre metodología, puntuación, calidad de la evidencia, participación y marcos de documentación."
+        "title": "Para profesionales | Estándares de auditoría independiente | HairAudit",
+        "description": "Metodología, puntuación, estándares de evidencia y marcos de participación para clínicas y profesionales que buscan transparencia, control de calidad y referencias, alineados con el modelo forense independiente de HairAudit."
       },
       "sampleReport": {
-        "title": "Informe de auditoría de ejemplo | HairAudit",
-        "description": "Vista previa de un informe HairAudit premium estilo forense con desgloses de puntuación, análisis de evidencia en imágenes, hallazgos y orientación correctiva."
+        "title": "Informe de auditoría de trasplante capilar de ejemplo | HairAudit",
+        "description": "Vista previa de un informe forense HairAudit estructurado: puntuación por dominios, análisis de donante y receptor, notas de técnica y diseño, límites de confianza y próximos pasos en lenguaje claro."
       }
     },
     "shared": {
@@ -219,17 +220,17 @@
       "reviewIndependentNote": "HairAudit es independiente. No vendemos cirugía ni derivaciones a clínicas."
     },
     "home": {
-      "heroTitle": "¿Qué tal está mi trasplante capilar?",
-      "heroLead": "Obtenga una auditoría gratuita de todos los aspectos de su cirugía, según estándares quirúrgicos reales, no opiniones",
-      "heroSupporting": "Suba sus fotos y reciba una puntuación HairAudit detallada, análisis de zona donante y desglose de calidad quirúrgica.",
-      "ctaStartAudit": "Iniciar mi auditoría",
-      "ctaSampleReport": "Ver informe de ejemplo",
+      "heroTitle": "Revisión independiente de trasplante capilar",
+      "heroLead": "Auditoría forense basada en evidencia de su resultado—área donante, crecimiento, densidad, diseño de línea frontal, implantación y técnica—con informes claros y estructurados.",
+      "heroSupporting": "Análisis asistido por IA dentro de un marco de revisión independiente. No es un discurso comercial de la clínica: transparencia para decidir y hablar con su médico.",
+      "ctaStartAudit": "Solicitar una auditoría de trasplante capilar",
+      "ctaSampleReport": "Informe de auditoría de ejemplo",
       "heroFootnote": "Usado por tricólogos, cirujanos y academias de formación internacionales",
       "howItWorksTitle": "Cómo funciona HairAudit",
       "howStep1Title": "Suba sus fotos",
       "howStep1Desc": "Cargue de forma segura imágenes de las zonas donante y receptora. Tarda menos de 2 minutos.",
       "howStep2Title": "Analizamos su cirugía",
-      "howStep2Desc": "Nuestro sistema evalúa la calidad de extracción, densidad, manejo del donante y técnica quirúrgica.",
+      "howStep2Desc": "El mapeo de imágenes y evidencia asistido por IA respalda una revisión clínica independiente de la calidad de extracción, densidad, manejo del donante y técnica quirúrgica.",
       "howStep3Title": "Reciba su informe HairAudit",
       "howStep3Desc": "Obtenga su puntuación HairAudit, desglose visual y recomendaciones claras para el siguiente paso.",
       "ecosystemHeading": "Parte de la red global de inteligencia capilar",
@@ -251,7 +252,16 @@
       "sampleTeaserLi2": "Análisis de zona donante y receptora",
       "sampleTeaserLi3": "Señales de alerta e indicadores de riesgo",
       "sampleTeaserLi4": "Explicación clínica clara, sin jerga confusa",
-      "ctaFullSampleReport": "Ver informe de ejemplo completo",
+      "ctaFullSampleReport": "Ver informe de auditoría de ejemplo completo",
+      "seoResourcesTitle": "Más información",
+      "seoResourcesIntro": "Explore la metodología, las guías para pacientes y las preguntas frecuentes; solicite una revisión cuando esté listo.",
+      "seoResourcesMethodology": "Metodología de auditoría forense",
+      "seoResourcesGuides": "Guías para pacientes (dudas y calendarios)",
+      "seoResourcesGraftFailure": "Signos de fallo de injertos frente a shock loss",
+      "seoResourcesFaq": "Preguntas frecuentes sobre auditorías",
+      "seoAudienceIntro": "Clínicas y profesionales:",
+      "seoAudienceClinicsLink": "Transparencia y control de calidad en clínica",
+      "seoAudienceProfessionalsLink": "Estándares de auditoría independiente",
       "whyMattersTitle": "Por qué importa HairAudit",
       "whyMattersP1": "A menudo se juzgan los resultados solo por la apariencia, pero lo que parece aceptable puede ocultar mala técnica. HairAudit evalúa lo que la mayoría de pacientes no ven: cómo se extrajeron los injertos, cómo se gestionó el donante y si el trabajo cumple estándares clínicos reales.",
       "whyMattersP2": "No es una herramienta de ventas. Verificación independiente de sus resultados.",
@@ -298,8 +308,8 @@
     "howItWorks": {
       "heroTitle": "Cómo HairAudit revisa su cirugía",
       "heroSubtitle": "Usamos sus fotos y datos del caso para elaborar una revisión clara e independiente.",
-      "ctaRequestReview": "Solicitar revisión",
-      "ctaExampleReport": "Ver informe de ejemplo",
+      "ctaRequestReview": "Solicitar una auditoría de trasplante capilar",
+      "ctaExampleReport": "Informe de auditoría de ejemplo",
       "badgeIndependent": "Evaluación quirúrgica independiente",
       "afterSubmitNote": "Muchos pacientes solo sospechan meses después de la cirugía. HairAudit le ayuda a saber si su resultado es normal o si algo falló.",
       "stepsTitle": "Paso a paso",

@@ -11,14 +11,15 @@ import { filterAndSortDirectory } from "@/lib/clinics/directoryFilters";
 import type { DirectoryClinicRow } from "@/lib/clinics/directoryFilters";
 import { computeClinicCertificationRanking } from "@/lib/ranking";
 import { createPageMetadata } from "@/lib/seo/pageMetadata";
+import BreadcrumbListSchema from "@/components/seo/BreadcrumbListSchema";
 
 const CLINIC_SELECT =
   "id, clinic_slug, clinic_name, country, city, participation_status, current_award_tier, transparency_score, audited_case_count, contributed_case_count, benchmark_eligible_count, benchmark_eligible_validated_count, average_forensic_score, documentation_integrity_average, award_progression_paused, linked_user_id";
 
 export const metadata = createPageMetadata({
-  title: "Clinic directory | HairAudit",
+  title: "For Clinics | Hair Transplant Quality Assurance & Transparency | HairAudit",
   description:
-    "Explore clinics in the HairAudit transparency ecosystem. Independent, evidence-based benchmarking; clinic profiles reflect validated participation and recognised transparency standards.",
+    "Directory of clinics in the HairAudit transparency ecosystem: independent, evidence-based benchmarking and profiles that reflect validated participation—useful for patients comparing options and for clinics demonstrating QA commitment.",
   pathname: "/clinics",
 });
 
@@ -116,6 +117,12 @@ export default async function ClinicDirectoryPage({
 
   return (
     <div className="min-h-screen flex flex-col bg-[#0a0a0f] text-slate-100">
+      <BreadcrumbListSchema
+        items={[
+          { name: "Home", pathname: "/" },
+          { name: "Clinic transparency directory", pathname: "/clinics" },
+        ]}
+      />
       <div className="fixed inset-0 pointer-events-none" aria-hidden>
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(56,189,248,0.08),transparent)]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_80%_60%,rgba(139,92,246,0.06),transparent)]" />
@@ -140,10 +147,16 @@ export default async function ClinicDirectoryPage({
                 Learn About the Verified Program
               </Link>
               <Link
+                href="/request-review"
+                className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl text-slate-400 text-sm font-medium hover:text-slate-200 transition-colors"
+              >
+                Request a hair transplant audit
+              </Link>
+              <Link
                 href="/how-it-works"
                 className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl text-slate-400 text-sm font-medium hover:text-slate-200 transition-colors"
               >
-                How It Works
+                How hair transplant audits work
               </Link>
             </div>
             <p className="mt-6 text-sm text-slate-500 max-w-2xl mx-auto">

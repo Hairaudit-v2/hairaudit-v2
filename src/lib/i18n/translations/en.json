@@ -37,6 +37,7 @@
       "sectionLegal": "Legal",
       "sectionPlatformEcosystem": "Platform Ecosystem",
       "linkPatientGuides": "Hair transplant guides",
+      "linkMethodology": "Methodology & review scope",
       "linkFaq": "FAQ",
       "linkVerifiedProgram": "Verified Surgeon Program",
       "linkCreateProfile": "Create Clinic or Doctor Profile",
@@ -193,20 +194,20 @@
   "marketing": {
     "meta": {
       "home": {
-        "title": "HairAudit",
-        "description": "How good is my Hair Transplant? Get a Free Audit on all aspects of your surgery — based on real surgical standards, not opinions."
+        "title": "Hair Transplant Audit | Independent Hair Transplant Review | HairAudit",
+        "description": "Independent, evidence-based forensic hair transplant audit for patients: structured second-opinion-style review of donor area, growth, density, design, implantation, and technique—with AI-assisted analysis inside an independent framework."
       },
       "howItWorks": {
-        "title": "How It Works | HairAudit",
-        "description": "See how HairAudit reviews surgery photos with structured analysis, expert review, and clear reporting."
+        "title": "How Hair Transplant Audits Work | Process & Evidence | HairAudit",
+        "description": "How HairAudit delivers independent hair transplant reviews: secure photo intake, structured forensic assessment, confidence-aware reporting, and clear next steps—without clinic marketing."
       },
       "professionals": {
-        "title": "For Professionals | HairAudit",
-        "description": "Review HairAudit standards for methodology, scoring, evidence quality, participation, and documentation frameworks."
+        "title": "For Professionals | Independent Hair Transplant Audit Standards | HairAudit",
+        "description": "Methodology, scoring, evidence standards, and participation frameworks for clinics and professionals seeking transparency, QA, and benchmarking—aligned to HairAudit’s independent forensic audit model."
       },
       "sampleReport": {
-        "title": "Sample Audit Report | HairAudit",
-        "description": "Preview a premium HairAudit forensic-style report with score breakdowns, image evidence analysis, findings, and correction guidance."
+        "title": "Sample Hair Transplant Audit Report | HairAudit",
+        "description": "Preview a structured HairAudit forensic audit report: scorecard by domain, donor and recipient analysis, technique and design notes, confidence limits, and plain-language next steps."
       }
     },
     "shared": {
@@ -219,17 +220,17 @@
       "reviewIndependentNote": "HairAudit is independent. We do not sell surgery or clinic referrals."
     },
     "home": {
-      "heroTitle": "How good is my Hair Transplant?",
-      "heroLead": "Get a Free Audit on all aspects of your surgery — based on real surgical standards, not opinions",
-      "heroSupporting": "Upload your photos and receive a detailed HairAudit Score, donor analysis, and surgical quality breakdown.",
-      "ctaStartAudit": "Start My Audit",
-      "ctaSampleReport": "View Sample Report",
+      "heroTitle": "Independent hair transplant review",
+      "heroLead": "Evidence-based forensic audit of your result—donor area, growth, density, hairline design, implantation, and technique—with clear, structured reporting.",
+      "heroSupporting": "AI-assisted analysis within an independent review framework. Not a clinic sales pitch—transparency you can use for decisions and follow-up with your clinician.",
+      "ctaStartAudit": "Request a hair transplant audit",
+      "ctaSampleReport": "Sample hair transplant audit report",
       "heroFootnote": "Used by trichologists, surgeons, and global training academies",
       "howItWorksTitle": "How HairAudit Works",
       "howStep1Title": "Upload Your Photos",
       "howStep1Desc": "Securely upload images of your donor and recipient areas. Takes less than 2 minutes.",
       "howStep2Title": "We Analyse Your Surgery",
-      "howStep2Desc": "Our system evaluates extraction quality, density, donor management, and surgical technique.",
+      "howStep2Desc": "AI-assisted image and evidence mapping supports an independent clinical review of extraction quality, density, donor management, and surgical technique.",
       "howStep3Title": "Receive Your HairAudit Report",
       "howStep3Desc": "Get your HairAudit Score, visual breakdown, and clear next-step recommendations.",
       "ecosystemHeading": "Part of the Global Hair Intelligence Network",
@@ -251,7 +252,16 @@
       "sampleTeaserLi2": "Donor and recipient area analysis",
       "sampleTeaserLi3": "Red flags and risk indicators",
       "sampleTeaserLi4": "Clear clinical explanation — no confusing terminology",
-      "ctaFullSampleReport": "View Full Sample Report",
+      "ctaFullSampleReport": "View full sample audit report",
+      "seoResourcesTitle": "Learn more",
+      "seoResourcesIntro": "Explore methodology, patient guides, and common questions—then request a review when you are ready.",
+      "seoResourcesMethodology": "Forensic audit methodology",
+      "seoResourcesGuides": "Patient guides (concerns & timelines)",
+      "seoResourcesGraftFailure": "Signs of graft failure vs shock loss",
+      "seoResourcesFaq": "Hair transplant audit FAQ",
+      "seoAudienceIntro": "Clinics and professionals:",
+      "seoAudienceClinicsLink": "Clinic transparency & QA",
+      "seoAudienceProfessionalsLink": "Independent audit standards",
       "whyMattersTitle": "Why HairAudit Matters",
       "whyMattersP1": "Results are often judged by appearance alone — but what looks acceptable can hide poor technique. HairAudit assesses what most patients cannot see: how grafts were extracted, how the donor was managed, and whether the work meets real clinical standards.",
       "whyMattersP2": "Not a sales tool. Independent verification of your results.",
@@ -298,8 +308,8 @@
     "howItWorks": {
       "heroTitle": "How HairAudit Reviews Your Surgery",
       "heroSubtitle": "We use your photos and case details to build a clear, independent review.",
-      "ctaRequestReview": "Request Review",
-      "ctaExampleReport": "See Example Report",
+      "ctaRequestReview": "Request a hair transplant audit",
+      "ctaExampleReport": "Sample hair transplant audit report",
       "badgeIndependent": "Independent Surgery Assessment",
       "afterSubmitNote": "Many patients only realise something may be wrong months after surgery. HairAudit helps you understand whether your result is normal — or if something went wrong.",
       "stepsTitle": "Step-by-step",

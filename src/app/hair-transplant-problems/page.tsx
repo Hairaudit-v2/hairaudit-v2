@@ -4,6 +4,7 @@ import SiteFooter from "@/components/SiteFooter";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import ReviewProcessReassurance from "@/components/seo/ReviewProcessReassurance";
 import MedicalProcedureFaqSchema from "@/components/seo/MedicalProcedureFaqSchema";
+import BreadcrumbListSchema from "@/components/seo/BreadcrumbListSchema";
 import { createPageMetadata } from "@/lib/seo/pageMetadata";
 import { patientIssueLibrary } from "@/lib/patientEducationIssues";
 import { listPatientIntentGuidesGroupedByTheme } from "@/lib/seo/patient-intent-hub-themes";
@@ -72,6 +73,12 @@ export default function HairTransplantProblemsHubPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#0a0a0f] text-slate-100">
+      <BreadcrumbListSchema
+        items={[
+          { name: "Home", pathname: "/" },
+          { name: "Hair transplant patient guides", pathname: "/hair-transplant-problems" },
+        ]}
+      />
       <MedicalProcedureFaqSchema
         pageName="Hair transplant patient guides"
         pageDescription="Independent patient education on post-transplant concerns, photo-based review, and when structured assessment helps."
@@ -120,7 +127,7 @@ export default function HairTransplantProblemsHubPage() {
                 data-cta="patient-guides-hub-hero-request-review"
                 data-cta-destination="/request-review"
               >
-                Request an independent review
+                Request a hair transplant audit
               </Link>
               <Link
                 href="/sample-report"
@@ -128,7 +135,15 @@ export default function HairTransplantProblemsHubPage() {
                 data-cta="patient-guides-hub-hero-sample-report"
                 data-cta-destination="/sample-report"
               >
-                View a sample report
+                Sample hair transplant audit report
+              </Link>
+              <Link
+                href="/methodology"
+                className="inline-flex items-center justify-center px-6 py-3 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
+                data-cta="patient-guides-hub-hero-methodology"
+                data-cta-destination="/methodology"
+              >
+                Audit methodology
               </Link>
               <Link
                 href="/faq"
@@ -136,7 +151,7 @@ export default function HairTransplantProblemsHubPage() {
                 data-cta="patient-guides-hub-hero-faq"
                 data-cta-destination="/faq"
               >
-                FAQ
+                Hair transplant audit FAQ
               </Link>
             </div>
           </ScrollReveal>

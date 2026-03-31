@@ -14,9 +14,9 @@ import type { AwardTier } from "@/lib/transparency/awardRules";
 export const revalidate = 600;
 
 export const metadata = createPageMetadata({
-  title: "For Clinics | HairAudit",
+  title: "For Clinics | Join HairAudit Transparency & Certification | HairAudit",
   description:
-    "Join HairAudit: improve outcomes privately, build public trust, and earn certification. A global transparency and quality framework for hair restoration clinics.",
+    "Clinics: internal audits, transparency participation, and certification-ready benchmarking—independent forensic standards for hair restoration quality assurance.",
   pathname: "/for-clinics",
 });
 

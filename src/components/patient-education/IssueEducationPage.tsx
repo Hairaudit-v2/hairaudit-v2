@@ -90,20 +90,39 @@ export default function IssueEducationPage({
                 HairAudit can review your photos and case timeline, then explain findings in plain
                 language.
               </p>
-              <div className="mt-6 flex flex-col sm:flex-row gap-4">
+              <div className="mt-6 flex flex-col sm:flex-row flex-wrap gap-4">
                 <Link
                   href="/request-review"
                   className="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors"
                 >
-                  Request Review
+                  Request a hair transplant audit
+                </Link>
+                <Link
+                  href="/demo-report"
+                  className="inline-flex items-center justify-center px-6 py-3 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
+                >
+                  Sample hair transplant audit report
                 </Link>
                 <Link
                   href="/audit-examples"
                   className="inline-flex items-center justify-center px-6 py-3 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
                 >
-                  View Audit Examples
+                  Audit examples gallery
                 </Link>
               </div>
+              <p className="mt-4 text-sm text-slate-500">
+                <Link href="/hair-transplant-problems" className="text-amber-400 hover:text-amber-300">
+                  All patient guides
+                </Link>
+                {" · "}
+                <Link href="/hair-transplant-second-opinion-vs-clinic-opinion" className="text-amber-400 hover:text-amber-300">
+                  Hair transplant second opinion vs clinic opinion
+                </Link>
+                {" · "}
+                <Link href="/methodology" className="text-amber-400 hover:text-amber-300">
+                  How we review your surgery
+                </Link>
+              </p>
               <ReviewProcessReassurance className="mt-6" />
             </section>
           </ScrollReveal>

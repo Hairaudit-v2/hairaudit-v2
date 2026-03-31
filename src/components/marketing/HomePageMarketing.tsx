@@ -88,6 +88,16 @@ export default function HomePageMarketing() {
             </Link>
           </div>
           <p className="mt-8 text-sm text-slate-500">{t("marketing.home.heroFootnote")}</p>
+          <p className="mt-6 text-sm text-slate-500 max-w-xl mx-auto leading-relaxed">
+            <span>{t("marketing.home.seoAudienceIntro")}</span>{" "}
+            <Link href="/clinics" className="text-amber-400/90 hover:text-amber-300 underline underline-offset-2 font-medium">
+              {t("marketing.home.seoAudienceClinicsLink")}
+            </Link>
+            {" · "}
+            <Link href="/professionals" className="text-amber-400/90 hover:text-amber-300 underline underline-offset-2 font-medium">
+              {t("marketing.home.seoAudienceProfessionalsLink")}
+            </Link>
+          </p>
         </div>
       </section>
 
@@ -171,6 +181,35 @@ export default function HomePageMarketing() {
             >
               {t("marketing.home.ctaFullSampleReport")}
             </TrackedLink>
+          </div>
+          <div className="mt-12 pt-10 border-t border-white/10 text-left">
+            <h3 className="text-lg font-semibold text-white">{t("marketing.home.seoResourcesTitle")}</h3>
+            <p className="mt-3 text-sm text-slate-400 leading-relaxed">{t("marketing.home.seoResourcesIntro")}</p>
+            <ul className="mt-5 space-y-2 text-sm text-slate-300">
+              <li>
+                <Link href="/methodology" className="text-amber-400 hover:text-amber-300 underline underline-offset-2 font-medium">
+                  {t("marketing.home.seoResourcesMethodology")}
+                </Link>
+              </li>
+              <li>
+                <Link href="/hair-transplant-problems" className="text-amber-400 hover:text-amber-300 underline underline-offset-2 font-medium">
+                  {t("marketing.home.seoResourcesGuides")}
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/shock-loss-vs-graft-failure"
+                  className="text-amber-400 hover:text-amber-300 underline underline-offset-2 font-medium"
+                >
+                  {t("marketing.home.seoResourcesGraftFailure")}
+                </Link>
+              </li>
+              <li>
+                <Link href="/faq" className="text-amber-400 hover:text-amber-300 underline underline-offset-2 font-medium">
+                  {t("marketing.home.seoResourcesFaq")}
+                </Link>
+              </li>
+            </ul>
           </div>
         </div>
       </section>

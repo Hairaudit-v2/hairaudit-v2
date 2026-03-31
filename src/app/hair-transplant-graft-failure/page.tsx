@@ -6,9 +6,9 @@ import { patientIssueLibrary } from "@/lib/patientEducationIssues";
 const issue = patientIssueLibrary.find((item) => item.slug === "hair-transplant-graft-failure");
 
 export const metadata = createPageMetadata({
-  title: "Hair Transplant Graft Failure | HairAudit",
+  title: "Hair Transplant Graft Failure: Signs, Timing & Review | HairAudit",
   description:
-    "Understand possible hair transplant graft failure signs and when an independent evidence review is appropriate.",
+    "Signs that may suggest graft failure after a hair transplant, how timing matters, and when an independent forensic audit can clarify evidence—without replacing your clinician.",
   pathname: "/hair-transplant-graft-failure",
 });
 

@@ -183,9 +183,9 @@ export const patientIssueLibrary: PatientIssueContent[] = [
   },
   {
     slug: "hair-transplant-graft-failure",
-    title: "Hair Transplant Graft Failure: Understanding the Signs",
+    title: "Hair Transplant Graft Failure: Signs, Timing & Review",
     description:
-      "Simple explanation of possible graft failure signs after hair transplant and when to seek independent case review.",
+      "Possible signs of graft failure after a hair transplant, why timing matters, and when an independent HairAudit review can help structure evidence and next steps.",
     intro:
       "Graft failure means transplanted follicles did not survive or did not produce expected growth. This can be partial or extensive and may involve multiple factors.",
     explanations: [

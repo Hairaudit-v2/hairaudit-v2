@@ -2,17 +2,24 @@ import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { createPageMetadata } from "@/lib/seo/pageMetadata";
+import BreadcrumbListSchema from "@/components/seo/BreadcrumbListSchema";
 
 export const metadata = createPageMetadata({
-  title: "How We Review Your Surgery | HairAudit",
+  title: "Hair Transplant Audit Methodology | Independent Forensic Review | HairAudit",
   description:
-    "Simple overview of how HairAudit reviews surgery photos and builds an independent, evidence-based report.",
+    "How HairAudit conducts independent hair transplant audits: donor area, growth, density, design, implantation, and technique—AI-assisted analysis with clinical review, confidence-aware reporting, and clear limits.",
   pathname: "/methodology",
 });
 
 export default function MethodologyPage() {
   return (
     <div className="min-h-screen flex flex-col bg-[#0a0a0f] text-slate-100">
+      <BreadcrumbListSchema
+        items={[
+          { name: "Home", pathname: "/" },
+          { name: "Audit methodology", pathname: "/methodology" },
+        ]}
+      />
       <div className="fixed inset-0 pointer-events-none" aria-hidden>
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(251,191,36,0.06),transparent)]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_80%_60%,rgba(139,92,246,0.05),transparent)]" />
@@ -25,14 +32,16 @@ export default function MethodologyPage() {
         <section className="relative px-4 sm:px-6 py-16 sm:py-20 lg:py-24">
           <div className="max-w-3xl mx-auto">
             <h1 className="mt-3 text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white leading-[1.15]">
-              How We Review Your Surgery
+              Hair transplant audit methodology
             </h1>
             <p className="mt-6 text-lg text-slate-400 leading-relaxed">
-              HairAudit uses your photos and case details to build a detailed medical review of your
-              surgery. We use the same process for every case so your results are clear and fair.
+              HairAudit uses your photos and case details for an independent, evidence-based forensic audit—structured
+              like a second opinion on donor area, growth, density, design, implantation, and technique. AI-assisted
+              analysis supports the review; clinical reviewers validate findings. The same framework applies to every case.
             </p>
             <p className="mt-4 text-slate-400">
-              We explain what looks strong, what is uncertain, and what next steps may help.
+              Reports explain what the evidence supports, where confidence is limited, and what may help next—not a
+              diagnosis or treatment prescription.
             </p>
           </div>
         </section>
@@ -44,10 +53,10 @@ export default function MethodologyPage() {
             </h2>
             <ul className="mt-6 space-y-3 text-slate-300">
               {[
-                "How evenly your grafts were placed",
-                "How safely the donor hair was removed",
-                "How accurately the hairs were implanted",
-                "Images and proof used in your report",
+                "Donor area integrity, extraction pattern, and overharvesting risk",
+                "Recipient density, growth pattern, and cosmetic design (e.g. hairline framing)",
+                "Implantation angles, direction, and technique-related cues visible in photos",
+                "Evidence quality, timeline fit, and confidence for each part of the audit",
               ].map((item) => (
                 <li key={item} className="flex gap-2">
                   <span className="text-amber-400">-</span>
@@ -56,7 +65,7 @@ export default function MethodologyPage() {
               ))}
             </ul>
             <p className="mt-6 text-slate-400">
-              This is a detailed medical review of your surgery, not just a simple opinion.
+              This is structured forensic assessment against defined criteria—not a promotional clinic assessment.
             </p>
           </div>
         </section>
@@ -71,9 +80,9 @@ export default function MethodologyPage() {
               this clearly so you know how confident each conclusion is.
             </p>
             <p className="mt-4 text-slate-400">
-              Looking for technical standards, scoring framework, and evidence rules?{" "}
+              Looking for technical standards, scoring, and evidence rules? See{" "}
               <Link href="/professionals" className="text-amber-400 hover:text-amber-300 transition-colors font-medium">
-                For Professionals
+                independent hair transplant audit standards for professionals
               </Link>
               .
             </p>
@@ -93,19 +102,25 @@ export default function MethodologyPage() {
                 href="/request-review"
                 className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors shadow-lg shadow-amber-500/20"
               >
-                Request Review
+                Request a hair transplant audit
               </Link>
               <Link
                 href="/demo-report"
                 className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
               >
-                See Example Report
+                Sample hair transplant audit report
+              </Link>
+              <Link
+                href="/faq"
+                className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
+              >
+                Hair transplant audit FAQ
               </Link>
               <Link
                 href="/how-it-works"
                 className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
               >
-                How It Works
+                How hair transplant audits work
               </Link>
             </div>
             <p className="mt-5 text-sm text-slate-400">

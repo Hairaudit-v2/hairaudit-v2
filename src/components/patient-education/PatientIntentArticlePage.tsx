@@ -4,6 +4,8 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import ReviewProcessReassurance from "@/components/seo/ReviewProcessReassurance";
 import MedicalProcedureFaqSchema from "@/components/seo/MedicalProcedureFaqSchema";
+import BreadcrumbListSchema from "@/components/seo/BreadcrumbListSchema";
+import { getBaseUrl } from "@/lib/seo/baseUrl";
 import { getPatientIntentArticle } from "@/lib/seo/patient-intent-articles";
 import type { PatientIntentArticleBlock } from "@/lib/seo/patient-intent-articles/types";
 import { patientIssueLibrary } from "@/lib/patientEducationIssues";
@@ -111,23 +113,45 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
     .map((slug) => resolveRelatedGuide(slug))
     .filter((r): r is ResolvedRelated => r != null);
 
+  const baseUrl = getBaseUrl();
+  const articleUrl = `${baseUrl}${article.pathname}`;
+  const logoUrl = `${baseUrl}/hairaudit-logo.svg`;
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Article",
     headline: article.h1,
     description: article.metaDescription,
+    url: articleUrl,
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": articleUrl,
+    },
+    inLanguage: "en",
     author: {
       "@type": "Organization",
       name: "HairAudit",
+      url: baseUrl,
     },
     publisher: {
       "@type": "Organization",
       name: "HairAudit",
+      url: baseUrl,
+      logo: {
+        "@type": "ImageObject",
+        url: logoUrl,
+      },
     },
   };
 
   return (
     <div className="min-h-screen flex flex-col bg-[#0a0a0f] text-slate-100">
+      <BreadcrumbListSchema
+        items={[
+          { name: "Home", pathname: "/" },
+          { name: "Patient guides", pathname: "/hair-transplant-problems" },
+          { name: article.h1, pathname: article.pathname },
+        ]}
+      />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -195,7 +219,7 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
                     data-cta-destination="/request-review"
                     data-patient-guide={articleSlug}
                   >
-                    Request an independent review
+                    Request a hair transplant audit
                   </Link>
                 </li>
                 <li className="sm:after:content-['·'] sm:after:px-2 sm:after:text-slate-600 sm:last:after:content-none">
@@ -206,7 +230,7 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
                     data-cta-destination="/sample-report"
                     data-patient-guide={articleSlug}
                   >
-                    View a sample report
+                    Sample hair transplant audit report
                   </Link>
                 </li>
                 <li className="sm:after:content-['·'] sm:after:px-2 sm:after:text-slate-600 sm:last:after:content-none">
@@ -217,7 +241,7 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
                     data-cta-destination="/faq"
                     data-patient-guide={articleSlug}
                   >
-                    FAQ
+                    Hair transplant audit FAQ
                   </Link>
                 </li>
                 <li>
@@ -274,7 +298,7 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
                   data-cta-destination="/request-review"
                   data-patient-guide={articleSlug}
                 >
-                  Request an independent review
+                  Request a hair transplant audit
                 </Link>
                 <Link
                   href="/sample-report"
@@ -283,7 +307,7 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
                   data-cta-destination="/sample-report"
                   data-patient-guide={articleSlug}
                 >
-                  View sample report
+                  Sample hair transplant audit report
                 </Link>
                 <Link
                   href="/faq"
@@ -292,7 +316,7 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
                   data-cta-destination="/faq"
                   data-patient-guide={articleSlug}
                 >
-                  FAQ
+                  Hair transplant audit FAQ
                 </Link>
               </div>
               <ReviewProcessReassurance className="mt-6" />
@@ -339,7 +363,7 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
                   data-patient-guide={articleSlug}
                   data-cta-destination="/how-it-works"
                 >
-                  How it works
+                  How hair transplant audits work
                 </Link>
               </li>
               <li>
@@ -350,7 +374,7 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
                   data-patient-guide={articleSlug}
                   data-cta-destination="/methodology"
                 >
-                  How we review your surgery
+                  Hair transplant audit methodology
                 </Link>
               </li>
               <li>

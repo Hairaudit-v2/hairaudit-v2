@@ -22,17 +22,17 @@ const metadataBaseUrl =
 export const metadata: Metadata = {
   metadataBase: new URL(metadataBaseUrl),
   title: {
-    default: "HairAudit",
+    default: "HairAudit | Independent Hair Transplant Audit",
     template: "%s",
   },
   description:
-    "Independent, evidence-based hair transplant review for patients and professionals.",
+    "Independent, evidence-based forensic hair transplant audits—clear review of donor area, growth, density, design, and technique. AI-assisted analysis within an independent framework.",
   openGraph: {
     type: "website",
     siteName: "HairAudit",
-    title: "HairAudit",
+    title: "HairAudit | Independent Hair Transplant Audit",
     description:
-      "Independent, evidence-based hair transplant review for patients and professionals.",
+      "Independent, evidence-based forensic hair transplant audits—clear review of donor area, growth, density, design, and technique. AI-assisted analysis within an independent framework.",
     url: "/",
     images: [
       {
@@ -43,9 +43,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "HairAudit",
+    title: "HairAudit | Independent Hair Transplant Audit",
     description:
-      "Independent, evidence-based hair transplant review for patients and professionals.",
+      "Independent, evidence-based forensic hair transplant audits—clear review of donor area, growth, density, design, and technique.",
     images: ["/hairaudit-logo.svg"],
   },
 };

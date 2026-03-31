@@ -9,9 +9,9 @@ import TrackedLink from "@/components/analytics/TrackedLink";
 import { FI_HOME } from "@/config/platform-links";
 
 export const metadata = createPageMetadata({
-  title: "Services | HairAudit",
+  title: "Hair Transplant Audit Services | Patients, Clinics & Professionals | HairAudit",
   description:
-    "Compare HairAudit services for patients, clinics, and professionals with structured outcomes and decision-focused reporting.",
+    "Forensic audit services: independent patient case review, corrective/outcome documentation, and clinic benchmark participation—structured reporting, confidence-aware conclusions, no treatment sales.",
   pathname: "/services",
 });
 

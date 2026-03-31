@@ -3,13 +3,14 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import ReviewProcessReassurance from "@/components/seo/ReviewProcessReassurance";
 import MedicalProcedureFaqSchema from "@/components/seo/MedicalProcedureFaqSchema";
+import BreadcrumbListSchema from "@/components/seo/BreadcrumbListSchema";
 import { createPageMetadata } from "@/lib/seo/pageMetadata";
 import TrackedLink from "@/components/analytics/TrackedLink";
 
 export const metadata = createPageMetadata({
-  title: "Request Review | HairAudit",
+  title: "Request a Hair Transplant Review | Secure Upload | HairAudit",
   description:
-    "Request a hair transplant review with secure photo upload, independent assessment, and clear next-step reporting.",
+    "Request an independent hair transplant audit: secure photo upload, structured forensic review of donor, growth, density, design, and technique, and a clear report—not clinic marketing.",
   pathname: "/request-review",
 });
 
@@ -34,6 +35,12 @@ const requestFaqs = [
 export default function RequestReviewPage() {
   return (
     <div className="min-h-screen flex flex-col bg-[#0a0a0f] text-slate-100">
+      <BreadcrumbListSchema
+        items={[
+          { name: "Home", pathname: "/" },
+          { name: "Request a hair transplant review", pathname: "/request-review" },
+        ]}
+      />
       <MedicalProcedureFaqSchema
         pageName="Request a Hair Transplant Review"
         pageDescription="Submit your case for independent hair transplant evidence review and reporting."
@@ -51,13 +58,16 @@ export default function RequestReviewPage() {
         <div className="max-w-4xl mx-auto">
           {/* Hero: no ScrollReveal so LCP (H1/CTA) paints immediately */}
           <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
-            Request Review
+            Request a hair transplant review
           </h1>
           <p className="mt-4 text-slate-300 max-w-2xl">
-            Send your surgery photos and details for an independent medical review, whether you
-            are concerned about problems or want quality validation.
+            Send your surgery photos and timeline for an independent, evidence-based forensic audit—structured
+            like a second opinion on donor area, growth, density, design, and technique—whether you have concerns
+            or want documentation of quality.
           </p>
-          <p className="mt-3 text-xs text-amber-300 font-medium">Independent Surgery Assessment</p>
+          <p className="mt-3 text-xs text-amber-300 font-medium">
+            Independent review · Secure upload · Not a substitute for in-person medical diagnosis
+          </p>
           <p className="mt-2 text-sm text-emerald-200 font-medium">Estimated completion time: 6 to 8 minutes</p>
 
           <div className="mt-8 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-6">
@@ -129,7 +139,7 @@ export default function RequestReviewPage() {
                 eventName="cta_example_report_request_review"
                 className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
               >
-                  See Example Report
+                Sample hair transplant audit report
               </TrackedLink>
             </div>
             <div className="mt-5 rounded-2xl border border-white/10 bg-white/5 p-5">
@@ -156,11 +166,21 @@ export default function RequestReviewPage() {
               </Link>
             </p>
             <p className="mt-4 text-sm text-slate-500">
-              Looking for our technical standards?{" "}
-              <Link href="/professionals" className="text-amber-400 hover:text-amber-300 transition-colors">
-                For Professionals
+              <Link href="/methodology" className="text-amber-400 hover:text-amber-300 transition-colors">
+                How we review your surgery (methodology)
               </Link>
-              .
+              {" · "}
+              <Link href="/faq" className="text-amber-400 hover:text-amber-300 transition-colors">
+                Hair transplant audit FAQ
+              </Link>
+              {" · "}
+              <Link href="/professionals" className="text-amber-400 hover:text-amber-300 transition-colors">
+                Independent audit standards for professionals
+              </Link>
+              {" · "}
+              <Link href="/clinics" className="text-amber-400 hover:text-amber-300 transition-colors">
+                Clinic transparency directory
+              </Link>
             </p>
         </div>
       </main>

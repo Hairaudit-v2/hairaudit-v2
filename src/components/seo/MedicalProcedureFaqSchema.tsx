@@ -1,4 +1,4 @@
-import { HA_HOME } from "@/config/platform-links";
+import { getBaseUrl } from "@/lib/seo/baseUrl";
 
 type FAQItem = {
   question: string;
@@ -11,23 +11,25 @@ type MedicalProcedureFaqSchemaProps = {
   faqs: FAQItem[];
 };
 
+/**
+ * Service (audit offering) plus optional FAQPage — avoids MedicalProcedure, which implies clinical treatment.
+ */
 export default function MedicalProcedureFaqSchema({
   pageName,
   pageDescription,
   faqs,
 }: MedicalProcedureFaqSchemaProps) {
-  const medicalProcedureSchema = {
+  const baseUrl = getBaseUrl();
+  const serviceSchema = {
     "@context": "https://schema.org",
-    "@type": "MedicalProcedure",
+    "@type": "Service",
     name: pageName,
     description: pageDescription,
-    procedureType: "Hair transplant forensic review",
-    howPerformed:
-      "Independent review of photos and surgery evidence with AI-assisted analysis and clinical reviewer validation.",
-    recognizingAuthority: {
+    serviceType: "Independent hair transplant forensic audit",
+    provider: {
       "@type": "Organization",
       name: "HairAudit",
-      url: HA_HOME,
+      url: baseUrl,
     },
   };
 
@@ -35,7 +37,7 @@ export default function MedicalProcedureFaqSchema({
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(medicalProcedureSchema) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }}
       />
       {faqs.length > 0 ? (
         <script

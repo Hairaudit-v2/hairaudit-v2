@@ -49,6 +49,11 @@ export default function SiteFooter({ theme = "default" }: SiteFooterProps) {
                 </Link>
               </li>
               <li>
+                <Link href="/methodology" className={linkClass}>
+                  {t("nav.footer.linkMethodology")}
+                </Link>
+              </li>
+              <li>
                 <TrackedLink
                   href="/request-review"
                   eventName="cta_request_review_footer"

@@ -2,9 +2,9 @@ import { createPageMetadata } from "@/lib/seo/pageMetadata";
 import DemoReportPageContent from "./DemoReportPageContent";
 
 export const metadata = createPageMetadata({
-  title: "Sample Report | HairAudit",
+  title: "Interactive Sample Hair Transplant Audit Report | HairAudit",
   description:
-    "View the structure and depth of a HairAudit AI surgical analysis report. Sample content only — no patient data. Request a full audit for your case.",
+    "Explore the structure of a HairAudit forensic audit report: domains, evidence, and confidence—sample content only, no patient data. For the marketing walkthrough, see the sample report page; to submit your case, request a review.",
   pathname: "/demo-report",
 });
 
