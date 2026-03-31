@@ -1,6 +1,7 @@
 /**
  * Auth funnel measurement — pushes to dataLayer (GTM) and dispatches hairaudit:auth_funnel.
- * Event names are stable for bot vs. real-user drop-off analysis.
+ * dataLayer objects use event: "hairaudit:auth_funnel" for GTM Custom Event triggers;
+ * auth_funnel_stage carries the stable stage id for drop-off analysis.
  */
 
 import { readStoredAuthAttribution } from "@/lib/analytics/authAttribution";
@@ -104,7 +105,6 @@ export function trackAuthFunnel(
   const base = buildAuthFunnelContext(pathname, search);
 
   const payload: Record<string, unknown> = {
-    event: stage,
     auth_funnel_stage: stage,
     auth_path: base.path,
     auth_path_search: base.path_search,
@@ -114,6 +114,7 @@ export function trackAuthFunnel(
     ...(base.cta_event ? { auth_cta_event: base.cta_event } : {}),
     ...(base.cta_href ? { auth_cta_href: base.cta_href } : {}),
     ...extra,
+    event: "hairaudit:auth_funnel",
   };
 
   const w = window as typeof window & { dataLayer?: Array<Record<string, unknown>> };
