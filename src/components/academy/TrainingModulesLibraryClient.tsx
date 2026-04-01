@@ -111,13 +111,13 @@ export default function TrainingModulesLibraryClient({
   return (
     <div className="space-y-6">
       {isStaff ? (
-        <p className="rounded-lg border border-amber-300/80 bg-gradient-to-r from-amber-50 to-orange-50 px-3 py-2 text-sm text-amber-950 shadow-sm">
+        <p className="rounded-xl border border-amber-400/80 bg-gradient-to-r from-amber-100 to-orange-100 px-4 py-3 text-sm text-amber-950 shadow-md">
           Staff view: you see the same catalog as trainees. Assignments in <code className="text-xs">modules.json</code> still apply
           filtering for trainees only.
         </p>
       ) : null}
 
-      <div className="flex flex-wrap items-end gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+      <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-slate-300/80 bg-gradient-to-br from-slate-100/80 to-white p-4 shadow-md">
         <div>
           <label className="block text-xs font-medium text-slate-600">Topic</label>
           <select
@@ -163,7 +163,7 @@ export default function TrainingModulesLibraryClient({
       </div>
 
       {competencyHref && traineeWeek != null ? (
-        <p className="rounded-lg border border-sky-200 bg-sky-50/60 px-3 py-2 text-sm text-slate-700">
+        <p className="rounded-xl border border-sky-300 bg-gradient-to-r from-sky-100/80 to-white px-4 py-2.5 text-sm text-slate-800 shadow-sm">
           Your program week (for badges): <span className="font-semibold text-slate-800">Week {traineeWeek}</span>.{" "}
           <Link href={competencyHref} className="font-medium text-amber-800 hover:underline">
             Competency dashboard
@@ -171,7 +171,7 @@ export default function TrainingModulesLibraryClient({
           is separate from these materials.
         </p>
       ) : competencyHref ? (
-        <p className="rounded-lg border border-sky-200 bg-sky-50/60 px-3 py-2 text-sm text-slate-700">
+        <p className="rounded-xl border border-sky-300 bg-gradient-to-r from-sky-100/80 to-white px-4 py-2.5 text-sm text-slate-800 shadow-sm">
           <Link href={competencyHref} className="font-medium text-amber-800 hover:underline">
             Open competency dashboard
           </Link>{" "}
@@ -199,19 +199,19 @@ export default function TrainingModulesLibraryClient({
             return (
               <li
                 key={m.id}
-                className={`rounded-xl border p-4 shadow-sm ${
+                className={`rounded-2xl border p-5 shadow-md ${
                   m.flags?.mandatory
-                    ? "border-rose-200 bg-gradient-to-br from-rose-50/40 to-white"
+                    ? "border-rose-300 bg-gradient-to-br from-rose-100/80 via-rose-50/70 to-white ring-1 ring-rose-200/80"
                     : suggested
-                      ? "border-amber-200 bg-gradient-to-br from-amber-50/40 to-white ring-1 ring-amber-100"
-                      : "border-slate-200 bg-white"
+                      ? "border-amber-300 bg-gradient-to-br from-amber-100/80 via-amber-50/70 to-white ring-1 ring-amber-200/80"
+                      : "border-slate-300/80 bg-gradient-to-br from-white to-slate-50/70"
                 }`}
               >
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <h2 className="text-base font-semibold text-slate-900">{m.title}</h2>
-                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-700">
+                      <span className="rounded-full bg-slate-200/80 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-800 ring-1 ring-slate-300/70">
                         {m.category}
                       </span>
                       {m.flags?.mandatory ? (

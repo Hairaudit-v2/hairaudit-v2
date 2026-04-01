@@ -70,13 +70,13 @@ export default async function TraineeDetailPage({ params }: { params: Promise<{ 
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-8 pb-10">
-      <div className="flex flex-wrap items-start justify-between gap-3 rounded-2xl border border-amber-200/70 bg-gradient-to-br from-amber-50 via-white to-slate-50 px-5 py-4 shadow-sm">
+      <div className="flex flex-wrap items-start justify-between gap-3 rounded-3xl border border-slate-300/80 bg-gradient-to-br from-slate-900 via-slate-800 to-amber-900 px-6 py-6 shadow-xl ring-1 ring-slate-700/50">
         <div>
-          <Link href="/academy/trainees" className="text-sm font-medium text-amber-700 hover:underline">
+          <Link href="/academy/trainees" className="text-sm font-medium text-amber-200 hover:underline">
             ← Trainees
           </Link>
-          <h1 className="mt-2 text-2xl font-semibold text-slate-900">{doctor.full_name}</h1>
-          <p className="mt-1 text-sm text-slate-600">
+          <h1 className="mt-2 text-3xl font-semibold text-white">{doctor.full_name}</h1>
+          <p className="mt-1 text-sm text-slate-200">
             {doctor.email || "No email"} · {doctor.current_stage} ·{" "}
             <span className="capitalize">{doctor.status}</span>
           </p>
@@ -86,19 +86,16 @@ export default async function TraineeDetailPage({ params }: { params: Promise<{ 
             {snapshot.label}
           </span>
           <div className="flex flex-col items-end gap-1">
-            <Link
-              href={`/academy/trainees/${doctorId}/competency`}
-              className="text-sm font-semibold text-slate-800 hover:text-amber-800"
-            >
+            <Link href={`/academy/trainees/${doctorId}/competency`} className="text-sm font-semibold text-amber-100 hover:text-white">
               Competency dashboard →
             </Link>
-            <Link href="/academy/training-modules" className="text-sm font-semibold text-slate-600 hover:text-amber-800">
+            <Link href="/academy/training-modules" className="text-sm font-semibold text-amber-200 hover:text-white">
               Training library (self-study) →
             </Link>
             {access.isStaff ? (
               <Link
                 href={`/academy/trainees/${doctorId}/new-case`}
-                className="text-sm font-semibold text-amber-700 hover:text-amber-800"
+                className="text-sm font-semibold text-amber-100 hover:text-white"
               >
                 + New training case
               </Link>
@@ -108,13 +105,13 @@ export default async function TraineeDetailPage({ params }: { params: Promise<{ 
       </div>
 
       {doctor.notes ? (
-        <section className="rounded-lg border border-violet-200 bg-violet-50/40 p-4 text-sm text-slate-700 shadow-sm">
+        <section className="rounded-xl border border-violet-300 bg-gradient-to-br from-violet-100/60 to-white p-4 text-sm text-slate-700 shadow-md">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Trainer notes</h2>
           <p className="mt-2 whitespace-pre-wrap">{doctor.notes}</p>
         </section>
       ) : null}
 
-      <section className="rounded-xl border border-sky-200 bg-gradient-to-br from-sky-50/50 to-white p-4 shadow-sm">
+      <section className="rounded-2xl border border-sky-300/90 bg-gradient-to-br from-sky-100/90 to-white p-5 shadow-md">
         <h2 className="text-sm font-semibold text-slate-900 mb-3">Trends</h2>
         <div className="grid gap-4 sm:grid-cols-3">
           <div>
@@ -132,7 +129,7 @@ export default async function TraineeDetailPage({ params }: { params: Promise<{ 
         </div>
       </section>
 
-      <section className="rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50/60 to-white p-4 shadow-sm">
+      <section className="rounded-2xl border border-amber-300/90 bg-gradient-to-br from-amber-100/90 to-white p-5 shadow-md">
         <h2 className="text-sm font-semibold text-slate-900 mb-3">Domain summary</h2>
         {Object.keys(domainAvg).length === 0 ? (
           <p className="text-sm text-slate-500">No assessments yet.</p>
@@ -151,7 +148,7 @@ export default async function TraineeDetailPage({ params }: { params: Promise<{ 
         )}
       </section>
 
-      <section className="rounded-xl border border-slate-300/70 bg-gradient-to-br from-slate-50 to-white p-4 shadow-sm">
+      <section className="rounded-2xl border border-slate-300/80 bg-gradient-to-br from-slate-100/80 to-white p-5 shadow-md">
         <h2 className="text-sm font-semibold text-slate-900 mb-3">Progress history</h2>
         {!history?.length ? (
           <p className="text-sm text-slate-500">No stage changes recorded.</p>
@@ -172,7 +169,7 @@ export default async function TraineeDetailPage({ params }: { params: Promise<{ 
 
       <section>
         <h2 className="text-sm font-semibold text-slate-900 mb-2">Cases</h2>
-        <ul className="rounded-xl border border-slate-200 bg-white divide-y divide-slate-100 shadow-sm">
+        <ul className="rounded-2xl border border-slate-300/80 bg-gradient-to-b from-white to-slate-50/60 divide-y divide-slate-100 shadow-md">
           {cases.length === 0 ? (
             <li className="p-4 text-sm text-slate-500">No cases yet.</li>
           ) : (
@@ -188,7 +185,7 @@ export default async function TraineeDetailPage({ params }: { params: Promise<{ 
         </ul>
       </section>
 
-      <section className="rounded-xl border border-amber-200 bg-amber-50/40 p-4 shadow-sm text-xs text-slate-600">
+      <section className="rounded-2xl border border-amber-300 bg-gradient-to-br from-amber-100/80 to-amber-50/50 p-5 shadow-md text-xs text-slate-700">
         <div className="font-semibold text-slate-700 text-sm mb-2">Photo checklist (per case)</div>
         <p>Open a case to upload. Types use the canonical format training_photo:category in storage records.</p>
         <ul className="mt-2 list-disc list-inside">

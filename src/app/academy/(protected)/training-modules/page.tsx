@@ -85,12 +85,12 @@ export default async function TrainingModulesPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-6 pb-10">
-      <div className="rounded-2xl border border-amber-200/70 bg-gradient-to-br from-amber-50 via-white to-slate-50 px-5 py-4 shadow-sm">
-        <Link href="/academy/dashboard" className="text-sm font-medium text-amber-700 hover:underline">
+      <div className="rounded-3xl border border-slate-300/80 bg-gradient-to-br from-slate-900 via-slate-800 to-amber-900 px-6 py-6 shadow-xl ring-1 ring-slate-700/50">
+        <Link href="/academy/dashboard" className="text-sm font-medium text-amber-200 hover:underline">
           ← Dashboard
         </Link>
-        <h1 className="mt-2 text-2xl font-semibold text-slate-900">Training module library</h1>
-        <p className="mt-1 text-sm text-slate-700">
+        <h1 className="mt-2 text-3xl font-semibold text-white">Training module library</h1>
+        <p className="mt-2 text-sm text-slate-200">
           Approved IIOHR self-study materials. Read or download anytime — this does not replace trainer sign-off on the competency
           dashboard.
         </p>

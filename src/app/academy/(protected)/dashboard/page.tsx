@@ -67,35 +67,36 @@ export default async function AcademyDashboardPage() {
 
     return (
       <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-8 pb-10">
-        <div className="rounded-2xl border border-amber-200/70 bg-gradient-to-br from-amber-50 via-white to-slate-50 px-5 py-4 shadow-sm">
-          <h1 className="text-2xl font-semibold text-slate-900">Academy dashboard</h1>
-          <p className="mt-1 text-sm text-slate-700">IIOHR surgical training overview</p>
-          <Link href="/academy/training-modules" className="mt-2 inline-block text-sm font-semibold text-amber-800 hover:underline">
+        <div className="rounded-3xl border border-slate-300/80 bg-gradient-to-br from-slate-900 via-slate-800 to-amber-900 px-6 py-6 shadow-xl ring-1 ring-slate-700/50">
+          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-amber-300">IIOHR Academy</p>
+          <h1 className="mt-1 text-3xl font-semibold text-white sm:text-[2rem]">Academy dashboard</h1>
+          <p className="mt-2 text-sm text-slate-200">Surgical training overview, progression, and review workload at a glance.</p>
+          <Link href="/academy/training-modules" className="mt-3 inline-flex rounded-full bg-white/95 px-3 py-1.5 text-sm font-semibold text-slate-900 shadow-sm hover:bg-white">
             Training module library →
           </Link>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-xl border border-slate-300/70 bg-gradient-to-br from-slate-50 to-white p-4 shadow-sm">
+          <div className="rounded-2xl border border-slate-400/60 bg-gradient-to-br from-slate-100 via-slate-50 to-white p-5 shadow-md ring-1 ring-slate-200">
             <div className="text-xs font-semibold uppercase tracking-wide text-slate-600">Trainees</div>
-            <div className="mt-1 text-3xl font-bold text-slate-900">{list.length}</div>
+            <div className="mt-2 text-4xl font-black text-slate-900">{list.length}</div>
           </div>
-          <div className="rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50/80 to-white p-4 shadow-sm">
+          <div className="rounded-2xl border border-amber-300/90 bg-gradient-to-br from-amber-100 via-amber-50 to-white p-5 shadow-md ring-1 ring-amber-200/80">
             <div className="text-xs font-semibold uppercase tracking-wide text-amber-900">Cases this month</div>
-            <div className="mt-1 text-3xl font-bold text-amber-950">{monthCases ?? 0}</div>
+            <div className="mt-2 text-4xl font-black text-amber-950">{monthCases ?? 0}</div>
           </div>
-          <div className="rounded-xl border border-orange-200 bg-gradient-to-br from-orange-50/80 to-white p-4 shadow-sm">
+          <div className="rounded-2xl border border-orange-300/90 bg-gradient-to-br from-orange-100 via-amber-50 to-white p-5 shadow-md ring-1 ring-orange-200/80">
             <div className="text-xs font-semibold uppercase tracking-wide text-orange-900">Cases in review</div>
-            <div className="mt-1 text-3xl font-bold text-orange-950">{inReview ?? 0}</div>
+            <div className="mt-2 text-4xl font-black text-orange-950">{inReview ?? 0}</div>
           </div>
-          <div className="rounded-xl border border-sky-200 bg-gradient-to-br from-sky-50/70 to-white p-4 shadow-sm">
+          <div className="rounded-2xl border border-sky-300/80 bg-gradient-to-br from-sky-100/90 via-sky-50 to-white p-5 shadow-md ring-1 ring-sky-200/80">
             <div className="text-xs font-semibold uppercase tracking-wide text-sky-900">Stages (headcount)</div>
             <div className="mt-2 flex flex-wrap gap-2 text-xs">
               {Object.keys(byStage).length === 0 ? (
                 <span className="text-slate-500">No trainees yet</span>
               ) : (
                 Object.entries(byStage).map(([k, v]) => (
-                  <span key={k} className="rounded-full bg-white px-2 py-0.5 text-slate-800 ring-1 ring-sky-100">
+                  <span key={k} className="rounded-full bg-white px-2.5 py-1 text-slate-800 ring-1 ring-sky-200">
                     {k}: {v}
                   </span>
                 ))
@@ -104,7 +105,7 @@ export default async function AcademyDashboardPage() {
           </div>
         </div>
 
-        <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <section className="rounded-2xl border border-sky-200/90 bg-gradient-to-br from-sky-50/70 via-white to-white p-5 shadow-md">
           <div className="flex items-center justify-between gap-2 mb-3">
             <h2 className="text-sm font-semibold text-slate-900">Recent reviews</h2>
             <Link href="/academy/trainees" className="text-sm font-medium text-amber-700 hover:text-amber-800">
@@ -138,7 +139,7 @@ export default async function AcademyDashboardPage() {
           )}
         </section>
 
-        <section className="rounded-xl border border-amber-300/80 bg-gradient-to-r from-amber-50 to-orange-50/60 p-4 shadow-sm">
+        <section className="rounded-2xl border border-amber-400/80 bg-gradient-to-r from-amber-100 via-amber-50 to-orange-100/70 p-5 shadow-md">
           <h2 className="text-sm font-semibold text-amber-950">Progression alerts</h2>
           <p className="mt-1 text-sm text-amber-950/80">
             {(inReview ?? 0) > 0
