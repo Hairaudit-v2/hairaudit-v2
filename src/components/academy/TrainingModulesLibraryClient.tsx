@@ -115,6 +115,7 @@ export default function TrainingModulesLibraryClient({
   }, [modules, categoryFilter, weekFilter]);
 
   const highlightSet = useMemo(() => new Set(highlightLadderKeys), [highlightLadderKeys]);
+  const pdfPreviewSrc = (url: string) => `${url}#page=1&view=FitH&toolbar=0&navpanes=0&scrollbar=0`;
 
   return (
     <div className="space-y-6">
@@ -218,7 +219,28 @@ export default function TrainingModulesLibraryClient({
                       : "border-slate-300/80 bg-gradient-to-br from-white to-slate-50/70"
                 }`}
               >
-                <div className="flex flex-wrap items-start justify-between gap-2">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="w-24 shrink-0 overflow-hidden rounded-lg border border-slate-300/80 bg-white shadow-sm sm:w-28">
+                    {m.coverImageUrl ? (
+                      <img
+                        src={m.coverImageUrl}
+                        alt={`${m.title} cover`}
+                        loading="lazy"
+                        className="h-32 w-full object-cover sm:h-36"
+                      />
+                    ) : m.downloadUrl?.toLowerCase().endsWith(".pdf") ? (
+                      <iframe
+                        src={pdfPreviewSrc(m.downloadUrl)}
+                        title={`${m.title} preview`}
+                        loading="lazy"
+                        className="h-32 w-full bg-white sm:h-36"
+                      />
+                    ) : (
+                      <div className="flex h-32 items-center justify-center bg-slate-100 px-2 text-center text-[10px] font-semibold uppercase tracking-wide text-slate-500 sm:h-36">
+                        Module
+                      </div>
+                    )}
+                  </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <h2 className="text-base font-semibold text-slate-900">{m.title}</h2>

@@ -23,6 +23,8 @@ export type TrainingModuleDefinition = {
   lastUpdated: string;
   readOnlineUrl?: string | null;
   downloadUrl?: string | null;
+  /** Optional static thumbnail/cover image shown in library cards */
+  coverImageUrl?: string | null;
   /** Show “Week n” badge when trainee is in this week */
   recommendedForWeeks?: number[];
   /** draft modules are omitted from the library */
@@ -54,8 +56,10 @@ function normalizeModule(raw: unknown): TrainingModuleDefinition | null {
 
   const readOnlineUrl = o.readOnlineUrl != null ? String(o.readOnlineUrl).trim() || null : null;
   const downloadUrl = o.downloadUrl != null ? String(o.downloadUrl).trim() || null : null;
+  const coverImageUrl = o.coverImageUrl != null ? String(o.coverImageUrl).trim() || null : null;
   if (readOnlineUrl && !isAllowedTrainingDoctorsPublicUrl(readOnlineUrl)) return null;
   if (downloadUrl && !isAllowedTrainingDoctorsPublicUrl(downloadUrl)) return null;
+  if (coverImageUrl && !isAllowedTrainingDoctorsPublicUrl(coverImageUrl)) return null;
 
   const status = o.status === "draft" ? "draft" : "approved";
   let recommendedForWeeks: number[] | undefined;
@@ -90,6 +94,7 @@ function normalizeModule(raw: unknown): TrainingModuleDefinition | null {
     lastUpdated,
     readOnlineUrl,
     downloadUrl,
+    coverImageUrl,
     recommendedForWeeks,
     status,
     flags,
