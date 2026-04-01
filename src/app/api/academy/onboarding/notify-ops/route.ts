@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAcademyAccess } from "@/lib/academy/auth";
-import { buildRequestEmailToOps, academyOpsInboxAddress } from "@/lib/academy/onboardingTemplate";
+import { buildTrainingAcademyRosterRequestEmail, academyOpsInboxAddress } from "@/lib/academy/onboardingTemplate";
 import { sendEmail } from "@/lib/email";
 
 export const runtime = "nodejs";
@@ -26,11 +26,10 @@ export async function POST(req: Request) {
   }
 
   let body: {
-    clinicOrOrganization?: string;
-    requesterName?: string;
-    requesterEmail?: string;
-    rolesNeeded?: string;
-    notes?: string;
+    trainingSiteOrProgram?: string;
+    hairauditAdminName?: string;
+    hairauditAdminEmail?: string;
+    notesForAcademy?: string;
   };
   try {
     body = await req.json();
@@ -38,24 +37,25 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "Invalid JSON" }, { status: 400 });
   }
 
-  const clinicOrOrganization = String(body.clinicOrOrganization ?? "").trim();
-  const requesterName = String(body.requesterName ?? "").trim();
-  const requesterEmail = String(body.requesterEmail ?? "").trim();
-  const rolesNeeded = String(body.rolesNeeded ?? "").trim();
+  const trainingSiteOrProgram = String(body.trainingSiteOrProgram ?? "").trim();
+  const hairauditAdminName = String(body.hairauditAdminName ?? "").trim();
+  const hairauditAdminEmail = String(body.hairauditAdminEmail ?? "").trim();
 
-  if (!clinicOrOrganization || !requesterName || !requesterEmail || !rolesNeeded) {
+  if (!trainingSiteOrProgram || !hairauditAdminName || !hairauditAdminEmail) {
     return NextResponse.json(
-      { ok: false, error: "clinicOrOrganization, requesterName, requesterEmail, and rolesNeeded are required" },
+      {
+        ok: false,
+        error: "trainingSiteOrProgram, hairauditAdminName, and hairauditAdminEmail are required",
+      },
       { status: 400 }
     );
   }
 
-  const { subject, body: textBody } = buildRequestEmailToOps({
-    clinicOrOrganization,
-    requesterName,
-    requesterEmail,
-    rolesNeeded,
-    notes: body.notes ? String(body.notes) : undefined,
+  const { subject, body: textBody } = buildTrainingAcademyRosterRequestEmail({
+    trainingSiteOrProgram,
+    hairauditAdminName,
+    hairauditAdminEmail,
+    notesForAcademy: body.notesForAcademy ? String(body.notesForAcademy) : undefined,
   });
 
   const html = `<pre style="font-family:system-ui,sans-serif;white-space:pre-wrap">${textBody
@@ -63,12 +63,12 @@ export async function POST(req: Request) {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")}</pre>`;
 
-  const ccRequester =
+  const ccHairAuditAdmin =
     process.env.ACADEMY_ONBOARDING_CC_REQUESTER === "1" ||
     process.env.ACADEMY_ONBOARDING_CC_REQUESTER === "true";
 
   const delivered = await sendEmail({
-    to: ccRequester ? [to, requesterEmail] : to,
+    to: ccHairAuditAdmin ? [to, hairauditAdminEmail] : to,
     subject,
     html,
     text: textBody,

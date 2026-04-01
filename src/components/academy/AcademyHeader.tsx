@@ -42,7 +42,7 @@ export default function AcademyHeader({
                 </Link>
                 {isAcademyAdmin ? (
                   <Link href="/academy/ops/onboarding" className="font-medium text-slate-300 hover:text-amber-400">
-                    Access onboarding
+                    Academy roster
                   </Link>
                 ) : null}
               </>

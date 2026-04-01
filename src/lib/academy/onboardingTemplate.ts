@@ -1,41 +1,64 @@
 /**
- * Copy-paste templates for clinic ↔ Evolved (IIOHR) academy access coordination.
- * Inbox address: set ACADEMY_OPS_NOTIFICATION_EMAIL in env (e.g. academy@evolved.com).
+ * Email from HairAudit (academy admin) → training academy (e.g. IIOHR / Evolved).
+ * Asks them to reply with the official roster so HairAudit can create logins.
+ * Inbox: ACADEMY_OPS_NOTIFICATION_EMAIL
  */
 
 export function academyOpsInboxAddress(): string {
   return (process.env.ACADEMY_OPS_NOTIFICATION_EMAIL ?? "").trim();
 }
 
-export function buildRequestEmailToOps(params: {
-  clinicOrOrganization: string;
-  requesterName: string;
-  requesterEmail: string;
-  rolesNeeded: string;
-  notes?: string;
+export function buildTrainingAcademyRosterRequestEmail(params: {
+  trainingSiteOrProgram: string;
+  hairauditAdminName: string;
+  hairauditAdminEmail: string;
+  notesForAcademy?: string;
 }): { subject: string; body: string } {
-  const subject = `[IIOHR Academy] Access list — ${params.clinicOrOrganization}`;
-  const body = `Hello Evolved / IIOHR Academy team,
+  const subject = `[HairAudit / IIOHR] Please send team roster — ${params.trainingSiteOrProgram}`;
+  const body = `Hello IIOHR / Evolved training academy team,
 
-Please register the following people for HairAudit IIOHR Academy access.
+HairAudit is ready to create IIOHR Academy workspace logins for your program. Please reply to this email with the completed roster (official work addresses only) so we can create accounts and send each person their login link.
 
-Organization / clinic: ${params.clinicOrOrganization}
-Requested by: ${params.requesterName} <${params.requesterEmail}>
+Program / site / cohort: ${params.trainingSiteOrProgram}
 
-Roles and work emails (one per line: role, email, display name optional):
-${params.rolesNeeded}
+From (HairAudit): ${params.hairauditAdminName} <${params.hairauditAdminEmail}>
 
-${params.notes?.trim() ? `Notes:\n${params.notes.trim()}\n\n` : ""}After you confirm, we will send each person a login link from HairAudit.
+Please reply with one line per person, in this format:
+  role, email, display name (optional)
+
+Valid roles:
+  • trainer
+  • clinic_staff
+  • trainee
+
+Example (for format only — please replace with your real team):
+  trainer, lead.surgeon@clinic.com, Dr. A. Name
+  clinic_staff, coordinator@clinic.com, Jane Coordinator
+  trainee, fellow@clinic.com, Dr. B. Fellow
+
+${params.notesForAcademy?.trim() ? `Notes from HairAudit:\n${params.notesForAcademy.trim()}\n\n` : ""}When your roster is ready, reply to ${params.hairauditAdminEmail}. We will create logins only after we receive the completed list from the training academy.
 
 Thank you,
-${params.requesterName}`;
+${params.hairauditAdminName}
+— HairAudit · IIOHR Academy onboarding`;
 
   return { subject, body };
 }
 
-export function buildMailtoOpsHref(params: Parameters<typeof buildRequestEmailToOps>[0]): string {
-  const { subject, body } = buildRequestEmailToOps(params);
-  const inbox = academyOpsInboxAddress();
+/** Server or any context where env is available */
+export function buildMailtoTrainingAcademyHref(
+  params: Parameters<typeof buildTrainingAcademyRosterRequestEmail>[0]
+): string {
+  return buildMailtoTrainingAcademyHrefForInbox(academyOpsInboxAddress(), params);
+}
+
+/** Client-safe: pass inbox from server-rendered props (non-public env is not in the browser bundle). */
+export function buildMailtoTrainingAcademyHrefForInbox(
+  trainingAcademyInbox: string,
+  params: Parameters<typeof buildTrainingAcademyRosterRequestEmail>[0]
+): string {
+  const { subject, body } = buildTrainingAcademyRosterRequestEmail(params);
+  const inbox = trainingAcademyInbox.trim();
   if (!inbox) return "";
   return `mailto:${encodeURIComponent(inbox)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }

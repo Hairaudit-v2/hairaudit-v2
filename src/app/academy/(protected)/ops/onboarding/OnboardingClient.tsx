@@ -1,7 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { buildRequestEmailToOps, buildMailtoOpsHref, academyOpsInboxAddress } from "@/lib/academy/onboardingTemplate";
+import {
+  buildTrainingAcademyRosterRequestEmail,
+  buildMailtoTrainingAcademyHrefForInbox,
+} from "@/lib/academy/onboardingTemplate";
 
 type Row = { email: string; academy_role: "trainer" | "clinic_staff" | "trainee"; display_name: string };
 
@@ -9,21 +12,20 @@ const emptyRow = (): Row => ({ email: "", academy_role: "trainee", display_name:
 
 export default function OnboardingClient({
   opsInboxConfigured,
-  defaultRequesterEmail,
+  trainingAcademyInbox,
+  defaultHairauditAdminEmail,
 }: {
   opsInboxConfigured: boolean;
-  defaultRequesterEmail: string;
+  trainingAcademyInbox: string;
+  defaultHairauditAdminEmail: string;
 }) {
   const [tab, setTab] = useState<"template" | "email" | "provision">("template");
   const [copied, setCopied] = useState<string | null>(null);
 
-  const [clinic, setClinic] = useState("");
-  const [requesterName, setRequesterName] = useState("");
-  const [requesterEmail, setRequesterEmail] = useState(defaultRequesterEmail);
-  const [rolesNeeded, setRolesNeeded] = useState(
-    "trainer, trainer.name@clinic.com, Dr. Trainer Name\nclinic_staff, frontdesk@clinic.com, Front Desk\ntrainee, fellow@clinic.com, Dr. Fellow"
-  );
-  const [notes, setNotes] = useState("");
+  const [trainingSiteOrProgram, setTrainingSiteOrProgram] = useState("");
+  const [hairauditAdminName, setHairauditAdminName] = useState("");
+  const [hairauditAdminEmail, setHairauditAdminEmail] = useState(defaultHairauditAdminEmail);
+  const [notesForAcademy, setNotesForAcademy] = useState("");
   const [notifyMsg, setNotifyMsg] = useState<string | null>(null);
   const [notifyBusy, setNotifyBusy] = useState(false);
 
@@ -35,25 +37,23 @@ export default function OnboardingClient({
   >([]);
 
   const templatePreview = useMemo(() => {
-    return buildRequestEmailToOps({
-      clinicOrOrganization: clinic || "[Your clinic / organization]",
-      requesterName: requesterName || "[Your name]",
-      requesterEmail: requesterEmail || "[your@email.com]",
-      rolesNeeded: rolesNeeded || "[Paste role, email, name lines]",
-      notes: notes || undefined,
+    return buildTrainingAcademyRosterRequestEmail({
+      trainingSiteOrProgram: trainingSiteOrProgram || "[Program / site / cohort name]",
+      hairauditAdminName: hairauditAdminName || "[Your name]",
+      hairauditAdminEmail: hairauditAdminEmail || "[you@hairaudit.com]",
+      notesForAcademy: notesForAcademy || undefined,
     });
-  }, [clinic, requesterName, requesterEmail, rolesNeeded, notes]);
+  }, [trainingSiteOrProgram, hairauditAdminName, hairauditAdminEmail, notesForAcademy]);
 
   const mailtoHref = useMemo(
     () =>
-      buildMailtoOpsHref({
-        clinicOrOrganization: clinic || "—",
-        requesterName: requesterName || "—",
-        requesterEmail: requesterEmail || "—",
-        rolesNeeded: rolesNeeded || "—",
-        notes: notes || undefined,
+      buildMailtoTrainingAcademyHrefForInbox(trainingAcademyInbox, {
+        trainingSiteOrProgram: trainingSiteOrProgram || "—",
+        hairauditAdminName: hairauditAdminName || "—",
+        hairauditAdminEmail: hairauditAdminEmail || "—",
+        notesForAcademy: notesForAcademy || undefined,
       }),
-    [clinic, requesterName, requesterEmail, rolesNeeded, notes]
+    [trainingAcademyInbox, trainingSiteOrProgram, hairauditAdminName, hairauditAdminEmail, notesForAcademy]
   );
 
   async function copy(text: string, key: string) {
@@ -74,16 +74,15 @@ export default function OnboardingClient({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          clinicOrOrganization: clinic,
-          requesterName,
-          requesterEmail,
-          rolesNeeded,
-          notes,
+          trainingSiteOrProgram,
+          hairauditAdminName,
+          hairauditAdminEmail,
+          notesForAcademy: notesForAcademy || undefined,
         }),
       });
       const j = await res.json();
       if (!res.ok) throw new Error(j.error || "Request failed");
-      setNotifyMsg("Sent to the academy operations inbox.");
+      setNotifyMsg("Sent to the training academy inbox. When they reply with the roster, use step 3 to create logins.");
     } catch (e) {
       setNotifyMsg(e instanceof Error ? e.message : "Failed");
     } finally {
@@ -130,9 +129,9 @@ export default function OnboardingClient({
       <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-3">
         {(
           [
-            ["template", "1. Email template"],
-            ["email", "2. Email Evolved"],
-            ["provision", "3. Generate logins"],
+            ["template", "1. How it works"],
+            ["email", "2. Email training academy"],
+            ["provision", "3. Create logins"],
           ] as const
         ).map(([id, label]) => (
           <button
@@ -151,30 +150,35 @@ export default function OnboardingClient({
       {tab === "template" ? (
         <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm space-y-4 text-sm text-slate-700">
           <p>
-            Use this workflow when a <strong>clinic</strong> needs Academy access: they email{" "}
-            <strong>Evolved / IIOHR</strong> with the official work addresses and roles. After Evolved confirms, an{" "}
-            <strong>academy admin</strong> uses step 3 to send Supabase invites / magic links.
+            <strong>You (HairAudit academy admin)</strong> send the request to the <strong>training academy</strong>{" "}
+            (IIOHR / Evolved) so <em>they</em> complete the official roster. When they email you back with the list, use
+            step 3 to generate invites and magic links — HairAudit does not guess emails on behalf of the clinic.
           </p>
+          <ol className="list-decimal list-inside space-y-2 text-slate-600">
+            <li>Fill step 2 and send (or copy) the email to the academy inbox configured below.</li>
+            <li>Wait for their reply with one line per person: <code className="text-xs bg-slate-100 px-1">role, email, name</code>.</li>
+            <li>Enter those rows in step 3 and run <strong>Invite / link users</strong>.</li>
+          </ol>
           <ul className="list-disc list-inside space-y-1 text-slate-600">
             <li>
-              <strong>Trainer</strong> — HairAudit profile role <code className="text-xs bg-slate-100 px-1">doctor</code>, Academy{" "}
+              <strong>trainer</strong> → HairAudit profile <code className="text-xs bg-slate-100 px-1">doctor</code>, Academy{" "}
               <code className="text-xs bg-slate-100 px-1">trainer</code>
             </li>
             <li>
-              <strong>Clinic staff</strong> — profile <code className="text-xs bg-slate-100 px-1">clinic</code>, Academy{" "}
+              <strong>clinic_staff</strong> → profile <code className="text-xs bg-slate-100 px-1">clinic</code>, Academy{" "}
               <code className="text-xs bg-slate-100 px-1">clinic_staff</code>
             </li>
             <li>
-              <strong>Trainee</strong> — profile <code className="text-xs bg-slate-100 px-1">patient</code>, Academy{" "}
-              <code className="text-xs bg-slate-100 px-1">trainee</code> + a <code className="text-xs bg-slate-100 px-1">training_doctors</code> row
+              <strong>trainee</strong> → profile <code className="text-xs bg-slate-100 px-1">patient</code>, Academy{" "}
+              <code className="text-xs bg-slate-100 px-1">trainee</code> + <code className="text-xs bg-slate-100 px-1">training_doctors</code> row
             </li>
           </ul>
           <p className="text-xs text-slate-500">
-            Ops inbox env: <code>ACADEMY_OPS_NOTIFICATION_EMAIL</code>
+            Training academy inbox (env): <code>ACADEMY_OPS_NOTIFICATION_EMAIL</code>
             {opsInboxConfigured ? (
               <span className="text-emerald-700"> (set)</span>
             ) : (
-              <span className="text-amber-800"> (not set — use copy/mailto only)</span>
+              <span className="text-amber-800"> (not set — copy/paste email only)</span>
             )}
           </p>
         </section>
@@ -182,47 +186,43 @@ export default function OnboardingClient({
 
       {tab === "email" ? (
         <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm space-y-4">
+          <p className="text-sm text-slate-600">
+            This message is sent <strong>from HairAudit</strong> to the training academy, asking them to return the roster.
+          </p>
           <div className="grid gap-3 sm:grid-cols-2">
-            <div>
-              <label className="text-xs font-medium text-slate-600">Organization / clinic</label>
-              <input
-                value={clinic}
-                onChange={(e) => setClinic(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-slate-600">Your name</label>
-              <input
-                value={requesterName}
-                onChange={(e) => setRequesterName(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-              />
-            </div>
             <div className="sm:col-span-2">
-              <label className="text-xs font-medium text-slate-600">Your email</label>
+              <label className="text-xs font-medium text-slate-600">Program / site / cohort (shown in subject &amp; body)</label>
+              <input
+                value={trainingSiteOrProgram}
+                onChange={(e) => setTrainingSiteOrProgram(e.target.value)}
+                placeholder="e.g. Evolved Fellowship Cohort Q2 · City Clinic"
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-slate-600">Your name (HairAudit)</label>
+              <input
+                value={hairauditAdminName}
+                onChange={(e) => setHairauditAdminName(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-slate-600">Your work email (HairAudit)</label>
               <input
                 type="email"
-                value={requesterEmail}
-                onChange={(e) => setRequesterEmail(e.target.value)}
+                value={hairauditAdminEmail}
+                onChange={(e) => setHairauditAdminEmail(e.target.value)}
                 className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
               />
             </div>
             <div className="sm:col-span-2">
-              <label className="text-xs font-medium text-slate-600">Roles &amp; addresses (one per line)</label>
+              <label className="text-xs font-medium text-slate-600">Notes for the academy (optional)</label>
               <textarea
-                value={rolesNeeded}
-                onChange={(e) => setRolesNeeded(e.target.value)}
-                rows={6}
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono text-xs"
-              />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="text-xs font-medium text-slate-600">Notes (optional)</label>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                rows={2}
+                value={notesForAcademy}
+                onChange={(e) => setNotesForAcademy(e.target.value)}
+                rows={3}
+                placeholder="e.g. Please include all trainers and fellows starting 1 May."
                 className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
               />
             </div>
@@ -251,7 +251,7 @@ export default function OnboardingClient({
                 Open in email app
               </a>
             ) : (
-              <span className="text-xs text-amber-800 self-center">Set ACADEMY_OPS_NOTIFICATION_EMAIL for mailto link.</span>
+              <span className="text-xs text-amber-800 self-center">Set ACADEMY_OPS_NOTIFICATION_EMAIL for mailto.</span>
             )}
             {opsInboxConfigured ? (
               <button
@@ -267,7 +267,7 @@ export default function OnboardingClient({
           {notifyMsg ? <p className="text-sm text-slate-600">{notifyMsg}</p> : null}
 
           <div className="rounded-lg bg-slate-50 p-3 text-xs text-slate-600">
-            <div className="font-semibold text-slate-800 mb-1">Preview</div>
+            <div className="font-semibold text-slate-800 mb-1">Preview (to: {trainingAcademyInbox || "—"})</div>
             <div className="font-medium">{templatePreview.subject}</div>
             <pre className="mt-2 whitespace-pre-wrap font-mono">{templatePreview.body}</pre>
           </div>
@@ -277,8 +277,9 @@ export default function OnboardingClient({
       {tab === "provision" ? (
         <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm space-y-4">
           <p className="text-sm text-slate-600">
-            After Evolved confirms the list, enter each person here. New users get a Supabase <strong>invite</strong> email;
-            existing users get a <strong>magic link</strong> via Resend (or copy the link if email is not configured).
+            After the <strong>training academy</strong> replies with their completed roster, paste each person here. New
+            users get a Supabase <strong>invite</strong>; existing users get a <strong>magic link</strong> via Resend (or a
+            one-time link to copy if email is not configured).
           </p>
           <div className="space-y-2">
             {rows.map((r, i) => (
