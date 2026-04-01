@@ -32,6 +32,10 @@ type PatchTraineeBody = Partial<{
   clinic_name: string | null;
   registration_number: string | null;
   start_date: string | null;
+  competency_wave_start_date: string | null;
+  competency_final_readiness_status: string | null;
+  competency_final_readiness_notes: string | null;
+  competency_restrictions_json: Record<string, unknown> | null;
   assigned_trainer_id: string | null;
   program_id: string | null;
   current_stage: string;

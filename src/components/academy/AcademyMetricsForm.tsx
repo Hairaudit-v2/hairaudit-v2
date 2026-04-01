@@ -6,6 +6,7 @@ const fields: { name: string; label: string; step?: string }[] = [
   { name: "grafts_attempted", label: "Grafts attempted" },
   { name: "grafts_extracted", label: "Grafts extracted" },
   { name: "grafts_implanted", label: "Grafts implanted" },
+  { name: "total_hairs", label: "Total hairs (session / day)" },
   { name: "extraction_minutes", label: "Extraction (min)", step: "0.1" },
   { name: "implantation_minutes", label: "Implantation (min)", step: "0.1" },
   { name: "total_minutes", label: "Total (min)", step: "0.1" },
@@ -35,7 +36,8 @@ export default function AcademyMetricsForm({
     setBusy(true);
     setMsg(null);
     const fd = new FormData(e.currentTarget);
-    const body: Record<string, number | string | null> = {};
+    const body: Record<string, number | string | boolean | null> = {};
+    body.observed_by_trainer = fd.get("observed_by_trainer") === "on";
     for (const f of fields) {
       const raw = String(fd.get(f.name) ?? "").trim();
       if (!raw) {
@@ -45,7 +47,7 @@ export default function AcademyMetricsForm({
       if (f.step) {
         const n = Number(raw);
         body[f.name] = Number.isFinite(n) ? n : null;
-      } else if (f.name.startsWith("grafts_")) {
+      } else if (f.name.startsWith("grafts_") || f.name === "total_hairs") {
         const n = parseInt(raw, 10);
         body[f.name] = Number.isFinite(n) ? n : null;
       } else {
@@ -85,6 +87,15 @@ export default function AcademyMetricsForm({
           </div>
         ))}
       </div>
+      <label className="flex items-center gap-2 text-sm text-slate-700">
+        <input
+          type="checkbox"
+          name="observed_by_trainer"
+          defaultChecked={Boolean(initial.observed_by_trainer)}
+          className="rounded border-slate-300"
+        />
+        Observed by trainer (this session)
+      </label>
       <button
         type="submit"
         disabled={busy}

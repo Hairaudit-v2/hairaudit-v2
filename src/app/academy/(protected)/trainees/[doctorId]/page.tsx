@@ -85,14 +85,22 @@ export default async function TraineeDetailPage({ params }: { params: Promise<{ 
           <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ring-1 ${badgeClass(snapshot.badge)}`}>
             {snapshot.label}
           </span>
-          {access.isStaff ? (
+          <div className="flex flex-col items-end gap-1">
             <Link
-              href={`/academy/trainees/${doctorId}/new-case`}
-              className="text-sm font-semibold text-amber-700 hover:text-amber-800"
+              href={`/academy/trainees/${doctorId}/competency`}
+              className="text-sm font-semibold text-slate-800 hover:text-amber-800"
             >
-              + New training case
+              Competency dashboard →
             </Link>
-          ) : null}
+            {access.isStaff ? (
+              <Link
+                href={`/academy/trainees/${doctorId}/new-case`}
+                className="text-sm font-semibold text-amber-700 hover:text-amber-800"
+              >
+                + New training case
+              </Link>
+            ) : null}
+          </div>
         </div>
       </div>
 

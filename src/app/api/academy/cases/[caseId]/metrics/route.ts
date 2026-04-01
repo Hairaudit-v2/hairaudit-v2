@@ -20,6 +20,9 @@ type MetricsBody = Partial<{
   punch_size: string | null;
   punch_type: string | null;
   implantation_method: string | null;
+  total_hairs: number | null;
+  hair_to_graft_ratio: number | null;
+  observed_by_trainer: boolean | null;
 }>;
 
 export async function PUT(req: Request, ctx: { params: Promise<{ caseId: string }> }) {
@@ -41,6 +44,17 @@ export async function PUT(req: Request, ctx: { params: Promise<{ caseId: string 
   const row: Record<string, unknown> = { training_case_id: caseId };
   for (const [k, v] of Object.entries(body)) {
     if (v !== undefined) row[k] = v;
+  }
+
+  const th = row.total_hairs != null ? Number(row.total_hairs) : null;
+  const graftsForRatio =
+    row.grafts_extracted != null
+      ? Number(row.grafts_extracted)
+      : row.grafts_implanted != null
+        ? Number(row.grafts_implanted)
+        : null;
+  if (th != null && graftsForRatio != null && graftsForRatio > 0 && Number.isFinite(th) && Number.isFinite(graftsForRatio)) {
+    row.hair_to_graft_ratio = Math.round((th / graftsForRatio) * 1000) / 1000;
   }
 
   const { data, error } = await supabase

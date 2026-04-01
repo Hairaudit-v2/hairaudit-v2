@@ -23,6 +23,13 @@ export type TrainingDoctorRow = {
   status: string;
   notes: string | null;
   auth_user_id: string | null;
+  competency_wave_start_date: string | null;
+  competency_final_readiness_at: string | null;
+  competency_final_readiness_by: string | null;
+  competency_final_readiness_status?: string | null;
+  competency_final_readiness_notes?: string | null;
+  /** Limitations / supervision rules (structured JSON). */
+  competency_restrictions_json?: Record<string, unknown>;
   created_by: string;
   created_at: string;
   updated_at: string;
@@ -66,6 +73,91 @@ export type TrainingCaseMetricsRow = {
   punch_size: string | null;
   punch_type: string | null;
   implantation_method: string | null;
+  total_hairs: number | null;
+  hair_to_graft_ratio: number | null;
+  observed_by_trainer: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type TrainingCompetencyLadderRow = {
+  id: string;
+  key: string;
+  title: string;
+  description: string | null;
+  sort_order: number;
+  is_active: boolean;
+  created_at: string;
+};
+
+export type TrainingCompetencyStepRow = {
+  id: string;
+  ladder_id: string;
+  step_index: number;
+  label: string;
+  short_label: string | null;
+  is_target: boolean;
+  is_optional: boolean;
+  criteria_json: Record<string, unknown>;
+  min_signed_observations?: number | null;
+  min_distinct_cases?: number | null;
+  requires_trainer_observation?: boolean;
+  repeatability_rule_json?: Record<string, unknown>;
+  created_at: string;
+};
+
+export type PerformanceDemonstration = "not_specified" | "single_session_peak" | "repeatable_across_sessions";
+
+export type TrainingCompetencyAchievementRow = {
+  id: string;
+  training_doctor_id: string;
+  step_id: string;
+  achieved_at: string;
+  signed_off_by: string;
+  trainer_comments: string | null;
+  evidence_training_case_id: string | null;
+  performance_demonstration: PerformanceDemonstration;
+  capture_json: Record<string, unknown>;
+  single_session_override?: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type TrainingCompetencyStepStateRow = {
+  training_doctor_id: string;
+  step_id: string;
+  status: string;
+  achievement_id: string | null;
+  trainer_notes: string | null;
+  updated_at: string;
+  updated_by: string | null;
+};
+
+export type TrainingCompetencyStepObservationRow = {
+  id: string;
+  training_doctor_id: string;
+  step_id: string;
+  training_case_id: string | null;
+  recorded_by: string;
+  threshold_met: boolean;
+  trainer_observed: boolean;
+  checklist_json: Record<string, unknown>;
+  notes: string | null;
+  created_at: string;
+};
+
+export type TrainingCompetencyWeeklyReviewRow = {
+  id: string;
+  training_doctor_id: string;
+  week_number: number;
+  review_start_date: string;
+  review_end_date: string;
+  strengths: string | null;
+  focus_areas: string | null;
+  risks_or_concerns: string | null;
+  recommended_next_targets: string | null;
+  reviewed_by: string;
+  reviewed_at: string;
   created_at: string;
   updated_at: string;
 };
