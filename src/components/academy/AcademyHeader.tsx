@@ -35,6 +35,9 @@ export default function AcademyHeader({
             <Link href="/academy/dashboard" className="font-medium text-slate-300 hover:text-amber-400">
               Dashboard
             </Link>
+            <Link href="/academy/training-modules" className="font-medium text-slate-300 hover:text-amber-400">
+              Training library
+            </Link>
             {isStaff ? (
               <>
                 <Link href="/academy/trainees" className="font-medium text-slate-300 hover:text-amber-400">

@@ -92,6 +92,9 @@ export default async function TraineeDetailPage({ params }: { params: Promise<{ 
             >
               Competency dashboard →
             </Link>
+            <Link href="/academy/training-modules" className="text-sm font-semibold text-slate-600 hover:text-amber-800">
+              Training library (self-study) →
+            </Link>
             {access.isStaff ? (
               <Link
                 href={`/academy/trainees/${doctorId}/new-case`}

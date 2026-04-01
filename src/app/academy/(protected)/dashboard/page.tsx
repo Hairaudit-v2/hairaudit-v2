@@ -70,6 +70,9 @@ export default async function AcademyDashboardPage() {
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">Academy dashboard</h1>
           <p className="mt-1 text-sm text-slate-600">IIOHR surgical training overview</p>
+          <Link href="/academy/training-modules" className="mt-2 inline-block text-sm font-semibold text-amber-800 hover:underline">
+            Training module library →
+          </Link>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -192,9 +195,17 @@ export default async function AcademyDashboardPage() {
           <h1 className="text-2xl font-semibold text-slate-900">Your training</h1>
           <p className="mt-1 text-sm text-slate-600">{doctor.full_name}</p>
         </div>
-        <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ring-1 ${badgeClass(snapshot.badge)}`}>
-          {snapshot.label}
-        </span>
+        <div className="flex flex-col items-end gap-2">
+          <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ring-1 ${badgeClass(snapshot.badge)}`}>
+            {snapshot.label}
+          </span>
+          <Link
+            href="/academy/training-modules"
+            className="text-sm font-semibold text-amber-800 hover:text-amber-900 hover:underline"
+          >
+            Training module library →
+          </Link>
+        </div>
       </div>
 
       {snapshot.hints.length > 0 ? (

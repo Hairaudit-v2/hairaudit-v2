@@ -106,6 +106,20 @@ export function competencyWeekDateWindow(
   return { start: iso(s), end: iso(e) };
 }
 
+/** Current 1-based competency week (1–4) from wave anchor, using local calendar days. Null if no anchor. */
+export function currentCompetencyWeekNumber(waveStart: Date | null, today = new Date()): number | null {
+  if (!waveStart) return null;
+  const anchor = new Date(waveStart.getTime());
+  anchor.setHours(12, 0, 0, 0);
+  const t = new Date(today);
+  t.setHours(12, 0, 0, 0);
+  const weekMs = 7 * 24 * 60 * 60 * 1000;
+  const idx = Math.floor((t.getTime() - anchor.getTime()) / weekMs) + 1;
+  if (idx < 1) return 1;
+  if (idx > 4) return 4;
+  return idx;
+}
+
 export function buildFourWeekOverview(input: {
   waveStart: Date | null;
   cases: Pick<TrainingCaseRow, "id" | "surgery_date">[];

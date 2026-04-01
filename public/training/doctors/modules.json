@@ -1,0 +1,18 @@
+{
+  "modules": [
+    {
+      "id": "welcome-iiohr-library",
+      "title": "Welcome to the training library",
+      "shortDescription": "How this self-study area works alongside your cases and competency milestones. Replace this entry when you add real modules.",
+      "category": "Orientation",
+      "lastUpdated": "2026-04-01",
+      "readOnlineUrl": "/training/doctors/welcome/welcome.html",
+      "recommendedForWeeks": [1],
+      "status": "approved",
+      "flags": {
+        "recommended": true,
+        "relatedCompetencyLadderKeys": []
+      }
+    }
+  ]
+}
