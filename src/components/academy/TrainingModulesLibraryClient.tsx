@@ -96,7 +96,7 @@ export default function TrainingModulesLibraryClient({
   );
 
   const filtered = useMemo(() => {
-    return modules.filter((m) => {
+    const list = modules.filter((m) => {
       if (categoryFilter && m.category !== categoryFilter) return false;
       if (weekFilter) {
         const w = parseInt(weekFilter, 10);
@@ -104,6 +104,14 @@ export default function TrainingModulesLibraryClient({
       }
       return true;
     });
+    list.sort((a, b) => {
+      const aOrientation = a.category === "Orientation" || a.id === "welcome-iiohr-library";
+      const bOrientation = b.category === "Orientation" || b.id === "welcome-iiohr-library";
+      if (aOrientation && !bOrientation) return -1;
+      if (!aOrientation && bOrientation) return 1;
+      return 0;
+    });
+    return list;
   }, [modules, categoryFilter, weekFilter]);
 
   const highlightSet = useMemo(() => new Set(highlightLadderKeys), [highlightLadderKeys]);
