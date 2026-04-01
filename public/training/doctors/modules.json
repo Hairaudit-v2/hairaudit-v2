@@ -68,6 +68,61 @@
       "recommendedForWeeks": [4],
       "status": "approved",
       "flags": { "mandatory": true }
+    },
+    {
+      "id": "iiohr-module-1-hair-science",
+      "title": "Module 1: Hair Science, Anatomy, and Hair Loss Drivers",
+      "shortDescription": "Core science primer covering follicular biology, scalp anatomy, and common drivers of hair loss.",
+      "category": "Clinical Foundations",
+      "lastUpdated": "2026-04-01",
+      "downloadUrl": "/training/doctors/Module 1 Hair-Science-Anatomy-Hair-Loss-Drivers.pdf",
+      "recommendedForWeeks": [1],
+      "status": "approved",
+      "flags": { "recommended": true }
+    },
+    {
+      "id": "iiohr-module-2-classification",
+      "title": "Module 2: Classification of Hair Loss",
+      "shortDescription": "Structured classification frameworks to support differential diagnosis and treatment planning.",
+      "category": "Trichology",
+      "lastUpdated": "2026-04-01",
+      "downloadUrl": "/training/doctors/Module 2 Classification-of-Hair-Loss.pdf",
+      "recommendedForWeeks": [1, 2],
+      "status": "approved",
+      "flags": { "recommended": true }
+    },
+    {
+      "id": "iiohr-module-4-trichoscopy",
+      "title": "Module 4: Diagnosis Using Trichoscopy",
+      "shortDescription": "Practical trichoscopy interpretation to improve pattern recognition and diagnostic confidence.",
+      "category": "Diagnostic Skills",
+      "lastUpdated": "2026-04-01",
+      "downloadUrl": "/training/doctors/Module-4-Diagnosis-Using-Trichoscopy.pdf",
+      "recommendedForWeeks": [2, 3],
+      "status": "approved",
+      "flags": { "recommended": true }
+    },
+    {
+      "id": "iiohr-module-5-treatment-planning",
+      "title": "Module 5: Treatment Planning and Clinical Decision",
+      "shortDescription": "Clinical decision logic for evidence-aware treatment planning and patient-centered pathways.",
+      "category": "Clinical Decision-Making",
+      "lastUpdated": "2026-04-01",
+      "downloadUrl": "/training/doctors/Module 5 Treatment-Planning-and-Clinical-Decision.pdf",
+      "recommendedForWeeks": [3, 4],
+      "status": "approved",
+      "flags": { "recommended": true }
+    },
+    {
+      "id": "iiohr-module-6-prp-gfc-lllt",
+      "title": "Module 6: PRP, GFC, and LLLT",
+      "shortDescription": "Overview of regenerative adjuncts and light-based therapies with clinical context and limitations.",
+      "category": "Adjunctive Therapies",
+      "lastUpdated": "2026-04-01",
+      "downloadUrl": "/training/doctors/Module 6 PRP-GFC-and-LLLT.pdf",
+      "recommendedForWeeks": [4],
+      "status": "approved",
+      "flags": { "recommended": true }
     }
   ]
 }
