@@ -41,9 +41,14 @@ export default function AcademyHeader({
                   Trainees
                 </Link>
                 {isAcademyAdmin ? (
-                  <Link href="/academy/ops/onboarding" className="font-medium text-slate-300 hover:text-amber-400">
-                    Academy roster
-                  </Link>
+                  <>
+                    <Link href="/academy/sites" className="font-medium text-slate-300 hover:text-amber-400">
+                      Sites
+                    </Link>
+                    <Link href="/academy/ops/onboarding" className="font-medium text-slate-300 hover:text-amber-400">
+                      Academy roster
+                    </Link>
+                  </>
                 ) : null}
               </>
             ) : null}

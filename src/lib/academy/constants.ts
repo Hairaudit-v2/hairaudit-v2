@@ -61,3 +61,6 @@ export const ACADEMY_DOMAIN_LABELS: Record<AcademyScoringDomain, string> = {
 export type AcademyUserRole = "academy_admin" | "trainer" | "clinic_staff" | "trainee";
 
 export const DEFAULT_TRAINING_PROGRAM_ID = "a0000000-0000-4000-8000-000000000001";
+
+/** Seeded default academy site (see migration 20260402120001_academy_sites.sql) */
+export const DEFAULT_ACADEMY_SITE_ID = "b0000000-0000-4000-8000-000000000001";

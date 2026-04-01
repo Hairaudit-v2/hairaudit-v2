@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getAcademyAccess } from "@/lib/academy/auth";
-import { buildTrainingAcademyRosterRequestEmail, academyOpsInboxAddress } from "@/lib/academy/onboardingTemplate";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { buildTrainingAcademyRosterRequestEmail } from "@/lib/academy/onboardingTemplate";
+import { resolveOnboardingOpsRecipient } from "@/lib/academy/academySiteRouting";
 import { sendEmail } from "@/lib/email";
 
 export const runtime = "nodejs";
@@ -14,22 +16,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "Academy admin only" }, { status: 403 });
   }
 
-  const to = academyOpsInboxAddress();
-  if (!to) {
-    return NextResponse.json(
-      {
-        ok: false,
-        error: "ACADEMY_OPS_NOTIFICATION_EMAIL is not configured on the server.",
-      },
-      { status: 503 }
-    );
-  }
-
   let body: {
     trainingSiteOrProgram?: string;
     hairauditAdminName?: string;
     hairauditAdminEmail?: string;
     notesForAcademy?: string;
+    trainingDoctorId?: string | null;
+    trainingProgramId?: string | null;
+    academySiteId?: string | null;
   };
   try {
     body = await req.json();
@@ -50,6 +44,33 @@ export async function POST(req: Request) {
       { status: 400 }
     );
   }
+
+  const admin = createSupabaseAdminClient();
+  const resolved = await resolveOnboardingOpsRecipient(admin, {
+    trainingDoctorId: body.trainingDoctorId?.trim() || null,
+    trainingProgramId: body.trainingProgramId?.trim() || null,
+    academySiteId: body.academySiteId?.trim() || null,
+  });
+
+  if (!resolved.email) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error:
+          "No recipient inbox resolved. Set ops_notification_email on the academy site, link the program to a site, " +
+          "or set ACADEMY_OPS_NOTIFICATION_EMAIL as a fallback.",
+        routing: {
+          route: resolved.route,
+          source: resolved.source,
+          siteId: resolved.site?.id ?? null,
+          siteName: resolved.site?.name ?? null,
+        },
+      },
+      { status: 422 }
+    );
+  }
+
+  const to = resolved.email;
 
   const { subject, body: textBody } = buildTrainingAcademyRosterRequestEmail({
     trainingSiteOrProgram,
@@ -84,5 +105,15 @@ export async function POST(req: Request) {
     );
   }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({
+    ok: true,
+    sentTo: to,
+    routing: {
+      route: resolved.route,
+      source: resolved.source,
+      siteId: resolved.site?.id ?? null,
+      siteName: resolved.site?.name ?? null,
+      siteSlug: resolved.site?.slug ?? null,
+    },
+  });
 }

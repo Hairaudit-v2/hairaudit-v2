@@ -1,7 +1,7 @@
 /**
  * Email from HairAudit (academy admin) → training academy (e.g. IIOHR / Evolved).
  * Asks them to reply with the official roster so HairAudit can create logins.
- * Inbox: ACADEMY_OPS_NOTIFICATION_EMAIL
+ * Recipient: academy_sites.ops_notification_email when routed by site/program/trainee, else ACADEMY_OPS_NOTIFICATION_EMAIL.
  */
 
 export function academyOpsInboxAddress(): string {
