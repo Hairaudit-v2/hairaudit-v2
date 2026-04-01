@@ -23,7 +23,7 @@ export default async function AcademyProtectedLayout({ children }: { children: R
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
-      <AcademyHeader isStaff={access.isStaff} role={access.role} />
+      <AcademyHeader isStaff={access.isStaff} role={access.role} isAcademyAdmin={access.role === "academy_admin"} />
       <main className="flex-1 py-6 sm:py-8">{children}</main>
     </div>
   );

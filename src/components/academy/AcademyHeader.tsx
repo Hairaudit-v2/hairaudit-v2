@@ -5,9 +5,11 @@ import SignOutButton from "@/components/SignOutButton";
 export default function AcademyHeader({
   isStaff,
   role,
+  isAcademyAdmin,
 }: {
   isStaff: boolean;
   role: string;
+  isAcademyAdmin?: boolean;
 }) {
   return (
     <header className="border-b border-slate-800 bg-slate-900">
@@ -38,6 +40,11 @@ export default function AcademyHeader({
                 <Link href="/academy/trainees" className="font-medium text-slate-300 hover:text-amber-400">
                   Trainees
                 </Link>
+                {isAcademyAdmin ? (
+                  <Link href="/academy/ops/onboarding" className="font-medium text-slate-300 hover:text-amber-400">
+                    Access onboarding
+                  </Link>
+                ) : null}
               </>
             ) : null}
             <span className="text-xs text-slate-500 capitalize hidden md:inline">{role.replace("_", " ")}</span>
