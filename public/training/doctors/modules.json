@@ -123,6 +123,17 @@
       "recommendedForWeeks": [4],
       "status": "approved",
       "flags": { "recommended": true }
+    },
+    {
+      "id": "iiohr-module-8-exosomes",
+      "title": "Module 8: Exosomes in Hair Restoration",
+      "shortDescription": "Clinical overview of exosome-based approaches in hair restoration, including use cases, limitations, and responsible integration.",
+      "category": "Adjunctive Therapies",
+      "lastUpdated": "2026-04-01",
+      "downloadUrl": "/training/doctors/Module 8 Exosomes-in-Hair-Restoration.pdf",
+      "recommendedForWeeks": [4],
+      "status": "approved",
+      "flags": { "recommended": true }
     }
   ]
 }
