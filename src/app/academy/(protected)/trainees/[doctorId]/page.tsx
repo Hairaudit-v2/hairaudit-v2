@@ -70,11 +70,12 @@ export default async function TraineeDetailPage({ params }: { params: Promise<{ 
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-8 pb-10">
-      <div className="flex flex-wrap items-start justify-between gap-3 rounded-3xl border border-slate-300/80 bg-gradient-to-br from-slate-900 via-slate-800 to-amber-900 px-6 py-6 shadow-xl ring-1 ring-slate-700/50">
+      <div className="flex flex-wrap items-start justify-between gap-3 rounded-3xl border border-slate-700/70 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 px-7 py-7 shadow-xl">
         <div>
           <Link href="/academy/trainees" className="text-sm font-medium text-amber-200 hover:underline">
             ← Trainees
           </Link>
+          <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.14em] text-amber-300">Trainee profile</p>
           <h1 className="mt-2 text-3xl font-semibold text-white">{doctor.full_name}</h1>
           <p className="mt-1 text-sm text-slate-200">
             {doctor.email || "No email"} · {doctor.current_stage} ·{" "}

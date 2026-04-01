@@ -117,7 +117,9 @@ export default function TrainingModulesLibraryClient({
         </p>
       ) : null}
 
-      <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-slate-300/80 bg-gradient-to-br from-slate-100/80 to-white p-4 shadow-md">
+      <div className="rounded-2xl border border-slate-300/90 bg-gradient-to-br from-slate-100 to-white p-4 shadow-md">
+        <p className="mb-3 text-[10px] font-semibold uppercase tracking-wide text-slate-600">Library filters</p>
+        <div className="flex flex-wrap items-end gap-3">
         <div>
           <label className="block text-xs font-medium text-slate-600">Topic</label>
           <select
@@ -160,6 +162,7 @@ export default function TrainingModulesLibraryClient({
             Clear filters
           </button>
         )}
+        </div>
       </div>
 
       {competencyHref && traineeWeek != null ? (
@@ -245,7 +248,7 @@ export default function TrainingModulesLibraryClient({
                         </span>
                       ) : null}
                     </div>
-                    <p className="mt-1 text-sm text-slate-600">{m.shortDescription}</p>
+                    <p className="mt-2 text-sm text-slate-700">{m.shortDescription}</p>
                     <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-500">
                       <span>{m.category}</span>
                       <span>Updated {m.lastUpdated}</span>

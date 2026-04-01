@@ -273,10 +273,11 @@ export default function CompetencyDashboardClient({
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-8 pb-16">
-      <div className="rounded-3xl border border-slate-300/80 bg-gradient-to-br from-slate-900 via-slate-800 to-amber-900 px-6 py-6 shadow-xl ring-1 ring-slate-700/50">
+      <div className="rounded-3xl border border-slate-700/70 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 px-7 py-7 shadow-xl">
         <Link href={`/academy/trainees/${doctorId}`} className="text-sm font-medium text-amber-200 hover:underline">
           ← {doctor.full_name}
         </Link>
+        <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.14em] text-amber-300">Competency program</p>
         <h1 className="mt-2 text-3xl font-semibold text-white">Competency</h1>
         <p className="mt-2 text-sm text-slate-200">Trainer-verified milestones. Case metrics attach automatically — no need to re-type.</p>
       </div>
@@ -304,7 +305,10 @@ export default function CompetencyDashboardClient({
       ) : null}
 
       <details className="rounded-2xl border border-slate-300/80 bg-gradient-to-br from-slate-100/80 to-white text-sm shadow-md">
-        <summary className="cursor-pointer px-4 py-3 font-medium text-slate-800">Program setup &amp; week overview</summary>
+        <summary className="cursor-pointer px-4 py-3 font-medium text-slate-800">
+          <span className="mr-2 rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-700">Setup</span>
+          Program setup &amp; week overview
+        </summary>
         <div className="border-t border-slate-100 px-4 py-3 space-y-4 text-xs text-slate-600">
           <p>
             Repeatability defaults on targets; single-session override is explicit. Wave start drives week boundaries for reviews.
@@ -347,6 +351,7 @@ export default function CompetencyDashboardClient({
 
       <details className="rounded-2xl border border-sky-300/80 bg-gradient-to-br from-sky-100/80 to-white text-sm shadow-md open:shadow-lg">
         <summary className="cursor-pointer px-4 py-3 font-medium text-slate-800">
+          <span className="mr-2 rounded-full bg-sky-200 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-sky-900">Review</span>
           Weekly reviews (quick) {waveStart ? "" : "— set wave start first"}
         </summary>
         <div className="border-t border-slate-100 px-4 py-3">
@@ -384,6 +389,7 @@ export default function CompetencyDashboardClient({
             <section key={ladder.id} className="rounded-2xl border border-slate-300/80 bg-gradient-to-br from-white via-slate-50/60 to-slate-100/50 p-5 shadow-md space-y-3">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Ladder</p>
                   <h2 className="text-base font-semibold text-slate-900">{ladder.title}</h2>
                   <p className="text-xs text-slate-600 mt-0.5">
                     {currentStep ? (

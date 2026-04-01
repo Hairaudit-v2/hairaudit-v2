@@ -67,29 +67,43 @@ export default async function AcademyDashboardPage() {
 
     return (
       <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-8 pb-10">
-        <div className="rounded-3xl border border-slate-300/80 bg-gradient-to-br from-slate-900 via-slate-800 to-amber-900 px-6 py-6 shadow-xl ring-1 ring-slate-700/50">
+        <div className="rounded-3xl border border-slate-700/70 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 px-7 py-7 shadow-xl">
           <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-amber-300">IIOHR Academy</p>
-          <h1 className="mt-1 text-3xl font-semibold text-white sm:text-[2rem]">Academy dashboard</h1>
-          <p className="mt-2 text-sm text-slate-200">Surgical training overview, progression, and review workload at a glance.</p>
-          <Link href="/academy/training-modules" className="mt-3 inline-flex rounded-full bg-white/95 px-3 py-1.5 text-sm font-semibold text-slate-900 shadow-sm hover:bg-white">
+          <h1 className="mt-1 text-3xl font-semibold text-white sm:text-[2.05rem]">Academy dashboard</h1>
+          <p className="mt-2 max-w-2xl text-sm text-slate-200">
+            Surgical training overview, progression, and review workload at a glance.
+          </p>
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <span className="rounded-full border border-amber-300/40 bg-amber-300/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-amber-200">
+              Program operations
+            </span>
+            <span className="rounded-full border border-slate-500/50 bg-slate-700/50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-200">
+              Live summary
+            </span>
+          </div>
+          <Link href="/academy/training-modules" className="mt-4 inline-flex rounded-full bg-amber-100 px-3.5 py-1.5 text-sm font-semibold text-slate-900 shadow-sm hover:bg-amber-50">
             Training module library →
           </Link>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-2xl border border-slate-400/60 bg-gradient-to-br from-slate-100 via-slate-50 to-white p-5 shadow-md ring-1 ring-slate-200">
+          <div className="rounded-2xl border border-slate-400/70 bg-gradient-to-br from-slate-100 via-slate-50 to-white p-5 shadow-md ring-1 ring-slate-200">
+            <div className="mb-3 h-1.5 w-14 rounded-full bg-slate-500/80" />
             <div className="text-xs font-semibold uppercase tracking-wide text-slate-600">Trainees</div>
             <div className="mt-2 text-4xl font-black text-slate-900">{list.length}</div>
           </div>
           <div className="rounded-2xl border border-amber-300/90 bg-gradient-to-br from-amber-100 via-amber-50 to-white p-5 shadow-md ring-1 ring-amber-200/80">
+            <div className="mb-3 h-1.5 w-14 rounded-full bg-amber-500/90" />
             <div className="text-xs font-semibold uppercase tracking-wide text-amber-900">Cases this month</div>
             <div className="mt-2 text-4xl font-black text-amber-950">{monthCases ?? 0}</div>
           </div>
           <div className="rounded-2xl border border-orange-300/90 bg-gradient-to-br from-orange-100 via-amber-50 to-white p-5 shadow-md ring-1 ring-orange-200/80">
+            <div className="mb-3 h-1.5 w-14 rounded-full bg-orange-500/90" />
             <div className="text-xs font-semibold uppercase tracking-wide text-orange-900">Cases in review</div>
             <div className="mt-2 text-4xl font-black text-orange-950">{inReview ?? 0}</div>
           </div>
           <div className="rounded-2xl border border-sky-300/80 bg-gradient-to-br from-sky-100/90 via-sky-50 to-white p-5 shadow-md ring-1 ring-sky-200/80">
+            <div className="mb-3 h-1.5 w-14 rounded-full bg-sky-500/90" />
             <div className="text-xs font-semibold uppercase tracking-wide text-sky-900">Stages (headcount)</div>
             <div className="mt-2 flex flex-wrap gap-2 text-xs">
               {Object.keys(byStage).length === 0 ? (
@@ -105,9 +119,12 @@ export default async function AcademyDashboardPage() {
           </div>
         </div>
 
-        <section className="rounded-2xl border border-sky-200/90 bg-gradient-to-br from-sky-50/70 via-white to-white p-5 shadow-md">
+        <section className="rounded-2xl border border-sky-300/90 bg-gradient-to-br from-sky-100/70 via-white to-white p-5 shadow-md">
           <div className="flex items-center justify-between gap-2 mb-3">
-            <h2 className="text-sm font-semibold text-slate-900">Recent reviews</h2>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-sky-700">Assessment flow</p>
+              <h2 className="text-sm font-semibold text-slate-900">Recent reviews</h2>
+            </div>
             <Link href="/academy/trainees" className="text-sm font-medium text-amber-700 hover:text-amber-800">
               Trainees
             </Link>
@@ -191,10 +208,11 @@ export default async function AcademyDashboardPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-8 pb-10">
-      <div className="flex flex-wrap items-start justify-between gap-3 rounded-2xl border border-amber-200/70 bg-gradient-to-br from-amber-50 via-white to-slate-50 px-5 py-4 shadow-sm">
+      <div className="flex flex-wrap items-start justify-between gap-3 rounded-3xl border border-slate-700/70 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 px-7 py-7 shadow-xl">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Your training</h1>
-          <p className="mt-1 text-sm text-slate-600">{doctor.full_name}</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-amber-300">IIOHR Academy</p>
+          <h1 className="mt-1 text-3xl font-semibold text-white">Your training</h1>
+          <p className="mt-1 text-sm text-slate-200">{doctor.full_name}</p>
         </div>
         <div className="flex flex-col items-end gap-2">
           <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ring-1 ${badgeClass(snapshot.badge)}`}>
@@ -202,7 +220,7 @@ export default async function AcademyDashboardPage() {
           </span>
           <Link
             href="/academy/training-modules"
-            className="text-sm font-semibold text-amber-800 hover:text-amber-900 hover:underline"
+            className="inline-flex rounded-full bg-amber-100 px-3.5 py-1.5 text-sm font-semibold text-slate-900 shadow-sm hover:bg-amber-50"
           >
             Training module library →
           </Link>
@@ -218,15 +236,18 @@ export default async function AcademyDashboardPage() {
       ) : null}
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border border-slate-300/70 bg-gradient-to-br from-slate-50 to-white p-4 shadow-sm">
+        <div className="rounded-2xl border border-slate-400/70 bg-gradient-to-br from-slate-100 to-white p-5 shadow-md ring-1 ring-slate-200">
+          <div className="mb-2 h-1.5 w-14 rounded-full bg-slate-500/80" />
           <div className="text-xs font-semibold uppercase tracking-wide text-slate-600">Current stage</div>
           <div className="mt-1 text-lg font-semibold text-slate-900">{doctor.current_stage}</div>
         </div>
-        <div className="rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50/80 to-white p-4 shadow-sm">
+        <div className="rounded-2xl border border-amber-300/90 bg-gradient-to-br from-amber-100 to-white p-5 shadow-md ring-1 ring-amber-200/80">
+          <div className="mb-2 h-1.5 w-14 rounded-full bg-amber-500/90" />
           <div className="text-xs font-semibold uppercase tracking-wide text-amber-900">Cases logged</div>
           <div className="mt-1 text-lg font-semibold text-slate-900">{cases.length}</div>
         </div>
-        <div className="rounded-xl border border-sky-200 bg-gradient-to-br from-sky-50/70 to-white p-4 shadow-sm">
+        <div className="rounded-2xl border border-sky-300/90 bg-gradient-to-br from-sky-100/90 to-white p-5 shadow-md ring-1 ring-sky-200/80">
+          <div className="mb-2 h-1.5 w-14 rounded-full bg-sky-500/90" />
           <div className="text-xs font-semibold uppercase tracking-wide text-sky-900">Last case</div>
           <div className="mt-1 text-lg font-semibold text-slate-900">
             {lastCase?.surgery_date ? lastCase.surgery_date : "—"}
