@@ -66,36 +66,36 @@ export default async function AcademyDashboardPage() {
       .eq("status", "in_review");
 
     return (
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-8">
-        <div>
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-8 pb-10">
+        <div className="rounded-2xl border border-amber-200/70 bg-gradient-to-br from-amber-50 via-white to-slate-50 px-5 py-4 shadow-sm">
           <h1 className="text-2xl font-semibold text-slate-900">Academy dashboard</h1>
-          <p className="mt-1 text-sm text-slate-600">IIOHR surgical training overview</p>
+          <p className="mt-1 text-sm text-slate-700">IIOHR surgical training overview</p>
           <Link href="/academy/training-modules" className="mt-2 inline-block text-sm font-semibold text-amber-800 hover:underline">
             Training module library →
           </Link>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Trainees</div>
-            <div className="mt-1 text-2xl font-semibold text-slate-900">{list.length}</div>
+          <div className="rounded-xl border border-slate-300/70 bg-gradient-to-br from-slate-50 to-white p-4 shadow-sm">
+            <div className="text-xs font-semibold uppercase tracking-wide text-slate-600">Trainees</div>
+            <div className="mt-1 text-3xl font-bold text-slate-900">{list.length}</div>
           </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Cases this month</div>
-            <div className="mt-1 text-2xl font-semibold text-slate-900">{monthCases ?? 0}</div>
+          <div className="rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50/80 to-white p-4 shadow-sm">
+            <div className="text-xs font-semibold uppercase tracking-wide text-amber-900">Cases this month</div>
+            <div className="mt-1 text-3xl font-bold text-amber-950">{monthCases ?? 0}</div>
           </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Cases in review</div>
-            <div className="mt-1 text-2xl font-semibold text-slate-900">{inReview ?? 0}</div>
+          <div className="rounded-xl border border-orange-200 bg-gradient-to-br from-orange-50/80 to-white p-4 shadow-sm">
+            <div className="text-xs font-semibold uppercase tracking-wide text-orange-900">Cases in review</div>
+            <div className="mt-1 text-3xl font-bold text-orange-950">{inReview ?? 0}</div>
           </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Stages (headcount)</div>
+          <div className="rounded-xl border border-sky-200 bg-gradient-to-br from-sky-50/70 to-white p-4 shadow-sm">
+            <div className="text-xs font-semibold uppercase tracking-wide text-sky-900">Stages (headcount)</div>
             <div className="mt-2 flex flex-wrap gap-2 text-xs">
               {Object.keys(byStage).length === 0 ? (
                 <span className="text-slate-500">No trainees yet</span>
               ) : (
                 Object.entries(byStage).map(([k, v]) => (
-                  <span key={k} className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-800">
+                  <span key={k} className="rounded-full bg-white px-2 py-0.5 text-slate-800 ring-1 ring-sky-100">
                     {k}: {v}
                   </span>
                 ))
@@ -116,7 +116,7 @@ export default async function AcademyDashboardPage() {
           ) : (
             <ul className="divide-y divide-slate-100">
               {recentReviews.map((r) => (
-                <li key={r.id} className="py-2 flex flex-wrap items-center justify-between gap-2 text-sm">
+                <li key={r.id} className="py-2.5 flex flex-wrap items-center justify-between gap-2 rounded-md text-sm">
                   <Link
                     href={`/academy/cases/${r.training_case_id}`}
                     className="font-medium text-amber-800 hover:underline truncate"
@@ -138,7 +138,7 @@ export default async function AcademyDashboardPage() {
           )}
         </section>
 
-        <section className="rounded-xl border border-amber-200/80 bg-amber-50/50 p-4">
+        <section className="rounded-xl border border-amber-300/80 bg-gradient-to-r from-amber-50 to-orange-50/60 p-4 shadow-sm">
           <h2 className="text-sm font-semibold text-amber-950">Progression alerts</h2>
           <p className="mt-1 text-sm text-amber-950/80">
             {(inReview ?? 0) > 0
@@ -189,8 +189,8 @@ export default async function AcademyDashboardPage() {
   const lastCase = cases.length ? cases[cases.length - 1] : null;
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-8">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-8 pb-10">
+      <div className="flex flex-wrap items-start justify-between gap-3 rounded-2xl border border-amber-200/70 bg-gradient-to-br from-amber-50 via-white to-slate-50 px-5 py-4 shadow-sm">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">Your training</h1>
           <p className="mt-1 text-sm text-slate-600">{doctor.full_name}</p>
@@ -209,7 +209,7 @@ export default async function AcademyDashboardPage() {
       </div>
 
       {snapshot.hints.length > 0 ? (
-        <ul className="rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-700 list-disc list-inside">
+        <ul className="rounded-lg border border-sky-200 bg-sky-50/60 p-3 text-sm text-slate-700 list-disc list-inside">
           {snapshot.hints.map((h) => (
             <li key={h}>{h}</li>
           ))}
@@ -217,16 +217,16 @@ export default async function AcademyDashboardPage() {
       ) : null}
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="text-xs font-medium text-slate-500">Current stage</div>
+        <div className="rounded-xl border border-slate-300/70 bg-gradient-to-br from-slate-50 to-white p-4 shadow-sm">
+          <div className="text-xs font-semibold uppercase tracking-wide text-slate-600">Current stage</div>
           <div className="mt-1 text-lg font-semibold text-slate-900">{doctor.current_stage}</div>
         </div>
-        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="text-xs font-medium text-slate-500">Cases logged</div>
+        <div className="rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50/80 to-white p-4 shadow-sm">
+          <div className="text-xs font-semibold uppercase tracking-wide text-amber-900">Cases logged</div>
           <div className="mt-1 text-lg font-semibold text-slate-900">{cases.length}</div>
         </div>
-        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="text-xs font-medium text-slate-500">Last case</div>
+        <div className="rounded-xl border border-sky-200 bg-gradient-to-br from-sky-50/70 to-white p-4 shadow-sm">
+          <div className="text-xs font-semibold uppercase tracking-wide text-sky-900">Last case</div>
           <div className="mt-1 text-lg font-semibold text-slate-900">
             {lastCase?.surgery_date ? lastCase.surgery_date : "—"}
           </div>

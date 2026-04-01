@@ -69,8 +69,8 @@ export default async function TraineeDetailPage({ params }: { params: Promise<{ 
   const extTrend = trendValuesFromCases(cases, metricsByCaseId, "extraction_grafts_per_hour");
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-8">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-8 pb-10">
+      <div className="flex flex-wrap items-start justify-between gap-3 rounded-2xl border border-amber-200/70 bg-gradient-to-br from-amber-50 via-white to-slate-50 px-5 py-4 shadow-sm">
         <div>
           <Link href="/academy/trainees" className="text-sm font-medium text-amber-700 hover:underline">
             ← Trainees
@@ -108,13 +108,13 @@ export default async function TraineeDetailPage({ params }: { params: Promise<{ 
       </div>
 
       {doctor.notes ? (
-        <section className="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-700">
+        <section className="rounded-lg border border-violet-200 bg-violet-50/40 p-4 text-sm text-slate-700 shadow-sm">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Trainer notes</h2>
           <p className="mt-2 whitespace-pre-wrap">{doctor.notes}</p>
         </section>
       ) : null}
 
-      <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <section className="rounded-xl border border-sky-200 bg-gradient-to-br from-sky-50/50 to-white p-4 shadow-sm">
         <h2 className="text-sm font-semibold text-slate-900 mb-3">Trends</h2>
         <div className="grid gap-4 sm:grid-cols-3">
           <div>
@@ -132,7 +132,7 @@ export default async function TraineeDetailPage({ params }: { params: Promise<{ 
         </div>
       </section>
 
-      <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <section className="rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50/60 to-white p-4 shadow-sm">
         <h2 className="text-sm font-semibold text-slate-900 mb-3">Domain summary</h2>
         {Object.keys(domainAvg).length === 0 ? (
           <p className="text-sm text-slate-500">No assessments yet.</p>
@@ -151,7 +151,7 @@ export default async function TraineeDetailPage({ params }: { params: Promise<{ 
         )}
       </section>
 
-      <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <section className="rounded-xl border border-slate-300/70 bg-gradient-to-br from-slate-50 to-white p-4 shadow-sm">
         <h2 className="text-sm font-semibold text-slate-900 mb-3">Progress history</h2>
         {!history?.length ? (
           <p className="text-sm text-slate-500">No stage changes recorded.</p>
@@ -188,7 +188,7 @@ export default async function TraineeDetailPage({ params }: { params: Promise<{ 
         </ul>
       </section>
 
-      <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm text-xs text-slate-500">
+      <section className="rounded-xl border border-amber-200 bg-amber-50/40 p-4 shadow-sm text-xs text-slate-600">
         <div className="font-semibold text-slate-700 text-sm mb-2">Photo checklist (per case)</div>
         <p>Open a case to upload. Types use the canonical format training_photo:category in storage records.</p>
         <ul className="mt-2 list-disc list-inside">
