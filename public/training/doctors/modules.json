@@ -3,7 +3,7 @@
     {
       "id": "welcome-iiohr-library",
       "title": "Welcome to the training library",
-      "shortDescription": "How this self-study area works alongside your cases and competency milestones. Replace this entry when you add real modules.",
+      "shortDescription": "How this self-study area works alongside your cases and competency milestones.",
       "category": "Orientation",
       "lastUpdated": "2026-04-01",
       "readOnlineUrl": "/training/doctors/welcome/welcome.html",
@@ -13,6 +13,61 @@
         "recommended": true,
         "relatedCompetencyLadderKeys": []
       }
+    },
+    {
+      "id": "iiohr-volume-1",
+      "title": "Volume 1: Diagnostic Trichology and Pattern Hair Loss Medicine",
+      "shortDescription": "Foundational diagnostic and pattern hair loss medicine reference for early training.",
+      "category": "Trichology",
+      "lastUpdated": "2026-04-01",
+      "downloadUrl": "/training/doctors/Volume -1-Diagnostic-Trichology-and-Pattern-Hair-Loss-Medicine.pdf",
+      "recommendedForWeeks": [1, 2],
+      "status": "approved",
+      "flags": { "recommended": true }
+    },
+    {
+      "id": "iiohr-volume-2",
+      "title": "Volume 2: Diffuse Shedding, Immune-Mediated Hair Loss, Cicatricial Alopecia and Scalp Disease",
+      "shortDescription": "Advanced medical causes and scalp disease patterns relevant to safe case planning.",
+      "category": "Trichology",
+      "lastUpdated": "2026-04-01",
+      "downloadUrl": "/training/doctors/Volume -2-Diffuse-Shedding-Immune-Mediated-Hair-Loss-Cicatricial-Alopecia-and-Scalp-Disease.pdf",
+      "recommendedForWeeks": [2, 3],
+      "status": "approved",
+      "flags": { "recommended": true }
+    },
+    {
+      "id": "iiohr-volume-3",
+      "title": "Volume 3: Foundations of Clinical Trichology",
+      "shortDescription": "Core clinical trichology principles for practical trainee decision-making.",
+      "category": "Clinical Foundations",
+      "lastUpdated": "2026-04-01",
+      "downloadUrl": "/training/doctors/Volume -3-Foundations-of-Clinical-Trichology.pdf",
+      "recommendedForWeeks": [1, 2, 3],
+      "status": "approved",
+      "flags": { "recommended": true }
+    },
+    {
+      "id": "iiohr-volume-4",
+      "title": "Volume 4: Therapeutics, Regenerative Medicine and Foundations of Hair Restoration Surgery",
+      "shortDescription": "Therapeutics and regenerative principles linked to surgical restoration fundamentals.",
+      "category": "Surgical Foundations",
+      "lastUpdated": "2026-04-01",
+      "downloadUrl": "/training/doctors/Volume -4-Therapeutics-Regenerative-Medicine-and-Foundations-of-Hair-Restoration-Surgery.pdf",
+      "recommendedForWeeks": [3, 4],
+      "status": "approved",
+      "flags": { "recommended": true }
+    },
+    {
+      "id": "iiohr-volume-5",
+      "title": "Volume 5: Advanced Surgical Integration, Professional Practice, Research Literacy and Certification",
+      "shortDescription": "Advanced integration and professional standards for higher-level trainee progression.",
+      "category": "Advanced Surgical",
+      "lastUpdated": "2026-04-01",
+      "downloadUrl": "/training/doctors/Volume-5-Advanced-Surgical-Integration-Professional-Practice-Research-Literacy-and-Certification.pdf",
+      "recommendedForWeeks": [4],
+      "status": "approved",
+      "flags": { "mandatory": true }
     }
   ]
 }
