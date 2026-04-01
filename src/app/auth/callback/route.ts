@@ -3,7 +3,8 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { isAuditor } from "@/lib/auth/isAuditor";
 import { sanitizeNextPath, dashboardPathForRole } from "@/lib/auth/redirects";
-import { parseRole } from "@/lib/roles";
+import { parseRole, type UserRole } from "@/lib/roles";
+import { defaultPathAfterAuthNoNext } from "@/lib/academy/postLoginRedirect";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -66,7 +67,9 @@ export async function GET(request: Request) {
             message: upsertError.message,
           });
         }
-        if (!nextParam) redirectPath = dashboardPathForRole(role);
+        if (!nextParam) {
+          redirectPath = await defaultPathAfterAuthNoNext(admin, user.id, role as UserRole);
+        }
       }
     } catch (error) {
       // If service role env vars aren't set locally, don't block login.

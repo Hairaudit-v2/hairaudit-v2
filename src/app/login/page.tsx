@@ -8,6 +8,7 @@ import SiteHeader from "@/components/SiteHeader";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { getCanonicalAppUrl } from "@/lib/auth/redirects";
 import { trackAuthFunnel } from "@/lib/analytics/authFunnel";
+import { browserPathAfterLoginSession } from "@/lib/academy/postLoginRedirect";
 
 export default function LoginPage() {
   const { t } = useI18n();
@@ -51,9 +52,11 @@ export default function LoginPage() {
 
   useEffect(() => {
     let mounted = true;
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(async ({ data }) => {
+      if (!mounted || !data.session) return;
+      const href = await browserPathAfterLoginSession(supabase);
       if (!mounted) return;
-      if (data.session) window.location.href = "/dashboard";
+      window.location.href = href;
     });
     return () => {
       mounted = false;
@@ -95,6 +98,7 @@ export default function LoginPage() {
     } else {
       const path = window.location.pathname;
       const search = window.location.search;
+      const href = await browserPathAfterLoginSession(supabase);
       trackAuthFunnel(
         "auth_session_success",
         { auth_method: "password", auth_surface: "login" },
@@ -102,10 +106,10 @@ export default function LoginPage() {
       );
       trackAuthFunnel(
         "auth_dashboard_redirect_success",
-        { auth_target: "/dashboard", auth_surface: "login" },
+        { auth_target: href, auth_surface: "login" },
         { pathname: path, search }
       );
-      window.location.href = "/dashboard";
+      window.location.href = href;
     }
     setBusyProvider(null);
   }
