@@ -17,8 +17,14 @@ export type ProvisionOneResult = {
   manualLink?: string;
 };
 
+/**
+ * HairAudit `profiles.role` drives the main app (patient / doctor / clinic dashboards).
+ * Academy permissions come from `academy_users.role` — do not map trainers to `doctor` by default,
+ * or they are treated as HairAudit surgeon users and routed to /dashboard/doctor.
+ * New trainers get `patient` unless they already have doctor/clinic/auditor (see resolveProfileRoleForUpsert).
+ */
 function hairAuditProfileRoleFor(academyRole: ProvisionAcademyRole): UserRole {
-  if (academyRole === "trainer") return "doctor";
+  if (academyRole === "trainer") return "patient";
   if (academyRole === "clinic_staff") return "clinic";
   return "patient";
 }

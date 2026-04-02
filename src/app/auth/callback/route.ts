@@ -4,7 +4,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { isAuditor } from "@/lib/auth/isAuditor";
 import { sanitizeNextPath, dashboardPathForRole } from "@/lib/auth/redirects";
 import { parseRole, type UserRole } from "@/lib/roles";
-import { defaultPathAfterAuthNoNext } from "@/lib/academy/postLoginRedirect";
+import { defaultPathAfterAuthNoNext, finalizeAuthCallbackRedirect } from "@/lib/academy/postLoginRedirect";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -70,6 +70,7 @@ export async function GET(request: Request) {
         if (!nextParam) {
           redirectPath = await defaultPathAfterAuthNoNext(admin, user.id, role as UserRole);
         }
+        redirectPath = await finalizeAuthCallbackRedirect(admin, user.id, redirectPath, role as UserRole);
       }
     } catch (error) {
       // If service role env vars aren't set locally, don't block login.

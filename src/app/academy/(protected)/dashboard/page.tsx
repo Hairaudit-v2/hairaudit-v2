@@ -2,14 +2,53 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { getAcademyAccess, isAcademyAdminRole } from "@/lib/academy/auth";
-import { fetchTrainingDoctorForUser, fetchTrainingCasesForDoctor } from "@/lib/academy/queries";
+import {
+  fetchTraineeCohortIds,
+  fetchTrainingDoctorForUser,
+  fetchTrainingCasesForDoctor,
+} from "@/lib/academy/queries";
 import {
   computeTraineeProgressSnapshot,
   domainAveragesFromAssessments,
   trendValuesFromCases,
 } from "@/lib/academy/progression";
-import type { TrainingCaseMetricsRow, TrainingCaseAssessmentRow } from "@/lib/academy/types";
-import Sparkline from "@/components/ui/Sparkline";
+import {
+  competencyWaveAnchor,
+  competencyWeekDateWindow,
+  currentCompetencyWeekNumber,
+  groupStepsByLadder,
+  suggestStepIdsFromLatestMetrics,
+} from "@/lib/academy/competency";
+import {
+  buildReadinessSummary,
+  buildStepUiByStepId,
+  type CompetencyFinalReadinessStatus,
+} from "@/lib/academy/competencyPhase2";
+import {
+  collectLadderKeysForTrainingHints,
+  filterModulesForViewer,
+  loadTrainingModulesCatalogMerged,
+} from "@/lib/academy/trainingModulesCatalog";
+import {
+  buildWeekFocusBullets,
+  computeTraineeTrajectoryPhase,
+  countSignedTargetMilestones,
+  countTargetMilestones,
+  pickReviewForCompetencyWeek,
+} from "@/lib/academy/traineeDashboardModel";
+import type {
+  TrainingCaseMetricsRow,
+  TrainingCaseAssessmentRow,
+  TrainingCompetencyAchievementRow,
+  TrainingCompetencyLadderRow,
+  TrainingCompetencyStepObservationRow,
+  TrainingCompetencyStepRow,
+  TrainingCompetencyStepStateRow,
+  TrainingCompetencyWeeklyReviewRow,
+  TrainingDoctorRow,
+  TrainingStageHistoryRow,
+} from "@/lib/academy/types";
+import TraineeDashboardView, { type TraineeDashboardModuleRec } from "@/components/academy/trainee/TraineeDashboardView";
 import { isOperationalTraineeStatus } from "@/lib/academy/traineeStatus";
 
 export const dynamic = "force-dynamic";
@@ -178,9 +217,9 @@ export default async function AcademyDashboardPage() {
     );
   }
 
-  // Trainee view
-  const doctor = await fetchTrainingDoctorForUser(supabase, access.userId);
-  if (!doctor) {
+  // Trainee view — premium progression dashboard
+  const doctorRow = await fetchTrainingDoctorForUser(supabase, access.userId);
+  if (!doctorRow) {
     return (
       <div className="max-w-lg mx-auto px-4 text-center py-12">
         <p className="text-slate-700">No trainee profile is linked to your account yet.</p>
@@ -189,9 +228,72 @@ export default async function AcademyDashboardPage() {
     );
   }
 
-  const cases = await fetchTrainingCasesForDoctor(supabase, doctor.id);
-  const caseIds = cases.map((c) => c.id);
+  const doctor = doctorRow as TrainingDoctorRow;
 
+  const [
+    cases,
+    { data: cohortLinks },
+    programRes,
+    siteRes,
+    { data: stageHistoryRows },
+    { data: ladders },
+    { data: allSteps },
+    { data: achievements },
+    { data: stateRows },
+    { data: obsRows },
+    { data: reviewRows },
+    traineeCohortIds,
+    rawModules,
+  ] = await Promise.all([
+    fetchTrainingCasesForDoctor(supabase, doctor.id),
+    supabase.from("training_cohort_trainees").select("cohort_id").eq("training_doctor_id", doctor.id),
+    doctor.program_id
+      ? supabase.from("training_programs").select("name").eq("id", doctor.program_id).maybeSingle()
+      : Promise.resolve({ data: null }),
+    doctor.academy_site_id
+      ? supabase.from("academy_sites").select("name, display_name").eq("id", doctor.academy_site_id).maybeSingle()
+      : Promise.resolve({ data: null }),
+    supabase
+      .from("training_stage_history")
+      .select("*")
+      .eq("training_doctor_id", doctor.id)
+      .order("changed_at", { ascending: false })
+      .limit(24),
+    supabase.from("training_competency_ladders").select("*").eq("is_active", true).order("sort_order", { ascending: true }),
+    supabase.from("training_competency_steps").select("*").order("step_index", { ascending: true }),
+    supabase
+      .from("training_competency_achievements")
+      .select("*")
+      .eq("training_doctor_id", doctor.id)
+      .order("achieved_at", { ascending: false }),
+    supabase.from("training_competency_step_states").select("*").eq("training_doctor_id", doctor.id),
+    supabase
+      .from("training_competency_step_observations")
+      .select("*")
+      .eq("training_doctor_id", doctor.id)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("training_competency_weekly_reviews")
+      .select("*")
+      .eq("training_doctor_id", doctor.id)
+      .order("week_number", { ascending: true }),
+    fetchTraineeCohortIds(supabase, access.userId).catch(() => [] as string[]),
+    loadTrainingModulesCatalogMerged(supabase),
+  ]);
+
+  const cohortIds = [...new Set((cohortLinks ?? []).map((r) => (r as { cohort_id: string }).cohort_id))];
+  let cohortLabel: string | null = null;
+  if (cohortIds.length) {
+    const { data: cohorts } = await supabase.from("training_cohorts").select("name").in("id", cohortIds);
+    const names = (cohorts ?? []).map((c) => (c as { name: string }).name).filter(Boolean);
+    cohortLabel = names.length ? names.join(", ") : null;
+  }
+
+  const programName = programRes.data ? String((programRes.data as { name: string }).name) : null;
+  const siteRow = siteRes.data as { name: string; display_name: string | null } | null;
+  const siteLabel = siteRow ? (siteRow.display_name?.trim() || siteRow.name) : null;
+
+  const caseIds = cases.map((c) => c.id);
   let metricsByCaseId = new Map<string, TrainingCaseMetricsRow>();
   let assessments: TrainingCaseAssessmentRow[] = [];
   if (caseIds.length) {
@@ -203,127 +305,168 @@ export default async function AcademyDashboardPage() {
     assessments = (arows ?? []) as TrainingCaseAssessmentRow[];
   }
 
+  const ladderRows = (ladders ?? []) as TrainingCompetencyLadderRow[];
+  const ladderIdSet = new Set(ladderRows.map((l) => l.id));
+  const stepRows = (allSteps ?? []).filter((s) => ladderIdSet.has((s as TrainingCompetencyStepRow).ladder_id)) as TrainingCompetencyStepRow[];
+  const laddersWithSteps = groupStepsByLadder(ladderRows, stepRows);
+
+  const achievementRows = (achievements ?? []) as TrainingCompetencyAchievementRow[];
+  const achievementsByStepId = new Map(achievementRows.map((a) => [a.step_id, a]));
+  const achievedStepIds = achievementRows.map((a) => a.step_id);
+  const achievedSet = new Set(achievedStepIds);
+
+  const stateList = (stateRows ?? []) as TrainingCompetencyStepStateRow[];
+  const stateByStepId = new Map(stateList.map((r) => [r.step_id, r]));
+  const observationsByStepId = new Map<string, TrainingCompetencyStepObservationRow[]>();
+  for (const o of (obsRows ?? []) as TrainingCompetencyStepObservationRow[]) {
+    const list = observationsByStepId.get(o.step_id) ?? [];
+    list.push(o);
+    observationsByStepId.set(o.step_id, list);
+  }
+
+  let latestMetrics: TrainingCaseMetricsRow | null = null;
+  for (let i = cases.length - 1; i >= 0; i--) {
+    const m = metricsByCaseId.get(cases[i]!.id);
+    if (m) {
+      latestMetrics = m;
+      break;
+    }
+  }
+
+  const stepUiByStepId = buildStepUiByStepId({
+    laddersWithSteps,
+    achievementsByStepId,
+    stateByStepId,
+    observationsByStepId,
+    metricsByCaseId,
+    casesChronological: cases,
+    latestMetrics,
+  });
+
+  const weeklyReviews = (reviewRows ?? []) as TrainingCompetencyWeeklyReviewRow[];
+  const waveStart = competencyWaveAnchor(doctor);
+  const competencyWeek = currentCompetencyWeekNumber(waveStart);
+  const waveWindowLabel =
+    waveStart && competencyWeek != null
+      ? (() => {
+          const w = competencyWeekDateWindow(waveStart, competencyWeek);
+          return `${w.start} – ${w.end}`;
+        })()
+      : null;
+
+  const reviewForWeek = pickReviewForCompetencyWeek(weeklyReviews, competencyWeek);
+  const weekFocusBullets = buildWeekFocusBullets({ competencyWeek, reviewForWeek });
+
+  const totalTargets = countTargetMilestones(laddersWithSteps);
+  const signedTargetCount = countSignedTargetMilestones(laddersWithSteps, achievedSet);
+  const targetsMet =
+    totalTargets === 0 ||
+    laddersWithSteps.every((l) => {
+      const targets = l.steps.filter((s) => s.is_target);
+      if (!targets.length) return true;
+      return targets.every((t) => achievedSet.has(t.id));
+    });
+
+  const readinessSummary = buildReadinessSummary({
+    doctor,
+    allTargetsAchieved: targetsMet,
+  });
+
   const snapshot = computeTraineeProgressSnapshot({
     doctor,
     metricsByCaseId,
     assessmentsNewestFirst: assessments,
   });
 
+  const trajectory = computeTraineeTrajectoryPhase({
+    readinessStatus: (doctor.competency_final_readiness_status || null) as CompetencyFinalReadinessStatus | null,
+    snapshotBadge: snapshot.badge,
+    signedTargetCount,
+    totalTargets,
+    caseCount: cases.length,
+    achievementCount: achievementRows.length,
+  });
+
+  const suggestedStepIds = suggestStepIdsFromLatestMetrics(laddersWithSteps, latestMetrics);
+  const stepLabelById = new Map(stepRows.map((s) => [s.id, s.short_label || s.label]));
+  const suggestedStepLabels = [...new Set(suggestedStepIds.map((id) => stepLabelById.get(id)).filter(Boolean))] as string[];
+
+  const highlightLadderKeys = collectLadderKeysForTrainingHints(laddersWithSteps, suggestedStepIds, achievedSet);
+  const modules = filterModulesForViewer(rawModules, {
+    userId: access.userId,
+    isStaff: false,
+    traineeCohortIds,
+  });
+
+  const moduleRecs: TraineeDashboardModuleRec[] = [];
+  const pushRec = (m: (typeof modules)[0], reason: TraineeDashboardModuleRec["reason"]) => {
+    moduleRecs.push({
+      id: m.id,
+      title: m.title,
+      shortDescription: m.shortDescription,
+      readOnlineUrl: m.readOnlineUrl ?? null,
+      reason,
+    });
+  };
+  for (const m of modules) {
+    if (competencyWeek != null && m.recommendedForWeeks?.includes(competencyWeek)) pushRec(m, "week");
+  }
+  for (const m of modules) {
+    if (m.flags?.mandatory) pushRec(m, "mandatory");
+  }
+  for (const m of modules) {
+    const keys = m.flags?.relatedCompetencyLadderKeys ?? [];
+    if (keys.some((k) => highlightLadderKeys.includes(k))) pushRec(m, "milestone");
+  }
+
+  const moduleHints = modules.map((m) => ({
+    id: m.id,
+    title: m.title,
+    readOnlineUrl: m.readOnlineUrl ?? null,
+  }));
+
+  const latestAchievementNote =
+    achievementRows.find((a) => (a.trainer_comments ?? "").trim().length > 0)?.trainer_comments ?? null;
+
   const domainAvg = domainAveragesFromAssessments(assessments, 5);
   const tTrend = trendValuesFromCases(cases, metricsByCaseId, "transection_rate");
   const impTrend = trendValuesFromCases(cases, metricsByCaseId, "implantation_grafts_per_hour");
   const extTrend = trendValuesFromCases(cases, metricsByCaseId, "extraction_grafts_per_hour");
 
-  const lastCase = cases.length ? cases[cases.length - 1] : null;
+  const stageHistory = (stageHistoryRows ?? []) as TrainingStageHistoryRow[];
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-8 pb-10">
-      <div className="flex flex-wrap items-start justify-between gap-3 rounded-3xl border border-slate-700/70 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 px-7 py-7 shadow-xl">
-        <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-amber-300">IIOHR Academy</p>
-          <h1 className="mt-1 text-3xl font-semibold text-white">Your training</h1>
-          <p className="mt-1 text-sm text-slate-200">{doctor.full_name}</p>
-        </div>
-        <div className="flex flex-col items-end gap-2">
-          <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ring-1 ${badgeClass(snapshot.badge)}`}>
-            {snapshot.label}
-          </span>
-          <Link
-            href="/academy/training-modules"
-            className="inline-flex rounded-full bg-amber-100 px-3.5 py-1.5 text-sm font-semibold text-slate-900 shadow-sm hover:bg-amber-50"
-          >
-            Training module library →
-          </Link>
-        </div>
-      </div>
-
-      {snapshot.hints.length > 0 ? (
-        <ul className="rounded-lg border border-sky-200 bg-sky-50/60 p-3 text-sm text-slate-700 list-disc list-inside">
-          {snapshot.hints.map((h) => (
-            <li key={h}>{h}</li>
-          ))}
-        </ul>
-      ) : null}
-
-      <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-2xl border border-slate-400/70 bg-gradient-to-br from-slate-100 to-white p-5 shadow-md ring-1 ring-slate-200">
-          <div className="mb-2 h-1.5 w-14 rounded-full bg-slate-500/80" />
-          <div className="text-xs font-semibold uppercase tracking-wide text-slate-600">Current stage</div>
-          <div className="mt-1 text-lg font-semibold text-slate-900">{doctor.current_stage}</div>
-        </div>
-        <div className="rounded-2xl border border-amber-300/90 bg-gradient-to-br from-amber-100 to-white p-5 shadow-md ring-1 ring-amber-200/80">
-          <div className="mb-2 h-1.5 w-14 rounded-full bg-amber-500/90" />
-          <div className="text-xs font-semibold uppercase tracking-wide text-amber-900">Cases logged</div>
-          <div className="mt-1 text-lg font-semibold text-slate-900">{cases.length}</div>
-        </div>
-        <div className="rounded-2xl border border-sky-300/90 bg-gradient-to-br from-sky-100/90 to-white p-5 shadow-md ring-1 ring-sky-200/80">
-          <div className="mb-2 h-1.5 w-14 rounded-full bg-sky-500/90" />
-          <div className="text-xs font-semibold uppercase tracking-wide text-sky-900">Last case</div>
-          <div className="mt-1 text-lg font-semibold text-slate-900">
-            {lastCase?.surgery_date ? lastCase.surgery_date : "—"}
-          </div>
-        </div>
-      </div>
-
-      <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <h2 className="text-sm font-semibold text-slate-900 mb-3">Performance trends</h2>
-        <div className="grid gap-4 sm:grid-cols-3">
-          <div>
-            <div className="text-xs text-slate-500 mb-1">Transection rate</div>
-            <Sparkline values={tTrend.length ? tTrend : [0]} strokeClassName="text-rose-600" fillClassName="text-rose-200/40" />
-          </div>
-          <div>
-            <div className="text-xs text-slate-500 mb-1">Implantation grafts/hr</div>
-            <Sparkline values={impTrend.length ? impTrend : [0]} strokeClassName="text-sky-600" fillClassName="text-sky-200/40" />
-          </div>
-          <div>
-            <div className="text-xs text-slate-500 mb-1">Extraction grafts/hr</div>
-            <Sparkline values={extTrend.length ? extTrend : [0]} strokeClassName="text-amber-600" fillClassName="text-amber-200/40" />
-          </div>
-        </div>
-      </section>
-
-      <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <h2 className="text-sm font-semibold text-slate-900 mb-3">Domain summary (recent reviews)</h2>
-        {Object.keys(domainAvg).length === 0 ? (
-          <p className="text-sm text-slate-500">No scored domains yet.</p>
-        ) : (
-          <ul className="space-y-2">
-            {Object.entries(domainAvg).map(([k, v]) => (
-              <li key={k} className="flex items-center gap-2 text-sm">
-                <span className="w-40 shrink-0 text-slate-600 truncate" title={k}>
-                  {k.replace(/_/g, " ")}
-                </span>
-                <div className="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-amber-500"
-                    style={{ width: `${Math.min(100, (v / 5) * 100)}%` }}
-                  />
-                </div>
-                <span className="w-8 text-right text-slate-800 tabular-nums">{v}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <section>
-        <h2 className="text-sm font-semibold text-slate-900 mb-2">Your cases</h2>
-        <ul className="rounded-xl border border-slate-200 bg-white divide-y divide-slate-100 shadow-sm">
-          {cases.length === 0 ? (
-            <li className="p-4 text-sm text-slate-500">No cases yet.</li>
-          ) : (
-            [...cases].reverse().map((c) => (
-              <li key={c.id} className="p-3 flex justify-between gap-2 text-sm">
-                <Link href={`/academy/cases/${c.id}`} className="font-medium text-amber-800 hover:underline">
-                  {c.surgery_date} · {c.procedure_type || "FUE"}
-                </Link>
-                <span className="text-slate-500 capitalize">{c.status.replace(/_/g, " ")}</span>
-              </li>
-            ))
-          )}
-        </ul>
-      </section>
-    </div>
+    <TraineeDashboardView
+      userId={access.userId}
+      doctor={doctor}
+      programName={programName}
+      cohortLabel={cohortLabel}
+      siteLabel={siteLabel}
+      competencyWeek={competencyWeek}
+      waveWindowLabel={waveWindowLabel}
+      snapshot={snapshot}
+      trajectory={trajectory}
+      readinessSummary={readinessSummary}
+      achievedStepIds={achievedStepIds}
+      cases={cases}
+      assessments={assessments}
+      metricsByCaseId={metricsByCaseId}
+      stageHistory={stageHistory}
+      laddersWithSteps={laddersWithSteps}
+      signedTargetCount={signedTargetCount}
+      totalTargets={totalTargets}
+      suggestedStepLabels={suggestedStepLabels}
+      stepUiByStepId={stepUiByStepId}
+      weeklyReviews={weeklyReviews}
+      reviewForWeek={reviewForWeek}
+      weekFocusBullets={weekFocusBullets}
+      moduleRecs={moduleRecs}
+      moduleHints={moduleHints}
+      latestAchievementNote={latestAchievementNote}
+      trendTransection={tTrend}
+      trendImplant={impTrend}
+      trendExtract={extTrend}
+      domainAvg={domainAvg}
+    />
   );
 }

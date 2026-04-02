@@ -33,3 +33,30 @@ export async function browserPathAfterLoginSession(supabase: SupabaseClient): Pr
   const { data: au } = await supabase.from("academy_users").select("user_id").eq("user_id", uid).maybeSingle();
   return au ? "/academy/dashboard" : "/dashboard";
 }
+
+/**
+ * After OAuth/magic-link callback, avoid sending academy-only users (trainers, trainees, etc.)
+ * to HairAudit doctor/patient dashboards when the computed `next` path is still a generic
+ * `/dashboard/*` URL. Real HairAudit doctors (profiles.role = doctor) keep their portal.
+ */
+export async function finalizeAuthCallbackRedirect(
+  admin: SupabaseClient,
+  userId: string,
+  path: string,
+  profileRole: UserRole
+): Promise<string> {
+  const { data: au } = await admin.from("academy_users").select("user_id").eq("user_id", userId).maybeSingle();
+  if (!au) return path;
+  if (profileRole === "doctor") return path;
+
+  if (
+    path === "/dashboard" ||
+    path === "/dashboard/doctor" ||
+    path.startsWith("/dashboard/doctor/") ||
+    path === "/dashboard/patient" ||
+    path.startsWith("/dashboard/patient/")
+  ) {
+    return "/academy/dashboard";
+  }
+  return path;
+}
