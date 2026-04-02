@@ -8,6 +8,7 @@ const nav = [
   { href: "/academy/admin", label: "Overview" },
   { href: "/academy/admin/programs", label: "Programs" },
   { href: "/academy/admin/people", label: "People" },
+  { href: "/academy/admin/trainees", label: "Trainee roster" },
   { href: "/academy/admin/cohorts", label: "Cohorts" },
   { href: "/academy/admin/library", label: "Training library" },
   { href: "/academy/admin/routing", label: "Notifications" },

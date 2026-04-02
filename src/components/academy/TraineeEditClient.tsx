@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { DEFAULT_TRAINING_PROGRAM_ID } from "@/lib/academy/constants";
 import type { TrainingDoctorRow } from "@/lib/academy/types";
+import { traineeStatusLabel } from "@/lib/academy/traineeStatus";
 
 type Opt = { id: string; name: string };
 type SiteOpt = { id: string; label: string };
@@ -12,21 +13,24 @@ type TrainerOpt = { user_id: string; label: string };
 
 export default function TraineeEditClient({
   doctorId,
-  doctor: initialDoctor,
+  doctor,
   programOptions,
   siteOptions,
   trainerOptions,
+  isAcademyAdmin,
 }: {
   doctorId: string;
   doctor: TrainingDoctorRow;
   programOptions: Opt[];
   siteOptions: SiteOpt[];
   trainerOptions: TrainerOpt[];
+  isAcademyAdmin: boolean;
 }) {
   const router = useRouter();
-  const [doctor] = useState(initialDoctor);
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState("");
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
@@ -66,6 +70,48 @@ export default function TraineeEditClient({
     }
   }
 
+  async function patchStatusOnly(status: string, successNote: string) {
+    setBusy(true);
+    setMsg(null);
+    try {
+      const res = await fetch(`/api/academy/trainees/${doctorId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      const j = await res.json();
+      if (!res.ok) throw new Error(j.error || "Update failed");
+      setMsg(successNote);
+      router.refresh();
+    } catch (err) {
+      setMsg(err instanceof Error ? err.message : "Failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function hardDelete() {
+    setBusy(true);
+    setMsg(null);
+    try {
+      const res = await fetch(`/api/academy/trainees/${doctorId}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirmation: deleteConfirm.trim() }),
+      });
+      const j = await res.json();
+      if (!res.ok) throw new Error(j.error || j.hint || "Delete failed");
+      router.push("/academy/trainees");
+      router.refresh();
+    } catch (err) {
+      setMsg(err instanceof Error ? err.message : "Failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const withdrawnOrArchived = doctor.status === "withdrawn" || doctor.status === "archived";
+
   return (
     <div className="space-y-6 max-w-xl mx-auto px-4 sm:px-6">
       <Link href={`/academy/trainees/${doctorId}`} className="text-sm font-medium text-amber-700 hover:underline">
@@ -79,7 +125,47 @@ export default function TraineeEditClient({
         (wave start can also be set there by staff).
       </p>
 
+      <section className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 shadow-sm space-y-3">
+        <h2 className="text-sm font-semibold text-slate-900">Roster actions</h2>
+        <p className="text-xs text-slate-600">
+          Withdraw and archive keep all training history, cases, competency data, reviews, and assignments. They only change how this
+          profile appears in default lists. Current status:{" "}
+          <span className="font-medium text-slate-800">{traineeStatusLabel(doctor.status)}</span>.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void patchStatusOnly("withdrawn", "Marked as withdrawn.")}
+            className="rounded-lg bg-white px-3 py-2 text-sm font-medium text-slate-800 ring-1 ring-slate-300 hover:bg-slate-50 disabled:opacity-50"
+          >
+            Withdraw from active roster
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void patchStatusOnly("archived", "Archived (hidden from default lists).")}
+            className="rounded-lg bg-white px-3 py-2 text-sm font-medium text-slate-800 ring-1 ring-slate-300 hover:bg-slate-50 disabled:opacity-50"
+          >
+            Archive record
+          </button>
+          <button
+            type="button"
+            disabled={busy || !withdrawnOrArchived}
+            onClick={() => void patchStatusOnly("active", "Restored to active.")}
+            className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+          >
+            Restore to active
+          </button>
+        </div>
+        <p className="text-[11px] text-slate-500">
+          Tip: use <strong className="font-medium">Archive</strong> for operational cleanup; <strong className="font-medium">Withdraw</strong> when someone
+          leaves the program. You can still adjust status from the form below.
+        </p>
+      </section>
+
       <form onSubmit={save} className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6 shadow-sm space-y-4">
+        <h2 className="text-sm font-semibold text-slate-900">Profile details</h2>
         <div>
           <label className="block text-xs font-medium text-slate-600">Full name *</label>
           <input
@@ -174,6 +260,7 @@ export default function TraineeEditClient({
               <option value="paused">paused</option>
               <option value="graduated">graduated</option>
               <option value="withdrawn">withdrawn</option>
+              <option value="archived">archived</option>
             </select>
           </div>
         </div>
@@ -204,9 +291,74 @@ export default function TraineeEditClient({
           disabled={busy}
           className="w-full rounded-lg bg-amber-600 py-2.5 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-50"
         >
-          {busy ? "Saving…" : "Save trainee"}
+          {busy ? "Saving…" : "Save changes"}
         </button>
       </form>
+
+      {isAcademyAdmin ? (
+        <section className="rounded-xl border border-rose-200 bg-rose-50/50 p-4 shadow-sm space-y-3">
+          <h2 className="text-sm font-semibold text-rose-950">Destructive cleanup (academy admin)</h2>
+          <p className="text-xs text-rose-900/90">
+            Hard delete removes this trainee row from the database. It is only allowed when there are no cases, competency rows, weekly
+            reviews, cohort membership, or stage history. If anything is linked, the server will refuse and you should use archive or
+            withdraw instead.
+          </p>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => {
+              setDeleteOpen(true);
+              setDeleteConfirm("");
+            }}
+            className="rounded-lg bg-rose-700 px-3 py-2 text-sm font-semibold text-white hover:bg-rose-800 disabled:opacity-50"
+          >
+            Delete trainee permanently…
+          </button>
+        </section>
+      ) : null}
+
+      {deleteOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-labelledby="delete-trainee-title">
+          <div className="max-w-md rounded-xl border border-slate-200 bg-white p-5 shadow-xl space-y-3">
+            <h3 id="delete-trainee-title" className="text-lg font-semibold text-slate-900">
+              Delete trainee permanently?
+            </h3>
+            <p className="text-sm text-slate-600">
+              This cannot be undone. The API will reject the request if the trainee has any training history or cohort links. To hide
+              them from lists without deleting data, cancel and use <strong className="font-medium">Archive</strong> or{" "}
+              <strong className="font-medium">Withdraw</strong> above.
+            </p>
+            <p className="text-sm text-slate-800">
+              Type the full name exactly to confirm: <span className="font-mono font-medium">{doctor.full_name}</span>
+            </p>
+            <input
+              value={deleteConfirm}
+              onChange={(e) => setDeleteConfirm(e.target.value)}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              placeholder="Full name"
+              autoComplete="off"
+            />
+            <div className="flex flex-wrap gap-2 justify-end pt-2">
+              <button
+                type="button"
+                className="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+                onClick={() => setDeleteOpen(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={busy || deleteConfirm.trim() !== doctor.full_name.trim()}
+                onClick={() => void hardDelete()}
+                className="rounded-lg bg-rose-700 px-3 py-2 text-sm font-semibold text-white hover:bg-rose-800 disabled:opacity-50"
+              >
+                {busy ? "Deleting…" : "Delete permanently"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {msg ? <p className="text-sm text-slate-700">{msg}</p> : null}
     </div>
   );

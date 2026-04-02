@@ -69,6 +69,18 @@ export function computeTraineeProgressSnapshot(input: {
     };
   }
 
+  if (input.doctor.status === "archived") {
+    return {
+      badge: "review_required",
+      label: "Archived",
+      hints: ["Trainee profile archived — hidden from default lists; data retained for admin review."],
+      avgTransectionLastN,
+      avgOverallScoreLastN,
+      casesWithMetrics: metrics.length,
+      lastReviewReadyToProgress,
+    };
+  }
+
   if (input.doctor.status === "paused") {
     hints.push("Program paused — confirm return date and support plan.");
   }

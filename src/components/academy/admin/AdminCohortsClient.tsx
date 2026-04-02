@@ -32,7 +32,7 @@ export default function AdminCohortsClient() {
     const [cRes, pRes, tRes, sRes, prRes] = await Promise.all([
       fetch("/api/academy/admin/cohorts"),
       fetch("/api/academy/admin/people"),
-      fetch("/api/academy/trainees"),
+      fetch("/api/academy/trainees?status=all"),
       fetch("/api/academy/sites"),
       fetch("/api/academy/programs"),
     ]);

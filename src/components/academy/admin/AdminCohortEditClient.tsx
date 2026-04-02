@@ -29,7 +29,7 @@ export default function AdminCohortEditClient({ cohortId }: { cohortId: string }
     const [cRes, pRes, tRes, sRes, prRes] = await Promise.all([
       fetch(`/api/academy/admin/cohorts/${cohortId}`),
       fetch("/api/academy/admin/people"),
-      fetch("/api/academy/trainees"),
+      fetch("/api/academy/trainees?status=all"),
       fetch("/api/academy/sites"),
       fetch("/api/academy/programs"),
     ]);

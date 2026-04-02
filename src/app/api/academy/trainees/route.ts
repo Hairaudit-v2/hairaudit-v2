@@ -2,10 +2,15 @@ import { NextResponse } from "next/server";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { getAcademyAccess, requireAcademyStaff } from "@/lib/academy/auth";
 import { DEFAULT_TRAINING_PROGRAM_ID } from "@/lib/academy/constants";
+import {
+  isAllowedTraineeStatus,
+  parseTraineeListStatusFilter,
+  statusesForListFilter,
+} from "@/lib/academy/traineeStatus";
 
 export const runtime = "nodejs";
 
-export async function GET() {
+export async function GET(req: Request) {
   const access = await getAcademyAccess();
   if (!access.ok) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
@@ -14,17 +19,23 @@ export async function GET() {
     return NextResponse.json({ ok: false, error: "Staff only" }, { status: 403 });
   }
 
+  const url = new URL(req.url);
+  const filter = parseTraineeListStatusFilter(url.searchParams.get("status"));
+  const statuses = statusesForListFilter(filter);
+
   const supabase = await createSupabaseAuthServerClient();
-  const { data, error } = await supabase
-    .from("training_doctors")
-    .select("*")
-    .order("created_at", { ascending: false });
+  let q = supabase.from("training_doctors").select("*").order("created_at", { ascending: false });
+  if (statuses !== "all") {
+    q = q.in("status", statuses);
+  }
+
+  const { data, error } = await q;
 
   if (error) {
     return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true, trainees: data ?? [] });
+  return NextResponse.json({ ok: true, trainees: data ?? [], filter });
 }
 
 type CreateTraineeBody = {
@@ -89,7 +100,10 @@ export async function POST(req: Request) {
       competency_wave_start_date: body.competency_wave_start_date?.trim() || null,
       program_id: programId,
       current_stage: body.current_stage?.trim() || "foundation",
-      status: body.status?.trim() || "active",
+      status: (() => {
+        const s = body.status?.trim() || "active";
+        return isAllowedTraineeStatus(s) ? s : "active";
+      })(),
       notes: body.notes?.trim() || null,
       auth_user_id: body.auth_user_id?.trim() || null,
       created_by: user.id,

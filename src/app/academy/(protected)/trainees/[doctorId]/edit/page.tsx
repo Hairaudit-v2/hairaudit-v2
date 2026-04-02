@@ -37,8 +37,10 @@ export default async function TraineeEditPage({ params }: { params: Promise<{ do
 
   return (
     <TraineeEditClient
+      key={doctor.updated_at}
       doctorId={doctorId}
       doctor={doctor as TrainingDoctorRow}
+      isAcademyAdmin={access.role === "academy_admin"}
       programOptions={
         programOptions.length
           ? programOptions.map((p: { id: string; name: string }) => ({ id: p.id, name: p.name }))

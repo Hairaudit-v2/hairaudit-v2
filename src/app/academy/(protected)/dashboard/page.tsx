@@ -10,6 +10,7 @@ import {
 } from "@/lib/academy/progression";
 import type { TrainingCaseMetricsRow, TrainingCaseAssessmentRow } from "@/lib/academy/types";
 import Sparkline from "@/components/ui/Sparkline";
+import { isOperationalTraineeStatus } from "@/lib/academy/traineeStatus";
 
 export const dynamic = "force-dynamic";
 
@@ -53,7 +54,7 @@ export default async function AcademyDashboardPage() {
         .limit(12),
     ]);
 
-    const list = doctors ?? [];
+    const list = (doctors ?? []).filter((d) => isOperationalTraineeStatus(d.status));
     const byStage = list.reduce<Record<string, number>>((acc, d) => {
       const s = d.current_stage || "unknown";
       acc[s] = (acc[s] ?? 0) + 1;

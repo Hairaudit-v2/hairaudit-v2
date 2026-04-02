@@ -26,7 +26,7 @@ export default function AdminProgramEditClient({ programId }: { programId: strin
     const [pr, st, tr] = await Promise.all([
       fetch("/api/academy/programs"),
       fetch("/api/academy/sites"),
-      fetch("/api/academy/trainees"),
+      fetch("/api/academy/trainees?status=all"),
     ]);
     const pj = await pr.json();
     const sj = await st.json();

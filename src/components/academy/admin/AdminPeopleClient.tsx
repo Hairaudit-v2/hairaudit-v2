@@ -98,6 +98,17 @@ export default function AdminPeopleClient() {
 
   return (
     <div className="space-y-8">
+      <section className="rounded-xl border border-amber-100 bg-amber-50/40 p-4 shadow-sm">
+        <h2 className="text-sm font-semibold text-slate-900">Trainee roster hygiene</h2>
+        <p className="mt-1 text-xs text-slate-600">
+          Spot duplicate emails or logins, withdraw or archive mistaken rows, and hard-delete only empty profiles from{" "}
+          <Link href="/academy/admin/trainees#duplicates" className="font-medium text-amber-900 underline hover:no-underline">
+            Trainee roster & cleanup
+          </Link>
+          .
+        </p>
+      </section>
+
       <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <h2 className="text-sm font-semibold text-slate-900">Invite or link user</h2>
         <p className="mt-1 text-xs text-slate-600">
