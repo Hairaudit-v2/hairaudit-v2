@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
-import { getAcademyAccess } from "@/lib/academy/auth";
+import { getAcademyAccess, isAcademyAdminRole } from "@/lib/academy/auth";
 import { parseTraineeListStatusFilter, statusesForListFilter, traineeStatusLabel } from "@/lib/academy/traineeStatus";
 import TraineeListStatusFilter from "@/components/academy/TraineeListStatusFilter";
 
@@ -62,7 +62,7 @@ export default async function AcademyTraineesListPage({
       {filter === "operational" ? (
         <p className="text-xs text-slate-600">
           Showing active, paused, and graduated trainees. Use the filter to include withdrawn, archived, or everyone.
-          {access.role === "academy_admin" ? (
+          {isAcademyAdminRole(access.role) ? (
             <>
               {" "}
               <Link href="/academy/admin/trainees" className="font-medium text-amber-800 hover:underline">

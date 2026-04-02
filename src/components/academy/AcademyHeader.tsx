@@ -16,7 +16,10 @@ export default function AcademyHeader({
 }) {
   const pathname = usePathname();
   const navClass = (href: string) => {
-    const active = pathname === href || pathname.startsWith(`${href}/`);
+    let active = pathname === href || pathname.startsWith(`${href}/`);
+    if (href === "/academy/dashboard" && pathname.startsWith("/academy/admin")) {
+      active = false;
+    }
     return active
       ? "font-semibold text-amber-300 bg-amber-400/10 ring-1 ring-amber-400/30 px-2.5 py-1 rounded-md"
       : "font-medium text-slate-300 hover:text-amber-300";

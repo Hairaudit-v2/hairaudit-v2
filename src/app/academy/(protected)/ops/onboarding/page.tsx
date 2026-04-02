@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getAcademyAccess } from "@/lib/academy/auth";
+import { ACADEMY_ADMIN_FORBIDDEN_PATH, getAcademyAccess, isAcademyAdminRole } from "@/lib/academy/auth";
 import { academyOpsInboxAddress } from "@/lib/academy/onboardingTemplate";
 import { listAcademySites } from "@/lib/academy/academySites";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 export default async function AcademyOnboardingPage() {
   const access = await getAcademyAccess();
   if (!access.ok) redirect("/academy/login");
-  if (access.role !== "academy_admin") redirect("/academy/dashboard");
+  if (!isAcademyAdminRole(access.role)) redirect(ACADEMY_ADMIN_FORBIDDEN_PATH);
 
   const envFallbackConfigured = Boolean(academyOpsInboxAddress());
   const defaultRequesterEmail = access.user.email?.trim() ?? "";

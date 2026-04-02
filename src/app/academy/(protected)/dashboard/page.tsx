@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
-import { getAcademyAccess } from "@/lib/academy/auth";
+import { getAcademyAccess, isAcademyAdminRole } from "@/lib/academy/auth";
 import { fetchTrainingDoctorForUser, fetchTrainingCasesForDoctor } from "@/lib/academy/queries";
 import {
   computeTraineeProgressSnapshot,
@@ -68,7 +68,7 @@ export default async function AcademyDashboardPage() {
 
     return (
       <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-8 pb-10">
-        {access.role === "academy_admin" ? (
+        {isAcademyAdminRole(access.role) ? (
           <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950">
             <span className="font-semibold">Academy admin:</span>{" "}
             <Link href="/academy/admin" className="font-medium text-amber-900 underline hover:no-underline">

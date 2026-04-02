@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { isBetaAllowedUser } from "@/lib/auth/betaAccess";
-import { getAcademyAccess } from "@/lib/academy/auth";
+import { getAcademyAccess, isAcademyAdminRole } from "@/lib/academy/auth";
 import AcademyHeader from "@/components/academy/AcademyHeader";
 
 export const dynamic = "force-dynamic";
@@ -23,7 +23,7 @@ export default async function AcademyProtectedLayout({ children }: { children: R
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
-      <AcademyHeader isStaff={access.isStaff} role={access.role} isAcademyAdmin={access.role === "academy_admin"} />
+      <AcademyHeader isStaff={access.isStaff} role={access.role} isAcademyAdmin={isAcademyAdminRole(access.role)} />
       <main className="flex-1 py-6 sm:py-8">{children}</main>
     </div>
   );

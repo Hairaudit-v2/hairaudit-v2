@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
-import { getAcademyAccess } from "@/lib/academy/auth";
+import { getAcademyAccess, isAcademyAdminRole } from "@/lib/academy/auth";
 import { DEFAULT_TRAINING_PROGRAM_ID } from "@/lib/academy/constants";
 import type { TrainingDoctorRow } from "@/lib/academy/types";
 import TraineeEditClient from "@/components/academy/TraineeEditClient";
@@ -40,7 +40,7 @@ export default async function TraineeEditPage({ params }: { params: Promise<{ do
       key={doctor.updated_at}
       doctorId={doctorId}
       doctor={doctor as TrainingDoctorRow}
-      isAcademyAdmin={access.role === "academy_admin"}
+      isAcademyAdmin={isAcademyAdminRole(access.role)}
       programOptions={
         programOptions.length
           ? programOptions.map((p: { id: string; name: string }) => ({ id: p.id, name: p.name }))

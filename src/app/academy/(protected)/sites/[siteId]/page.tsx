@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
-import { getAcademyAccess } from "@/lib/academy/auth";
+import { ACADEMY_ADMIN_FORBIDDEN_PATH, getAcademyAccess, isAcademyAdminRole } from "@/lib/academy/auth";
 import { getAcademySiteById } from "@/lib/academy/academySites";
 import AcademySiteEditForm from "./AcademySiteEditForm";
 
@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export default async function AcademySiteDetailPage({ params }: { params: Promise<{ siteId: string }> }) {
   const access = await getAcademyAccess();
   if (!access.ok) redirect("/academy/login");
-  if (access.role !== "academy_admin") redirect("/academy/dashboard");
+  if (!isAcademyAdminRole(access.role)) redirect(ACADEMY_ADMIN_FORBIDDEN_PATH);
 
   const { siteId } = await params;
   const supabase = await createSupabaseAuthServerClient();

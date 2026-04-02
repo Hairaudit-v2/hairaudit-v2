@@ -1,8 +1,13 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getAcademyAccess } from "@/lib/academy/auth";
+import {
+  ACADEMY_ADMIN_FORBIDDEN_PATH,
+  getAcademyAccess,
+  isAcademyAdminRole,
+} from "@/lib/academy/auth";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 const nav = [
   { href: "/academy/admin", label: "Overview" },
@@ -16,8 +21,11 @@ const nav = [
 
 export default async function AcademyAdminLayout({ children }: { children: React.ReactNode }) {
   const access = await getAcademyAccess();
-  if (!access.ok) redirect("/academy/login");
-  if (access.role !== "academy_admin") redirect("/academy/dashboard");
+  if (!access.ok) {
+    if (access.reason === "no_membership") redirect("/academy/no-access");
+    redirect("/academy/login");
+  }
+  if (!isAcademyAdminRole(access.role)) redirect(ACADEMY_ADMIN_FORBIDDEN_PATH);
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-12">
