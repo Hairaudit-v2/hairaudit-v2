@@ -67,6 +67,15 @@ export default async function AcademyDashboardPage() {
 
     return (
       <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-8 pb-10">
+        {access.role === "academy_admin" ? (
+          <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+            <span className="font-semibold">Academy admin:</span>{" "}
+            <Link href="/academy/admin" className="font-medium text-amber-900 underline hover:no-underline">
+              Open admin console
+            </Link>{" "}
+            for programs, people, cohorts, and training library publishing.
+          </div>
+        ) : null}
         <div className="rounded-3xl border border-slate-700/70 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 px-7 py-7 shadow-xl">
           <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-amber-300">IIOHR Academy</p>
           <h1 className="mt-1 text-3xl font-semibold text-white sm:text-[2.05rem]">Academy dashboard</h1>

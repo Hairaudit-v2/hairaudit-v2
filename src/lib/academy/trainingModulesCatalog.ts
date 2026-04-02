@@ -1,5 +1,6 @@
 import { readFile } from "fs/promises";
 import path from "path";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LadderWithSteps } from "./competency";
 
 const PUBLIC_PREFIX = "/training/doctors";
@@ -12,6 +13,8 @@ export type TrainingModuleCatalogFlags = {
   /** When true, only listed auth user ids (trainees) see the module */
   requiresTrainerAssignment?: boolean;
   assignedAuthUserIds?: string[];
+  /** Cohort ids from `training_module_cohort_assignments` (DB-backed) */
+  assignedCohortIds?: string[];
 };
 
 export type TrainingModuleDefinition = {
@@ -101,7 +104,7 @@ function normalizeModule(raw: unknown): TrainingModuleDefinition | null {
   };
 }
 
-export async function loadTrainingModulesCatalog(): Promise<TrainingModuleDefinition[]> {
+export async function loadTrainingModulesCatalogFromJson(): Promise<TrainingModuleDefinition[]> {
   const filePath = path.join(process.cwd(), "public", "training", "doctors", "modules.json");
   try {
     const raw = await readFile(filePath, "utf8");
@@ -127,16 +130,144 @@ export async function loadTrainingModulesCatalog(): Promise<TrainingModuleDefini
   }
 }
 
+/** @deprecated Prefer loadTrainingModulesCatalogMerged(supabase) */
+export async function loadTrainingModulesCatalog(): Promise<TrainingModuleDefinition[]> {
+  return loadTrainingModulesCatalogFromJson();
+}
+
+type DbModuleRow = {
+  id: string;
+  title: string;
+  short_description: string;
+  category: string;
+  last_updated: string;
+  read_online_url: string | null;
+  download_url: string | null;
+  cover_image_url: string | null;
+  status: string;
+  mandatory: boolean;
+  recommended: boolean;
+  recommended_weeks: number[] | null;
+  related_competency_ladder_keys: string[] | null;
+  requires_assignment: boolean;
+};
+
+function dbRowToDefinition(
+  row: DbModuleRow,
+  userIds: string[],
+  cohortIds: string[]
+): TrainingModuleDefinition | null {
+  const lastUpdated = String(row.last_updated || "").slice(0, 10);
+  if (!row.id?.trim() || !row.title?.trim() || !lastUpdated) return null;
+  const readOnlineUrl = row.read_online_url?.trim() || null;
+  const downloadUrl = row.download_url?.trim() || null;
+  const coverImageUrl = row.cover_image_url?.trim() || null;
+  if (readOnlineUrl && !isAllowedTrainingDoctorsPublicUrl(readOnlineUrl)) return null;
+  if (downloadUrl && !isAllowedTrainingDoctorsPublicUrl(downloadUrl)) return null;
+  if (coverImageUrl && !isAllowedTrainingDoctorsPublicUrl(coverImageUrl)) return null;
+
+  const weeks = Array.isArray(row.recommended_weeks)
+    ? row.recommended_weeks.map((n) => Number(n)).filter((n) => n >= 1 && n <= 12)
+    : [];
+  const ladderKeys = Array.isArray(row.related_competency_ladder_keys)
+    ? row.related_competency_ladder_keys.map((k) => String(k).trim()).filter(Boolean)
+    : undefined;
+
+  const flags: TrainingModuleCatalogFlags = {
+    mandatory: row.mandatory,
+    recommended: row.recommended,
+    relatedCompetencyLadderKeys: ladderKeys?.length ? ladderKeys : undefined,
+    requiresTrainerAssignment: row.requires_assignment,
+    assignedAuthUserIds: userIds.length ? userIds : undefined,
+    assignedCohortIds: cohortIds.length ? cohortIds : undefined,
+  };
+
+  return {
+    id: row.id.trim(),
+    title: row.title.trim(),
+    shortDescription: row.short_description?.trim() || "",
+    category: row.category?.trim() || "General",
+    lastUpdated,
+    readOnlineUrl,
+    downloadUrl,
+    coverImageUrl,
+    recommendedForWeeks: weeks.length ? weeks : undefined,
+    status: row.status === "draft" ? "draft" : "approved",
+    flags,
+  };
+}
+
+/**
+ * DB modules (RLS-aware) override JSON entries with the same id. Unmatched JSON modules remain as fallback.
+ */
+export async function loadTrainingModulesCatalogMerged(supabase: SupabaseClient): Promise<TrainingModuleDefinition[]> {
+  const { data: rows, error } = await supabase.from("training_modules").select("*");
+  if (error) {
+    return loadTrainingModulesCatalogFromJson();
+  }
+  if (!rows?.length) {
+    return loadTrainingModulesCatalogFromJson();
+  }
+
+  const dbList = rows as DbModuleRow[];
+  const ids = dbList.map((r) => r.id);
+  const [{ data: userAssigns }, { data: cohortAssigns }] = await Promise.all([
+    supabase.from("training_module_user_assignments").select("module_id, user_id").in("module_id", ids),
+    supabase.from("training_module_cohort_assignments").select("module_id, cohort_id").in("module_id", ids),
+  ]);
+
+  const usersByModule = new Map<string, string[]>();
+  for (const r of userAssigns ?? []) {
+    const mid = (r as { module_id: string }).module_id;
+    const uid = (r as { user_id: string }).user_id;
+    const list = usersByModule.get(mid) ?? [];
+    list.push(uid);
+    usersByModule.set(mid, list);
+  }
+  const cohortsByModule = new Map<string, string[]>();
+  for (const r of cohortAssigns ?? []) {
+    const mid = (r as { module_id: string }).module_id;
+    const cid = (r as { cohort_id: string }).cohort_id;
+    const list = cohortsByModule.get(mid) ?? [];
+    list.push(cid);
+    cohortsByModule.set(mid, list);
+  }
+
+  const fromDb: TrainingModuleDefinition[] = [];
+  const dbIds = new Set<string>();
+  for (const row of dbList) {
+    const m = dbRowToDefinition(
+      row,
+      usersByModule.get(row.id) ?? [],
+      cohortsByModule.get(row.id) ?? []
+    );
+    if (!m) continue;
+    if (m.status === "draft") continue;
+    dbIds.add(m.id);
+    fromDb.push(m);
+  }
+
+  const jsonMods = await loadTrainingModulesCatalogFromJson();
+  const fromJson = jsonMods.filter((m) => !dbIds.has(m.id));
+  const merged = [...fromDb, ...fromJson];
+  merged.sort((a, b) => b.lastUpdated.localeCompare(a.lastUpdated) || a.title.localeCompare(b.title));
+  return merged;
+}
+
 export function filterModulesForViewer(
   modules: TrainingModuleDefinition[],
-  ctx: { userId: string; isStaff: boolean }
+  ctx: { userId: string; isStaff: boolean; traineeCohortIds?: string[] }
 ): TrainingModuleDefinition[] {
+  const cohortSet = ctx.traineeCohortIds ?? [];
   return modules.filter((m) => {
     const req = m.flags?.requiresTrainerAssignment;
     if (!req) return true;
     if (ctx.isStaff) return true;
     const ids = m.flags?.assignedAuthUserIds ?? [];
-    return ids.length > 0 && ids.includes(ctx.userId);
+    const cids = m.flags?.assignedCohortIds ?? [];
+    if (ids.includes(ctx.userId)) return true;
+    if (cids.length > 0 && cohortSet.some((c) => cids.includes(c))) return true;
+    return false;
   });
 }
 

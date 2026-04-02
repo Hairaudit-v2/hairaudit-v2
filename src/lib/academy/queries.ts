@@ -26,3 +26,17 @@ export async function fetchTrainingCasesForDoctor(
   if (error || !data) return [];
   return data as TrainingCaseRow[];
 }
+
+/** Cohort ids for a trainee auth user (via training_doctors → training_cohort_trainees). */
+export async function fetchTraineeCohortIds(supabase: SupabaseClient, userId: string): Promise<string[]> {
+  const { data: docs } = await supabase.from("training_doctors").select("id").eq("auth_user_id", userId);
+  const doctorIds = (docs ?? []).map((d) => (d as { id: string }).id);
+  if (!doctorIds.length) return [];
+  const { data: ct } = await supabase
+    .from("training_cohort_trainees")
+    .select("cohort_id")
+    .in("training_doctor_id", doctorIds);
+  const set = new Set<string>();
+  for (const r of ct ?? []) set.add((r as { cohort_id: string }).cohort_id);
+  return [...set];
+}

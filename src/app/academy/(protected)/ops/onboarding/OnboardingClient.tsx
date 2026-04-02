@@ -589,8 +589,8 @@ export default function OnboardingClient({
                     }}
                     className="mt-0.5 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
                   >
-                    <option value="trainer">Trainer</option>
-                    <option value="clinic_staff">Clinic staff</option>
+                    <option value="trainer">Trainer (surgeon / faculty)</option>
+                    <option value="clinic_staff">Clinic coordinator / nurse</option>
                     <option value="trainee">Trainee</option>
                   </select>
                 </div>

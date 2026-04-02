@@ -62,3 +62,13 @@ export async function requireAcademyStaff(): Promise<Extract<AcademyAccess, { ok
   }
   return a;
 }
+
+export async function requireAcademyAdmin(): Promise<Extract<AcademyAccess, { ok: true }>> {
+  const a = await requireAcademyAccess();
+  if (a.role !== "academy_admin") {
+    const err = new Error("academy_admin_only");
+    (err as Error & { academyReason?: string }).academyReason = "academy_admin_only";
+    throw err;
+  }
+  return a;
+}

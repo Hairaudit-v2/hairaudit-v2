@@ -5,7 +5,7 @@ import { getAcademyAccess } from "@/lib/academy/auth";
 import {
   collectLadderKeysForTrainingHints,
   filterModulesForViewer,
-  loadTrainingModulesCatalog,
+  loadTrainingModulesCatalogMerged,
 } from "@/lib/academy/trainingModulesCatalog";
 import {
   competencyWaveAnchor,
@@ -13,7 +13,11 @@ import {
   groupStepsByLadder,
   suggestStepIdsFromLatestMetrics,
 } from "@/lib/academy/competency";
-import { fetchTrainingCasesForDoctor, fetchTrainingDoctorForUser } from "@/lib/academy/queries";
+import {
+  fetchTraineeCohortIds,
+  fetchTrainingCasesForDoctor,
+  fetchTrainingDoctorForUser,
+} from "@/lib/academy/queries";
 import type {
   TrainingCaseMetricsRow,
   TrainingCompetencyAchievementRow,
@@ -28,10 +32,21 @@ export default async function TrainingModulesPage() {
   const access = await getAcademyAccess();
   if (!access.ok) redirect("/academy/login");
 
-  const rawModules = await loadTrainingModulesCatalog();
-  const modules = filterModulesForViewer(rawModules, { userId: access.userId, isStaff: access.isStaff });
-
   const supabase = await createSupabaseAuthServerClient();
+  const rawModules = await loadTrainingModulesCatalogMerged(supabase);
+  let traineeCohortIds: string[] = [];
+  if (!access.isStaff) {
+    try {
+      traineeCohortIds = await fetchTraineeCohortIds(supabase, access.userId);
+    } catch {
+      traineeCohortIds = [];
+    }
+  }
+  const modules = filterModulesForViewer(rawModules, {
+    userId: access.userId,
+    isStaff: access.isStaff,
+    traineeCohortIds,
+  });
 
   let traineeWeek: number | null = null;
   let highlightLadderKeys: string[] = [];

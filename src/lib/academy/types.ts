@@ -17,6 +17,7 @@ export type TrainingDoctorRow = {
   clinic_name: string | null;
   registration_number: string | null;
   start_date: string | null;
+  academy_site_id: string | null;
   assigned_trainer_id: string | null;
   program_id: string | null;
   current_stage: string;

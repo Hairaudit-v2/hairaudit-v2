@@ -37,6 +37,7 @@ type PatchTraineeBody = Partial<{
   competency_final_readiness_notes: string | null;
   competency_restrictions_json: Record<string, unknown> | null;
   assigned_trainer_id: string | null;
+  academy_site_id: string | null;
   program_id: string | null;
   current_stage: string;
   status: string;

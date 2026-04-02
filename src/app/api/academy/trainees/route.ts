@@ -35,7 +35,9 @@ type CreateTraineeBody = {
   clinic_name?: string | null;
   registration_number?: string | null;
   start_date?: string | null;
+  academy_site_id?: string | null;
   assigned_trainer_id?: string | null;
+  competency_wave_start_date?: string | null;
   program_id?: string | null;
   current_stage?: string | null;
   status?: string | null;
@@ -82,7 +84,9 @@ export async function POST(req: Request) {
       clinic_name: body.clinic_name?.trim() || null,
       registration_number: body.registration_number?.trim() || null,
       start_date: body.start_date?.trim() || null,
+      academy_site_id: body.academy_site_id?.trim() || null,
       assigned_trainer_id: body.assigned_trainer_id?.trim() || null,
+      competency_wave_start_date: body.competency_wave_start_date?.trim() || null,
       program_id: programId,
       current_stage: body.current_stage?.trim() || "foundation",
       status: body.status?.trim() || "active",

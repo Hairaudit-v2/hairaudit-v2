@@ -56,6 +56,9 @@ export default function AcademyHeader({
                 </Link>
                 {isAcademyAdmin ? (
                   <>
+                    <Link href="/academy/admin" className={navClass("/academy/admin")}>
+                      Admin
+                    </Link>
                     <Link href="/academy/sites" className={navClass("/academy/sites")}>
                       Sites
                     </Link>

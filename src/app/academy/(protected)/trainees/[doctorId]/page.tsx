@@ -94,12 +94,20 @@ export default async function TraineeDetailPage({ params }: { params: Promise<{ 
               Training library (self-study) →
             </Link>
             {access.isStaff ? (
-              <Link
-                href={`/academy/trainees/${doctorId}/new-case`}
-                className="text-sm font-semibold text-amber-100 hover:text-white"
-              >
-                + New training case
-              </Link>
+              <>
+                <Link
+                  href={`/academy/trainees/${doctorId}/edit`}
+                  className="text-sm font-semibold text-amber-100 hover:text-white"
+                >
+                  Edit trainee profile
+                </Link>
+                <Link
+                  href={`/academy/trainees/${doctorId}/new-case`}
+                  className="text-sm font-semibold text-amber-100 hover:text-white"
+                >
+                  + New training case
+                </Link>
+              </>
             ) : null}
           </div>
         </div>
