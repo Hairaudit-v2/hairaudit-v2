@@ -9,9 +9,10 @@ export async function fetchTrainingDoctorForUser(
     .from("training_doctors")
     .select("*")
     .eq("auth_user_id", userId)
-    .maybeSingle();
-  if (error || !data) return null;
-  return data as TrainingDoctorRow;
+    .order("created_at", { ascending: false })
+    .limit(1);
+  if (error || !data?.length) return null;
+  return data[0] as TrainingDoctorRow;
 }
 
 export async function fetchTrainingCasesForDoctor(

@@ -46,6 +46,24 @@ async function resolveProfileRoleForUpsert(
   return desired;
 }
 
+/** GoTrue / invite errors when the email already has an auth user — wording varies by version. */
+function isAuthEmailAlreadyRegisteredMessage(message: string): boolean {
+  const m = message.toLowerCase();
+  return (
+    m.includes("already been registered") ||
+    m.includes("already registered") ||
+    m.includes("user already registered") ||
+    m.includes("email address is already") ||
+    m.includes("email already") ||
+    (m.includes("already") && m.includes("exists") && m.includes("user"))
+  );
+}
+
+/** ILIKE pattern for case-insensitive exact email match (escape %, _, \\). */
+function emailForExactIlike(e: string): string {
+  return e.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
+}
+
 /**
  * Invite or magic-link a user, upsert HairAudit profile + academy_users, optional training_doctors for trainees.
  */
@@ -77,14 +95,7 @@ export async function provisionAcademyMember(input: {
   let manualLink: string | undefined;
 
   if (inviteRes.error) {
-    const em = inviteRes.error.message.toLowerCase();
-    const alreadyThere =
-      em.includes("already been registered") ||
-      em.includes("already registered") ||
-      em.includes("user already registered") ||
-      em.includes("email address is already");
-
-    if (!alreadyThere) {
+    if (!isAuthEmailAlreadyRegisteredMessage(inviteRes.error.message)) {
       return { email, academy_role: input.academyRole, ok: false, error: inviteRes.error.message };
     }
 
@@ -157,24 +168,75 @@ export async function provisionAcademyMember(input: {
   }
 
   if (input.academyRole === "trainee") {
-    const { data: existingDoc } = await admin.from("training_doctors").select("id").eq("auth_user_id", userId).maybeSingle();
-    if (!existingDoc) {
-      const { error: tdErr } = await admin.from("training_doctors").insert({
-        full_name: display,
+    const { data: linkedRows, error: linkedErr } = await admin
+      .from("training_doctors")
+      .select("id")
+      .eq("auth_user_id", userId)
+      .limit(1);
+    if (linkedErr) {
+      return {
         email,
-        auth_user_id: userId,
-        created_by: input.invitedByUserId,
-        program_id: DEFAULT_TRAINING_PROGRAM_ID,
-        current_stage: "foundation",
-        status: "active",
-      });
-      if (tdErr) {
+        academy_role: input.academyRole,
+        ok: false,
+        error: `Trainee profile: ${linkedErr.message}`,
+      };
+    }
+    if (linkedRows?.length) {
+      // Already linked to a trainee row
+    } else {
+      const { data: shellRows, error: shErr } = await admin
+        .from("training_doctors")
+        .select("id")
+        .is("auth_user_id", null)
+        .ilike("email", emailForExactIlike(email))
+        .order("created_at", { ascending: true })
+        .limit(1);
+      if (shErr) {
         return {
           email,
           academy_role: input.academyRole,
           ok: false,
-          error: `Trainee profile: ${tdErr.message}`,
+          error: `Trainee profile: ${shErr.message}`,
         };
+      }
+      const shellId = shellRows?.[0]?.id as string | undefined;
+
+      if (shellId) {
+        const { error: upErr } = await admin
+          .from("training_doctors")
+          .update({
+            auth_user_id: userId,
+            full_name: display,
+            email,
+            updated_at: now,
+          })
+          .eq("id", shellId);
+        if (upErr) {
+          return {
+            email,
+            academy_role: input.academyRole,
+            ok: false,
+            error: `Trainee profile: ${upErr.message}`,
+          };
+        }
+      } else {
+        const { error: tdErr } = await admin.from("training_doctors").insert({
+          full_name: display,
+          email,
+          auth_user_id: userId,
+          created_by: input.invitedByUserId,
+          program_id: DEFAULT_TRAINING_PROGRAM_ID,
+          current_stage: "foundation",
+          status: "active",
+        });
+        if (tdErr) {
+          return {
+            email,
+            academy_role: input.academyRole,
+            ok: false,
+            error: `Trainee profile: ${tdErr.message}`,
+          };
+        }
       }
     }
   }
