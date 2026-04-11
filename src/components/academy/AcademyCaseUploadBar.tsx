@@ -1,9 +1,25 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import AcademyQuickUpload from "@/components/academy/AcademyQuickUpload";
+import AcademyCasePhotosPanel from "@/components/academy/AcademyCasePhotosPanel";
+import type { TrainingCaseUploadRow } from "@/lib/academy/types";
 
-export default function AcademyCaseUploadBar({ caseId }: { caseId: string }) {
-  const router = useRouter();
-  return <AcademyQuickUpload caseId={caseId} onUploaded={() => router.refresh()} />;
+export default function AcademyCaseUploadBar({
+  caseId,
+  initialUploads,
+  viewerUserId,
+  isStaff,
+}: {
+  caseId: string;
+  initialUploads: TrainingCaseUploadRow[];
+  viewerUserId: string;
+  isStaff: boolean;
+}) {
+  return (
+    <AcademyCasePhotosPanel
+      caseId={caseId}
+      initialUploads={initialUploads}
+      viewerUserId={viewerUserId}
+      isStaff={isStaff}
+    />
+  );
 }

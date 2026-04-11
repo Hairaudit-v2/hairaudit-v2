@@ -2,11 +2,10 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { getAcademyAccess } from "@/lib/academy/auth";
-import AcademySignedThumb from "@/components/academy/AcademySignedThumb";
 import AcademyMetricsForm from "@/components/academy/AcademyMetricsForm";
 import AcademyCaseStatusControl from "@/components/academy/AcademyCaseStatusControl";
 import AcademyCaseUploadBar from "@/components/academy/AcademyCaseUploadBar";
-import { parseTrainingPhotoType } from "@/lib/academy/photoCategories";
+import type { TrainingCaseUploadRow } from "@/lib/academy/types";
 
 export const dynamic = "force-dynamic";
 
@@ -55,19 +54,14 @@ export default async function AcademyCaseDetailPage({ params }: { params: Promis
         </div>
       </div>
 
-      <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm space-y-4">
+      <section className="space-y-3">
         <h2 className="text-sm font-semibold text-slate-900">Photos</h2>
-        <AcademyCaseUploadBar caseId={caseId} />
-        {!uploads?.length ? (
-          <p className="text-sm text-slate-500">No uploads yet.</p>
-        ) : (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {uploads.map((u) => {
-              const cat = parseTrainingPhotoType(u.type) ?? u.type;
-              return <AcademySignedThumb key={u.id} storagePath={u.storage_path} label={cat} />;
-            })}
-          </div>
-        )}
+        <AcademyCaseUploadBar
+          caseId={caseId}
+          initialUploads={(uploads ?? []) as TrainingCaseUploadRow[]}
+          viewerUserId={access.userId}
+          isStaff={access.isStaff}
+        />
       </section>
 
       <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
