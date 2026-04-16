@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import {
   deriveTrainingCaseMetrics,
@@ -92,9 +93,11 @@ export default function AcademyMetricsForm({
   surgeryDate: string;
   initial: MetricsInitial;
 }) {
+  const router = useRouter();
   const [saved, setSaved] = useState<MetricsInitial>(initial);
   const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
+  const [saveOk, setSaveOk] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const [graftsAttempted, setGraftsAttempted] = useState(() => toStr(initial.grafts_attempted));
   const [graftsExtracted, setGraftsExtracted] = useState(() => toStr(initial.grafts_extracted));
@@ -179,7 +182,8 @@ export default function AcademyMetricsForm({
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setBusy(true);
-    setMsg(null);
+    setSaveOk(null);
+    setSaveError(null);
 
     const patch: Record<string, string | number | boolean | null> = {
       grafts_attempted: parseIntField(graftsAttempted),
@@ -211,10 +215,32 @@ export default function AcademyMetricsForm({
       });
       const j = (await res.json()) as { ok?: boolean; error?: string; metrics?: MetricsInitial };
       if (!res.ok) throw new Error(j.error || "Save failed");
-      if (j.metrics) setSaved(j.metrics);
-      setMsg("Metrics saved");
+      if (j.metrics) {
+        const r = j.metrics;
+        setSaved(r);
+        setGraftsAttempted(toStr(r.grafts_attempted));
+        setGraftsExtracted(toStr(r.grafts_extracted));
+        setGraftsImplanted(toStr(r.grafts_implanted));
+        setTotalHairs(toStr(r.total_hairs));
+        setExtStart(toTimeInput(r.extraction_start_time));
+        setExtEnd(toTimeInput(r.extraction_end_time));
+        setImpStart(toTimeInput(r.implantation_start_time));
+        setImpEnd(toTimeInput(r.implantation_end_time));
+        setPunchSize(toStr(r.punch_size));
+        setPunchType(toStr(r.punch_type));
+        setImplantMethod(toStr(r.implantation_method));
+        setObserved(Boolean(r.observed_by_trainer));
+        setTransectCount(toStr(r.transected_grafts_count));
+        setBuriedCount(toStr(r.buried_grafts_count));
+        setPoppedCount(toStr(r.popped_grafts_count));
+        setManualTransect(toStr(r.transection_rate));
+        setManualBuried(toStr(r.buried_graft_rate));
+        setManualPopping(toStr(r.popping_rate));
+      }
+      setSaveOk("Metrics saved");
+      router.refresh();
     } catch (err) {
-      setMsg(err instanceof Error ? err.message : "Save failed");
+      setSaveError(err instanceof Error ? err.message : "Save failed");
     } finally {
       setBusy(false);
     }
@@ -225,6 +251,14 @@ export default function AcademyMetricsForm({
 
   return (
     <form onSubmit={onSubmit} className="space-y-6">
+      {saveOk || saveError ? (
+        <div
+          role="status"
+          className={`rounded-lg border px-3 py-2 text-sm ${saveError ? "border-red-200 bg-red-50 text-red-900" : "border-emerald-200 bg-emerald-50 text-emerald-900"}`}
+        >
+          {saveError ?? saveOk}
+        </div>
+      ) : null}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h3 className="text-base font-semibold tracking-tight text-slate-900">Case metrics</h3>
@@ -392,7 +426,6 @@ export default function AcademyMetricsForm({
         >
           {busy ? "Saving…" : "Save metrics"}
         </button>
-        {msg ? <p className="text-xs text-slate-600">{msg}</p> : null}
       </div>
     </form>
   );

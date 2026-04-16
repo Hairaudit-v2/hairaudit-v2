@@ -35,6 +35,33 @@ const METRICS_COLUMNS = [
 
 type MetricsColumn = (typeof METRICS_COLUMNS)[number];
 
+/** DB columns added in 20260416130001 — omit from upsert if remote schema has not migrated yet */
+const METRICS_V2_OPTIONAL_DB_COLUMNS = [
+  "extraction_start_time",
+  "extraction_end_time",
+  "implantation_start_time",
+  "implantation_end_time",
+  "transected_grafts_count",
+  "buried_grafts_count",
+  "popped_grafts_count",
+] as const;
+
+function omitKeys(obj: Record<string, unknown>, keys: readonly string[]): Record<string, unknown> {
+  const o = { ...obj };
+  for (const k of keys) delete o[k];
+  return o;
+}
+
+function isUnknownTrainingMetricsColumnError(err: { message?: string; code?: string } | null): boolean {
+  if (!err) return false;
+  const m = (err.message ?? "").toLowerCase();
+  const c = String(err.code ?? "");
+  if (m.includes("could not find") && m.includes("column")) return true;
+  if (m.includes("schema cache")) return true;
+  if (/42703|42P01/.test(c)) return true;
+  return false;
+}
+
 function numOrNull(v: unknown): number | null {
   if (v === undefined || v === null || v === "") return null;
   const n = typeof v === "number" ? v : Number(v);
@@ -149,13 +176,30 @@ export async function PUT(req: Request, ctx: { params: Promise<{ caseId: string 
   row.buried_graft_rate = derived.buried_graft_rate;
   row.popping_rate = derived.popping_rate;
 
-  const { data, error } = await supabase
+  row.observed_by_trainer = Boolean(merged.observed_by_trainer);
+
+  let payload: Record<string, unknown> = row;
+  let { data, error } = await supabase
     .from("training_case_metrics")
-    .upsert(row, { onConflict: "training_case_id" })
+    .upsert(payload, { onConflict: "training_case_id" })
     .select("*")
     .maybeSingle();
 
+  if (error && isUnknownTrainingMetricsColumnError(error)) {
+    console.warn("[training_case_metrics] upsert failed (likely missing v2 columns); retrying without timing/count fields", {
+      caseId,
+      message: error.message,
+    });
+    payload = omitKeys(row, METRICS_V2_OPTIONAL_DB_COLUMNS);
+    ({ data, error } = await supabase
+      .from("training_case_metrics")
+      .upsert(payload, { onConflict: "training_case_id" })
+      .select("*")
+      .maybeSingle());
+  }
+
   if (error) {
+    console.error("[training_case_metrics] upsert failed", { caseId, message: error.message, code: error.code });
     return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
   }
 
