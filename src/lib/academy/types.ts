@@ -62,6 +62,10 @@ export type TrainingCaseMetricsRow = {
   grafts_attempted: number | null;
   grafts_extracted: number | null;
   grafts_implanted: number | null;
+  extraction_start_time: string | null;
+  extraction_end_time: string | null;
+  implantation_start_time: string | null;
+  implantation_end_time: string | null;
   extraction_minutes: number | null;
   implantation_minutes: number | null;
   total_minutes: number | null;
@@ -70,6 +74,9 @@ export type TrainingCaseMetricsRow = {
   transection_rate: number | null;
   buried_graft_rate: number | null;
   popping_rate: number | null;
+  transected_grafts_count: number | null;
+  buried_grafts_count: number | null;
+  popped_grafts_count: number | null;
   out_of_body_time_estimate: number | null;
   punch_size: string | null;
   punch_type: string | null;

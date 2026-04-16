@@ -1,29 +1,86 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { requireAcademyStaff } from "@/lib/academy/auth";
+import { deriveTrainingCaseMetrics } from "@/lib/academy/trainingCaseMetricsDerived";
 
 export const runtime = "nodejs";
 
-type MetricsBody = Partial<{
-  grafts_attempted: number | null;
-  grafts_extracted: number | null;
-  grafts_implanted: number | null;
-  extraction_minutes: number | null;
-  implantation_minutes: number | null;
-  total_minutes: number | null;
-  extraction_grafts_per_hour: number | null;
-  implantation_grafts_per_hour: number | null;
-  transection_rate: number | null;
-  buried_graft_rate: number | null;
-  popping_rate: number | null;
-  out_of_body_time_estimate: number | null;
-  punch_size: string | null;
-  punch_type: string | null;
-  implantation_method: string | null;
-  total_hairs: number | null;
-  hair_to_graft_ratio: number | null;
-  observed_by_trainer: boolean | null;
-}>;
+const METRICS_COLUMNS = [
+  "grafts_attempted",
+  "grafts_extracted",
+  "grafts_implanted",
+  "extraction_start_time",
+  "extraction_end_time",
+  "implantation_start_time",
+  "implantation_end_time",
+  "extraction_minutes",
+  "implantation_minutes",
+  "total_minutes",
+  "extraction_grafts_per_hour",
+  "implantation_grafts_per_hour",
+  "transection_rate",
+  "buried_graft_rate",
+  "popping_rate",
+  "transected_grafts_count",
+  "buried_grafts_count",
+  "popped_grafts_count",
+  "out_of_body_time_estimate",
+  "punch_size",
+  "punch_type",
+  "implantation_method",
+  "total_hairs",
+  "hair_to_graft_ratio",
+  "observed_by_trainer",
+] as const;
+
+type MetricsColumn = (typeof METRICS_COLUMNS)[number];
+
+function numOrNull(v: unknown): number | null {
+  if (v === undefined || v === null || v === "") return null;
+  const n = typeof v === "number" ? v : Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
+function strOrNull(v: unknown): string | null {
+  if (v === undefined || v === null) return null;
+  const s = String(v).trim();
+  return s.length ? s : null;
+}
+
+function readPatch(raw: Record<string, unknown>): Partial<Record<MetricsColumn, number | string | boolean | null>> {
+  const patch: Partial<Record<MetricsColumn, number | string | boolean | null>> = {};
+  for (const k of METRICS_COLUMNS) {
+    if (raw[k] === undefined) continue;
+    const v = raw[k];
+    if (k === "observed_by_trainer") {
+      patch[k] = Boolean(v);
+      continue;
+    }
+    if (
+      k === "punch_size" ||
+      k === "punch_type" ||
+      k === "implantation_method" ||
+      k === "extraction_start_time" ||
+      k === "extraction_end_time" ||
+      k === "implantation_start_time" ||
+      k === "implantation_end_time"
+    ) {
+      patch[k] = strOrNull(v);
+      continue;
+    }
+    patch[k] = numOrNull(v);
+  }
+  return patch;
+}
+
+function stripRow(r: Record<string, unknown> | null | undefined): Partial<Record<MetricsColumn, unknown>> {
+  if (!r) return {};
+  const o: Partial<Record<MetricsColumn, unknown>> = {};
+  for (const k of METRICS_COLUMNS) {
+    if (r[k] !== undefined) o[k] = r[k];
+  }
+  return o;
+}
 
 export async function PUT(req: Request, ctx: { params: Promise<{ caseId: string }> }) {
   try {
@@ -33,29 +90,64 @@ export async function PUT(req: Request, ctx: { params: Promise<{ caseId: string 
   }
 
   const { caseId } = await ctx.params;
-  let body: MetricsBody;
+  let raw: Record<string, unknown>;
   try {
-    body = (await req.json()) as MetricsBody;
+    raw = (await req.json()) as Record<string, unknown>;
   } catch {
     return NextResponse.json({ ok: false, error: "Invalid JSON" }, { status: 400 });
   }
 
   const supabase = await createSupabaseAuthServerClient();
+
+  const { data: existing } = await supabase
+    .from("training_case_metrics")
+    .select("*")
+    .eq("training_case_id", caseId)
+    .maybeSingle();
+
+  const prev = stripRow(existing as Record<string, unknown> | null);
+  const patch = readPatch(raw);
+  const merged: Record<string, unknown> = { ...prev, ...patch };
+
+  const primary = {
+    grafts_attempted: numOrNull(merged.grafts_attempted),
+    grafts_extracted: numOrNull(merged.grafts_extracted),
+    grafts_implanted: numOrNull(merged.grafts_implanted),
+    total_hairs: numOrNull(merged.total_hairs),
+    extraction_start_time: strOrNull(merged.extraction_start_time),
+    extraction_end_time: strOrNull(merged.extraction_end_time),
+    implantation_start_time: strOrNull(merged.implantation_start_time),
+    implantation_end_time: strOrNull(merged.implantation_end_time),
+    transected_grafts_count: numOrNull(merged.transected_grafts_count),
+    buried_grafts_count: numOrNull(merged.buried_grafts_count),
+    popped_grafts_count: numOrNull(merged.popped_grafts_count),
+  };
+
+  const derived = deriveTrainingCaseMetrics(primary, {
+    transection_rate: numOrNull(merged.transection_rate),
+    buried_graft_rate: numOrNull(merged.buried_graft_rate),
+    popping_rate: numOrNull(merged.popping_rate),
+  });
+
+  const fallNum = (live: number | null, key: MetricsColumn) =>
+    live != null ? live : numOrNull(merged[key]) ?? null;
+
   const row: Record<string, unknown> = { training_case_id: caseId };
-  for (const [k, v] of Object.entries(body)) {
-    if (v !== undefined) row[k] = v;
+  for (const k of METRICS_COLUMNS) {
+    row[k] = merged[k] !== undefined ? merged[k] : null;
   }
 
-  const th = row.total_hairs != null ? Number(row.total_hairs) : null;
-  const graftsForRatio =
-    row.grafts_extracted != null
-      ? Number(row.grafts_extracted)
-      : row.grafts_implanted != null
-        ? Number(row.grafts_implanted)
-        : null;
-  if (th != null && graftsForRatio != null && graftsForRatio > 0 && Number.isFinite(th) && Number.isFinite(graftsForRatio)) {
-    row.hair_to_graft_ratio = Math.round((th / graftsForRatio) * 1000) / 1000;
-  }
+  row.extraction_minutes = fallNum(derived.extraction_minutes, "extraction_minutes");
+  row.implantation_minutes = fallNum(derived.implantation_minutes, "implantation_minutes");
+  row.total_minutes = fallNum(derived.total_minutes, "total_minutes");
+  row.extraction_grafts_per_hour = fallNum(derived.extraction_grafts_per_hour, "extraction_grafts_per_hour");
+  row.implantation_grafts_per_hour = fallNum(derived.implantation_grafts_per_hour, "implantation_grafts_per_hour");
+  row.hair_to_graft_ratio = fallNum(derived.hair_to_graft_ratio, "hair_to_graft_ratio");
+  row.out_of_body_time_estimate = fallNum(derived.out_of_body_time_estimate, "out_of_body_time_estimate");
+
+  row.transection_rate = derived.transection_rate;
+  row.buried_graft_rate = derived.buried_graft_rate;
+  row.popping_rate = derived.popping_rate;
 
   const { data, error } = await supabase
     .from("training_case_metrics")

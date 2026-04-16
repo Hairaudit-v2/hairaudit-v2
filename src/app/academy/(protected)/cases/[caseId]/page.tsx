@@ -66,7 +66,12 @@ export default async function AcademyCaseDetailPage({ params }: { params: Promis
 
       <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         {access.isStaff ? (
-          <AcademyMetricsForm caseId={caseId} initial={(metrics ?? {}) as Record<string, string | number | null | undefined>} />
+          <AcademyMetricsForm
+            key={caseId}
+            caseId={caseId}
+            surgeryDate={c.surgery_date}
+            initial={(metrics ?? {}) as Record<string, string | number | null | undefined>}
+          />
         ) : metrics ? (
           <div className="text-sm text-slate-700 space-y-1">
             <div className="font-semibold text-slate-900 mb-2">Metrics</div>
