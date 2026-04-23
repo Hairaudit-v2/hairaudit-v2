@@ -5,7 +5,6 @@ import AuthAttributionRecorder from "@/components/analytics/AuthAttributionRecor
 import { logAuthEnvHealthOnce } from "@/lib/auth/validateAuthEnv";
 import RecoveryHashRouter from "@/components/RecoveryHashRouter";
 import MainContentTarget from "@/components/a11y/MainContentTarget";
-import BetaBanner from "@/components/BetaBanner";
 import { I18nProvider } from "@/components/i18n/I18nProvider";
 import I18nHtmlLang from "@/components/i18n/I18nHtmlLang";
 import SkipLinkI18n from "@/components/i18n/SkipLinkI18n";
@@ -60,7 +59,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <I18nProvider>
           <I18nHtmlLang />
           <SkipLinkI18n />
-          <BetaBanner />
           <MainContentTarget />
           <RecoveryHashRouter />
           <Suspense fallback={null}>
