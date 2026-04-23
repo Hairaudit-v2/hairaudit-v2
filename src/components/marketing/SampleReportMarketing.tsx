@@ -2,7 +2,6 @@
 
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
-import ScrollReveal from "@/components/ui/ScrollReveal";
 import ReviewProcessReassurance from "@/components/seo/ReviewProcessReassurance";
 import SampleReportPatientGuidanceCallout from "@/components/marketing/SampleReportPatientGuidanceCallout";
 import TrackedLink from "@/components/analytics/TrackedLink";
@@ -145,7 +144,7 @@ export default function SampleReportMarketing() {
       <main className="relative flex-1">
         <section className="px-4 sm:px-6 py-14 sm:py-18 lg:py-24">
           <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
-            <ScrollReveal>
+            <div>
               <p className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-cyan-200">
                 {t("marketing.sampleReport.heroBadge")}
               </p>
@@ -172,9 +171,9 @@ export default function SampleReportMarketing() {
                 </TrackedLink>
               </div>
               <p className="mt-5 text-sm text-slate-400">{t("marketing.sampleReport.heroNote")}</p>
-            </ScrollReveal>
+            </div>
 
-            <ScrollReveal delay={0.08}>
+            <div>
               <div className="relative mx-auto h-[380px] w-full max-w-[420px]">
                 <div className="absolute right-0 top-4 h-72 w-56 rotate-6 rounded-2xl border border-cyan-200/20 bg-slate-900/75 p-4 shadow-2xl shadow-cyan-950/40 backdrop-blur">
                   <p className="text-[11px] uppercase tracking-[0.18em] text-cyan-200/90">
@@ -228,12 +227,12 @@ export default function SampleReportMarketing() {
                   </div>
                 </div>
               </div>
-            </ScrollReveal>
+            </div>
           </div>
         </section>
 
         <section className="px-4 sm:px-6 pb-8 sm:pb-10">
-          <ScrollReveal>
+          <div>
             <div className="mx-auto flex max-w-5xl flex-col items-center gap-4 rounded-2xl border border-white/12 bg-white/[0.04] px-6 py-6 text-center backdrop-blur sm:flex-row sm:justify-between sm:text-left">
               <div>
                 <p className="text-xs uppercase tracking-[0.18em] text-cyan-200/90">
@@ -249,30 +248,30 @@ export default function SampleReportMarketing() {
                 {t("marketing.sampleReport.midBannerCta")}
               </TrackedLink>
             </div>
-          </ScrollReveal>
+          </div>
         </section>
 
         <SampleReportPatientGuidanceCallout />
 
         <section id="inside-report" className="px-4 sm:px-6 py-14 sm:py-18">
           <div className="mx-auto max-w-6xl">
-            <ScrollReveal>
+            <div>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200/90">
                 {t("marketing.sampleReport.insideEyebrow")}
               </p>
               <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
                 {t("marketing.sampleReport.insideHeading")}
               </h2>
-            </ScrollReveal>
+            </div>
             <div className="mt-8 grid gap-5 sm:grid-cols-2">
               {PREVIEW_CARDS.map((card, index) => (
-                <ScrollReveal key={card.titleKey} delay={index * 0.05}>
+                <div key={card.titleKey}>
                   <article className="rounded-2xl border border-white/12 bg-gradient-to-b from-white/[0.06] to-white/[0.02] p-6 shadow-[0_14px_50px_rgba(2,6,23,0.45)] backdrop-blur">
                     <p className="text-xs uppercase tracking-[0.17em] text-cyan-200/80">{previewLabel(index + 1)}</p>
                     <h3 className="mt-2 text-xl font-semibold text-white">{t(card.titleKey)}</h3>
                     <p className="mt-3 text-sm leading-relaxed text-slate-300">{t(card.detailKey)}</p>
                   </article>
-                </ScrollReveal>
+                </div>
               ))}
             </div>
           </div>
@@ -280,16 +279,16 @@ export default function SampleReportMarketing() {
 
         <section className="px-4 sm:px-6 py-14 sm:py-18">
           <div className="mx-auto max-w-6xl">
-            <ScrollReveal>
+            <div>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200/90">
                 {t("marketing.sampleReport.visualsEyebrow")}
               </p>
               <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
                 {t("marketing.sampleReport.visualsHeading")}
               </h2>
-            </ScrollReveal>
+            </div>
             <div className="mt-9 grid gap-6 lg:grid-cols-2">
-              <ScrollReveal>
+              <div>
                 <article className="rounded-2xl border border-white/12 bg-white/[0.03] p-5 backdrop-blur">
                   <h3 className="text-base font-semibold text-white">{t("marketing.sampleReport.chartRadarTitle")}</h3>
                   <p className="mt-1 text-sm text-slate-300">{t("marketing.sampleReport.chartRadarDesc")}</p>
@@ -350,9 +349,9 @@ export default function SampleReportMarketing() {
                     </div>
                   </div>
                 </article>
-              </ScrollReveal>
+              </div>
 
-              <ScrollReveal delay={0.05}>
+              <div>
                 <article className="rounded-2xl border border-white/12 bg-white/[0.03] p-5 backdrop-blur">
                   <h3 className="text-base font-semibold text-white">{t("marketing.sampleReport.chartBreakdownTitle")}</h3>
                   <p className="mt-1 text-sm text-slate-300">{t("marketing.sampleReport.chartBreakdownDesc")}</p>
@@ -373,9 +372,9 @@ export default function SampleReportMarketing() {
                     ))}
                   </div>
                 </article>
-              </ScrollReveal>
+              </div>
 
-              <ScrollReveal>
+              <div>
                 <article className="rounded-2xl border border-white/12 bg-white/[0.03] p-5 backdrop-blur">
                   <h3 className="text-base font-semibold text-white">{t("marketing.sampleReport.meterTitle")}</h3>
                   <p className="mt-1 text-sm text-slate-300">{t("marketing.sampleReport.meterDesc")}</p>
@@ -400,9 +399,9 @@ export default function SampleReportMarketing() {
                     </div>
                   </div>
                 </article>
-              </ScrollReveal>
+              </div>
 
-              <ScrollReveal delay={0.05}>
+              <div>
                 <article className="rounded-2xl border border-white/12 bg-white/[0.03] p-5 backdrop-blur">
                   <h3 className="text-base font-semibold text-white">{t("marketing.sampleReport.correctionVisTitle")}</h3>
                   <p className="mt-1 text-sm text-slate-300">{t("marketing.sampleReport.correctionVisDesc")}</p>
@@ -427,27 +426,27 @@ export default function SampleReportMarketing() {
                     </div>
                   </div>
                 </article>
-              </ScrollReveal>
+              </div>
             </div>
           </div>
         </section>
 
         <section className="px-4 sm:px-6 py-14 sm:py-18">
           <div className="mx-auto max-w-6xl">
-            <ScrollReveal>
+            <div>
               <h2 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
                 {t("marketing.sampleReport.findingsSectionTitle")}
               </h2>
-            </ScrollReveal>
+            </div>
             <div className="mt-8 grid gap-5 lg:grid-cols-3">
-              {sampleFindings.map((finding, idx) => (
-                <ScrollReveal key={finding.title} delay={idx * 0.05}>
+              {sampleFindings.map((finding) => (
+                <div key={finding.title}>
                   <article className="rounded-2xl border border-white/12 bg-gradient-to-b from-white/[0.06] to-white/[0.02] p-6 backdrop-blur">
                     <p className="text-xs uppercase tracking-[0.14em] text-cyan-200/90">{finding.severity}</p>
                     <h3 className="mt-2 text-xl font-semibold text-white">{finding.title}</h3>
                     <p className="mt-3 text-sm leading-relaxed text-slate-300">{finding.insight}</p>
                   </article>
-                </ScrollReveal>
+                </div>
               ))}
             </div>
           </div>
@@ -455,7 +454,7 @@ export default function SampleReportMarketing() {
 
         <section className="px-4 sm:px-6 py-14 sm:py-18">
           <div className="mx-auto max-w-6xl rounded-3xl border border-white/12 bg-white/[0.03] p-6 sm:p-8">
-            <ScrollReveal>
+            <div>
               <h2 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
                 {t("marketing.sampleReport.recoSectionTitle")}
               </h2>
@@ -470,20 +469,20 @@ export default function SampleReportMarketing() {
                   </li>
                 ))}
               </ul>
-            </ScrollReveal>
+            </div>
           </div>
         </section>
 
         <section className="px-4 sm:px-6 py-14 sm:py-18">
           <div className="mx-auto max-w-6xl">
-            <ScrollReveal>
+            <div>
               <h2 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
                 {t("marketing.sampleReport.includesSectionTitle")}
               </h2>
-            </ScrollReveal>
+            </div>
             <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {AUDIT_INCLUDE_KEYS.map((key, idx) => (
-                <ScrollReveal key={key} delay={idx * 0.03}>
+                <div key={key}>
                   <article className="rounded-2xl border border-white/12 bg-white/[0.03] p-5 backdrop-blur">
                     <div className="flex items-center gap-3">
                       <span className="inline-flex size-9 items-center justify-center rounded-lg border border-white/20 bg-white/[0.06]">
@@ -492,7 +491,7 @@ export default function SampleReportMarketing() {
                       <h3 className="text-base font-semibold text-white">{t(key)}</h3>
                     </div>
                   </article>
-                </ScrollReveal>
+                </div>
               ))}
             </div>
           </div>
@@ -500,18 +499,18 @@ export default function SampleReportMarketing() {
 
         <section className="px-4 sm:px-6 py-14 sm:py-18">
           <div className="mx-auto max-w-6xl">
-            <ScrollReveal>
+            <div>
               <h2 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
                 {t("marketing.sampleReport.motivationsTitle")}
               </h2>
-            </ScrollReveal>
+            </div>
             <div className="mt-8 grid gap-4 md:grid-cols-2">
-              {MOTIVATION_KEYS.map((key, idx) => (
-                <ScrollReveal key={key} delay={idx * 0.05}>
+              {MOTIVATION_KEYS.map((key) => (
+                <div key={key}>
                   <article className="rounded-2xl border border-white/12 bg-slate-900/60 p-5">
                     <p className="text-sm leading-relaxed text-slate-200">{t(key)}</p>
                   </article>
-                </ScrollReveal>
+                </div>
               ))}
             </div>
           </div>
@@ -519,7 +518,7 @@ export default function SampleReportMarketing() {
 
         <section className="px-4 sm:px-6 py-14 sm:py-18">
           <div className="mx-auto max-w-5xl rounded-3xl border border-cyan-300/25 bg-gradient-to-r from-cyan-400/10 via-indigo-400/10 to-slate-900 p-8 text-center shadow-2xl shadow-cyan-950/35">
-            <ScrollReveal>
+            <div>
               <p className="text-xs uppercase tracking-[0.2em] text-cyan-200/90">{t("marketing.sampleReport.footerEyebrow")}</p>
               <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
                 {t("marketing.sampleReport.footerTitle")}
@@ -546,7 +545,7 @@ export default function SampleReportMarketing() {
               <div className="mx-auto mt-8 max-w-3xl text-left">
                 <ReviewProcessReassurance />
               </div>
-            </ScrollReveal>
+            </div>
           </div>
         </section>
       </main>

@@ -146,7 +146,6 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
                   width={280}
                   height={80}
                   className="h-16 sm:h-20 w-auto object-contain"
-                  priority
                   sizes="(max-width: 640px) 200px, 280px"
                 />
               ) : (
@@ -156,7 +155,6 @@ export default function SiteHeader({ variant = "default", showLogo = true }: Sit
                   width={288}
                   height={80}
                   className="h-16 sm:h-20 w-auto object-contain"
-                  priority
                   sizes="(max-width: 640px) 200px, 280px"
                 />
               )}

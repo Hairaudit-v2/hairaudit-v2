@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import ScrollReveal from "@/components/ui/ScrollReveal";
 import TrackedLink from "@/components/analytics/TrackedLink";
 
 type SampleAuditReportSectionProps = {
@@ -178,7 +177,7 @@ export default function SampleAuditReportSection({
       className={`relative px-4 sm:px-6 py-20 sm:py-28 border-t ${borderClass} ${sectionBg}`}
     >
       <div className="max-w-6xl mx-auto">
-        <ScrollReveal>
+        <div>
           <p className={`text-xs uppercase tracking-widest font-semibold ${eyebrowClass}`}>
             Sample audit report
           </p>
@@ -189,11 +188,11 @@ export default function SampleAuditReportSection({
             Every audit includes a structured score, evidence-based visuals, and clear risk indicators. 
             This is a preview of the same format you receive.
           </p>
-        </ScrollReveal>
+        </div>
 
         {/* Primary score + domain breakdown */}
         <div className="mt-12 grid gap-6 lg:grid-cols-[280px_1fr]">
-          <ScrollReveal delay={0.03}>
+          <div>
             <div className={`rounded-2xl border ${borderClass} ${cardBg} p-6 flex flex-col items-center`}>
               <p className={`text-xs uppercase tracking-wider font-semibold ${labelClass}`}>
                 Overall score
@@ -209,8 +208,8 @@ export default function SampleAuditReportSection({
                 Weighted across all domains
               </p>
             </div>
-          </ScrollReveal>
-          <ScrollReveal delay={0.05}>
+          </div>
+          <div>
             <div className={`rounded-2xl border ${borderClass} ${cardBg} p-6`}>
               <p className={`text-xs uppercase tracking-wider font-semibold ${labelClass}`}>
                 Score breakdown by domain
@@ -233,12 +232,12 @@ export default function SampleAuditReportSection({
                 ))}
               </div>
             </div>
-          </ScrollReveal>
+          </div>
         </div>
 
         {/* Donor, angles, density — 3-column */}
         <div className="mt-8 grid gap-6 sm:grid-cols-3">
-          <ScrollReveal delay={0.06}>
+          <div>
             <div className={`rounded-2xl border ${borderClass} ${cardBg} p-5`}>
               <p className={`text-xs uppercase tracking-wider font-semibold ${labelClass}`}>
                 Donor analysis
@@ -250,8 +249,8 @@ export default function SampleAuditReportSection({
                 <DonorZoneDiagram theme={theme} />
               </div>
             </div>
-          </ScrollReveal>
-          <ScrollReveal delay={0.08}>
+          </div>
+          <div>
             <div className={`rounded-2xl border ${borderClass} ${cardBg} p-5`}>
               <p className={`text-xs uppercase tracking-wider font-semibold ${labelClass}`}>
                 Implantation angles
@@ -263,8 +262,8 @@ export default function SampleAuditReportSection({
                 <ImplantationAngleDiagram theme={theme} />
               </div>
             </div>
-          </ScrollReveal>
-          <ScrollReveal delay={0.1}>
+          </div>
+          <div>
             <div className={`rounded-2xl border ${borderClass} ${cardBg} p-5`}>
               <p className={`text-xs uppercase tracking-wider font-semibold ${labelClass}`}>
                 Density mapping
@@ -276,12 +275,12 @@ export default function SampleAuditReportSection({
                 <DensityMapGrid theme={theme} />
               </div>
             </div>
-          </ScrollReveal>
+          </div>
         </div>
 
         {/* Before/after + risk indicators */}
         <div className="mt-8 grid gap-6 lg:grid-cols-2">
-          <ScrollReveal delay={0.08}>
+          <div>
             <div className={`rounded-2xl border ${borderClass} ${cardBg} p-6`}>
               <p className={`text-xs uppercase tracking-wider font-semibold ${labelClass}`}>
                 Before / after comparison
@@ -300,8 +299,8 @@ export default function SampleAuditReportSection({
                 </div>
               </div>
             </div>
-          </ScrollReveal>
-          <ScrollReveal delay={0.1}>
+          </div>
+          <div>
             <div className={`rounded-2xl border ${borderClass} ${cardBg} p-6`}>
               <p className={`text-xs uppercase tracking-wider font-semibold ${labelClass}`}>
                 Risk indicators
@@ -321,11 +320,11 @@ export default function SampleAuditReportSection({
                 ))}
               </ul>
             </div>
-          </ScrollReveal>
+          </div>
         </div>
 
         {showCta && (
-          <ScrollReveal delay={0.12}>
+          <div>
             <div className={`mt-14 rounded-2xl border ${borderClass} ${cardBg} p-8 sm:p-10 text-center`}>
               <p className={`text-lg font-semibold ${headingClass}`}>
                 This is what an independent audit looks like.
@@ -349,7 +348,7 @@ export default function SampleAuditReportSection({
                 </Link>
               </div>
             </div>
-          </ScrollReveal>
+          </div>
         )}
       </div>
     </section>

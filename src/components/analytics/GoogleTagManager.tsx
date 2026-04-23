@@ -6,9 +6,8 @@ const GTM_ID_PATTERN = /^GTM-[A-Z0-9]+$/i;
  * Loads Google Tag Manager when NEXT_PUBLIC_GTM_ID is set (e.g. GTM-XXXX).
  * No-op when unset or malformed.
  *
- * `beforeInteractive` (root layout only) so GTM is in the initial HTML—needed for
- * Tag Assistant / Tag Coverage and similar checks. Inline `afterInteractive` scripts
- * are deferred until after hydration, so those tools often miss the container.
+ * Uses `afterInteractive` so GTM does not compete with LCP / first paint on the main thread.
+ * Tag Assistant may require a full reload or interaction before the container appears in some modes.
  */
 export default function GoogleTagManager() {
   const raw = process.env.NEXT_PUBLIC_GTM_ID?.trim();
@@ -19,7 +18,7 @@ export default function GoogleTagManager() {
 
   return (
     <>
-      <Script id="google-tag-manager" strategy="beforeInteractive">
+      <Script id="google-tag-manager" strategy="afterInteractive">
         {`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
 new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
 j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=

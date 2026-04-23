@@ -66,7 +66,9 @@ const AUTH_CALLBACK_PARAMS = ["code", "next", "signup_role"] as const;
 
 /**
  * Returns the path+query to redirect to when homepage receives auth params (e.g. ?code=...).
- * Use for homepage auth repair: redirect to /auth/callback with allowed params only.
+ * **Production path:** `middleware.ts` redirects `/?code=...` to `/auth/callback` before the
+ * homepage renders, so the marketing root stays static. This helper remains for tests and any
+ * non-middleware contexts that need the same URL shape.
  * Returns null when there is no code (no redirect).
  */
 export function getHomepageAuthRedirectTarget(

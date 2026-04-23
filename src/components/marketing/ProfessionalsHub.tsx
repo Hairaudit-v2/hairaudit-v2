@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import ProfessionalsShell from "@/components/professionals/ProfessionalsShell";
-import ScrollReveal from "@/components/ui/ScrollReveal";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import type { TranslationKey } from "@/lib/i18n/translationKeys";
 
@@ -54,8 +53,8 @@ export default function ProfessionalsHub() {
       intro={t("marketing.professionals.pageIntro")}
     >
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-        {CARDS.map((card, i) => (
-          <ScrollReveal key={card.href} delay={i * 0.04}>
+        {CARDS.map((card) => (
+          <div key={card.href}>
             <Link
               href={card.href}
               className="group block rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-6 hover:border-white/20 transition-colors h-full"
@@ -65,7 +64,7 @@ export default function ProfessionalsHub() {
               </h2>
               <p className="mt-3 text-sm text-slate-400">{t(card.descKey)}</p>
             </Link>
-          </ScrollReveal>
+          </div>
         ))}
       </div>
     </ProfessionalsShell>

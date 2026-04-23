@@ -1,6 +1,5 @@
 "use client";
 
-import ScrollReveal from "@/components/ui/ScrollReveal";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import type { TranslationKey } from "@/lib/i18n/translationKeys";
 
@@ -18,7 +17,7 @@ export default function SampleReportPatientGuidanceCallout() {
       className="px-4 sm:px-6 pb-10 sm:pb-12"
       aria-labelledby="sample-report-patient-guidance-heading"
     >
-      <ScrollReveal>
+      <div>
         <div className="mx-auto max-w-5xl rounded-2xl border border-white/12 bg-white/[0.04] px-6 py-6 backdrop-blur sm:px-8 sm:py-7">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200/90">
             {t("marketing.sampleReport.patientGuidanceEyebrow")}
@@ -43,7 +42,7 @@ export default function SampleReportPatientGuidanceCallout() {
             ))}
           </ul>
         </div>
-      </ScrollReveal>
+      </div>
     </section>
   );
 }

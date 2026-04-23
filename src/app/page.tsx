@@ -1,43 +1,41 @@
-import nextDynamic from "next/dynamic";
+import dynamic from "next/dynamic";
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
+import HomePageHero from "@/components/marketing/HomePageHero";
 import OrganizationWebSiteSchema from "@/components/seo/OrganizationWebSiteSchema";
-import { createLocalizedPageMetadata, resolvePublicSeoLocale } from "@/lib/seo/localeMetadata";
-import { getHomepageAuthRedirectTarget } from "@/lib/auth/redirects";
+import { createLocalizedPageMetadata } from "@/lib/seo/localeMetadata";
+import { DEFAULT_LOCALE } from "@/lib/i18n/constants";
 
-const HomePageMarketing = nextDynamic(
+const HomePageMarketing = dynamic(
   () => import("@/components/marketing/HomePageMarketing").then((m) => m.default),
   { ssr: true }
 );
 
 export const revalidate = 600;
-export const dynamic = "force-dynamic";
 
-export async function generateMetadata(): Promise<Metadata> {
-  const locale = await resolvePublicSeoLocale();
-  return createLocalizedPageMetadata(locale, {
+/**
+ * Static metadata (default locale) so `/` can be prerendered without `cookies()` / `headers()`.
+ * In-page marketing copy follows {@link I18nProvider} on the client after hydration.
+ */
+export function generateMetadata(): Metadata {
+  return createLocalizedPageMetadata(DEFAULT_LOCALE, {
     titleKey: "marketing.meta.home.title",
     descriptionKey: "marketing.meta.home.description",
     pathname: "/",
   });
 }
 
-type PageProps = { searchParams?: Promise<Record<string, string | string[] | undefined>> };
-
-export default async function HomePage(props: PageProps) {
-  const rawParams = props.searchParams;
-  const searchParams = rawParams ? await rawParams : {};
-  const authRedirect = getHomepageAuthRedirectTarget(searchParams);
-  if (authRedirect) redirect(authRedirect);
-
+export default function HomePage() {
   return (
     <div className="min-h-screen flex flex-col bg-slate-900 text-slate-100">
       <OrganizationWebSiteSchema />
       <SiteHeader />
 
-      <HomePageMarketing />
+      <main id="main-content" className="relative flex-1">
+        <HomePageHero />
+        <HomePageMarketing />
+      </main>
 
       <SiteFooter />
     </div>

@@ -1,36 +1,17 @@
-"use client";
+import type { ReactNode } from "react";
 
-import { motion } from "framer-motion";
-
-const defaults = {
-  hidden: { opacity: 0, y: 24 },
-  visible: { opacity: 1, y: 0 },
-  transition: { duration: 0.4, ease: "easeOut" as const },
-};
-
-export default function ScrollReveal({
-  children,
-  className,
-  delay = 0,
-  once = true,
-}: {
-  children: React.ReactNode;
+type ScrollRevealProps = {
+  children: ReactNode;
   className?: string;
+  /** Kept for call-site compatibility; no longer used (scroll-driven motion removed for web-vitals). */
   delay?: number;
   once?: boolean;
-}) {
-  return (
-    <motion.div
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once, margin: "-48px 0px -48px 0px" }}
-      variants={{
-        hidden: defaults.hidden,
-        visible: { ...defaults.visible, transition: { ...defaults.transition, delay } },
-      }}
-      className={className}
-    >
-      {children}
-    </motion.div>
-  );
+};
+
+/**
+ * Static layout wrapper (formerly Framer Motion scroll reveal).
+ * Avoids shipping ~framer-motion~ and scroll observers on marketing / guide routes.
+ */
+export default function ScrollReveal({ children, className }: ScrollRevealProps) {
+  return <div className={className}>{children}</div>;
 }
