@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { CaseEvidenceManifest } from "@/lib/evidence/evidenceManifest";
 import { inferCanonicalPhotoCategory, photoCategoryGroup } from "@/lib/photos/classification";
-import type { CaseEvidenceManifest } from "@/lib/evidence/prepareCaseEvidence";
 import { optimizeRasterBufferForPrintPdf } from "@/lib/pdf/optimizeRasterForPrintPdf";
 import { pdfEnvConfig } from "@/lib/pdf/pdfEnvConfig";
 

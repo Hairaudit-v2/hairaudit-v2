@@ -11,7 +11,7 @@ import {
   evaluatePdfReadiness,
   toNumberRecord,
 } from "@/lib/reports/pdfReadiness";
-import { loadLatestEvidenceManifest } from "@/lib/evidence/prepareCaseEvidence";
+import { loadLatestEvidenceManifest } from "@/lib/evidence/evidenceManifest";
 import { pdfEnvConfig } from "@/lib/pdf/pdfEnvConfig";
 import { evaluateEvidence, type EvidenceEvaluationResult } from "@/lib/evidence/evidenceEvaluator";
 import {

@@ -18,10 +18,10 @@ import {
 } from "@/lib/patientPhoto/patientPhotoReadinessPolicy";
 import { isPatientPhotoStageAwareSubmitEnabled } from "@/lib/features/enablePatientPhotoStageAwareSubmit";
 import { shouldGeneratePdf } from "@/lib/reports/pdfReadiness";
+import type { PreparedImageManifestItem } from "@/lib/evidence/evidenceManifest";
 import {
   loadPreparedModelImageInputs,
   prepareCaseEvidenceManifest,
-  type PreparedImageManifestItem,
 } from "@/lib/evidence/prepareCaseEvidence";
 import { computeAuditorReviewEligibility, computeProvisionalFromScore, computeAwardContributionWeight } from "@/lib/auditor/eligibility";
 import { refreshTransparencyMetricsForCase } from "@/lib/transparency/refreshOrchestration";

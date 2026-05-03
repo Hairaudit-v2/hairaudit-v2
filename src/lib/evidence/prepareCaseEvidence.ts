@@ -1,5 +1,9 @@
 import sharp from "sharp";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type {
+  CaseEvidenceManifest,
+  PreparedImageManifestItem,
+} from "@/lib/evidence/evidenceManifest";
 import { inferCanonicalPhotoCategory } from "@/lib/photos/classification";
 import { isPatientUploadAuditExcluded } from "@/lib/uploads/patientPhotoAuditMeta";
 
@@ -9,30 +13,6 @@ type UploadRow = {
   storage_path?: string | null;
   metadata?: Record<string, unknown> | null;
   created_at?: string | null;
-};
-
-export type PreparedImageManifestItem = {
-  upload_id: string;
-  original_path: string;
-  prepared_path: string;
-  category: string;
-  width: number;
-  height: number;
-  mime_type: string;
-  quality_label: "usable" | "weak" | "poor";
-  notes: string;
-};
-
-export type CaseEvidenceManifest = {
-  id: string;
-  case_id: string;
-  status: "processing" | "ready" | "failed";
-  prepared_images: PreparedImageManifestItem[];
-  quality_score: number;
-  missing_categories: string[];
-  errors: string[];
-  created_at?: string;
-  updated_at?: string;
 };
 
 export type PreparedModelImageInput = {
@@ -117,25 +97,6 @@ function normalizeQualityScore(params: {
   const qualityMixRatio = Math.max(0, Math.min(1, (usableCount + weakCount * 0.5) / denominator));
   const score = (successRatio * 0.5 + categoryCoverageRatio * 0.3 + qualityMixRatio * 0.2) * 100;
   return Math.round(score * 10) / 10;
-}
-
-export async function loadLatestEvidenceManifest(args: {
-  supabase: SupabaseClient;
-  caseId: string;
-  status?: "processing" | "ready" | "failed";
-}): Promise<CaseEvidenceManifest | null> {
-  let query = args.supabase
-    .from("case_evidence_manifests")
-    .select("id, case_id, status, prepared_images, quality_score, missing_categories, errors, created_at, updated_at")
-    .eq("case_id", args.caseId)
-    .order("created_at", { ascending: false })
-    .limit(1);
-  if (args.status) {
-    query = query.eq("status", args.status);
-  }
-  const { data, error } = await query.maybeSingle();
-  if (error || !data) return null;
-  return data as CaseEvidenceManifest;
 }
 
 export async function prepareCaseEvidenceManifest(args: {

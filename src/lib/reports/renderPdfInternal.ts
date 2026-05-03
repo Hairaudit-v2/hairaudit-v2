@@ -17,7 +17,7 @@ import {
   deriveDomainScoresHeuristic,
   toNumberRecord,
 } from "@/lib/reports/pdfReadiness";
-import { loadLatestEvidenceManifest } from "@/lib/evidence/prepareCaseEvidence";
+import { loadLatestEvidenceManifest } from "@/lib/evidence/evidenceManifest";
 import { auditorPatientPhotoCategoryLabel } from "@/lib/auditor/auditorPatientPhotoCategories";
 import { effectivePatientPhotoCategoryKey } from "@/lib/uploads/patientPhotoAuditMeta";
 import { evaluateEvidence, type EvidenceEvaluationResult } from "@/lib/evidence/evidenceEvaluator";
