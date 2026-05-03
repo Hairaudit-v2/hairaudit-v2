@@ -4,7 +4,7 @@ import { buildReportViewModel, normalizeAuditMode, type AuditMode, type AuditRep
 import { verifyRenderToken } from "@/lib/reports/internalRenderToken";
 import { renderEliteReportHtml } from "@/lib/reports/EliteReportHtml";
 import rubric from "@/lib/audit/rubrics/hairaudit_clinical_v1.json";
-import { buildElitePrintPhotosByCategory } from "@/lib/pdf/elitePrintPhotoPipeline";
+import { buildElitePrintPhotosByCategorySignedUrl } from "@/lib/pdf/elitePrintPhotoSignedUrlPipeline";
 import {
   deriveDomainScoresFromSections,
   deriveDomainScoresHeuristic,
@@ -140,11 +140,12 @@ export async function GET(req: Request) {
     status: "ready",
   });
 
-  const { photosByCategory, stats: printPhotoStats } = await buildElitePrintPhotosByCategory({
+  const { photosByCategory, stats: printPhotoStats } = await buildElitePrintPhotosByCategorySignedUrl({
     supabase: supabase as any,
     bucket,
     caseId,
     manifest: manifest ?? null,
+    maxImagesPerSection: pdfEnvConfig.getMaxImagesPerSection(),
   });
 
   const pdfInstrumentation = pdfEnvConfig.isInstrumentationEnabled();
