@@ -9,7 +9,6 @@ import { runGraftIntegrityModelEstimate } from "@/lib/ai/graftIntegrity";
 import { runDoctorScoringNarrative, DEFAULT_PROTOCOL_CATALOG, DEFAULT_TRAINING_MODULE_CATALOG } from "@/lib/ai/runDoctorScoringNarrative";
 import { notifyPatientAuditFailed, notifyAuditorAuditFailed, notifyPatientReportReady, notifyAuditorNewAuditSubmitted } from "@/lib/email";
 import { computeDomainScoresV1, computeDoctorAiContextV1 } from "@/lib/benchmarks/domainScoring";
-import { renderAndUploadPdfForCase } from "@/lib/reports/renderPdfInternal";
 import { normalizeIntakeFormData, toNestedForApi } from "@/lib/intake/normalizeIntakeFormData";
 import { normalizedPatientAnswersFromReportRow } from "@/lib/patient/answersFromReportRow";
 import {
@@ -19,10 +18,6 @@ import {
 import { isPatientPhotoStageAwareSubmitEnabled } from "@/lib/features/enablePatientPhotoStageAwareSubmit";
 import { shouldGeneratePdf } from "@/lib/reports/pdfReadiness";
 import type { PreparedImageManifestItem } from "@/lib/evidence/evidenceManifest";
-import {
-  loadPreparedModelImageInputs,
-  prepareCaseEvidenceManifest,
-} from "@/lib/evidence/prepareCaseEvidence";
 import { computeAuditorReviewEligibility, computeProvisionalFromScore, computeAwardContributionWeight } from "@/lib/auditor/eligibility";
 import { refreshTransparencyMetricsForCase } from "@/lib/transparency/refreshOrchestration";
 import { isPatientUploadAuditExcluded } from "@/lib/uploads/patientPhotoAuditMeta";
@@ -34,6 +29,14 @@ const AUDITOR_RERUN_REASON_CORRECTED_PATIENT_PHOTOS = "corrected_patient_photos"
 
 function supabaseAdmin() {
   return createSupabaseAdminClient();
+}
+
+async function loadEvidencePrepModule() {
+  return import("@/lib/evidence/prepareCaseEvidence");
+}
+
+async function loadPdfRenderModule() {
+  return import("@/lib/reports/renderPdfInternal");
 }
 
 const BUCKET = process.env.CASE_FILES_BUCKET || "case-files";
@@ -409,6 +412,7 @@ export const runGraftIntegrityEstimate = inngest.createFunction(
 
     // 2) Reuse the same deterministic evidence preparation pipeline.
     const preparedEvidence = await step.run("prepare-case-evidence", async () => {
+      const { prepareCaseEvidenceManifest } = await loadEvidencePrepModule();
       const { manifest } = await prepareCaseEvidenceManifest({
         supabase,
         caseId,
@@ -455,6 +459,7 @@ export const runGraftIntegrityEstimate = inngest.createFunction(
           return c.includes("recipient") || c.includes("intraop") || c.includes("postop");
         })
         .slice(0, 10);
+      const { loadPreparedModelImageInputs } = await loadEvidencePrepModule();
       const donorPrepared = await loadPreparedModelImageInputs({ supabase, bucket: BUCKET, items: donorItems });
       const recipientPrepared = await loadPreparedModelImageInputs({ supabase, bucket: BUCKET, items: recipientItems });
       return await runGraftIntegrityModelEstimate({
@@ -737,6 +742,7 @@ export const runAudit = inngest.createFunction(
 
     // 5) Deterministic evidence preparation stage (shared by AI audit + graft integrity + PDF).
     const preparedVision = await step.run("prepare-case-evidence", async () => {
+      const { prepareCaseEvidenceManifest } = await loadEvidencePrepModule();
       const { manifest } = await prepareCaseEvidenceManifest({
         supabase,
         caseId,
@@ -825,6 +831,7 @@ export const runAudit = inngest.createFunction(
 
       const aiExtendedEvidence = isAiExtendedImageEvidenceEnabled();
       const manifestPrepared = (preparedVision.manifest.prepared_images ?? []) as PreparedImageManifestItem[];
+      const { loadPreparedModelImageInputs } = await loadEvidencePrepModule();
       const modelInputs = await loadPreparedModelImageInputs({
         supabase,
         bucket: BUCKET,
@@ -1350,6 +1357,7 @@ export const runAudit = inngest.createFunction(
 
       try {
         const result = await step.run(`build-and-upload-pdf-${attempt}`, async () => {
+          const { renderAndUploadPdfForCase } = await loadPdfRenderModule();
           return await renderAndUploadPdfForCase({
             caseId,
             auditMode: pdfAuditMode,
@@ -1481,6 +1489,7 @@ export const runPdfRebuild = inngest.createFunction(
     if (version < 1) throw new Error(`Invalid report version for case ${caseId}`);
 
     const result = await step.run("rebuild-pdf", async () => {
+      const { renderAndUploadPdfForCase } = await loadPdfRenderModule();
       return await renderAndUploadPdfForCase({
         caseId,
         version,
