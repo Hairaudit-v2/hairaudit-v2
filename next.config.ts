@@ -28,6 +28,7 @@ const nextConfig: NextConfig = {
     "@supabase/ssr",
     "inngest",
     "openai",
+    "sharp",
     "@sparticuz/chromium",
     "playwright-core",
   ],
