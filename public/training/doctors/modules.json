@@ -134,6 +134,39 @@
       "recommendedForWeeks": [4],
       "status": "approved",
       "flags": { "recommended": true }
+    },
+    {
+      "id": "iiohr-beard-reconstruction-guide",
+      "title": "Beard Reconstruction and Graft Distribution Guide",
+      "shortDescription": "A practical clinical guide for beard density correction, donor selection, angulation, distribution, natural pattern creation, and avoiding pluggy or uneven graft placement.",
+      "category": "Advanced Hairline and Facial Hair Design",
+      "lastUpdated": "2026-05-04",
+      "downloadUrl": "/training/doctors/Beard-Restoration-Quick-Clinical-Support-Guide.pdf",
+      "recommendedForWeeks": [3, 4],
+      "status": "approved",
+      "flags": { "recommended": true }
+    },
+    {
+      "id": "iiohr-eyebrow-reconstruction-guide",
+      "title": "Eyebrow Reconstruction and Brow Design Guide",
+      "shortDescription": "A trainee reference for eyebrow restoration, brow shape planning, direction control, graft selection, scar tissue considerations, and density strategy.",
+      "category": "Advanced Hairline and Facial Hair Design",
+      "lastUpdated": "2026-05-04",
+      "downloadUrl": "/training/doctors/IIOHR-Eyebrow-Restoration.pdf",
+      "recommendedForWeeks": [3, 4],
+      "status": "approved",
+      "flags": { "recommended": true }
+    },
+    {
+      "id": "iiohr-female-hairline-creation-guide",
+      "title": "Female Hairline Creation and Feminine Hairline Design Guide",
+      "shortDescription": "A clinical design guide for creating natural female hairlines, temple rounding, frontal softness, irregularity, density planning, and avoiding masculine or artificial hairline patterns.",
+      "category": "Advanced Hairline and Facial Hair Design",
+      "lastUpdated": "2026-05-04",
+      "downloadUrl": "/training/doctors/Female-Hairline-Design-and-Creation.pdf",
+      "recommendedForWeeks": [3, 4],
+      "status": "approved",
+      "flags": { "recommended": true }
     }
   ]
 }
