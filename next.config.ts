@@ -33,7 +33,11 @@ const nextConfig: NextConfig = {
     "playwright-core",
   ],
   outputFileTracingIncludes: {
-    "**": [
+    "/api/internal/render-pdf": [
+      "./node_modules/@sparticuz/chromium/bin/**",
+      "./node_modules/.pnpm/@sparticuz+chromium@*/node_modules/@sparticuz/chromium/bin/**",
+    ],
+    "/api/reports/demo-pdf": [
       "./node_modules/@sparticuz/chromium/bin/**",
       "./node_modules/.pnpm/@sparticuz+chromium@*/node_modules/@sparticuz/chromium/bin/**",
     ],
