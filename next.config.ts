@@ -43,6 +43,10 @@ const nextConfig: NextConfig = {
     ],
   },
   outputFileTracingExcludes: {
+    "/api/internal/render-pdf": [
+      "./public/training/doctors/**",
+      "./public/post-operative-hair-protection-guide.pdf",
+    ],
     "**": ["scripts/output/**"],
   },
   turbopack: {
