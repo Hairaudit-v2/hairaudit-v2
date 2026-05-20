@@ -10,6 +10,7 @@ import {
 } from "@/lib/academy/trainingCaseReviews";
 import TrainingCaseReviewSummaryCard from "@/components/academy/training-case-reviews/TrainingCaseReviewSummaryCard";
 import TrainingCaseReviewSections from "@/components/academy/training-case-reviews/TrainingCaseReviewSections";
+import { isActiveTrainingCaseUpload } from "@/lib/academy/trainingCaseUploads";
 import type { TrainingCaseUploadRow } from "@/lib/academy/types";
 import { REVIEW_IMAGE_CATEGORIES } from "@/lib/academy/trainingCaseReviews";
 import AcademySignedThumb from "@/components/academy/AcademySignedThumb";
@@ -31,7 +32,7 @@ export default async function TrainingCaseDetailPage({
   const supabase = await createSupabaseAuthServerClient();
 
   const { data: c, error: cErr } = await supabase.from("training_cases").select("*").eq("id", caseId).maybeSingle();
-  if (cErr || !c) notFound();
+  if (cErr || !c || c.deleted_at) notFound();
 
   const [{ data: doctor }, { data: uploads }, reviews] = await Promise.all([
     supabase.from("training_doctors").select("id, full_name, current_stage").eq("id", c.training_doctor_id).maybeSingle(),
@@ -61,6 +62,14 @@ export default async function TrainingCaseDetailPage({
           <Link href={`/academy/cases/${caseId}`} className="text-sm text-slate-600 hover:text-slate-800 hover:underline">
             Open case photos & metrics →
           </Link>
+          {access.isStaff ? (
+            <Link
+              href={`/academy/cases/${caseId}/edit`}
+              className="text-sm font-semibold text-slate-800 hover:text-slate-900 hover:underline"
+            >
+              Correct case data →
+            </Link>
+          ) : null}
           {access.isStaff ? (
             draftReview ? (
               <Link
@@ -177,7 +186,9 @@ export default async function TrainingCaseDetailPage({
               <h2 className="text-sm font-semibold text-slate-900">Image comments</h2>
               {bundle.images.map((img) => {
                 const catLabel = REVIEW_IMAGE_CATEGORIES.find((c) => c.key === img.image_category)?.title ?? img.image_category;
-                const upload = (uploads ?? []).find((u) => u.id === img.image_id) as TrainingCaseUploadRow | undefined;
+                const upload = ((uploads ?? []) as TrainingCaseUploadRow[])
+                  .filter(isActiveTrainingCaseUpload)
+                  .find((u) => u.id === img.image_id);
                 return (
                   <div key={img.id} className="border-b border-slate-100 pb-3 last:border-0">
                     <div className="text-sm font-medium text-slate-800">{catLabel}</div>

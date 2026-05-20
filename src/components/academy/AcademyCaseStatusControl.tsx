@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-const statuses = ["draft", "in_review", "reviewed", "archived"] as const;
+const statuses = ["draft", "in_review", "reviewed", "archived", "voided"] as const;
 
 export default function AcademyCaseStatusControl({ caseId, current }: { caseId: string; current: string }) {
   const router = useRouter();

@@ -5,6 +5,7 @@ import { getAcademyAccess } from "@/lib/academy/auth";
 import AcademyMetricsForm from "@/components/academy/AcademyMetricsForm";
 import AcademyCaseStatusControl from "@/components/academy/AcademyCaseStatusControl";
 import AcademyCaseUploadBar from "@/components/academy/AcademyCaseUploadBar";
+import { isActiveTrainingCaseUpload } from "@/lib/academy/trainingCaseUploads";
 import type { TrainingCaseUploadRow } from "@/lib/academy/types";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +18,7 @@ export default async function AcademyCaseDetailPage({ params }: { params: Promis
   const supabase = await createSupabaseAuthServerClient();
 
   const { data: c, error: cErr } = await supabase.from("training_cases").select("*").eq("id", caseId).maybeSingle();
-  if (cErr || !c) notFound();
+  if (cErr || !c || c.deleted_at) notFound();
 
   const { data: doctor } = await supabase
     .from("training_doctors")
@@ -49,6 +50,12 @@ export default async function AcademyCaseDetailPage({ params }: { params: Promis
           {access.isStaff ? (
             <>
               <Link
+                href={`/academy/cases/${caseId}/edit`}
+                className="rounded-md bg-slate-800 px-3 py-1.5 text-sm font-semibold text-white hover:bg-slate-900"
+              >
+                Correct case data
+              </Link>
+              <Link
                 href={`/academy/training-cases/${caseId}/review`}
                 className="text-sm font-semibold text-amber-700 hover:text-amber-800"
               >
@@ -70,7 +77,7 @@ export default async function AcademyCaseDetailPage({ params }: { params: Promis
         <h2 className="text-sm font-semibold text-slate-900">Photos</h2>
         <AcademyCaseUploadBar
           caseId={caseId}
-          initialUploads={(uploads ?? []) as TrainingCaseUploadRow[]}
+          initialUploads={((uploads ?? []) as TrainingCaseUploadRow[]).filter(isActiveTrainingCaseUpload)}
           viewerUserId={access.userId}
           isStaff={access.isStaff}
         />

@@ -51,6 +51,12 @@ export type TrainingCaseRow = {
   trainee_roles_json: Record<string, unknown>;
   status: string;
   notes: string | null;
+  archived_at?: string | null;
+  archived_by?: string | null;
+  archive_reason?: string | null;
+  deleted_at?: string | null;
+  deleted_by?: string | null;
+  delete_reason?: string | null;
   created_by: string;
   created_at: string;
   updated_at: string;
@@ -194,6 +200,20 @@ export type TrainingCaseUploadRow = {
   type: string;
   storage_path: string;
   metadata_json: Record<string, unknown>;
+  deleted_at?: string | null;
+  deleted_by?: string | null;
+  created_at: string;
+};
+
+export type TrainingCaseCorrectionRow = {
+  id: string;
+  training_case_id: string;
+  changed_by: string | null;
+  correction_type: string;
+  field_name: string | null;
+  old_value: unknown;
+  new_value: unknown;
+  reason: string | null;
   created_at: string;
 };
 
