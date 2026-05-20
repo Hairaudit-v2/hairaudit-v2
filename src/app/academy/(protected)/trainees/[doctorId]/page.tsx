@@ -8,8 +8,10 @@ import {
   domainAveragesFromAssessments,
   trendValuesFromCases,
 } from "@/lib/academy/progression";
+import { buildTraineeSurgicalProgressDashboard } from "@/lib/academy/trainingCaseReviews";
 import type { TrainingCaseMetricsRow, TrainingCaseAssessmentRow } from "@/lib/academy/types";
 import Sparkline from "@/components/ui/Sparkline";
+import TraineeSurgicalProgressSection from "@/components/academy/training-progress/TraineeSurgicalProgressSection";
 
 export const dynamic = "force-dynamic";
 
@@ -68,6 +70,32 @@ export default async function TraineeDetailPage({ params }: { params: Promise<{ 
   const impTrend = trendValuesFromCases(cases, metricsByCaseId, "implantation_grafts_per_hour");
   const extTrend = trendValuesFromCases(cases, metricsByCaseId, "extraction_grafts_per_hour");
 
+  const [{ data: cohortLinks }, programRes, siteRes] = await Promise.all([
+    supabase.from("training_cohort_trainees").select("cohort_id").eq("training_doctor_id", doctorId),
+    doctor.program_id
+      ? supabase.from("training_programs").select("name").eq("id", doctor.program_id).maybeSingle()
+      : Promise.resolve({ data: null }),
+    doctor.academy_site_id
+      ? supabase.from("academy_sites").select("name, display_name").eq("id", doctor.academy_site_id).maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
+
+  const cohortIds = [...new Set((cohortLinks ?? []).map((r) => (r as { cohort_id: string }).cohort_id))];
+  let cohortLabel: string | null = null;
+  if (cohortIds.length) {
+    const { data: cohorts } = await supabase.from("training_cohorts").select("name").in("id", cohortIds);
+    const names = (cohorts ?? []).map((c) => (c as { name: string }).name).filter(Boolean);
+    cohortLabel = names.length ? names.join(", ") : null;
+  }
+
+  const programName = programRes.data ? String((programRes.data as { name: string }).name) : null;
+  const siteRow = siteRes.data as { name: string; display_name: string | null } | null;
+  const siteLabel = siteRow ? (siteRow.display_name?.trim() || siteRow.name) : null;
+
+  const surgicalProgress = await buildTraineeSurgicalProgressDashboard(supabase, doctorId, {
+    includeDrafts: access.isStaff,
+  }).catch(() => null);
+
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-8 pb-10">
       <div className="flex flex-wrap items-start justify-between gap-3 rounded-3xl border border-slate-700/70 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 px-7 py-7 shadow-xl">
@@ -118,6 +146,20 @@ export default async function TraineeDetailPage({ params }: { params: Promise<{ 
           <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Trainer notes</h2>
           <p className="mt-2 whitespace-pre-wrap">{doctor.notes}</p>
         </section>
+      ) : null}
+
+      {surgicalProgress ? (
+        <TraineeSurgicalProgressSection
+          traineeName={doctor.full_name}
+          programName={programName}
+          cohortLabel={cohortLabel}
+          siteLabel={siteLabel}
+          currentStage={doctor.current_stage}
+          competencyWeek={null}
+          progress={surgicalProgress}
+          isStaff={access.isStaff}
+          doctorId={doctorId}
+        />
       ) : null}
 
       <section className="rounded-2xl border border-sky-300/90 bg-gradient-to-br from-sky-100/90 to-white p-5 shadow-md">

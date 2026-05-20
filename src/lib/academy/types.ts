@@ -197,6 +197,8 @@ export type TrainingCaseUploadRow = {
   created_at: string;
 };
 
+export type { TrainingCaseReviewRow, TrainingCaseReviewSectionRow, TrainingCaseReviewImageRow } from "./trainingCaseReviews/types";
+
 export type TrainingStageHistoryRow = {
   id: string;
   training_doctor_id: string;

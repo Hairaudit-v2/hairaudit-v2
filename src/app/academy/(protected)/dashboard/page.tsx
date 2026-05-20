@@ -36,6 +36,7 @@ import {
   countTargetMilestones,
   pickReviewForCompetencyWeek,
 } from "@/lib/academy/traineeDashboardModel";
+import { fetchLatestSubmittedReviewForTrainee, buildTraineeSurgicalProgressDashboard } from "@/lib/academy/trainingCaseReviews";
 import type {
   TrainingCaseMetricsRow,
   TrainingCaseAssessmentRow,
@@ -132,6 +133,9 @@ export default async function AcademyDashboardPage() {
           </div>
           <Link href="/academy/training-modules" className="mt-4 inline-flex rounded-full bg-amber-100 px-3.5 py-1.5 text-sm font-semibold text-slate-900 shadow-sm hover:bg-amber-50">
             Training module library →
+          </Link>
+          <Link href="/academy/training-cases" className="mt-2 inline-flex rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-white/15">
+            Training case reviews →
           </Link>
         </div>
 
@@ -435,6 +439,9 @@ export default async function AcademyDashboardPage() {
 
   const stageHistory = (stageHistoryRows ?? []) as TrainingStageHistoryRow[];
 
+  const latestCaseReview = await fetchLatestSubmittedReviewForTrainee(supabase, doctor.id).catch(() => null);
+  const surgicalProgress = await buildTraineeSurgicalProgressDashboard(supabase, doctor.id).catch(() => null);
+
   return (
     <TraineeDashboardView
       userId={access.userId}
@@ -467,6 +474,8 @@ export default async function AcademyDashboardPage() {
       trendImplant={impTrend}
       trendExtract={extTrend}
       domainAvg={domainAvg}
+      latestCaseReview={latestCaseReview}
+      surgicalProgress={surgicalProgress}
     />
   );
 }

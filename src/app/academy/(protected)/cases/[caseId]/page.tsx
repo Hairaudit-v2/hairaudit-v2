@@ -47,10 +47,22 @@ export default async function AcademyCaseDetailPage({ params }: { params: Promis
         <div className="flex flex-col items-end gap-2">
           {access.isStaff ? <AcademyCaseStatusControl caseId={caseId} current={c.status} /> : null}
           {access.isStaff ? (
-            <Link href={`/academy/cases/${caseId}/review`} className="text-sm font-semibold text-amber-700 hover:text-amber-800">
-              Trainer review →
+            <>
+              <Link
+                href={`/academy/training-cases/${caseId}/review`}
+                className="text-sm font-semibold text-amber-700 hover:text-amber-800"
+              >
+                Training case review →
+              </Link>
+              <Link href={`/academy/cases/${caseId}/review`} className="text-sm text-slate-600 hover:text-slate-800">
+                Legacy assessment →
+              </Link>
+            </>
+          ) : (
+            <Link href={`/academy/training-cases/${caseId}`} className="text-sm font-semibold text-amber-700 hover:text-amber-800">
+              View case feedback →
             </Link>
-          ) : null}
+          )}
         </div>
       </div>
 

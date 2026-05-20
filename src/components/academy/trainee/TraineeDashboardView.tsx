@@ -23,7 +23,11 @@ import type {
   TrainingDoctorRow,
   TrainingStageHistoryRow,
 } from "@/lib/academy/types";
+import type { TrainingCaseReviewRow } from "@/lib/academy/trainingCaseReviews";
+import type { TraineeSurgicalProgressDashboard } from "@/lib/academy/trainingCaseReviews/dashboard";
 import TraineeModuleHintsClient, { type TraineeModuleHintItem } from "./TraineeModuleHintsClient";
+import TrainingCaseReviewSummaryCard from "@/components/academy/training-case-reviews/TrainingCaseReviewSummaryCard";
+import TraineeSurgicalProgressSection from "@/components/academy/training-progress/TraineeSurgicalProgressSection";
 
 export type TraineeDashboardModuleRec = {
   id: string;
@@ -67,6 +71,8 @@ export type TraineeDashboardViewProps = {
   trendImplant: number[];
   trendExtract: number[];
   domainAvg: Record<string, number>;
+  latestCaseReview: TrainingCaseReviewRow | null;
+  surgicalProgress: TraineeSurgicalProgressDashboard | null;
 };
 
 function badgeClass(badge: string) {
@@ -260,6 +266,18 @@ export default function TraineeDashboardView(p: TraineeDashboardViewProps) {
           </div>
         </div>
       </section>
+
+      {p.surgicalProgress ? (
+        <TraineeSurgicalProgressSection
+          traineeName={p.doctor.full_name}
+          programName={p.programName}
+          cohortLabel={p.cohortLabel}
+          siteLabel={p.siteLabel}
+          currentStage={p.doctor.current_stage}
+          competencyWeek={p.competencyWeek}
+          progress={p.surgicalProgress}
+        />
+      ) : null}
 
       {/* Key metrics */}
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -547,7 +565,30 @@ export default function TraineeDashboardView(p: TraineeDashboardViewProps) {
       </section>
 
       {/* Trainer feedback */}
-      <section className="grid gap-6 lg:grid-cols-2">
+      <section className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
+        {p.latestCaseReview ? (
+          <TrainingCaseReviewSummaryCard
+            review={p.latestCaseReview}
+            caseHref={
+              p.latestCaseReview.training_case_id
+                ? `/academy/training-cases/${p.latestCaseReview.training_case_id}?reviewId=${p.latestCaseReview.id}`
+                : "/academy/training-cases"
+            }
+            compact
+          />
+        ) : (
+          <div className="rounded-2xl border border-sky-200/90 bg-gradient-to-br from-sky-50/60 via-white to-white p-6 shadow-sm ring-1 ring-sky-100">
+            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-sky-800/80">Training Case Feedback</p>
+            <h2 className="mt-1 text-lg font-semibold text-slate-900">Surgical coaching</h2>
+            <EmptyBlock
+              title="No submitted case feedback yet"
+              body="When faculty complete a Training Case Review on your supervised cases, developmental feedback and next-step focus will appear here."
+            />
+            <Link href="/academy/training-cases" className="mt-4 inline-flex text-sm font-semibold text-amber-700 hover:underline">
+              View training cases →
+            </Link>
+          </div>
+        )}
         <div className="rounded-2xl border border-amber-200/90 bg-gradient-to-br from-amber-50/90 via-white to-white p-6 shadow-sm ring-1 ring-amber-100">
           <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-amber-900/80">Recent weekly review</p>
           <h2 className="mt-1 text-lg font-semibold text-slate-900">Faculty narrative</h2>
