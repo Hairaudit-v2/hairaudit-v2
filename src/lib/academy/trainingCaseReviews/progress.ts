@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { filterReviewsOnActiveCases } from "./data";
 import { DEVELOPMENTAL_LEVEL_LABELS, isDevelopmentalLevel } from "./schema";
 import { TRAINING_CASE_REVIEW_SECTIONS } from "./reviewSections";
 import type {
@@ -103,7 +104,7 @@ export async function getTraineeCaseReviewHistory(
 
   const { data, error } = await q;
   if (error) throw error;
-  return (data ?? []) as TrainingCaseReviewRow[];
+  return filterReviewsOnActiveCases(supabase, (data ?? []) as TrainingCaseReviewRow[]);
 }
 
 export async function fetchSectionsForReviews(

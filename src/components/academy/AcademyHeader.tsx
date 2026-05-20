@@ -52,6 +52,9 @@ export default function AcademyHeader({
             <Link href="/academy/training-modules" className={navClass("/academy/training-modules")}>
               Training library
             </Link>
+            <Link href="/academy/training-cases" className={navClass("/academy/training-cases")}>
+              Case Reviews
+            </Link>
             {isStaff ? (
               <>
                 <Link href="/academy/trainees" className={navClass("/academy/trainees")}>

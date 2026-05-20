@@ -40,6 +40,7 @@ import {
   fetchLatestSubmittedReviewForTrainee,
   buildTraineeSurgicalProgressDashboard,
   createEmptyTraineeSurgicalProgressDashboard,
+  fetchStaffTrainingCaseReviewWorkload,
 } from "@/lib/academy/trainingCaseReviews";
 import type {
   TrainingCaseMetricsRow,
@@ -85,17 +86,28 @@ export default async function AcademyDashboardPage() {
   const supabase = await createSupabaseAuthServerClient();
 
   if (access.isStaff) {
-    const [{ data: doctors }, { count: monthCases }, { data: recentReviews }] = await Promise.all([
+    const [
+      { data: doctors },
+      { count: monthCases },
+      { data: recentReviews },
+      reviewWorkload,
+    ] = await Promise.all([
       supabase.from("training_doctors").select("id, current_stage, status, full_name").order("created_at", { ascending: false }),
       supabase
         .from("training_cases")
         .select("id", { count: "exact", head: true })
-        .gte("surgery_date", startOfMonthIsoDate()),
+        .gte("surgery_date", startOfMonthIsoDate())
+        .is("deleted_at", null),
       supabase
         .from("training_case_assessments")
         .select("id, created_at, overall_score, ready_to_progress, training_case_id")
         .order("created_at", { ascending: false })
         .limit(12),
+      fetchStaffTrainingCaseReviewWorkload(supabase).catch(() => ({
+        draftCount: 0,
+        recentSubmitted: [],
+        casesReadyForReview: [],
+      })),
     ]);
 
     const list = (doctors ?? []).filter((d) => isOperationalTraineeStatus(d.status));
@@ -176,11 +188,91 @@ export default async function AcademyDashboardPage() {
           </div>
         </div>
 
+        <section className="rounded-2xl border border-emerald-300/90 bg-gradient-to-br from-emerald-50/80 via-white to-white p-5 shadow-md">
+          <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-800">Developmental coaching</p>
+              <h2 className="text-sm font-semibold text-slate-900">Training Case Reviews</h2>
+              <p className="mt-1 text-xs text-slate-600 max-w-xl">
+                Structured faculty feedback for surgical learning — separate from legacy score-based assessments below.
+              </p>
+            </div>
+            <Link href="/academy/training-cases" className="text-sm font-semibold text-emerald-800 hover:underline shrink-0">
+              Open case reviews →
+            </Link>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-3 mb-4">
+            <div className="rounded-xl border border-emerald-200 bg-white px-4 py-3">
+              <div className="text-[10px] font-semibold uppercase tracking-wide text-emerald-700">Draft reviews</div>
+              <div className="mt-1 text-2xl font-bold text-emerald-950">{reviewWorkload.draftCount}</div>
+              <p className="mt-1 text-xs text-slate-500">Draft reviews waiting to be completed</p>
+            </div>
+            <div className="rounded-xl border border-emerald-200 bg-white px-4 py-3">
+              <div className="text-[10px] font-semibold uppercase tracking-wide text-emerald-700">Recently submitted</div>
+              <div className="mt-1 text-2xl font-bold text-emerald-950">{reviewWorkload.recentSubmitted.length}</div>
+              <p className="mt-1 text-xs text-slate-500">Recently submitted coaching feedback</p>
+            </div>
+            <div className="rounded-xl border border-emerald-200 bg-white px-4 py-3">
+              <div className="text-[10px] font-semibold uppercase tracking-wide text-emerald-700">Ready for review</div>
+              <div className="mt-1 text-2xl font-bold text-emerald-950">{reviewWorkload.casesReadyForReview.length}</div>
+              <p className="mt-1 text-xs text-slate-500">Cases with evidence but no submitted review</p>
+            </div>
+          </div>
+
+          {reviewWorkload.casesReadyForReview.length > 0 ? (
+            <div className="mb-4">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-600 mb-2">Cases ready for faculty review</h3>
+              <ul className="divide-y divide-slate-100 rounded-lg border border-slate-200 bg-white">
+                {reviewWorkload.casesReadyForReview.slice(0, 6).map((item) => (
+                  <li key={item.caseId} className="px-3 py-2 flex flex-wrap items-center justify-between gap-2 text-sm">
+                    <Link
+                      href={`/academy/training-cases/${item.caseId}/review`}
+                      className="font-medium text-emerald-800 hover:underline"
+                    >
+                      {item.traineeName} · {item.surgeryDate}
+                    </Link>
+                    <span className="text-xs text-slate-500">{item.uploadCount} photo(s)</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
+          {reviewWorkload.recentSubmitted.length > 0 ? (
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-600 mb-2">Recently submitted coaching feedback</h3>
+              <ul className="divide-y divide-slate-100 rounded-lg border border-slate-200 bg-white">
+                {reviewWorkload.recentSubmitted.slice(0, 6).map((r) => (
+                  <li key={r.id} className="px-3 py-2 flex flex-wrap items-center justify-between gap-2 text-sm">
+                    <Link
+                      href={
+                        r.training_case_id
+                          ? `/academy/training-cases/${r.training_case_id}?reviewId=${r.id}`
+                          : "/academy/training-cases"
+                      }
+                      className="font-medium text-emerald-800 hover:underline"
+                    >
+                      Case {r.training_case_id ? String(r.training_case_id).slice(0, 8) : "—"}…
+                    </Link>
+                    <span className="text-xs text-slate-500">
+                      {r.submitted_at ? new Date(r.submitted_at).toLocaleDateString() : "—"}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : reviewWorkload.draftCount === 0 && reviewWorkload.casesReadyForReview.length === 0 ? (
+            <p className="text-sm text-slate-500">No training case reviews in progress yet. Open a case with photos to start coaching feedback.</p>
+          ) : null}
+        </section>
+
         <section className="rounded-2xl border border-sky-300/90 bg-gradient-to-br from-sky-100/70 via-white to-white p-5 shadow-md">
           <div className="flex items-center justify-between gap-2 mb-3">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-sky-700">Assessment flow</p>
-              <h2 className="text-sm font-semibold text-slate-900">Recent reviews</h2>
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-sky-700">Legacy assessment flow</p>
+              <h2 className="text-sm font-semibold text-slate-900">Recent score-based assessments</h2>
+              <p className="mt-1 text-xs text-slate-500">Domain scores and progression flags — not developmental case reviews.</p>
             </div>
             <Link href="/academy/trainees" className="text-sm font-medium text-amber-700 hover:text-amber-800">
               Trainees
@@ -217,8 +309,10 @@ export default async function AcademyDashboardPage() {
           <h2 className="text-sm font-semibold text-amber-950">Progression alerts</h2>
           <p className="mt-1 text-sm text-amber-950/80">
             {(inReview ?? 0) > 0
-              ? `${inReview} case(s) marked in review — complete trainer assessments.`
-              : "No cases flagged in review. Mark cases as “in review” when ready for sign-off."}
+              ? `${inReview} case(s) marked in review — complete legacy assessments or Training Case Reviews as appropriate.`
+              : reviewWorkload.draftCount > 0
+                ? `${reviewWorkload.draftCount} Training Case Review draft(s) waiting — complete coaching feedback for trainees.`
+                : "No cases flagged in review. Mark cases as “in review” when ready for faculty feedback."}
           </p>
         </section>
       </div>

@@ -11,6 +11,7 @@ import {
 import TrainingCaseReviewSummaryCard from "@/components/academy/training-case-reviews/TrainingCaseReviewSummaryCard";
 import TrainingCaseReviewSections from "@/components/academy/training-case-reviews/TrainingCaseReviewSections";
 import { isActiveTrainingCaseUpload } from "@/lib/academy/trainingCaseUploads";
+import { isActiveTrainingCase } from "@/lib/academy/trainingCases";
 import type { TrainingCaseUploadRow } from "@/lib/academy/types";
 import { REVIEW_IMAGE_CATEGORIES } from "@/lib/academy/trainingCaseReviews";
 import AcademySignedThumb from "@/components/academy/AcademySignedThumb";
@@ -32,7 +33,7 @@ export default async function TrainingCaseDetailPage({
   const supabase = await createSupabaseAuthServerClient();
 
   const { data: c, error: cErr } = await supabase.from("training_cases").select("*").eq("id", caseId).maybeSingle();
-  if (cErr || !c || c.deleted_at) notFound();
+  if (cErr || !c || !isActiveTrainingCase(c)) notFound();
 
   const [{ data: doctor }, { data: uploads }, reviews] = await Promise.all([
     supabase.from("training_doctors").select("id, full_name, current_stage").eq("id", c.training_doctor_id).maybeSingle(),
@@ -45,6 +46,8 @@ export default async function TrainingCaseDetailPage({
   const bundle = selectedReviewId ? await fetchTrainingCaseReviewBundle(supabase, selectedReviewId).catch(() => null) : null;
 
   const draftReview = access.isStaff ? reviews.find((r) => r.review_status === "draft") : null;
+
+  const activeUploads = ((uploads ?? []) as TrainingCaseUploadRow[]).filter(isActiveTrainingCaseUpload);
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-8 pb-10">
@@ -186,9 +189,7 @@ export default async function TrainingCaseDetailPage({
               <h2 className="text-sm font-semibold text-slate-900">Image comments</h2>
               {bundle.images.map((img) => {
                 const catLabel = REVIEW_IMAGE_CATEGORIES.find((c) => c.key === img.image_category)?.title ?? img.image_category;
-                const upload = ((uploads ?? []) as TrainingCaseUploadRow[])
-                  .filter(isActiveTrainingCaseUpload)
-                  .find((u) => u.id === img.image_id);
+                const upload = activeUploads.find((u) => u.id === img.image_id);
                 return (
                   <div key={img.id} className="border-b border-slate-100 pb-3 last:border-0">
                     <div className="text-sm font-medium text-slate-800">{catLabel}</div>
@@ -196,6 +197,8 @@ export default async function TrainingCaseDetailPage({
                       <div className="mt-2 max-w-[200px]">
                         <AcademySignedThumb storagePath={upload.storage_path} label={catLabel} />
                       </div>
+                    ) : img.image_id ? (
+                      <p className="mt-2 text-xs text-slate-500 italic">Linked evidence has been removed.</p>
                     ) : null}
                     {img.reviewer_comment ? <p className="mt-2 text-sm text-slate-700">{img.reviewer_comment}</p> : null}
                   </div>

@@ -9,6 +9,8 @@ import {
 } from "@/lib/academy/trainingCaseReviews";
 import TrainingCaseReviewForm from "@/components/academy/training-case-reviews/TrainingCaseReviewForm";
 import type { TrainingCaseUploadRow } from "@/lib/academy/types";
+import { isActiveTrainingCase } from "@/lib/academy/trainingCases";
+import { isActiveTrainingCaseUpload } from "@/lib/academy/trainingCaseUploads";
 
 export const dynamic = "force-dynamic";
 
@@ -29,10 +31,10 @@ export default async function TrainingCaseReviewEditPage({
 
   const { data: c, error: cErr } = await supabase
     .from("training_cases")
-    .select("id, training_doctor_id, surgery_date, procedure_type")
+    .select("id, training_doctor_id, surgery_date, procedure_type, deleted_at, status")
     .eq("id", caseId)
     .maybeSingle();
-  if (cErr || !c) notFound();
+  if (cErr || !c || !isActiveTrainingCase(c)) notFound();
 
   const { data: doctor } = await supabase
     .from("training_doctors")
@@ -97,7 +99,7 @@ export default async function TrainingCaseReviewEditPage({
           caseId={caseId}
           reviewId={reviewId}
           initial={bundle}
-          uploads={(uploads ?? []) as TrainingCaseUploadRow[]}
+          uploads={((uploads ?? []) as TrainingCaseUploadRow[]).filter(isActiveTrainingCaseUpload)}
         />
       </div>
     </div>

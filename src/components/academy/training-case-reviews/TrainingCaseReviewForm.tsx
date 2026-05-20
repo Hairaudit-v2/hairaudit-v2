@@ -18,6 +18,7 @@ import {
 } from "@/lib/academy/trainingCaseReviews";
 import type { TrainingCaseUploadRow } from "@/lib/academy/types";
 import { parseTrainingPhotoType } from "@/lib/academy/photoCategories";
+import { isActiveTrainingCaseUpload } from "@/lib/academy/trainingCaseUploads";
 import AcademySignedThumb from "@/components/academy/AcademySignedThumb";
 
 type Props = {
@@ -31,6 +32,7 @@ type SectionState = Record<string, TrainingCaseReviewSectionInput & { section_ke
 
 export default function TrainingCaseReviewForm({ caseId, reviewId, initial, uploads }: Props) {
   const router = useRouter();
+  const activeUploads = uploads.filter(isActiveTrainingCaseUpload);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -63,7 +65,7 @@ export default function TrainingCaseReviewForm({ caseId, reviewId, initial, uplo
 
   const uploadsByCategory = useMemo(() => {
     const m = new Map<string, TrainingCaseUploadRow[]>();
-    for (const u of uploads) {
+    for (const u of activeUploads) {
       const cat = parseTrainingPhotoType(u.type);
       if (!cat) continue;
       const list = m.get(cat) ?? [];
@@ -71,7 +73,7 @@ export default function TrainingCaseReviewForm({ caseId, reviewId, initial, uplo
       m.set(cat, list);
     }
     return m;
-  }, [uploads]);
+  }, [activeUploads]);
 
   const [imageComments, setImageComments] = useState<Record<string, { comment: string; quality: string; uploadId: string }>>(
     () => {
@@ -295,8 +297,8 @@ export default function TrainingCaseReviewForm({ caseId, reviewId, initial, uplo
         <div className="space-y-4">
           {REVIEW_IMAGE_CATEGORIES.map((cat) => {
             const st = imageComments[cat.key] ?? { comment: "", quality: "", uploadId: "" };
-            const options = cat.linkedUploadCategory ? (uploadsByCategory.get(cat.linkedUploadCategory) ?? []) : uploads;
-            const selected = uploads.find((u) => u.id === st.uploadId);
+            const options = cat.linkedUploadCategory ? (uploadsByCategory.get(cat.linkedUploadCategory) ?? []) : activeUploads;
+            const selected = activeUploads.find((u) => u.id === st.uploadId);
             return (
               <div key={cat.key} className="rounded-lg border border-slate-100 p-3 space-y-2">
                 <div className="text-sm font-medium text-slate-800">{cat.title}</div>

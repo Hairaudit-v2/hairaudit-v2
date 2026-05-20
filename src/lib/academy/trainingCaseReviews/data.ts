@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { isActiveTrainingCase } from "../trainingCases";
 import { parseTrainingPhotoType } from "../photoCategories";
 import { defaultSectionRows } from "./reviewSections";
 import type {
@@ -8,6 +9,113 @@ import type {
   TrainingCaseReviewSectionInput,
   TrainingCaseReviewUpsertBody,
 } from "./types";
+
+export type StaffTrainingCaseReviewWorkload = {
+  draftCount: number;
+  recentSubmitted: TrainingCaseReviewRow[];
+  casesReadyForReview: {
+    caseId: string;
+    surgeryDate: string;
+    traineeName: string;
+    uploadCount: number;
+  }[];
+};
+
+async function fetchActiveCaseIdSet(
+  supabase: SupabaseClient,
+  caseIds: string[],
+): Promise<Set<string>> {
+  if (!caseIds.length) return new Set();
+  const { data, error } = await supabase.from("training_cases").select("id, deleted_at, status").in("id", caseIds);
+  if (error) throw error;
+  return new Set((data ?? []).filter(isActiveTrainingCase).map((c) => c.id as string));
+}
+
+export async function filterReviewsOnActiveCases(
+  supabase: SupabaseClient,
+  reviews: TrainingCaseReviewRow[],
+): Promise<TrainingCaseReviewRow[]> {
+  const caseIds = [...new Set(reviews.map((r) => r.training_case_id).filter(Boolean))] as string[];
+  if (!caseIds.length) return reviews;
+  const activeIds = await fetchActiveCaseIdSet(supabase, caseIds);
+  return reviews.filter((r) => !r.training_case_id || activeIds.has(r.training_case_id));
+}
+
+export async function fetchStaffTrainingCaseReviewWorkload(
+  supabase: SupabaseClient,
+): Promise<StaffTrainingCaseReviewWorkload> {
+  const [{ count: draftCount }, { data: recentRaw }, { data: allCases }] = await Promise.all([
+    supabase
+      .from("training_case_reviews")
+      .select("id", { count: "exact", head: true })
+      .eq("review_status", "draft"),
+    supabase
+      .from("training_case_reviews")
+      .select("*")
+      .eq("review_status", "submitted")
+      .order("submitted_at", { ascending: false })
+      .limit(8),
+    supabase.from("training_cases").select("id, surgery_date, training_doctor_id, deleted_at, status"),
+  ]);
+
+  const activeCases = (allCases ?? []).filter(isActiveTrainingCase);
+  const activeCaseIds = activeCases.map((c) => c.id as string);
+
+  const recentSubmitted = await filterReviewsOnActiveCases(
+    supabase,
+    (recentRaw ?? []) as TrainingCaseReviewRow[],
+  );
+
+  if (!activeCaseIds.length) {
+    return { draftCount: draftCount ?? 0, recentSubmitted, casesReadyForReview: [] };
+  }
+
+  const [{ data: uploads }, { data: submittedReviews }] = await Promise.all([
+    supabase
+      .from("training_case_uploads")
+      .select("training_case_id, deleted_at")
+      .in("training_case_id", activeCaseIds)
+      .is("deleted_at", null),
+    supabase
+      .from("training_case_reviews")
+      .select("training_case_id")
+      .eq("review_status", "submitted")
+      .in("training_case_id", activeCaseIds),
+  ]);
+
+  const casesWithUploads = new Set((uploads ?? []).map((u) => u.training_case_id as string));
+  const casesWithSubmittedReview = new Set(
+    (submittedReviews ?? []).map((r) => r.training_case_id as string).filter(Boolean),
+  );
+
+  const readyCaseIds = [...casesWithUploads].filter((id) => !casesWithSubmittedReview.has(id)).slice(0, 12);
+  const readyCases = activeCases.filter((c) => readyCaseIds.includes(c.id as string));
+
+  const doctorIds = [...new Set(readyCases.map((c) => c.training_doctor_id as string))];
+  const { data: doctors } = doctorIds.length
+    ? await supabase.from("training_doctors").select("id, full_name").in("id", doctorIds)
+    : { data: [] };
+  const doctorById = new Map((doctors ?? []).map((d) => [d.id as string, d.full_name as string]));
+
+  const uploadCountByCase = new Map<string, number>();
+  for (const u of uploads ?? []) {
+    const id = u.training_case_id as string;
+    uploadCountByCase.set(id, (uploadCountByCase.get(id) ?? 0) + 1);
+  }
+
+  const casesReadyForReview = readyCases.map((c) => ({
+    caseId: c.id as string,
+    surgeryDate: c.surgery_date as string,
+    traineeName: doctorById.get(c.training_doctor_id as string) ?? "Trainee",
+    uploadCount: uploadCountByCase.get(c.id as string) ?? 0,
+  }));
+
+  return {
+    draftCount: draftCount ?? 0,
+    recentSubmitted,
+    casesReadyForReview,
+  };
+}
 
 export async function fetchTrainingCaseReviewsForCase(
   supabase: SupabaseClient,
@@ -32,10 +140,10 @@ export async function fetchLatestSubmittedReviewForTrainee(
     .eq("trainee_id", traineeId)
     .eq("review_status", "submitted")
     .order("submitted_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .limit(10);
   if (error) throw error;
-  return (data as TrainingCaseReviewRow | null) ?? null;
+  const filtered = await filterReviewsOnActiveCases(supabase, (data ?? []) as TrainingCaseReviewRow[]);
+  return filtered[0] ?? null;
 }
 
 export async function fetchTrainingCaseReviewBundle(
@@ -77,7 +185,7 @@ export async function fetchTrainingCaseReviewsList(
   if (opts?.limit) q = q.limit(opts.limit);
   const { data, error } = await q;
   if (error) throw error;
-  return (data ?? []) as TrainingCaseReviewRow[];
+  return filterReviewsOnActiveCases(supabase, (data ?? []) as TrainingCaseReviewRow[]);
 }
 
 type CreateReviewArgs = {
@@ -95,6 +203,16 @@ export async function createDraftTrainingCaseReview(
   supabase: SupabaseClient,
   args: CreateReviewArgs,
 ): Promise<TrainingCaseReviewRow> {
+  const { data: existingDraft, error: findErr } = await supabase
+    .from("training_case_reviews")
+    .select("*")
+    .eq("training_case_id", args.trainingCaseId)
+    .eq("reviewer_id", args.reviewerId)
+    .eq("review_status", "draft")
+    .maybeSingle();
+  if (findErr) throw findErr;
+  if (existingDraft) return existingDraft as TrainingCaseReviewRow;
+
   const { data: review, error } = await supabase
     .from("training_case_reviews")
     .insert({
@@ -227,7 +345,23 @@ export async function submitTrainingCaseReview(
     .maybeSingle();
   if (error) throw error;
   if (!data) throw new Error("Review not found or already submitted");
-  return data as TrainingCaseReviewRow;
+
+  const review = data as TrainingCaseReviewRow;
+  if (review.training_case_id) {
+    const { data: caseRow } = await supabase
+      .from("training_cases")
+      .select("id, status, deleted_at")
+      .eq("id", review.training_case_id)
+      .maybeSingle();
+    if (caseRow && isActiveTrainingCase(caseRow)) {
+      await supabase
+        .from("training_cases")
+        .update({ status: "reviewed", updated_at: now })
+        .eq("id", review.training_case_id);
+    }
+  }
+
+  return review;
 }
 
 /** Suggest upload rows for each review image category based on existing case uploads. */

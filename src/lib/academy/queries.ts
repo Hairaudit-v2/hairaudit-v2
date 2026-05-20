@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { TrainingCaseRow, TrainingDoctorRow } from "./types";
+import { isActiveTrainingCase } from "./trainingCases";
 
 export async function fetchTrainingDoctorForUser(
   supabase: SupabaseClient,
@@ -25,7 +26,7 @@ export async function fetchTrainingCasesForDoctor(
     .eq("training_doctor_id", doctorId)
     .order("surgery_date", { ascending: true });
   if (error || !data) return [];
-  return data as TrainingCaseRow[];
+  return (data as TrainingCaseRow[]).filter(isActiveTrainingCase);
 }
 
 /** Cohort ids for a trainee auth user (via training_doctors → training_cohort_trainees). */

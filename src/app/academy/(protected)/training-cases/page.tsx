@@ -4,6 +4,7 @@ import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { getAcademyAccess } from "@/lib/academy/auth";
 import { fetchTrainingCaseReviewsList } from "@/lib/academy/trainingCaseReviews";
 import { DEVELOPMENTAL_LEVEL_LABELS } from "@/lib/academy/trainingCaseReviews";
+import { isActiveTrainingCase } from "@/lib/academy/trainingCases";
 
 export const dynamic = "force-dynamic";
 
@@ -29,14 +30,14 @@ export default async function TrainingCasesPage({
 
   const [{ data: cases }, { data: trainees }] = await Promise.all([
     caseIds.length
-      ? supabase.from("training_cases").select("id, surgery_date, procedure_type, status").in("id", caseIds)
+      ? supabase.from("training_cases").select("id, surgery_date, procedure_type, status, deleted_at").in("id", caseIds)
       : Promise.resolve({ data: [] }),
     traineeIds.length
       ? supabase.from("training_doctors").select("id, full_name").in("id", traineeIds)
       : Promise.resolve({ data: [] }),
   ]);
 
-  const caseById = new Map((cases ?? []).map((c) => [c.id, c]));
+  const caseById = new Map((cases ?? []).filter(isActiveTrainingCase).map((c) => [c.id, c]));
   const traineeById = new Map((trainees ?? []).map((t) => [t.id, t]));
 
   return (
