@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { requireAcademyStaff } from "@/lib/academy/auth";
+import { validateEvidenceTrainingCaseReview } from "@/lib/academy/competencyReviewTraceability";
 import type { PerformanceDemonstration } from "@/lib/academy/types";
 
 export const runtime = "nodejs";
@@ -9,6 +10,7 @@ type PatchBody = Partial<{
   trainerComments: string | null;
   performanceDemonstration: PerformanceDemonstration;
   evidenceTrainingCaseId: string | null;
+  evidenceTrainingCaseReviewId: string | null;
   capture: Record<string, unknown>;
   singleSessionOverride: boolean;
 }>;
@@ -65,6 +67,17 @@ export async function PATCH(
       }
     }
     patch.evidence_training_case_id = cid;
+  }
+  if (body.evidenceTrainingCaseReviewId !== undefined) {
+    let rid = body.evidenceTrainingCaseReviewId ? String(body.evidenceTrainingCaseReviewId).trim() : null;
+    if (rid === "") rid = null;
+    if (rid) {
+      const reviewCheck = await validateEvidenceTrainingCaseReview(supabase, rid, trainingDoctorId);
+      if (!reviewCheck.ok) {
+        return NextResponse.json({ ok: false, error: reviewCheck.error }, { status: 400 });
+      }
+    }
+    patch.evidence_training_case_review_id = rid;
   }
   if (body.capture !== undefined && body.capture && typeof body.capture === "object") {
     patch.capture_json = { ...(row.capture_json as object), ...body.capture };

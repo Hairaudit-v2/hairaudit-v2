@@ -8,8 +8,10 @@ import {
   DEVELOPMENTAL_LEVEL_LABELS,
   REVIEW_DISCLAIMER,
 } from "@/lib/academy/trainingCaseReviews";
+import { fetchCompetencyLinksForReview } from "@/lib/academy/competencyReviewTraceability";
 import TrainingCaseReviewSummaryCard from "@/components/academy/training-case-reviews/TrainingCaseReviewSummaryCard";
 import TrainingCaseReviewSections from "@/components/academy/training-case-reviews/TrainingCaseReviewSections";
+import CompetencyTraceabilityPanel from "@/components/academy/CompetencyTraceabilityPanel";
 import { isActiveTrainingCaseUpload } from "@/lib/academy/trainingCaseUploads";
 import { isActiveTrainingCase } from "@/lib/academy/trainingCases";
 import type { TrainingCaseUploadRow } from "@/lib/academy/types";
@@ -44,6 +46,11 @@ export default async function TrainingCaseDetailPage({
   const visibleReviews = access.isStaff ? reviews : reviews.filter((r) => r.review_status === "submitted");
   const selectedReviewId = sp.reviewId ?? visibleReviews.find((r) => r.review_status === "submitted")?.id ?? visibleReviews[0]?.id;
   const bundle = selectedReviewId ? await fetchTrainingCaseReviewBundle(supabase, selectedReviewId).catch(() => null) : null;
+
+  const competencyLinks =
+    access.isStaff && bundle?.review.id
+      ? await fetchCompetencyLinksForReview(supabase, bundle.review.id).catch(() => [])
+      : [];
 
   const draftReview = access.isStaff ? reviews.find((r) => r.review_status === "draft") : null;
 
@@ -122,6 +129,10 @@ export default async function TrainingCaseDetailPage({
       ) : (
         <>
           <TrainingCaseReviewSummaryCard review={bundle.review} caseHref={`/academy/training-cases/${caseId}?reviewId=${bundle.review.id}`} />
+
+          {access.isStaff ? (
+            <CompetencyTraceabilityPanel traineeId={c.training_doctor_id} links={competencyLinks} />
+          ) : null}
 
           <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm space-y-3">
             <h2 className="text-sm font-semibold text-slate-900">Overall summary</h2>

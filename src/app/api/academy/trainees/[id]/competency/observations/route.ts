@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { requireAcademyStaff } from "@/lib/academy/auth";
+import { validateEvidenceTrainingCaseReview } from "@/lib/academy/competencyReviewTraceability";
 
 export const runtime = "nodejs";
 
 type PostBody = {
   stepId: string;
   trainingCaseId?: string | null;
+  evidenceTrainingCaseReviewId?: string | null;
   thresholdMet?: boolean;
   trainerObserved?: boolean;
   checklistJson?: Record<string, unknown>;
@@ -50,12 +52,29 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     }
   }
 
+  let evidenceTrainingCaseReviewId = body.evidenceTrainingCaseReviewId
+    ? String(body.evidenceTrainingCaseReviewId).trim()
+    : null;
+  if (evidenceTrainingCaseReviewId === "") evidenceTrainingCaseReviewId = null;
+
+  if (evidenceTrainingCaseReviewId) {
+    const reviewCheck = await validateEvidenceTrainingCaseReview(
+      supabase,
+      evidenceTrainingCaseReviewId,
+      trainingDoctorId,
+    );
+    if (!reviewCheck.ok) {
+      return NextResponse.json({ ok: false, error: reviewCheck.error }, { status: 400 });
+    }
+  }
+
   const { data: inserted, error } = await supabase
     .from("training_competency_step_observations")
     .insert({
       training_doctor_id: trainingDoctorId,
       step_id: stepId,
       training_case_id: trainingCaseId,
+      evidence_training_case_review_id: evidenceTrainingCaseReviewId,
       recorded_by: access.userId,
       threshold_met: body.thresholdMet !== false,
       trainer_observed: Boolean(body.trainerObserved),

@@ -130,6 +130,7 @@ export type TrainingCompetencyAchievementRow = {
   signed_off_by: string;
   trainer_comments: string | null;
   evidence_training_case_id: string | null;
+  evidence_training_case_review_id?: string | null;
   performance_demonstration: PerformanceDemonstration;
   capture_json: Record<string, unknown>;
   single_session_override?: boolean;
@@ -152,6 +153,7 @@ export type TrainingCompetencyStepObservationRow = {
   training_doctor_id: string;
   step_id: string;
   training_case_id: string | null;
+  evidence_training_case_review_id?: string | null;
   recorded_by: string;
   threshold_met: boolean;
   trainer_observed: boolean;

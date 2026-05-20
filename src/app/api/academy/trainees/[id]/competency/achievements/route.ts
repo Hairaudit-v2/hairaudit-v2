@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { requireAcademyStaff } from "@/lib/academy/auth";
 import { isStepUnlockedForSignoff } from "@/lib/academy/competency";
+import { validateEvidenceTrainingCaseReview } from "@/lib/academy/competencyReviewTraceability";
 import { evaluateRepeatability } from "@/lib/academy/competencyPhase2";
 import type { PerformanceDemonstration, TrainingCompetencyStepObservationRow, TrainingCompetencyStepRow } from "@/lib/academy/types";
 
@@ -22,6 +23,7 @@ type CapturePayload = {
 type PostBody = {
   stepId: string;
   evidenceTrainingCaseId?: string | null;
+  evidenceTrainingCaseReviewId?: string | null;
   trainerComments?: string | null;
   performanceDemonstration?: PerformanceDemonstration;
   capture?: CapturePayload;
@@ -140,6 +142,22 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     }
   }
 
+  let evidenceTrainingCaseReviewId = body.evidenceTrainingCaseReviewId
+    ? String(body.evidenceTrainingCaseReviewId).trim()
+    : null;
+  if (evidenceTrainingCaseReviewId === "") evidenceTrainingCaseReviewId = null;
+
+  if (evidenceTrainingCaseReviewId) {
+    const reviewCheck = await validateEvidenceTrainingCaseReview(
+      supabase,
+      evidenceTrainingCaseReviewId,
+      trainingDoctorId,
+    );
+    if (!reviewCheck.ok) {
+      return NextResponse.json({ ok: false, error: reviewCheck.error }, { status: 400 });
+    }
+  }
+
   const captureJson: Record<string, unknown> = {};
   if (evidenceTrainingCaseId) {
     const { data: metrics } = await supabase
@@ -179,6 +197,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       signed_off_by: access.userId,
       trainer_comments: body.trainerComments?.trim() || null,
       evidence_training_case_id: evidenceTrainingCaseId,
+      evidence_training_case_review_id: evidenceTrainingCaseReviewId,
       performance_demonstration: demo,
       capture_json: captureJson,
       single_session_override: singleOverride,

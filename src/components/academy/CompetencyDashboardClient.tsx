@@ -12,6 +12,12 @@ import {
   isStepUnlockedForSignoff,
 } from "@/lib/academy/competency";
 import type { CompetencyStepStatus, ReadinessSummary, StepUiModel } from "@/lib/academy/competencyPhase2";
+import type { ReviewEvidenceView } from "@/lib/academy/competencyReviewTraceability";
+import type { TrainingCaseReviewRow } from "@/lib/academy/trainingCaseReviews/types";
+import {
+  CompetencyReviewEvidenceLink,
+  TrainingCaseReviewEvidenceSelect,
+} from "@/components/academy/CompetencyReviewEvidence";
 import type {
   PerformanceDemonstration,
   TrainingCaseRow,
@@ -39,6 +45,8 @@ type Props = {
   /** Latest training case that has saved metrics — pre-fills evidence to avoid re-typing. */
   defaultEvidenceCaseId: string | null;
   caseIdsWithMetrics: string[];
+  submittedReviews: TrainingCaseReviewRow[];
+  reviewEvidenceById: Record<string, ReviewEvidenceView>;
 };
 
 function statusBadgeClass(status: CompetencyStepStatus): string {
@@ -153,6 +161,8 @@ export default function CompetencyDashboardClient({
   waveStartIso,
   defaultEvidenceCaseId,
   caseIdsWithMetrics,
+  submittedReviews,
+  reviewEvidenceById,
 }: Props) {
   const router = useRouter();
   const [waveDate, setWaveDate] = useState(doctor.competency_wave_start_date || "");
@@ -431,7 +441,16 @@ export default function CompetencyDashboardClient({
                             </span>
                           </summary>
                           <div className="border-t border-emerald-100/80 px-3 py-2 space-y-2">
-                            <AchievedBlock ach={ach} trainerNames={trainerNames} caseHrefBase="/academy/cases" />
+                            <AchievedBlock
+                              ach={ach}
+                              trainerNames={trainerNames}
+                              caseHrefBase="/academy/cases"
+                              reviewEvidence={
+                                ach.evidence_training_case_review_id
+                                  ? reviewEvidenceById[ach.evidence_training_case_review_id]
+                                  : undefined
+                              }
+                            />
                             {isStaff ? (
                               <EditSignOffForm
                                 doctorId={doctorId}
@@ -440,6 +459,8 @@ export default function CompetencyDashboardClient({
                                 initialComments={ach.trainer_comments}
                                 initialDemo={ach.performance_demonstration}
                                 initialOverride={Boolean(ach.single_session_override)}
+                                initialReviewId={ach.evidence_training_case_review_id ?? ""}
+                                submittedReviews={submittedReviews}
                                 onDone={() => router.refresh()}
                               />
                             ) : null}
@@ -524,6 +545,7 @@ export default function CompetencyDashboardClient({
                             cases={cases}
                             defaultEvidenceCaseId={defaultEvidenceCaseId}
                             metricsCaseSet={metricsCaseSet}
+                            submittedReviews={submittedReviews}
                             onDone={() => router.refresh()}
                           />
                           <TrainerStateActions
@@ -544,6 +566,14 @@ export default function CompetencyDashboardClient({
                                     {o.trainer_observed ? "Y" : "n"}
                                     {o.training_case_id ? ` · case` : ""}
                                     {o.notes ? ` — ${o.notes}` : ""}
+                                    {o.evidence_training_case_review_id ? (
+                                      <span className="block mt-0.5">
+                                        <CompetencyReviewEvidenceLink
+                                          reviewId={o.evidence_training_case_review_id}
+                                          reviewEvidence={reviewEvidenceById[o.evidence_training_case_review_id]}
+                                        />
+                                      </span>
+                                    ) : null}
                                   </li>
                                 ))}
                               </ul>
@@ -556,6 +586,7 @@ export default function CompetencyDashboardClient({
                             stepUi={ui}
                             defaultEvidenceCaseId={defaultEvidenceCaseId}
                             metricsCaseSet={metricsCaseSet}
+                            submittedReviews={submittedReviews}
                             onDone={() => router.refresh()}
                           />
                         </div>
@@ -876,6 +907,7 @@ function ObservationLogForm({
   cases,
   defaultEvidenceCaseId,
   metricsCaseSet,
+  submittedReviews,
   onDone,
 }: {
   doctorId: string;
@@ -883,11 +915,13 @@ function ObservationLogForm({
   cases: Pick<TrainingCaseRow, "id" | "surgery_date">[];
   defaultEvidenceCaseId: string | null;
   metricsCaseSet: Set<string>;
+  submittedReviews: TrainingCaseReviewRow[];
   onDone: () => void;
 }) {
   const checklistItems = stepChecklistItems(step);
   const [busy, setBusy] = useState(false);
   const [caseId, setCaseId] = useState(defaultEvidenceCaseId || "");
+  const [reviewId, setReviewId] = useState("");
   const [notes, setNotes] = useState("");
   const [thresholdMet, setThresholdMet] = useState(true);
   const [trainerObserved, setTrainerObserved] = useState(true);
@@ -907,6 +941,7 @@ function ObservationLogForm({
         body: JSON.stringify({
           stepId: step.id,
           trainingCaseId: caseId || null,
+          evidenceTrainingCaseReviewId: reviewId || null,
           thresholdMet,
           trainerObserved,
           notes: notes || null,
@@ -917,6 +952,7 @@ function ObservationLogForm({
       if (!res.ok) throw new Error(j.error || "Log failed");
       setNotes("");
       setCaseId(defaultEvidenceCaseId || "");
+      setReviewId("");
       setChecklist(Object.fromEntries(checklistItems.map((i) => [i.id, false])));
       onDone();
     } catch (err) {
@@ -955,6 +991,12 @@ function ObservationLogForm({
           </button>
         ) : null}
       </div>
+      <TrainingCaseReviewEvidenceSelect
+        reviews={submittedReviews}
+        value={reviewId}
+        onChange={setReviewId}
+        selectedCaseId={caseId || undefined}
+      />
       <div className="flex flex-wrap gap-3">
         <label className="flex items-center gap-1.5">
           <input type="checkbox" checked={thresholdMet} onChange={(e) => setThresholdMet(e.target.checked)} />
@@ -1065,10 +1107,12 @@ function AchievedBlock({
   ach,
   trainerNames,
   caseHrefBase,
+  reviewEvidence,
 }: {
   ach: TrainingCompetencyAchievementRow;
   trainerNames: Record<string, string>;
   caseHrefBase: string;
+  reviewEvidence?: ReviewEvidenceView;
 }) {
   const name = trainerNames[ach.signed_off_by] || "Trainer";
   const demo = PERFORMANCE_DEMONSTRATION_LABELS[ach.performance_demonstration] ?? ach.performance_demonstration;
@@ -1101,6 +1145,15 @@ function AchievedBlock({
           </Link>
         </div>
       ) : null}
+      {ach.evidence_training_case_review_id ? (
+        <div>
+          <span className="text-[11px] text-slate-500">Linked as supporting evidence · </span>
+          <CompetencyReviewEvidenceLink
+            reviewId={ach.evidence_training_case_review_id}
+            reviewEvidence={reviewEvidence}
+          />
+        </div>
+      ) : null}
       {ach.trainer_comments ? <p className="text-xs text-slate-600 whitespace-pre-wrap">“{ach.trainer_comments}”</p> : null}
       {snap && Object.keys(snap).length ? (
         <details className="text-xs">
@@ -1131,6 +1184,7 @@ function SignOffForm({
   stepUi,
   defaultEvidenceCaseId,
   metricsCaseSet,
+  submittedReviews,
   onDone,
 }: {
   doctorId: string;
@@ -1139,11 +1193,13 @@ function SignOffForm({
   stepUi?: StepUiModel;
   defaultEvidenceCaseId: string | null;
   metricsCaseSet: Set<string>;
+  submittedReviews: TrainingCaseReviewRow[];
   onDone: () => void;
 }) {
   const [busy, setBusy] = useState(false);
   const [comments, setComments] = useState("");
   const [caseId, setCaseId] = useState(defaultEvidenceCaseId || "");
+  const [reviewId, setReviewId] = useState("");
   const [demo, setDemo] = useState<PerformanceDemonstration>("repeatable_across_sessions");
   const [sessionDate, setSessionDate] = useState("");
   const [extGrafts, setExtGrafts] = useState("");
@@ -1195,6 +1251,7 @@ function SignOffForm({
         body: JSON.stringify({
           stepId: step.id,
           evidenceTrainingCaseId: caseId || null,
+          evidenceTrainingCaseReviewId: reviewId || null,
           trainerComments: comments || null,
           performanceDemonstration: demo,
           capture: Object.keys(capture).length ? capture : undefined,
@@ -1205,6 +1262,7 @@ function SignOffForm({
       if (!res.ok) throw new Error(j.error || "Sign-off failed");
       setComments("");
       setCaseId(defaultEvidenceCaseId || "");
+      setReviewId("");
       setSessionDate("");
       setExtGrafts("");
       setImpGrafts("");
@@ -1263,6 +1321,12 @@ function SignOffForm({
           </button>
         ) : null}
       </div>
+      <TrainingCaseReviewEvidenceSelect
+        reviews={submittedReviews}
+        value={reviewId}
+        onChange={setReviewId}
+        selectedCaseId={caseId || undefined}
+      />
       <div>
         <span className="text-[11px] font-medium text-slate-600">Performance (tap one)</span>
         <div className="mt-1 flex flex-wrap gap-1">
@@ -1418,6 +1482,8 @@ function EditSignOffForm({
   initialComments,
   initialDemo,
   initialOverride,
+  initialReviewId,
+  submittedReviews,
   onDone,
 }: {
   doctorId: string;
@@ -1426,6 +1492,8 @@ function EditSignOffForm({
   initialComments: string | null;
   initialDemo: PerformanceDemonstration;
   initialOverride: boolean;
+  initialReviewId: string;
+  submittedReviews: TrainingCaseReviewRow[];
   onDone: () => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -1433,6 +1501,7 @@ function EditSignOffForm({
   const [comments, setComments] = useState(initialComments || "");
   const [demo, setDemo] = useState<PerformanceDemonstration>(initialDemo);
   const [override, setOverride] = useState(initialOverride);
+  const [reviewId, setReviewId] = useState(initialReviewId);
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
@@ -1445,6 +1514,7 @@ function EditSignOffForm({
           trainerComments: comments,
           performanceDemonstration: demo,
           singleSessionOverride: isTarget ? override : false,
+          evidenceTrainingCaseReviewId: reviewId || null,
         }),
       });
       const j = await res.json();
@@ -1468,6 +1538,7 @@ function EditSignOffForm({
 
   return (
     <form onSubmit={(e) => void save(e)} className="mt-2 space-y-2 rounded-md border border-slate-200 bg-slate-50/80 p-2">
+      <TrainingCaseReviewEvidenceSelect reviews={submittedReviews} value={reviewId} onChange={setReviewId} />
       {isTarget ? (
         <label className="flex items-center gap-2 text-xs">
           <input type="checkbox" checked={override} onChange={(e) => setOverride(e.target.checked)} />

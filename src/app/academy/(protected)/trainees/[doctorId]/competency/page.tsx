@@ -4,7 +4,9 @@ import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { getAcademyAccess } from "@/lib/academy/auth";
 import { competencyWaveAnchor, groupStepsByLadder, suggestStepIdsFromLatestMetrics } from "@/lib/academy/competency";
 import { buildReadinessSummary, buildStepUiByStepId } from "@/lib/academy/competencyPhase2";
+import { buildReviewEvidenceMap } from "@/lib/academy/competencyReviewTraceability";
 import { fetchTrainingCasesForDoctor } from "@/lib/academy/queries";
+import { fetchTrainingCaseReviewsList } from "@/lib/academy/trainingCaseReviews";
 import type {
   TrainingCaseMetricsRow,
   TrainingCompetencyAchievementRow,
@@ -39,6 +41,7 @@ export default async function TraineeCompetencyPage({ params }: { params: Promis
     { data: obsRows },
     { data: reviewRows },
     cases,
+    submittedReviews,
   ] = await Promise.all([
     supabase.from("training_competency_ladders").select("*").eq("is_active", true).order("sort_order", { ascending: true }),
     supabase.from("training_competency_steps").select("*").order("step_index", { ascending: true }),
@@ -59,6 +62,7 @@ export default async function TraineeCompetencyPage({ params }: { params: Promis
       .eq("training_doctor_id", doctorId)
       .order("week_number", { ascending: true }),
     fetchTrainingCasesForDoctor(supabase, doctorId),
+    fetchTrainingCaseReviewsList(supabase, { traineeId: doctorId, status: "submitted" }).catch(() => []),
   ]);
 
   const ladderRows = (ladders ?? []) as TrainingCompetencyLadderRow[];
@@ -160,6 +164,24 @@ export default async function TraineeCompetencyPage({ params }: { params: Promis
 
   const waveStart = competencyWaveAnchor(doctorRow);
 
+  const linkedReviewIds = [
+    ...new Set(
+      [
+        ...achievementRows.map((a) => a.evidence_training_case_review_id),
+        ...observationList.map((o) => o.evidence_training_case_review_id),
+      ].filter((id): id is string => Boolean(id)),
+    ),
+  ];
+  let linkedReviews = submittedReviews;
+  if (access.isStaff && linkedReviewIds.length) {
+    const missingIds = linkedReviewIds.filter((id) => !submittedReviews.some((r) => r.id === id));
+    if (missingIds.length) {
+      const { data: extraReviews } = await supabase.from("training_case_reviews").select("*").in("id", missingIds);
+      linkedReviews = [...submittedReviews, ...((extraReviews ?? []) as typeof submittedReviews)];
+    }
+  }
+  const reviewEvidenceById = buildReviewEvidenceMap(linkedReviews, { isStaff: access.isStaff });
+
   return (
     <CompetencyDashboardClient
       doctorId={doctorId}
@@ -188,6 +210,8 @@ export default async function TraineeCompetencyPage({ params }: { params: Promis
       waveStartIso={waveStart ? waveStart.toISOString() : null}
       defaultEvidenceCaseId={defaultEvidenceCaseId}
       caseIdsWithMetrics={[...caseIdsWithMetrics]}
+      submittedReviews={submittedReviews}
+      reviewEvidenceById={reviewEvidenceById}
     />
   );
 }
