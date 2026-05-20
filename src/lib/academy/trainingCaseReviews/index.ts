@@ -5,6 +5,27 @@ export {
   type TraineeSurgicalProgressDashboard,
 } from "./dashboard";
 export {
+  generateTrainingCaseAiReviewDraft,
+  getLatestTrainingCaseAiReviewDraft,
+  getTrainingCaseAiReviewProviderConfig,
+  isTrainingCaseAiReviewConfigured,
+  listTrainingCaseAiReviewDrafts,
+  mapAiDraftToReviewSectionSuggestions,
+} from "./aiDrafts";
+export { runTrainingCaseAiReviewProvider } from "./trainingCaseAiReviewProvider";
+export {
+  validateTrainingCaseAiReviewFeedback,
+  normalizeStructuredFeedbackFromRaw,
+} from "./aiDraftValidation";
+export {
+  AI_REVIEW_IMAGE_LIMITATION_COPY,
+  type AiReviewSectionSuggestion,
+  type MappedAiSectionSuggestion,
+  type TrainingCaseAiReviewDraftRow,
+  type GenerateTrainingCaseAiReviewDraftResult,
+  type TrainingCaseAiReviewStructuredFeedback,
+} from "./aiDraftTypes";
+export {
   createDraftTrainingCaseReview,
   fetchLatestSubmittedReviewForTrainee,
   fetchStaffTrainingCaseReviewWorkload,
