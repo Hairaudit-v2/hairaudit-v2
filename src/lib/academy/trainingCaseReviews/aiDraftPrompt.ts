@@ -106,6 +106,7 @@ export function buildTrainingCaseAiReviewUserPrompt(ctx: TrainingCaseAiPromptCon
   ].join("\n");
 }
 
+/** OpenAI strict structured-output schema (all object properties must be listed in `required`). */
 export const TRAINING_CASE_AI_REVIEW_JSON_SCHEMA = {
   name: "training_case_ai_review_draft",
   strict: true,
@@ -134,15 +135,23 @@ export const TRAINING_CASE_AI_REVIEW_JSON_SCHEMA = {
         items: {
           type: "object",
           additionalProperties: false,
-          required: ["sectionKey", "confidence"],
+          required: [
+            "sectionKey",
+            "whatWentWell",
+            "needsImprovement",
+            "clinicalImportance",
+            "nextCaseFocus",
+            "confidence",
+            "imageLimitations",
+          ],
           properties: {
             sectionKey: { type: "string" },
-            whatWentWell: { type: ["string", "null"] },
-            needsImprovement: { type: ["string", "null"] },
-            clinicalImportance: { type: ["string", "null"] },
-            nextCaseFocus: { type: ["string", "null"] },
+            whatWentWell: { anyOf: [{ type: "string" }, { type: "null" }] },
+            needsImprovement: { anyOf: [{ type: "string" }, { type: "null" }] },
+            clinicalImportance: { anyOf: [{ type: "string" }, { type: "null" }] },
+            nextCaseFocus: { anyOf: [{ type: "string" }, { type: "null" }] },
             confidence: { type: "string", enum: ["low", "medium", "high"] },
-            imageLimitations: { type: ["string", "null"] },
+            imageLimitations: { anyOf: [{ type: "string" }, { type: "null" }] },
           },
         },
       },

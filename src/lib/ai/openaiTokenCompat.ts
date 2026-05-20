@@ -22,3 +22,14 @@ export function maxTokensParam(model: string, n: number): { max_tokens: number }
   return usesMaxCompletionTokens(model) ? { max_completion_tokens: limit } : { max_tokens: limit };
 }
 
+/** GPT-5 / reasoning models reject `temperature` on chat completions */
+export function supportsChatTemperature(model: string): boolean {
+  const m = String(model ?? "").trim().toLowerCase();
+  if (m.startsWith("gpt-5")) return false;
+  if (m.startsWith("o1")) return false;
+  if (m.startsWith("o3")) return false;
+  if (m.startsWith("o4")) return false;
+  if (m.includes("reasoning")) return false;
+  return true;
+}
+
