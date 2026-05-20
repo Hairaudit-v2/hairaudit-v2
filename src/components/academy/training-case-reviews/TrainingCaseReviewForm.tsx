@@ -1,8 +1,16 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import TrainingCaseReviewSections from "./TrainingCaseReviewSections";
+import TrainingCaseReviewSections, { type ReviewSectionFieldKey } from "./TrainingCaseReviewSections";
+import type { AiReviewSectionSuggestion } from "@/lib/academy/trainingCaseReviews/aiDraftTypes";
+import {
+  AI_INSERT_SOURCE_LABEL,
+  appendAiInsertText,
+  type AiInsertAuditEntry,
+  stripAiInsertLabels,
+  wrapAiInsertText,
+} from "@/lib/academy/trainingCaseReviews/aiInsertHelpers";
 import {
   CASE_DIFFICULTY_LABELS,
   CASE_DIFFICULTY_OPTIONS,
@@ -20,6 +28,7 @@ import type { TrainingCaseUploadRow } from "@/lib/academy/types";
 import { parseTrainingPhotoType } from "@/lib/academy/photoCategories";
 import { isActiveTrainingCaseUpload } from "@/lib/academy/trainingCaseUploads";
 import AcademySignedThumb from "@/components/academy/AcademySignedThumb";
+import TrainingCaseAiDraftPanel from "./TrainingCaseAiDraftPanel";
 
 type Props = {
   caseId: string;
@@ -46,6 +55,42 @@ export default function TrainingCaseReviewForm({ caseId, reviewId, initial, uplo
   );
   const [recommendedNextFocus, setRecommendedNextFocus] = useState(initial.review.recommended_next_focus ?? "");
   const [facultyRecommendation, setFacultyRecommendation] = useState(initial.review.faculty_recommendation ?? "");
+
+  const auditStorageKey = `training-review-ai-audit:${reviewId}`;
+  const [aiInsertAudit, setAiInsertAudit] = useState<AiInsertAuditEntry[]>([]);
+  const [aiMarkedSections, setAiMarkedSections] = useState<
+    Record<string, Partial<Record<ReviewSectionFieldKey, boolean>>>
+  >({});
+  const [aiMarkedSummary, setAiMarkedSummary] = useState({
+    summary: false,
+    mainStrengths: false,
+    improvementPriorities: false,
+    recommendedNextFocus: false,
+  });
+
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(auditStorageKey);
+      if (raw) setAiInsertAudit(JSON.parse(raw) as AiInsertAuditEntry[]);
+    } catch {
+      /* ignore */
+    }
+  }, [auditStorageKey]);
+
+  const recordAiInsert = useCallback(
+    (entry: AiInsertAuditEntry) => {
+      setAiInsertAudit((prev) => {
+        const next = [...prev, entry];
+        try {
+          sessionStorage.setItem(auditStorageKey, JSON.stringify(next.slice(-40)));
+        } catch {
+          /* ignore */
+        }
+        return next;
+      });
+    },
+    [auditStorageKey],
+  );
 
   const [sections, setSections] = useState<SectionState>(() => {
     const m: SectionState = {};
@@ -101,6 +146,114 @@ export default function TrainingCaseReviewForm({ caseId, reviewId, initial, uplo
     }));
   }, []);
 
+  const markSectionField = useCallback((sectionKey: string, field: ReviewSectionFieldKey) => {
+    setAiMarkedSections((prev) => ({
+      ...prev,
+      [sectionKey]: { ...prev[sectionKey], [field]: true },
+    }));
+  }, []);
+
+  const applyText = useCallback((existing: string, incoming: string, mode: "append" | "replace") => {
+    const wrapped = wrapAiInsertText(incoming);
+    if (mode === "replace") return wrapped;
+    return appendAiInsertText(existing, incoming);
+  }, []);
+
+  const onApplyAiSummary = useCallback(
+    (
+      patch: {
+        summary?: string;
+        mainStrengths?: string[];
+        improvementPriorities?: string[];
+        recommendedNextFocus?: string;
+      },
+      mode: "append" | "replace",
+    ) => {
+      if (patch.summary) {
+        setSummary((prev) => applyText(prev, patch.summary!, mode));
+        setAiMarkedSummary((m) => ({ ...m, summary: true }));
+      }
+      if (patch.mainStrengths?.length) {
+        const block = patch.mainStrengths.join("\n");
+        setMainStrengths((prev) => applyText(prev, block, mode));
+        setAiMarkedSummary((m) => ({ ...m, mainStrengths: true }));
+      }
+      if (patch.improvementPriorities?.length) {
+        const block = patch.improvementPriorities.join("\n");
+        setImprovementPriorities((prev) => applyText(prev, block, mode));
+        setAiMarkedSummary((m) => ({ ...m, improvementPriorities: true }));
+      }
+      if (patch.recommendedNextFocus) {
+        setRecommendedNextFocus((prev) => applyText(prev, patch.recommendedNextFocus!, mode));
+        setAiMarkedSummary((m) => ({ ...m, recommendedNextFocus: true }));
+      }
+      setMsg("AI suggestion inserted — review, edit, then save draft. Labels are removed on save.");
+    },
+    [applyText],
+  );
+
+  const onApplyAiSection = useCallback(
+    (
+      sectionKey: string,
+      field: ReviewSectionFieldKey,
+      text: string,
+      mode: "append" | "replace",
+    ) => {
+      setSections((prev) => {
+        const cur = prev[sectionKey] ?? { section_key: sectionKey };
+        const existing = (cur[field] as string | null | undefined) ?? "";
+        const next = mode === "replace" ? wrapAiInsertText(text) : appendAiInsertText(existing, text);
+        return {
+          ...prev,
+          [sectionKey]: { ...cur, section_key: sectionKey, [field]: next },
+        };
+      });
+      markSectionField(sectionKey, field);
+      setMsg("AI suggestion inserted — review, edit, then save draft.");
+    },
+    [markSectionField],
+  );
+
+  const onApplyFullSection = useCallback(
+    (sectionKey: string, suggestion: AiReviewSectionSuggestion, mode: "append" | "replace") => {
+      const fields: { key: ReviewSectionFieldKey; text?: string | null }[] = [
+        { key: "what_went_well", text: suggestion.whatWentWell },
+        { key: "needs_improvement", text: suggestion.needsImprovement },
+        { key: "clinical_importance", text: suggestion.clinicalImportance },
+        { key: "next_case_focus", text: suggestion.nextCaseFocus },
+      ];
+      for (const f of fields) {
+        if (f.text?.trim()) onApplyAiSection(sectionKey, f.key, f.text, mode);
+      }
+      if (suggestion.imageLimitations?.trim()) {
+        onApplyAiSection(sectionKey, "faculty_note", suggestion.imageLimitations, "append");
+      }
+    },
+    [onApplyAiSection],
+  );
+
+  const hasSectionFieldText = useCallback(
+    (sectionKey: string, field: ReviewSectionFieldKey) => {
+      const v = sections[sectionKey]?.[field];
+      return Boolean(v && String(v).trim());
+    },
+    [sections],
+  );
+
+  const hasSectionAnyText = useCallback(
+    (sectionKey: string) => {
+      const keys: ReviewSectionFieldKey[] = [
+        "what_went_well",
+        "needs_improvement",
+        "clinical_importance",
+        "next_case_focus",
+        "faculty_note",
+      ];
+      return keys.some((f) => hasSectionFieldText(sectionKey, f));
+    },
+    [hasSectionFieldText],
+  );
+
   function buildPayload() {
     const sectionList = Object.values(sections).map((s) => ({
       section_key: s.section_key,
@@ -130,20 +283,37 @@ export default function TrainingCaseReviewForm({ caseId, reviewId, initial, uplo
       overall_level: overallLevel || null,
       case_difficulty: caseDifficulty || null,
       trainee_stage: traineeStage || null,
-      summary: summary || null,
-      main_strengths: mainStrengths
+      summary: stripAiInsertLabels(summary),
+      main_strengths: (stripAiInsertLabels(mainStrengths) ?? "")
         .split(/[\n,;]+/)
         .map((s) => s.trim())
         .filter(Boolean),
-      improvement_priorities: improvementPriorities
+      improvement_priorities: (stripAiInsertLabels(improvementPriorities) ?? "")
         .split(/[\n,;]+/)
         .map((s) => s.trim())
         .filter(Boolean),
-      recommended_next_focus: recommendedNextFocus || null,
-      faculty_recommendation: facultyRecommendation || null,
-      sections: sectionList,
+      recommended_next_focus: stripAiInsertLabels(recommendedNextFocus),
+      faculty_recommendation: stripAiInsertLabels(facultyRecommendation),
+      sections: sectionList.map((s) => ({
+        ...s,
+        what_went_well: stripAiInsertLabels(s.what_went_well),
+        needs_improvement: stripAiInsertLabels(s.needs_improvement),
+        clinical_importance: stripAiInsertLabels(s.clinical_importance),
+        next_case_focus: stripAiInsertLabels(s.next_case_focus),
+        faculty_note: stripAiInsertLabels(s.faculty_note),
+      })),
       images,
     };
+  }
+
+  function clearAiMarksAfterSave() {
+    setAiMarkedSections({});
+    setAiMarkedSummary({
+      summary: false,
+      mainStrengths: false,
+      improvementPriorities: false,
+      recommendedNextFocus: false,
+    });
   }
 
   async function saveDraft() {
@@ -157,7 +327,8 @@ export default function TrainingCaseReviewForm({ caseId, reviewId, initial, uplo
       });
       const j = await res.json();
       if (!res.ok) throw new Error(j.error || "Save failed");
-      setMsg("Draft saved.");
+      clearAiMarksAfterSave();
+      setMsg("Draft saved. AI source labels were removed from stored text.");
       router.refresh();
     } catch (e) {
       setMsg(e instanceof Error ? e.message : "Save failed");
@@ -201,6 +372,41 @@ export default function TrainingCaseReviewForm({ caseId, reviewId, initial, uplo
         {REVIEW_DISCLAIMER}
       </p>
 
+      <TrainingCaseAiDraftPanel
+        caseId={caseId}
+        reviewId={reviewId}
+        activeImageCount={activeUploads.length}
+        onApplySummary={onApplyAiSummary}
+        onApplySection={onApplyAiSection}
+        onApplyFullSection={onApplyFullSection}
+        onRecordAudit={recordAiInsert}
+        hasSectionFieldText={hasSectionFieldText}
+        hasSectionAnyText={hasSectionAnyText}
+        hasSummaryText={Boolean(summary.trim())}
+        hasStrengthsText={Boolean(mainStrengths.trim())}
+        hasImprovementText={Boolean(improvementPriorities.trim())}
+        hasNextFocusText={Boolean(recommendedNextFocus.trim())}
+      />
+
+      {aiInsertAudit.length ? (
+        <details className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+          <summary className="cursor-pointer font-medium text-slate-700">AI insert activity (this session)</summary>
+          <ul className="mt-2 space-y-1 max-h-32 overflow-y-auto">
+            {aiInsertAudit
+              .slice()
+              .reverse()
+              .map((e, i) => (
+                <li key={`${e.at}-${i}`}>
+                  {new Date(e.at).toLocaleTimeString()} · {e.action}
+                  {e.sectionKey ? ` · ${e.sectionKey}` : ""}
+                  {e.field ? ` · ${e.field}` : ""}
+                  <span className="text-slate-400"> · draft {e.aiDraftId.slice(0, 8)}</span>
+                </li>
+              ))}
+          </ul>
+        </details>
+      ) : null}
+
       <section className="rounded-xl border border-slate-200 bg-white p-4 space-y-4">
         <h2 className="text-sm font-semibold text-slate-900">Overall review summary</h2>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -240,38 +446,40 @@ export default function TrainingCaseReviewForm({ caseId, reviewId, initial, uplo
             </select>
           </Field>
         </div>
-        <Field label="Summary">
-          <textarea
-            value={summary}
-            onChange={(e) => setSummary(e.target.value)}
-            rows={3}
-            className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
-            placeholder="Supportive overview of the case and learning trajectory…"
-          />
-        </Field>
-        <Field label="Main strengths (one per line)">
-          <textarea
-            value={mainStrengths}
-            onChange={(e) => setMainStrengths(e.target.value)}
-            rows={2}
-            className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
-          />
-        </Field>
-        <Field label="Main improvement areas (one per line)">
-          <textarea
-            value={improvementPriorities}
-            onChange={(e) => setImprovementPriorities(e.target.value)}
-            rows={2}
-            className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
-          />
-        </Field>
-        <Field label="Priority skill to work on next">
-          <input
-            value={recommendedNextFocus}
-            onChange={(e) => setRecommendedNextFocus(e.target.value)}
-            className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
-          />
-        </Field>
+        <SummaryField
+          label="Summary"
+          value={summary}
+          showAiMark={aiMarkedSummary.summary || summary.includes(AI_INSERT_SOURCE_LABEL)}
+          onChange={setSummary}
+          rows={3}
+          placeholder="Supportive overview of the case and learning trajectory…"
+        />
+        <SummaryField
+          label="Main strengths (one per line)"
+          value={mainStrengths}
+          showAiMark={aiMarkedSummary.mainStrengths || mainStrengths.includes(AI_INSERT_SOURCE_LABEL)}
+          onChange={setMainStrengths}
+          rows={2}
+        />
+        <SummaryField
+          label="Main improvement areas (one per line)"
+          value={improvementPriorities}
+          showAiMark={
+            aiMarkedSummary.improvementPriorities || improvementPriorities.includes(AI_INSERT_SOURCE_LABEL)
+          }
+          onChange={setImprovementPriorities}
+          rows={2}
+        />
+        <SummaryField
+          label="Priority skill to work on next"
+          value={recommendedNextFocus}
+          showAiMark={
+            aiMarkedSummary.recommendedNextFocus || recommendedNextFocus.includes(AI_INSERT_SOURCE_LABEL)
+          }
+          onChange={setRecommendedNextFocus}
+          rows={1}
+          singleLine
+        />
         <Field label="Faculty recommendation">
           <textarea
             value={facultyRecommendation}
@@ -288,6 +496,7 @@ export default function TrainingCaseReviewForm({ caseId, reviewId, initial, uplo
           sections={initial.sections}
           values={sections as Record<string, (typeof initial.sections)[0]>}
           onChange={onSectionChange}
+          aiMarkedFields={aiMarkedSections}
         />
       </section>
 
@@ -391,6 +600,49 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     <div>
       <label className="block text-xs font-medium text-slate-600">{label}</label>
       <div className="mt-1">{children}</div>
+    </div>
+  );
+}
+
+function SummaryField({
+  label,
+  value,
+  onChange,
+  showAiMark,
+  rows = 2,
+  placeholder,
+  singleLine,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  showAiMark?: boolean;
+  rows?: number;
+  placeholder?: string;
+  singleLine?: boolean;
+}) {
+  const cls = `w-full rounded-md border px-2 py-1.5 text-sm ${
+    showAiMark ? "border-violet-200 bg-violet-50/30" : "border-slate-300"
+  }`;
+  return (
+    <div>
+      <label className="block text-xs font-medium text-slate-600">{label}</label>
+      {showAiMark ? (
+        <p className="mt-0.5 text-[10px] text-violet-700 bg-violet-50 border border-violet-100 rounded px-1.5 py-0.5 inline-block">
+          {AI_INSERT_SOURCE_LABEL}
+        </p>
+      ) : null}
+      {singleLine ? (
+        <input value={value} onChange={(e) => onChange(e.target.value)} className={cls} />
+      ) : (
+        <textarea
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          rows={rows}
+          placeholder={placeholder}
+          className={cls}
+        />
+      )}
     </div>
   );
 }

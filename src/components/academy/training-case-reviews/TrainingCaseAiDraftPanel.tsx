@@ -3,27 +3,69 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   AI_REVIEW_IMAGE_LIMITATION_COPY,
+  type AiReviewSectionSuggestion,
   type MappedAiSectionSuggestion,
   type TrainingCaseAiReviewDraftRow,
 } from "@/lib/academy/trainingCaseReviews/aiDraftTypes";
+import {
+  createAiInsertAuditEntry,
+  resolveAiDraftDisplayState,
+  type AiInsertAuditEntry,
+} from "@/lib/academy/trainingCaseReviews/aiInsertHelpers";
+import {
+  ConfidenceBadge,
+  DraftStateBanner,
+  InsertLinkButton,
+  MissingPhotoWarning,
+  confirmReplaceIfNeeded,
+} from "./aiDraftUx";
+
+type SectionField =
+  | "what_went_well"
+  | "needs_improvement"
+  | "clinical_importance"
+  | "next_case_focus"
+  | "faculty_note";
+
 type Props = {
   caseId: string;
   reviewId: string;
-  onApplySummary: (patch: {
-    summary?: string;
-    mainStrengths?: string[];
-    improvementPriorities?: string[];
-    recommendedNextFocus?: string;
-  }) => void;
-  onApplySection: (
-    sectionKey: string,
-    field: "what_went_well" | "needs_improvement" | "clinical_importance" | "next_case_focus" | "faculty_note",
-    text: string,
-    mode: "replace" | "append",
+  activeImageCount: number;
+  onApplySummary: (
+    patch: {
+      summary?: string;
+      mainStrengths?: string[];
+      improvementPriorities?: string[];
+      recommendedNextFocus?: string;
+    },
+    mode: "append" | "replace",
   ) => void;
+  onApplySection: (sectionKey: string, field: SectionField, text: string, mode: "append" | "replace") => void;
+  onApplyFullSection: (sectionKey: string, suggestion: AiReviewSectionSuggestion, mode: "append" | "replace") => void;
+  onRecordAudit: (entry: AiInsertAuditEntry) => void;
+  hasSectionFieldText: (sectionKey: string, field: SectionField) => boolean;
+  hasSectionAnyText: (sectionKey: string) => boolean;
+  hasSummaryText: boolean;
+  hasStrengthsText: boolean;
+  hasImprovementText: boolean;
+  hasNextFocusText: boolean;
 };
 
-export default function TrainingCaseAiDraftPanel({ caseId, reviewId, onApplySummary, onApplySection }: Props) {
+export default function TrainingCaseAiDraftPanel({
+  caseId,
+  reviewId,
+  activeImageCount,
+  onApplySummary,
+  onApplySection,
+  onApplyFullSection,
+  onRecordAudit,
+  hasSectionFieldText,
+  hasSectionAnyText,
+  hasSummaryText,
+  hasStrengthsText,
+  hasImprovementText,
+  hasNextFocusText,
+}: Props) {
   const [draft, setDraft] = useState<TrainingCaseAiReviewDraftRow | null>(null);
   const [sectionSuggestions, setSectionSuggestions] = useState<MappedAiSectionSuggestion[]>([]);
   const [busy, setBusy] = useState(false);
@@ -45,6 +87,10 @@ export default function TrainingCaseAiDraftPanel({ caseId, reviewId, onApplySumm
     void loadLatest();
   }, [loadLatest]);
 
+  function record(draftId: string, action: string, opts?: { sectionKey?: string; field?: string }) {
+    onRecordAudit(createAiInsertAuditEntry(draftId, action, opts));
+  }
+
   async function generateDraft() {
     setBusy(true);
     setMsg(null);
@@ -63,8 +109,8 @@ export default function TrainingCaseAiDraftPanel({ caseId, reviewId, onApplySumm
         typeof j.staffMessage === "string"
           ? j.staffMessage
           : j.draft?.status === "failed"
-            ? "AI draft could not be generated safely. Enter feedback manually or try again."
-            : "AI draft generated. Review and edit all suggestions before submitting.",
+            ? "AI draft could not be generated safely. See guidance below."
+            : "AI draft generated. Insert suggestions individually — nothing is submitted automatically.",
       );
     } catch (e) {
       setMsg(e instanceof Error ? e.message : "Generation failed");
@@ -86,20 +132,79 @@ export default function TrainingCaseAiDraftPanel({ caseId, reviewId, onApplySumm
     }
   }
 
+  async function insertSummaryField(
+    field: "summary" | "mainStrengths" | "improvementPriorities" | "recommendedNextFocus",
+    value: string | string[],
+    hasExisting: boolean,
+  ) {
+    if (!draft) return;
+    const label =
+      field === "summary"
+        ? "Summary"
+        : field === "mainStrengths"
+          ? "Main strengths"
+          : field === "improvementPriorities"
+            ? "Improvement areas"
+            : "Next focus";
+    const mode = await confirmReplaceIfNeeded(label, hasExisting);
+    if (mode === "cancel") return;
+
+    if (field === "summary") onApplySummary({ summary: String(value) }, mode);
+    else if (field === "mainStrengths") onApplySummary({ mainStrengths: value as string[] }, mode);
+    else if (field === "improvementPriorities") onApplySummary({ improvementPriorities: value as string[] }, mode);
+    else onApplySummary({ recommendedNextFocus: String(value) }, mode);
+
+    record(draft.id, `insert_summary_${field}`, { field });
+    setMsg(`Inserted into ${label}. Edit as needed, then save draft.`);
+  }
+
+  async function insertSectionField(s: MappedAiSectionSuggestion, field: SectionField, text: string) {
+    if (!draft || !text.trim()) return;
+    const labels: Record<SectionField, string> = {
+      what_went_well: "What went well",
+      needs_improvement: "Needs improvement",
+      clinical_importance: "Why it matters clinically",
+      next_case_focus: "Next case focus",
+      faculty_note: "Faculty note",
+    };
+    const mode = await confirmReplaceIfNeeded(
+      `${s.sectionTitle} — ${labels[field]}`,
+      hasSectionFieldText(s.sectionKey, field),
+    );
+    if (mode === "cancel") return;
+    onApplySection(s.sectionKey, field, text, mode);
+    record(draft.id, "insert_section_field", { sectionKey: s.sectionKey, field });
+    setMsg(`Inserted into ${s.sectionTitle}.`);
+  }
+
+  async function insertFullSection(s: MappedAiSectionSuggestion) {
+    if (!draft) return;
+    const mode = await confirmReplaceIfNeeded(s.sectionTitle, hasSectionAnyText(s.sectionKey));
+    if (mode === "cancel") return;
+    onApplyFullSection(s.sectionKey, s.suggestion, "append");
+    record(draft.id, "insert_full_section", { sectionKey: s.sectionKey });
+    setMsg(`Full suggestion inserted into ${s.sectionTitle}. Review each field before submitting.`);
+  }
+
   const structured = draft?.structured_feedback as Record<string, unknown> | null | undefined;
   const imageQualityNotes = Array.isArray(structured?.imageQualityNotes)
     ? (structured.imageQualityNotes as string[])
     : [];
-  const isPlaceholder = Boolean(structured?.placeholder);
-  const isFailed = draft?.status === "failed";
+  const displayState = resolveAiDraftDisplayState(draft);
+  const isFailed = displayState === "failed";
+  const isNotConfigured = displayState === "not_configured";
+  const isNoImages = displayState === "no_images" || (activeImageCount === 0 && draft && !isFailed);
+  const canInsert = displayState === "ready" && !isFailed && !isNotConfigured;
+
+  const missingCategories = draft?.missing_categories ?? [];
 
   return (
     <section className="rounded-xl border border-violet-200 bg-violet-50/40 p-4 space-y-4">
       <div>
         <h2 className="text-sm font-semibold text-violet-950">AI-assisted draft feedback</h2>
         <p className="mt-1 text-xs text-violet-900/80 leading-relaxed">
-          Use this to generate draft observations from the uploaded training case images. Faculty must review and edit
-          all suggestions before feedback is submitted.
+          Generate draft observations from training images, then insert suggestions into the review form one at a time.
+          Faculty must edit and submit — nothing is sent to the trainee automatically.
         </p>
         <p className="mt-2 text-xs font-medium text-violet-800 rounded-md bg-violet-100/80 border border-violet-200 px-2 py-1.5">
           AI-generated · unverified · internal faculty tool only
@@ -122,86 +227,121 @@ export default function TrainingCaseAiDraftPanel({ caseId, reviewId, onApplySumm
           <p className="text-xs text-slate-500">
             Generated {new Date(draft.created_at).toLocaleString()}
             {draft.ai_model ? ` · ${draft.ai_model}` : ""}
-            {isPlaceholder ? " · placeholder (AI not configured)" : ""}
-            {isFailed ? " · generation failed" : ""}
+            {draft.image_count != null ? ` · ${draft.image_count} image(s) in draft` : ""}
+            {activeImageCount !== draft.image_count ? ` · ${activeImageCount} active now` : ""}
           </p>
 
-          {isFailed && draft.error_message ? (
-            <p className="text-xs text-red-800 bg-red-50 border border-red-100 rounded-md px-2 py-1.5">
-              {draft.error_message}
-            </p>
+          {isFailed ? (
+            <DraftStateBanner state="failed" errorMessage={draft.error_message} />
+          ) : isNotConfigured ? (
+            <DraftStateBanner state="not_configured" />
+          ) : isNoImages ? (
+            <DraftStateBanner state="no_images" imageCount={activeImageCount} />
           ) : null}
+
+          <MissingPhotoWarning categories={missingCategories} />
 
           <p className="text-xs text-amber-800 bg-amber-50 border border-amber-100 rounded-md px-2 py-1.5">
             {AI_REVIEW_IMAGE_LIMITATION_COPY}
           </p>
 
-          {draft.overall_summary ? (
-            <DraftBlock title="Overall summary">
-              <p className="text-sm text-slate-700 whitespace-pre-wrap">{draft.overall_summary}</p>
-              {!isFailed && !isPlaceholder ? (
-                <ActionRow
-                  onCopy={() => copyText(draft.overall_summary!)}
-                  onInsert={() => onApplySummary({ summary: draft.overall_summary! })}
-                  onIgnore={() => dismissKey("overall_summary")}
-                  hidden={dismissed.has("overall_summary")}
-                />
-              ) : null}
-            </DraftBlock>
+          {canInsert && (draft.strengths?.length || draft.improvement_areas?.length || draft.suggested_next_focus) ? (
+            <div className="rounded-md border border-violet-100 bg-violet-50/50 p-3 space-y-3">
+              <h3 className="text-xs font-semibold text-violet-950 uppercase tracking-wide">Apply summary suggestions</h3>
+              <p className="text-xs text-slate-600">
+                Inserts add an in-form AI label (removed when you save). Existing text is kept unless you choose replace.
+              </p>
+              <div className="flex flex-wrap gap-3">
+                {draft.strengths?.length ? (
+                  <InsertLinkButton
+                    onClick={() => insertSummaryField("mainStrengths", draft.strengths!, hasStrengthsText)}
+                  >
+                    Insert strengths
+                  </InsertLinkButton>
+                ) : null}
+                {draft.improvement_areas?.length ? (
+                  <InsertLinkButton
+                    onClick={() =>
+                      insertSummaryField("improvementPriorities", draft.improvement_areas!, hasImprovementText)
+                    }
+                  >
+                    Insert improvement areas
+                  </InsertLinkButton>
+                ) : null}
+                {draft.suggested_next_focus ? (
+                  <InsertLinkButton
+                    onClick={() =>
+                      insertSummaryField("recommendedNextFocus", draft.suggested_next_focus!, hasNextFocusText)
+                    }
+                  >
+                    Insert next focus
+                  </InsertLinkButton>
+                ) : null}
+                {draft.strengths?.length && draft.improvement_areas?.length && draft.suggested_next_focus ? (
+                  <InsertLinkButton
+                    onClick={async () => {
+                      await insertSummaryField("mainStrengths", draft.strengths!, hasStrengthsText);
+                      await insertSummaryField("improvementPriorities", draft.improvement_areas!, hasImprovementText);
+                      await insertSummaryField("recommendedNextFocus", draft.suggested_next_focus!, hasNextFocusText);
+                    }}
+                  >
+                    Insert all summary fields
+                  </InsertLinkButton>
+                ) : null}
+              </div>
+            </div>
           ) : null}
 
-          {draft.missing_categories?.length ? (
-            <DraftBlock title="Missing photo categories">
-              <ul className="text-sm text-slate-700 list-disc pl-4">
-                {draft.missing_categories.map((c) => (
-                  <li key={c}>{c}</li>
-                ))}
-              </ul>
+          {draft.overall_summary && canInsert ? (
+            <DraftBlock title="Overall summary (optional)">
+              <p className="text-sm text-slate-700 whitespace-pre-wrap">{draft.overall_summary}</p>
+              <div className="flex flex-wrap gap-3 pt-1">
+                <InsertLinkButton onClick={() => insertSummaryField("summary", draft.overall_summary!, hasSummaryText)}>
+                  Insert into summary
+                </InsertLinkButton>
+                <InsertLinkButton onClick={() => copyText(draft.overall_summary!)}>Copy</InsertLinkButton>
+                <InsertLinkButton onClick={() => dismissKey("overall_summary")}>Ignore</InsertLinkButton>
+              </div>
             </DraftBlock>
           ) : null}
 
           {imageQualityNotes.length ? (
             <DraftBlock title="Image quality notes">
-              <ul className="text-sm text-slate-700 list-disc pl-4">
-                {imageQualityNotes.map((n, i) => (
-                  <li key={i}>{n}</li>
-                ))}
-              </ul>
+              <BulletList items={imageQualityNotes} />
             </DraftBlock>
           ) : null}
 
-          {!isFailed && draft.strengths?.length ? (
+          {canInsert && draft.strengths?.length && !dismissed.has("strengths") ? (
             <DraftBlock title="Suggested strengths">
               <BulletList items={draft.strengths} />
-              <ActionRow
+              <SummaryActions
+                onInsert={() => insertSummaryField("mainStrengths", draft.strengths!, hasStrengthsText)}
                 onCopy={() => copyText(draft.strengths!.join("\n"))}
-                onInsert={() => onApplySummary({ mainStrengths: draft.strengths! })}
                 onIgnore={() => dismissKey("strengths")}
-                hidden={dismissed.has("strengths")}
               />
             </DraftBlock>
           ) : null}
 
-          {!isFailed && draft.improvement_areas?.length ? (
+          {canInsert && draft.improvement_areas?.length && !dismissed.has("improvement_areas") ? (
             <DraftBlock title="Suggested improvement areas">
               <BulletList items={draft.improvement_areas} />
-              <ActionRow
+              <SummaryActions
+                onInsert={() => insertSummaryField("improvementPriorities", draft.improvement_areas!, hasImprovementText)}
                 onCopy={() => copyText(draft.improvement_areas!.join("\n"))}
-                onInsert={() => onApplySummary({ improvementPriorities: draft.improvement_areas! })}
                 onIgnore={() => dismissKey("improvement_areas")}
-                hidden={dismissed.has("improvement_areas")}
               />
             </DraftBlock>
           ) : null}
 
-          {!isFailed && draft.suggested_next_focus ? (
+          {canInsert && draft.suggested_next_focus && !dismissed.has("suggested_next_focus") ? (
             <DraftBlock title="Suggested next training focus">
               <p className="text-sm text-slate-700">{draft.suggested_next_focus}</p>
-              <ActionRow
+              <SummaryActions
+                onInsert={() =>
+                  insertSummaryField("recommendedNextFocus", draft.suggested_next_focus!, hasNextFocusText)
+                }
                 onCopy={() => copyText(draft.suggested_next_focus!)}
-                onInsert={() => onApplySummary({ recommendedNextFocus: draft.suggested_next_focus! })}
                 onIgnore={() => dismissKey("suggested_next_focus")}
-                hidden={dismissed.has("suggested_next_focus")}
               />
             </DraftBlock>
           ) : null}
@@ -212,79 +352,73 @@ export default function TrainingCaseAiDraftPanel({ caseId, reviewId, onApplySumm
             </DraftBlock>
           ) : null}
 
-          {!isFailed && sectionSuggestions.length ? (
+          {canInsert && sectionSuggestions.length ? (
             <div className="space-y-3">
               <h3 className="text-xs font-semibold text-slate-800 uppercase tracking-wide">Section suggestions</h3>
               {sectionSuggestions.map((s) => {
                 const key = `section:${s.sectionKey}`;
                 if (dismissed.has(key)) return null;
+                const sug = s.suggestion;
                 return (
                   <div key={s.sectionKey} className="rounded-md border border-slate-100 p-3 space-y-2">
-                    <div className="text-sm font-medium text-slate-800">{s.sectionTitle}</div>
-                    {s.suggestion.confidence ? (
-                      <span className="text-xs text-slate-500">Confidence: {s.suggestion.confidence}</span>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="text-sm font-medium text-slate-800">{s.sectionTitle}</div>
+                      <InsertLinkButton onClick={() => insertFullSection(s)}>
+                        Insert full suggestion
+                      </InsertLinkButton>
+                    </div>
+                    <ConfidenceBadge confidence={sug.confidence} />
+                    {sug.whatWentWell ? <SuggestionField label="What went well" value={sug.whatWentWell} /> : null}
+                    {sug.needsImprovement ? (
+                      <SuggestionField label="Needs improvement" value={sug.needsImprovement} />
                     ) : null}
-                    {s.suggestion.whatWentWell ? (
-                      <SuggestionField label="What went well" value={s.suggestion.whatWentWell} />
+                    {sug.clinicalImportance ? (
+                      <SuggestionField label="Why it matters clinically" value={sug.clinicalImportance} />
                     ) : null}
-                    {s.suggestion.needsImprovement ? (
-                      <SuggestionField label="Needs improvement" value={s.suggestion.needsImprovement} />
+                    {sug.nextCaseFocus ? <SuggestionField label="Next case focus" value={sug.nextCaseFocus} /> : null}
+                    {sug.imageLimitations ? (
+                      <SuggestionField label="Image limitations" value={sug.imageLimitations} />
                     ) : null}
-                    {s.suggestion.clinicalImportance ? (
-                      <SuggestionField label="Clinical importance" value={s.suggestion.clinicalImportance} />
-                    ) : null}
-                    {s.suggestion.nextCaseFocus ? (
-                      <SuggestionField label="Next case focus" value={s.suggestion.nextCaseFocus} />
-                    ) : null}
-                    {s.suggestion.imageLimitations ? (
-                      <SuggestionField label="Image limitations" value={s.suggestion.imageLimitations} />
-                    ) : null}
-                    <div className="flex flex-wrap gap-2 pt-1">
-                      {s.suggestion.whatWentWell ? (
-                        <button
-                          type="button"
-                          className="text-xs font-medium text-violet-800 hover:underline"
-                          onClick={() =>
-                            onApplySection(s.sectionKey, "what_went_well", s.suggestion.whatWentWell!, "append")
-                          }
+                    <div className="flex flex-wrap gap-x-3 gap-y-1 pt-1 border-t border-slate-50">
+                      {sug.whatWentWell ? (
+                        <InsertLinkButton
+                          onClick={() => insertSectionField(s, "what_went_well", sug.whatWentWell!)}
                         >
                           Insert “what went well”
-                        </button>
+                        </InsertLinkButton>
                       ) : null}
-                      {s.suggestion.needsImprovement ? (
-                        <button
-                          type="button"
-                          className="text-xs font-medium text-violet-800 hover:underline"
-                          onClick={() =>
-                            onApplySection(s.sectionKey, "needs_improvement", s.suggestion.needsImprovement!, "append")
-                          }
+                      {sug.needsImprovement ? (
+                        <InsertLinkButton
+                          onClick={() => insertSectionField(s, "needs_improvement", sug.needsImprovement!)}
                         >
                           Insert “needs improvement”
-                        </button>
+                        </InsertLinkButton>
                       ) : null}
-                      <button
-                        type="button"
-                        className="text-xs font-medium text-slate-600 hover:underline"
+                      {sug.clinicalImportance ? (
+                        <InsertLinkButton
+                          onClick={() => insertSectionField(s, "clinical_importance", sug.clinicalImportance!)}
+                        >
+                          Insert “why it matters clinically”
+                        </InsertLinkButton>
+                      ) : null}
+                      {sug.nextCaseFocus ? (
+                        <InsertLinkButton
+                          onClick={() => insertSectionField(s, "next_case_focus", sug.nextCaseFocus!)}
+                        >
+                          Insert “next case focus”
+                        </InsertLinkButton>
+                      ) : null}
+                      <InsertLinkButton
                         onClick={() => {
-                          const note = [
-                            s.suggestion.whatWentWell,
-                            s.suggestion.needsImprovement,
-                            s.suggestion.imageLimitations,
-                          ]
+                          const note = [sug.whatWentWell, sug.needsImprovement, sug.imageLimitations]
                             .filter(Boolean)
                             .join("\n\n");
-                          if (note) onApplySection(s.sectionKey, "faculty_note", note, "append");
+                          if (note) void insertSectionField(s, "faculty_note", note);
                         }}
                       >
-                        Insert into faculty note
-                      </button>
-                      <button
-                        type="button"
-                        className="text-xs font-medium text-slate-500 hover:underline"
-                        onClick={() => dismissKey(key)}
-                      >
-                        Ignore
-                      </button>
+                        Insert “faculty note”
+                      </InsertLinkButton>
+                      <InsertLinkButton onClick={() => dismissKey(key)}>Ignore section</InsertLinkButton>
                     </div>
                   </div>
                 );
@@ -292,7 +426,11 @@ export default function TrainingCaseAiDraftPanel({ caseId, reviewId, onApplySumm
             </div>
           ) : null}
         </div>
-      ) : null}
+      ) : (
+        <p className="text-xs text-slate-500">
+          No AI draft yet. Generate one to see suggestions — faculty control what gets inserted into the review.
+        </p>
+      )}
     </section>
   );
 }
@@ -325,29 +463,20 @@ function SuggestionField({ label, value }: { label: string; value: string }) {
   );
 }
 
-function ActionRow({
-  onCopy,
+function SummaryActions({
   onInsert,
+  onCopy,
   onIgnore,
-  hidden,
 }: {
-  onCopy: () => void;
   onInsert: () => void;
+  onCopy: () => void;
   onIgnore: () => void;
-  hidden?: boolean;
 }) {
-  if (hidden) return null;
   return (
     <div className="flex flex-wrap gap-3 pt-1">
-      <button type="button" onClick={onInsert} className="text-xs font-medium text-violet-800 hover:underline">
-        Insert into review
-      </button>
-      <button type="button" onClick={onCopy} className="text-xs font-medium text-slate-600 hover:underline">
-        Copy
-      </button>
-      <button type="button" onClick={onIgnore} className="text-xs font-medium text-slate-500 hover:underline">
-        Ignore
-      </button>
+      <InsertLinkButton onClick={onInsert}>Insert into review</InsertLinkButton>
+      <InsertLinkButton onClick={onCopy}>Copy</InsertLinkButton>
+      <InsertLinkButton onClick={onIgnore}>Ignore</InsertLinkButton>
     </div>
   );
 }

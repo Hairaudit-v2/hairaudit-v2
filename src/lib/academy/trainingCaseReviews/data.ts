@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { isActiveTrainingCase } from "../trainingCases";
 import { parseTrainingPhotoType } from "../photoCategories";
+import { isTrainingCaseAiReviewConfigured } from "./trainingCaseAiReviewProvider";
 import { defaultSectionRows } from "./reviewSections";
 import type {
   TrainingCaseReviewBundle,
@@ -377,14 +378,22 @@ export function mapUploadsToReviewCategories(
   return out;
 }
 
-/**
- * Placeholder for future AI-assisted review drafting.
- * No image analysis is performed — faculty enter feedback manually.
- */
-export async function suggestTrainingCaseReviewDraft(_caseId?: string): Promise<{ available: false; reason: string }> {
-  void _caseId;
-  return {
-    available: false,
-    reason: "AI-assisted review drafting is not enabled. Faculty should enter feedback manually.",
-  };
+/** @deprecated Use generateTrainingCaseAiReviewDraft via the AI draft API instead. */
+export async function suggestTrainingCaseReviewDraft(caseId?: string): Promise<
+  | { available: true; caseId: string }
+  | { available: false; reason: string }
+> {
+  if (!caseId) {
+    return {
+      available: false,
+      reason: "AI-assisted review drafting requires a training case. Use Generate AI draft feedback on the review form.",
+    };
+  }
+  if (!isTrainingCaseAiReviewConfigured()) {
+    return {
+      available: false,
+      reason: "AI review is not configured for this environment. Faculty should enter feedback manually.",
+    };
+  }
+  return { available: true, caseId };
 }

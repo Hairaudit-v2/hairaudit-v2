@@ -18,6 +18,14 @@ export {
   normalizeStructuredFeedbackFromRaw,
 } from "./aiDraftValidation";
 export {
+  AI_INSERT_SOURCE_LABEL,
+  appendAiInsertText,
+  createAiInsertAuditEntry,
+  stripAiInsertLabels,
+  wrapAiInsertText,
+  type AiInsertAuditEntry,
+} from "./aiInsertHelpers";
+export {
   AI_REVIEW_IMAGE_LIMITATION_COPY,
   type AiReviewSectionSuggestion,
   type MappedAiSectionSuggestion,

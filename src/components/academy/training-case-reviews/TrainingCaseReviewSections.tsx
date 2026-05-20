@@ -5,12 +5,22 @@ import {
   DEVELOPMENTAL_LEVELS,
   type TrainingCaseReviewSectionRow,
 } from "@/lib/academy/trainingCaseReviews";
+import { AI_INSERT_SOURCE_LABEL } from "@/lib/academy/trainingCaseReviews/aiInsertHelpers";
+
+export type ReviewSectionFieldKey =
+  | "what_went_well"
+  | "needs_improvement"
+  | "clinical_importance"
+  | "next_case_focus"
+  | "faculty_note";
 
 type Props = {
   sections: TrainingCaseReviewSectionRow[];
   readOnly?: boolean;
   values?: Record<string, Partial<TrainingCaseReviewSectionRow>>;
   onChange?: (sectionKey: string, field: string, value: string) => void;
+  /** Fields containing unsaved AI insert labels (faculty-only draft UI) */
+  aiMarkedFields?: Record<string, Partial<Record<ReviewSectionFieldKey, boolean>>>;
 };
 
 function levelLabel(level: string | null | undefined) {
@@ -21,7 +31,7 @@ function levelLabel(level: string | null | undefined) {
   return level;
 }
 
-export default function TrainingCaseReviewSections({ sections, readOnly, values, onChange }: Props) {
+export default function TrainingCaseReviewSections({ sections, readOnly, values, onChange, aiMarkedFields }: Props) {
   return (
     <div className="space-y-4">
       {sections.map((s) => {
@@ -83,26 +93,31 @@ export default function TrainingCaseReviewSections({ sections, readOnly, values,
                   <TextArea
                     label="What went well"
                     value={v.what_went_well ?? ""}
+                    showAiMark={aiMarkedFields?.[s.section_key]?.what_went_well}
                     onChange={(val) => onChange?.(s.section_key, "what_went_well", val)}
                   />
                   <TextArea
                     label="What needs improvement"
                     value={v.needs_improvement ?? ""}
+                    showAiMark={aiMarkedFields?.[s.section_key]?.needs_improvement}
                     onChange={(val) => onChange?.(s.section_key, "needs_improvement", val)}
                   />
                   <TextArea
                     label="Why it matters clinically"
                     value={v.clinical_importance ?? ""}
+                    showAiMark={aiMarkedFields?.[s.section_key]?.clinical_importance}
                     onChange={(val) => onChange?.(s.section_key, "clinical_importance", val)}
                   />
                   <TextArea
                     label="Practical next step for the next case"
                     value={v.next_case_focus ?? ""}
+                    showAiMark={aiMarkedFields?.[s.section_key]?.next_case_focus}
                     onChange={(val) => onChange?.(s.section_key, "next_case_focus", val)}
                   />
                   <TextArea
                     label="Faculty note"
                     value={v.faculty_note ?? ""}
+                    showAiMark={aiMarkedFields?.[s.section_key]?.faculty_note}
                     onChange={(val) => onChange?.(s.section_key, "faculty_note", val)}
                   />
                 </>
@@ -134,19 +149,29 @@ function TextArea({
   label,
   value,
   onChange,
+  showAiMark,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
+  showAiMark?: boolean;
 }) {
+  const hasLabel = showAiMark || value.includes(AI_INSERT_SOURCE_LABEL);
   return (
     <div>
       <label className="block text-xs font-medium text-slate-600">{label}</label>
+      {hasLabel ? (
+        <p className="mt-0.5 text-[10px] text-violet-700 bg-violet-50 border border-violet-100 rounded px-1.5 py-0.5 inline-block">
+          {AI_INSERT_SOURCE_LABEL}
+        </p>
+      ) : null}
       <textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
         rows={2}
-        className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+        className={`mt-1 w-full rounded-md border px-2 py-1.5 text-sm ${
+          hasLabel ? "border-violet-200 bg-violet-50/30" : "border-slate-300"
+        }`}
       />
     </div>
   );
