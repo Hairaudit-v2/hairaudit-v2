@@ -35,6 +35,40 @@ export type TraineeSurgicalProgressDashboard = {
   facultyReadiness: FacultyReadinessSignal;
 };
 
+/** Empty dashboard when no reviews exist or data fetch failed (trainee-safe defaults). */
+export function createEmptyTraineeSurgicalProgressDashboard(): TraineeSurgicalProgressDashboard {
+  const reviewsNewestFirst: TrainingCaseReviewRow[] = [];
+  const sectionsByReviewId = new Map<string, import("./types").TrainingCaseReviewSectionRow[]>();
+  const skillProgress = getTraineeSkillProgressSummary({ reviewsNewestFirst, sectionsByReviewId });
+  const repeatedFocusAreas: string[] = [];
+  const latestReview = null;
+  return {
+    reviewCount: 0,
+    latestReview,
+    latestOverallLevel: null,
+    latestOverallLevelLabel: null,
+    encouragingSummary:
+      "Once your faculty submits your first Training Case Review, your progress trends will appear here.",
+    skillProgress,
+    timeline: [],
+    improvementTrend: buildImprovementTrendSummary({
+      skillProgress,
+      latestReview,
+      reviewsNewestFirst,
+      sectionsByReviewId,
+    }),
+    currentStrengths: [],
+    recommendedNextFocus: [],
+    repeatedFocusAreas,
+    facultyReadiness: buildFacultyReadinessSignal({
+      reviewsNewestFirst,
+      skillProgress,
+      currentStrengths: [],
+      repeatedFocusAreas,
+    }),
+  };
+}
+
 export async function buildTraineeSurgicalProgressDashboard(
   supabase: SupabaseClient,
   traineeId: string,

@@ -36,7 +36,11 @@ import {
   countTargetMilestones,
   pickReviewForCompetencyWeek,
 } from "@/lib/academy/traineeDashboardModel";
-import { fetchLatestSubmittedReviewForTrainee, buildTraineeSurgicalProgressDashboard } from "@/lib/academy/trainingCaseReviews";
+import {
+  fetchLatestSubmittedReviewForTrainee,
+  buildTraineeSurgicalProgressDashboard,
+  createEmptyTraineeSurgicalProgressDashboard,
+} from "@/lib/academy/trainingCaseReviews";
 import type {
   TrainingCaseMetricsRow,
   TrainingCaseAssessmentRow,
@@ -440,7 +444,9 @@ export default async function AcademyDashboardPage() {
   const stageHistory = (stageHistoryRows ?? []) as TrainingStageHistoryRow[];
 
   const latestCaseReview = await fetchLatestSubmittedReviewForTrainee(supabase, doctor.id).catch(() => null);
-  const surgicalProgress = await buildTraineeSurgicalProgressDashboard(supabase, doctor.id).catch(() => null);
+  const surgicalProgress =
+    (await buildTraineeSurgicalProgressDashboard(supabase, doctor.id).catch(() => null)) ??
+    createEmptyTraineeSurgicalProgressDashboard();
 
   return (
     <TraineeDashboardView

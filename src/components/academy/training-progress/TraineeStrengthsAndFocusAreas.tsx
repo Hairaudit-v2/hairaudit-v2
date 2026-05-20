@@ -1,6 +1,7 @@
 type Props = {
   strengths: string[];
   nextFocus: string[];
+  repeatedFocusAreas?: string[];
 };
 
 function Panel({
@@ -42,7 +43,12 @@ function Panel({
   );
 }
 
-export default function TraineeStrengthsAndFocusAreas({ strengths, nextFocus }: Props) {
+export default function TraineeStrengthsAndFocusAreas({ strengths, nextFocus, repeatedFocusAreas = [] }: Props) {
+  const focusItems = [
+    ...nextFocus,
+    ...repeatedFocusAreas.filter((item) => !nextFocus.some((f) => f.toLowerCase() === item.toLowerCase())),
+  ];
+
   return (
     <section className="grid gap-4 lg:grid-cols-2">
       <Panel
@@ -55,7 +61,7 @@ export default function TraineeStrengthsAndFocusAreas({ strengths, nextFocus }: 
       <Panel
         subtitle="Faculty guidance"
         title="Next training focus"
-        items={nextFocus}
+        items={focusItems}
         emptyText="Your faculty team will recommend next focus areas after case reviews are submitted."
         tone="amber"
       />

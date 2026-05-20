@@ -11,7 +11,7 @@ function trendLabel(trend: SkillTrendLabel): string {
     case "stable":
       return "Stable";
     case "needs_attention":
-      return "Needs attention";
+      return "Needs continued focus";
     case "new_skill_area":
       return "New skill area";
     default:
@@ -60,8 +60,8 @@ export default function SurgicalSkillProgressGrid({ skills }: Props) {
   return (
     <section className="space-y-4">
       <div>
-        <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-600">Surgical skill domains</p>
-        <h2 className="text-xl font-semibold text-slate-900">Progress over time</h2>
+        <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-600">Surgical skill progress</p>
+        <h2 className="text-xl font-semibold text-slate-900">Skill progress grid</h2>
         <p className="mt-1 max-w-2xl text-sm text-slate-600">
           Developmental levels from faculty Training Case Reviews. Trends compare your latest review to previous reviews.
         </p>
@@ -90,11 +90,20 @@ export default function SurgicalSkillProgressGrid({ skills }: Props) {
                 {trendLabel(skill.trend)}
               </span>
             </div>
-            {skill.latestNote ? (
-              <p className="mt-3 text-xs leading-relaxed text-slate-600 line-clamp-3">{skill.latestNote}</p>
-            ) : (
+            {skill.latestNextCaseFocus ? (
+              <p className="mt-3 text-xs text-slate-700">
+                <span className="font-semibold text-slate-800">Next-case focus · </span>
+                <span className="line-clamp-2">{skill.latestNextCaseFocus}</span>
+              </p>
+            ) : null}
+            {skill.latestFacultyNotePreview ? (
+              <p className="mt-2 text-xs leading-relaxed text-slate-500 line-clamp-2">
+                <span className="font-medium text-slate-600">Faculty note · </span>
+                {skill.latestFacultyNotePreview}
+              </p>
+            ) : !skill.latestNextCaseFocus ? (
               <p className="mt-3 text-xs text-slate-400">Faculty notes will appear after case reviews are submitted.</p>
-            )}
+            ) : null}
           </div>
         ))}
       </div>

@@ -1,5 +1,6 @@
 export {
   buildTraineeSurgicalProgressDashboard,
+  createEmptyTraineeSurgicalProgressDashboard,
   computeOverallTrainingProgressFromReviews,
   type TraineeSurgicalProgressDashboard,
 } from "./dashboard";

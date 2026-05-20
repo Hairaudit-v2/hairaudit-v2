@@ -267,16 +267,27 @@ export default function TraineeDashboardView(p: TraineeDashboardViewProps) {
         </div>
       </section>
 
-      {p.surgicalProgress ? (
-        <TraineeSurgicalProgressSection
-          traineeName={p.doctor.full_name}
-          programName={p.programName}
-          cohortLabel={p.cohortLabel}
-          siteLabel={p.siteLabel}
-          currentStage={p.doctor.current_stage}
-          competencyWeek={p.competencyWeek}
-          progress={p.surgicalProgress}
-        />
+      {p.surgicalProgress !== null ? (
+        <section className="space-y-4">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-800">Surgical coaching progress</p>
+              <h2 className="text-xl font-semibold text-slate-900">Your surgical progress over time</h2>
+              <p className="mt-1 max-w-2xl text-sm text-slate-600">
+                Based on submitted Training Case Reviews — educational feedback to support your supervised learning journey.
+              </p>
+            </div>
+          </div>
+          <TraineeSurgicalProgressSection
+            traineeName={p.doctor.full_name}
+            programName={p.programName}
+            cohortLabel={p.cohortLabel}
+            siteLabel={p.siteLabel}
+            currentStage={p.doctor.current_stage}
+            competencyWeek={p.competencyWeek}
+            progress={p.surgicalProgress}
+          />
+        </section>
       ) : null}
 
       {/* Key metrics */}

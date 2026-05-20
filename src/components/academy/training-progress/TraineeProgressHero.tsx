@@ -33,7 +33,7 @@ export default function TraineeProgressHero({
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0 space-y-3">
             <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-300/95">
-              Surgical progress · Training dashboard
+              Your surgical progress over time
             </p>
             <h2 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">{traineeName}</h2>
             <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-emerald-100/90">
@@ -70,8 +70,14 @@ export default function TraineeProgressHero({
 
         <div className="mt-8 grid gap-4 border-t border-white/10 pt-8 sm:grid-cols-3">
           <div className="sm:col-span-2">
-            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-200/80">Progress summary</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-200/80">Training summary</p>
             <p className="mt-2 text-sm leading-relaxed text-emerald-50/95">{progress.encouragingSummary}</p>
+            {progress.recommendedNextFocus[0] ? (
+              <p className="mt-3 text-xs text-emerald-200/90">
+                <span className="font-semibold text-emerald-100">Latest recommended next focus · </span>
+                {progress.recommendedNextFocus[0]}
+              </p>
+            ) : null}
           </div>
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-300/70">Case review progress</p>

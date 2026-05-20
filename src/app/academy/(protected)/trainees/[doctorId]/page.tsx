@@ -8,7 +8,10 @@ import {
   domainAveragesFromAssessments,
   trendValuesFromCases,
 } from "@/lib/academy/progression";
-import { buildTraineeSurgicalProgressDashboard } from "@/lib/academy/trainingCaseReviews";
+import {
+  buildTraineeSurgicalProgressDashboard,
+  createEmptyTraineeSurgicalProgressDashboard,
+} from "@/lib/academy/trainingCaseReviews";
 import type { TrainingCaseMetricsRow, TrainingCaseAssessmentRow } from "@/lib/academy/types";
 import Sparkline from "@/components/ui/Sparkline";
 import TraineeSurgicalProgressSection from "@/components/academy/training-progress/TraineeSurgicalProgressSection";
@@ -92,9 +95,10 @@ export default async function TraineeDetailPage({ params }: { params: Promise<{ 
   const siteRow = siteRes.data as { name: string; display_name: string | null } | null;
   const siteLabel = siteRow ? (siteRow.display_name?.trim() || siteRow.name) : null;
 
-  const surgicalProgress = await buildTraineeSurgicalProgressDashboard(supabase, doctorId, {
-    includeDrafts: access.isStaff,
-  }).catch(() => null);
+  const surgicalProgress =
+    (await buildTraineeSurgicalProgressDashboard(supabase, doctorId, {
+      includeDrafts: access.isStaff,
+    }).catch(() => null)) ?? createEmptyTraineeSurgicalProgressDashboard();
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-8 pb-10">
@@ -148,8 +152,7 @@ export default async function TraineeDetailPage({ params }: { params: Promise<{ 
         </section>
       ) : null}
 
-      {surgicalProgress ? (
-        <TraineeSurgicalProgressSection
+      <TraineeSurgicalProgressSection
           traineeName={doctor.full_name}
           programName={programName}
           cohortLabel={cohortLabel}
@@ -160,7 +163,6 @@ export default async function TraineeDetailPage({ params }: { params: Promise<{ 
           isStaff={access.isStaff}
           doctorId={doctorId}
         />
-      ) : null}
 
       <section className="rounded-2xl border border-sky-300/90 bg-gradient-to-br from-sky-100/90 to-white p-5 shadow-md">
         <h2 className="text-sm font-semibold text-slate-900 mb-3">Trends</h2>

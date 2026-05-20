@@ -136,7 +136,8 @@ export type SkillProgressEntry = {
   currentLevelLabel: string | null;
   trend: SkillTrendLabel;
   classification: SkillClassification;
-  latestNote: string | null;
+  latestNextCaseFocus: string | null;
+  latestFacultyNotePreview: string | null;
   reviewCount: number;
 };
 
@@ -149,15 +150,19 @@ export function getTraineeSkillProgressSummary(input: {
 
   return SURGICAL_SKILL_DOMAINS.map((domain) => {
     const levels: (string | null)[] = [];
-    let latestNote: string | null = null;
+    let latestNextCaseFocus: string | null = null;
+    let latestFacultyNotePreview: string | null = null;
 
     for (const review of submitted) {
       const sections = sectionsByReviewId.get(review.id) ?? [];
       const section = sections.find((s) => s.section_key === domain.sectionKey);
       if (!section) continue;
       levels.push(section.developmental_level);
-      if (!latestNote) {
-        latestNote =
+      if (!latestNextCaseFocus && section.next_case_focus?.trim()) {
+        latestNextCaseFocus = section.next_case_focus.trim();
+      }
+      if (!latestFacultyNotePreview) {
+        latestFacultyNotePreview =
           section.faculty_note?.trim() ||
           section.what_went_well?.trim() ||
           section.needs_improvement?.trim() ||
@@ -167,7 +172,7 @@ export function getTraineeSkillProgressSummary(input: {
 
     const currentLevel = levels[0] ?? null;
     const previousLevel = levels[1] ?? null;
-    const trend = computeSkillTrend(currentLevel, previousLevel, levels.filter(Boolean).length);
+    const trend = computeSkillTrend(currentLevel, previousLevel, submitted.length);
 
     return {
       key: domain.key,
@@ -177,7 +182,8 @@ export function getTraineeSkillProgressSummary(input: {
       currentLevelLabel: developmentalLevelLabel(currentLevel),
       trend,
       classification: classifySkill(currentLevel, trend),
-      latestNote,
+      latestNextCaseFocus,
+      latestFacultyNotePreview,
       reviewCount: levels.filter(Boolean).length,
     };
   });
@@ -325,9 +331,10 @@ export function buildCaseReviewTimeline(input: {
 
 export type ImprovementTrendSummary = {
   hasEnoughData: boolean;
-  improvedSkills: string[];
-  consistentSkills: string[];
-  repeatedFocusSkills: string[];
+  improvingAreas: string[];
+  stableStrengths: string[];
+  repeatedFocusAreas: string[];
+  newSkillAreas: string[];
   biggestPositiveMovement: { skill: string; from: string; to: string } | null;
   facultyRecommendedNextStep: string | null;
 };
@@ -342,23 +349,28 @@ export function buildImprovementTrendSummary(input: {
   if (submitted.length < 2) {
     return {
       hasEnoughData: false,
-      improvedSkills: [],
-      consistentSkills: [],
-      repeatedFocusSkills: [],
+      improvingAreas: [],
+      stableStrengths: [],
+      repeatedFocusAreas: [],
+      newSkillAreas: [],
       biggestPositiveMovement: null,
       facultyRecommendedNextStep: input.latestReview?.recommended_next_focus?.trim() ?? null,
     };
   }
 
-  const improvedSkills = input.skillProgress
-    .filter((s) => s.trend === "improving")
+  const improvingAreas = input.skillProgress.filter((s) => s.trend === "improving").map((s) => s.title);
+  const stableStrengths = input.skillProgress
+    .filter(
+      (s) =>
+        s.trend === "stable" &&
+        s.reviewCount >= 2 &&
+        (s.classification === "strength" || computeDevelopmentalLevelScore(s.currentLevel) >= 3),
+    )
     .map((s) => s.title);
-  const consistentSkills = input.skillProgress
-    .filter((s) => s.trend === "stable" && s.reviewCount >= 2)
+  const repeatedFocusAreas = input.skillProgress
+    .filter((s) => s.trend === "needs_attention" || (s.classification === "focus_area" && s.reviewCount >= 2))
     .map((s) => s.title);
-  const repeatedFocusSkills = input.skillProgress
-    .filter((s) => s.trend === "needs_attention" || s.classification === "focus_area")
-    .map((s) => s.title);
+  const newSkillAreas = input.skillProgress.filter((s) => s.trend === "new_skill_area").map((s) => s.title);
 
   let biggestPositiveMovement: ImprovementTrendSummary["biggestPositiveMovement"] = null;
   let maxDelta = 0;
@@ -386,9 +398,10 @@ export function buildImprovementTrendSummary(input: {
 
   return {
     hasEnoughData: true,
-    improvedSkills,
-    consistentSkills,
-    repeatedFocusSkills,
+    improvingAreas,
+    stableStrengths,
+    repeatedFocusAreas,
+    newSkillAreas,
     biggestPositiveMovement,
     facultyRecommendedNextStep: input.latestReview?.recommended_next_focus?.trim() ?? null,
   };
@@ -400,28 +413,34 @@ export function buildEncouragingSummary(input: {
   recommendedNextFocus: string[];
 }): string {
   if (!input.latestReview) {
-    return "Your surgical progress dashboard will populate as faculty submit Training Case Reviews on your supervised cases.";
+    return "Once your faculty submits your first Training Case Review, your progress trends will appear here.";
+  }
+
+  if (input.latestReview.summary?.trim()) {
+    const focus = input.recommendedNextFocus[0];
+    if (focus) {
+      return `${input.latestReview.summary.trim()} Your next focus: ${focus}.`;
+    }
+    return input.latestReview.summary.trim();
   }
 
   const strengths = input.skillProgress.filter((s) => s.classification === "strength").slice(0, 2);
   const focus = input.recommendedNextFocus[0];
 
-  const parts: string[] = [];
-  if (input.latestReview.summary?.trim()) {
-    parts.push(input.latestReview.summary.trim());
-  } else if (strengths.length) {
-    parts.push(
-      `Your latest case review shows developing consistency in ${strengths.map((s) => s.title.toLowerCase()).join(" and ")}.`,
-    );
-  } else {
-    parts.push("Your latest case review is on file — keep building supervised case volume with faculty guidance.");
+  if (strengths.length && focus) {
+    const strengthPhrase = strengths.map((s) => s.title.toLowerCase()).join(" and ");
+    return `Your latest submitted case review shows developing consistency in ${strengthPhrase}, with the next focus on ${focus.charAt(0).toLowerCase() + focus.slice(1)}.`;
+  }
+
+  if (strengths.length) {
+    return `Your latest submitted case review shows developing consistency in ${strengths.map((s) => s.title.toLowerCase()).join(" and ")}.`;
   }
 
   if (focus) {
-    parts.push(`Your next focus: ${focus}.`);
+    return `Your latest submitted case review is on file, with the next focus on ${focus.charAt(0).toLowerCase() + focus.slice(1)}.`;
   }
 
-  return parts.join(" ");
+  return "Your latest submitted case review is on file — keep building supervised case volume with faculty guidance.";
 }
 
 export type FacultyReadinessSignal = {
