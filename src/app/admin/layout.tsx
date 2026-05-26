@@ -45,6 +45,12 @@ export default async function AdminLayout({
             >
               Auth Health
             </Link>
+            <Link
+              href="/admin/hair-audit/bulk-upload"
+              className="text-sm font-medium text-slate-300 hover:text-cyan-300 transition-colors"
+            >
+              Bulk Case Upload
+            </Link>
           </div>
           <span className="text-xs text-slate-500">Admin</span>
         </div>
