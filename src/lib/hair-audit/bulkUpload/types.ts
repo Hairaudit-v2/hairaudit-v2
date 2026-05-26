@@ -84,3 +84,9 @@ export type BulkCaseReadiness = {
   missingFields: string[];
   imageCount: number;
 };
+
+export type BulkBatchContextDisplay = {
+  batchId: string;
+  batchName: string;
+  fields: Array<{ label: string; value: string }>;
+};

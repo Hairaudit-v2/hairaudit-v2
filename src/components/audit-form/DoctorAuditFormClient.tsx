@@ -10,6 +10,12 @@ import { DOCTOR_AUDIT_SECTIONS } from "@/lib/doctorAuditForm";
 import { validateDoctorAnswers } from "@/lib/doctorAuditSchema";
 import { caseStableFields, doctorDefaultFields } from "@/config/auditSchema";
 import { AUDIT_PROTOCOL_GROUPS } from "@/config/auditProtocolGroups";
+import {
+  applyBulkBatchPrefillToAnswers,
+  BULK_BATCH_PROVENANCE,
+  mapBatchToAuditPrefill,
+} from "@/lib/hair-audit/bulkUpload/mapBatchToAuditPrefill";
+import type { HairAuditCaseBatchRow } from "@/lib/hair-audit/bulkUpload/types";
 
 type FormQuestion = {
   id: string;
@@ -75,6 +81,7 @@ export default function DoctorAuditFormClient({
   primaryCtaHref,
   primaryCtaLabel,
   isFollowupAudit = false,
+  bulkBatch = null,
 }: {
   caseId: string;
   caseStatus: string;
@@ -86,6 +93,7 @@ export default function DoctorAuditFormClient({
   primaryCtaHref?: string;
   primaryCtaLabel?: string;
   isFollowupAudit?: boolean;
+  bulkBatch?: HairAuditCaseBatchRow | null;
 }) {
   const [answers, setAnswers] = useState<Record<string, unknown>>({});
   const [loading, setLoading] = useState(true);
@@ -144,11 +152,15 @@ export default function DoctorAuditFormClient({
     const data = (json.doctorAnswers ?? null) as Record<string, unknown> | null;
     originalAnswersRef.current = data;
     baselineRef.current = data;
+
+    let nextAnswers: Record<string, unknown> = {};
+    let nextProvenance: Record<string, string> = {};
+
     if (data && Object.keys(data).length > 0) {
-      setAnswers(data);
+      nextAnswers = { ...data };
       const loadedProvenance = data.field_provenance;
       if (loadedProvenance && typeof loadedProvenance === "object" && !Array.isArray(loadedProvenance)) {
-        setFieldProvenance(loadedProvenance as Record<string, string>);
+        nextProvenance = { ...(loadedProvenance as Record<string, string>) };
       }
     } else if (typeof window !== "undefined") {
       const rawDefaults = window.localStorage.getItem(defaultsStorageKey);
@@ -156,13 +168,8 @@ export default function DoctorAuditFormClient({
         const defaults = JSON.parse(rawDefaults) as Record<string, unknown>;
         const prefill = pickFields(defaults, doctorDefaultFields as readonly string[]);
         if (Object.keys(prefill).length > 0) {
-          setAnswers(prefill);
-          baselineRef.current = prefill;
-          setFieldProvenance((prev) => {
-            const next = { ...prev };
-            for (const key of Object.keys(prefill)) next[key] = "prefilled_from_doctor_default";
-            return next;
-          });
+          nextAnswers = prefill;
+          for (const key of Object.keys(prefill)) nextProvenance[key] = "prefilled_from_doctor_default";
           setUseSavedDefaultForFields((prev) => {
             const next = { ...prev };
             for (const key of Object.keys(prefill)) next[key] = true;
@@ -172,8 +179,26 @@ export default function DoctorAuditFormClient({
         }
       }
     }
+
+    if (bulkBatch) {
+      const batchPrefill = mapBatchToAuditPrefill(bulkBatch);
+      const applied = applyBulkBatchPrefillToAnswers(nextAnswers, batchPrefill);
+      if (applied.prefilledKeys.length > 0) {
+        nextAnswers = applied.answers;
+        for (const key of applied.prefilledKeys) {
+          if (!nextProvenance[key]) nextProvenance[key] = BULK_BATCH_PROVENANCE;
+        }
+        setWorkflowNotice("Some empty fields were prefilled from the bulk upload batch. Case-specific values always take priority.");
+      }
+    }
+
+    if (Object.keys(nextAnswers).length > 0) {
+      setAnswers(nextAnswers);
+      baselineRef.current = nextAnswers;
+    }
+    if (Object.keys(nextProvenance).length > 0) setFieldProvenance(nextProvenance);
     setLoading(false);
-  }, [loadUrl]);
+  }, [bulkBatch, loadUrl, t]);
 
   useEffect(() => {
     load();
@@ -186,7 +211,8 @@ export default function DoctorAuditFormClient({
       const nextTag =
         prevTag === "prefilled_from_doctor_default" ||
         prevTag === "prefilled_from_clinic_default" ||
-        prevTag === "inherited_from_original_case"
+        prevTag === "inherited_from_original_case" ||
+        prevTag === "inherited_from_bulk_batch"
           ? "edited_after_prefill"
           : "entered_manually";
       return { ...prev, [id]: nextTag };

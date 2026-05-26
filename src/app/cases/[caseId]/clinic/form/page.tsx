@@ -9,6 +9,8 @@ import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { canAccessCase } from "@/lib/case-access";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import CaseNotFoundRecovery from "@/components/case/CaseNotFoundRecovery";
+import BulkBatchInheritedMetadataPanel from "@/components/hair-audit/BulkBatchInheritedMetadataPanel";
+import { loadBulkBatchContext } from "@/lib/hair-audit/bulkUpload/loadBulkBatchContext";
 
 export default async function ClinicFormPage({
   params,
@@ -30,7 +32,7 @@ export default async function ClinicFormPage({
   const admin = createSupabaseAdminClient();
   const { data: c } = await admin
     .from("cases")
-    .select("id, status, submitted_at, user_id, doctor_id, clinic_id")
+    .select("id, status, submitted_at, user_id, doctor_id, clinic_id, batch_id, case_label")
     .eq("id", caseId)
     .maybeSingle();
 
@@ -45,6 +47,8 @@ export default async function ClinicFormPage({
   const allowed = await canAccessCase(user.id, c);
   if (!allowed) redirect("/dashboard/clinic");
 
+  const bulkBatchContext = c.batch_id ? await loadBulkBatchContext(admin, c.batch_id) : null;
+
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
       <div className="mb-6">
@@ -54,6 +58,16 @@ export default async function ClinicFormPage({
       </div>
       <h1 className="text-2xl font-bold mb-2">{getTranslation("dashboard.clinic.forms.caseAudit.page.title", locale)}</h1>
       <p className="text-gray-600 mb-8">{getTranslation("dashboard.clinic.forms.caseAudit.page.description", locale)}</p>
+
+      {bulkBatchContext ? (
+        <div className="mb-8">
+          <BulkBatchInheritedMetadataPanel
+            display={bulkBatchContext.display}
+            caseLabel={c.case_label}
+            variant="light"
+          />
+        </div>
+      ) : null}
 
       <AuditFormClient
         caseId={caseId}
@@ -77,6 +91,7 @@ export default async function ClinicFormPage({
         validate={validateClinicAnswers}
         workflowActor="clinic"
         isFollowupAudit={isFollowupAudit}
+        bulkBatch={bulkBatchContext?.batch ?? null}
       />
     </div>
   );

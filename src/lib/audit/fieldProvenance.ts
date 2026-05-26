@@ -3,6 +3,7 @@ export const FIELD_PROVENANCE_VALUES = [
   "prefilled_from_doctor_default",
   "prefilled_from_clinic_default",
   "inherited_from_original_case",
+  "inherited_from_bulk_batch",
   "edited_after_prefill",
   "confirmed_by_submitter",
 ] as const;
@@ -55,7 +56,8 @@ export function mergeFieldProvenance(params: {
     if (
       prevEntry === "prefilled_from_doctor_default" ||
       prevEntry === "prefilled_from_clinic_default" ||
-      prevEntry === "inherited_from_original_case"
+      prevEntry === "inherited_from_original_case" ||
+      prevEntry === "inherited_from_bulk_batch"
     ) {
       merged[key] = "edited_after_prefill";
       continue;

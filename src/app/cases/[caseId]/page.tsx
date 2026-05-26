@@ -57,6 +57,8 @@ import PatientSafeSummaryTranslationOpsPanel from "./PatientSafeSummaryTranslati
 import AuditorPatientImageManager from "./AuditorPatientImageManager";
 import { evaluateEvidence } from "@/lib/evidence/evidenceEvaluator";
 import { isPatientUploadAuditExcluded } from "@/lib/uploads/patientPhotoAuditMeta";
+import BulkBatchInheritedMetadataPanel from "@/components/hair-audit/BulkBatchInheritedMetadataPanel";
+import { loadBulkBatchContext } from "@/lib/hair-audit/bulkUpload/loadBulkBatchContext";
 
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { tryCreateSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -119,6 +121,7 @@ export default async function Page({
   const { caseId } = await params;
   const resolvedSearchParams = await Promise.resolve(searchParams ?? {});
   const fromContributionRequests = resolvedSearchParams?.from === "contribution-requests";
+  const fromBulkUpload = resolvedSearchParams?.from === "bulk-upload";
   let supabase: Awaited<ReturnType<typeof createSupabaseAuthServerClient>>;
   try {
     supabase = await createSupabaseAuthServerClient();
@@ -168,12 +171,12 @@ export default async function Page({
   const CASE_SELECT_MINIMAL =
     "id, title, status, created_at, user_id, submitted_at, patient_id, doctor_id, clinic_id, audit_type, submission_channel, visibility_scope";
 
-  let c: { id: string; title?: string; status?: string; created_at?: string; user_id?: string; submitted_at?: string | null; patient_id?: string | null; doctor_id?: string | null; clinic_id?: string | null; audit_type?: "patient" | "doctor" | "clinic" | null; submission_channel?: string | null; visibility_scope?: string | null; rerun_count?: number | null; last_rerun_at?: string | null; last_rerun_by?: string | null; evidence_score_patient?: string | null; confidence_label_patient?: string | null; evidence_score_doctor?: string | null; confidence_label_doctor?: string | null; evidence_details?: Record<string, unknown> | null } | null;
+  let c: { id: string; title?: string; status?: string; created_at?: string; user_id?: string; submitted_at?: string | null; patient_id?: string | null; doctor_id?: string | null; clinic_id?: string | null; audit_type?: "patient" | "doctor" | "clinic" | null; submission_channel?: string | null; visibility_scope?: string | null; batch_id?: string | null; case_label?: string | null; intake_status?: string | null; rerun_count?: number | null; last_rerun_at?: string | null; last_rerun_by?: string | null; evidence_score_patient?: string | null; confidence_label_patient?: string | null; evidence_score_doctor?: string | null; confidence_label_doctor?: string | null; evidence_details?: Record<string, unknown> | null } | null;
   let caseRes: any;
   try {
     caseRes = await db
       .from("cases")
-      .select("id, title, status, created_at, user_id, submitted_at, patient_id, doctor_id, clinic_id, audit_type, submission_channel, visibility_scope, rerun_count, last_rerun_at, last_rerun_by, evidence_score_patient, confidence_label_patient, evidence_score_doctor, confidence_label_doctor, evidence_details")
+      .select("id, title, status, created_at, user_id, submitted_at, patient_id, doctor_id, clinic_id, audit_type, submission_channel, visibility_scope, batch_id, case_label, intake_status, rerun_count, last_rerun_at, last_rerun_by, evidence_score_patient, confidence_label_patient, evidence_score_doctor, confidence_label_doctor, evidence_details")
       .eq("id", caseId)
       .maybeSingle();
   } catch (e) {
@@ -674,6 +677,9 @@ export default async function Page({
     evidenceCoverageScoreFromReport ?? caseEvidenceEvaluation?.overallCoverageScore ?? null;
   const evidenceCoverageResult = isAuditor && caseEvidenceEvaluation ? caseEvidenceEvaluation : null;
 
+  const bulkBatchContext =
+    c.batch_id && role !== "patient" ? await loadBulkBatchContext(admin ?? db, c.batch_id) : null;
+
   return (
     <div className="mx-auto mt-4 max-w-[1200px] rounded-3xl border border-slate-800 bg-slate-950 px-4 pb-10 pt-4 shadow-2xl sm:px-6">
       <div className="flex flex-wrap items-center gap-3">
@@ -693,6 +699,26 @@ export default async function Page({
               Auditor Dashboard
             </Link>
           </>
+        ) : fromBulkUpload && role === "auditor" ? (
+          <>
+            <Link
+              href="/admin/hair-audit/bulk-upload"
+              className="inline-flex items-center text-sm font-medium text-cyan-300 hover:text-cyan-200 transition-colors"
+            >
+              ← Bulk Case Upload
+            </Link>
+            {bulkBatchContext ? (
+              <>
+                <span className="text-slate-500">|</span>
+                <Link
+                  href={`/admin/hair-audit/bulk-upload/${bulkBatchContext.batch.id}`}
+                  className="inline-flex items-center text-sm font-medium text-slate-400 hover:text-slate-200 transition-colors"
+                >
+                  {bulkBatchContext.batch.batch_name}
+                </Link>
+              </>
+            ) : null}
+          </>
         ) : (
           <Link
             href={dashboardPath}
@@ -711,6 +737,23 @@ export default async function Page({
             <div>
               <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Forensic AI Workspace</p>
               <h1 className="mt-2 text-2xl font-semibold text-white">{c.title ?? "Untitled case"}</h1>
+              {bulkBatchContext ? (
+                <p className="mt-2 inline-flex flex-wrap items-center gap-2">
+                  <span className="rounded-full border border-cyan-300/30 bg-cyan-400/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-cyan-100">
+                    Bulk upload batch
+                  </span>
+                  {c.case_label ? (
+                    <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-200">
+                      {c.case_label}
+                    </span>
+                  ) : null}
+                  {c.intake_status ? (
+                    <span className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
+                      {String(c.intake_status).replace(/_/g, " ")}
+                    </span>
+                  ) : null}
+                </p>
+              ) : null}
             </div>
             <span className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold uppercase ${statusPill}`}>
               {statusDisplayLabel}
@@ -740,6 +783,15 @@ export default async function Page({
           {isAuditor && latestReport && (
             <PatientSafeSummaryTranslationOpsPanel caseId={c.id} locale={seoLocale} />
           )}
+
+          {bulkBatchContext ? (
+            <BulkBatchInheritedMetadataPanel
+              display={bulkBatchContext.display}
+              caseLabel={c.case_label}
+              variant="dark"
+              showAdminLink={isAuditor}
+            />
+          ) : null}
 
           <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

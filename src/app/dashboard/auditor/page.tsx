@@ -19,6 +19,7 @@ import AuditStatusChart from "@/components/dashboard/AuditStatusChart";
 import AuditPriorityChart from "@/components/dashboard/AuditPriorityChart";
 import OperationalAuditsTable from "@/components/dashboard/OperationalAuditsTable";
 import PatientSafeSummaryTranslationQueuePanel from "@/components/dashboard/PatientSafeSummaryTranslationQueuePanel";
+import BulkUploadDashboardCard from "@/components/admin/hair-audit/BulkUploadDashboardCard";
 import {
   derivePatientSafeSummaryQueueStatus,
   shouldFallbackToEnglishInQueue,
@@ -382,6 +383,8 @@ export default async function AuditorDashboardPage({
           </Link>
         </div>
       </section>
+
+      <BulkUploadDashboardCard />
 
       <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">

@@ -869,10 +869,10 @@ export default function BulkUploadWizardClient({ batch, initialCases, initialIma
                       Continue editing
                     </button>
                     <Link
-                      href={`/cases/${c.id}`}
+                      href={`/cases/${c.id}?from=bulk-upload`}
                       className="rounded-lg border border-white/10 px-3 py-1.5 text-xs font-semibold text-cyan-300 hover:bg-white/5"
                     >
-                      Open case
+                      Open case review
                     </Link>
                   </div>
                 </div>
