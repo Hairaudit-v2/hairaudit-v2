@@ -3,6 +3,10 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { isAuditor } from "@/lib/auth/isAuditor";
 import BulkUploadWizardClient from "@/components/admin/hair-audit/bulk-upload/BulkUploadWizardClient";
+import {
+  countReviewUploadsForCases,
+  getBulkImageReviewSyncStatus,
+} from "@/lib/hair-audit/bulkUpload/syncToUploads";
 import type { BulkCaseImageRow, BulkCaseRow, HairAuditCaseBatchRow } from "@/lib/hair-audit/bulkUpload/types";
 
 export const dynamic = "force-dynamic";
@@ -42,11 +46,26 @@ export default async function BulkUploadBatchPage({ params }: { params: Promise<
 
   if (!batchRes.data) notFound();
 
+  const cases = (casesRes.data ?? []) as BulkCaseRow[];
+  const images = (imagesRes.data ?? []) as BulkCaseImageRow[];
+  const caseIds = cases.map((c) => c.id);
+
+  const [reviewSyncStatus, reviewUploadCounts] = await Promise.all([
+    getBulkImageReviewSyncStatus(admin, images),
+    countReviewUploadsForCases(admin, caseIds),
+  ]);
+
+  const initialImages = images.map((img) => ({
+    ...img,
+    synced_to_review: reviewSyncStatus[img.id] ?? false,
+  }));
+
   return (
     <BulkUploadWizardClient
       batch={batchRes.data as HairAuditCaseBatchRow}
-      initialCases={(casesRes.data ?? []) as BulkCaseRow[]}
-      initialImages={(imagesRes.data ?? []) as BulkCaseImageRow[]}
+      initialCases={cases}
+      initialImages={initialImages}
+      initialReviewUploadCounts={reviewUploadCounts}
     />
   );
 }

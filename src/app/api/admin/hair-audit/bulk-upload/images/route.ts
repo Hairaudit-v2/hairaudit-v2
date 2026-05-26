@@ -1,38 +1,39 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { requireHairAuditBulkAdmin } from "@/lib/hair-audit/bulkUpload/auth";
+import { refreshCaseIntakeStatus } from "@/lib/hair-audit/bulkUpload/caseIntake";
 import {
   BULK_IMAGE_CATEGORY_SET,
   bulkStoragePath,
   type BulkImageCategory,
 } from "@/lib/hair-audit/bulkUpload/constants";
-import { computeCaseReadiness } from "@/lib/hair-audit/bulkUpload/validation";
+import {
+  getBulkImageReviewSyncStatus,
+  reconcileBulkImageUpload,
+  syncSingleBulkImageToUploads,
+  type BulkImageRow,
+} from "@/lib/hair-audit/bulkUpload/syncToUploads";
 import { safeFileName, UPLOAD_LIMITS } from "@/lib/uploads/safeUpload";
 
 export const runtime = "nodejs";
 
-async function refreshCaseIntakeStatus(admin: ReturnType<typeof createSupabaseAdminClient>, caseId: string) {
+async function loadCaseOwnerId(admin: ReturnType<typeof createSupabaseAdminClient>, caseId: string, fallbackUserId: string) {
+  const { data: caseRow } = await admin.from("cases").select("user_id").eq("id", caseId).maybeSingle();
+  return caseRow?.user_id ?? fallbackUserId;
+}
+
+async function verifyCaseInBatch(
+  admin: ReturnType<typeof createSupabaseAdminClient>,
+  caseId: string,
+  batchId: string
+) {
   const { data: caseRow } = await admin
     .from("cases")
-    .select("id, patient_reference, graft_count")
+    .select("id")
     .eq("id", caseId)
+    .eq("batch_id", batchId)
     .maybeSingle();
-  if (!caseRow) return;
-
-  const { count } = await admin
-    .from("hair_audit_case_images")
-    .select("id", { count: "exact", head: true })
-    .eq("case_id", caseId);
-
-  const readiness = computeCaseReadiness(
-    {
-      patient_reference: caseRow.patient_reference ?? "",
-      graft_count: caseRow.graft_count,
-    },
-    count ?? 0
-  );
-
-  await admin.from("cases").update({ intake_status: readiness.intakeStatus }).eq("id", caseId);
+  return Boolean(caseRow);
 }
 
 export async function POST(req: Request) {
@@ -66,13 +67,8 @@ export async function POST(req: Request) {
   if (!batch) return NextResponse.json({ ok: false, error: "Batch not found" }, { status: 404 });
 
   if (caseId) {
-    const { data: caseRow } = await admin
-      .from("cases")
-      .select("id, batch_id")
-      .eq("id", caseId)
-      .eq("batch_id", batchId)
-      .maybeSingle();
-    if (!caseRow) return NextResponse.json({ ok: false, error: "Case not in batch" }, { status: 400 });
+    const valid = await verifyCaseInBatch(admin, caseId, batchId);
+    if (!valid) return NextResponse.json({ ok: false, error: "Case not in batch" }, { status: 400 });
   }
 
   const bucket = process.env.CASE_FILES_BUCKET || "case-files";
@@ -111,11 +107,25 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: insErr.message }, { status: 500 });
   }
 
-  if (caseId) {
+  let sync = null;
+  if (caseId && row) {
+    const ownerId = await loadCaseOwnerId(admin, caseId, auth.userId);
+    sync = await syncSingleBulkImageToUploads(admin, caseId, ownerId, {
+      ...(row as BulkImageRow),
+      batch_id: batchId,
+    });
     await refreshCaseIntakeStatus(admin, caseId);
   }
 
-  return NextResponse.json({ ok: true, image: row });
+  const reviewSyncStatus = row
+    ? await getBulkImageReviewSyncStatus(admin, [{ id: row.id, case_id: row.case_id, storage_path: row.storage_path }])
+    : {};
+
+  return NextResponse.json({
+    ok: true,
+    image: row ? { ...row, synced_to_review: reviewSyncStatus[row.id] ?? false } : row,
+    sync,
+  });
 }
 
 export async function PATCH(req: Request) {
@@ -158,6 +168,32 @@ export async function PATCH(req: Request) {
   }
 
   const admin = createSupabaseAdminClient();
+
+  const { data: beforeRows, error: beforeErr } = await admin
+    .from("hair_audit_case_images")
+    .select("id, case_id, batch_id, storage_path, file_name, mime_type, image_category")
+    .in("id", imageIds);
+
+  if (beforeErr) return NextResponse.json({ ok: false, error: beforeErr.message }, { status: 500 });
+  if (!beforeRows?.length) {
+    return NextResponse.json({ ok: false, error: "No matching images found" }, { status: 404 });
+  }
+
+  const batchIds = new Set(beforeRows.map((row) => row.batch_id));
+  if (batchIds.size !== 1) {
+    return NextResponse.json({ ok: false, error: "Images must belong to a single batch" }, { status: 400 });
+  }
+  const batchId = [...batchIds][0]!;
+
+  if (typeof updatePayload.case_id === "string") {
+    const valid = await verifyCaseInBatch(admin, updatePayload.case_id, batchId);
+    if (!valid) {
+      return NextResponse.json({ ok: false, error: "Target case is not in this batch" }, { status: 400 });
+    }
+  }
+
+  const beforeById = new Map(beforeRows.map((row) => [row.id, row as BulkImageRow]));
+
   const { data, error } = await admin
     .from("hair_audit_case_images")
     .update(updatePayload)
@@ -167,12 +203,41 @@ export async function PATCH(req: Request) {
   if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
 
   const affectedCaseIds = new Set<string>();
+  for (const row of beforeRows) {
+    if (row.case_id) affectedCaseIds.add(row.case_id);
+  }
   for (const row of data ?? []) {
     if (row.case_id) affectedCaseIds.add(row.case_id);
   }
   if (typeof updatePayload.case_id === "string") affectedCaseIds.add(updatePayload.case_id);
 
+  const syncTotals = { synced: 0, updated: 0, skipped: 0, removed: 0, errors: [] as string[] };
+  for (const afterRow of data ?? []) {
+    const beforeRow = beforeById.get(afterRow.id);
+    if (!beforeRow) continue;
+    const after = { ...(afterRow as BulkImageRow), batch_id: batchId };
+    const ownerId = after.case_id
+      ? await loadCaseOwnerId(admin, after.case_id, auth.userId)
+      : auth.userId;
+    const sync = await reconcileBulkImageUpload(admin, ownerId, beforeRow, after);
+    syncTotals.synced += sync.synced;
+    syncTotals.updated += sync.updated;
+    syncTotals.skipped += sync.skipped;
+    syncTotals.removed += sync.removed;
+    syncTotals.errors.push(...sync.errors);
+  }
+
   await Promise.all([...affectedCaseIds].map((caseId) => refreshCaseIntakeStatus(admin, caseId)));
 
-  return NextResponse.json({ ok: true, images: data ?? [] });
+  const reviewSyncStatus = await getBulkImageReviewSyncStatus(
+    admin,
+    (data ?? []).map((row) => ({ id: row.id, case_id: row.case_id, storage_path: row.storage_path }))
+  );
+
+  const images = (data ?? []).map((row) => ({
+    ...row,
+    synced_to_review: reviewSyncStatus[row.id] ?? false,
+  }));
+
+  return NextResponse.json({ ok: true, images, sync: syncTotals });
 }

@@ -50,6 +50,7 @@ export type BulkCaseImageRow = {
   sort_order: number;
   uploaded_by: string | null;
   created_at: string;
+  synced_to_review?: boolean;
 };
 
 export type BulkCaseDraftInput = {

@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { requireHairAuditBulkAdmin } from "@/lib/hair-audit/bulkUpload/auth";
+import {
+  countReviewUploadsForCases,
+  getBulkImageReviewSyncStatus,
+} from "@/lib/hair-audit/bulkUpload/syncToUploads";
 import type { BulkBatchDetailsInput } from "@/lib/hair-audit/bulkUpload/types";
 
 export const runtime = "nodejs";
@@ -70,11 +74,26 @@ export async function GET(_req: Request, ctx: { params: Promise<{ batchId: strin
   if (casesRes.error) return NextResponse.json({ ok: false, error: casesRes.error.message }, { status: 500 });
   if (imagesRes.error) return NextResponse.json({ ok: false, error: imagesRes.error.message }, { status: 500 });
 
+  const cases = casesRes.data ?? [];
+  const images = imagesRes.data ?? [];
+  const caseIds = cases.map((c) => c.id);
+
+  const [reviewSyncStatus, reviewUploadCounts] = await Promise.all([
+    getBulkImageReviewSyncStatus(admin, images),
+    countReviewUploadsForCases(admin, caseIds),
+  ]);
+
+  const imagesWithSync = images.map((img) => ({
+    ...img,
+    synced_to_review: reviewSyncStatus[img.id] ?? false,
+  }));
+
   return NextResponse.json({
     ok: true,
     batch: batchRes.data,
-    cases: casesRes.data ?? [],
-    images: imagesRes.data ?? [],
+    cases,
+    images: imagesWithSync,
+    reviewUploadCounts,
   });
 }
 

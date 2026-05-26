@@ -23,6 +23,7 @@ type WizardProps = {
   batch: HairAuditCaseBatchRow;
   initialCases: BulkCaseRow[];
   initialImages: BulkCaseImageRow[];
+  initialReviewUploadCounts?: Record<string, number>;
 };
 
 const STEPS = ["Batch details", "Cases", "Images", "Review"] as const;
@@ -76,13 +77,27 @@ function intakeChip(status: string) {
   return "bg-slate-700 text-slate-300";
 }
 
-export default function BulkUploadWizardClient({ batch, initialCases, initialImages }: WizardProps) {
+function imageAssignmentBadge(img: BulkCaseImageRow, caseLabel: string) {
+  if (!img.case_id) return null;
+  if (img.synced_to_review) {
+    return { text: `Assigned to ${caseLabel} · Visible in case review`, className: "bg-emerald-900/50 text-emerald-200" };
+  }
+  return { text: `Assigned to ${caseLabel} · Sync pending`, className: "bg-amber-900/40 text-amber-200" };
+}
+
+export default function BulkUploadWizardClient({
+  batch,
+  initialCases,
+  initialImages,
+  initialReviewUploadCounts = {},
+}: WizardProps) {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [batchDetails, setBatchDetails] = useState(() => batchToInput(batch));
   const [cases, setCases] = useState<BulkCaseDraftInput[]>(() => casesToDraft(initialCases));
   const [savedCases, setSavedCases] = useState<BulkCaseRow[]>(initialCases);
   const [images, setImages] = useState<BulkCaseImageRow[]>(initialImages);
+  const [reviewUploadCounts, setReviewUploadCounts] = useState<Record<string, number>>(initialReviewUploadCounts);
   const [clinics, setClinics] = useState<BulkProfileClinicOption[]>([]);
   const [doctors, setDoctors] = useState<BulkProfileDoctorOption[]>([]);
   const [selectedImageIds, setSelectedImageIds] = useState<Set<string>>(new Set());
@@ -117,6 +132,15 @@ export default function BulkUploadWizardClient({ batch, initialCases, initialIma
     return m;
   }, [images]);
 
+  const pendingSyncByCase = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const img of images) {
+      if (!img.case_id || img.synced_to_review) continue;
+      m.set(img.case_id, (m.get(img.case_id) ?? 0) + 1);
+    }
+    return m;
+  }, [images]);
+
   const caseReadiness = useMemo(() => {
     const m = new Map<string, ReturnType<typeof computeCaseReadiness>>();
     for (const c of savedCases) {
@@ -140,6 +164,7 @@ export default function BulkUploadWizardClient({ batch, initialCases, initialIma
     if (j.ok) {
       setSavedCases(j.cases ?? []);
       setImages(j.images ?? []);
+      setReviewUploadCounts(j.reviewUploadCounts ?? {});
       setCases(casesToDraft(j.cases ?? []));
     }
   }, [batch.id]);
@@ -208,6 +233,7 @@ export default function BulkUploadWizardClient({ batch, initialCases, initialIma
     setMsg(null);
     let ok = 0;
     let lastError: string | null = null;
+    let assignedAny = false;
     try {
       await Promise.all(
         list.map((file) =>
@@ -215,7 +241,10 @@ export default function BulkUploadWizardClient({ batch, initialCases, initialIma
             const fd = new FormData();
             fd.set("batchId", batch.id);
             fd.set("file", file);
-            if (bulkAssignCaseId) fd.set("caseId", bulkAssignCaseId);
+            if (bulkAssignCaseId) {
+              fd.set("caseId", bulkAssignCaseId);
+              assignedAny = true;
+            }
             if (bulkAssignCategory) fd.set("category", bulkAssignCategory);
             const res = await fetch("/api/admin/hair-audit/bulk-upload/images", { method: "POST", body: fd });
             const j = await res.json().catch(() => ({}));
@@ -230,6 +259,7 @@ export default function BulkUploadWizardClient({ batch, initialCases, initialIma
           })
         )
       );
+      if (assignedAny) await refreshBatch();
       if (lastError && ok === 0) setErr(lastError);
       else setMsg(`Uploaded ${ok} image${ok === 1 ? "" : "s"}.`);
     } finally {
@@ -252,6 +282,7 @@ export default function BulkUploadWizardClient({ batch, initialCases, initialIma
         const byId = new Map(updated.map((row) => [row.id, row]));
         return prev.map((row) => byId.get(row.id) ?? row);
       });
+      await refreshBatch();
     } else {
       await refreshBatch();
     }
@@ -280,16 +311,47 @@ export default function BulkUploadWizardClient({ batch, initialCases, initialIma
     setBusy(true);
     setErr(null);
     try {
-      await Promise.all(
-        [...selectedImageIds].map((id) =>
-          fetch(`/api/admin/hair-audit/bulk-upload/images/${id}`, { method: "DELETE" })
-        )
+      const results = await Promise.all(
+        [...selectedImageIds].map(async (id) => {
+          const res = await fetch(`/api/admin/hair-audit/bulk-upload/images/${id}`, { method: "DELETE" });
+          return res.ok;
+        })
       );
+      if (results.some((ok) => !ok)) {
+        throw new Error("Could not delete some images.");
+      }
       setImages((prev) => prev.filter((img) => !selectedImageIds.has(img.id)));
       setSelectedImageIds(new Set());
+      await refreshBatch();
       setMsg("Selected images deleted.");
-    } catch {
-      setErr("Could not delete some images.");
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Could not delete some images.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function syncBatchImagesToReview() {
+    setBusy(true);
+    setErr(null);
+    setMsg(null);
+    try {
+      const res = await fetch(`/api/admin/hair-audit/bulk-upload/batches/${batch.id}/sync-images`, {
+        method: "POST",
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(typeof j.error === "string" ? j.error : "Sync failed");
+      await refreshBatch();
+      const synced = (j.synced ?? 0) + (j.updated ?? 0);
+      const skipped = j.skipped ?? 0;
+      const errors = Array.isArray(j.errors) ? j.errors : [];
+      if (errors.length) {
+        setErr(`Synced ${synced}, skipped ${skipped}, but ${errors.length} error(s) occurred.`);
+      } else {
+        setMsg(`Synced ${synced} image${synced === 1 ? "" : "s"} to case review${skipped ? ` (${skipped} already up to date)` : ""}.`);
+      }
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Sync failed");
     } finally {
       setBusy(false);
     }
@@ -705,6 +767,14 @@ export default function BulkUploadWizardClient({ batch, initialCases, initialIma
               >
                 Assign case
               </button>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void bulkPatchImages({ caseId: null })}
+                className="rounded bg-slate-800 px-2 py-1 text-xs font-semibold text-white disabled:opacity-50"
+              >
+                Unassign case
+              </button>
               <select
                 value={bulkAssignCategory}
                 onChange={(e) => setBulkAssignCategory(e.target.value)}
@@ -740,6 +810,7 @@ export default function BulkUploadWizardClient({ batch, initialCases, initialIma
             {images.map((img) => {
               const caseLabel =
                 savedCases.find((c) => c.id === img.case_id)?.case_label ?? "Unassigned";
+              const badge = imageAssignmentBadge(img, caseLabel);
               return (
                 <li
                   key={img.id}
@@ -750,7 +821,13 @@ export default function BulkUploadWizardClient({ batch, initialCases, initialIma
                   <button type="button" onClick={() => toggleImage(img.id)} className="block w-full text-left">
                     <BulkImageThumb storagePath={img.storage_path} fileName={img.file_name} />
                   </button>
-                  <p className="mt-1 truncate text-[10px] text-slate-400">{caseLabel}</p>
+                  {badge ? (
+                    <p className={`mt-1 rounded px-1.5 py-0.5 text-[10px] font-medium ${badge.className}`}>
+                      {badge.text}
+                    </p>
+                  ) : (
+                    <p className="mt-1 truncate text-[10px] text-slate-400">{caseLabel}</p>
+                  )}
                   <select
                     value={img.case_id ?? ""}
                     onChange={(e) => {
@@ -804,22 +881,40 @@ export default function BulkUploadWizardClient({ batch, initialCases, initialIma
 
       {step === 3 ? (
         <section className="space-y-4">
-          <h2 className="text-lg font-semibold text-white">Review</h2>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold text-white">Review</h2>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => void syncBatchImagesToReview()}
+              className="rounded-lg border border-cyan-500/40 bg-cyan-950/30 px-3 py-1.5 text-xs font-semibold text-cyan-200 hover:bg-cyan-950/50 disabled:opacity-50"
+            >
+              Sync images to case review
+            </button>
+          </div>
           {savedCases.length === 0 ? (
             <p className="text-sm text-slate-400">Save at least one case before review.</p>
           ) : (
             savedCases.map((c) => {
               const readiness = caseReadiness.get(c.id) ?? computeCaseReadiness(casesToDraft([c])[0], 0);
+              const stagedCount = imageCountByCase.get(c.id) ?? 0;
+              const reviewCount = reviewUploadCounts[c.id] ?? 0;
+              const pendingSync = pendingSyncByCase.get(c.id) ?? 0;
               return (
                 <div key={c.id} className="rounded-xl border border-white/10 bg-slate-900/60 p-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <h3 className="font-semibold text-white">{c.case_label ?? c.title}</h3>
                       <p className="mt-1 text-sm text-slate-300">
-                        {c.patient_reference || "No patient reference"} · {readiness.imageCount} image
-                        {readiness.imageCount === 1 ? "" : "s"}
+                        {c.patient_reference || "No patient reference"} · {stagedCount} assigned image
+                        {stagedCount === 1 ? "" : "s"} · {reviewCount} visible in case review
                         {c.graft_count != null ? ` · ${c.graft_count} grafts` : ""}
                       </p>
+                      {pendingSync > 0 ? (
+                        <p className="mt-2 text-xs text-amber-200">
+                          {pendingSync} assigned image{pendingSync === 1 ? "" : "s"} not yet visible in case review — use Sync images to case review.
+                        </p>
+                      ) : null}
                       {readiness.missingFields.length ? (
                         <p className="mt-2 text-xs text-amber-200">
                           Missing: {readiness.missingFields.join(", ")}
