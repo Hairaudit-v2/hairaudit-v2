@@ -12,13 +12,13 @@ export async function GET() {
   const [clinicsRes, doctorsRes] = await Promise.all([
     admin
       .from("clinic_profiles")
-      .select("id, clinic_name, linked_user_id")
+      .select("id, clinic_name, linked_user_id, country, city, clinic_email, clinic_phone, clinic_website")
       .not("linked_user_id", "is", null)
       .order("clinic_name", { ascending: true })
       .limit(500),
     admin
       .from("doctor_profiles")
-      .select("id, doctor_name, linked_user_id, clinic_profile_id")
+      .select("id, doctor_name, doctor_email, linked_user_id, clinic_profile_id, country, city, intake_phone")
       .not("linked_user_id", "is", null)
       .order("doctor_name", { ascending: true })
       .limit(500),
@@ -33,12 +33,18 @@ export async function GET() {
       profileId: c.id,
       name: c.clinic_name,
       userId: c.linked_user_id,
+      clinic_email: c.clinic_email ?? null,
+      city: c.city ?? null,
+      country: c.country ?? null,
     })),
     doctors: (doctorsRes.data ?? []).map((d) => ({
       profileId: d.id,
       name: d.doctor_name,
       userId: d.linked_user_id,
       clinicProfileId: d.clinic_profile_id,
+      doctor_email: d.doctor_email ?? null,
+      city: d.city ?? null,
+      country: d.country ?? null,
     })),
   });
 }

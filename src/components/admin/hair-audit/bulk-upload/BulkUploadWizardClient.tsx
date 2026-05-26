@@ -14,8 +14,10 @@ import type {
 } from "@/lib/hair-audit/bulkUpload/types";
 import { UploadQueue, UPLOAD_LIMITS } from "@/lib/uploads/safeUpload";
 import BulkImageThumb from "./BulkImageThumb";
-
-type ProfileOption = { profileId: string; name: string; userId: string; clinicProfileId?: string | null };
+import BulkBatchProfessionalsPickers, {
+  type BulkProfileClinicOption,
+  type BulkProfileDoctorOption,
+} from "./BulkBatchProfessionalsPickers";
 
 type WizardProps = {
   batch: HairAuditCaseBatchRow;
@@ -81,8 +83,8 @@ export default function BulkUploadWizardClient({ batch, initialCases, initialIma
   const [cases, setCases] = useState<BulkCaseDraftInput[]>(() => casesToDraft(initialCases));
   const [savedCases, setSavedCases] = useState<BulkCaseRow[]>(initialCases);
   const [images, setImages] = useState<BulkCaseImageRow[]>(initialImages);
-  const [clinics, setClinics] = useState<ProfileOption[]>([]);
-  const [doctors, setDoctors] = useState<ProfileOption[]>([]);
+  const [clinics, setClinics] = useState<BulkProfileClinicOption[]>([]);
+  const [doctors, setDoctors] = useState<BulkProfileDoctorOption[]>([]);
   const [selectedImageIds, setSelectedImageIds] = useState<Set<string>>(new Set());
   const [bulkAssignCaseId, setBulkAssignCaseId] = useState("");
   const [bulkAssignCategory, setBulkAssignCategory] = useState("");
@@ -376,40 +378,18 @@ export default function BulkUploadWizardClient({ batch, initialCases, initialIma
                 className="mt-1 w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-white"
               />
             </label>
-            <label className="block">
-              <span className="text-xs font-medium text-slate-400">Clinic</span>
-              <select
-                value={batchDetails.clinic_id ?? ""}
-                onChange={(e) =>
-                  setBatchDetails((d) => ({ ...d, clinic_id: e.target.value || null }))
-                }
-                className="mt-1 w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-white"
-              >
-                <option value="">None</option>
-                {clinics.map((c) => (
-                  <option key={c.userId} value={c.userId}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="block">
-              <span className="text-xs font-medium text-slate-400">Doctor</span>
-              <select
-                value={batchDetails.doctor_id ?? ""}
-                onChange={(e) =>
-                  setBatchDetails((d) => ({ ...d, doctor_id: e.target.value || null }))
-                }
-                className="mt-1 w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-white"
-              >
-                <option value="">None</option>
-                {doctors.map((d) => (
-                  <option key={d.userId} value={d.userId}>
-                    {d.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <BulkBatchProfessionalsPickers
+              batch={batch}
+              batchDetails={batchDetails}
+              setBatchDetails={setBatchDetails}
+              doctors={doctors}
+              setDoctors={setDoctors}
+              clinics={clinics}
+              setClinics={setClinics}
+              setErr={setErr}
+              busy={busy}
+              setBusy={setBusy}
+            />
             {[
               ["shared_surgery_date", "Surgery date", "date"],
               ["shared_location", "Location / clinic site", "text"],
