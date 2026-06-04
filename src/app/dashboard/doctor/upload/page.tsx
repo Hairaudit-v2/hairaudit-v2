@@ -1,5 +1,6 @@
-import DoctorComingSoonPlaceholder from "../DoctorComingSoonPlaceholder";
+import { redirect } from "next/navigation";
 
+// The doctor "upload" slot now routes into the shared Surgery Upload Portal.
 export default function DoctorUploadPage() {
-  return <DoctorComingSoonPlaceholder variant="upload" />;
+  redirect("/dashboard/surgery-upload");
 }

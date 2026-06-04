@@ -381,6 +381,10 @@ export default async function ClinicDashboardPage() {
           <div className="text-sm font-semibold text-slate-900">Submit Case</div>
           <p className="mt-1 text-xs text-slate-600">Create Submitted Cases (clinic-owned audits) with controlled visibility.</p>
         </Link>
+        <Link href="/dashboard/surgery-upload" className="rounded-xl border border-slate-200 bg-white p-4 hover:border-cyan-300 transition-colors">
+          <div className="text-sm font-semibold text-slate-900">Surgery Upload Portal</div>
+          <p className="mt-1 text-xs text-slate-600">Mobile-first capture of surgery photos and case details, during or right after surgery.</p>
+        </Link>
         <div className="rounded-xl border border-slate-200 bg-white p-4">
           <div className="text-sm font-semibold text-slate-900">Portal Mode</div>
           <p className="mt-1 text-xs text-slate-600">{String(portalProfile?.portal_mode ?? "hairaudit_public").replaceAll("_", " ")}</p>

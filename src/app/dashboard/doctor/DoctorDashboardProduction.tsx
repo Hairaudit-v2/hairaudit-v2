@@ -138,8 +138,14 @@ export default function DoctorDashboardProduction({
         <h1 className="text-xl font-semibold text-slate-900">{t("dashboard.doctor.workspaceTitle")}</h1>
         <p className="mt-1 text-sm text-slate-600">{t("dashboard.doctor.workspaceSubtitle")}</p>
         <p className="mt-1 text-xs text-slate-500">{BENCHMARKING_GLOBAL_STANDARDS}</p>
-        <div className="mt-4">
+        <div className="mt-4 flex flex-wrap items-center gap-3">
           <CreateCaseButton variant="premium" dashboardHref="/dashboard/doctor" />
+          <Link
+            href="/dashboard/surgery-upload"
+            className="inline-flex items-center rounded-lg border border-cyan-300 bg-cyan-50 px-4 py-2.5 text-sm font-semibold text-cyan-800 hover:bg-cyan-100"
+          >
+            Surgery Upload Portal
+          </Link>
         </div>
       </section>
 

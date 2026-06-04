@@ -65,6 +65,23 @@ export async function DELETE(req: Request) {
       );
     }
 
+    // Targeted Stage 2 lock: surgery upload photos cannot be removed once the
+    // surgery upload itself has been submitted (the case row stays in 'draft',
+    // so the check above does not cover this). Only affects surgery_photo:* rows.
+    if (String(upload.type ?? "").startsWith("surgery_photo:")) {
+      const { data: surgeryDetails } = await admin
+        .from("surgery_upload_details")
+        .select("status")
+        .eq("case_id", upload.case_id)
+        .maybeSingle();
+      if (surgeryDetails?.status === "submitted") {
+        return NextResponse.json(
+          { error: "This surgery upload has been submitted and cannot be modified." },
+          { status: 409 }
+        );
+      }
+    }
+
     // 4) Delete from Storage (bucket is in the first segment of storage_path)
     // Your storage_path currently looks like: "cases/<caseId>/patient/..."
     // So we delete from the "case-files" bucket using that path.

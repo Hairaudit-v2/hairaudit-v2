@@ -386,6 +386,23 @@ export default async function AuditorDashboardPage({
 
       <BulkUploadDashboardCard />
 
+      <section className="rounded-xl border border-cyan-200 bg-cyan-50/70 p-4 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900">Mobile Surgery Uploads</h2>
+            <p className="mt-0.5 text-sm text-slate-600">
+              Review submitted surgery uploads from clinics and doctors.
+            </p>
+          </div>
+          <Link
+            href="/dashboard/surgery-upload"
+            className="inline-flex items-center gap-2 rounded-lg border border-cyan-400 bg-cyan-100 px-4 py-2 text-sm font-medium text-cyan-900 hover:bg-cyan-200"
+          >
+            Mobile Surgery Uploads →
+          </Link>
+        </div>
+      </section>
+
       <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>

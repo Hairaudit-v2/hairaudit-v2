@@ -23,6 +23,8 @@ import { applyAuditorOverridesToSummary, type OverrideRow } from "@/lib/auditor/
 import UnlockAuditorReviewButton from "./UnlockAuditorReviewButton";
 import VersionHistoryDrawer from "@/components/reports/VersionHistoryDrawer";
 import UploadThumbnailGallery from "@/components/reports/UploadThumbnailGallery";
+import SurgeryUploadReviewPanel from "@/components/surgery-upload/SurgeryUploadReviewPanel";
+import type { SurgeryUploadDetails } from "@/lib/surgeryUpload/fields";
 import LatestReportCard from "@/components/reports/LatestReportCard";
 import InviteClinicContributionCard from "@/components/case/InviteClinicContributionCard";
 import ForensicCaseTimelineViewer from "@/components/reports/ForensicCaseTimelineViewer";
@@ -289,6 +291,20 @@ export default async function Page({
     .select("id, type, storage_path, metadata, created_at")
     .eq("case_id", c.id)
     .order("created_at", { ascending: false });
+
+  // Mobile Surgery Upload Portal (Stage 2): surface structured surgery details +
+  // photo checklist for reviewers when this case has a surgery upload.
+  let surgeryUploadDetails: SurgeryUploadDetails | null = null;
+  try {
+    const { data: sud } = await db
+      .from("surgery_upload_details")
+      .select("*")
+      .eq("case_id", c.id)
+      .maybeSingle();
+    surgeryUploadDetails = (sud as SurgeryUploadDetails | null) ?? null;
+  } catch {
+    /* surgery_upload_details may not exist in older environments */
+  }
 
   // Optional feature: graft integrity must never break case page
   let graftIntegrityEstimate: any = null;
@@ -1232,6 +1248,15 @@ export default async function Page({
           <LatestReportCard report={latestReport as any} caseId={c.id} displayScore={latestReportDisplayScore} />
         </div>
       </section>
+
+      {surgeryUploadDetails && (
+        <div className="mt-6">
+          <SurgeryUploadReviewPanel
+            details={surgeryUploadDetails}
+            uploads={(uploads ?? []) as any}
+          />
+        </div>
+      )}
 
       {upErr && <p className="mt-6 text-sm text-rose-300">{upErr.message}</p>}
       <div className="mt-6">
