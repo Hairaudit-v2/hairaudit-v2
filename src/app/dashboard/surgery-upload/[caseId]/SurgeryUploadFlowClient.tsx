@@ -21,8 +21,9 @@ import {
   type SurgerySlotReviewRow,
 } from "@/lib/surgeryUpload/evidenceReview";
 import SurgeryUploadEvidenceTimeline from "@/components/surgery-upload/SurgeryUploadEvidenceTimeline";
-import SurgeryPhotoExportPackButton from "@/components/surgery-upload/SurgeryPhotoExportPackButton";
+import SurgeryPhotoExportPackPanel from "@/components/surgery-upload/SurgeryPhotoExportPackPanel";
 import { type EvidenceTimelineEvent } from "@/lib/surgeryUpload/evidenceEvents";
+import type { PhotoExportHistoryItem } from "@/lib/surgeryUpload/photoExportHistory";
 import {
   auditIntakeStatusLabel,
   type AuditIntakeStatus,
@@ -106,6 +107,7 @@ export default function SurgeryUploadFlowClient({
   initialSlotReviews = [],
   evidenceEvents = [],
   auditIntakeStatus = null,
+  photoExportHistory = [],
 }: {
   caseId: string;
   userId?: string | null;
@@ -114,6 +116,7 @@ export default function SurgeryUploadFlowClient({
   initialSlotReviews?: SurgerySlotReviewRow[];
   evidenceEvents?: EvidenceTimelineEvent[];
   auditIntakeStatus?: AuditIntakeStatus | null;
+  photoExportHistory?: PhotoExportHistoryItem[];
 }) {
   const router = useRouter();
   const [details, setDetails] = useState<SurgeryUploadDetails>(initialDetails);
@@ -687,6 +690,8 @@ export default function SurgeryUploadFlowClient({
         surgeryPhotoCount={surgeryPhotoCount}
         evidenceEvents={evidenceEvents}
         auditIntakeStatus={auditIntakeStatus}
+        photoExportHistory={photoExportHistory}
+        uploads={uploads}
       />
     );
   }
@@ -777,7 +782,11 @@ export default function SurgeryUploadFlowClient({
         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">Photo export</p>
           <div className="mt-2">
-            <SurgeryPhotoExportPackButton caseId={caseId} surgeryPhotoCount={surgeryPhotoCount} />
+            <SurgeryPhotoExportPackPanel
+              caseId={caseId}
+              uploads={uploads}
+              exportHistory={photoExportHistory}
+            />
           </div>
         </div>
 
@@ -1612,12 +1621,16 @@ function SubmittedConfirmation({
   surgeryPhotoCount,
   evidenceEvents,
   auditIntakeStatus = null,
+  uploads,
+  photoExportHistory = [],
 }: {
   caseId: string;
   details: SurgeryUploadDetails;
   surgeryPhotoCount: number;
   evidenceEvents: EvidenceTimelineEvent[];
   auditIntakeStatus?: AuditIntakeStatus | null;
+  uploads: SurgeryUploadRow[];
+  photoExportHistory?: PhotoExportHistoryItem[];
 }) {
   return (
     <div className="mt-6 space-y-6 pb-10">
@@ -1655,7 +1668,11 @@ function SubmittedConfirmation({
           Available while evidence is under review (submitted, needs more evidence, or accepted).
         </p>
         <div className="mt-2">
-          <SurgeryPhotoExportPackButton caseId={caseId} surgeryPhotoCount={surgeryPhotoCount} />
+          <SurgeryPhotoExportPackPanel
+            caseId={caseId}
+            uploads={uploads}
+            exportHistory={photoExportHistory}
+          />
         </div>
       </div>
 

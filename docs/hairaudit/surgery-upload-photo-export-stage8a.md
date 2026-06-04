@@ -1,8 +1,10 @@
 # Surgery upload — Stage 8A (Case Photo Export Pack)
 
+**Note:** Stage **8B** extends this route with `?slots=`, CRM-oriented manifests, patient-name matching, export history UI, and `export_scope` values `category` / `multi_category`. See [surgery-upload-photo-export-stage8b.md](./surgery-upload-photo-export-stage8b.md).
+
 ## Behaviour
 
-- **Route:** `GET /api/surgery-upload/cases/[caseId]/photo-export` (optional `?slot=<slotKey>`).
+- **Route:** `GET /api/surgery-upload/cases/[caseId]/photo-export` (see 8B for `slot` / `slots`).
 - **Runtime:** Node.js (`export const runtime = "nodejs"`).
 - **Contents:** Only `uploads` rows with `type` matching `surgery_photo:*` and a known checklist slot.
 - **Auth:** Signed-in user; `resolvePhotoPackExportRole` allows **auditor**, **doctor**, **clinic** only (patients always denied). `canAccessCase` must pass for the case.
@@ -17,7 +19,7 @@
 | Max downloaded bytes mid-build | 500 MB (then 413) |
 | Max output ZIP buffer | 2× source cap (safety) then 413 |
 
-In-memory ZIP generation is acceptable for Stage 8A; very large cases should use **`?slot=`** (same limits per request) or contact support — **Stage 8B** can add multi-part or server-side streaming exports.
+In-memory ZIP generation is acceptable; very large cases should use **category / multi-category** exports (`slot` / `slots`) or contact support — future stages may add streaming or multi-part archives.
 
 ## ZIP layout
 
@@ -29,7 +31,7 @@ Per-slot subfolders (only if they contain at least one file):
 
 Files: `<order>-<slot>-<UTC-date>-<shortUploadId>.<ext>`
 
-Root also contains **`manifest.csv`** (no raw storage paths) and **`manifest.json`** (per-row `internal.storage_path` for integrations).
+Root also contains **`manifest.csv`** and **`manifest.json`** — see Stage 8B doc for the CRM-oriented manifest layout (8A shipped a flatter JSON; 8B nests `export` / `case` / `photos`).
 
 ## Logging
 
@@ -38,13 +40,11 @@ Root also contains **`manifest.csv`** (no raw storage paths) and **`manifest.jso
 
 ## UI
 
-- **SurgeryUploadReviewPanel:** export block when `canExportPhotoPack` (case page passes auditor/doctor/clinic).
-- **SurgeryUploadFlowClient:** submitted confirmation + “needs more evidence” flow.
-- **Audit intake queue:** compact link (no local photo count; API enforces).
+- **SurgeryUploadReviewPanel / SurgeryUploadFlowClient:** `SurgeryPhotoExportPackPanel` (Stage 8B) when `canExportPhotoPack` — see 8B doc.
+- **Audit intake queue:** compact `SurgeryPhotoExportPackButton` (full-pack download only).
 
-## Stage 8B ideas
+## Follow-on ideas (Stage 8C+)
 
 - Streaming ZIP / temp file to reduce memory.
-- Multi-select slot export UI.
 - Stronger preflight HEAD/stat on storage for size estimates.
 - Admin “hair audit” role parity if introduced in `profiles.role`.

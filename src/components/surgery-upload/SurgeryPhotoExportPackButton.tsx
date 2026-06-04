@@ -4,6 +4,8 @@ import React, { useCallback, useState } from "react";
 
 const PRIVACY =
   "This export may include patient-identifying information. Download and store it only in authorised clinical systems according to your clinic privacy policy.";
+const CATEGORY_HINT =
+  "Use the category export when your CRM/CMS only needs selected image groups.";
 const CRM_COPY =
   "Use this export pack only for authorised clinical records or approved CRM/CMS systems.";
 
@@ -110,6 +112,7 @@ export default function SurgeryPhotoExportPackButton({
         {loading ? "Preparing download…" : label}
       </button>
       <p className="max-w-xl text-xs text-slate-500">{PRIVACY}</p>
+      <p className="max-w-xl text-xs text-slate-500">{CATEGORY_HINT}</p>
       <p className="max-w-xl text-xs text-slate-500">{CRM_COPY}</p>
       {error && <p className="text-sm text-rose-600">{error}</p>}
     </div>

@@ -1,6 +1,8 @@
 // Stage 8A — ZIP naming, folder layout, and filename sanitisation for surgery photo exports.
 import {
   SURGERY_PHOTO_SLOTS,
+  isValidSurgerySlot,
+  normalizeSurgerySlot,
   slotFromSurgeryType,
   type SurgeryPhotoSlotKey,
 } from "@/lib/surgeryUpload/checklist";
@@ -103,39 +105,53 @@ export function buildExportedImageBasename(args: {
   return base.replace(/[^a-zA-Z0-9._-]/g, "-").slice(0, 180);
 }
 
-export function pickPatientFacingLabel(args: {
+/** CRM / filename-safe patient display name from profile (never raw email/phone). */
+export function sanitizePatientDisplayName(raw: string | null | undefined): string {
+  if (!raw || typeof raw !== "string") return "";
+  let s = raw.replace(/@/g, " ").trim();
+  s = stripRiskyFilenameContent(s);
+  return sanitizePathSegment(s, 80);
+}
+
+/**
+ * Resolve human-facing case reference for filenames (not necessarily the same as patient_reference CSV column).
+ */
+export function resolveCaseReferenceForExport(args: {
   patientReference: string | null;
   caseTitle: string | null;
+  shortCaseId: string;
 }): string {
-  const ref = args.patientReference?.trim();
-  if (ref) return stripRiskyFilenameContent(ref);
-  const title = args.caseTitle?.trim();
-  if (title) return stripRiskyFilenameContent(title);
-  return "";
+  const pr = args.patientReference?.trim();
+  if (pr) return stripRiskyFilenameContent(pr);
+  const t = args.caseTitle?.trim();
+  if (t) return stripRiskyFilenameContent(t);
+  return args.shortCaseId;
 }
 
 export function buildZipDisplayName(args: {
-  patientLabel: string;
+  /** Profile display name when available (Stage 8B). */
+  patientName: string;
   caseReference: string;
   surgeryDate: string | null;
   shortCase: string;
 }): string {
   const datePart = args.surgeryDate?.trim() || "unknown-date";
-  const ref = sanitizePathSegment(
-    stripRiskyFilenameContent(args.caseReference || args.shortCase),
-    48
-  );
-  const nameSeg = args.patientLabel
-    ? sanitizePathSegment(stripRiskyFilenameContent(args.patientLabel), 36)
+  const ref = sanitizePathSegment(stripRiskyFilenameContent(args.caseReference || args.shortCase), 48);
+  const nameSeg = args.patientName
+    ? sanitizePathSegment(stripRiskyFilenameContent(args.patientName), 36)
     : "";
   if (nameSeg) {
     return `HairAudit-Surgery-Photos-${nameSeg}-${ref}-${datePart}.zip`;
   }
-  return `HairAudit-Surgery-Photos-${ref}-${datePart}.zip`;
+  if (ref && ref !== args.shortCase) {
+    return `HairAudit-Surgery-Photos-${ref}-${datePart}.zip`;
+  }
+  return `HairAudit-Surgery-Photos-${args.shortCase}-${datePart}.zip`;
 }
 
 /** ASCII-safe Content-Disposition value (lowercase, tight charset). */
 export function buildZipAttachmentFilename(args: {
+  patientName: string;
   caseReference: string;
   surgeryDate: string | null;
   shortCase: string;
@@ -145,19 +161,27 @@ export function buildZipAttachmentFilename(args: {
     stripRiskyFilenameContent(args.caseReference || args.shortCase).toLowerCase().replace(/\s+/g, "-"),
     40
   ).replace(/[^a-z0-9._-]/g, "");
-  return `hairaudit-surgery-photos-${ref}-${datePart}.zip`;
+  const nameSeg = args.patientName
+    ? sanitizePathSegment(
+        stripRiskyFilenameContent(args.patientName).toLowerCase().replace(/\s+/g, "-"),
+        28
+      ).replace(/[^a-z0-9._-]/g, "")
+    : "";
+  if (nameSeg) return `hairaudit-surgery-photos-${nameSeg}-${ref}-${datePart}.zip`;
+  if (ref) return `hairaudit-surgery-photos-${ref}-${datePart}.zip`;
+  return `hairaudit-surgery-photos-${args.shortCase}-${datePart}.zip`;
 }
 
 export function buildZipRootFolderName(args: {
-  patientLabel: string;
+  patientName: string;
   caseReference: string;
   shortCase: string;
 }): string {
   const ref = sanitizePathSegment(stripRiskyFilenameContent(args.caseReference || args.shortCase), 40);
-  const label = args.patientLabel
-    ? sanitizePathSegment(stripRiskyFilenameContent(args.patientLabel), 32)
+  const nameSeg = args.patientName
+    ? sanitizePathSegment(stripRiskyFilenameContent(args.patientName), 28)
     : "";
-  const core = label ? `Case-${label}-${ref}` : `Case-${ref}`;
+  const core = nameSeg ? `Case-${nameSeg}-${ref}` : `Case-${ref}`;
   return sanitizePathSegment(`${core}-${args.shortCase}`, 120);
 }
 
@@ -172,15 +196,17 @@ export type SurgeryUploadRowForExport = {
 
 export function filterSurgeryPhotoExports(
   rows: SurgeryUploadRowForExport[],
-  slotFilter: SurgeryPhotoSlotKey | null
+  /** When null or empty, include all known surgery_photo slots. */
+  slotsFilter: Set<SurgeryPhotoSlotKey> | null
 ): SurgeryUploadRowForExport[] {
   const list: SurgeryUploadRowForExport[] = [];
+  const activeFilter = slotsFilter && slotsFilter.size > 0 ? slotsFilter : null;
   for (const row of rows) {
     const t = String(row.type ?? "");
     if (!t.startsWith("surgery_photo:")) continue;
     const slot = slotFromSurgeryType(t);
     if (!slot) continue;
-    if (slotFilter && slot !== slotFilter) continue;
+    if (activeFilter && !activeFilter.has(slot)) continue;
     list.push(row);
   }
   list.sort((a, b) => {
@@ -192,6 +218,60 @@ export function filterSurgeryPhotoExports(
     return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
   });
   return list;
+}
+
+/** Count surgery_photo uploads per checklist slot (known slots only). */
+export function countSurgeryPhotosBySlot(
+  rows: Pick<SurgeryUploadRowForExport, "type">[]
+): Map<SurgeryPhotoSlotKey, number> {
+  const counts = new Map<SurgeryPhotoSlotKey, number>();
+  for (const row of rows) {
+    const slot = slotFromSurgeryType(String(row.type ?? ""));
+    if (!slot) continue;
+    counts.set(slot, (counts.get(slot) ?? 0) + 1);
+  }
+  return counts;
+}
+
+/**
+ * Parse `slot` and `slots` query params. If both are non-empty → error.
+ * `slots` is comma-separated slot keys. Returns a set for partial export, or null for all.
+ */
+export function parsePhotoExportSlotParams(searchParams: URLSearchParams):
+  | { ok: true; slots: Set<SurgeryPhotoSlotKey> | null }
+  | { ok: false; error: string } {
+  const rawSlot = searchParams.get("slot")?.trim() ?? "";
+  const rawSlots = searchParams.get("slots")?.trim() ?? "";
+  if (rawSlot && rawSlots) {
+    return { ok: false, error: "Use either slot or slots, not both." };
+  }
+  if (rawSlots) {
+    const parts = rawSlots
+      .split(",")
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean);
+    if (parts.length === 0) {
+      return { ok: false, error: "slots must list at least one category." };
+    }
+    if (parts.length > SURGERY_PHOTO_SLOTS.length) {
+      return { ok: false, error: "Too many categories selected." };
+    }
+    const out = new Set<SurgeryPhotoSlotKey>();
+    for (const p of parts) {
+      if (!isValidSurgerySlot(p)) {
+        return { ok: false, error: `Invalid photo slot: ${p}` };
+      }
+      out.add(normalizeSurgerySlot(p));
+    }
+    return { ok: true, slots: out };
+  }
+  if (rawSlot) {
+    if (!isValidSurgerySlot(rawSlot)) {
+      return { ok: false, error: "Invalid photo slot." };
+    }
+    return { ok: true, slots: new Set<SurgeryPhotoSlotKey>([normalizeSurgerySlot(rawSlot)]) };
+  }
+  return { ok: true, slots: null };
 }
 
 export function estimateUploadBytes(meta: Record<string, unknown> | null): number | null {

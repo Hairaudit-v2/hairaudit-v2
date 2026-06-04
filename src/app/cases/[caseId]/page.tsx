@@ -29,6 +29,7 @@ import SurgeryUploadReviewPanel, {
 import type { SurgeryUploadDetails } from "@/lib/surgeryUpload/fields";
 import type { SurgerySlotReviewRow } from "@/lib/surgeryUpload/evidenceReview";
 import { loadEvidenceEvents, type EvidenceTimelineEvent } from "@/lib/surgeryUpload/evidenceEvents";
+import { loadPhotoExportHistory } from "@/lib/surgeryUpload/photoExportHistory";
 import { loadAuditIntakeByCase } from "@/lib/surgeryUpload/auditIntakeQuery";
 import { SURGERY_UPLOAD_REPORT_KIND_EVIDENCE_REVIEW_V1 } from "@/lib/surgeryUpload/surgeryUploadReportPipelineStage7a";
 import { filterForensicAuditReports } from "@/lib/reports/forensicReportsFilter";
@@ -304,6 +305,7 @@ export default async function Page({
   let surgeryUploadDetails: SurgeryUploadDetails | null = null;
   let surgerySlotReviews: SurgerySlotReviewRow[] = [];
   let surgeryEvidenceEvents: EvidenceTimelineEvent[] = [];
+  let surgeryPhotoExportHistory: Awaited<ReturnType<typeof loadPhotoExportHistory>> = [];
   try {
     const { data: sud } = await db
       .from("surgery_upload_details")
@@ -327,6 +329,7 @@ export default async function Page({
     // Stage 6A: read-only evidence-review history. Case access is already enforced
     // above (the `allowed` gate), so the loader can trust this db client.
     surgeryEvidenceEvents = await loadEvidenceEvents(db, c.id);
+    surgeryPhotoExportHistory = await loadPhotoExportHistory(db, c.id);
   }
 
   // Optional feature: graft integrity must never break case page
@@ -1391,6 +1394,7 @@ export default async function Page({
             auditIntake={surgeryAuditIntakeView}
             evidenceReportPdfPath={surgeryEvidenceReportPdfPath}
             evidenceReportRequestedByLabel={evidenceReportRequestedByLabel}
+            photoExportHistory={surgeryPhotoExportHistory}
           />
         </div>
       )}

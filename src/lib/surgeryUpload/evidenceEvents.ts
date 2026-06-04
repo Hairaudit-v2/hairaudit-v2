@@ -109,6 +109,17 @@ function readNumber(meta: Record<string, unknown> | null, ...keys: string[]): nu
   return null;
 }
 
+function readStringArray(meta: Record<string, unknown> | null, key: string): string[] | null {
+  if (!meta) return null;
+  const v = meta[key];
+  if (!Array.isArray(v)) return null;
+  const out: string[] = [];
+  for (const item of v) {
+    if (typeof item === "string" && item.trim()) out.push(item.trim());
+  }
+  return out.length > 0 ? out : null;
+}
+
 function readBool(meta: Record<string, unknown> | null, key: string): boolean {
   return !!(meta && meta[key] === true);
 }
@@ -235,17 +246,35 @@ function buildSummary(
       };
     case "photo_export_created": {
       const count = readNumber(meta, "photoCount", "count");
-      const scope = readString(meta, "scope");
-      const slotKey = readString(meta, "slotKey");
+      const exportScope = readString(meta, "exportScope", "scope");
       const skipped = readNumber(meta, "skippedCount");
-      const scopeLabel =
-        scope === "slot" && slotKey ? `category “${surgerySlotLabel(slotKey)}”` : "all categories";
+      let slotKeys = readStringArray(meta, "slotKeys");
+      const legacySlot = readString(meta, "slotKey");
+      if ((!slotKeys || slotKeys.length === 0) && legacySlot) {
+        slotKeys = [legacySlot];
+      }
+      const catCount = readNumber(meta, "categoryCount");
+
+      let scopePhrase = "all categories";
+      if (exportScope === "multi_category" || (slotKeys && slotKeys.length > 1)) {
+        const n = catCount ?? slotKeys?.length ?? 0;
+        scopePhrase = n > 0 ? `${n} selected categories` : "multiple categories";
+      } else if (
+        exportScope === "category" ||
+        exportScope === "slot" ||
+        (slotKeys && slotKeys.length === 1)
+      ) {
+        const sk = slotKeys?.[0] ?? legacySlot;
+        if (sk) scopePhrase = `category “${surgerySlotLabel(sk)}”`;
+        else scopePhrase = "single category";
+      }
+
       const summary =
         count != null
           ? skipped != null && skipped > 0
-            ? `Surgery photos exported (${count} file${count === 1 ? "" : "s"}, ${scopeLabel}; ${skipped} missing from storage).`
-            : `Surgery photos exported (${count} file${count === 1 ? "" : "s"}, ${scopeLabel}).`
-          : `Surgery photos exported (${scopeLabel}).`;
+            ? `Surgery photos exported (${count} file${count === 1 ? "" : "s"}, ${scopePhrase}; ${skipped} missing from storage).`
+            : `Surgery photos exported (${count} file${count === 1 ? "" : "s"}, ${scopePhrase}).`
+          : `Surgery photos exported (${scopePhrase}).`;
       return { summary, note: null };
     }
     case "photo_export_failed":

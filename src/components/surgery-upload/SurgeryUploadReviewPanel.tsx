@@ -27,6 +27,7 @@ import SurgeryUploadEvidenceWorkspace, {
   computeEvidenceWorkspaceSummary,
 } from "@/components/surgery-upload/SurgeryUploadEvidenceWorkspace";
 import { type EvidenceTimelineEvent } from "@/lib/surgeryUpload/evidenceEvents";
+import type { PhotoExportHistoryItem } from "@/lib/surgeryUpload/photoExportHistory";
 import {
   AUDIT_HANDOFF_STATUS_LABELS,
   computeAuditHandoffEligibility,
@@ -40,7 +41,7 @@ import {
   type AuditIntakeStatus,
 } from "@/lib/surgeryUpload/auditIntake";
 import Link from "next/link";
-import SurgeryPhotoExportPackButton from "@/components/surgery-upload/SurgeryPhotoExportPackButton";
+import SurgeryPhotoExportPackPanel from "@/components/surgery-upload/SurgeryPhotoExportPackPanel";
 
 /** Sanitized audit-intake view passed to the review panel (no internal ids). */
 export type SurgeryAuditIntakeView = {
@@ -89,6 +90,7 @@ export default function SurgeryUploadReviewPanel({
   auditIntake = null,
   evidenceReportPdfPath = null,
   evidenceReportRequestedByLabel = null,
+  photoExportHistory = [],
 }: {
   details: SurgeryUploadDetails;
   uploads: UploadRow[];
@@ -103,6 +105,8 @@ export default function SurgeryUploadReviewPanel({
   evidenceReportPdfPath?: string | null;
   /** Stage 7C: display name for evidence_report_requested_by (resolved on server). */
   evidenceReportRequestedByLabel?: string | null;
+  /** Stage 8B: recent surgery photo export attempts (sanitised). */
+  photoExportHistory?: PhotoExportHistoryItem[];
 }) {
   const surgeryUploads = useMemo(
     () => uploads.filter((u) => slotFromSurgeryType(u.type) !== null),
@@ -268,7 +272,11 @@ export default function SurgeryUploadReviewPanel({
         <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">Photo export</p>
           <div className="mt-2">
-            <SurgeryPhotoExportPackButton caseId={caseId} surgeryPhotoCount={surgeryUploads.length} />
+            <SurgeryPhotoExportPackPanel
+              caseId={caseId}
+              uploads={uploads}
+              exportHistory={photoExportHistory}
+            />
           </div>
         </div>
       )}

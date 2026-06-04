@@ -7,6 +7,7 @@ import { resolveSurgeryUploadActor } from "@/lib/surgeryUpload/access";
 import type { SurgeryUploadDetails } from "@/lib/surgeryUpload/fields";
 import type { SurgerySlotReviewRow } from "@/lib/surgeryUpload/evidenceReview";
 import { loadEvidenceEvents, type EvidenceTimelineEvent } from "@/lib/surgeryUpload/evidenceEvents";
+import { loadPhotoExportHistory } from "@/lib/surgeryUpload/photoExportHistory";
 import { loadAuditIntakeByCase } from "@/lib/surgeryUpload/auditIntakeQuery";
 import type { AuditIntakeStatus } from "@/lib/surgeryUpload/auditIntake";
 import SurgeryUploadFlowClient, { type SurgeryUploadRow } from "./SurgeryUploadFlowClient";
@@ -72,6 +73,7 @@ export default async function SurgeryUploadCasePage({
   // Stage 6A: read-only evidence-review history for clinic/doctor visibility.
   // Case access was already enforced above via canAccessCase.
   const evidenceEvents: EvidenceTimelineEvent[] = await loadEvidenceEvents(admin, caseId);
+  const photoExportHistory = await loadPhotoExportHistory(admin, caseId);
 
   // Stage 6C: read-only audit intake status (bare status only on the mobile flow).
   const intake = await loadAuditIntakeByCase(admin, caseId);
@@ -95,6 +97,7 @@ export default async function SurgeryUploadCasePage({
         initialSlotReviews={slotReviews}
         evidenceEvents={evidenceEvents}
         auditIntakeStatus={auditIntakeStatus}
+        photoExportHistory={photoExportHistory}
       />
     </div>
   );
