@@ -5,6 +5,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { canAccessCase } from "@/lib/case-access";
 import { resolveSurgeryUploadActor } from "@/lib/surgeryUpload/access";
 import type { SurgeryUploadDetails } from "@/lib/surgeryUpload/fields";
+import type { SurgerySlotReviewRow } from "@/lib/surgeryUpload/evidenceReview";
 import SurgeryUploadFlowClient, { type SurgeryUploadRow } from "./SurgeryUploadFlowClient";
 
 export const dynamic = "force-dynamic";
@@ -53,6 +54,18 @@ export default async function SurgeryUploadCasePage({
     .eq("case_id", caseId)
     .order("created_at", { ascending: false });
 
+  // Stage 5: per-slot reviewer decisions (so the flow can show which slots need more).
+  let slotReviews: SurgerySlotReviewRow[] = [];
+  try {
+    const { data: slotRows } = await admin
+      .from("surgery_upload_slot_reviews")
+      .select("case_id, slot_key, status, reviewer_notes, reviewed_by, reviewed_at")
+      .eq("case_id", caseId);
+    slotReviews = (slotRows as SurgerySlotReviewRow[] | null) ?? [];
+  } catch {
+    /* Stage 5 table may not exist yet in older environments */
+  }
+
   return (
     <div className="mx-auto w-full max-w-2xl px-4 pb-28">
       <div className="pt-2">
@@ -68,6 +81,7 @@ export default async function SurgeryUploadCasePage({
         userId={user.id}
         initialDetails={details as SurgeryUploadDetails}
         initialUploads={(uploads ?? []) as SurgeryUploadRow[]}
+        initialSlotReviews={slotReviews}
       />
     </div>
   );

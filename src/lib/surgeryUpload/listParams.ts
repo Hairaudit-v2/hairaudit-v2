@@ -3,6 +3,7 @@
 // flows into a server-side query passes through here first so raw user input
 // never reaches the query builder unchecked.
 import { isValidProcedureType } from "./fields";
+import { isEvidenceReviewStatus, type EvidenceReviewStatus } from "./evidenceReview";
 
 /** Allowed page sizes (default first). Anything else sanitizes to the default. */
 export const SURGERY_PAGE_SIZES = [25, 50, 100] as const;
@@ -15,9 +16,14 @@ export const MAX_CLINIC_NAME_FILTER_LENGTH = 200;
 
 export type SurgeryStatusFilter = "all" | "draft" | "submitted";
 
+/** "" means all review statuses; otherwise a valid EvidenceReviewStatus. */
+export type SurgeryReviewStatusFilter = "" | EvidenceReviewStatus;
+
 /** Sanitized, query-ready filter state (no pagination). */
 export type SurgeryUploadFilters = {
   status: SurgeryStatusFilter;
+  /** Stage 5: evidence review status filter ("" = all). */
+  reviewStatus: SurgeryReviewStatusFilter;
   /** "" | "id:<uuid>" | "name:<lowercased>" | "__unknown__" */
   clinic: string;
   /** Trimmed, length-limited free text for a case-insensitive partial match. */
@@ -94,6 +100,11 @@ export function parseSurgeryUploadSearchParams(
   const status: SurgeryStatusFilter =
     statusRaw === "draft" || statusRaw === "submitted" ? statusRaw : "all";
 
+  const reviewStatusRaw = firstValue(raw.reviewStatus).trim();
+  const reviewStatus: SurgeryReviewStatusFilter = isEvidenceReviewStatus(reviewStatusRaw)
+    ? reviewStatusRaw
+    : "";
+
   const procedureRaw = firstValue(raw.procedure).trim();
   const procedure = isValidProcedureType(procedureRaw) ? procedureRaw : "";
 
@@ -115,13 +126,14 @@ export function parseSurgeryUploadSearchParams(
   const pageRaw = Math.floor(Number(firstValue(raw.page)));
   const page = Number.isFinite(pageRaw) && pageRaw >= 1 ? pageRaw : 1;
 
-  return { status, clinic, surgeon, procedure, missing, from, to, page, pageSize };
+  return { status, reviewStatus, clinic, surgeon, procedure, missing, from, to, page, pageSize };
 }
 
 /** True when any non-default filter is active (drives empty-state copy / clear UI). */
 export function hasActiveSurgeryFilters(f: SurgeryUploadFilters): boolean {
   return (
     f.status !== "all" ||
+    Boolean(f.reviewStatus) ||
     Boolean(f.clinic) ||
     Boolean(f.surgeon) ||
     Boolean(f.procedure) ||

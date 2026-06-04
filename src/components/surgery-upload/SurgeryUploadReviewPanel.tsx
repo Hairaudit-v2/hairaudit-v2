@@ -10,6 +10,17 @@ import {
   type ResolvedSurgerySlot,
 } from "@/lib/surgeryUpload/checklist";
 import { SURGERY_PROCEDURE_TYPES, type SurgeryUploadDetails } from "@/lib/surgeryUpload/fields";
+import {
+  EVIDENCE_REVIEW_ACTION_STATUSES,
+  EVIDENCE_REVIEW_STATUS_LABELS,
+  SLOT_REVIEW_ACTION_STATUSES,
+  SLOT_REVIEW_STATUS_LABELS,
+  evidenceReviewStatusLabel,
+  slotReviewStatusLabel,
+  type EvidenceReviewStatus,
+  type SlotReviewStatus,
+  type SurgerySlotReviewRow,
+} from "@/lib/surgeryUpload/evidenceReview";
 
 type UploadRow = {
   id: string;
@@ -18,6 +29,16 @@ type UploadRow = {
   metadata: unknown;
   created_at: string;
 };
+
+type SaveState = "idle" | "saving" | "saved" | "error";
+
+function hasLowResWarning(uploads: UploadRow[]): boolean {
+  return uploads.some((u) => {
+    const m = u.metadata as Record<string, unknown> | null;
+    if (!m) return false;
+    return Boolean(m.low_resolution) || Boolean(m.quality_warning) || m.resolution_flag === "low";
+  });
+}
 
 const PROCEDURE_LABELS = Object.fromEntries(
   SURGERY_PROCEDURE_TYPES.map((p) => [p.value, p.label])
@@ -32,9 +53,15 @@ function yesNo(v: boolean | null): string {
 export default function SurgeryUploadReviewPanel({
   details,
   uploads,
+  caseId,
+  isAuditor = false,
+  initialSlotReviews = [],
 }: {
   details: SurgeryUploadDetails;
   uploads: UploadRow[];
+  caseId: string;
+  isAuditor?: boolean;
+  initialSlotReviews?: SurgerySlotReviewRow[];
 }) {
   const surgeryUploads = useMemo(
     () => uploads.filter((u) => slotFromSurgeryType(u.type) !== null),
@@ -79,6 +106,35 @@ export default function SurgeryUploadReviewPanel({
   const requirementMessages = useMemo(
     () => completion.failures.map((f) => f.message),
     [completion.failures]
+  );
+
+  // Stage 5: per-slot reviewer decisions, keyed by slot_key.
+  const [slotReviews, setSlotReviews] = useState<Record<string, SurgerySlotReviewRow>>(() => {
+    const map: Record<string, SurgerySlotReviewRow> = {};
+    for (const r of initialSlotReviews) map[r.slot_key] = r;
+    return map;
+  });
+
+  const saveSlotReview = useCallback(
+    async (slotKey: string, status: SlotReviewStatus, reviewerNotes: string): Promise<boolean> => {
+      try {
+        const res = await fetch(`/api/surgery-upload/cases/${caseId}/slot-review`, {
+          method: "PATCH",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ slotKey, status, reviewerNotes }),
+        });
+        const json = (await res.json().catch(() => ({}))) as {
+          ok?: boolean;
+          slotReview?: SurgerySlotReviewRow;
+        };
+        if (!res.ok || !json.ok || !json.slotReview) return false;
+        setSlotReviews((prev) => ({ ...prev, [slotKey]: json.slotReview! }));
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    [caseId]
   );
 
   const [preview, setPreview] = useState<{
@@ -162,6 +218,11 @@ export default function SurgeryUploadReviewPanel({
         </p>
       )}
 
+      {/* Stage 5: overall evidence review (auditor controls / read-only feedback) */}
+      {submitted && (
+        <OverallReviewSection details={details} caseId={caseId} isAuditor={isAuditor} />
+      )}
+
       {/* Required-photo completeness for reviewers (count-aware) */}
       {requirementMessages.length > 0 ? (
         <div className="mt-3 rounded-xl border border-amber-300 bg-amber-50 p-3">
@@ -219,6 +280,10 @@ export default function SurgeryUploadReviewPanel({
         slots={requiredGroup}
         uploadsBySlot={uploadsBySlot}
         onPreview={openPreview}
+        showReviews={submitted}
+        isAuditor={isAuditor}
+        slotReviews={slotReviews}
+        onSaveSlotReview={saveSlotReview}
       />
       {optionalGroup.length > 0 && (
         <PhotoGroup
@@ -226,6 +291,10 @@ export default function SurgeryUploadReviewPanel({
           slots={optionalGroup}
           uploadsBySlot={uploadsBySlot}
           onPreview={openPreview}
+          showReviews={submitted}
+          isAuditor={isAuditor}
+          slotReviews={slotReviews}
+          onSaveSlotReview={saveSlotReview}
         />
       )}
       {additionalGroup.length > 0 && (
@@ -235,6 +304,10 @@ export default function SurgeryUploadReviewPanel({
           slots={additionalGroup}
           uploadsBySlot={uploadsBySlot}
           onPreview={openPreview}
+          showReviews={submitted}
+          isAuditor={isAuditor}
+          slotReviews={slotReviews}
+          onSaveSlotReview={saveSlotReview}
         />
       )}
 
@@ -284,12 +357,24 @@ function PhotoGroup({
   slots,
   uploadsBySlot,
   onPreview,
+  showReviews = false,
+  isAuditor = false,
+  slotReviews = {},
+  onSaveSlotReview,
 }: {
   title: string;
   subtitle?: string;
   slots: readonly ResolvedSurgerySlot[];
   uploadsBySlot: Record<string, UploadRow[]>;
   onPreview: (label: string, slotUploads: UploadRow[], index: number) => void;
+  showReviews?: boolean;
+  isAuditor?: boolean;
+  slotReviews?: Record<string, SurgerySlotReviewRow>;
+  onSaveSlotReview?: (
+    slotKey: string,
+    status: SlotReviewStatus,
+    reviewerNotes: string
+  ) => Promise<boolean>;
 }) {
   return (
     <div className="mt-5">
@@ -300,6 +385,8 @@ function PhotoGroup({
           const existing = uploadsBySlot[slot.key] ?? [];
           const count = existing.length;
           const status = slotStatus(slot, count);
+          const review = slotReviews[slot.key] ?? null;
+          const lowRes = hasLowResWarning(existing);
           return (
             <div key={slot.key} className="rounded-xl border border-slate-200 p-3">
               <div className="flex items-center justify-between gap-2">
@@ -307,11 +394,16 @@ function PhotoGroup({
                   {slot.label}
                   <span className="ml-1 font-normal text-slate-500">— {status.countText}</span>
                 </p>
-                <span
-                  className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${status.cls}`}
-                >
-                  {status.label}
-                </span>
+                <div className="flex shrink-0 items-center gap-1.5">
+                  {review && review.status !== "not_reviewed" && (
+                    <SlotReviewBadge status={review.status} />
+                  )}
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-xs font-semibold ${status.cls}`}
+                  >
+                    {status.label}
+                  </span>
+                </div>
               </div>
               {count > 0 ? (
                 <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4">
@@ -331,9 +423,268 @@ function PhotoGroup({
                   No photos uploaded for this category.
                 </p>
               )}
+              {lowRes && (
+                <p className="mt-2 text-xs font-medium text-amber-700">
+                  Low-resolution warning detected on one or more images. Review quality before accepting.
+                </p>
+              )}
+              {showReviews &&
+                (isAuditor && onSaveSlotReview ? (
+                  <SlotReviewEditor
+                    slotKey={slot.key}
+                    review={review}
+                    onSave={onSaveSlotReview}
+                  />
+                ) : (
+                  <SlotReviewFeedback review={review} />
+                ))}
             </div>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+function slotBadgeClass(status: SlotReviewStatus): string {
+  switch (status) {
+    case "accepted":
+      return "bg-emerald-100 text-emerald-800";
+    case "poor_quality":
+      return "bg-rose-100 text-rose-800";
+    case "needs_more_photos":
+      return "bg-amber-100 text-amber-800";
+    case "not_applicable":
+      return "bg-slate-200 text-slate-600";
+    default:
+      return "bg-slate-100 text-slate-500";
+  }
+}
+
+function SlotReviewBadge({ status }: { status: SlotReviewStatus }) {
+  return (
+    <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${slotBadgeClass(status)}`}>
+      {slotReviewStatusLabel(status)}
+    </span>
+  );
+}
+
+/** Read-only per-slot feedback for clinic/doctor users. */
+function SlotReviewFeedback({ review }: { review: SurgerySlotReviewRow | null }) {
+  if (!review || review.status === "not_reviewed") return null;
+  const emphasis =
+    review.status === "poor_quality"
+      ? "border-rose-200 bg-rose-50"
+      : review.status === "needs_more_photos"
+        ? "border-amber-200 bg-amber-50"
+        : "border-slate-200 bg-slate-50";
+  return (
+    <div className={`mt-2 rounded-lg border p-2 text-xs ${emphasis}`}>
+      <p className="font-semibold text-slate-700">
+        Reviewer: {slotReviewStatusLabel(review.status)}
+      </p>
+      {review.reviewer_notes && <p className="mt-0.5 text-slate-600">{review.reviewer_notes}</p>}
+    </div>
+  );
+}
+
+/** Auditor-only per-slot review editor. */
+function SlotReviewEditor({
+  slotKey,
+  review,
+  onSave,
+}: {
+  slotKey: string;
+  review: SurgerySlotReviewRow | null;
+  onSave: (slotKey: string, status: SlotReviewStatus, reviewerNotes: string) => Promise<boolean>;
+}) {
+  const [status, setStatus] = useState<SlotReviewStatus>(review?.status ?? "not_reviewed");
+  const [notes, setNotes] = useState<string>(review?.reviewer_notes ?? "");
+  const [save, setSave] = useState<SaveState>("idle");
+
+  const dirty =
+    status !== (review?.status ?? "not_reviewed") || notes !== (review?.reviewer_notes ?? "");
+
+  const handleSave = useCallback(async () => {
+    if (status === "not_reviewed") return;
+    setSave("saving");
+    const ok = await onSave(slotKey, status, notes.trim());
+    setSave(ok ? "saved" : "error");
+    if (ok) setTimeout(() => setSave("idle"), 1500);
+  }, [onSave, slotKey, status, notes]);
+
+  return (
+    <div className="mt-3 rounded-lg border border-cyan-200 bg-cyan-50/60 p-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <label className="text-xs font-semibold text-slate-600">Slot review</label>
+        <select
+          value={status}
+          onChange={(e) => setStatus(e.target.value as SlotReviewStatus)}
+          className="rounded-md border border-slate-300 bg-white px-2 py-1 text-xs text-slate-800"
+        >
+          <option value="not_reviewed">Not reviewed</option>
+          {SLOT_REVIEW_ACTION_STATUSES.map((s) => (
+            <option key={s} value={s}>
+              {SLOT_REVIEW_STATUS_LABELS[s]}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={!dirty || save === "saving" || status === "not_reviewed"}
+          className="rounded-md bg-cyan-600 px-3 py-1 text-xs font-semibold text-white disabled:opacity-50"
+        >
+          {save === "saving" ? "Saving…" : "Save review"}
+        </button>
+        {save === "saved" && <span className="text-xs font-medium text-emerald-700">Saved</span>}
+        {save === "error" && <span className="text-xs font-medium text-rose-700">Failed</span>}
+      </div>
+      <textarea
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        rows={2}
+        placeholder="Reviewer notes (visible to clinic/doctor)"
+        className="mt-2 w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-xs text-slate-800"
+      />
+    </div>
+  );
+}
+
+/** Overall evidence review: auditor controls or read-only feedback. */
+function OverallReviewSection({
+  details,
+  caseId,
+  isAuditor,
+}: {
+  details: SurgeryUploadDetails;
+  caseId: string;
+  isAuditor: boolean;
+}) {
+  const initialStatus = (details.evidence_review_status as EvidenceReviewStatus) ?? "not_reviewed";
+  const [status, setStatus] = useState<EvidenceReviewStatus>(
+    initialStatus === "not_reviewed" ? "in_review" : initialStatus
+  );
+  const [notes, setNotes] = useState<string>(details.evidence_review_notes ?? "");
+  const [requestMessage, setRequestMessage] = useState<string>(
+    details.evidence_request_message ?? ""
+  );
+  const [currentStatus, setCurrentStatus] = useState<EvidenceReviewStatus>(initialStatus);
+  const [savedNotes, setSavedNotes] = useState<string>(details.evidence_review_notes ?? "");
+  const [savedMessage, setSavedMessage] = useState<string>(details.evidence_request_message ?? "");
+  const [save, setSave] = useState<SaveState>("idle");
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSave = useCallback(async () => {
+    setSave("saving");
+    setError(null);
+    try {
+      const res = await fetch(`/api/surgery-upload/cases/${caseId}/evidence-review`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          evidenceReviewStatus: status,
+          evidenceReviewNotes: notes.trim(),
+          evidenceRequestMessage: status === "needs_more_evidence" ? requestMessage.trim() : undefined,
+        }),
+      });
+      const json = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+      if (!res.ok || !json.ok) {
+        setSave("error");
+        setError(json.error ?? "Could not save review");
+        return;
+      }
+      setCurrentStatus(status);
+      setSavedNotes(notes.trim());
+      if (status === "needs_more_evidence") setSavedMessage(requestMessage.trim());
+      setSave("saved");
+      setTimeout(() => setSave("idle"), 1500);
+    } catch {
+      setSave("error");
+      setError("Could not save review");
+    }
+  }, [caseId, status, notes, requestMessage]);
+
+  if (!isAuditor) {
+    // Read-only feedback for clinic/doctor users.
+    if (currentStatus === "not_reviewed") return null;
+    return (
+      <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-sm font-semibold text-slate-700">Evidence review</p>
+          <span className="rounded-full bg-slate-200 px-2.5 py-0.5 text-xs font-semibold text-slate-700">
+            {evidenceReviewStatusLabel(currentStatus)}
+          </span>
+        </div>
+        {currentStatus === "needs_more_evidence" && savedMessage && (
+          <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-2">
+            <p className="text-xs font-semibold text-amber-900">Additional evidence requested:</p>
+            <p className="mt-0.5 text-sm text-amber-900">{savedMessage}</p>
+          </div>
+        )}
+        {savedNotes && (
+          <div className="mt-2">
+            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+              Reviewer notes
+            </p>
+            <p className="text-sm text-slate-700">{savedNotes}</p>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-3 rounded-xl border border-cyan-300 bg-cyan-50/60 p-3">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-sm font-semibold text-slate-800">Evidence review (reviewer)</p>
+        <span className="rounded-full bg-cyan-100 px-2.5 py-0.5 text-xs font-semibold text-cyan-800">
+          Current: {evidenceReviewStatusLabel(currentStatus)}
+        </span>
+      </div>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <label className="text-xs font-semibold text-slate-600">Status</label>
+        <select
+          value={status}
+          onChange={(e) => setStatus(e.target.value as EvidenceReviewStatus)}
+          className="rounded-md border border-slate-300 bg-white px-2 py-1 text-sm text-slate-800"
+        >
+          {EVIDENCE_REVIEW_ACTION_STATUSES.map((s) => (
+            <option key={s} value={s}>
+              {EVIDENCE_REVIEW_STATUS_LABELS[s]}
+            </option>
+          ))}
+        </select>
+      </div>
+      <textarea
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        rows={2}
+        placeholder="Reviewer notes (optional, visible to clinic/doctor)"
+        className="mt-2 w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-sm text-slate-800"
+      />
+      {status === "needs_more_evidence" && (
+        <textarea
+          value={requestMessage}
+          onChange={(e) => setRequestMessage(e.target.value)}
+          rows={2}
+          placeholder="Request message — what additional evidence is needed?"
+          className="mt-2 w-full rounded-md border border-amber-300 bg-white px-2 py-1 text-sm text-slate-800"
+        />
+      )}
+      <div className="mt-2 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={save === "saving"}
+          className="rounded-md bg-cyan-600 px-4 py-1.5 text-sm font-semibold text-white disabled:opacity-50"
+        >
+          {save === "saving" ? "Saving…" : "Save overall review"}
+        </button>
+        {save === "saved" && <span className="text-xs font-medium text-emerald-700">Saved</span>}
+        {save === "error" && (
+          <span className="text-xs font-medium text-rose-700">{error ?? "Failed"}</span>
+        )}
       </div>
     </div>
   );

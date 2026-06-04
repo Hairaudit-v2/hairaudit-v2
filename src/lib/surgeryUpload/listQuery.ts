@@ -33,7 +33,7 @@ const MAX_MISSING_CANDIDATES = 500;
 const OPTIONS_SCAN_LIMIT = 1000;
 
 const ROW_COLUMNS =
-  "case_id, patient_reference, clinic_name, clinic_profile_id, surgeon_name, surgery_date, procedure_type, status, submitted_at, photo_checklist_config, created_at, created_by";
+  "case_id, patient_reference, clinic_name, clinic_profile_id, surgeon_name, surgery_date, procedure_type, status, submitted_at, photo_checklist_config, created_at, created_by, evidence_review_status";
 
 /** Raw surgery_upload_details row as selected for the index. */
 type RawRow = {
@@ -49,6 +49,7 @@ type RawRow = {
   photo_checklist_config: unknown | null;
   created_at: string;
   created_by: string | null;
+  evidence_review_status: string | null;
 };
 
 /** A fully-mapped, completion-annotated row handed to the client. */
@@ -63,6 +64,8 @@ export type SurgeryUploadListItem = {
   status: string;
   submitted_at: string | null;
   created_at: string;
+  /** Stage 5: evidence review workflow status. */
+  evidence_review_status: string;
   /** Sum of min(uploaded, minCount) across required slots (the "7" in 7/8). */
   requiredSatisfiedCount: number;
   /** Sum of per-slot minCounts across required slots (the "8" in 7/8). */
@@ -129,6 +132,7 @@ function applyFilters(
   let q = query;
   if (!isAuditor) q = q.eq("created_by", userId);
   if (params.status !== "all") q = q.eq("status", params.status);
+  if (params.reviewStatus) q = q.eq("evidence_review_status", params.reviewStatus);
   if (params.procedure) q = q.eq("procedure_type", params.procedure);
   if (params.surgeon) q = q.ilike("surgeon_name", `%${escapeLike(params.surgeon)}%`);
   if (params.clinic === UNKNOWN_CLINIC_KEY) {
@@ -183,6 +187,7 @@ async function attachCompletion(
       status: r.status,
       submitted_at: r.submitted_at,
       created_at: r.created_at,
+      evidence_review_status: r.evidence_review_status ?? "not_reviewed",
       requiredSatisfiedCount: summary.requiredSatisfiedCount,
       requiredCountTotal: summary.requiredCountTotal,
       missingRequired: summary.missingRequired,

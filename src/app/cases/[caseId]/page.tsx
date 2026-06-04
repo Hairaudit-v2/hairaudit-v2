@@ -25,6 +25,7 @@ import VersionHistoryDrawer from "@/components/reports/VersionHistoryDrawer";
 import UploadThumbnailGallery from "@/components/reports/UploadThumbnailGallery";
 import SurgeryUploadReviewPanel from "@/components/surgery-upload/SurgeryUploadReviewPanel";
 import type { SurgeryUploadDetails } from "@/lib/surgeryUpload/fields";
+import type { SurgerySlotReviewRow } from "@/lib/surgeryUpload/evidenceReview";
 import LatestReportCard from "@/components/reports/LatestReportCard";
 import InviteClinicContributionCard from "@/components/case/InviteClinicContributionCard";
 import ForensicCaseTimelineViewer from "@/components/reports/ForensicCaseTimelineViewer";
@@ -295,6 +296,7 @@ export default async function Page({
   // Mobile Surgery Upload Portal (Stage 2): surface structured surgery details +
   // photo checklist for reviewers when this case has a surgery upload.
   let surgeryUploadDetails: SurgeryUploadDetails | null = null;
+  let surgerySlotReviews: SurgerySlotReviewRow[] = [];
   try {
     const { data: sud } = await db
       .from("surgery_upload_details")
@@ -304,6 +306,17 @@ export default async function Page({
     surgeryUploadDetails = (sud as SurgeryUploadDetails | null) ?? null;
   } catch {
     /* surgery_upload_details may not exist in older environments */
+  }
+  if (surgeryUploadDetails) {
+    try {
+      const { data: slotRows } = await db
+        .from("surgery_upload_slot_reviews")
+        .select("case_id, slot_key, status, reviewer_notes, reviewed_by, reviewed_at")
+        .eq("case_id", c.id);
+      surgerySlotReviews = (slotRows as SurgerySlotReviewRow[] | null) ?? [];
+    } catch {
+      /* Stage 5 table may not exist yet in older environments */
+    }
   }
 
   // Optional feature: graft integrity must never break case page
@@ -1254,6 +1267,9 @@ export default async function Page({
           <SurgeryUploadReviewPanel
             details={surgeryUploadDetails}
             uploads={(uploads ?? []) as any}
+            caseId={c.id}
+            isAuditor={isAuditor}
+            initialSlotReviews={surgerySlotReviews}
           />
         </div>
       )}

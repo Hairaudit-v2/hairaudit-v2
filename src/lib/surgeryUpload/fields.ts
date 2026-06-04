@@ -50,6 +50,18 @@ export type SurgeryUploadDetails = {
   prefilled_from_clinic_defaults: boolean;
   /** Stage 3: per-case checklist snapshot (null => base HairAudit checklist). */
   photo_checklist_config: unknown | null;
+  // Stage 5: evidence review workflow (separate from status/cases.status).
+  evidence_review_status: string;
+  evidence_reviewed_at: string | null;
+  evidence_reviewed_by: string | null;
+  evidence_review_notes: string | null;
+  evidence_requested_at: string | null;
+  evidence_requested_by: string | null;
+  evidence_request_message: string | null;
+  evidence_resolved_at: string | null;
+  evidence_resolved_by: string | null;
+  ready_for_audit_at: string | null;
+  ready_for_audit_by: string | null;
   created_at: string;
   updated_at: string;
 };

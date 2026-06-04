@@ -8,6 +8,11 @@ import {
   type SurgeryUploadFilters,
   SURGERY_PAGE_SIZES,
 } from "@/lib/surgeryUpload/listParams";
+import {
+  EVIDENCE_REVIEW_STATUSES,
+  EVIDENCE_REVIEW_STATUS_LABELS,
+  evidenceReviewStatusLabel,
+} from "@/lib/surgeryUpload/evidenceReview";
 import type {
   SelectOption,
   SurgeryUploadFilterOptions,
@@ -211,6 +216,16 @@ export default function SurgeryUploadIndexClient({
               allLabel="All procedures"
             />
           )}
+          <FilterSelect
+            label="Review status"
+            value={filters.reviewStatus}
+            onChange={(v) => updateFilters({ reviewStatus: v || null })}
+            options={EVIDENCE_REVIEW_STATUSES.map((s) => ({
+              value: s,
+              label: EVIDENCE_REVIEW_STATUS_LABELS[s],
+            }))}
+            allLabel="All review statuses"
+          />
           <div className="grid grid-cols-2 gap-2">
             <label className="block">
               <span className="mb-1 block text-xs font-medium text-slate-600">Surgery from</span>
@@ -299,7 +314,12 @@ export default function SurgeryUploadIndexClient({
                     <span className="truncate font-semibold text-slate-900">
                       {r.patient_reference?.trim() || "Untitled surgery upload"}
                     </span>
-                    <StatusPill status={r.status} />
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      {r.status === "submitted" && (
+                        <ReviewStatusBadge status={r.evidence_review_status} />
+                      )}
+                      <StatusPill status={r.status} />
+                    </div>
                   </div>
                   <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-slate-500">
                     {r.procedure_type && (
@@ -410,6 +430,24 @@ function StatusPill({ status }: { status: string }) {
       }`}
     >
       {submitted ? "Submitted for review" : "Draft"}
+    </span>
+  );
+}
+
+function ReviewStatusBadge({ status }: { status: string }) {
+  // Hide the default "not reviewed" state to keep the row uncluttered.
+  if (!status || status === "not_reviewed") return null;
+  const cls =
+    status === "needs_more_evidence"
+      ? "bg-amber-100 text-amber-800"
+      : status === "evidence_accepted"
+        ? "bg-emerald-100 text-emerald-800"
+        : status === "ready_for_audit"
+          ? "bg-cyan-100 text-cyan-800"
+          : "bg-slate-100 text-slate-600";
+  return (
+    <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${cls}`}>
+      {evidenceReviewStatusLabel(status)}
     </span>
   );
 }

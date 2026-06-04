@@ -16,6 +16,11 @@ import {
 } from "@/lib/surgeryUpload/checklist";
 import { SURGERY_PROCEDURE_TYPES, type SurgeryUploadDetails } from "@/lib/surgeryUpload/fields";
 import {
+  evidenceReviewStatusLabel,
+  slotReviewStatusLabel,
+  type SurgerySlotReviewRow,
+} from "@/lib/surgeryUpload/evidenceReview";
+import {
   clearLocalSurgeryDraft,
   diffRecoverableValues,
   hasMeaningfulLocalDifferences,
@@ -91,11 +96,13 @@ export default function SurgeryUploadFlowClient({
   userId,
   initialDetails,
   initialUploads,
+  initialSlotReviews = [],
 }: {
   caseId: string;
   userId?: string | null;
   initialDetails: SurgeryUploadDetails;
   initialUploads: SurgeryUploadRow[];
+  initialSlotReviews?: SurgerySlotReviewRow[];
 }) {
   const router = useRouter();
   const [details, setDetails] = useState<SurgeryUploadDetails>(initialDetails);
@@ -121,6 +128,20 @@ export default function SurgeryUploadFlowClient({
   const [refreshedWithFailures, setRefreshedWithFailures] = useState(false);
 
   const locked = details.status === "submitted";
+  // Stage 5: a reviewer can re-open a submitted upload for additional photos only.
+  const needsMoreEvidence =
+    locked && details.evidence_review_status === "needs_more_evidence";
+  const uploadsAllowed = !locked || needsMoreEvidence;
+
+  // Stage 5 resubmission state (clinic/doctor after adding requested evidence).
+  const [resubmitting, setResubmitting] = useState(false);
+  const [resubmitted, setResubmitted] = useState(false);
+  const [resubmitError, setResubmitError] = useState<string | null>(null);
+  const slotReviewMap = useMemo(() => {
+    const map: Record<string, SurgerySlotReviewRow> = {};
+    for (const r of initialSlotReviews) map[r.slot_key] = r;
+    return map;
+  }, [initialSlotReviews]);
 
   // Source-of-truth refs (avoid stale closures inside async autosave).
   const detailsRef = useRef<SurgeryUploadDetails>(initialDetails);
@@ -316,7 +337,7 @@ export default function SurgeryUploadFlowClient({
   // ---- Photo upload (compress -> upload -> per-slot status + retry) ----------
   const uploadFiles = useCallback(
     async (slot: SurgeryPhotoSlotKey, files: File[], isRetry = false) => {
-      if (locked || files.length === 0) return;
+      if (!uploadsAllowed || files.length === 0) return;
 
       setSlotState((m) => {
         const prev = m[slot] ?? EMPTY_SLOT_STATE;
@@ -391,7 +412,7 @@ export default function SurgeryUploadFlowClient({
         };
       });
     },
-    [caseId, locked]
+    [caseId, uploadsAllowed]
   );
 
   const retrySlot = useCallback(
@@ -508,6 +529,34 @@ export default function SurgeryUploadFlowClient({
     setRecovery(null);
   }, [caseId, userId]);
 
+  // ---- Stage 5: resubmit additional evidence --------------------------------
+  const resubmit = useCallback(async () => {
+    if (resubmitting) return;
+    setResubmitError(null);
+    setResubmitting(true);
+    try {
+      const res = await fetch(`/api/surgery-upload/cases/${caseId}/resubmit-evidence`, {
+        method: "POST",
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json?.ok) {
+        throw new Error(json?.error ?? "Could not resubmit");
+      }
+      const next = {
+        ...detailsRef.current,
+        evidence_review_status: "in_review" as string,
+      } as SurgeryUploadDetails;
+      detailsRef.current = next;
+      setDetails(next);
+      setResubmitted(true);
+      router.refresh();
+    } catch (e) {
+      setResubmitError((e as Error)?.message ?? "Could not resubmit");
+    } finally {
+      setResubmitting(false);
+    }
+  }, [caseId, resubmitting, router]);
+
   // ---- Submit ----------------------------------------------------------------
   const submit = useCallback(async () => {
     if (submitting) return;
@@ -597,8 +646,195 @@ export default function SurgeryUploadFlowClient({
     };
   }, []);
 
-  if (locked) {
+  if (locked && !needsMoreEvidence) {
     return <SubmittedConfirmation details={details} photoCount={uploads.length} />;
+  }
+
+  if (locked && needsMoreEvidence) {
+    const flaggedSlots = resolved
+      .map((s) => ({ slot: s, review: slotReviewMap[s.key] }))
+      .filter(
+        (x) =>
+          x.review &&
+          (x.review.status === "needs_more_photos" || x.review.status === "poor_quality")
+      );
+    const canResubmit = completion.missing.length === 0 && !anyUploading && !resubmitting;
+    return (
+      <div className="mt-3 space-y-6 pb-28">
+        <header className="space-y-1">
+          <h1 className="text-2xl font-bold text-slate-900">Additional evidence requested</h1>
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800">
+              {evidenceReviewStatusLabel(details.evidence_review_status)}
+            </span>
+            <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-800">
+              Submitted (locked details)
+            </span>
+          </div>
+        </header>
+
+        {/* Reviewer's request message */}
+        {details.evidence_request_message && (
+          <div className="rounded-2xl border border-amber-300 bg-amber-50 p-4">
+            <p className="text-sm font-semibold text-amber-900">A reviewer has requested more evidence:</p>
+            <p className="mt-1 text-sm text-amber-900">{details.evidence_request_message}</p>
+          </div>
+        )}
+
+        <Banner tone="amber">
+          Your surgical details are locked. You can add the requested photos below, then resubmit
+          for review. Existing submitted photos cannot be deleted.
+        </Banner>
+
+        {/* Connection awareness */}
+        {!online ? (
+          <Banner tone="amber">
+            You appear to be offline. Photos cannot upload until the connection returns.
+          </Banner>
+        ) : connectionRestored ? (
+          <Banner tone="emerald" onDismiss={() => setConnectionRestored(false)}>
+            Connection restored.{totalFailed > 0 ? " Please retry any failed uploads." : ""}
+          </Banner>
+        ) : null}
+
+        {/* Slots the reviewer specifically flagged */}
+        {flaggedSlots.length > 0 && (
+          <div className="rounded-2xl border border-slate-200 bg-white p-4">
+            <p className="text-sm font-semibold text-slate-700">Slots needing attention</p>
+            <ul className="mt-2 space-y-1 text-sm">
+              {flaggedSlots.map(({ slot, review }) => (
+                <li key={slot.key} className="flex flex-wrap items-center gap-2">
+                  <span className="font-medium text-slate-800">{slot.label}</span>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                      review!.status === "poor_quality"
+                        ? "bg-rose-100 text-rose-800"
+                        : "bg-amber-100 text-amber-800"
+                    }`}
+                  >
+                    {slotReviewStatusLabel(review!.status)}
+                  </span>
+                  {review!.reviewer_notes && (
+                    <span className="text-xs text-slate-500">— {review!.reviewer_notes}</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Aggregate upload-failure banner */}
+        {totalFailed > 0 && (
+          <div className="rounded-2xl border border-red-300 bg-red-50 p-4">
+            <p className="text-sm font-semibold text-red-800">
+              Some photos failed to upload ({totalFailed}).
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={retryAllFailed}
+                disabled={anyUploading || !online}
+                className="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white active:scale-[0.99] disabled:opacity-50"
+              >
+                Retry failed uploads
+              </button>
+              <button
+                type="button"
+                onClick={clearAllFailed}
+                className="rounded-xl border border-red-300 bg-white px-4 py-2 text-sm font-semibold text-red-700 active:scale-[0.99]"
+              >
+                Clear failed upload list
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Photo slots — upload allowed, deletion blocked */}
+        <Section title="Required photos" subtitle="Add any additional photos requested above.">
+          <div className="space-y-3">
+            {requiredSlots.map((slot) => (
+              <PhotoSlotCard
+                key={slot.key}
+                slot={slot}
+                existing={uploadsBySlot[slot.key] ?? []}
+                state={slotState[slot.key] ?? EMPTY_SLOT_STATE}
+                canUpload
+                canDelete={false}
+                onUpload={(files) => uploadFiles(slot.key, files)}
+                onRetry={() => retrySlot(slot.key)}
+                onDeleted={onDeleted}
+                onPreview={(i) => openPreview(slot.label, uploadsBySlot[slot.key] ?? [], i)}
+              />
+            ))}
+          </div>
+        </Section>
+        {optionalSlots.length > 0 && (
+          <Section title="Optional photos" subtitle="Add any that apply.">
+            <div className="space-y-3">
+              {optionalSlots.map((slot) => (
+                <PhotoSlotCard
+                  key={slot.key}
+                  slot={slot}
+                  existing={uploadsBySlot[slot.key] ?? []}
+                  state={slotState[slot.key] ?? EMPTY_SLOT_STATE}
+                  canUpload
+                  canDelete={false}
+                  onUpload={(files) => uploadFiles(slot.key, files)}
+                  onRetry={() => retrySlot(slot.key)}
+                  onDeleted={onDeleted}
+                  onPreview={(i) => openPreview(slot.label, uploadsBySlot[slot.key] ?? [], i)}
+                />
+              ))}
+            </div>
+          </Section>
+        )}
+
+        {/* Resubmit bar */}
+        <div className="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200 bg-white/95 px-4 py-3 backdrop-blur">
+          <div className="mx-auto flex max-w-2xl items-center gap-3">
+            <div className="min-w-0 flex-1 text-xs text-slate-500">
+              {resubmitted ? (
+                <span className="font-medium text-emerald-700">
+                  Additional evidence submitted for review.
+                </span>
+              ) : anyUploading ? (
+                <span>Please wait for uploads to finish.</span>
+              ) : canResubmit ? (
+                <span className="font-medium text-emerald-700">Ready to resubmit</span>
+              ) : (
+                <span>
+                  {completion.missing.length} required photo
+                  {completion.missing.length === 1 ? "" : "s"} still missing
+                </span>
+              )}
+              {resubmitError && <p className="text-red-600">{resubmitError}</p>}
+            </div>
+            <button
+              type="button"
+              onClick={resubmit}
+              disabled={!canResubmit || resubmitted}
+              className={`shrink-0 rounded-xl px-5 py-3 text-sm font-semibold text-white transition ${
+                canResubmit && !resubmitted
+                  ? "bg-cyan-600 active:scale-[0.99]"
+                  : "cursor-not-allowed bg-slate-300"
+              }`}
+            >
+              {resubmitting ? "Submitting…" : "Resubmit additional evidence"}
+            </button>
+          </div>
+        </div>
+
+        {preview && (
+          <ImageLightbox
+            upload={preview.upload as LightboxUpload}
+            label={preview.label}
+            position={preview.position}
+            count={preview.count}
+            onClose={() => setPreview(null)}
+          />
+        )}
+      </div>
+    );
   }
 
   return (
@@ -863,7 +1099,8 @@ export default function SurgeryUploadFlowClient({
               slot={slot}
               existing={uploadsBySlot[slot.key] ?? []}
               state={slotState[slot.key] ?? EMPTY_SLOT_STATE}
-              locked={locked}
+              canUpload={!locked}
+              canDelete={!locked}
               onUpload={(files) => uploadFiles(slot.key, files)}
               onRetry={() => retrySlot(slot.key)}
               onDeleted={onDeleted}
@@ -883,7 +1120,8 @@ export default function SurgeryUploadFlowClient({
                 slot={slot}
                 existing={uploadsBySlot[slot.key] ?? []}
                 state={slotState[slot.key] ?? EMPTY_SLOT_STATE}
-                locked={locked}
+                canUpload={!locked}
+                canDelete={!locked}
                 onUpload={(files) => uploadFiles(slot.key, files)}
                 onRetry={() => retrySlot(slot.key)}
                 onDeleted={onDeleted}
@@ -1128,7 +1366,8 @@ function PhotoSlotCard({
   slot,
   existing,
   state,
-  locked,
+  canUpload,
+  canDelete,
   onUpload,
   onRetry,
   onDeleted,
@@ -1137,7 +1376,8 @@ function PhotoSlotCard({
   slot: ResolvedSurgerySlot;
   existing: SurgeryUploadRow[];
   state: SlotUploadState;
-  locked: boolean;
+  canUpload: boolean;
+  canDelete: boolean;
   onUpload: (files: File[]) => void;
   onRetry: () => void;
   onDeleted: (id: string) => void;
@@ -1146,7 +1386,7 @@ function PhotoSlotCard({
   const remaining = Math.max(0, slot.maxFiles - existing.length);
   const busy = state.uploading > 0;
   // Disable inputs while uploading to prevent double-tap duplicate uploads.
-  const disabled = locked || remaining <= 0 || busy;
+  const disabled = !canUpload || remaining <= 0 || busy;
   const count = existing.length;
   // Stage 3.1: a required slot is only "complete" once it meets its minCount.
   const required = slot.requiredCount;
@@ -1232,7 +1472,7 @@ function PhotoSlotCard({
             <UploadedThumb
               key={u.id}
               upload={u}
-              locked={locked}
+              locked={!canDelete}
               onDeleted={() => onDeleted(u.id)}
               onPreview={() => onPreview(i)}
             />
@@ -1240,7 +1480,7 @@ function PhotoSlotCard({
         </div>
       )}
 
-      {!locked && (
+      {canUpload && (
         <div className="mt-3 grid grid-cols-2 gap-2">
           {/* Camera capture (mobile) */}
           <label
@@ -1276,7 +1516,7 @@ function PhotoSlotCard({
           </label>
         </div>
       )}
-      {remaining <= 0 && !locked && (
+      {remaining <= 0 && canUpload && (
         <p className="mt-2 text-xs text-slate-400">Maximum reached</p>
       )}
     </div>

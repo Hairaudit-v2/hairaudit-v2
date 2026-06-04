@@ -11,6 +11,7 @@ import {
   normalizeSurgerySlot,
   surgeryTypeFromSlot,
 } from "@/lib/surgeryUpload/checklist";
+import { logEvidenceEvent } from "@/lib/surgeryUpload/logEvidenceEvent";
 import {
   UPLOAD_LIMITS,
   validateFileCount,
@@ -73,6 +74,13 @@ function parseClientImageMeta(form: FormData): ClientImageMeta {
   return meta;
 }
 
+/** Stage 5: marks photos added in response to a reviewer's request for more evidence. */
+type AdditionalEvidenceMeta = {
+  added_after_review_request: true;
+  uploaded_after_review_requested_at: string;
+  evidence_request_context?: string;
+};
+
 async function uploadSingleFile(
   admin: ReturnType<typeof createSupabaseAdminClient>,
   bucket: string,
@@ -81,7 +89,8 @@ async function uploadSingleFile(
   role: string,
   slot: string,
   file: File,
-  clientMeta: ClientImageMeta
+  clientMeta: ClientImageMeta,
+  additionalEvidenceMeta: AdditionalEvidenceMeta | null
 ): Promise<UploadResult<{ id: string; type: string; storage_path: string; metadata: unknown; created_at: string }>> {
   const fileName = safeFileName(file.name || "upload.jpg");
   const stamp = Date.now();
@@ -124,6 +133,8 @@ async function uploadSingleFile(
     // Stage 3.1: enhanced (best-effort) client metadata. Absent fields are omitted
     // so existing/legacy upload rows without these keys remain valid.
     ...clientMeta,
+    // Stage 5: tag photos uploaded after a reviewer requested more evidence.
+    ...(additionalEvidenceMeta ?? {}),
   };
 
   return withRetry(
@@ -219,10 +230,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: "Forbidden", requestId }, { status: 403 });
     }
 
-    // Block uploads once the surgery upload has been submitted.
+    // Drafts accept uploads freely. Submitted uploads are locked EXCEPT when a
+    // reviewer has flagged the case as needs_more_evidence (Stage 5), in which
+    // case additional photos are allowed (and tagged) but details stay locked.
     const { data: details } = await admin
       .from("surgery_upload_details")
-      .select("status")
+      .select("status, evidence_review_status, evidence_request_message")
       .eq("case_id", caseId)
       .maybeSingle();
     if (!details) {
@@ -231,12 +244,24 @@ export async function POST(req: Request) {
         { status: 404 }
       );
     }
-    if (details.status === "submitted") {
+    const isAdditionalEvidence =
+      details.status === "submitted" && details.evidence_review_status === "needs_more_evidence";
+    if (details.status === "submitted" && !isAdditionalEvidence) {
       return NextResponse.json(
         { ok: false, error: "Surgery upload submitted and cannot be modified", requestId },
         { status: 409 }
       );
     }
+
+    const additionalEvidenceMeta: AdditionalEvidenceMeta | null = isAdditionalEvidence
+      ? {
+          added_after_review_request: true,
+          uploaded_after_review_requested_at: new Date().toISOString(),
+          ...(details.evidence_request_message
+            ? { evidence_request_context: String(details.evidence_request_message).slice(0, 500) }
+            : {}),
+        }
+      : null;
 
     const bucket = process.env.CASE_FILES_BUCKET || "case-files";
     const clientMeta = parseClientImageMeta(form);
@@ -253,7 +278,8 @@ export async function POST(req: Request) {
         actor.role,
         slot,
         file,
-        clientMeta
+        clientMeta,
+        additionalEvidenceMeta
       );
       if (result.success) {
         saved.push(result.data);
@@ -272,6 +298,16 @@ export async function POST(req: Request) {
         { ok: false, error: errors[0].error, errors, requestId },
         { status: 500 }
       );
+    }
+
+    // Stage 5: record additional-evidence uploads for reviewer history.
+    if (isAdditionalEvidence && saved.length > 0) {
+      await logEvidenceEvent(admin, {
+        caseId,
+        actorId: user.id,
+        eventType: "additional_evidence_uploaded",
+        metadata: { slot, count: saved.length },
+      });
     }
 
     return NextResponse.json({
