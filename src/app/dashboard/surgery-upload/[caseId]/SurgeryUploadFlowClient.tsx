@@ -159,6 +159,8 @@ export default function SurgeryUploadFlowClient({
   const lastServerUpdatedRef = useRef<string | null>(initialDetails.updated_at ?? null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const savingRef = useRef(false);
+  /** Serializes overlapping flushSave calls (submit vs debounce vs blur). */
+  const flushMutexRef = useRef<Promise<void> | null>(null);
 
   // Resolve THIS case's checklist snapshot (null => base HairAudit checklist).
   const resolved = useMemo(
@@ -234,64 +236,79 @@ export default function SurgeryUploadFlowClient({
     [caseId, userId]
   );
 
-  // The authoritative save: PATCH only the fields that differ from the server,
-  // then reconcile (the user may have typed during the request). Returns true when
-  // the server is in sync (or there was nothing to save), false on failure.
+  // The authoritative save: PATCH only fields that differ from the server, looping
+  // until fully synced (user may type during a request). Returns true only when there
+  // is nothing left to save or the case is read-only; false on network/server failure.
   const flushSave = useCallback(async (): Promise<boolean> => {
     if (locked) return true;
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
       debounceRef.current = null;
     }
-    // A save is already in flight; it will reconcile remaining edits on completion.
-    if (savingRef.current) return true;
 
-    const patch = diffRecoverableValues(
-      pickRecoverableValues(detailsRef.current as Record<string, unknown>),
-      serverValuesRef.current
-    );
-    if (Object.keys(patch).length === 0) {
-      clearLocalSurgeryDraft(caseId, userId);
-      setSaveState((s) => (s === "saved" ? "saved" : "idle"));
-      return true;
+    const prevMutex = flushMutexRef.current;
+    let release!: () => void;
+    const myTurn = new Promise<void>((r) => {
+      release = r;
+    });
+    flushMutexRef.current = myTurn;
+    try {
+      await (prevMutex ?? Promise.resolve());
+    } catch {
+      // prior flush failed — still proceed
     }
 
-    savingRef.current = true;
-    setSaveState("saving");
     try {
-      const res = await fetch(`/api/surgery-upload/cases/${caseId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(patch),
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json?.error ?? "Could not save");
+      while (true) {
+        const patch = diffRecoverableValues(
+          pickRecoverableValues(detailsRef.current as Record<string, unknown>),
+          serverValuesRef.current
+        );
+        if (Object.keys(patch).length === 0) {
+          clearLocalSurgeryDraft(caseId, userId);
+          setSaveState((s) => (s === "saved" ? "saved" : "idle"));
+          return true;
+        }
 
-      // Server now holds these values; advance our server snapshot + version.
-      serverValuesRef.current = { ...serverValuesRef.current, ...patch };
-      const updatedAt = (json?.details?.updated_at as string | undefined) ?? null;
-      if (updatedAt) lastServerUpdatedRef.current = updatedAt;
+        savingRef.current = true;
+        setSaveState("saving");
+        try {
+          const res = await fetch(`/api/surgery-upload/cases/${caseId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(patch),
+          });
+          const json = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(json?.error ?? "Could not save");
 
-      const remaining = diffRecoverableValues(
-        pickRecoverableValues(detailsRef.current as Record<string, unknown>),
-        serverValuesRef.current
-      );
-      if (Object.keys(remaining).length === 0) {
-        clearLocalSurgeryDraft(caseId, userId);
-        setSaveState("saved");
-        setTimeout(() => setSaveState((s) => (s === "saved" ? "idle" : s)), 1500);
-      } else {
-        saveLocalSurgeryDraft(caseId, remaining, userId, lastServerUpdatedRef.current);
-        setSaveState("unsaved");
+          serverValuesRef.current = { ...serverValuesRef.current, ...patch };
+          const updatedAt = (json?.details?.updated_at as string | undefined) ?? null;
+          if (updatedAt) lastServerUpdatedRef.current = updatedAt;
+
+          const remaining = diffRecoverableValues(
+            pickRecoverableValues(detailsRef.current as Record<string, unknown>),
+            serverValuesRef.current
+          );
+          if (Object.keys(remaining).length === 0) {
+            clearLocalSurgeryDraft(caseId, userId);
+            setSaveState("saved");
+            setTimeout(() => setSaveState((s) => (s === "saved" ? "idle" : s)), 1500);
+            return true;
+          }
+          saveLocalSurgeryDraft(caseId, remaining, userId, lastServerUpdatedRef.current);
+          setSaveState("unsaved");
+          // Loop: another PATCH for edits that landed during the request.
+        } catch {
+          saveLocalSurgeryDraft(caseId, patch, userId, lastServerUpdatedRef.current);
+          setSaveState("error");
+          return false;
+        } finally {
+          savingRef.current = false;
+        }
       }
-      return true;
-    } catch {
-      // Keep the changes on-device and surface a retry.
-      saveLocalSurgeryDraft(caseId, patch, userId, lastServerUpdatedRef.current);
-      setSaveState("error");
-      return false;
     } finally {
-      savingRef.current = false;
+      release();
+      if (flushMutexRef.current === myTurn) flushMutexRef.current = null;
     }
   }, [caseId, userId, locked]);
 
@@ -753,8 +770,10 @@ export default function SurgeryUploadFlowClient({
         {/* Aggregate upload-failure banner */}
         {totalFailed > 0 && (
           <div className="rounded-2xl border border-red-300 bg-red-50 p-4">
-            <p className="text-sm font-semibold text-red-800">
-              Some photos failed to upload ({totalFailed}).
+            <p className="text-sm font-semibold text-red-800">Some photos failed to upload.</p>
+            <p className="mt-0.5 text-xs text-red-700">
+              {totalFailed} file{totalFailed === 1 ? "" : "s"} still selected on this device — retry without
+              choosing them again.
             </p>
             <div className="mt-2 flex flex-wrap gap-2">
               <button
@@ -882,13 +901,21 @@ export default function SurgeryUploadFlowClient({
             <button
               type="button"
               onClick={() => void flushSave()}
-              className="rounded-lg bg-slate-900 px-3 py-1 text-xs font-semibold text-white active:scale-[0.99]"
+              className="min-h-[44px] rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white active:scale-[0.99]"
             >
               {saveState === "error" ? "Retry save" : "Save now"}
             </button>
           )}
         </div>
       </header>
+
+      {/* In-session reminder for accidental back navigation (browser still uses beforeunload). */}
+      {needsLeaveWarning && (
+        <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+          You have work in progress on this page. Save or finish uploads before leaving — your browser
+          may warn you if you close or reload the tab.
+        </p>
+      )}
 
       {/* Local draft recovery banner */}
       {recovery && (
@@ -1080,11 +1107,10 @@ export default function SurgeryUploadFlowClient({
       {/* Aggregate upload-failure banner */}
       {totalFailed > 0 && (
         <div className="rounded-2xl border border-red-300 bg-red-50 p-4">
-          <p className="text-sm font-semibold text-red-800">
-            Some photos failed to upload ({totalFailed}).
-          </p>
+          <p className="text-sm font-semibold text-red-800">Some photos failed to upload.</p>
           <p className="mt-0.5 text-xs text-red-700">
-            They are still selected on this device — you can retry without choosing them again.
+            {totalFailed} file{totalFailed === 1 ? "" : "s"} still selected on this device — you can retry
+            without choosing them again.
           </p>
           <div className="mt-2 flex flex-wrap gap-2">
             <button
@@ -1294,13 +1320,27 @@ function ToggleField({
 }
 
 function SaveIndicator({ state }: { state: SaveState }) {
-  if (state === "saving") return <span className="text-xs text-slate-400">Saving…</span>;
-  if (state === "saved") return <span className="text-xs text-emerald-600">Saved ✓</span>;
+  if (state === "saving")
+    return (
+      <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+        Saving…
+      </span>
+    );
+  if (state === "saved")
+    return (
+      <span className="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">
+        Saved
+      </span>
+    );
   if (state === "unsaved")
-    return <span className="text-xs text-amber-600">Unsaved local changes</span>;
+    return (
+      <span className="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-900">
+        Unsaved local changes
+      </span>
+    );
   if (state === "error")
     return (
-      <span className="text-xs text-red-600">
+      <span className="inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-800">
         Save failed — your changes are stored on this device
       </span>
     );
@@ -1352,7 +1392,9 @@ function RecoveryBanner({
 }) {
   const when = (() => {
     try {
-      return new Date(savedAt).toLocaleString();
+      const d = new Date(savedAt);
+      if (Number.isNaN(d.getTime())) return savedAt;
+      return d.toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" });
     } catch {
       return savedAt;
     }
