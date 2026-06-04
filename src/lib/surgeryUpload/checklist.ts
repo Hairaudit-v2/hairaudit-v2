@@ -461,6 +461,45 @@ export function getRequiredPhotoCompletion(
   };
 }
 
+/**
+ * Stage 4A: minCount-aware required-photo completion for index/list summaries.
+ *
+ * Unlike getRequiredPhotoCompletion (which reports slot-level done/total — a slot
+ * is "done" once its minCount is met), this reports PHOTO-COUNT totals so labels
+ * read like "7/8 required photos" where 8 is the SUM of per-slot minCounts. Both
+ * helpers share the same resolved checklist, so the six locked minimum slots plus
+ * any clinic-promoted required slots and their minCounts are respected here too.
+ *
+ * - requiredCountTotal: sum of requiredCount (minCount) across required slots.
+ * - requiredSatisfiedCount: sum of min(uploaded, requiredCount) per required slot,
+ *   so extra photos in one slot never mask a shortfall in another.
+ * - missingRequired: true when any required slot is below its minCount.
+ */
+export function getRequiredPhotoCountSummary(
+  uploadTypes: { type: string }[],
+  config?: unknown
+): {
+  requiredCountTotal: number;
+  requiredSatisfiedCount: number;
+  missingRequired: boolean;
+} {
+  const counts = countsBySlotFromUploads(uploadTypes);
+  let requiredCountTotal = 0;
+  let requiredSatisfiedCount = 0;
+  for (const slot of getResolvedSurgeryChecklist(config)) {
+    if (!slot.effectiveRequired) continue;
+    const required = slot.requiredCount;
+    const current = counts.get(slot.key) ?? 0;
+    requiredCountTotal += required;
+    requiredSatisfiedCount += Math.min(current, required);
+  }
+  return {
+    requiredCountTotal,
+    requiredSatisfiedCount,
+    missingRequired: requiredSatisfiedCount < requiredCountTotal,
+  };
+}
+
 /** Slots that are hidden by config but still have uploaded photos (evidence to surface). */
 export function getHiddenSlotsWithUploads(
   uploadTypes: { type: string }[],

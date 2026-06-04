@@ -1,176 +1,142 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import {
+  hasActiveSurgeryFilters,
+  type SurgeryUploadFilters,
+  SURGERY_PAGE_SIZES,
+} from "@/lib/surgeryUpload/listParams";
+import type {
+  SelectOption,
+  SurgeryUploadFilterOptions,
+  SurgeryUploadListItem,
+} from "@/lib/surgeryUpload/listQuery";
 
-export type SurgeryUploadListRow = {
-  case_id: string;
-  patient_reference: string | null;
-  clinic_name: string | null;
-  clinic_profile_id: string | null;
-  surgeon_name: string | null;
-  surgery_date: string | null;
-  procedure_type: string | null;
-  status: string;
-  submitted_at: string | null;
-};
-
-type StatusFilter = "all" | "draft" | "submitted";
-
-type SelectOption = { value: string; label: string };
-
-const UNKNOWN_CLINIC_LABEL = "Unknown clinic";
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
- * Stable clinic identity key for filtering. Prefers the linked clinic_profile_id so
- * text variations of the same clinic collapse to one option; falls back to a
- * normalized clinic_name, then a shared "unknown" bucket for null/blank records.
+ * Stage 4A: this is now a controlled filter/pagination UI. All real filtering and
+ * pagination happen on the server; this component reads the sanitized state from
+ * props and reflects user changes into URL params (which re-runs the server query).
+ * It does NOT re-filter the already-paginated rows.
  */
-function clinicKey(r: SurgeryUploadListRow): string {
-  if (r.clinic_profile_id) return `id:${r.clinic_profile_id}`;
-  const name = (r.clinic_name ?? "").trim();
-  return name ? `name:${name.toLowerCase()}` : "__unknown__";
-}
-
-function clinicLabelOf(r: SurgeryUploadListRow): string {
-  const name = (r.clinic_name ?? "").trim();
-  return name || UNKNOWN_CLINIC_LABEL;
-}
-
 export default function SurgeryUploadIndexClient({
   rows,
-  requiredDoneByCase,
-  requiredTotalByCase,
-  requiredPhotoTotal,
+  options,
+  filters,
+  page,
+  pageSize,
+  totalCount,
+  totalCountApproximate,
+  hasPrevPage,
+  hasNextPage,
+  totalPages,
   procedureLabels,
   isAuditor,
 }: {
-  rows: SurgeryUploadListRow[];
-  requiredDoneByCase: Record<string, number>;
-  /** Per-case required total (clinics may promote optional categories to required). */
-  requiredTotalByCase: Record<string, number>;
-  /** Fallback base required total when a case has no resolved total. */
-  requiredPhotoTotal: number;
+  rows: SurgeryUploadListItem[];
+  options: SurgeryUploadFilterOptions;
+  filters: SurgeryUploadFilters;
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalCountApproximate: boolean;
+  hasPrevPage: boolean;
+  hasNextPage: boolean;
+  totalPages: number | null;
   procedureLabels: Record<string, string>;
   isAuditor: boolean;
 }) {
-  const totalFor = (caseId: string) => requiredTotalByCase[caseId] ?? requiredPhotoTotal;
-
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
 
-  // Initialise from URL query params so filters are shareable/bookmarkable and the
-  // param shape is ready to be consumed server-side in a future stage. Client-side
-  // filtering below is unchanged.
-  const initStatus = ((): StatusFilter => {
-    const s = searchParams.get("status");
-    return s === "draft" || s === "submitted" ? s : "all";
-  })();
-  const [status, setStatus] = useState<StatusFilter>(initStatus);
-  const [clinic, setClinic] = useState(searchParams.get("clinic") ?? "");
-  const [surgeon, setSurgeon] = useState(searchParams.get("surgeon") ?? "");
-  const [procedure, setProcedure] = useState(searchParams.get("procedure") ?? "");
-  const [missingOnly, setMissingOnly] = useState(searchParams.get("missing") === "1");
-  const [dateFrom, setDateFrom] = useState(searchParams.get("from") ?? "");
-  const [dateTo, setDateTo] = useState(searchParams.get("to") ?? "");
+  // Local state for free-text / date inputs so typing stays responsive. Selects,
+  // status pills and the checkbox navigate immediately. Local state re-syncs when
+  // the server-provided filters change (clear filters, browser back, etc.).
+  const [surgeonInput, setSurgeonInput] = useState(filters.surgeon);
+  const [fromInput, setFromInput] = useState(filters.from ?? "");
+  const [toInput, setToInput] = useState(filters.to ?? "");
 
-  // Reflect the current filter state in the URL (low-risk, no full reload). The
-  // canonical param names here map directly to future server-side query filters.
+  useEffect(() => setSurgeonInput(filters.surgeon), [filters.surgeon]);
+  useEffect(() => setFromInput(filters.from ?? ""), [filters.from]);
+  useEffect(() => setToInput(filters.to ?? ""), [filters.to]);
+
+  const navigate = useCallback(
+    (mutate: (sp: URLSearchParams) => void) => {
+      const sp = new URLSearchParams(searchParams.toString());
+      mutate(sp);
+      const qs = sp.toString();
+      startTransition(() => {
+        router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+      });
+    },
+    [searchParams, pathname, router]
+  );
+
+  // Any filter change resets to page 1 but preserves the current pageSize.
+  const updateFilters = useCallback(
+    (changes: Record<string, string | null>) => {
+      navigate((sp) => {
+        for (const [k, v] of Object.entries(changes)) {
+          if (v === null || v === "") sp.delete(k);
+          else sp.set(k, v);
+        }
+        sp.delete("page");
+      });
+    },
+    [navigate]
+  );
+
+  // Debounced free-text surgeon search.
   useEffect(() => {
-    const params = new URLSearchParams();
-    if (status !== "all") params.set("status", status);
-    if (clinic) params.set("clinic", clinic);
-    if (surgeon) params.set("surgeon", surgeon);
-    if (procedure) params.set("procedure", procedure);
-    if (missingOnly) params.set("missing", "1");
-    if (dateFrom) params.set("from", dateFrom);
-    if (dateTo) params.set("to", dateTo);
-    const qs = params.toString();
-    const next = qs ? `${pathname}?${qs}` : pathname;
-    const current = `${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ""}`;
-    if (next !== current) {
-      router.replace(next, { scroll: false });
-    }
+    const trimmed = surgeonInput.trim();
+    if (trimmed === filters.surgeon) return;
+    const t = setTimeout(() => updateFilters({ surgeon: trimmed || null }), 400);
+    return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status, clinic, surgeon, procedure, missingOnly, dateFrom, dateTo]);
+  }, [surgeonInput]);
 
-  // Distinct option lists, derived from the current result set.
-  // Clinics are keyed by clinic_profile_id (Stage 2.2) so text variations of the
-  // same linked clinic collapse to a single, de-duplicated option.
-  const clinicOptions = useMemo<SelectOption[]>(() => {
-    const map = new Map<string, string>();
-    for (const r of rows) {
-      const value = clinicKey(r);
-      if (!map.has(value)) map.set(value, clinicLabelOf(r));
+  function onDateChange(which: "from" | "to", value: string) {
+    if (which === "from") setFromInput(value);
+    else setToInput(value);
+    // Native date inputs only emit "" or a full YYYY-MM-DD; ignore anything else.
+    if (value === "" || DATE_RE.test(value)) {
+      updateFilters({ [which]: value || null });
     }
-    return Array.from(map.entries())
-      .map(([value, label]) => ({ value, label }))
-      .sort((a, b) => a.label.localeCompare(b.label));
-  }, [rows]);
-  const surgeonOptions = useMemo<SelectOption[]>(
-    () => uniqueSorted(rows.map((r) => r.surgeon_name)).map((v) => ({ value: v, label: v })),
-    [rows]
-  );
-  const procedureOptions = useMemo<SelectOption[]>(
-    () =>
-      uniqueSorted(rows.map((r) => r.procedure_type)).map((v) => ({
-        value: v,
-        label: procedureLabels[v] ?? v,
-      })),
-    [rows, procedureLabels]
-  );
-
-  const filtered = useMemo(() => {
-    return rows.filter((r) => {
-      if (status !== "all" && r.status !== status) return false;
-      if (clinic && clinicKey(r) !== clinic) return false;
-      if (surgeon && r.surgeon_name !== surgeon) return false;
-      if (procedure && r.procedure_type !== procedure) return false;
-      if (
-        missingOnly &&
-        (requiredDoneByCase[r.case_id] ?? 0) >=
-          (requiredTotalByCase[r.case_id] ?? requiredPhotoTotal)
-      ) {
-        return false;
-      }
-      if (dateFrom && (!r.surgery_date || r.surgery_date < dateFrom)) return false;
-      if (dateTo && (!r.surgery_date || r.surgery_date > dateTo)) return false;
-      return true;
-    });
-  }, [
-    rows,
-    status,
-    clinic,
-    surgeon,
-    procedure,
-    missingOnly,
-    dateFrom,
-    dateTo,
-    requiredDoneByCase,
-    requiredTotalByCase,
-    requiredPhotoTotal,
-  ]);
-
-  const hasActiveFilters =
-    status !== "all" ||
-    Boolean(clinic) ||
-    Boolean(surgeon) ||
-    Boolean(procedure) ||
-    missingOnly ||
-    Boolean(dateFrom) ||
-    Boolean(dateTo);
-
-  function resetFilters() {
-    setStatus("all");
-    setClinic("");
-    setSurgeon("");
-    setProcedure("");
-    setMissingOnly(false);
-    setDateFrom("");
-    setDateTo("");
   }
+
+  function goToPage(p: number) {
+    if (p < 1) return;
+    navigate((sp) => sp.set("page", String(p)));
+  }
+
+  function changePageSize(size: number) {
+    navigate((sp) => {
+      sp.set("pageSize", String(size));
+      sp.delete("page");
+    });
+  }
+
+  function clearFilters() {
+    setSurgeonInput("");
+    setFromInput("");
+    setToInput("");
+    navigate((sp) => {
+      ["status", "clinic", "surgeon", "procedure", "missing", "from", "to", "page"].forEach(
+        (k) => sp.delete(k)
+      );
+    });
+  }
+
+  const activeFilters = hasActiveSurgeryFilters(filters);
+
+  const totalLabel = totalCountApproximate
+    ? `${totalCount}+ results`
+    : `${totalCount} ${totalCount === 1 ? "result" : "results"}`;
 
   return (
     <section className="mt-6">
@@ -178,10 +144,10 @@ export default function SurgeryUploadIndexClient({
         <h2 className="text-sm font-semibold text-slate-700">
           {isAuditor ? "Recent surgery uploads" : "Your surgery uploads"}
         </h2>
-        {hasActiveFilters && (
+        {activeFilters && (
           <button
             type="button"
-            onClick={resetFilters}
+            onClick={clearFilters}
             className="text-xs font-semibold text-cyan-700 hover:text-cyan-800"
           >
             Clear filters
@@ -196,9 +162,9 @@ export default function SurgeryUploadIndexClient({
             <button
               key={s}
               type="button"
-              onClick={() => setStatus(s)}
+              onClick={() => updateFilters({ status: s === "all" ? null : s })}
               className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                status === s
+                filters.status === s
                   ? "bg-slate-900 text-white"
                   : "bg-slate-100 text-slate-600 hover:bg-slate-200"
               }`}
@@ -209,30 +175,39 @@ export default function SurgeryUploadIndexClient({
         </div>
 
         <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-          {clinicOptions.length > 0 && (
+          {options.clinics.length > 0 && (
             <FilterSelect
               label="Clinic"
-              value={clinic}
-              onChange={setClinic}
-              options={clinicOptions}
+              value={filters.clinic}
+              onChange={(v) => updateFilters({ clinic: v || null })}
+              options={options.clinics}
               allLabel="All clinics"
             />
           )}
-          {surgeonOptions.length > 0 && (
-            <FilterSelect
-              label="Doctor / surgeon"
-              value={surgeon}
-              onChange={setSurgeon}
-              options={surgeonOptions}
-              allLabel="All surgeons"
+          <label className="block">
+            <span className="mb-1 block text-xs font-medium text-slate-600">
+              Doctor / surgeon
+            </span>
+            <input
+              type="search"
+              list="surgery-surgeon-options"
+              value={surgeonInput}
+              onChange={(e) => setSurgeonInput(e.target.value)}
+              placeholder="Search surgeon…"
+              className={filterInputCls}
             />
-          )}
-          {procedureOptions.length > 0 && (
+            <datalist id="surgery-surgeon-options">
+              {options.surgeons.map((opt) => (
+                <option key={opt.value} value={opt.value} />
+              ))}
+            </datalist>
+          </label>
+          {options.procedures.length > 0 && (
             <FilterSelect
               label="Procedure type"
-              value={procedure}
-              onChange={setProcedure}
-              options={procedureOptions}
+              value={filters.procedure}
+              onChange={(v) => updateFilters({ procedure: v || null })}
+              options={options.procedures}
               allLabel="All procedures"
             />
           )}
@@ -241,8 +216,8 @@ export default function SurgeryUploadIndexClient({
               <span className="mb-1 block text-xs font-medium text-slate-600">Surgery from</span>
               <input
                 type="date"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
+                value={fromInput}
+                onChange={(e) => onDateChange("from", e.target.value)}
                 className={filterInputCls}
               />
             </label>
@@ -250,8 +225,8 @@ export default function SurgeryUploadIndexClient({
               <span className="mb-1 block text-xs font-medium text-slate-600">Surgery to</span>
               <input
                 type="date"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
+                value={toInput}
+                onChange={(e) => onDateChange("to", e.target.value)}
                 className={filterInputCls}
               />
             </label>
@@ -261,30 +236,59 @@ export default function SurgeryUploadIndexClient({
         <label className="mt-3 flex items-center gap-2 text-sm text-slate-700">
           <input
             type="checkbox"
-            checked={missingOnly}
-            onChange={(e) => setMissingOnly(e.target.checked)}
+            checked={filters.missing}
+            onChange={(e) => updateFilters({ missing: e.target.checked ? "1" : null })}
             className="h-4 w-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500"
           />
           Only show uploads missing required photos
         </label>
       </div>
 
+      {/* Result summary + page size */}
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+        <span>{totalLabel}</span>
+        <label className="flex items-center gap-1.5">
+          <span>Per page</span>
+          <select
+            value={pageSize}
+            onChange={(e) => changePageSize(Number(e.target.value))}
+            className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs text-slate-900 outline-none focus:border-cyan-500"
+          >
+            {SURGERY_PAGE_SIZES.map((size) => (
+              <option key={size} value={size}>
+                {size}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
       {/* List */}
       {rows.length === 0 ? (
-        <EmptyState
-          title="No surgery uploads found."
-          subtitle="Tap “Start new surgery upload” to begin a draft."
-        />
-      ) : filtered.length === 0 ? (
-        <EmptyState
-          title="No uploads match your current filters."
-          subtitle="Try clearing or adjusting the filters above."
-        />
+        activeFilters ? (
+          <EmptyState
+            title="No uploads match your current filters."
+            subtitle="Try clearing or adjusting the filters above."
+          />
+        ) : page > 1 ? (
+          <EmptyState
+            title="No uploads on this page."
+            subtitle="Go back to the first page to see your uploads."
+          />
+        ) : (
+          <EmptyState
+            title="No surgery uploads found."
+            subtitle="Tap “Start new surgery upload” to begin a draft."
+          />
+        )
       ) : (
-        <ul className="mt-3 space-y-3">
-          {filtered.map((r) => {
-            const done = requiredDoneByCase[r.case_id] ?? 0;
-            const total = totalFor(r.case_id);
+        <ul
+          className={`mt-3 space-y-3 transition-opacity ${isPending ? "opacity-60" : "opacity-100"}`}
+        >
+          {rows.map((r) => {
+            const done = r.requiredSatisfiedCount;
+            const total = r.requiredCountTotal;
+            const complete = !r.missingRequired;
             return (
               <li key={r.case_id}>
                 <Link
@@ -307,9 +311,7 @@ export default function SurgeryUploadIndexClient({
                   </div>
                   <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs">
                     <span
-                      className={`font-medium ${
-                        done >= total ? "text-emerald-700" : "text-slate-500"
-                      }`}
+                      className={`font-medium ${complete ? "text-emerald-700" : "text-slate-500"}`}
                     >
                       {done}/{total} required photos
                     </span>
@@ -324,6 +326,32 @@ export default function SurgeryUploadIndexClient({
             );
           })}
         </ul>
+      )}
+
+      {/* Pagination */}
+      {(hasPrevPage || hasNextPage) && (
+        <div className="mt-4 flex items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={() => goToPage(page - 1)}
+            disabled={!hasPrevPage || isPending}
+            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-cyan-300 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Previous
+          </button>
+          <span className="text-xs font-medium text-slate-500">
+            Page {page}
+            {totalPages ? ` of ${totalPages}` : ""}
+          </span>
+          <button
+            type="button"
+            onClick={() => goToPage(page + 1)}
+            disabled={!hasNextPage || isPending}
+            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-cyan-300 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Next
+          </button>
+        </div>
       )}
     </section>
   );
@@ -384,13 +412,4 @@ function StatusPill({ status }: { status: string }) {
       {submitted ? "Submitted for review" : "Draft"}
     </span>
   );
-}
-
-function uniqueSorted(values: (string | null)[]): string[] {
-  const set = new Set<string>();
-  for (const v of values) {
-    const trimmed = (v ?? "").trim();
-    if (trimmed) set.add(trimmed);
-  }
-  return Array.from(set).sort((a, b) => a.localeCompare(b));
 }

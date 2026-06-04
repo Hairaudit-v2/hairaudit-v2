@@ -4,24 +4,23 @@ import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { resolveSurgeryUploadActor } from "@/lib/surgeryUpload/access";
 import { SURGERY_PROCEDURE_TYPES } from "@/lib/surgeryUpload/fields";
-import {
-  REQUIRED_SURGERY_PHOTO_SLOTS,
-  getRequiredPhotoCompletion,
-} from "@/lib/surgeryUpload/checklist";
+import { parseSurgeryUploadSearchParams } from "@/lib/surgeryUpload/listParams";
+import { loadSurgeryUploadIndex } from "@/lib/surgeryUpload/listQuery";
 import StartSurgeryUploadButton from "./StartSurgeryUploadButton";
 import type { ClinicPickerOption } from "./defaults/ClinicDefaultsPicker";
-import SurgeryUploadIndexClient, {
-  type SurgeryUploadListRow,
-} from "./SurgeryUploadIndexClient";
+import SurgeryUploadIndexClient from "./SurgeryUploadIndexClient";
 
 export const dynamic = "force-dynamic";
 
 const PROCEDURE_LABELS = Object.fromEntries(
   SURGERY_PROCEDURE_TYPES.map((p) => [p.value, p.label])
 );
-const REQUIRED_PHOTO_TOTAL = REQUIRED_SURGERY_PHOTO_SLOTS.length;
 
-export default async function SurgeryUploadIndexPage() {
+export default async function SurgeryUploadIndexPage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const supabase = await createSupabaseAuthServerClient();
   const {
     data: { user },
@@ -33,47 +32,16 @@ export default async function SurgeryUploadIndexPage() {
 
   const admin = createSupabaseAdminClient();
 
-  // Doctors/clinics see uploads they created; auditors see the most recent set.
-  const query = admin
-    .from("surgery_upload_details")
-    .select(
-      "case_id, patient_reference, clinic_name, clinic_profile_id, surgeon_name, surgery_date, procedure_type, status, submitted_at, photo_checklist_config, created_at, updated_at"
-    )
-    .order("updated_at", { ascending: false })
-    .limit(50);
-  if (!actor.isAuditor) {
-    query.eq("created_by", user.id);
-  }
-  const { data: rows } = await query;
-
-  const list = rows ?? [];
-
-  // Required-photo completion counts per case (reviewer visibility). Totals are
-  // per-case because a clinic may have promoted optional categories to required.
-  const requiredDoneByCase: Record<string, number> = {};
-  const requiredTotalByCase: Record<string, number> = {};
-  if (list.length > 0) {
-    const caseIds = list.map((r) => r.case_id);
-    const configByCase = new Map<string, unknown>(
-      list.map((r) => [r.case_id, (r as { photo_checklist_config?: unknown }).photo_checklist_config])
-    );
-    const { data: ups } = await admin
-      .from("uploads")
-      .select("case_id, type")
-      .in("case_id", caseIds);
-    const byCase: Record<string, { type: string }[]> = {};
-    for (const u of ups ?? []) {
-      (byCase[u.case_id as string] ||= []).push({ type: u.type as string });
-    }
-    for (const caseId of caseIds) {
-      const completion = getRequiredPhotoCompletion(
-        byCase[caseId] ?? [],
-        configByCase.get(caseId)
-      );
-      requiredDoneByCase[caseId] = completion.done;
-      requiredTotalByCase[caseId] = completion.total;
-    }
-  }
+  // All filtering + pagination happens server-side. Access is enforced inside the
+  // loader (non-auditors are constrained to created_by = user.id); clinic_profile_id
+  // is used only as a filter key, never as an access grant.
+  const params = parseSurgeryUploadSearchParams(await Promise.resolve(searchParams ?? {}));
+  const result = await loadSurgeryUploadIndex({
+    admin,
+    userId: user.id,
+    isAuditor: actor.isAuditor,
+    params,
+  });
 
   const canEditDefaults = actor.role === "clinic" || actor.isAuditor;
 
@@ -124,10 +92,16 @@ export default async function SurgeryUploadIndexPage() {
       </div>
 
       <SurgeryUploadIndexClient
-        rows={list as SurgeryUploadListRow[]}
-        requiredDoneByCase={requiredDoneByCase}
-        requiredTotalByCase={requiredTotalByCase}
-        requiredPhotoTotal={REQUIRED_PHOTO_TOTAL}
+        rows={result.rows}
+        options={result.options}
+        filters={params}
+        page={result.page}
+        pageSize={result.pageSize}
+        totalCount={result.totalCount}
+        totalCountApproximate={result.totalCountApproximate}
+        hasPrevPage={result.hasPrevPage}
+        hasNextPage={result.hasNextPage}
+        totalPages={result.totalPages}
         procedureLabels={PROCEDURE_LABELS}
         isAuditor={actor.isAuditor}
       />
