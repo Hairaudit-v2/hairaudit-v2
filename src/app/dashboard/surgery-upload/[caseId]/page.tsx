@@ -7,6 +7,8 @@ import { resolveSurgeryUploadActor } from "@/lib/surgeryUpload/access";
 import type { SurgeryUploadDetails } from "@/lib/surgeryUpload/fields";
 import type { SurgerySlotReviewRow } from "@/lib/surgeryUpload/evidenceReview";
 import { loadEvidenceEvents, type EvidenceTimelineEvent } from "@/lib/surgeryUpload/evidenceEvents";
+import { loadAuditIntakeByCase } from "@/lib/surgeryUpload/auditIntakeQuery";
+import type { AuditIntakeStatus } from "@/lib/surgeryUpload/auditIntake";
 import SurgeryUploadFlowClient, { type SurgeryUploadRow } from "./SurgeryUploadFlowClient";
 
 export const dynamic = "force-dynamic";
@@ -71,6 +73,10 @@ export default async function SurgeryUploadCasePage({
   // Case access was already enforced above via canAccessCase.
   const evidenceEvents: EvidenceTimelineEvent[] = await loadEvidenceEvents(admin, caseId);
 
+  // Stage 6C: read-only audit intake status (bare status only on the mobile flow).
+  const intake = await loadAuditIntakeByCase(admin, caseId);
+  const auditIntakeStatus: AuditIntakeStatus | null = intake?.status ?? null;
+
   return (
     <div className="mx-auto w-full max-w-2xl px-4 pb-28">
       <div className="pt-2">
@@ -88,6 +94,7 @@ export default async function SurgeryUploadCasePage({
         initialUploads={(uploads ?? []) as SurgeryUploadRow[]}
         initialSlotReviews={slotReviews}
         evidenceEvents={evidenceEvents}
+        auditIntakeStatus={auditIntakeStatus}
       />
     </div>
   );

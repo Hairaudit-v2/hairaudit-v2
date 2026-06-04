@@ -16,6 +16,10 @@ import {
   evidenceReviewStatusLabel,
   slotReviewStatusLabel,
 } from "@/lib/surgeryUpload/evidenceReview";
+import {
+  auditIntakePriorityLabel,
+  auditIntakeStatusLabel,
+} from "@/lib/surgeryUpload/auditIntake";
 import type { EvidenceEventType } from "@/lib/surgeryUpload/logEvidenceEvent";
 
 /** Max characters of free-text (notes / request messages) surfaced in the timeline. */
@@ -40,6 +44,9 @@ export const EVIDENCE_EVENT_LABELS: Record<EvidenceEventType, string> = {
   additional_evidence_uploaded: "Additional evidence uploaded",
   evidence_resubmitted: "Additional evidence resubmitted",
   audit_handoff: "Audit handoff",
+  audit_intake_created: "Audit intake created",
+  audit_intake_updated: "Audit intake updated",
+  audit_intake_status_changed: "Audit intake status changed",
 };
 
 /** Label for a known event type; unknown types render as a safe generic label. */
@@ -165,12 +172,44 @@ function buildSummary(
           note: readString(meta, "errorMessage"),
         };
       }
-      // Marker mode is the Stage 6B reality; phrase success accordingly.
+      // Stage 6B was marker mode; Stage 6C sends to the audit intake queue.
       const summary =
         mode === "marker"
           ? "Mobile surgery upload marked for audit intake."
-          : "Mobile surgery upload sent to audit pipeline.";
+          : "Mobile surgery upload sent to audit intake.";
       return { summary, note: readString(meta, "notes") };
+    }
+    case "audit_intake_created":
+      return { summary: "Audit intake record created.", note: null };
+    case "audit_intake_status_changed": {
+      const from = readString(meta, "from", "previousStatus");
+      const to = readString(meta, "to", "newStatus", "status");
+      const summary =
+        from || to
+          ? `Audit intake status changed from ${auditIntakeStatusLabel(from)} to ${auditIntakeStatusLabel(to)}.`
+          : "Audit intake status changed.";
+      return { summary, note: null };
+    }
+    case "audit_intake_updated": {
+      const priorityTo = readString(meta, "priority", "priorityChangedTo");
+      if (priorityTo) {
+        return {
+          summary: `Audit intake priority changed to ${auditIntakePriorityLabel(priorityTo)}.`,
+          note: null,
+        };
+      }
+      if (readBool(meta, "assignedChanged")) {
+        return {
+          summary: readBool(meta, "assigned")
+            ? "Audit intake assigned to a reviewer."
+            : "Audit intake assignment cleared.",
+          note: null,
+        };
+      }
+      if (readBool(meta, "notesUpdated")) {
+        return { summary: "Audit intake notes updated.", note: null };
+      }
+      return { summary: "Audit intake record updated.", note: null };
     }
     default:
       return { summary: "Evidence review activity recorded.", note: null };

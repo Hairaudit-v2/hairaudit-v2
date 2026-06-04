@@ -77,14 +77,24 @@ export default async function SurgeryUploadIndexPage({
           Capture surgery photos and case details from your phone, during or right
           after the procedure.
         </p>
-        {canEditDefaults && (
-          <Link
-            href="/dashboard/surgery-upload/defaults"
-            className="mt-3 inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-cyan-300"
-          >
-            Surgery defaults
-          </Link>
-        )}
+        <div className="mt-3 flex flex-wrap gap-2">
+          {canEditDefaults && (
+            <Link
+              href="/dashboard/surgery-upload/defaults"
+              className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-cyan-300"
+            >
+              Surgery defaults
+            </Link>
+          )}
+          {actor.isAuditor && (
+            <Link
+              href="/dashboard/surgery-upload/audit-intake"
+              className="inline-flex items-center rounded-lg border border-indigo-300 bg-indigo-50 px-3 py-2 text-sm font-semibold text-indigo-700 hover:border-indigo-400"
+            >
+              Audit intake queue
+            </Link>
+          )}
+        </div>
       </header>
 
       <div className="sticky top-2 z-10 mt-5">

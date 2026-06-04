@@ -15,6 +15,10 @@ function badgeClass(eventType: string): string {
       return "bg-emerald-100 text-emerald-800";
     case "audit_handoff":
       return "bg-indigo-100 text-indigo-800";
+    case "audit_intake_created":
+    case "audit_intake_updated":
+    case "audit_intake_status_changed":
+      return "bg-purple-100 text-purple-800";
     default:
       return "bg-slate-100 text-slate-600";
   }

@@ -23,6 +23,10 @@ import {
 import SurgeryUploadEvidenceTimeline from "@/components/surgery-upload/SurgeryUploadEvidenceTimeline";
 import { type EvidenceTimelineEvent } from "@/lib/surgeryUpload/evidenceEvents";
 import {
+  auditIntakeStatusLabel,
+  type AuditIntakeStatus,
+} from "@/lib/surgeryUpload/auditIntake";
+import {
   clearLocalSurgeryDraft,
   diffRecoverableValues,
   hasMeaningfulLocalDifferences,
@@ -100,6 +104,7 @@ export default function SurgeryUploadFlowClient({
   initialUploads,
   initialSlotReviews = [],
   evidenceEvents = [],
+  auditIntakeStatus = null,
 }: {
   caseId: string;
   userId?: string | null;
@@ -107,6 +112,7 @@ export default function SurgeryUploadFlowClient({
   initialUploads: SurgeryUploadRow[];
   initialSlotReviews?: SurgerySlotReviewRow[];
   evidenceEvents?: EvidenceTimelineEvent[];
+  auditIntakeStatus?: AuditIntakeStatus | null;
 }) {
   const router = useRouter();
   const [details, setDetails] = useState<SurgeryUploadDetails>(initialDetails);
@@ -656,6 +662,7 @@ export default function SurgeryUploadFlowClient({
         details={details}
         photoCount={uploads.length}
         evidenceEvents={evidenceEvents}
+        auditIntakeStatus={auditIntakeStatus}
       />
     );
   }
@@ -1547,10 +1554,12 @@ function SubmittedConfirmation({
   details,
   photoCount,
   evidenceEvents,
+  auditIntakeStatus = null,
 }: {
   details: SurgeryUploadDetails;
   photoCount: number;
   evidenceEvents: EvidenceTimelineEvent[];
+  auditIntakeStatus?: AuditIntakeStatus | null;
 }) {
   return (
     <div className="mt-6 space-y-6 pb-10">
@@ -1567,6 +1576,11 @@ function SubmittedConfirmation({
         {details.submitted_at && (
           <p className="mt-2 text-xs text-slate-400">
             Submitted {new Date(details.submitted_at).toLocaleString()}
+          </p>
+        )}
+        {auditIntakeStatus && (
+          <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold text-purple-800">
+            Sent to audit intake · {auditIntakeStatusLabel(auditIntakeStatus)}
           </p>
         )}
         <Link

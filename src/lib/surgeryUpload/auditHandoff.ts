@@ -57,14 +57,15 @@ export function isAuditHandoffLocked(value: unknown): boolean {
 export type AuditHandoffPipelineMode = "direct" | "queue" | "marker";
 
 /**
- * Stage 6B integration approach. The existing /api/submit + Inngest pipeline is
- * NOT safe to call directly for surgery uploads (it forbids auditors, validates
- * patient/doctor/clinic photo categories, and depends on audit_type semantics
- * surgery uploads lack), and there is no dedicated audit queue table. So Stage 6B
- * records a controlled marker only. Stage 6C should switch this to "direct" or
- * "queue" once a safe integration exists.
+ * Stage 6C integration approach. The existing /api/submit + Inngest pipeline is
+ * still NOT safe to call directly for surgery uploads (it forbids auditors,
+ * validates patient/doctor/clinic photo categories, and depends on audit_type
+ * semantics surgery uploads lack). Stage 6C therefore routes the handoff into a
+ * dedicated, auditor-managed audit intake QUEUE (surgery_upload_audit_intake)
+ * instead of the engine. This is still not report generation — Stage 7 will
+ * connect intake records to the real pipeline.
  */
-export const AUDIT_HANDOFF_PIPELINE_MODE: AuditHandoffPipelineMode = "marker";
+export const AUDIT_HANDOFF_PIPELINE_MODE: AuditHandoffPipelineMode = "queue";
 
 // ---------------------------------------------------------------------------
 // Permission

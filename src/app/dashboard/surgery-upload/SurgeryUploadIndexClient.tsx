@@ -18,6 +18,7 @@ import {
   AUDIT_HANDOFF_STATUS_LABELS,
   auditHandoffStatusLabel,
 } from "@/lib/surgeryUpload/auditHandoff";
+import { auditIntakeStatusLabel } from "@/lib/surgeryUpload/auditIntake";
 import type {
   SelectOption,
   SurgeryUploadFilterOptions,
@@ -340,6 +341,9 @@ export default function SurgeryUploadIndexClient({
                     </span>
                     <div className="flex shrink-0 items-center gap-1.5">
                       {r.status === "submitted" && (
+                        <IntakeStatusBadge status={r.audit_intake_status} />
+                      )}
+                      {r.status === "submitted" && (
                         <HandoffStatusBadge status={r.audit_handoff_status} />
                       )}
                       {r.status === "submitted" && (
@@ -475,6 +479,26 @@ function HandoffStatusBadge({ status }: { status: string }) {
   return (
     <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${cls}`}>
       {auditHandoffStatusLabel(status)}
+    </span>
+  );
+}
+
+function IntakeStatusBadge({ status }: { status: string | null }) {
+  // Only surface an intake badge once a record exists.
+  if (!status) return null;
+  const cls =
+    status === "completed"
+      ? "bg-emerald-100 text-emerald-800"
+      : status === "processing"
+        ? "bg-cyan-100 text-cyan-800"
+        : status === "failed"
+          ? "bg-rose-100 text-rose-800"
+          : status === "cancelled"
+            ? "bg-slate-200 text-slate-600"
+            : "bg-purple-100 text-purple-800";
+  return (
+    <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${cls}`}>
+      Intake: {auditIntakeStatusLabel(status)}
     </span>
   );
 }

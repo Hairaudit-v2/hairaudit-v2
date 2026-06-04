@@ -23,10 +23,13 @@ import { applyAuditorOverridesToSummary, type OverrideRow } from "@/lib/auditor/
 import UnlockAuditorReviewButton from "./UnlockAuditorReviewButton";
 import VersionHistoryDrawer from "@/components/reports/VersionHistoryDrawer";
 import UploadThumbnailGallery from "@/components/reports/UploadThumbnailGallery";
-import SurgeryUploadReviewPanel from "@/components/surgery-upload/SurgeryUploadReviewPanel";
+import SurgeryUploadReviewPanel, {
+  type SurgeryAuditIntakeView,
+} from "@/components/surgery-upload/SurgeryUploadReviewPanel";
 import type { SurgeryUploadDetails } from "@/lib/surgeryUpload/fields";
 import type { SurgerySlotReviewRow } from "@/lib/surgeryUpload/evidenceReview";
 import { loadEvidenceEvents, type EvidenceTimelineEvent } from "@/lib/surgeryUpload/evidenceEvents";
+import { loadAuditIntakeByCase } from "@/lib/surgeryUpload/auditIntakeQuery";
 import LatestReportCard from "@/components/reports/LatestReportCard";
 import InviteClinicContributionCard from "@/components/case/InviteClinicContributionCard";
 import ForensicCaseTimelineViewer from "@/components/reports/ForensicCaseTimelineViewer";
@@ -379,6 +382,40 @@ export default async function Page({
 
   // Case-scoped access flags (auditor sees all)
   const isAuditor = role === "auditor";
+
+  // Stage 6C: audit intake status (read-only for clinic/doctor; richer for auditor).
+  // Auditor-only fields (priority, assignee, internal notes) are never sent to
+  // clinic/doctor — only the bare status is.
+  let surgeryAuditIntakeView: SurgeryAuditIntakeView | null = null;
+  if (surgeryUploadDetails) {
+    const intake = await loadAuditIntakeByCase(db, c.id);
+    if (intake) {
+      if (isAuditor) {
+        let assignedLabel: string | null = null;
+        if (intake.assigned_to) {
+          try {
+            const { data: prof } = await db
+              .from("profiles")
+              .select("display_name, role")
+              .eq("id", intake.assigned_to)
+              .maybeSingle();
+            const name = (prof?.display_name as string | null)?.trim();
+            assignedLabel = name || (prof?.role === "auditor" ? "Reviewer" : "Reviewer");
+          } catch {
+            assignedLabel = "Reviewer";
+          }
+        }
+        surgeryAuditIntakeView = {
+          status: intake.status,
+          priority: intake.priority,
+          assignedLabel,
+          intakeNotes: intake.intake_notes,
+        };
+      } else {
+        surgeryAuditIntakeView = { status: intake.status };
+      }
+    }
+  }
   let patientImageEvidenceQuality: ReturnType<typeof computePatientImageEvidenceQualityFromCaseUploads> | null = null;
   if (isAuditor && isInternalImageEvidenceQualityPanelEnabled()) {
     try {
@@ -1276,6 +1313,7 @@ export default async function Page({
             isAuditor={isAuditor}
             initialSlotReviews={surgerySlotReviews}
             evidenceEvents={surgeryEvidenceEvents}
+            auditIntake={surgeryAuditIntakeView}
           />
         </div>
       )}

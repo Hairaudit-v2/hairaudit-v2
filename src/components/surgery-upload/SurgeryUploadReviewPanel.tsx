@@ -30,6 +30,21 @@ import {
   normalizeAuditHandoffStatus,
   type AuditHandoffStatus,
 } from "@/lib/surgeryUpload/auditHandoff";
+import {
+  auditIntakePriorityLabel,
+  auditIntakeStatusLabel,
+  type AuditIntakePriority,
+  type AuditIntakeStatus,
+} from "@/lib/surgeryUpload/auditIntake";
+import Link from "next/link";
+
+/** Sanitized audit-intake view passed to the review panel (no internal ids). */
+export type SurgeryAuditIntakeView = {
+  status: AuditIntakeStatus;
+  priority?: AuditIntakePriority | null;
+  assignedLabel?: string | null;
+  intakeNotes?: string | null;
+};
 
 type UploadRow = {
   id: string;
@@ -66,6 +81,7 @@ export default function SurgeryUploadReviewPanel({
   isAuditor = false,
   initialSlotReviews = [],
   evidenceEvents = [],
+  auditIntake = null,
 }: {
   details: SurgeryUploadDetails;
   uploads: UploadRow[];
@@ -73,6 +89,7 @@ export default function SurgeryUploadReviewPanel({
   isAuditor?: boolean;
   initialSlotReviews?: SurgerySlotReviewRow[];
   evidenceEvents?: EvidenceTimelineEvent[];
+  auditIntake?: SurgeryAuditIntakeView | null;
 }) {
   const surgeryUploads = useMemo(
     () => uploads.filter((u) => slotFromSurgeryType(u.type) !== null),
@@ -243,6 +260,11 @@ export default function SurgeryUploadReviewPanel({
           requiredEvidenceComplete={requirementMessages.length === 0}
           requirementMessages={requirementMessages}
         />
+      )}
+
+      {/* Stage 6C: audit intake queue status (once a record exists). */}
+      {submitted && auditIntake && (
+        <AuditIntakeStatusSection intake={auditIntake} isAuditor={isAuditor} />
       )}
 
       {/* Required-photo completeness for reviewers (count-aware) */}
@@ -742,6 +764,89 @@ function HandoffStatusBadge({ status }: { status: AuditHandoffStatus }) {
     >
       {AUDIT_HANDOFF_STATUS_LABELS[status]}
     </span>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Stage 6C: Audit intake queue status
+// ---------------------------------------------------------------------------
+function intakeBadgeClass(status: AuditIntakeStatus): string {
+  switch (status) {
+    case "pending":
+      return "bg-amber-100 text-amber-800";
+    case "processing":
+      return "bg-cyan-100 text-cyan-800";
+    case "completed":
+      return "bg-emerald-100 text-emerald-800";
+    case "failed":
+      return "bg-rose-100 text-rose-800";
+    case "cancelled":
+      return "bg-slate-200 text-slate-600";
+  }
+}
+
+/**
+ * Audit intake status. Auditors see priority, assignment, internal notes, and a
+ * link to the queue. Clinic/doctor users see a read-only status only (no internal
+ * notes, no error details, no internal ids).
+ */
+function AuditIntakeStatusSection({
+  intake,
+  isAuditor,
+}: {
+  intake: SurgeryAuditIntakeView;
+  isAuditor: boolean;
+}) {
+  if (!isAuditor) {
+    return (
+      <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-sm font-semibold text-slate-700">Audit intake</p>
+          <span
+            className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${intakeBadgeClass(intake.status)}`}
+          >
+            {auditIntakeStatusLabel(intake.status)}
+          </span>
+        </div>
+        <p className="mt-1 text-xs text-slate-500">
+          Sent to audit intake. Audit intake status: {auditIntakeStatusLabel(intake.status)}.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-3 rounded-xl border border-purple-300 bg-purple-50/60 p-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm font-semibold text-slate-800">Audit intake</p>
+        <div className="flex items-center gap-1.5">
+          {intake.priority && (
+            <span className="rounded-full bg-white px-2.5 py-0.5 text-xs font-semibold text-slate-600">
+              {auditIntakePriorityLabel(intake.priority)}
+            </span>
+          )}
+          <span
+            className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${intakeBadgeClass(intake.status)}`}
+          >
+            {auditIntakeStatusLabel(intake.status)}
+          </span>
+        </div>
+      </div>
+      {intake.assignedLabel && (
+        <p className="mt-1 text-xs text-slate-600">Assigned reviewer: {intake.assignedLabel}</p>
+      )}
+      {intake.intakeNotes && (
+        <p className="mt-1.5 rounded-lg border border-slate-200 bg-white p-2 text-xs text-slate-600">
+          {intake.intakeNotes}
+        </p>
+      )}
+      <Link
+        href="/dashboard/surgery-upload/audit-intake"
+        className="mt-2 inline-flex text-xs font-semibold text-purple-700 hover:text-purple-800"
+      >
+        Manage in audit intake queue →
+      </Link>
+    </div>
   );
 }
 

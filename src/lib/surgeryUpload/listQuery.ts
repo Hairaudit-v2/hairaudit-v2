@@ -9,6 +9,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getRequiredPhotoCountSummary } from "./checklist";
 import { SURGERY_PROCEDURE_TYPES } from "./fields";
+import { loadAuditIntakeStatusesByCase } from "./auditIntakeQuery";
 import {
   UNKNOWN_CLINIC_KEY,
   type SurgeryUploadQueryParams,
@@ -69,6 +70,8 @@ export type SurgeryUploadListItem = {
   evidence_review_status: string;
   /** Stage 6B: audit pipeline handoff status. */
   audit_handoff_status: string;
+  /** Stage 6C: audit intake queue status (null when no intake record exists). */
+  audit_intake_status: string | null;
   /** Sum of min(uploaded, minCount) across required slots (the "7" in 7/8). */
   requiredSatisfiedCount: number;
   /** Sum of per-slot minCounts across required slots (the "8" in 7/8). */
@@ -175,6 +178,9 @@ async function attachCompletion(
     else byCase.set(u.case_id, [{ type: u.type }]);
   }
 
+  // Stage 6C: annotate each row with its audit intake status (best-effort).
+  const intakeByCase = await loadAuditIntakeStatusesByCase(admin, caseIds);
+
   return rows.map((r) => {
     const summary = getRequiredPhotoCountSummary(
       byCase.get(r.case_id) ?? [],
@@ -193,6 +199,7 @@ async function attachCompletion(
       created_at: r.created_at,
       evidence_review_status: r.evidence_review_status ?? "not_reviewed",
       audit_handoff_status: r.audit_handoff_status ?? "not_sent",
+      audit_intake_status: intakeByCase.get(r.case_id) ?? null,
       requiredSatisfiedCount: summary.requiredSatisfiedCount,
       requiredCountTotal: summary.requiredCountTotal,
       missingRequired: summary.missingRequired,
