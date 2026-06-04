@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useState } from "react";
+import { useRouter } from "next/navigation";
 
 const PRIVACY =
   "This export may include patient-identifying information. Download and store it only in authorised clinical systems according to your clinic privacy policy.";
@@ -27,6 +28,7 @@ export default function SurgeryPhotoExportPackButton({
   className = "",
   variant = "button",
 }: Props) {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -63,12 +65,13 @@ export default function SurgeryPhotoExportPackButton({
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
+      router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Download failed");
     } finally {
       setLoading(false);
     }
-  }, [href]);
+  }, [href, router]);
 
   const disabled =
     typeof surgeryPhotoCount === "number" ? surgeryPhotoCount <= 0 || loading : loading;

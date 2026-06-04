@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   SURGERY_PHOTO_SLOTS,
   slotFromSurgeryType,
@@ -29,6 +30,7 @@ export default function SurgeryPhotoExportPackPanel({
   uploads,
   exportHistory = [],
 }: Props) {
+  const router = useRouter();
   const slotsWithCounts = useMemo(() => {
     const counts = countSurgeryPhotosBySlot(uploads);
     return SURGERY_PHOTO_SLOTS.map((s) => ({
@@ -49,41 +51,45 @@ export default function SurgeryPhotoExportPackPanel({
 
   const basePath = `/api/surgery-upload/cases/${encodeURIComponent(caseId)}/photo-export`;
 
-  const download = useCallback(async (href: string) => {
-    setError(null);
-    setLoading(true);
-    try {
-      const res = await fetch(href, { method: "GET", credentials: "include" });
-      if (!res.ok) {
-        let msg = res.statusText;
-        try {
-          const j = (await res.json()) as { error?: string };
-          if (j?.error) msg = j.error;
-        } catch {
-          /* ignore */
+  const download = useCallback(
+    async (href: string) => {
+      setError(null);
+      setLoading(true);
+      try {
+        const res = await fetch(href, { method: "GET", credentials: "include" });
+        if (!res.ok) {
+          let msg = res.statusText;
+          try {
+            const j = (await res.json()) as { error?: string };
+            if (j?.error) msg = j.error;
+          } catch {
+            /* ignore */
+          }
+          throw new Error(msg);
         }
-        throw new Error(msg);
+        const blob = await res.blob();
+        const cd = res.headers.get("Content-Disposition");
+        let filename = "hairaudit-surgery-photos.zip";
+        const m = cd?.match(/filename="([^"]+)"/i);
+        if (m?.[1]) filename = m[1];
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        a.rel = "noopener";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        router.refresh();
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Download failed");
+      } finally {
+        setLoading(false);
       }
-      const blob = await res.blob();
-      const cd = res.headers.get("Content-Disposition");
-      let filename = "hairaudit-surgery-photos.zip";
-      const m = cd?.match(/filename="([^"]+)"/i);
-      if (m?.[1]) filename = m[1];
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      a.rel = "noopener";
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Download failed");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    [router]
+  );
 
   const toggleSlot = useCallback((key: SurgeryPhotoSlotKey) => {
     setSelected((prev) => {
@@ -127,6 +133,12 @@ export default function SurgeryPhotoExportPackPanel({
 
   return (
     <div className="space-y-4">
+      <p className="max-w-xl text-sm text-slate-600">
+        <span className="font-semibold text-slate-800">How export works:</span> Download{" "}
+        <strong>all</strong> surgery photos as one ZIP, grab a <strong>single category</strong> from
+        the list, or tick several categories and use <strong>Download selected</strong> for a
+        smaller CRM/CMS import.
+      </p>
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
         <button
           type="button"

@@ -40,31 +40,36 @@ Root folder: `Case-<patientName>-<caseReference>-<shortId>` or `Case-<caseRefere
 
 ## Manifest (CRM-oriented)
 
+Canonical **version 1** schema (column order, JSON top-level keys): [surgery-upload-crm-cms-integration-stage8c.md](./surgery-upload-crm-cms-integration-stage8c.md).
+
 ### `manifest.csv`
 
-User-facing columns only (no `storage_path`, no `case_id`, no auth ids):
+User-facing columns only (no `storage_path`, no `case_id` in CSV). Rows include `manifest_version` and `export_source` (see 8C doc), then patient/case/photo fields.
 
-`patient_name`, `patient_reference`, `case_reference`, `surgery_date`, `clinic_name`, `surgeon`, `procedure_type`, `photo_category`, `photo_category_key`, `original_filename`, `exported_filename`, `uploaded_at`, `uploaded_by`, `added_after_review_request`, `quality_warning`, `width`, `height`, `original_size_bytes`, `compressed_size_bytes`, `file_included`, `skip_reason`
+`manifest_version`, `export_source`, `patient_name`, `patient_reference`, `case_reference`, `surgery_date`, `clinic_name`, `surgeon`, `procedure_type`, `photo_category`, `photo_category_key`, `original_filename`, `exported_filename`, `uploaded_at`, `uploaded_by`, `added_after_review_request`, `quality_warning`, `width`, `height`, `original_size_bytes`, `compressed_size_bytes`, `file_included`, `skip_reason`
 
-`uploaded_by` is the uploader’s user id string (legacy compatibility); omit from CRM mapping if your policy forbids storing ids.
+`uploaded_by` is a **display label** (profile name or role label; blank if unknown), not a raw UUID — see [8C doc](./surgery-upload-crm-cms-integration-stage8c.md).
 
 ### `manifest.json`
 
-Top-level shape:
+Top-level shape (version 1):
 
 ```json
 {
+  "manifest_version": 1,
+  "export_source": "hairaudit_mobile_surgery_upload",
   "export": { "generated_at", "export_scope", "selected_slots", "photo_count", "included_file_count", "skipped_file_count" },
   "case": { "patient_name", "patient_reference", "case_reference", "surgery_date", "clinic_name", "surgeon", "procedure_type" },
-  "photos": [ { "...row fields...", "internal": { "upload_id", "storage_path" } } ],
+  "photos": [ { "uploaded_by_label", "...", "internal": { "upload_id", "storage_path", "uploaded_by_id" } } ],
   "internal": { "case_id", "zip_filename", "downloaded_source_bytes", "note" }
+}
 ```
 
 Prefer **CSV** for generic CRM imports; JSON `internal` / per-photo `internal` is for controlled technical integrations.
 
 ## Export logging metadata (completed)
 
-Includes: `slot_keys`, `patient_name_included`, `case_reference`, `zip_filename`, `skipped_count`, `included_count`, `requested_count`, byte counts.
+Includes: `manifest_version`, `export_source`, `manifest_schema_version`, `export_scope`, `slot_keys`, `patient_name_included`, `patient_reference_included`, `case_reference`, `zip_filename`, `skipped_count`, `included_count`, `requested_count`, byte counts, `streaming_used`, `zip_bytes` (null when streaming ZIP output).
 
 ## UI
 
@@ -78,6 +83,9 @@ Unchanged from 8A: no patients, no public links, no path in CSV, `clinic_profile
 
 ## Limitations & Stage 8C / 9 ideas
 
-- In-memory ZIP (same as 8A).
-- Export history does not auto-refresh after download until page refresh.
-- Future: streaming ZIP, signed-URL handoff only with explicit product spec, OAuth CRM connectors, webhook on export completion.
+Stage **8C** addressed streaming ZIP delivery (compressed stream to the client; see [CRM/CMS integration prep](./surgery-upload-crm-cms-integration-stage8c.md)), manifest **version 1** (`manifest_version` + `export_source`), uploader display labels, richer export metadata, export history refresh via `router.refresh()`, and timeline tweaks for failed exports.
+
+Remaining / future:
+
+- Input buffers still load full photo bytes before ZIP streaming completes; true storage→ZIP streaming would be a later optimisation.
+- Signed-URL handoff only with explicit product spec, OAuth CRM connectors, webhook on export completion, clinic batch export worker.

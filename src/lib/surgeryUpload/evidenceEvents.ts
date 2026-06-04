@@ -21,6 +21,7 @@ import {
   auditIntakeStatusLabel,
 } from "@/lib/surgeryUpload/auditIntake";
 import type { EvidenceEventType } from "@/lib/surgeryUpload/logEvidenceEvent";
+import { staffDisplayLabelFromProfile } from "@/lib/surgeryUpload/photoExportStaffDisplay";
 
 /** Max characters of free-text (notes / request messages) surfaced in the timeline. */
 const MAX_TIMELINE_TEXT = 600;
@@ -277,11 +278,18 @@ function buildSummary(
           : `Surgery photos exported (${scopePhrase}).`;
       return { summary, note: null };
     }
-    case "photo_export_failed":
+    case "photo_export_failed": {
+      const msg = readString(meta, "message", "errorMessage");
+      const exportScope = readString(meta, "exportScope", "scope");
+      let scopeHint = "";
+      if (exportScope === "all") scopeHint = " (all categories)";
+      else if (exportScope === "multi_category") scopeHint = " (multiple categories)";
+      else if (exportScope === "category") scopeHint = " (single category)";
       return {
-        summary: "Photo export failed.",
-        note: readString(meta, "message", "errorMessage"),
+        summary: `Photo export failed${scopeHint}.`,
+        note: msg,
       };
+    }
     default:
       return { summary: "Evidence review activity recorded.", note: null };
   }
@@ -293,20 +301,6 @@ function buildSummary(
 // We only read profiles(id, role, display_name). Email lives in auth.users and is
 // intentionally NOT fetched here (avoids per-actor admin lookups). When no profile
 // is found we fall back to a role-agnostic, non-identifying label.
-function actorLabelFromProfile(profile: { role?: string | null; display_name?: string | null } | undefined): string {
-  const name = profile?.display_name?.trim();
-  if (name) return name;
-  switch (profile?.role) {
-    case "auditor":
-      return "Reviewer";
-    case "clinic":
-      return "Clinic user";
-    case "doctor":
-      return "Doctor";
-    default:
-      return "User";
-  }
-}
 
 // ---------------------------------------------------------------------------
 // Loader
@@ -367,7 +361,7 @@ export async function loadEvidenceEvents(
         summary,
         note,
         actorLabel: row.actor_id
-          ? actorLabelFromProfile(profilesById.get(row.actor_id))
+          ? staffDisplayLabelFromProfile(profilesById.get(row.actor_id))
           : "System",
         createdAt: row.created_at,
       };

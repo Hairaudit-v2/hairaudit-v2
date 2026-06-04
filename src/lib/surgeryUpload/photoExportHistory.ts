@@ -1,6 +1,7 @@
 // Stage 8B — read-only surgery photo export history for case participants (no patients).
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { SURGERY_PHOTO_SLOTS } from "@/lib/surgeryUpload/checklist";
+import { staffDisplayLabelFromProfile } from "@/lib/surgeryUpload/photoExportStaffDisplay";
 
 const SLOT_LABELS: Record<string, string> = Object.fromEntries(
   SURGERY_PHOTO_SLOTS.map((s) => [s.key, s.label])
@@ -103,9 +104,11 @@ export async function loadPhotoExportHistory(
 
     return rows.map((row) => {
       const prof = row.actor_id ? profilesById.get(row.actor_id) : undefined;
-      const name = prof?.display_name?.trim();
-      const actorLabel =
-        name ? name.slice(0, 80) : row.actor_id ? "Staff" : "System";
+      const actorLabel = !row.actor_id
+        ? "System"
+        : prof
+          ? staffDisplayLabelFromProfile(prof)
+          : "Staff";
       const st = row.status === "failed" ? "failed" : "completed";
       return {
         id: row.id,
