@@ -13,6 +13,11 @@ import {
   EVIDENCE_REVIEW_STATUS_LABELS,
   evidenceReviewStatusLabel,
 } from "@/lib/surgeryUpload/evidenceReview";
+import {
+  AUDIT_HANDOFF_STATUSES,
+  AUDIT_HANDOFF_STATUS_LABELS,
+  auditHandoffStatusLabel,
+} from "@/lib/surgeryUpload/auditHandoff";
 import type {
   SelectOption,
   SurgeryUploadFilterOptions,
@@ -131,9 +136,18 @@ export default function SurgeryUploadIndexClient({
     setFromInput("");
     setToInput("");
     navigate((sp) => {
-      ["status", "clinic", "surgeon", "procedure", "missing", "from", "to", "page"].forEach(
-        (k) => sp.delete(k)
-      );
+      [
+        "status",
+        "reviewStatus",
+        "handoffStatus",
+        "clinic",
+        "surgeon",
+        "procedure",
+        "missing",
+        "from",
+        "to",
+        "page",
+      ].forEach((k) => sp.delete(k));
     });
   }
 
@@ -226,6 +240,16 @@ export default function SurgeryUploadIndexClient({
             }))}
             allLabel="All review statuses"
           />
+          <FilterSelect
+            label="Audit handoff"
+            value={filters.handoffStatus}
+            onChange={(v) => updateFilters({ handoffStatus: v || null })}
+            options={AUDIT_HANDOFF_STATUSES.map((s) => ({
+              value: s,
+              label: AUDIT_HANDOFF_STATUS_LABELS[s],
+            }))}
+            allLabel="All handoff statuses"
+          />
           <div className="grid grid-cols-2 gap-2">
             <label className="block">
               <span className="mb-1 block text-xs font-medium text-slate-600">Surgery from</span>
@@ -315,6 +339,9 @@ export default function SurgeryUploadIndexClient({
                       {r.patient_reference?.trim() || "Untitled surgery upload"}
                     </span>
                     <div className="flex shrink-0 items-center gap-1.5">
+                      {r.status === "submitted" && (
+                        <HandoffStatusBadge status={r.audit_handoff_status} />
+                      )}
                       {r.status === "submitted" && (
                         <ReviewStatusBadge status={r.evidence_review_status} />
                       )}
@@ -430,6 +457,24 @@ function StatusPill({ status }: { status: string }) {
       }`}
     >
       {submitted ? "Submitted for review" : "Draft"}
+    </span>
+  );
+}
+
+function HandoffStatusBadge({ status }: { status: string }) {
+  // Keep rows uncluttered: only surface meaningful handoff states.
+  if (!status || status === "not_sent") return null;
+  const cls =
+    status === "sent"
+      ? "bg-indigo-100 text-indigo-800"
+      : status === "failed"
+        ? "bg-rose-100 text-rose-800"
+        : status === "sending"
+          ? "bg-amber-100 text-amber-800"
+          : "bg-slate-100 text-slate-600";
+  return (
+    <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${cls}`}>
+      {auditHandoffStatusLabel(status)}
     </span>
   );
 }

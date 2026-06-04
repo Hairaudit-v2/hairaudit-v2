@@ -4,6 +4,7 @@
 // never reaches the query builder unchecked.
 import { isValidProcedureType } from "./fields";
 import { isEvidenceReviewStatus, type EvidenceReviewStatus } from "./evidenceReview";
+import { isAuditHandoffStatus, type AuditHandoffStatus } from "./auditHandoff";
 
 /** Allowed page sizes (default first). Anything else sanitizes to the default. */
 export const SURGERY_PAGE_SIZES = [25, 50, 100] as const;
@@ -19,11 +20,16 @@ export type SurgeryStatusFilter = "all" | "draft" | "submitted";
 /** "" means all review statuses; otherwise a valid EvidenceReviewStatus. */
 export type SurgeryReviewStatusFilter = "" | EvidenceReviewStatus;
 
+/** "" means all handoff statuses; otherwise a valid AuditHandoffStatus. */
+export type SurgeryHandoffStatusFilter = "" | AuditHandoffStatus;
+
 /** Sanitized, query-ready filter state (no pagination). */
 export type SurgeryUploadFilters = {
   status: SurgeryStatusFilter;
   /** Stage 5: evidence review status filter ("" = all). */
   reviewStatus: SurgeryReviewStatusFilter;
+  /** Stage 6B: audit handoff status filter ("" = all). */
+  handoffStatus: SurgeryHandoffStatusFilter;
   /** "" | "id:<uuid>" | "name:<lowercased>" | "__unknown__" */
   clinic: string;
   /** Trimmed, length-limited free text for a case-insensitive partial match. */
@@ -105,6 +111,11 @@ export function parseSurgeryUploadSearchParams(
     ? reviewStatusRaw
     : "";
 
+  const handoffStatusRaw = firstValue(raw.handoffStatus).trim();
+  const handoffStatus: SurgeryHandoffStatusFilter = isAuditHandoffStatus(handoffStatusRaw)
+    ? handoffStatusRaw
+    : "";
+
   const procedureRaw = firstValue(raw.procedure).trim();
   const procedure = isValidProcedureType(procedureRaw) ? procedureRaw : "";
 
@@ -126,7 +137,19 @@ export function parseSurgeryUploadSearchParams(
   const pageRaw = Math.floor(Number(firstValue(raw.page)));
   const page = Number.isFinite(pageRaw) && pageRaw >= 1 ? pageRaw : 1;
 
-  return { status, reviewStatus, clinic, surgeon, procedure, missing, from, to, page, pageSize };
+  return {
+    status,
+    reviewStatus,
+    handoffStatus,
+    clinic,
+    surgeon,
+    procedure,
+    missing,
+    from,
+    to,
+    page,
+    pageSize,
+  };
 }
 
 /** True when any non-default filter is active (drives empty-state copy / clear UI). */
@@ -134,6 +157,7 @@ export function hasActiveSurgeryFilters(f: SurgeryUploadFilters): boolean {
   return (
     f.status !== "all" ||
     Boolean(f.reviewStatus) ||
+    Boolean(f.handoffStatus) ||
     Boolean(f.clinic) ||
     Boolean(f.surgeon) ||
     Boolean(f.procedure) ||

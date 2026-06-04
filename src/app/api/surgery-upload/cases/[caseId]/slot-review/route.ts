@@ -110,7 +110,9 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ caseId: strin
       caseId,
       actorId: user.id,
       eventType: "slot_review_updated",
-      metadata: { slotKey, status },
+      // Stage 6A: include reviewer_notes (already visible to the clinic/doctor) so the
+      // read-only evidence timeline can surface per-slot context. Additive only.
+      metadata: { slotKey, status, ...(reviewerNotes !== null ? { reviewerNotes } : {}) },
     });
 
     return NextResponse.json({ ok: true, slotReview: upserted });

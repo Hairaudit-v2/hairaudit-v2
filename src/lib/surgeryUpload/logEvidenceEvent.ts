@@ -7,7 +7,9 @@ export type EvidenceEventType =
   | "evidence_review_status_changed"
   | "slot_review_updated"
   | "additional_evidence_uploaded"
-  | "evidence_resubmitted";
+  | "evidence_resubmitted"
+  // Stage 6B: controlled audit-pipeline handoff (success or failure carried in metadata.result).
+  | "audit_handoff";
 
 export async function logEvidenceEvent(
   admin: SupabaseClient,

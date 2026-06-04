@@ -128,6 +128,12 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ caseId: strin
         to: reviewStatus,
         hasNotes: notes !== null,
         hasRequestMessage: requestMessage !== null,
+        // Stage 6A: persist the actual text (already shown to the clinic/doctor) so
+        // the read-only evidence timeline can surface it. Additive + backward compatible.
+        ...(reviewStatus === "needs_more_evidence" && requestMessage !== null
+          ? { requestMessage }
+          : {}),
+        ...(notes !== null ? { reviewerNotes: notes } : {}),
       },
     });
 

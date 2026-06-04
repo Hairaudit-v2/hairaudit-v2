@@ -20,6 +20,8 @@ import {
   slotReviewStatusLabel,
   type SurgerySlotReviewRow,
 } from "@/lib/surgeryUpload/evidenceReview";
+import SurgeryUploadEvidenceTimeline from "@/components/surgery-upload/SurgeryUploadEvidenceTimeline";
+import { type EvidenceTimelineEvent } from "@/lib/surgeryUpload/evidenceEvents";
 import {
   clearLocalSurgeryDraft,
   diffRecoverableValues,
@@ -97,12 +99,14 @@ export default function SurgeryUploadFlowClient({
   initialDetails,
   initialUploads,
   initialSlotReviews = [],
+  evidenceEvents = [],
 }: {
   caseId: string;
   userId?: string | null;
   initialDetails: SurgeryUploadDetails;
   initialUploads: SurgeryUploadRow[];
   initialSlotReviews?: SurgerySlotReviewRow[];
+  evidenceEvents?: EvidenceTimelineEvent[];
 }) {
   const router = useRouter();
   const [details, setDetails] = useState<SurgeryUploadDetails>(initialDetails);
@@ -647,7 +651,13 @@ export default function SurgeryUploadFlowClient({
   }, []);
 
   if (locked && !needsMoreEvidence) {
-    return <SubmittedConfirmation details={details} photoCount={uploads.length} />;
+    return (
+      <SubmittedConfirmation
+        details={details}
+        photoCount={uploads.length}
+        evidenceEvents={evidenceEvents}
+      />
+    );
   }
 
   if (locked && needsMoreEvidence) {
@@ -722,6 +732,16 @@ export default function SurgeryUploadFlowClient({
             </ul>
           </div>
         )}
+
+        {/* Stage 6A: read-only evidence-review activity so the clinic/doctor can see
+            what was requested, what they resubmitted, and the reviewer's decisions. */}
+        <div className="rounded-2xl border border-slate-200 bg-white p-4">
+          <SurgeryUploadEvidenceTimeline
+            events={evidenceEvents}
+            title="Evidence review activity"
+            subtitle="What the reviewer has requested and your recent submissions."
+          />
+        </div>
 
         {/* Aggregate upload-failure banner */}
         {totalFailed > 0 && (
@@ -1526,32 +1546,45 @@ function PhotoSlotCard({
 function SubmittedConfirmation({
   details,
   photoCount,
+  evidenceEvents,
 }: {
   details: SurgeryUploadDetails;
   photoCount: number;
+  evidenceEvents: EvidenceTimelineEvent[];
 }) {
   return (
-    <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-6 text-center">
-      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-600 text-2xl text-white">
-        ✓
-      </div>
-      <h1 className="mt-4 text-xl font-bold text-slate-900">Submitted for review</h1>
-      <p className="mt-1 text-sm text-slate-600">
-        {details.patient_reference?.trim() || "This surgery upload"} has been submitted with{" "}
-        {photoCount} photo{photoCount === 1 ? "" : "s"}. It is now locked to preserve
-        integrity.
-      </p>
-      {details.submitted_at && (
-        <p className="mt-2 text-xs text-slate-400">
-          Submitted {new Date(details.submitted_at).toLocaleString()}
+    <div className="mt-6 space-y-6 pb-10">
+      <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-6 text-center">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-600 text-2xl text-white">
+          ✓
+        </div>
+        <h1 className="mt-4 text-xl font-bold text-slate-900">Submitted for review</h1>
+        <p className="mt-1 text-sm text-slate-600">
+          {details.patient_reference?.trim() || "This surgery upload"} has been submitted with{" "}
+          {photoCount} photo{photoCount === 1 ? "" : "s"}. It is now locked to preserve
+          integrity.
         </p>
-      )}
-      <Link
-        href="/dashboard/surgery-upload"
-        className="mt-5 inline-flex rounded-xl bg-cyan-600 px-5 py-3 text-sm font-semibold text-white"
-      >
-        Back to surgery uploads
-      </Link>
+        {details.submitted_at && (
+          <p className="mt-2 text-xs text-slate-400">
+            Submitted {new Date(details.submitted_at).toLocaleString()}
+          </p>
+        )}
+        <Link
+          href="/dashboard/surgery-upload"
+          className="mt-5 inline-flex rounded-xl bg-cyan-600 px-5 py-3 text-sm font-semibold text-white"
+        >
+          Back to surgery uploads
+        </Link>
+      </div>
+
+      {/* Stage 6A: read-only evidence-review activity for the clinic/doctor. */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-4">
+        <SurgeryUploadEvidenceTimeline
+          events={evidenceEvents}
+          title="Evidence review activity"
+          subtitle="A read-only record of reviewer activity for this upload."
+        />
+      </div>
     </div>
   );
 }

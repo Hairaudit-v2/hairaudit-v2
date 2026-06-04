@@ -6,6 +6,7 @@ import { canAccessCase } from "@/lib/case-access";
 import { resolveSurgeryUploadActor } from "@/lib/surgeryUpload/access";
 import type { SurgeryUploadDetails } from "@/lib/surgeryUpload/fields";
 import type { SurgerySlotReviewRow } from "@/lib/surgeryUpload/evidenceReview";
+import { loadEvidenceEvents, type EvidenceTimelineEvent } from "@/lib/surgeryUpload/evidenceEvents";
 import SurgeryUploadFlowClient, { type SurgeryUploadRow } from "./SurgeryUploadFlowClient";
 
 export const dynamic = "force-dynamic";
@@ -66,6 +67,10 @@ export default async function SurgeryUploadCasePage({
     /* Stage 5 table may not exist yet in older environments */
   }
 
+  // Stage 6A: read-only evidence-review history for clinic/doctor visibility.
+  // Case access was already enforced above via canAccessCase.
+  const evidenceEvents: EvidenceTimelineEvent[] = await loadEvidenceEvents(admin, caseId);
+
   return (
     <div className="mx-auto w-full max-w-2xl px-4 pb-28">
       <div className="pt-2">
@@ -82,6 +87,7 @@ export default async function SurgeryUploadCasePage({
         initialDetails={details as SurgeryUploadDetails}
         initialUploads={(uploads ?? []) as SurgeryUploadRow[]}
         initialSlotReviews={slotReviews}
+        evidenceEvents={evidenceEvents}
       />
     </div>
   );

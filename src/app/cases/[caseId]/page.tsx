@@ -26,6 +26,7 @@ import UploadThumbnailGallery from "@/components/reports/UploadThumbnailGallery"
 import SurgeryUploadReviewPanel from "@/components/surgery-upload/SurgeryUploadReviewPanel";
 import type { SurgeryUploadDetails } from "@/lib/surgeryUpload/fields";
 import type { SurgerySlotReviewRow } from "@/lib/surgeryUpload/evidenceReview";
+import { loadEvidenceEvents, type EvidenceTimelineEvent } from "@/lib/surgeryUpload/evidenceEvents";
 import LatestReportCard from "@/components/reports/LatestReportCard";
 import InviteClinicContributionCard from "@/components/case/InviteClinicContributionCard";
 import ForensicCaseTimelineViewer from "@/components/reports/ForensicCaseTimelineViewer";
@@ -297,6 +298,7 @@ export default async function Page({
   // photo checklist for reviewers when this case has a surgery upload.
   let surgeryUploadDetails: SurgeryUploadDetails | null = null;
   let surgerySlotReviews: SurgerySlotReviewRow[] = [];
+  let surgeryEvidenceEvents: EvidenceTimelineEvent[] = [];
   try {
     const { data: sud } = await db
       .from("surgery_upload_details")
@@ -317,6 +319,9 @@ export default async function Page({
     } catch {
       /* Stage 5 table may not exist yet in older environments */
     }
+    // Stage 6A: read-only evidence-review history. Case access is already enforced
+    // above (the `allowed` gate), so the loader can trust this db client.
+    surgeryEvidenceEvents = await loadEvidenceEvents(db, c.id);
   }
 
   // Optional feature: graft integrity must never break case page
@@ -1270,6 +1275,7 @@ export default async function Page({
             caseId={c.id}
             isAuditor={isAuditor}
             initialSlotReviews={surgerySlotReviews}
+            evidenceEvents={surgeryEvidenceEvents}
           />
         </div>
       )}

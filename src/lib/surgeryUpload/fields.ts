@@ -62,6 +62,14 @@ export type SurgeryUploadDetails = {
   evidence_resolved_by: string | null;
   ready_for_audit_at: string | null;
   ready_for_audit_by: string | null;
+  // Stage 6B: controlled audit-pipeline handoff marker (separate from cases.status).
+  audit_handoff_status: string;
+  audit_handoff_requested_at: string | null;
+  audit_handoff_requested_by: string | null;
+  audit_handoff_completed_at: string | null;
+  audit_handoff_completed_by: string | null;
+  audit_handoff_error: string | null;
+  audit_handoff_notes: string | null;
   created_at: string;
   updated_at: string;
 };
