@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import UploadedThumb from "@/components/uploads/UploadedThumb";
@@ -15,6 +15,15 @@ import {
   type SurgeryPhotoSlotKey,
 } from "@/lib/surgeryUpload/checklist";
 import { SURGERY_PROCEDURE_TYPES, type SurgeryUploadDetails } from "@/lib/surgeryUpload/fields";
+import {
+  clearLocalSurgeryDraft,
+  diffRecoverableValues,
+  hasMeaningfulLocalDifferences,
+  loadLocalSurgeryDraft,
+  pickRecoverableValues,
+  saveLocalSurgeryDraft,
+  type LocalSurgeryDraft,
+} from "@/lib/surgeryUpload/localDraftRecovery";
 
 export type SurgeryUploadRow = {
   id: string;
@@ -29,7 +38,37 @@ const PHOTO_API = "/api/surgery-upload/photos";
 
 const COMPRESS_OPTS = { maxEdge: 2400, quality: 0.85 } as const;
 
-type SaveState = "idle" | "saving" | "saved" | "error";
+/** Debounce window before a typed change is autosaved (blur still saves instantly). */
+const AUTOSAVE_DEBOUNCE_MS = 1200;
+
+type SaveState = "idle" | "saving" | "saved" | "error" | "unsaved";
+
+/** sessionStorage marker so we can explain (after a refresh) that failed File
+ *  objects can't be recovered and must be reselected. Never stores file data. */
+function failedMarkerKey(caseId: string): string {
+  return `hairaudit:surgery-upload-failed:${caseId}`;
+}
+function setFailedMarker(caseId: string, count: number): void {
+  try {
+    sessionStorage.setItem(failedMarkerKey(caseId), JSON.stringify({ count, at: Date.now() }));
+  } catch {
+    // best-effort
+  }
+}
+function clearFailedMarker(caseId: string): void {
+  try {
+    sessionStorage.removeItem(failedMarkerKey(caseId));
+  } catch {
+    // best-effort
+  }
+}
+function hasFailedMarker(caseId: string): boolean {
+  try {
+    return sessionStorage.getItem(failedMarkerKey(caseId)) !== null;
+  } catch {
+    return false;
+  }
+}
 
 /** Per-slot upload status used to drive progress, success, error + retry UI. */
 type SlotUploadState = {
@@ -49,10 +88,12 @@ const EMPTY_SLOT_STATE: SlotUploadState = {
 
 export default function SurgeryUploadFlowClient({
   caseId,
+  userId,
   initialDetails,
   initialUploads,
 }: {
   caseId: string;
+  userId?: string | null;
   initialDetails: SurgeryUploadDetails;
   initialUploads: SurgeryUploadRow[];
 }) {
@@ -70,7 +111,23 @@ export default function SurgeryUploadFlowClient({
     count: number;
   } | null>(null);
 
+  // ---- Stage 4B reliability state -------------------------------------------
+  const [recovery, setRecovery] = useState<{
+    draft: LocalSurgeryDraft;
+    serverIsNewer: boolean;
+  } | null>(null);
+  const [online, setOnline] = useState(true);
+  const [connectionRestored, setConnectionRestored] = useState(false);
+  const [refreshedWithFailures, setRefreshedWithFailures] = useState(false);
+
   const locked = details.status === "submitted";
+
+  // Source-of-truth refs (avoid stale closures inside async autosave).
+  const detailsRef = useRef<SurgeryUploadDetails>(initialDetails);
+  const serverValuesRef = useRef(pickRecoverableValues(initialDetails as Record<string, unknown>));
+  const lastServerUpdatedRef = useRef<string | null>(initialDetails.updated_at ?? null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const savingRef = useRef(false);
 
   // Resolve THIS case's checklist snapshot (null => base HairAudit checklist).
   const resolved = useMemo(
@@ -127,51 +184,134 @@ export default function SurgeryUploadFlowClient({
     []
   );
 
-  // ---- Details autosave ------------------------------------------------------
-  const saveField = useCallback(
-    async (patch: Record<string, unknown>) => {
-      if (locked) return;
-      setSaveState("saving");
-      try {
-        const res = await fetch(`/api/surgery-upload/cases/${caseId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(patch),
-        });
-        const json = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(json?.error ?? "Could not save");
-        setSaveState("saved");
-        setTimeout(() => setSaveState((s) => (s === "saved" ? "idle" : s)), 1500);
-      } catch {
-        setSaveState("error");
+  // ---- Details autosave + local recovery -------------------------------------
+  // Persist the minimal local diff (changed editable fields only) so a refresh /
+  // lock / crash before server confirmation never loses typed details.
+  const persistLocalDraft = useCallback(
+    (next: SurgeryUploadDetails) => {
+      if (next.status === "submitted") return;
+      const patch = diffRecoverableValues(
+        pickRecoverableValues(next as Record<string, unknown>),
+        serverValuesRef.current
+      );
+      if (Object.keys(patch).length === 0) {
+        clearLocalSurgeryDraft(caseId, userId);
+      } else {
+        saveLocalSurgeryDraft(caseId, patch, userId, lastServerUpdatedRef.current);
       }
     },
-    [caseId, locked]
+    [caseId, userId]
+  );
+
+  // The authoritative save: PATCH only the fields that differ from the server,
+  // then reconcile (the user may have typed during the request). Returns true when
+  // the server is in sync (or there was nothing to save), false on failure.
+  const flushSave = useCallback(async (): Promise<boolean> => {
+    if (locked) return true;
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
+    // A save is already in flight; it will reconcile remaining edits on completion.
+    if (savingRef.current) return true;
+
+    const patch = diffRecoverableValues(
+      pickRecoverableValues(detailsRef.current as Record<string, unknown>),
+      serverValuesRef.current
+    );
+    if (Object.keys(patch).length === 0) {
+      clearLocalSurgeryDraft(caseId, userId);
+      setSaveState((s) => (s === "saved" ? "saved" : "idle"));
+      return true;
+    }
+
+    savingRef.current = true;
+    setSaveState("saving");
+    try {
+      const res = await fetch(`/api/surgery-upload/cases/${caseId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(patch),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json?.error ?? "Could not save");
+
+      // Server now holds these values; advance our server snapshot + version.
+      serverValuesRef.current = { ...serverValuesRef.current, ...patch };
+      const updatedAt = (json?.details?.updated_at as string | undefined) ?? null;
+      if (updatedAt) lastServerUpdatedRef.current = updatedAt;
+
+      const remaining = diffRecoverableValues(
+        pickRecoverableValues(detailsRef.current as Record<string, unknown>),
+        serverValuesRef.current
+      );
+      if (Object.keys(remaining).length === 0) {
+        clearLocalSurgeryDraft(caseId, userId);
+        setSaveState("saved");
+        setTimeout(() => setSaveState((s) => (s === "saved" ? "idle" : s)), 1500);
+      } else {
+        saveLocalSurgeryDraft(caseId, remaining, userId, lastServerUpdatedRef.current);
+        setSaveState("unsaved");
+      }
+      return true;
+    } catch {
+      // Keep the changes on-device and surface a retry.
+      saveLocalSurgeryDraft(caseId, patch, userId, lastServerUpdatedRef.current);
+      setSaveState("error");
+      return false;
+    } finally {
+      savingRef.current = false;
+    }
+  }, [caseId, userId, locked]);
+
+  const scheduleDebouncedSave = useCallback(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      debounceRef.current = null;
+      void flushSave();
+    }, AUTOSAVE_DEBOUNCE_MS);
+  }, [flushSave]);
+
+  // Apply a user edit: update state + ref, cache locally, mark unsaved, debounce.
+  const applyChange = useCallback(
+    (patch: Partial<SurgeryUploadDetails>) => {
+      if (locked) return;
+      const next = { ...detailsRef.current, ...patch } as SurgeryUploadDetails;
+      detailsRef.current = next;
+      setDetails(next);
+      persistLocalDraft(next);
+      setSaveState((s) => (s === "saving" ? "saving" : "unsaved"));
+      scheduleDebouncedSave();
+    },
+    [locked, persistLocalDraft, scheduleDebouncedSave]
   );
 
   const onText = (field: keyof SurgeryUploadDetails) => ({
     value: (details[field] as string | number | null) ?? "",
     disabled: locked,
     onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-      setDetails((d) => ({ ...d, [field]: e.target.value })),
-    onBlur: (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-      saveField({ [field]: e.target.value === "" ? null : e.target.value }),
+      applyChange({ [field]: e.target.value } as Partial<SurgeryUploadDetails>),
+    onBlur: () => void flushSave(),
   });
 
   const onBool = (field: "prp_used" | "exosomes_used", value: boolean) => {
-    setDetails((d) => ({ ...d, [field]: value }));
-    saveField({ [field]: value });
+    applyChange({ [field]: value } as Partial<SurgeryUploadDetails>);
+    void flushSave();
   };
 
   const onSelectProcedure = (value: string) => {
-    setDetails((d) => ({ ...d, procedure_type: (value || null) as SurgeryUploadDetails["procedure_type"] }));
-    saveField({ procedure_type: value || null });
+    applyChange({
+      procedure_type: (value || null) as SurgeryUploadDetails["procedure_type"],
+    });
+    void flushSave();
   };
 
   const onDate = (value: string) => {
-    setDetails((d) => ({ ...d, surgery_date: value || null }));
-    saveField({ surgery_date: value || null });
+    applyChange({ surgery_date: value || null });
+    void flushSave();
   };
+
+  const hasUnsavedLocal = saveState === "unsaved" || saveState === "error";
 
   // ---- Photo upload (compress -> upload -> per-slot status + retry) ----------
   const uploadFiles = useCallback(
@@ -267,11 +407,129 @@ export default function SurgeryUploadFlowClient({
     setUploads((prev) => prev.filter((u) => u.id !== uploadId));
   }, []);
 
+  // ---- Upload interruption (aggregate failures across slots) ------------------
+  const totalFailed = useMemo(
+    () => Object.values(slotState).reduce((sum, s) => sum + s.failed.length, 0),
+    [slotState]
+  );
+
+  const retryAllFailed = useCallback(() => {
+    setConnectionRestored(false);
+    for (const [slot, s] of Object.entries(slotState)) {
+      if (s.failed.length > 0) void uploadFiles(slot as SurgeryPhotoSlotKey, s.failed, true);
+    }
+  }, [slotState, uploadFiles]);
+
+  const clearAllFailed = useCallback(() => {
+    setSlotState((m) => {
+      const next: Record<string, SlotUploadState> = {};
+      for (const [slot, s] of Object.entries(m)) {
+        next[slot] = { ...s, failed: [], error: null };
+      }
+      return next;
+    });
+    clearFailedMarker(caseId);
+    setRefreshedWithFailures(false);
+  }, [caseId]);
+
+  // Persist a lightweight "had failures" marker (no file data) so we can explain,
+  // after a refresh, that File objects must be reselected. Cleared when resolved.
+  const prevFailedRef = useRef(0);
+  useEffect(() => {
+    if (locked) return;
+    if (totalFailed > 0) {
+      setFailedMarker(caseId, totalFailed);
+    } else if (prevFailedRef.current > 0) {
+      clearFailedMarker(caseId);
+      setRefreshedWithFailures(false);
+    }
+    prevFailedRef.current = totalFailed;
+  }, [totalFailed, caseId, locked]);
+
+  // ---- Mount: local recovery + prior-failure marker --------------------------
+  useEffect(() => {
+    if (locked) {
+      clearLocalSurgeryDraft(caseId, userId);
+      clearFailedMarker(caseId);
+      return;
+    }
+    // Prior failed uploads existed but File objects can't survive a refresh.
+    if (hasFailedMarker(caseId)) setRefreshedWithFailures(true);
+
+    const draft = loadLocalSurgeryDraft(caseId, userId);
+    if (!draft) return;
+    const serverVals = pickRecoverableValues(initialDetails as Record<string, unknown>);
+    if (!hasMeaningfulLocalDifferences(draft.values, serverVals)) {
+      clearLocalSurgeryDraft(caseId, userId);
+      return;
+    }
+    const serverIsNewer =
+      !!draft.lastServerUpdatedAt &&
+      !!initialDetails.updated_at &&
+      new Date(initialDetails.updated_at).getTime() >
+        new Date(draft.lastServerUpdatedAt).getTime();
+    setRecovery({ draft, serverIsNewer });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ---- Connection awareness --------------------------------------------------
+  useEffect(() => {
+    if (typeof navigator !== "undefined") setOnline(navigator.onLine);
+    function goOnline() {
+      setOnline(true);
+      setConnectionRestored(true);
+    }
+    function goOffline() {
+      setOnline(false);
+      setConnectionRestored(false);
+    }
+    window.addEventListener("online", goOnline);
+    window.addEventListener("offline", goOffline);
+    return () => {
+      window.removeEventListener("online", goOnline);
+      window.removeEventListener("offline", goOffline);
+    };
+  }, []);
+
+  // ---- Recovery banner actions ----------------------------------------------
+  const restoreLocal = useCallback(() => {
+    if (!recovery) return;
+    const next = { ...detailsRef.current, ...recovery.draft.values } as SurgeryUploadDetails;
+    detailsRef.current = next;
+    setDetails(next);
+    setRecovery(null);
+    setSaveState("unsaved");
+    persistLocalDraft(next);
+    void flushSave();
+  }, [recovery, persistLocalDraft, flushSave]);
+
+  const keepServer = useCallback(() => {
+    clearLocalSurgeryDraft(caseId, userId);
+    setRecovery(null);
+  }, [caseId, userId]);
+
   // ---- Submit ----------------------------------------------------------------
   const submit = useCallback(async () => {
-    if (!canSubmit || submitting) return;
-    setSubmitting(true);
+    if (submitting) return;
+    if (anyUploading) {
+      setSubmitError("Please wait for all uploads to finish before submitting.");
+      return;
+    }
+    if (!canSubmit) return;
     setSubmitError(null);
+
+    // Save any unsaved local changes first so the submitted record is complete.
+    if (hasUnsavedLocal || savingRef.current) {
+      const saved = await flushSave();
+      if (!saved) {
+        setSubmitError(
+          "Couldn't save your latest changes. Tap “Retry save”, then submit."
+        );
+        return;
+      }
+    }
+
+    setSubmitting(true);
     try {
       const res = await fetch(`/api/surgery-upload/cases/${caseId}/submit`, {
         method: "POST",
@@ -289,18 +547,55 @@ export default function SurgeryUploadFlowClient({
         }
         throw new Error(json?.error ?? "Could not submit");
       }
-      setDetails((d) => ({
-        ...d,
-        status: "submitted",
-        submitted_at: json?.details?.submitted_at ?? new Date().toISOString(),
-      }));
+      // Submitted: clear all local recovery + failure state, lock read-only.
+      clearLocalSurgeryDraft(caseId, userId);
+      clearFailedMarker(caseId);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      setSaveState("idle");
+      const next = {
+        ...detailsRef.current,
+        status: "submitted" as const,
+        submitted_at: (json?.details?.submitted_at as string) ?? new Date().toISOString(),
+      };
+      detailsRef.current = next;
+      setDetails(next);
       router.refresh();
     } catch (e) {
       setSubmitError((e as Error)?.message ?? "Could not submit");
     } finally {
       setSubmitting(false);
     }
-  }, [canSubmit, submitting, caseId, router]);
+  }, [
+    canSubmit,
+    submitting,
+    anyUploading,
+    hasUnsavedLocal,
+    flushSave,
+    caseId,
+    userId,
+    router,
+  ]);
+
+  // ---- Leave-page protection (browser tab close / reload) --------------------
+  const needsLeaveWarning =
+    !locked && (anyUploading || saveState === "saving" || hasUnsavedLocal);
+  useEffect(() => {
+    if (!needsLeaveWarning) return;
+    function onBeforeUnload(e: BeforeUnloadEvent) {
+      e.preventDefault();
+      // Legacy requirement for the native confirmation dialog to appear.
+      e.returnValue = "";
+    }
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [needsLeaveWarning]);
+
+  // Flush any pending debounce timer on unmount.
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
 
   if (locked) {
     return <SubmittedConfirmation details={details} photoCount={uploads.length} />;
@@ -320,8 +615,39 @@ export default function SurgeryUploadFlowClient({
             </span>
           )}
           <SaveIndicator state={saveState} />
+          {(saveState === "unsaved" || saveState === "error") && (
+            <button
+              type="button"
+              onClick={() => void flushSave()}
+              className="rounded-lg bg-slate-900 px-3 py-1 text-xs font-semibold text-white active:scale-[0.99]"
+            >
+              {saveState === "error" ? "Retry save" : "Save now"}
+            </button>
+          )}
         </div>
       </header>
+
+      {/* Local draft recovery banner */}
+      {recovery && (
+        <RecoveryBanner
+          savedAt={recovery.draft.savedAt}
+          serverIsNewer={recovery.serverIsNewer}
+          onRestore={restoreLocal}
+          onKeepServer={keepServer}
+        />
+      )}
+
+      {/* Connection awareness */}
+      {!online ? (
+        <Banner tone="amber">
+          You appear to be offline. Photos cannot upload until the connection returns.
+          Your typed details are saved on this device.
+        </Banner>
+      ) : connectionRestored ? (
+        <Banner tone="emerald" onDismiss={() => setConnectionRestored(false)}>
+          Connection restored.{totalFailed > 0 ? " Please retry any failed uploads." : ""}
+        </Banner>
+      ) : null}
 
       {/* Progress */}
       <div className="rounded-2xl border border-slate-200 bg-white p-4">
@@ -488,6 +814,43 @@ export default function SurgeryUploadFlowClient({
         </p>
       </div>
 
+      {/* Aggregate upload-failure banner */}
+      {totalFailed > 0 && (
+        <div className="rounded-2xl border border-red-300 bg-red-50 p-4">
+          <p className="text-sm font-semibold text-red-800">
+            Some photos failed to upload ({totalFailed}).
+          </p>
+          <p className="mt-0.5 text-xs text-red-700">
+            They are still selected on this device — you can retry without choosing them again.
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={retryAllFailed}
+              disabled={anyUploading || !online}
+              className="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white active:scale-[0.99] disabled:opacity-50"
+            >
+              Retry failed uploads
+            </button>
+            <button
+              type="button"
+              onClick={clearAllFailed}
+              className="rounded-xl border border-red-300 bg-white px-4 py-2 text-sm font-semibold text-red-700 active:scale-[0.99]"
+            >
+              Clear failed upload list
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Refresh limitation copy (failures existed before a reload) */}
+      {refreshedWithFailures && totalFailed === 0 && (
+        <Banner tone="amber" onDismiss={() => { clearFailedMarker(caseId); setRefreshedWithFailures(false); }}>
+          For privacy and browser security, photos must be selected again after a refresh.
+          Previously failed photos were not kept.
+        </Banner>
+      )}
+
       {/* Section 3: required photos */}
       <Section
         title="Required photos"
@@ -549,10 +912,14 @@ export default function SurgeryUploadFlowClient({
       <div className="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200 bg-white/95 px-4 py-3 backdrop-blur">
         <div className="mx-auto flex max-w-2xl items-center gap-3">
           <div className="min-w-0 flex-1 text-xs text-slate-500">
-            {canSubmit ? (
-              <span className="font-medium text-emerald-700">Ready to submit</span>
-            ) : anyUploading ? (
-              <span>Uploading photos…</span>
+            {anyUploading ? (
+              <span>Please wait for uploads to finish before submitting.</span>
+            ) : canSubmit ? (
+              hasUnsavedLocal ? (
+                <span>Ready to submit — your changes will be saved first.</span>
+              ) : (
+                <span className="font-medium text-emerald-700">Ready to submit</span>
+              )
             ) : missingRequiredLabels.length > 0 ? (
               <span>Missing: {missingRequiredLabels.join(", ")}</span>
             ) : (
@@ -664,9 +1031,97 @@ function ToggleField({
 function SaveIndicator({ state }: { state: SaveState }) {
   if (state === "saving") return <span className="text-xs text-slate-400">Saving…</span>;
   if (state === "saved") return <span className="text-xs text-emerald-600">Saved ✓</span>;
+  if (state === "unsaved")
+    return <span className="text-xs text-amber-600">Unsaved local changes</span>;
   if (state === "error")
-    return <span className="text-xs text-red-600">Save failed — retry</span>;
+    return (
+      <span className="text-xs text-red-600">
+        Save failed — your changes are stored on this device
+      </span>
+    );
   return null;
+}
+
+function Banner({
+  tone,
+  children,
+  onDismiss,
+}: {
+  tone: "amber" | "emerald" | "red";
+  children: React.ReactNode;
+  onDismiss?: () => void;
+}) {
+  const toneCls =
+    tone === "amber"
+      ? "border-amber-300 bg-amber-50 text-amber-900"
+      : tone === "emerald"
+        ? "border-emerald-300 bg-emerald-50 text-emerald-900"
+        : "border-red-300 bg-red-50 text-red-900";
+  return (
+    <div className={`flex items-start justify-between gap-3 rounded-2xl border p-4 ${toneCls}`}>
+      <p className="text-sm">{children}</p>
+      {onDismiss && (
+        <button
+          type="button"
+          onClick={onDismiss}
+          className="shrink-0 rounded-lg px-2 py-1 text-xs font-semibold underline-offset-2 hover:underline"
+          aria-label="Dismiss"
+        >
+          Dismiss
+        </button>
+      )}
+    </div>
+  );
+}
+
+function RecoveryBanner({
+  savedAt,
+  serverIsNewer,
+  onRestore,
+  onKeepServer,
+}: {
+  savedAt: string;
+  serverIsNewer: boolean;
+  onRestore: () => void;
+  onKeepServer: () => void;
+}) {
+  const when = (() => {
+    try {
+      return new Date(savedAt).toLocaleString();
+    } catch {
+      return savedAt;
+    }
+  })();
+  return (
+    <div className="rounded-2xl border border-cyan-300 bg-cyan-50 p-4">
+      <p className="text-sm font-semibold text-cyan-900">
+        Unsaved local changes were found from this device.
+      </p>
+      <p className="mt-0.5 text-xs text-cyan-800">Local changes saved on this device at {when}.</p>
+      {serverIsNewer && (
+        <p className="mt-1 text-xs font-medium text-amber-800">
+          Note: this case was also updated elsewhere since then. Keeping the server version is safer
+          unless you know your local changes are newer.
+        </p>
+      )}
+      <div className="mt-3 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={onRestore}
+          className="rounded-xl bg-cyan-600 px-4 py-2 text-sm font-semibold text-white active:scale-[0.99]"
+        >
+          Restore local changes
+        </button>
+        <button
+          type="button"
+          onClick={onKeepServer}
+          className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 active:scale-[0.99]"
+        >
+          Keep server version
+        </button>
+      </div>
+    </div>
+  );
 }
 
 function PhotoSlotCard({

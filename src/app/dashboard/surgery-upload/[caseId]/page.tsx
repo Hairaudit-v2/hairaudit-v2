@@ -65,6 +65,7 @@ export default async function SurgeryUploadCasePage({
       </div>
       <SurgeryUploadFlowClient
         caseId={caseId}
+        userId={user.id}
         initialDetails={details as SurgeryUploadDetails}
         initialUploads={(uploads ?? []) as SurgeryUploadRow[]}
       />

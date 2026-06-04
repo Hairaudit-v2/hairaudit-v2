@@ -75,6 +75,25 @@ export const SURGERY_EDITABLE_INT_FIELDS = ["planned_grafts", "actual_grafts"] a
 
 export const SURGERY_EDITABLE_BOOL_FIELDS = ["prp_used", "exosomes_used"] as const;
 
+/**
+ * Stage 4B: the full set of user-editable surgery-upload form fields. This is the
+ * canonical list for local draft recovery — only these columns are ever cached on
+ * the device (never images, signed URLs, or server-managed columns). Derived from
+ * the editable field lists above so the recovery layer can't drift from autosave.
+ */
+export const SURGERY_RECOVERABLE_FIELDS = [
+  ...SURGERY_EDITABLE_TEXT_FIELDS,
+  ...SURGERY_EDITABLE_INT_FIELDS,
+  ...SURGERY_EDITABLE_BOOL_FIELDS,
+  "procedure_type",
+  "surgery_date",
+] as const;
+
+export type SurgeryRecoverableField = (typeof SURGERY_RECOVERABLE_FIELDS)[number];
+
+/** The editable subset of SurgeryUploadDetails used by autosave + local recovery. */
+export type SurgeryUploadDetailsInput = Pick<SurgeryUploadDetails, SurgeryRecoverableField>;
+
 type SanitizedDetails = Record<string, string | number | boolean | null>;
 
 /**
