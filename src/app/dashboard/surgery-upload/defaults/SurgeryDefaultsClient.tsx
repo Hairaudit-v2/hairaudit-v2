@@ -1,7 +1,17 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import type { SurgeryUploadClinicDefaults } from "@/lib/surgeryUpload/clinicDefaults";
+import {
+  getResolvedSurgeryChecklist,
+  LOCKED_REQUIRED_SURGERY_SLOTS,
+  OPTIONAL_SURGERY_SLOT_KEYS,
+  SURGERY_PHOTO_SLOTS,
+  CHECKLIST_CONFIG_VERSION,
+  type SurgerySlotState,
+  type SurgeryPhotoSlotKey,
+  type SurgeryChecklistConfig,
+} from "@/lib/surgeryUpload/checklist";
 
 type FormState = {
   default_extraction_machine: string;
@@ -13,6 +23,42 @@ type FormState = {
   default_storage_solution: string;
   default_notes: string;
 };
+
+const SLOT_LABELS = new Map<SurgeryPhotoSlotKey, string>(
+  SURGERY_PHOTO_SLOTS.map((s) => [s.key, s.label])
+);
+const SLOT_HELP = new Map<SurgeryPhotoSlotKey, string>(
+  SURGERY_PHOTO_SLOTS.map((s) => [s.key, s.help])
+);
+
+type ChecklistState = Record<SurgeryPhotoSlotKey, SurgerySlotState>;
+
+function initChecklist(d: SurgeryUploadClinicDefaults | null): ChecklistState {
+  const resolved = getResolvedSurgeryChecklist(d?.default_photo_checklist_config);
+  const state = {} as ChecklistState;
+  for (const slot of resolved) state[slot.key] = slot.state;
+  return state;
+}
+
+/**
+ * Build the config to persist from the editable optional-slot states. Locked slots are
+ * always required. Returns null when the result is equivalent to the HairAudit base
+ * (all optional slots "optional"), keeping the stored value clean for reset-to-default.
+ */
+function buildChecklistPayload(state: ChecklistState): SurgeryChecklistConfig | null {
+  const isBase = OPTIONAL_SURGERY_SLOT_KEYS.every((k) => state[k] === "optional");
+  if (isBase) return null;
+
+  const slots: SurgeryChecklistConfig["slots"] = {};
+  SURGERY_PHOTO_SLOTS.forEach((slot, index) => {
+    const locked = LOCKED_REQUIRED_SURGERY_SLOTS.includes(slot.key);
+    slots[slot.key] = {
+      state: locked ? "required" : state[slot.key] ?? "optional",
+      order: index,
+    };
+  });
+  return { version: CHECKLIST_CONFIG_VERSION, slots };
+}
 
 function initFromDefaults(d: SurgeryUploadClinicDefaults | null): FormState {
   return {
@@ -39,6 +85,9 @@ export default function SurgeryDefaultsClient({
   initialDefaults: SurgeryUploadClinicDefaults | null;
 }) {
   const [form, setForm] = useState<FormState>(initFromDefaults(initialDefaults));
+  const [checklist, setChecklist] = useState<ChecklistState>(() =>
+    initChecklist(initialDefaults)
+  );
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -46,8 +95,27 @@ export default function SurgeryDefaultsClient({
   const disabled = !editable || saving;
   const noDefaultsSaved = initialDefaults === null;
 
+  const isChecklistBase = useMemo(
+    () => OPTIONAL_SURGERY_SLOT_KEYS.every((k) => checklist[k] === "optional"),
+    [checklist]
+  );
+
   function setField<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((f) => ({ ...f, [key]: value }));
+    setSaved(false);
+  }
+
+  function setSlotState(key: SurgeryPhotoSlotKey, value: SurgerySlotState) {
+    setChecklist((c) => ({ ...c, [key]: value }));
+    setSaved(false);
+  }
+
+  function resetChecklist() {
+    setChecklist((c) => {
+      const next = { ...c };
+      for (const k of OPTIONAL_SURGERY_SLOT_KEYS) next[k] = "optional";
+      return next;
+    });
     setSaved(false);
   }
 
@@ -58,6 +126,9 @@ export default function SurgeryDefaultsClient({
     setError(null);
     try {
       const payload: Record<string, unknown> = { ...form };
+      // Stage 3: persist photo checklist preferences. Locked HairAudit minimum slots
+      // are always required; null resets to the HairAudit default.
+      payload.default_photo_checklist_config = buildChecklistPayload(checklist);
       if (isAuditor) payload.clinicProfileId = clinicProfileId;
       const res = await fetch("/api/surgery-upload/defaults", {
         method: "PUT",
@@ -179,6 +250,77 @@ export default function SurgeryDefaultsClient({
         </div>
       </section>
 
+      {/* Stage 3: per-clinic photo checklist preferences */}
+      <section className="rounded-2xl border border-slate-200 bg-white p-4">
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div>
+            <h2 className="text-base font-semibold text-slate-900">Photo checklist preferences</h2>
+            <p className="mt-0.5 text-xs text-slate-500">
+              HairAudit&apos;s core evidence photos stay required to protect audit
+              quality. You can make extra categories required or hide optional
+              categories your clinic does not use.
+            </p>
+          </div>
+          {editable && !isChecklistBase && (
+            <button
+              type="button"
+              onClick={resetChecklist}
+              className="shrink-0 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-cyan-300"
+            >
+              Reset to HairAudit default
+            </button>
+          )}
+        </div>
+
+        <div className="mt-4">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+            HairAudit required (locked)
+          </p>
+          <div className="space-y-2">
+            {LOCKED_REQUIRED_SURGERY_SLOTS.map((key) => (
+              <div
+                key={key}
+                className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5"
+              >
+                <span className="min-w-0">
+                  <span className="block text-sm font-medium text-slate-800">
+                    {SLOT_LABELS.get(key) ?? key}
+                  </span>
+                </span>
+                <span className="shrink-0 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800">
+                  Required • locked
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-5">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+            Optional categories
+          </p>
+          <div className="space-y-3">
+            {OPTIONAL_SURGERY_SLOT_KEYS.map((key) => (
+              <div key={key} className="rounded-xl border border-slate-200 p-3">
+                <p className="text-sm font-medium text-slate-800">
+                  {SLOT_LABELS.get(key) ?? key}
+                </p>
+                {SLOT_HELP.get(key) && (
+                  <p className="text-xs text-slate-500">{SLOT_HELP.get(key)}</p>
+                )}
+                <div className="mt-2">
+                  <SlotStateToggle
+                    value={checklist[key] ?? "optional"}
+                    disabled={disabled}
+                    onChange={(v) => setSlotState(key, v)}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {editable && (
         <div className="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200 bg-white/95 px-4 py-3 backdrop-blur">
           <div className="mx-auto flex max-w-2xl items-center gap-3">
@@ -210,6 +352,42 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <span className="mb-1 block text-sm font-medium text-slate-700">{label}</span>
       {children}
     </label>
+  );
+}
+
+function SlotStateToggle({
+  value,
+  disabled,
+  onChange,
+}: {
+  value: SurgerySlotState;
+  disabled: boolean;
+  onChange: (v: SurgerySlotState) => void;
+}) {
+  const options: { v: SurgerySlotState; label: string }[] = [
+    { v: "required", label: "Required" },
+    { v: "optional", label: "Optional" },
+    { v: "hidden", label: "Hidden" },
+  ];
+  return (
+    <div className="flex overflow-hidden rounded-xl border border-slate-300">
+      {options.map((opt) => {
+        const active = value === opt.v;
+        return (
+          <button
+            key={opt.v}
+            type="button"
+            disabled={disabled}
+            onClick={() => onChange(opt.v)}
+            className={`flex-1 px-2 py-2.5 text-sm font-semibold transition ${
+              active ? "bg-cyan-600 text-white" : "bg-white text-slate-600"
+            } disabled:opacity-60`}
+          >
+            {opt.label}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 

@@ -5,11 +5,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import UploadedThumb from "@/components/uploads/UploadedThumb";
 import { UPLOAD_LIMITS, UploadQueue, formatUploadErrorForUser } from "@/lib/uploads/safeUpload";
+import { compressImageForUpload } from "@/lib/uploads/compressImage";
 import {
-  SURGERY_PHOTO_SLOTS,
   slotFromSurgeryType,
-  getMissingRequiredSurgerySlots,
-  type SurgeryPhotoSlot,
+  getResolvedSurgeryChecklist,
+  getRequiredPhotoCompletion,
+  type ResolvedSurgerySlot,
   type SurgeryPhotoSlotKey,
 } from "@/lib/surgeryUpload/checklist";
 import { SURGERY_PROCEDURE_TYPES, type SurgeryUploadDetails } from "@/lib/surgeryUpload/fields";
@@ -25,7 +26,25 @@ export type SurgeryUploadRow = {
 const uploadQueue = new UploadQueue(UPLOAD_LIMITS.MAX_CONCURRENT_UPLOADS);
 const PHOTO_API = "/api/surgery-upload/photos";
 
+const COMPRESS_OPTS = { maxEdge: 2400, quality: 0.85 } as const;
+
 type SaveState = "idle" | "saving" | "saved" | "error";
+
+/** Per-slot upload status used to drive progress, success, error + retry UI. */
+type SlotUploadState = {
+  uploading: number;
+  error: string | null;
+  /** Failed File objects retained in memory so the user can retry without reselecting. */
+  failed: File[];
+  success: boolean;
+};
+
+const EMPTY_SLOT_STATE: SlotUploadState = {
+  uploading: 0,
+  error: null,
+  failed: [],
+  success: false,
+};
 
 export default function SurgeryUploadFlowClient({
   caseId,
@@ -40,12 +59,22 @@ export default function SurgeryUploadFlowClient({
   const [details, setDetails] = useState<SurgeryUploadDetails>(initialDetails);
   const [uploads, setUploads] = useState<SurgeryUploadRow[]>(initialUploads);
   const [saveState, setSaveState] = useState<SaveState>("idle");
-  const [busySlots, setBusySlots] = useState<Record<string, boolean>>({});
-  const [slotErrors, setSlotErrors] = useState<Record<string, string>>({});
+  const [slotState, setSlotState] = useState<Record<string, SlotUploadState>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const locked = details.status === "submitted";
+
+  // Resolve THIS case's checklist snapshot (null => base HairAudit checklist).
+  const resolved = useMemo(
+    () => getResolvedSurgeryChecklist(details.photo_checklist_config),
+    [details.photo_checklist_config]
+  );
+  const requiredSlots = useMemo(() => resolved.filter((s) => s.effectiveRequired), [resolved]);
+  const optionalSlots = useMemo(
+    () => resolved.filter((s) => s.state === "optional"),
+    [resolved]
+  );
 
   const uploadsBySlot = useMemo(() => {
     const map: Record<string, SurgeryUploadRow[]> = {};
@@ -57,13 +86,22 @@ export default function SurgeryUploadFlowClient({
     return map;
   }, [uploads]);
 
-  const missingRequired = useMemo(
-    () => getMissingRequiredSurgerySlots(uploads),
-    [uploads]
+  const completion = useMemo(
+    () => getRequiredPhotoCompletion(uploads, details.photo_checklist_config),
+    [uploads, details.photo_checklist_config]
   );
-  const requiredTotal = SURGERY_PHOTO_SLOTS.filter((s) => s.required).length;
-  const requiredDone = requiredTotal - missingRequired.length;
-  const canSubmit = !locked && missingRequired.length === 0;
+  const requiredTotal = completion.total;
+  const requiredDone = completion.done;
+  const anyUploading = useMemo(
+    () => Object.values(slotState).some((s) => s.uploading > 0),
+    [slotState]
+  );
+  const canSubmit = !locked && completion.missing.length === 0 && !anyUploading;
+
+  const missingRequiredLabels = useMemo(() => {
+    const labelByKey = new Map(resolved.map((s) => [s.key, s.label]));
+    return completion.missing.map((key) => labelByKey.get(key) ?? key);
+  }, [completion.missing, resolved]);
 
   // ---- Details autosave ------------------------------------------------------
   const saveField = useCallback(
@@ -111,20 +149,33 @@ export default function SurgeryUploadFlowClient({
     saveField({ surgery_date: value || null });
   };
 
-  // ---- Photo upload ----------------------------------------------------------
+  // ---- Photo upload (compress -> upload -> per-slot status + retry) ----------
   const uploadFiles = useCallback(
-    async (slot: SurgeryPhotoSlotKey, files: File[]) => {
+    async (slot: SurgeryPhotoSlotKey, files: File[], isRetry = false) => {
       if (locked || files.length === 0) return;
-      setBusySlots((m) => ({ ...m, [slot]: true }));
-      setSlotErrors((m) => {
-        const { [slot]: _omit, ...rest } = m;
-        return rest;
+
+      setSlotState((m) => {
+        const prev = m[slot] ?? EMPTY_SLOT_STATE;
+        return {
+          ...m,
+          [slot]: {
+            ...prev,
+            uploading: prev.uploading + files.length,
+            error: null,
+            success: false,
+            // Retrying replaces the previous failed set; a fresh add keeps it.
+            failed: isRetry ? [] : prev.failed,
+          },
+        };
       });
 
-      const errors: string[] = [];
-      for (const file of files) {
+      const newFailures: File[] = [];
+      let succeeded = 0;
+
+      for (const original of files) {
         try {
           await uploadQueue.execute(async () => {
+            const file = await compressImageForUpload(original, COMPRESS_OPTS);
             const fd = new FormData();
             fd.append("caseId", caseId);
             fd.append("category", slot);
@@ -144,18 +195,40 @@ export default function SurgeryUploadFlowClient({
               setUploads((prev) => [...json.saved, ...prev]);
             }
           });
-        } catch (e) {
-          errors.push(`${file.name}: ${(e as Error)?.message ?? "Upload failed"}`);
+          succeeded += 1;
+        } catch {
+          // Keep the ORIGINAL file (not the compressed copy) so retry is reliable.
+          newFailures.push(original);
         }
       }
 
-      setBusySlots((m) => {
-        const { [slot]: _omit, ...rest } = m;
-        return rest;
+      setSlotState((m) => {
+        const prev = m[slot] ?? EMPTY_SLOT_STATE;
+        const failed = [...prev.failed, ...newFailures];
+        return {
+          ...m,
+          [slot]: {
+            uploading: Math.max(0, prev.uploading - files.length),
+            failed,
+            error:
+              newFailures.length > 0
+                ? `${newFailures.length} photo${newFailures.length === 1 ? "" : "s"} failed to upload.`
+                : prev.error,
+            success: succeeded > 0 ? true : prev.success,
+          },
+        };
       });
-      if (errors.length) setSlotErrors((m) => ({ ...m, [slot]: errors[0] }));
     },
     [caseId, locked]
+  );
+
+  const retrySlot = useCallback(
+    (slot: SurgeryPhotoSlotKey) => {
+      const failed = slotState[slot]?.failed ?? [];
+      if (failed.length === 0) return;
+      void uploadFiles(slot, failed, true);
+    },
+    [slotState, uploadFiles]
   );
 
   const onDeleted = useCallback((uploadId: string) => {
@@ -173,6 +246,9 @@ export default function SurgeryUploadFlowClient({
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
+        if (json?.missingRequiredLabels?.length) {
+          throw new Error(`Missing required photos: ${json.missingRequiredLabels.join(", ")}`);
+        }
         if (json?.missingRequiredSlots?.length) {
           throw new Error("Some required photos are still missing.");
         }
@@ -226,6 +302,16 @@ export default function SurgeryUploadFlowClient({
             style={{ width: `${requiredTotal ? (requiredDone / requiredTotal) * 100 : 0}%` }}
           />
         </div>
+        {completion.missing.length === 0 ? (
+          <p className="mt-2 text-xs font-semibold text-emerald-700">
+            Required photos complete ✓
+          </p>
+        ) : (
+          <p className="mt-2 text-xs text-slate-500">
+            {completion.missing.length} required photo
+            {completion.missing.length === 1 ? "" : "s"} remaining
+          </p>
+        )}
       </div>
 
       {/* Section 1: case basics */}
@@ -359,41 +445,54 @@ export default function SurgeryUploadFlowClient({
         </Field>
       </Section>
 
+      {/* Photo upload guidance */}
+      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-600">
+        <p>📷 Large images are automatically compressed before upload.</p>
+        <p className="mt-1">
+          Use clear, well-lit photos. Avoid blurry or obstructed images.
+        </p>
+      </div>
+
       {/* Section 3: required photos */}
-      <Section title="Required photos" subtitle="All six are needed before you can submit.">
+      <Section
+        title="Required photos"
+        subtitle={`All ${requiredTotal} are needed before you can submit.`}
+      >
         <div className="space-y-3">
-          {SURGERY_PHOTO_SLOTS.filter((s) => s.required).map((slot) => (
+          {requiredSlots.map((slot) => (
             <PhotoSlotCard
               key={slot.key}
               slot={slot}
               existing={uploadsBySlot[slot.key] ?? []}
-              busy={!!busySlots[slot.key]}
-              error={slotErrors[slot.key]}
+              state={slotState[slot.key] ?? EMPTY_SLOT_STATE}
               locked={locked}
               onUpload={(files) => uploadFiles(slot.key, files)}
+              onRetry={() => retrySlot(slot.key)}
               onDeleted={onDeleted}
             />
           ))}
         </div>
       </Section>
 
-      {/* Section 4: optional photos */}
-      <Section title="Optional photos" subtitle="Add any that apply.">
-        <div className="space-y-3">
-          {SURGERY_PHOTO_SLOTS.filter((s) => !s.required).map((slot) => (
-            <PhotoSlotCard
-              key={slot.key}
-              slot={slot}
-              existing={uploadsBySlot[slot.key] ?? []}
-              busy={!!busySlots[slot.key]}
-              error={slotErrors[slot.key]}
-              locked={locked}
-              onUpload={(files) => uploadFiles(slot.key, files)}
-              onDeleted={onDeleted}
-            />
-          ))}
-        </div>
-      </Section>
+      {/* Section 4: optional photos (hidden slots are intentionally omitted) */}
+      {optionalSlots.length > 0 && (
+        <Section title="Optional photos" subtitle="Add any that apply.">
+          <div className="space-y-3">
+            {optionalSlots.map((slot) => (
+              <PhotoSlotCard
+                key={slot.key}
+                slot={slot}
+                existing={uploadsBySlot[slot.key] ?? []}
+                state={slotState[slot.key] ?? EMPTY_SLOT_STATE}
+                locked={locked}
+                onUpload={(files) => uploadFiles(slot.key, files)}
+                onRetry={() => retrySlot(slot.key)}
+                onDeleted={onDeleted}
+              />
+            ))}
+          </div>
+        </Section>
+      )}
 
       {/* Sticky submit bar */}
       <div className="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200 bg-white/95 px-4 py-3 backdrop-blur">
@@ -401,8 +500,12 @@ export default function SurgeryUploadFlowClient({
           <div className="min-w-0 flex-1 text-xs text-slate-500">
             {canSubmit ? (
               <span className="font-medium text-emerald-700">Ready to submit</span>
+            ) : anyUploading ? (
+              <span>Uploading photos…</span>
+            ) : missingRequiredLabels.length > 0 ? (
+              <span>Missing: {missingRequiredLabels.join(", ")}</span>
             ) : (
-              <span>{missingRequired.length} required photo(s) remaining</span>
+              <span>{completion.missing.length} required photo(s) remaining</span>
             )}
             {submitError && <p className="text-red-600">{submitError}</p>}
           </div>
@@ -508,23 +611,27 @@ function SaveIndicator({ state }: { state: SaveState }) {
 function PhotoSlotCard({
   slot,
   existing,
-  busy,
-  error,
+  state,
   locked,
   onUpload,
+  onRetry,
   onDeleted,
 }: {
-  slot: SurgeryPhotoSlot;
+  slot: ResolvedSurgerySlot;
   existing: SurgeryUploadRow[];
-  busy: boolean;
-  error?: string;
+  state: SlotUploadState;
   locked: boolean;
   onUpload: (files: File[]) => void;
+  onRetry: () => void;
   onDeleted: (id: string) => void;
 }) {
   const remaining = Math.max(0, slot.maxFiles - existing.length);
+  const busy = state.uploading > 0;
+  // Disable inputs while uploading to prevent double-tap duplicate uploads.
   const disabled = locked || remaining <= 0 || busy;
   const done = existing.length > 0;
+  const hasFailures = state.failed.length > 0;
+  const justSucceeded = !busy && !hasFailures && state.success;
 
   function handleInput(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []).slice(0, remaining);
@@ -535,27 +642,52 @@ function PhotoSlotCard({
   return (
     <div
       className={`rounded-xl border p-3 ${
-        slot.required && !done ? "border-amber-300 bg-amber-50/40" : "border-slate-200"
+        slot.effectiveRequired && !done ? "border-amber-300 bg-amber-50/40" : "border-slate-200"
       }`}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="font-semibold text-slate-900">
             {slot.label}
-            {slot.required && <span className="ml-1 text-xs text-amber-700">(required)</span>}
+            {slot.effectiveRequired ? (
+              <span className="ml-1 text-xs text-amber-700">(required)</span>
+            ) : (
+              <span className="ml-1 text-xs text-slate-400">(optional)</span>
+            )}
           </p>
           <p className="text-xs text-slate-500">{slot.help}</p>
         </div>
         <span
           className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${
-            done ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-500"
+            busy
+              ? "bg-cyan-100 text-cyan-800"
+              : done
+                ? "bg-emerald-100 text-emerald-800"
+                : "bg-slate-100 text-slate-500"
           }`}
         >
-          {done ? `${existing.length} ✓` : "0"}
+          {busy ? "Uploading…" : done ? `${existing.length} ✓` : "0"}
         </span>
       </div>
 
-      {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
+      {justSucceeded && (
+        <p className="mt-2 text-xs font-medium text-emerald-700">Uploaded ✓</p>
+      )}
+
+      {state.error && (
+        <div className="mt-2 rounded-lg border border-red-200 bg-red-50 p-2">
+          <p className="text-xs text-red-700">{state.error}</p>
+          {hasFailures && !busy && (
+            <button
+              type="button"
+              onClick={onRetry}
+              className="mt-1 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white active:scale-[0.99]"
+            >
+              Retry {state.failed.length} failed
+            </button>
+          )}
+        </div>
+      )}
 
       {existing.length > 0 && (
         <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">

@@ -3,11 +3,10 @@
 import React, { useMemo } from "react";
 import UploadedThumb from "@/components/uploads/UploadedThumb";
 import {
-  SURGERY_PHOTO_SLOTS,
   slotFromSurgeryType,
-  getMissingRequiredSurgerySlots,
-  type SurgeryPhotoSlot,
-  type SurgeryPhotoSlotKey,
+  getResolvedSurgeryChecklist,
+  getRequiredPhotoCompletion,
+  type ResolvedSurgerySlot,
 } from "@/lib/surgeryUpload/checklist";
 import { SURGERY_PROCEDURE_TYPES, type SurgeryUploadDetails } from "@/lib/surgeryUpload/fields";
 
@@ -51,20 +50,35 @@ export default function SurgeryUploadReviewPanel({
     return map;
   }, [surgeryUploads]);
 
-  const requiredTotal = SURGERY_PHOTO_SLOTS.filter((s) => s.required).length;
-  const missingRequiredKeys = useMemo(
-    () => getMissingRequiredSurgerySlots(surgeryUploads),
-    [surgeryUploads]
+  // Resolve THIS case's checklist snapshot (null => base HairAudit checklist).
+  const resolved = useMemo(
+    () => getResolvedSurgeryChecklist(details.photo_checklist_config),
+    [details.photo_checklist_config]
   );
-  const requiredDone = requiredTotal - missingRequiredKeys.length;
+  const requiredGroup = useMemo(() => resolved.filter((s) => s.effectiveRequired), [resolved]);
+  const optionalGroup = useMemo(() => resolved.filter((s) => s.state === "optional"), [resolved]);
+  // Hidden slots are normally omitted, but any that already have evidence must still
+  // be surfaced to reviewers (never hide uploaded evidence).
+  const additionalGroup = useMemo(
+    () =>
+      resolved.filter(
+        (s) => s.state === "hidden" && (uploadsBySlot[s.key]?.length ?? 0) > 0
+      ),
+    [resolved, uploadsBySlot]
+  );
+
+  const completion = useMemo(
+    () => getRequiredPhotoCompletion(surgeryUploads, details.photo_checklist_config),
+    [surgeryUploads, details.photo_checklist_config]
+  );
+  const requiredTotal = completion.total;
+  const requiredDone = completion.done;
   const submitted = details.status === "submitted";
 
   const missingRequiredLabels = useMemo(() => {
-    const labelByKey = new Map<SurgeryPhotoSlotKey, string>(
-      SURGERY_PHOTO_SLOTS.map((s) => [s.key, s.label])
-    );
-    return missingRequiredKeys.map((key) => labelByKey.get(key) ?? key);
-  }, [missingRequiredKeys]);
+    const labelByKey = new Map(resolved.map((s) => [s.key, s.label]));
+    return completion.missing.map((key) => labelByKey.get(key) ?? key);
+  }, [completion.missing, resolved]);
 
   const detailItems: Array<{ label: string; value: React.ReactNode }> = [
     { label: "Procedure", value: details.procedure_type ? PROCEDURE_LABELS[details.procedure_type] ?? details.procedure_type : "—" },
@@ -179,33 +193,38 @@ export default function SurgeryUploadReviewPanel({
         </div>
       )}
 
-      {/* Photo groups in reviewer-friendly order */}
-      <PhotoGroup
-        title="Required photos"
-        slots={SURGERY_PHOTO_SLOTS.filter((s) => s.required)}
-        uploadsBySlot={uploadsBySlot}
-      />
-      <PhotoGroup
-        title="Optional photos"
-        slots={SURGERY_PHOTO_SLOTS.filter((s) => !s.required)}
-        uploadsBySlot={uploadsBySlot}
-      />
+      {/* Photo groups in reviewer-friendly order: required → optional → hidden-with-evidence */}
+      <PhotoGroup title="Required photos" slots={requiredGroup} uploadsBySlot={uploadsBySlot} />
+      {optionalGroup.length > 0 && (
+        <PhotoGroup title="Optional photos" slots={optionalGroup} uploadsBySlot={uploadsBySlot} />
+      )}
+      {additionalGroup.length > 0 && (
+        <PhotoGroup
+          title="Additional uploaded evidence"
+          subtitle="Categories the clinic hid from new uploads, shown here because photos already exist."
+          slots={additionalGroup}
+          uploadsBySlot={uploadsBySlot}
+        />
+      )}
     </section>
   );
 }
 
 function PhotoGroup({
   title,
+  subtitle,
   slots,
   uploadsBySlot,
 }: {
   title: string;
-  slots: readonly SurgeryPhotoSlot[];
+  subtitle?: string;
+  slots: readonly ResolvedSurgerySlot[];
   uploadsBySlot: Record<string, UploadRow[]>;
 }) {
   return (
     <div className="mt-5">
       <h3 className="text-sm font-semibold text-slate-700">{title}</h3>
+      {subtitle && <p className="text-xs text-slate-500">{subtitle}</p>}
       <div className="mt-2 space-y-3">
         {slots.map((slot) => {
           const existing = uploadsBySlot[slot.key] ?? [];
@@ -215,7 +234,7 @@ function PhotoGroup({
               <div className="flex items-center justify-between gap-2">
                 <p className="text-sm font-semibold text-slate-800">
                   {slot.label}
-                  {slot.required && (
+                  {slot.effectiveRequired && (
                     <span className="ml-1 text-xs text-amber-700">(required)</span>
                   )}
                   <span className="ml-1 font-normal text-slate-500">

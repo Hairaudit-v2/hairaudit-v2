@@ -7,7 +7,11 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { resolveSurgeryUploadActor } from "@/lib/surgeryUpload/access";
 import { sanitizeSurgeryDetailsInput } from "@/lib/surgeryUpload/fields";
 import { resolveSurgeryClinicContext } from "@/lib/surgeryUpload/resolveClinicContext";
-import { defaultsToCaseValues } from "@/lib/surgeryUpload/clinicDefaults";
+import {
+  defaultsToCaseValues,
+  resolveDefaultChecklistForNewCase,
+} from "@/lib/surgeryUpload/clinicDefaults";
+import type { SurgeryChecklistConfig } from "@/lib/surgeryUpload/checklist";
 
 export const runtime = "nodejs";
 
@@ -72,6 +76,9 @@ export async function POST(req: Request) {
     // historical cases stay accurate if defaults change later.
     let defaultValues: Record<string, string | boolean> = {};
     let defaultsApplied = false;
+    // Stage 3: snapshot of the clinic's photo checklist preferences, copied (not
+    // linked) so later default changes never alter this case. null => base checklist.
+    let checklistConfig: SurgeryChecklistConfig | null = null;
     if (clinicProfileId) {
       const { data: defaultsRow } = await admin
         .from("surgery_upload_clinic_defaults")
@@ -82,6 +89,7 @@ export async function POST(req: Request) {
       defaultValues = mapped.values;
       // prefilled_from_clinic_defaults is true only when real defaults were copied.
       defaultsApplied = mapped.applied;
+      checklistConfig = resolveDefaultChecklistForNewCase(defaultsRow);
     }
 
     // Create the underlying case as a draft, mirroring /api/cases/create.
@@ -124,6 +132,8 @@ export async function POST(req: Request) {
       // Stage 2.2: reliable clinic linkage (nullable; never blocks creation).
       clinic_profile_id: clinicProfileId,
       prefilled_from_clinic_defaults: defaultsApplied,
+      // Stage 3: per-case checklist snapshot (null => base HairAudit checklist).
+      photo_checklist_config: checklistConfig,
       // Clinic defaults first; explicit request body values win over them.
       ...defaultValues,
       ...sanitized.values,

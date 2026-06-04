@@ -6,7 +6,15 @@ import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { canAccessCase } from "@/lib/case-access";
 import { resolveSurgeryUploadActor } from "@/lib/surgeryUpload/access";
-import { getMissingRequiredSurgerySlots } from "@/lib/surgeryUpload/checklist";
+import {
+  getMissingRequiredSurgerySlots,
+  SURGERY_PHOTO_SLOTS,
+  type SurgeryPhotoSlotKey,
+} from "@/lib/surgeryUpload/checklist";
+
+const SLOT_LABELS = new Map<SurgeryPhotoSlotKey, string>(
+  SURGERY_PHOTO_SLOTS.map((s) => [s.key, s.label])
+);
 
 export const runtime = "nodejs";
 
@@ -48,7 +56,7 @@ export async function POST(
 
     const { data: details } = await admin
       .from("surgery_upload_details")
-      .select("id, status")
+      .select("id, status, photo_checklist_config")
       .eq("case_id", caseId)
       .maybeSingle();
     if (!details) {
@@ -61,18 +69,24 @@ export async function POST(
       return NextResponse.json({ ok: true, alreadySubmitted: true });
     }
 
-    // Enforce required photo checklist.
+    // Enforce required photo checklist using THIS case's resolved checklist
+    // (per-case snapshot; null falls back to the base HairAudit checklist).
+    // Server-side validation is authoritative — never trust the client here.
     const { data: uploads } = await admin
       .from("uploads")
       .select("type")
       .eq("case_id", caseId);
-    const missing = getMissingRequiredSurgerySlots(uploads ?? []);
+    const missing = getMissingRequiredSurgerySlots(
+      uploads ?? [],
+      details.photo_checklist_config
+    );
     if (missing.length > 0) {
       return NextResponse.json(
         {
           ok: false,
           error: "Missing required photos",
           missingRequiredSlots: missing,
+          missingRequiredLabels: missing.map((slot) => SLOT_LABELS.get(slot) ?? slot),
         },
         { status: 422 }
       );

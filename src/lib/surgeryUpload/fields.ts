@@ -48,6 +48,8 @@ export type SurgeryUploadDetails = {
   submitted_at: string | null;
   submitted_by: string | null;
   prefilled_from_clinic_defaults: boolean;
+  /** Stage 3: per-case checklist snapshot (null => base HairAudit checklist). */
+  photo_checklist_config: unknown | null;
   created_at: string;
   updated_at: string;
 };

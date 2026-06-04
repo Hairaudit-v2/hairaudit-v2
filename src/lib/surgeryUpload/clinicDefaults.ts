@@ -1,4 +1,8 @@
 // HairAudit Mobile Surgery Upload Portal — Stage 2 clinic defaults model
+import {
+  sanitizeSurgeryChecklistConfig,
+  type SurgeryChecklistConfig,
+} from "./checklist";
 
 export type SurgeryUploadClinicDefaults = {
   id: string;
@@ -63,7 +67,21 @@ export function defaultsToCaseValues(
   return { values, applied: Object.keys(values).length > 0 };
 }
 
-type SanitizedDefaults = Record<string, string | boolean | null>;
+type SanitizedDefaults = Record<string, string | boolean | null | SurgeryChecklistConfig>;
+
+/**
+ * Resolve the per-case checklist snapshot to copy from a clinic-defaults row when a
+ * new surgery upload is created. Returns a sanitized config (locked slots forced
+ * required, unknown values dropped) or null when the clinic has no saved config.
+ * Returning null lets the case fall back to the base HairAudit checklist at runtime.
+ */
+export function resolveDefaultChecklistForNewCase(
+  defaults: Partial<SurgeryUploadClinicDefaults> | null | undefined
+): SurgeryChecklistConfig | null {
+  const raw = defaults?.default_photo_checklist_config;
+  if (raw === null || raw === undefined) return null;
+  return sanitizeSurgeryChecklistConfig(raw);
+}
 
 /** Validate + coerce a defaults PATCH/PUT body into a safe column set. */
 export function sanitizeClinicDefaultsInput(
@@ -95,6 +113,19 @@ export function sanitizeClinicDefaultsInput(
       values[field] = raw === "true";
     } else {
       return { error: `Field ${field} must be true/false` };
+    }
+  }
+
+  // Stage 3: photo checklist preferences. `null` resets to the HairAudit default;
+  // any object is sanitized (locked slots forced required, unknown keys dropped).
+  if ("default_photo_checklist_config" in body) {
+    const raw = body.default_photo_checklist_config;
+    if (raw === null || raw === undefined || raw === "") {
+      values.default_photo_checklist_config = null;
+    } else if (typeof raw === "object") {
+      values.default_photo_checklist_config = sanitizeSurgeryChecklistConfig(raw);
+    } else {
+      return { error: "default_photo_checklist_config must be an object or null" };
     }
   }
 

@@ -40,16 +40,21 @@ function clinicLabelOf(r: SurgeryUploadListRow): string {
 export default function SurgeryUploadIndexClient({
   rows,
   requiredDoneByCase,
+  requiredTotalByCase,
   requiredPhotoTotal,
   procedureLabels,
   isAuditor,
 }: {
   rows: SurgeryUploadListRow[];
   requiredDoneByCase: Record<string, number>;
+  /** Per-case required total (clinics may promote optional categories to required). */
+  requiredTotalByCase: Record<string, number>;
+  /** Fallback base required total when a case has no resolved total. */
   requiredPhotoTotal: number;
   procedureLabels: Record<string, string>;
   isAuditor: boolean;
 }) {
+  const totalFor = (caseId: string) => requiredTotalByCase[caseId] ?? requiredPhotoTotal;
   const [status, setStatus] = useState<StatusFilter>("all");
   const [clinic, setClinic] = useState("");
   const [surgeon, setSurgeon] = useState("");
@@ -90,7 +95,11 @@ export default function SurgeryUploadIndexClient({
       if (clinic && clinicKey(r) !== clinic) return false;
       if (surgeon && r.surgeon_name !== surgeon) return false;
       if (procedure && r.procedure_type !== procedure) return false;
-      if (missingOnly && (requiredDoneByCase[r.case_id] ?? 0) >= requiredPhotoTotal) {
+      if (
+        missingOnly &&
+        (requiredDoneByCase[r.case_id] ?? 0) >=
+          (requiredTotalByCase[r.case_id] ?? requiredPhotoTotal)
+      ) {
         return false;
       }
       if (dateFrom && (!r.surgery_date || r.surgery_date < dateFrom)) return false;
@@ -107,6 +116,7 @@ export default function SurgeryUploadIndexClient({
     dateFrom,
     dateTo,
     requiredDoneByCase,
+    requiredTotalByCase,
     requiredPhotoTotal,
   ]);
 
@@ -241,6 +251,7 @@ export default function SurgeryUploadIndexClient({
         <ul className="mt-3 space-y-3">
           {filtered.map((r) => {
             const done = requiredDoneByCase[r.case_id] ?? 0;
+            const total = totalFor(r.case_id);
             return (
               <li key={r.case_id}>
                 <Link
@@ -264,10 +275,10 @@ export default function SurgeryUploadIndexClient({
                   <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs">
                     <span
                       className={`font-medium ${
-                        done >= requiredPhotoTotal ? "text-emerald-700" : "text-slate-500"
+                        done >= total ? "text-emerald-700" : "text-slate-500"
                       }`}
                     >
-                      {done}/{requiredPhotoTotal} required photos
+                      {done}/{total} required photos
                     </span>
                     {r.status === "submitted" && r.submitted_at && (
                       <span className="text-slate-400">

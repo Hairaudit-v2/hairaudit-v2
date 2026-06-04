@@ -6,7 +6,7 @@ import { resolveSurgeryUploadActor } from "@/lib/surgeryUpload/access";
 import { SURGERY_PROCEDURE_TYPES } from "@/lib/surgeryUpload/fields";
 import {
   REQUIRED_SURGERY_PHOTO_SLOTS,
-  getMissingRequiredSurgerySlots,
+  getRequiredPhotoCompletion,
 } from "@/lib/surgeryUpload/checklist";
 import StartSurgeryUploadButton from "./StartSurgeryUploadButton";
 import SurgeryUploadIndexClient, {
@@ -36,7 +36,7 @@ export default async function SurgeryUploadIndexPage() {
   const query = admin
     .from("surgery_upload_details")
     .select(
-      "case_id, patient_reference, clinic_name, clinic_profile_id, surgeon_name, surgery_date, procedure_type, status, submitted_at, created_at, updated_at"
+      "case_id, patient_reference, clinic_name, clinic_profile_id, surgeon_name, surgery_date, procedure_type, status, submitted_at, photo_checklist_config, created_at, updated_at"
     )
     .order("updated_at", { ascending: false })
     .limit(50);
@@ -47,10 +47,15 @@ export default async function SurgeryUploadIndexPage() {
 
   const list = rows ?? [];
 
-  // Required-photo completion counts per case (reviewer visibility).
+  // Required-photo completion counts per case (reviewer visibility). Totals are
+  // per-case because a clinic may have promoted optional categories to required.
   const requiredDoneByCase: Record<string, number> = {};
+  const requiredTotalByCase: Record<string, number> = {};
   if (list.length > 0) {
     const caseIds = list.map((r) => r.case_id);
+    const configByCase = new Map<string, unknown>(
+      list.map((r) => [r.case_id, (r as { photo_checklist_config?: unknown }).photo_checklist_config])
+    );
     const { data: ups } = await admin
       .from("uploads")
       .select("case_id, type")
@@ -60,8 +65,12 @@ export default async function SurgeryUploadIndexPage() {
       (byCase[u.case_id as string] ||= []).push({ type: u.type as string });
     }
     for (const caseId of caseIds) {
-      const missing = getMissingRequiredSurgerySlots(byCase[caseId] ?? []);
-      requiredDoneByCase[caseId] = REQUIRED_PHOTO_TOTAL - missing.length;
+      const completion = getRequiredPhotoCompletion(
+        byCase[caseId] ?? [],
+        configByCase.get(caseId)
+      );
+      requiredDoneByCase[caseId] = completion.done;
+      requiredTotalByCase[caseId] = completion.total;
     }
   }
 
@@ -95,6 +104,7 @@ export default async function SurgeryUploadIndexPage() {
       <SurgeryUploadIndexClient
         rows={list as SurgeryUploadListRow[]}
         requiredDoneByCase={requiredDoneByCase}
+        requiredTotalByCase={requiredTotalByCase}
         requiredPhotoTotal={REQUIRED_PHOTO_TOTAL}
         procedureLabels={PROCEDURE_LABELS}
         isAuditor={actor.isAuditor}
