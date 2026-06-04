@@ -84,3 +84,42 @@ test("evaluateSurgeryEvidenceReportRequest blocks when succeeded", () => {
   );
   assert.equal(g.ok, false);
 });
+
+test("evaluateSurgeryEvidenceReportRequest blocks when running", () => {
+  const g = evaluateSurgeryEvidenceReportRequest(
+    baseDetails({ status: "submitted", evidence_report_pipeline_status: "running" })
+  );
+  assert.equal(g.ok, false);
+  assert.equal(g.status, 409);
+});
+
+test("evaluateSurgeryEvidenceReportRequest allows failed (retry)", () => {
+  const g = evaluateSurgeryEvidenceReportRequest(
+    baseDetails({ status: "submitted", evidence_report_pipeline_status: "failed" })
+  );
+  assert.equal(g.ok, true);
+});
+
+test("evaluateSurgeryEvidenceReportRequest rejects null details", () => {
+  const g = evaluateSurgeryEvidenceReportRequest(null);
+  assert.equal(g.ok, false);
+  assert.equal(g.status, 404);
+});
+
+test("evaluateSurgeryEvidenceReportRequest blocks cancelled", () => {
+  const g = evaluateSurgeryEvidenceReportRequest(
+    baseDetails({ status: "submitted", evidence_report_pipeline_status: "cancelled" })
+  );
+  assert.equal(g.ok, false);
+});
+
+test("evaluateSurgeryEvidenceReportRequest: gate uses mobile surgery_upload_details.status only (not cases)", () => {
+  const g = evaluateSurgeryEvidenceReportRequest(
+    baseDetails({
+      status: "draft",
+      evidence_report_pipeline_status: "not_started",
+    })
+  );
+  assert.equal(g.ok, false);
+  assert.match(String(g.reason ?? ""), /submits this surgery upload/i);
+});

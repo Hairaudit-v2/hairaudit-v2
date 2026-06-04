@@ -22,7 +22,11 @@ export function surgeryEvidenceReportPipelineFromDetails(
   return isSurgeryUploadReportPipelinePhase(raw) ? raw : "not_started";
 }
 
-/** Server-side gate for POST /request-report (auditor auth is checked separately). */
+/** Server-side gate for POST /request-report (auditor auth is checked separately).
+ *
+ * Stage 7C: Only `surgery_upload_details` fields drive this gate (mobile portal `status`,
+ * pipeline phase). Legacy `cases.status` / forensic submission state is intentionally ignored here.
+ */
 export function evaluateSurgeryEvidenceReportRequest(
   details: SurgeryUploadDetails | null
 ): SurgeryEvidenceReportRequestGate {

@@ -12,6 +12,8 @@ import {
   slotReviewStatusLabel,
 } from "@/lib/surgeryUpload/evidenceReview";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { buildSurgeryEvidenceReviewPdfInput } from "@/lib/reports/surgeryUpload/surgeryEvidenceReviewPdfModel";
+import { evidenceIssueFlagLabel } from "@/lib/surgeryUpload/evidenceReviewWorkspace";
 
 const PROCEDURE_LABELS = Object.fromEntries(SURGERY_PROCEDURE_TYPES.map((p) => [p.value, p.label]));
 
@@ -77,6 +79,23 @@ export async function buildSurgeryEvidenceReviewPdfBuffer(
   args: SurgeryEvidenceReviewPdfBuildArgs
 ): Promise<Buffer> {
   const { caseId, generatedAtIso, requestedByDisplay, details, uploads, slotReviews } = args;
+
+  const workspaceUploads = uploads.map((u, i) => ({
+    id: (u as { id?: string }).id ?? `upload-${i}-${u.storage_path}`,
+    type: u.type,
+    storage_path: u.storage_path,
+    metadata: u.metadata,
+    created_at: u.created_at,
+  }));
+
+  const pdfInput = buildSurgeryEvidenceReviewPdfInput({
+    caseId,
+    generatedAtIso,
+    requestedByDisplay,
+    details,
+    uploads: workspaceUploads,
+    slotReviews,
+  });
 
   const surgeryUploads = uploads.filter((u) => slotFromSurgeryType(u.type) !== null);
   const failures = getSurgeryRequirementFailures([...uploads], details.photo_checklist_config);
@@ -144,7 +163,55 @@ export async function buildSurgeryEvidenceReviewPdfBuffer(
     doc.fillColor("#0f172a").text(clip(String(details.complication_notes), 2000), { lineGap: 3 });
   }
 
-  heading(doc, "6. Evidence / images received");
+  heading(doc, "6. Evidence review workspace (Stage 8)");
+  bodyLine(
+    doc,
+    "Administrative checklist",
+    `${pdfInput.completenessRatio.met}/${pdfInput.completenessRatio.total} required items satisfied`
+  );
+  doc.moveDown(0.2);
+  for (const row of pdfInput.completenessChecklist) {
+    const mark = row.met ? "Yes" : "No";
+    const suffix = row.countsTowardRatio ? "" : " (optional)";
+    doc.fontSize(9.5).fillColor("#334155").text(`• ${row.label}${suffix}: `, { continued: true });
+    doc.fillColor(row.met ? "#047857" : "#b45309").text(mark, { lineGap: 2 });
+  }
+
+  doc.moveDown(0.35);
+  doc.fontSize(10).fillColor("#475569").text("Workspace reviewer notes (internal):", { lineGap: 2 });
+  if (pdfInput.workspaceNotes && pdfInput.workspaceNotes.trim()) {
+    doc.fillColor("#0f172a").text(clip(pdfInput.workspaceNotes, 6000), { lineGap: 3 });
+  } else {
+    doc.fillColor("#64748b").text("—", { lineGap: 2 });
+  }
+
+  doc.moveDown(0.35);
+  doc.fontSize(10).fillColor("#475569").text("Evidence issue flags:", { lineGap: 2 });
+  if (pdfInput.workspaceFlags.length === 0) {
+    doc.fillColor("#64748b").text("None recorded.", { lineGap: 2 });
+  } else {
+    for (const f of pdfInput.workspaceFlags) {
+      const label = evidenceIssueFlagLabel(f.code);
+      const extra = f.detail ? ` — ${clip(f.detail, 400)}` : "";
+      doc.fontSize(9.5).fillColor("#b45309").text(`• ${label}${extra}`, { lineGap: 2 });
+    }
+  }
+
+  doc.moveDown(0.35);
+  doc.fontSize(10).fillColor("#475569").text("Grouped evidence summary (by review category):", { lineGap: 2 });
+  if (pdfInput.groupedEvidenceCounts.length === 0) {
+    doc.fillColor("#64748b").text("No surgery uploads grouped.", { lineGap: 2 });
+  } else {
+    for (const g of pdfInput.groupedEvidenceCounts) {
+      const types = g.sampleTypes.length ? ` — types: ${g.sampleTypes.join(", ")}` : "";
+      doc
+        .fontSize(9.5)
+        .fillColor("#0f172a")
+        .text(`• ${g.label}: ${g.count} file(s)${types}`, { lineGap: 2 });
+    }
+  }
+
+  heading(doc, "7. Evidence / images received");
   if (surgeryUploads.length === 0) {
     doc.text("No surgery_photo uploads recorded for this case.", { lineGap: 4 });
   } else {
@@ -178,7 +245,7 @@ export async function buildSurgeryEvidenceReviewPdfBuffer(
     }
   }
 
-  heading(doc, "7. Missing or incomplete required evidence");
+  heading(doc, "8. Missing or incomplete required evidence");
   if (failures.length === 0) {
     doc.text("All required checklist slots satisfied at generation time.", { lineGap: 4 });
   } else {
@@ -187,7 +254,7 @@ export async function buildSurgeryEvidenceReviewPdfBuffer(
     }
   }
 
-  heading(doc, "8. Reviewer / admin notes (overall evidence review)");
+  heading(doc, "9. Reviewer / admin notes (overall evidence review)");
   bodyLine(doc, "Evidence review status", evidenceReviewStatusLabel(details.evidence_review_status));
   if (details.evidence_review_notes) {
     doc.moveDown(0.2);
@@ -201,7 +268,7 @@ export async function buildSurgeryEvidenceReviewPdfBuffer(
     doc.fillColor("#0f172a").text(clip(details.evidence_request_message, 2000), { lineGap: 3 });
   }
 
-  heading(doc, "9. Per-slot reviewer decisions");
+  heading(doc, "10. Per-slot reviewer decisions");
   if (slotReviews.length === 0) {
     doc.text("No per-slot reviewer rows recorded.", { lineGap: 3 });
   } else {
@@ -214,7 +281,7 @@ export async function buildSurgeryEvidenceReviewPdfBuffer(
     }
   }
 
-  heading(doc, "10. Non-AI evidence review disclaimer");
+  heading(doc, "11. Non-AI evidence review disclaimer");
   doc.fontSize(9).fillColor("#334155").text(
     "This document is an internal evidence and metadata summary for administrative review. " +
       "It is not a full HairAudit forensic AI surgical audit, does not produce clinical scores, " +

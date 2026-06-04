@@ -165,7 +165,7 @@ export async function POST(_req: Request, ctx: { params: Promise<{ caseId: strin
       ok: true,
       pipelineStatus: "queued",
       message:
-        "Evidence review report requested. Generation runs in the background and does not submit this case for a forensic audit.",
+        "Non-AI evidence review report requested. Generation runs in the background and does not start the forensic HairAudit pipeline.",
       details: claimed,
     });
   } catch (e) {

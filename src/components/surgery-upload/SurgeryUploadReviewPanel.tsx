@@ -23,6 +23,9 @@ import {
   type SurgerySlotReviewRow,
 } from "@/lib/surgeryUpload/evidenceReview";
 import SurgeryUploadEvidenceTimeline from "@/components/surgery-upload/SurgeryUploadEvidenceTimeline";
+import SurgeryUploadEvidenceWorkspace, {
+  computeEvidenceWorkspaceSummary,
+} from "@/components/surgery-upload/SurgeryUploadEvidenceWorkspace";
 import { type EvidenceTimelineEvent } from "@/lib/surgeryUpload/evidenceEvents";
 import {
   AUDIT_HANDOFF_STATUS_LABELS,
@@ -37,7 +40,6 @@ import {
   type AuditIntakeStatus,
 } from "@/lib/surgeryUpload/auditIntake";
 import Link from "next/link";
-import { surgeryUploadReportPipelinePhaseLabel } from "@/lib/surgeryUpload/surgeryUploadReportPipelineStage7a";
 
 /** Sanitized audit-intake view passed to the review panel (no internal ids). */
 export type SurgeryAuditIntakeView = {
@@ -84,6 +86,7 @@ export default function SurgeryUploadReviewPanel({
   evidenceEvents = [],
   auditIntake = null,
   evidenceReportPdfPath = null,
+  evidenceReportRequestedByLabel = null,
 }: {
   details: SurgeryUploadDetails;
   uploads: UploadRow[];
@@ -94,6 +97,8 @@ export default function SurgeryUploadReviewPanel({
   auditIntake?: SurgeryAuditIntakeView | null;
   /** Stage 7B: storage path for generated evidence review PDF (forensic reports excluded). */
   evidenceReportPdfPath?: string | null;
+  /** Stage 7C: display name for evidence_report_requested_by (resolved on server). */
+  evidenceReportRequestedByLabel?: string | null;
 }) {
   const surgeryUploads = useMemo(
     () => uploads.filter((u) => slotFromSurgeryType(u.type) !== null),
@@ -138,6 +143,11 @@ export default function SurgeryUploadReviewPanel({
   const requirementMessages = useMemo(
     () => completion.failures.map((f) => f.message),
     [completion.failures]
+  );
+
+  const evidenceWorkspaceSummary = useMemo(
+    () => (isAuditor ? computeEvidenceWorkspaceSummary(details, uploads) : null),
+    [isAuditor, details, uploads]
   );
 
   // Stage 5: per-slot reviewer decisions, keyed by slot_key.
@@ -271,13 +281,25 @@ export default function SurgeryUploadReviewPanel({
         <AuditIntakeStatusSection intake={auditIntake} isAuditor={isAuditor} />
       )}
 
-      {/* Stage 7B: non-AI evidence review report (auditor-only; never legacy case submission). */}
+      {/* Stage 8: auditor evidence review workspace (non-AI; never legacy case submission). */}
+      {isAuditor && (
+        <SurgeryUploadEvidenceWorkspace
+          key={`evidence-workspace-${details.evidence_review_workspace_notes_updated_at ?? "n"}-${details.evidence_review_workspace_flags_updated_at ?? "f"}`}
+          details={details}
+          uploads={uploads}
+          caseId={caseId}
+        />
+      )}
+
+      {/* Stage 7B/7C: non-AI evidence review report (auditor-only; never legacy case submission). */}
       {isAuditor && (
         <EvidenceReviewReportSection
           caseId={caseId}
           submitted={submitted}
           details={details}
           pdfPath={evidenceReportPdfPath ?? null}
+          requestedByLabel={evidenceReportRequestedByLabel ?? null}
+          workspaceSummary={evidenceWorkspaceSummary}
         />
       )}
 
@@ -617,21 +639,31 @@ function SlotReviewEditor({
 }
 
 /**
- * Stage 7B: auditor-only request for the non-AI Evidence Review Report PDF.
+ * Stage 7B/7C: auditor-only non-AI evidence review report (PDF) — UI + request entrypoint.
  *
- * REGRESSION GUARDS: this UI must only call `POST /api/admin/hair-audit/surgery-upload/.../request-report`.
- * Never wire this button to `/api/submit` or any flow that sets `cases.status` to submitted.
+ * REGRESSION GUARDS: only `POST /api/admin/hair-audit/surgery-upload/.../request-report`.
+ * Never `/api/submit` or copy that implies a forensic case handoff.
  */
 function EvidenceReviewReportSection({
   caseId,
   submitted,
   details,
   pdfPath,
+  requestedByLabel,
+  workspaceSummary,
 }: {
   caseId: string;
   submitted: boolean;
   details: SurgeryUploadDetails;
   pdfPath: string | null;
+  requestedByLabel: string | null;
+  /** Stage 8: derived from workspace + uploads (no extra request buttons). */
+  workspaceSummary: {
+    completenessMet: number;
+    completenessTotal: number;
+    flagCount: number;
+    lastReviewerNoteAt: string | null;
+  } | null;
 }) {
   const router = useRouter();
   const pipeline = details.evidence_report_pipeline_status ?? "not_started";
@@ -639,7 +671,16 @@ function EvidenceReviewReportSection({
   const [banner, setBanner] = useState<"idle" | "ok" | "err">("idle");
   const [localMsg, setLocalMsg] = useState<string | null>(null);
 
-  const requestReport = async () => {
+  const formatWhen = (iso: string | null | undefined): string | null => {
+    if (!iso) return null;
+    try {
+      return new Date(iso).toLocaleString();
+    } catch {
+      return null;
+    }
+  };
+
+  const requestOrRetryReport = async () => {
     setLoading(true);
     setBanner("idle");
     setLocalMsg(null);
@@ -658,7 +699,7 @@ function EvidenceReviewReportSection({
       setBanner("ok");
       setLocalMsg(
         j.message ??
-          "Evidence review report requested. Generation runs in the background and does not submit this case for audit."
+          "Non-AI evidence review report queued. It is generated in the background and does not start the forensic HairAudit pipeline."
       );
       router.refresh();
     } catch {
@@ -686,22 +727,94 @@ function EvidenceReviewReportSection({
     }
   };
 
-  const disabledRequest =
-    !submitted || loading || pipeline === "queued" || pipeline === "running" || pipeline === "succeeded";
+  const canRequestOrRetry =
+    submitted && !loading && (pipeline === "not_started" || pipeline === "failed");
+
+  const requestedAt = formatWhen(details.evidence_report_requested_at);
+  const completedAt = formatWhen(details.evidence_report_completed_at);
+
+  const statusHeadline = (() => {
+    switch (pipeline) {
+      case "not_started":
+        return "Non-AI evidence review report: not requested yet.";
+      case "queued":
+        return "Non-AI evidence review report: requested — queued for generation.";
+      case "running":
+        return "Non-AI evidence review report: generation in progress.";
+      case "succeeded":
+        return "Non-AI evidence review report: ready.";
+      case "failed":
+        return "Non-AI evidence review report: generation failed.";
+      case "cancelled":
+        return "Non-AI evidence review report: cancelled.";
+      default:
+        return "Non-AI evidence review report: status unknown.";
+    }
+  })();
+
+  const missingPdfWarning =
+    pipeline === "succeeded" && (!pdfPath || pdfPath.trim() === "");
 
   return (
     <div className="mt-4 rounded-xl border border-indigo-200 bg-indigo-50/50 p-3">
-      <p className="text-sm font-semibold text-indigo-950">Evidence review report (non-AI)</p>
+      <p className="text-sm font-semibold text-indigo-950">Non-AI evidence review report</p>
       <p className="mt-1 text-xs text-indigo-900/80">
-        Generates a dedicated PDF from surgery evidence and structured fields. This does{" "}
-        <strong>not</strong> submit the case for a forensic HairAudit audit or trigger the legacy patient pipeline.
+        Optional PDF summarizing surgery-upload evidence and structured fields for internal review. This is{" "}
+        <strong>not</strong> a forensic HairAudit scorecard and <strong>does not</strong> start the legacy audit
+        engine.
       </p>
-      <p className="mt-2 text-xs font-semibold text-indigo-900">
-        Status: {surgeryUploadReportPipelinePhaseLabel(pipeline)}
-      </p>
-      {details.evidence_report_error && pipeline === "failed" && (
-        <p className="mt-1 text-xs text-rose-700">{details.evidence_report_error}</p>
+
+      {workspaceSummary && (
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md border border-indigo-100 bg-white/70 px-2 py-1.5 text-[11px] text-indigo-950">
+          <span>
+            Workspace completeness:{" "}
+            <strong>
+              {workspaceSummary.completenessMet}/{workspaceSummary.completenessTotal}
+            </strong>
+          </span>
+          <span className="text-indigo-300">|</span>
+          <span>
+            Flags: <strong>{workspaceSummary.flagCount}</strong>
+          </span>
+          <span className="text-indigo-300">|</span>
+          <span>
+            Last workspace note:{" "}
+            <strong>{formatWhen(workspaceSummary.lastReviewerNoteAt) ?? "—"}</strong>
+          </span>
+          <Link
+            href="#surgery-upload-evidence-workspace"
+            className="ml-auto font-semibold text-indigo-700 hover:text-indigo-900"
+          >
+            Open workspace ↑
+          </Link>
+        </div>
       )}
+
+      <p className="mt-2 text-sm font-medium text-indigo-950">{statusHeadline}</p>
+
+      {(requestedAt || requestedByLabel) && (
+        <p className="mt-1 text-xs text-indigo-900/90">
+          {requestedAt && <span>Requested: {requestedAt}</span>}
+          {requestedAt && requestedByLabel && " · "}
+          {requestedByLabel && <span>Requested by: {requestedByLabel}</span>}
+        </p>
+      )}
+      {completedAt && pipeline === "succeeded" && (
+        <p className="mt-1 text-xs text-indigo-900/90">Completed: {completedAt}</p>
+      )}
+      {pipeline === "failed" && details.evidence_report_error && (
+        <p className="mt-1 text-xs text-rose-800">
+          <span className="font-semibold">Details: </span>
+          {String(details.evidence_report_error).slice(0, 500)}
+        </p>
+      )}
+
+      {missingPdfWarning && (
+        <div className="mt-2 rounded-md border border-amber-300 bg-amber-50 px-2 py-1.5 text-xs text-amber-950">
+          Report is marked ready, but no PDF path was found. Try refreshing; if this persists, contact support.
+        </div>
+      )}
+
       {banner === "ok" && localMsg && (
         <p className="mt-2 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs text-emerald-900">
           {localMsg}
@@ -710,31 +823,44 @@ function EvidenceReviewReportSection({
       {banner === "err" && localMsg && (
         <p className="mt-2 rounded-md border border-rose-200 bg-rose-50 px-2 py-1 text-xs text-rose-900">{localMsg}</p>
       )}
+
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          onClick={requestReport}
-          disabled={disabledRequest}
-          className="rounded-md bg-indigo-700 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
-        >
-          {loading ? "Requesting…" : "Request Evidence Review Report"}
-        </button>
-        {pdfPath && pipeline === "succeeded" && (
+        {canRequestOrRetry && (
+          <button
+            type="button"
+            onClick={requestOrRetryReport}
+            className="rounded-md bg-indigo-700 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+          >
+            {loading
+              ? "Working…"
+              : pipeline === "failed"
+                ? "Retry non-AI evidence review report"
+                : "Request non-AI evidence review report"}
+          </button>
+        )}
+        {pipeline === "succeeded" && pdfPath && (
           <button
             type="button"
             onClick={downloadPdf}
             className="rounded-md border border-indigo-300 bg-white px-3 py-1.5 text-xs font-semibold text-indigo-900"
           >
-            Download evidence review PDF
+            Download PDF
           </button>
         )}
       </div>
+
       {!submitted && (
-        <p className="mt-2 text-xs text-slate-600">Available after the surgery upload is submitted for review.</p>
+        <p className="mt-2 text-xs text-slate-600">
+          Available after the clinic finishes this surgery upload (mobile portal), so reviewers have a fixed evidence
+          snapshot to summarize.
+        </p>
       )}
+
       {(pipeline === "queued" || pipeline === "running") && (
         <p className="mt-2 text-xs text-indigo-800">
-          Evidence review report requested — generation is running in the background.
+          {pipeline === "queued"
+            ? "Queued — the non-AI evidence review report will generate shortly."
+            : "In progress — PDF assembly is running; this page will update when finished."}
         </p>
       )}
     </div>

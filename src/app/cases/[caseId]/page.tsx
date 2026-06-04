@@ -31,6 +31,7 @@ import type { SurgerySlotReviewRow } from "@/lib/surgeryUpload/evidenceReview";
 import { loadEvidenceEvents, type EvidenceTimelineEvent } from "@/lib/surgeryUpload/evidenceEvents";
 import { loadAuditIntakeByCase } from "@/lib/surgeryUpload/auditIntakeQuery";
 import { SURGERY_UPLOAD_REPORT_KIND_EVIDENCE_REVIEW_V1 } from "@/lib/surgeryUpload/surgeryUploadReportPipelineStage7a";
+import { filterForensicAuditReports } from "@/lib/reports/forensicReportsFilter";
 import LatestReportCard from "@/components/reports/LatestReportCard";
 import InviteClinicContributionCard from "@/components/case/InviteClinicContributionCard";
 import ForensicCaseTimelineViewer from "@/components/reports/ForensicCaseTimelineViewer";
@@ -409,7 +410,7 @@ export default async function Page({
   }
 
   /** Forensic AI audit reports only — excludes Stage 7B surgery evidence review PDFs. */
-  const forensicReports = (reports ?? []).filter((r) => !r.report_kind);
+  const forensicReports = filterForensicAuditReports(reports ?? []);
 
   // Case-scoped access flags (auditor sees all)
   const isAuditor = role === "auditor";
@@ -445,6 +446,23 @@ export default async function Page({
       } else {
         surgeryAuditIntakeView = { status: intake.status };
       }
+    }
+  }
+
+  // Stage 7C: display label for who requested the evidence review report (auditor-safe).
+  let evidenceReportRequestedByLabel: string | null = null;
+  if (surgeryUploadDetails?.evidence_report_requested_by) {
+    try {
+      const { data: reqProf } = await db
+        .from("profiles")
+        .select("display_name, role")
+        .eq("id", surgeryUploadDetails.evidence_report_requested_by)
+        .maybeSingle();
+      const nm = (reqProf?.display_name as string | null | undefined)?.trim();
+      evidenceReportRequestedByLabel =
+        nm || (reqProf?.role === "auditor" ? "Reviewer" : "Staff");
+    } catch {
+      evidenceReportRequestedByLabel = null;
     }
   }
 
@@ -1238,7 +1256,7 @@ export default async function Page({
 
       {isAuditor && forensicReports.length > 0 && (
         <div className="mt-6">
-          <AuditorRerunPanel caseId={c.id} latestReportVersion={(forensicReports[0] as any)?.version} />
+          <AuditorRerunPanel caseId={c.id} latestReportVersion={forensicReports[0]?.version} />
         </div>
       )}
 
@@ -1350,10 +1368,10 @@ export default async function Page({
             <p className="mt-0.5 text-xs text-slate-400">{BENCHMARKING_GLOBAL_STANDARDS}</p>
             {repErr && <p className="text-sm text-rose-300">{repErr.message}</p>}
           </div>
-          {forensicReports.length > 0 && <VersionHistoryDrawer reports={forensicReports as any} />}
+          {forensicReports.length > 0 && <VersionHistoryDrawer reports={forensicReports} />}
         </div>
         <div className="mt-4">
-          <LatestReportCard report={latestReport as any} caseId={c.id} displayScore={latestReportDisplayScore} />
+          <LatestReportCard report={latestReport} caseId={c.id} displayScore={latestReportDisplayScore} />
         </div>
       </section>
 
@@ -1368,6 +1386,7 @@ export default async function Page({
             evidenceEvents={surgeryEvidenceEvents}
             auditIntake={surgeryAuditIntakeView}
             evidenceReportPdfPath={surgeryEvidenceReportPdfPath}
+            evidenceReportRequestedByLabel={evidenceReportRequestedByLabel}
           />
         </div>
       )}

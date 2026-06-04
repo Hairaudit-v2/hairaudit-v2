@@ -27,3 +27,31 @@ Implemented: non-AI PDF report for mobile surgery-upload cases, triggered by aud
 ## Related design doc
 
 - `docs/hairaudit/surgery-upload-report-pipeline-stage-7a.md` (pipeline inspection; 7B implements the dedicated Inngest path described there).
+
+---
+
+## Stage 7C — Admin polish and regression protection
+
+**UI (`SurgeryUploadReviewPanel`):** Per-phase copy for the **non-AI evidence review report** (`not_started`, `queued`, `running`, `succeeded`, `failed`). Shows **requested at / requested by** and **completed at** when present; shows bounded **failure** text for auditors; if pipeline is `succeeded` but the PDF path is missing, shows an **amber warning** instead of a broken download. **Retry** uses the same POST route as the initial request (allowed from **`failed`** only server-side; **`cancelled`** remains blocked by policy).
+
+**Forensic isolation:** `filterForensicAuditReports` in `src/lib/reports/forensicReportsFilter.ts` centralizes “latest forensic report” filtering so `report_kind = surgery_upload_evidence_review_v1` rows never replace forensic version history / latest card.
+
+### Report state machine (current product)
+
+```
+not_started ──request──► queued ──Inngest claim──► running ──success──► succeeded
+    ▲                        │                         │
+    │                        │                         └──► failed
+    └──── retry (request again) ◄─── only from failed (and not_started); API claim accepts not_started | failed
+```
+
+- **One successful PDF per case** is enforced by design: `evaluateSurgeryEvidenceReportRequest` returns **409** when `evidence_report_pipeline_status === succeeded` (download the existing file). A new version would require relaxing that gate, bumping `reports.version`, and optionally retaining history (e.g. child table or multiple `reports` rows with the same kind + UI to pick “latest evidence PDF”).
+
+### Regression tests
+
+- `tests/surgeryEvidenceReportRequest.test.ts` — eligibility matrix including **failed retry**, **running**, **null details**, **cancelled**.
+- `tests/surgeryEvidenceReportStage7cRegression.test.ts` — source-level assertions that the request route and Inngest job do not reference **`case/submitted`**, **`/api/submit`**, **`submitted_at`**, or **`from("cases")`**; plus forensic filter behavior.
+
+### Legacy submit path
+
+Stage 7C does **not** change `/api/submit`, `runAudit`, or `cases` write paths; it only adds UI/docs/tests and a small report filter helper.

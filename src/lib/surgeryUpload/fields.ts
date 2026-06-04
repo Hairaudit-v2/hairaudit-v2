@@ -78,6 +78,13 @@ export type SurgeryUploadDetails = {
   evidence_report_failed_at?: string | null;
   evidence_report_error?: string | null;
   evidence_report_id?: string | null;
+  // Stage 8: auditor evidence-review workspace (non-AI; never touches cases.* submission).
+  evidence_review_workspace_notes?: string | null;
+  evidence_review_workspace_notes_updated_by?: string | null;
+  evidence_review_workspace_notes_updated_at?: string | null;
+  evidence_review_workspace_flags?: unknown;
+  evidence_review_workspace_flags_updated_by?: string | null;
+  evidence_review_workspace_flags_updated_at?: string | null;
   created_at: string;
   updated_at: string;
 };
