@@ -9,6 +9,7 @@ import {
   getRequiredPhotoCompletion,
 } from "@/lib/surgeryUpload/checklist";
 import StartSurgeryUploadButton from "./StartSurgeryUploadButton";
+import type { ClinicPickerOption } from "./defaults/ClinicDefaultsPicker";
 import SurgeryUploadIndexClient, {
   type SurgeryUploadListRow,
 } from "./SurgeryUploadIndexClient";
@@ -76,6 +77,27 @@ export default async function SurgeryUploadIndexPage() {
 
   const canEditDefaults = actor.role === "clinic" || actor.isAuditor;
 
+  // Auditors/admins can start an upload on behalf of a selected clinic. The new
+  // case inherits that clinic's defaults + photo checklist (handled by the create API).
+  let clinics: ClinicPickerOption[] = [];
+  if (actor.isAuditor) {
+    const { data: clinicRows } = await admin
+      .from("clinic_profiles")
+      .select("id, clinic_name, clinic_email, participation_status")
+      .order("clinic_name", { ascending: true });
+    clinics = ((clinicRows ?? []) as Array<{
+      id: string;
+      clinic_name: string | null;
+      clinic_email: string | null;
+      participation_status: string | null;
+    }>).map((c) => ({
+      id: c.id,
+      clinicName: c.clinic_name ?? "",
+      email: c.clinic_email ?? null,
+      status: c.participation_status ?? null,
+    }));
+  }
+
   return (
     <div className="mx-auto w-full max-w-2xl px-4 pb-24">
       <header className="pt-2">
@@ -98,7 +120,7 @@ export default async function SurgeryUploadIndexPage() {
       </header>
 
       <div className="sticky top-2 z-10 mt-5">
-        <StartSurgeryUploadButton />
+        <StartSurgeryUploadButton isAuditor={actor.isAuditor} clinics={clinics} />
       </div>
 
       <SurgeryUploadIndexClient

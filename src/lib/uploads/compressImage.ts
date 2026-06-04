@@ -72,30 +72,85 @@ function renamed(name: string, ext: string): string {
   return `${base || "photo"}.${ext}`;
 }
 
+// ---------------------------------------------------------------------------
+// Stage 3.1 — lightweight (non-AI) quality signal + upload metadata
+// ---------------------------------------------------------------------------
+// Below this shortest-edge threshold an image is flagged as possibly too low
+// resolution for reliable audit review. This NEVER blocks upload — it is purely a
+// warning surfaced to the uploader and the reviewer.
+export const LOW_RES_MIN_EDGE_PX = 900;
+export const LOW_RES_WARNING =
+  "This image may be too low resolution for reliable audit review.";
+
+/** Client-derived metadata captured at selection time, attached to the upload. */
+export type PreparedImageMeta = {
+  /** Original selected filename. */
+  originalFilename: string;
+  /** Size of the originally selected file, in bytes. */
+  originalSizeBytes: number;
+  /** Size of the file actually uploaded (compressed when applicable), in bytes. */
+  compressedSizeBytes: number;
+  /** Original capture width in px (null if it could not be read). */
+  width: number | null;
+  /** Original capture height in px (null if it could not be read). */
+  height: number | null;
+  /** True when a smaller, re-encoded copy was adopted for upload. */
+  compressionApplied: boolean;
+  /** Non-null when the original looked too low-resolution for reliable review. */
+  qualityWarning: string | null;
+};
+
+export type PreparedImage = {
+  file: File;
+  meta: PreparedImageMeta;
+};
+
+function baseMeta(file: File): PreparedImageMeta {
+  return {
+    originalFilename: file.name || "photo",
+    originalSizeBytes: file.size,
+    compressedSizeBytes: file.size,
+    width: null,
+    height: null,
+    compressionApplied: false,
+    qualityWarning: null,
+  };
+}
+
 /**
- * Compress a single image file for upload. Always resolves to a File — the original
- * is returned unchanged when compression is impossible, unnecessary, or unhelpful.
+ * Decode (for dimensions + a low-res signal), then compress when worthwhile, and
+ * return BOTH the upload-ready File and the captured metadata. Always resolves —
+ * undecodable inputs (e.g. HEIC on some platforms) keep the original file and yield
+ * null dimensions with no warning, so uploads never fail on metadata extraction.
  */
-export async function compressImageForUpload(
+export async function prepareImageForUpload(
   file: File,
   options?: CompressImageOptions
-): Promise<File> {
+): Promise<PreparedImage> {
   const opts = { ...DEFAULTS, ...(options ?? {}) };
+  const meta = baseMeta(file);
 
-  if (!canCompress(file)) return file;
+  if (!canCompress(file)) return { file, meta };
 
   const source = await decode(file);
-  if (!source) return file; // Undecodable (e.g. HEIC on some platforms) — keep original.
+  if (!source) return { file, meta }; // Undecodable — keep original, no dimensions.
 
   try {
     const { w, h } = dimensionsOf(source);
-    if (!w || !h) return file;
+    if (w && h) {
+      meta.width = w;
+      meta.height = h;
+      if (Math.min(w, h) < LOW_RES_MIN_EDGE_PX) {
+        meta.qualityWarning = LOW_RES_WARNING;
+      }
+    }
+    if (!w || !h) return { file, meta };
 
     const longest = Math.max(w, h);
     const scale = longest > opts.maxEdge ? opts.maxEdge / longest : 1;
 
     // Already small and no resize needed → don't re-encode (avoids quality loss).
-    if (scale === 1 && file.size <= opts.skipBelowBytes) return file;
+    if (scale === 1 && file.size <= opts.skipBelowBytes) return { file, meta };
 
     const targetW = Math.max(1, Math.round(w * scale));
     const targetH = Math.max(1, Math.round(h * scale));
@@ -104,7 +159,7 @@ export async function compressImageForUpload(
     canvas.width = targetW;
     canvas.height = targetH;
     const ctx = canvas.getContext("2d");
-    if (!ctx) return file;
+    if (!ctx) return { file, meta };
     ctx.drawImage(source as CanvasImageSource, 0, 0, targetW, targetH);
 
     const outType = file.type === "image/png" ? "image/png" : "image/jpeg";
@@ -114,19 +169,32 @@ export async function compressImageForUpload(
       canvas.toBlob(resolve, outType, outType === "image/jpeg" ? opts.quality : undefined)
     );
 
-    if (!blob) return file;
-    // Only adopt the compressed version when it's genuinely smaller.
-    if (blob.size >= file.size) return file;
+    if (!blob || blob.size >= file.size) return { file, meta };
 
-    return new File([blob], renamed(file.name || "photo", outExt), {
+    const out = new File([blob], renamed(file.name || "photo", outExt), {
       type: outType,
       lastModified: Date.now(),
     });
+    meta.compressionApplied = true;
+    meta.compressedSizeBytes = out.size;
+    return { file: out, meta };
   } catch {
-    return file;
+    return { file, meta };
   } finally {
     if (typeof ImageBitmap !== "undefined" && source instanceof ImageBitmap) {
       source.close();
     }
   }
+}
+
+/**
+ * Compress a single image file for upload. Always resolves to a File — the original
+ * is returned unchanged when compression is impossible, unnecessary, or unhelpful.
+ * Thin wrapper over prepareImageForUpload for callers that only need the File.
+ */
+export async function compressImageForUpload(
+  file: File,
+  options?: CompressImageOptions
+): Promise<File> {
+  return (await prepareImageForUpload(file, options)).file;
 }

@@ -4,14 +4,21 @@ import React, { useMemo, useState } from "react";
 import type { SurgeryUploadClinicDefaults } from "@/lib/surgeryUpload/clinicDefaults";
 import {
   getResolvedSurgeryChecklist,
+  coerceMinCount,
   LOCKED_REQUIRED_SURGERY_SLOTS,
   OPTIONAL_SURGERY_SLOT_KEYS,
   SURGERY_PHOTO_SLOTS,
   CHECKLIST_CONFIG_VERSION,
+  DEFAULT_SLOT_MIN_COUNT,
+  MIN_SLOT_MIN_COUNT,
+  MAX_SLOT_MIN_COUNT,
   type SurgerySlotState,
   type SurgeryPhotoSlotKey,
   type SurgeryChecklistConfig,
 } from "@/lib/surgeryUpload/checklist";
+
+const MIN_COUNT_HELP =
+  "Minimum photo count helps ensure enough angles are captured for reliable review.";
 
 type FormState = {
   default_extraction_machine: string;
@@ -31,30 +38,46 @@ const SLOT_HELP = new Map<SurgeryPhotoSlotKey, string>(
   SURGERY_PHOTO_SLOTS.map((s) => [s.key, s.help])
 );
 
-type ChecklistState = Record<SurgeryPhotoSlotKey, SurgerySlotState>;
+type SlotPref = { state: SurgerySlotState; minCount: number };
+type ChecklistState = Record<SurgeryPhotoSlotKey, SlotPref>;
 
 function initChecklist(d: SurgeryUploadClinicDefaults | null): ChecklistState {
   const resolved = getResolvedSurgeryChecklist(d?.default_photo_checklist_config);
   const state = {} as ChecklistState;
-  for (const slot of resolved) state[slot.key] = slot.state;
+  for (const slot of resolved) {
+    state[slot.key] = { state: slot.state, minCount: slot.minCount };
+  }
   return state;
 }
 
+/** True when this slot's minCount actually applies (only required slots require photos). */
+function minCountApplies(pref: SlotPref): boolean {
+  return pref.state === "required";
+}
+
 /**
- * Build the config to persist from the editable optional-slot states. Locked slots are
- * always required. Returns null when the result is equivalent to the HairAudit base
- * (all optional slots "optional"), keeping the stored value clean for reset-to-default.
+ * Build the config to persist from the editable slot prefs. Locked slots are always
+ * required. Returns null when the result is equivalent to the HairAudit base (all
+ * optional slots "optional" AND every minCount at the default of 1), keeping the
+ * stored value clean for reset-to-default.
  */
 function buildChecklistPayload(state: ChecklistState): SurgeryChecklistConfig | null {
-  const isBase = OPTIONAL_SURGERY_SLOT_KEYS.every((k) => state[k] === "optional");
-  if (isBase) return null;
+  const optionalAllBase = OPTIONAL_SURGERY_SLOT_KEYS.every(
+    (k) => state[k]?.state === "optional"
+  );
+  const minCountsAllDefault = SURGERY_PHOTO_SLOTS.every(
+    (s) => (state[s.key]?.minCount ?? DEFAULT_SLOT_MIN_COUNT) === DEFAULT_SLOT_MIN_COUNT
+  );
+  if (optionalAllBase && minCountsAllDefault) return null;
 
   const slots: SurgeryChecklistConfig["slots"] = {};
   SURGERY_PHOTO_SLOTS.forEach((slot, index) => {
     const locked = LOCKED_REQUIRED_SURGERY_SLOTS.includes(slot.key);
+    const pref = state[slot.key] ?? { state: "optional", minCount: DEFAULT_SLOT_MIN_COUNT };
     slots[slot.key] = {
-      state: locked ? "required" : state[slot.key] ?? "optional",
+      state: locked ? "required" : pref.state,
       order: index,
+      minCount: coerceMinCount(pref.minCount),
     };
   });
   return { version: CHECKLIST_CONFIG_VERSION, slots };
@@ -96,7 +119,11 @@ export default function SurgeryDefaultsClient({
   const noDefaultsSaved = initialDefaults === null;
 
   const isChecklistBase = useMemo(
-    () => OPTIONAL_SURGERY_SLOT_KEYS.every((k) => checklist[k] === "optional"),
+    () =>
+      OPTIONAL_SURGERY_SLOT_KEYS.every((k) => checklist[k]?.state === "optional") &&
+      SURGERY_PHOTO_SLOTS.every(
+        (s) => (checklist[s.key]?.minCount ?? DEFAULT_SLOT_MIN_COUNT) === DEFAULT_SLOT_MIN_COUNT
+      ),
     [checklist]
   );
 
@@ -106,14 +133,25 @@ export default function SurgeryDefaultsClient({
   }
 
   function setSlotState(key: SurgeryPhotoSlotKey, value: SurgerySlotState) {
-    setChecklist((c) => ({ ...c, [key]: value }));
+    setChecklist((c) => ({ ...c, [key]: { ...c[key], state: value } }));
+    setSaved(false);
+  }
+
+  function setSlotMinCount(key: SurgeryPhotoSlotKey, value: number) {
+    setChecklist((c) => ({ ...c, [key]: { ...c[key], minCount: coerceMinCount(value) } }));
     setSaved(false);
   }
 
   function resetChecklist() {
     setChecklist((c) => {
       const next = { ...c };
-      for (const k of OPTIONAL_SURGERY_SLOT_KEYS) next[k] = "optional";
+      for (const s of SURGERY_PHOTO_SLOTS) {
+        const locked = LOCKED_REQUIRED_SURGERY_SLOTS.includes(s.key);
+        next[s.key] = {
+          state: locked ? "required" : "optional",
+          minCount: DEFAULT_SLOT_MIN_COUNT,
+        };
+      }
       return next;
     });
     setSaved(false);
@@ -272,6 +310,10 @@ export default function SurgeryDefaultsClient({
           )}
         </div>
 
+        <p className="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+          {MIN_COUNT_HELP}
+        </p>
+
         <div className="mt-4">
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
             HairAudit required (locked)
@@ -280,16 +322,26 @@ export default function SurgeryDefaultsClient({
             {LOCKED_REQUIRED_SURGERY_SLOTS.map((key) => (
               <div
                 key={key}
-                className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5"
+                className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5"
               >
-                <span className="min-w-0">
-                  <span className="block text-sm font-medium text-slate-800">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="min-w-0 block text-sm font-medium text-slate-800">
                     {SLOT_LABELS.get(key) ?? key}
                   </span>
-                </span>
-                <span className="shrink-0 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800">
-                  Required • locked
-                </span>
+                  <span className="shrink-0 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800">
+                    Required • locked
+                  </span>
+                </div>
+                <div className="mt-2 flex items-center justify-between gap-2">
+                  <span className="text-xs font-medium text-slate-600">
+                    Minimum photos
+                  </span>
+                  <MinCountStepper
+                    value={checklist[key]?.minCount ?? DEFAULT_SLOT_MIN_COUNT}
+                    disabled={disabled}
+                    onChange={(v) => setSlotMinCount(key, v)}
+                  />
+                </div>
               </div>
             ))}
           </div>
@@ -300,23 +352,44 @@ export default function SurgeryDefaultsClient({
             Optional categories
           </p>
           <div className="space-y-3">
-            {OPTIONAL_SURGERY_SLOT_KEYS.map((key) => (
-              <div key={key} className="rounded-xl border border-slate-200 p-3">
-                <p className="text-sm font-medium text-slate-800">
-                  {SLOT_LABELS.get(key) ?? key}
-                </p>
-                {SLOT_HELP.get(key) && (
-                  <p className="text-xs text-slate-500">{SLOT_HELP.get(key)}</p>
-                )}
-                <div className="mt-2">
-                  <SlotStateToggle
-                    value={checklist[key] ?? "optional"}
-                    disabled={disabled}
-                    onChange={(v) => setSlotState(key, v)}
-                  />
+            {OPTIONAL_SURGERY_SLOT_KEYS.map((key) => {
+              const pref = checklist[key] ?? {
+                state: "optional" as SurgerySlotState,
+                minCount: DEFAULT_SLOT_MIN_COUNT,
+              };
+              const applies = minCountApplies(pref);
+              return (
+                <div key={key} className="rounded-xl border border-slate-200 p-3">
+                  <p className="text-sm font-medium text-slate-800">
+                    {SLOT_LABELS.get(key) ?? key}
+                  </p>
+                  {SLOT_HELP.get(key) && (
+                    <p className="text-xs text-slate-500">{SLOT_HELP.get(key)}</p>
+                  )}
+                  <div className="mt-2">
+                    <SlotStateToggle
+                      value={pref.state}
+                      disabled={disabled}
+                      onChange={(v) => setSlotState(key, v)}
+                    />
+                  </div>
+                  <div className="mt-2 flex items-center justify-between gap-2">
+                    <span
+                      className={`text-xs font-medium ${
+                        applies ? "text-slate-600" : "text-slate-400"
+                      }`}
+                    >
+                      Minimum photos {applies ? "" : "(set to Required to use)"}
+                    </span>
+                    <MinCountStepper
+                      value={pref.minCount}
+                      disabled={disabled || !applies}
+                      onChange={(v) => setSlotMinCount(key, v)}
+                    />
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
@@ -352,6 +425,44 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <span className="mb-1 block text-sm font-medium text-slate-700">{label}</span>
       {children}
     </label>
+  );
+}
+
+function MinCountStepper({
+  value,
+  disabled,
+  onChange,
+}: {
+  value: number;
+  disabled: boolean;
+  onChange: (v: number) => void;
+}) {
+  const dec = () => onChange(Math.max(MIN_SLOT_MIN_COUNT, value - 1));
+  const inc = () => onChange(Math.min(MAX_SLOT_MIN_COUNT, value + 1));
+  return (
+    <div className="flex shrink-0 items-center overflow-hidden rounded-xl border border-slate-300">
+      <button
+        type="button"
+        disabled={disabled || value <= MIN_SLOT_MIN_COUNT}
+        onClick={dec}
+        aria-label="Decrease minimum"
+        className="h-10 w-10 text-lg font-semibold text-slate-700 disabled:opacity-40"
+      >
+        −
+      </button>
+      <span className="w-8 text-center text-sm font-semibold text-slate-900" aria-live="polite">
+        {value}
+      </span>
+      <button
+        type="button"
+        disabled={disabled || value >= MAX_SLOT_MIN_COUNT}
+        onClick={inc}
+        aria-label="Increase minimum"
+        className="h-10 w-10 text-lg font-semibold text-slate-700 disabled:opacity-40"
+      >
+        +
+      </button>
+    </div>
   );
 }
 

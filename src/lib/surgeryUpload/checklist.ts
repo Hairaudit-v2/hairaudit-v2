@@ -153,6 +153,12 @@ export type SurgerySlotState = "required" | "optional" | "hidden";
 export type SurgeryChecklistSlotConfig = {
   state: SurgerySlotState;
   order?: number;
+  /**
+   * Stage 3.1: minimum number of photos required when this slot is effectively
+   * required. Always sanitizes to an integer in [MIN_SLOT_MIN_COUNT, MAX_SLOT_MIN_COUNT].
+   * Ignored for optional/hidden slots (they require zero photos at runtime).
+   */
+  minCount?: number;
 };
 
 export type SurgeryChecklistConfig = {
@@ -161,6 +167,37 @@ export type SurgeryChecklistConfig = {
 };
 
 export const CHECKLIST_CONFIG_VERSION = 1;
+
+// ---------------------------------------------------------------------------
+// Stage 3.1 — per-slot minimum photo counts
+// ---------------------------------------------------------------------------
+// Required slots may demand more than one photo (e.g. donor from two angles).
+// Defaults to 1 so existing configs (and configs without minCount) behave exactly
+// as before. Clinics/auditors may raise a slot's minimum but never below 1 for a
+// required (or locked) slot. A suggested ceiling keeps the UI/control sane.
+export const DEFAULT_SLOT_MIN_COUNT = 1;
+export const MIN_SLOT_MIN_COUNT = 1;
+export const MAX_SLOT_MIN_COUNT = 10;
+
+/**
+ * Coerce arbitrary stored/incoming minCount into a safe integer.
+ * Invalid / missing values fall back to DEFAULT_SLOT_MIN_COUNT (1) and the result
+ * is always clamped to [MIN_SLOT_MIN_COUNT, MAX_SLOT_MIN_COUNT]. Required and
+ * locked slots can therefore never drop below 1.
+ */
+export function coerceMinCount(value: unknown): number {
+  const num =
+    typeof value === "number"
+      ? value
+      : typeof value === "string" && value.trim() !== ""
+        ? Number(value)
+        : NaN;
+  if (!Number.isFinite(num)) return DEFAULT_SLOT_MIN_COUNT;
+  const floored = Math.floor(num);
+  if (floored < MIN_SLOT_MIN_COUNT) return MIN_SLOT_MIN_COUNT;
+  if (floored > MAX_SLOT_MIN_COUNT) return MAX_SLOT_MIN_COUNT;
+  return floored;
+}
 
 /** The six HairAudit minimum evidence slots — always required, locked for clinics. */
 export const LOCKED_REQUIRED_SURGERY_SLOTS: readonly SurgeryPhotoSlotKey[] =
@@ -188,7 +225,11 @@ function coerceOrder(value: unknown, fallback: number): number {
 export function getBaseChecklistConfig(): SurgeryChecklistConfig {
   const slots: SurgeryChecklistConfig["slots"] = {};
   SURGERY_PHOTO_SLOTS.forEach((slot, index) => {
-    slots[slot.key] = { state: slot.required ? "required" : "optional", order: index };
+    slots[slot.key] = {
+      state: slot.required ? "required" : "optional",
+      order: index,
+      minCount: DEFAULT_SLOT_MIN_COUNT,
+    };
   });
   return { version: CHECKLIST_CONFIG_VERSION, slots };
 }
@@ -211,19 +252,30 @@ export function sanitizeSurgeryChecklistConfig(raw: unknown): SurgeryChecklistCo
   SURGERY_PHOTO_SLOTS.forEach((slot, index) => {
     const entry =
       rawSlots && typeof rawSlots === "object"
-        ? (rawSlots[slot.key] as { state?: unknown; order?: unknown } | undefined)
+        ? (rawSlots[slot.key] as {
+            state?: unknown;
+            order?: unknown;
+            minCount?: unknown;
+          } | undefined)
         : undefined;
 
+    const order = coerceOrder(entry?.order, index);
+    // minCount always sanitizes to a safe integer (>= 1). It is stored for every
+    // slot for forward-compatibility but only applies at runtime when the slot is
+    // effectively required.
+    const minCount = coerceMinCount(entry?.minCount);
+
     if (LOCKED_SLOT_SET.has(slot.key)) {
-      // Locked slots can never be optional/hidden in Stage 3.
-      slots[slot.key] = { state: "required", order: coerceOrder(entry?.order, index) };
+      // Locked slots can never be optional/hidden; minCount can be raised but the
+      // clamp in coerceMinCount keeps it at least 1.
+      slots[slot.key] = { state: "required", order, minCount };
       return;
     }
 
     const state: SurgerySlotState = isValidState(entry?.state)
       ? entry!.state
       : "optional";
-    slots[slot.key] = { state, order: coerceOrder(entry?.order, index) };
+    slots[slot.key] = { state, order, minCount };
   });
 
   return { version: CHECKLIST_CONFIG_VERSION, slots };
@@ -236,6 +288,10 @@ export type ResolvedSurgerySlot = SurgeryPhotoSlot & {
   locked: boolean;
   /** Convenience flag: state === "required". */
   effectiveRequired: boolean;
+  /** Configured minimum photo count (>= 1). Always present after resolution. */
+  minCount: number;
+  /** Photos this slot demands at runtime: minCount when required, else 0. */
+  requiredCount: number;
   order: number;
 };
 
@@ -246,13 +302,19 @@ export type ResolvedSurgerySlot = SurgeryPhotoSlot & {
 export function getResolvedSurgeryChecklist(config?: unknown): ResolvedSurgerySlot[] {
   const sane = sanitizeSurgeryChecklistConfig(config);
   const resolved: ResolvedSurgerySlot[] = SURGERY_PHOTO_SLOTS.map((slot) => {
-    const entry = sane.slots[slot.key] ?? { state: "optional" as SurgerySlotState };
+    const entry =
+      sane.slots[slot.key] ??
+      ({ state: "optional", minCount: DEFAULT_SLOT_MIN_COUNT } as SurgeryChecklistSlotConfig);
     const state = LOCKED_SLOT_SET.has(slot.key) ? "required" : entry.state;
+    const effectiveRequired = state === "required";
+    const minCount = coerceMinCount(entry.minCount);
     return {
       ...slot,
       state,
       locked: LOCKED_SLOT_SET.has(slot.key),
-      effectiveRequired: state === "required",
+      effectiveRequired,
+      minCount,
+      requiredCount: effectiveRequired ? minCount : 0,
       order: coerceOrder(entry.order, SLOT_BASE_INDEX.get(slot.key) ?? 0),
     };
   });
@@ -284,6 +346,34 @@ function presentSlotsFromUploads(uploadTypes: { type: string }[]): Set<SurgeryPh
   return present;
 }
 
+/** Count uploaded photos per slot (Stage 3.1 minCount-aware calculations). */
+function countsBySlotFromUploads(
+  uploadTypes: { type: string }[]
+): Map<SurgeryPhotoSlotKey, number> {
+  const counts = new Map<SurgeryPhotoSlotKey, number>();
+  for (const u of uploadTypes) {
+    const slot = slotFromSurgeryType(u.type);
+    if (slot) counts.set(slot, (counts.get(slot) ?? 0) + 1);
+  }
+  return counts;
+}
+
+/** A required slot whose minCount is not yet satisfied, with reviewer-ready copy. */
+export type SurgeryRequirementFailure = {
+  key: SurgeryPhotoSlotKey;
+  label: string;
+  /** Photos required (minCount). */
+  required: number;
+  /** Photos currently uploaded for the slot. */
+  current: number;
+  /** Human-readable, e.g. "Pre-op donor requires 2 photos; currently has 1." */
+  message: string;
+};
+
+function formatRequirementMessage(label: string, required: number, current: number): string {
+  return `${label} requires ${required} photo${required === 1 ? "" : "s"}; currently has ${current}.`;
+}
+
 export function isValidSurgerySlot(value: string): value is SurgeryPhotoSlotKey {
   return SLOT_KEYS.has(value.trim().toLowerCase());
 }
@@ -307,27 +397,68 @@ export function slotFromSurgeryType(type: string): SurgeryPhotoSlotKey | null {
 }
 
 /**
- * Returns the required slots that have zero uploads, using the resolved checklist.
- * When `config` is omitted/invalid this falls back to the base HairAudit checklist,
- * preserving Stage 1/2 behaviour for cases without a stored config.
+ * Required slots whose minCount is not satisfied (Stage 3.1). A slot counts as
+ * "missing" when its uploaded photo count is below the configured minimum (>= 1).
+ * When `config` is omitted/invalid this falls back to the base HairAudit checklist
+ * (minCount 1), preserving Stage 1/2 behaviour for cases without a stored config.
  */
 export function getMissingRequiredSurgerySlots(
   uploadTypes: { type: string }[],
   config?: unknown
 ): SurgeryPhotoSlotKey[] {
-  const present = presentSlotsFromUploads(uploadTypes);
-  return getRequiredSurgerySlots(config).filter((slot) => !present.has(slot));
+  return getSurgeryRequirementFailures(uploadTypes, config).map((f) => f.key);
 }
 
-/** Required-photo completion summary for progress UIs and counts. */
+/**
+ * Per-slot requirement failures with reviewer-ready labels/messages. Authoritative
+ * source for both server-side submission validation and client UX mirroring.
+ */
+export function getSurgeryRequirementFailures(
+  uploadTypes: { type: string }[],
+  config?: unknown
+): SurgeryRequirementFailure[] {
+  const counts = countsBySlotFromUploads(uploadTypes);
+  const failures: SurgeryRequirementFailure[] = [];
+  for (const slot of getResolvedSurgeryChecklist(config)) {
+    if (!slot.effectiveRequired) continue;
+    const required = slot.requiredCount;
+    const current = counts.get(slot.key) ?? 0;
+    if (current < required) {
+      failures.push({
+        key: slot.key,
+        label: slot.label,
+        required,
+        current,
+        message: formatRequirementMessage(slot.label, required, current),
+      });
+    }
+  }
+  return failures;
+}
+
+/**
+ * Required-photo completion summary for progress UIs and counts. "total"/"done"
+ * are slot-level (a slot is "done" once its minCount is met); "failures" carries
+ * the count-aware detail used to render "1/2 required" style labels.
+ */
 export function getRequiredPhotoCompletion(
   uploadTypes: { type: string }[],
   config?: unknown
-): { total: number; done: number; missing: SurgeryPhotoSlotKey[] } {
+): {
+  total: number;
+  done: number;
+  missing: SurgeryPhotoSlotKey[];
+  failures: SurgeryRequirementFailure[];
+} {
   const required = getRequiredSurgerySlots(config);
-  const present = presentSlotsFromUploads(uploadTypes);
-  const missing = required.filter((slot) => !present.has(slot));
-  return { total: required.length, done: required.length - missing.length, missing };
+  const failures = getSurgeryRequirementFailures(uploadTypes, config);
+  const missing = failures.map((f) => f.key);
+  return {
+    total: required.length,
+    done: required.length - missing.length,
+    missing,
+    failures,
+  };
 }
 
 /** Slots that are hidden by config but still have uploaded photos (evidence to surface). */

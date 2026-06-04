@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import UploadedThumb from "@/components/uploads/UploadedThumb";
+import ImageLightbox, { type LightboxUpload } from "@/components/uploads/ImageLightbox";
 import {
   slotFromSurgeryType,
   getResolvedSurgeryChecklist,
@@ -75,10 +76,29 @@ export default function SurgeryUploadReviewPanel({
   const requiredDone = completion.done;
   const submitted = details.status === "submitted";
 
-  const missingRequiredLabels = useMemo(() => {
-    const labelByKey = new Map(resolved.map((s) => [s.key, s.label]));
-    return completion.missing.map((key) => labelByKey.get(key) ?? key);
-  }, [completion.missing, resolved]);
+  const requirementMessages = useMemo(
+    () => completion.failures.map((f) => f.message),
+    [completion.failures]
+  );
+
+  const [preview, setPreview] = useState<{
+    upload: UploadRow;
+    label: string;
+    position: number;
+    count: number;
+  } | null>(null);
+
+  const openPreview = useCallback(
+    (label: string, slotUploads: UploadRow[], index: number) => {
+      setPreview({
+        upload: slotUploads[index],
+        label,
+        position: index + 1,
+        count: slotUploads.length,
+      });
+    },
+    []
+  );
 
   const detailItems: Array<{ label: string; value: React.ReactNode }> = [
     { label: "Procedure", value: details.procedure_type ? PROCEDURE_LABELS[details.procedure_type] ?? details.procedure_type : "—" },
@@ -142,15 +162,15 @@ export default function SurgeryUploadReviewPanel({
         </p>
       )}
 
-      {/* Required-photo completeness for reviewers */}
-      {missingRequiredLabels.length > 0 ? (
+      {/* Required-photo completeness for reviewers (count-aware) */}
+      {requirementMessages.length > 0 ? (
         <div className="mt-3 rounded-xl border border-amber-300 bg-amber-50 p-3">
           <p className="text-sm font-semibold text-amber-900">
-            Missing required photos:
+            Required photo minimums not met:
           </p>
           <ul className="mt-1 list-disc space-y-0.5 pl-5 text-sm text-amber-900">
-            {missingRequiredLabels.map((label) => (
-              <li key={label}>{label}</li>
+            {requirementMessages.map((msg) => (
+              <li key={msg}>{msg}</li>
             ))}
           </ul>
         </div>
@@ -194,9 +214,19 @@ export default function SurgeryUploadReviewPanel({
       )}
 
       {/* Photo groups in reviewer-friendly order: required → optional → hidden-with-evidence */}
-      <PhotoGroup title="Required photos" slots={requiredGroup} uploadsBySlot={uploadsBySlot} />
+      <PhotoGroup
+        title="Required photos"
+        slots={requiredGroup}
+        uploadsBySlot={uploadsBySlot}
+        onPreview={openPreview}
+      />
       {optionalGroup.length > 0 && (
-        <PhotoGroup title="Optional photos" slots={optionalGroup} uploadsBySlot={uploadsBySlot} />
+        <PhotoGroup
+          title="Optional photos"
+          slots={optionalGroup}
+          uploadsBySlot={uploadsBySlot}
+          onPreview={openPreview}
+        />
       )}
       {additionalGroup.length > 0 && (
         <PhotoGroup
@@ -204,10 +234,48 @@ export default function SurgeryUploadReviewPanel({
           subtitle="Categories the clinic hid from new uploads, shown here because photos already exist."
           slots={additionalGroup}
           uploadsBySlot={uploadsBySlot}
+          onPreview={openPreview}
+        />
+      )}
+
+      {preview && (
+        <ImageLightbox
+          upload={preview.upload as LightboxUpload}
+          label={preview.label}
+          position={preview.position}
+          count={preview.count}
+          onClose={() => setPreview(null)}
         />
       )}
     </section>
   );
+}
+
+/** Reviewer-facing per-slot status derived from the resolved checklist + counts. */
+function slotStatus(
+  slot: ResolvedSurgerySlot,
+  count: number
+): { label: string; cls: string; countText: string } {
+  if (slot.state === "hidden") {
+    return {
+      label: "Hidden (has evidence)",
+      cls: "bg-slate-200 text-slate-700",
+      countText: `${count} ${count === 1 ? "image" : "images"}`,
+    };
+  }
+  if (slot.effectiveRequired) {
+    const met = count >= slot.requiredCount;
+    return {
+      label: met ? "Complete" : "Incomplete",
+      cls: met ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800",
+      countText: `${count}/${slot.requiredCount} required`,
+    };
+  }
+  return {
+    label: "Optional",
+    cls: count > 0 ? "bg-cyan-100 text-cyan-800" : "bg-slate-100 text-slate-500",
+    countText: `${count} ${count === 1 ? "image" : "images"}`,
+  };
 }
 
 function PhotoGroup({
@@ -215,11 +283,13 @@ function PhotoGroup({
   subtitle,
   slots,
   uploadsBySlot,
+  onPreview,
 }: {
   title: string;
   subtitle?: string;
   slots: readonly ResolvedSurgerySlot[];
   uploadsBySlot: Record<string, UploadRow[]>;
+  onPreview: (label: string, slotUploads: UploadRow[], index: number) => void;
 }) {
   return (
     <div className="mt-5">
@@ -229,33 +299,31 @@ function PhotoGroup({
         {slots.map((slot) => {
           const existing = uploadsBySlot[slot.key] ?? [];
           const count = existing.length;
+          const status = slotStatus(slot, count);
           return (
             <div key={slot.key} className="rounded-xl border border-slate-200 p-3">
               <div className="flex items-center justify-between gap-2">
                 <p className="text-sm font-semibold text-slate-800">
                   {slot.label}
-                  {slot.effectiveRequired && (
-                    <span className="ml-1 text-xs text-amber-700">(required)</span>
-                  )}
-                  <span className="ml-1 font-normal text-slate-500">
-                    — {count} {count === 1 ? "image" : "images"}
-                  </span>
+                  <span className="ml-1 font-normal text-slate-500">— {status.countText}</span>
                 </p>
                 <span
-                  className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${
-                    count > 0
-                      ? "bg-emerald-100 text-emerald-800"
-                      : "bg-slate-100 text-slate-500"
-                  }`}
+                  className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${status.cls}`}
                 >
-                  {count}
+                  {status.label}
                 </span>
               </div>
               {count > 0 ? (
                 <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4">
-                  {existing.map((u) => (
+                  {existing.map((u, i) => (
                     // locked => read-only (no delete control) for reviewers.
-                    <UploadedThumb key={u.id} upload={u} locked onDeleted={() => {}} />
+                    <UploadedThumb
+                      key={u.id}
+                      upload={u}
+                      locked
+                      onDeleted={() => {}}
+                      onPreview={() => onPreview(slot.label, existing, i)}
+                    />
                   ))}
                 </div>
               ) : (

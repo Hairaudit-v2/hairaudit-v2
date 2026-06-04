@@ -26,6 +26,53 @@ export const runtime = "nodejs";
 
 const LOG_PREFIX = "[api/surgery-upload/photos]";
 
+/**
+ * Stage 3.1: optional, client-supplied image metadata. Stored for review context
+ * only — it NEVER affects access, storage paths, or validation. All fields are
+ * sanitized and bounded; anything missing/invalid is simply dropped.
+ */
+type ClientImageMeta = {
+  original_filename?: string;
+  original_size_bytes?: number;
+  compressed_size_bytes?: number;
+  width?: number;
+  height?: number;
+  compression_applied?: boolean;
+  quality_warning?: string;
+};
+
+function toBoundedInt(value: FormDataEntryValue | null, max: number): number | undefined {
+  if (typeof value !== "string" || value.trim() === "") return undefined;
+  const n = Number(value);
+  if (!Number.isFinite(n) || n < 0) return undefined;
+  return Math.min(Math.floor(n), max);
+}
+
+function parseClientImageMeta(form: FormData): ClientImageMeta {
+  const meta: ClientImageMeta = {};
+  const filename = form.get("originalFilename");
+  if (typeof filename === "string" && filename.trim()) {
+    meta.original_filename = filename.trim().slice(0, 300);
+  }
+  const originalSize = toBoundedInt(form.get("originalSizeBytes"), 200_000_000);
+  if (originalSize !== undefined) meta.original_size_bytes = originalSize;
+  const compressedSize = toBoundedInt(form.get("compressedSizeBytes"), 200_000_000);
+  if (compressedSize !== undefined) meta.compressed_size_bytes = compressedSize;
+  const width = toBoundedInt(form.get("width"), 100_000);
+  if (width !== undefined) meta.width = width;
+  const height = toBoundedInt(form.get("height"), 100_000);
+  if (height !== undefined) meta.height = height;
+  const compression = form.get("compressionApplied");
+  if (compression === "true" || compression === "false") {
+    meta.compression_applied = compression === "true";
+  }
+  const warning = form.get("qualityWarning");
+  if (typeof warning === "string" && warning.trim()) {
+    meta.quality_warning = warning.trim().slice(0, 500);
+  }
+  return meta;
+}
+
 async function uploadSingleFile(
   admin: ReturnType<typeof createSupabaseAdminClient>,
   bucket: string,
@@ -33,7 +80,8 @@ async function uploadSingleFile(
   userId: string,
   role: string,
   slot: string,
-  file: File
+  file: File,
+  clientMeta: ClientImageMeta
 ): Promise<UploadResult<{ id: string; type: string; storage_path: string; metadata: unknown; created_at: string }>> {
   const fileName = safeFileName(file.name || "upload.jpg");
   const stamp = Date.now();
@@ -73,6 +121,9 @@ async function uploadSingleFile(
     original_name: file.name,
     mime: file.type,
     size: file.size,
+    // Stage 3.1: enhanced (best-effort) client metadata. Absent fields are omitted
+    // so existing/legacy upload rows without these keys remain valid.
+    ...clientMeta,
   };
 
   return withRetry(
@@ -188,12 +239,22 @@ export async function POST(req: Request) {
     }
 
     const bucket = process.env.CASE_FILES_BUCKET || "case-files";
+    const clientMeta = parseClientImageMeta(form);
     const saved: unknown[] = [];
     const errors: Array<{ file: string; error: string; code?: string }> = [];
 
     for (const file of files) {
       if (!(file instanceof File)) continue;
-      const result = await uploadSingleFile(admin, bucket, caseId, user.id, actor.role, slot, file);
+      const result = await uploadSingleFile(
+        admin,
+        bucket,
+        caseId,
+        user.id,
+        actor.role,
+        slot,
+        file,
+        clientMeta
+      );
       if (result.success) {
         saved.push(result.data);
       } else {

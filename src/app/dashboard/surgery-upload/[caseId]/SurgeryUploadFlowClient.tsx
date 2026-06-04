@@ -4,8 +4,9 @@ import React, { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import UploadedThumb from "@/components/uploads/UploadedThumb";
+import ImageLightbox, { type LightboxUpload } from "@/components/uploads/ImageLightbox";
 import { UPLOAD_LIMITS, UploadQueue, formatUploadErrorForUser } from "@/lib/uploads/safeUpload";
-import { compressImageForUpload } from "@/lib/uploads/compressImage";
+import { prepareImageForUpload } from "@/lib/uploads/compressImage";
 import {
   slotFromSurgeryType,
   getResolvedSurgeryChecklist,
@@ -62,6 +63,12 @@ export default function SurgeryUploadFlowClient({
   const [slotState, setSlotState] = useState<Record<string, SlotUploadState>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [preview, setPreview] = useState<{
+    upload: SurgeryUploadRow;
+    label: string;
+    position: number;
+    count: number;
+  } | null>(null);
 
   const locked = details.status === "submitted";
 
@@ -98,10 +105,27 @@ export default function SurgeryUploadFlowClient({
   );
   const canSubmit = !locked && completion.missing.length === 0 && !anyUploading;
 
-  const missingRequiredLabels = useMemo(() => {
-    const labelByKey = new Map(resolved.map((s) => [s.key, s.label]));
-    return completion.missing.map((key) => labelByKey.get(key) ?? key);
-  }, [completion.missing, resolved]);
+  // Count-aware requirement messages ("Pre-op donor requires 2 photos; currently has 1.").
+  const requirementMessages = useMemo(
+    () => completion.failures.map((f) => f.message),
+    [completion.failures]
+  );
+  const missingRequiredLabels = useMemo(
+    () => completion.failures.map((f) => `${f.label} (${f.current}/${f.required})`),
+    [completion.failures]
+  );
+
+  const openPreview = useCallback(
+    (slotLabel: string, slotUploads: SurgeryUploadRow[], index: number) => {
+      setPreview({
+        upload: slotUploads[index],
+        label: slotLabel,
+        position: index + 1,
+        count: slotUploads.length,
+      });
+    },
+    []
+  );
 
   // ---- Details autosave ------------------------------------------------------
   const saveField = useCallback(
@@ -175,11 +199,19 @@ export default function SurgeryUploadFlowClient({
       for (const original of files) {
         try {
           await uploadQueue.execute(async () => {
-            const file = await compressImageForUpload(original, COMPRESS_OPTS);
+            const { file, meta } = await prepareImageForUpload(original, COMPRESS_OPTS);
             const fd = new FormData();
             fd.append("caseId", caseId);
             fd.append("category", slot);
             fd.append("files[]", file);
+            // Stage 3.1: best-effort image metadata + low-res quality signal.
+            fd.append("originalFilename", meta.originalFilename);
+            fd.append("originalSizeBytes", String(meta.originalSizeBytes));
+            fd.append("compressedSizeBytes", String(meta.compressedSizeBytes));
+            if (meta.width != null) fd.append("width", String(meta.width));
+            if (meta.height != null) fd.append("height", String(meta.height));
+            fd.append("compressionApplied", String(meta.compressionApplied));
+            if (meta.qualityWarning) fd.append("qualityWarning", meta.qualityWarning);
             const res = await fetch(PHOTO_API, { method: "POST", body: fd });
             const json = await res.json().catch(() => ({}));
             if (!res.ok) {
@@ -246,6 +278,9 @@ export default function SurgeryUploadFlowClient({
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
+        if (json?.requirementMessages?.length) {
+          throw new Error(json.requirementMessages.join(" "));
+        }
         if (json?.missingRequiredLabels?.length) {
           throw new Error(`Missing required photos: ${json.missingRequiredLabels.join(", ")}`);
         }
@@ -469,6 +504,7 @@ export default function SurgeryUploadFlowClient({
               onUpload={(files) => uploadFiles(slot.key, files)}
               onRetry={() => retrySlot(slot.key)}
               onDeleted={onDeleted}
+              onPreview={(i) => openPreview(slot.label, uploadsBySlot[slot.key] ?? [], i)}
             />
           ))}
         </div>
@@ -488,10 +524,25 @@ export default function SurgeryUploadFlowClient({
                 onUpload={(files) => uploadFiles(slot.key, files)}
                 onRetry={() => retrySlot(slot.key)}
                 onDeleted={onDeleted}
+                onPreview={(i) => openPreview(slot.label, uploadsBySlot[slot.key] ?? [], i)}
               />
             ))}
           </div>
         </Section>
+      )}
+
+      {/* Missing-requirements summary (above the submit bar) */}
+      {requirementMessages.length > 0 && (
+        <div className="rounded-2xl border border-amber-300 bg-amber-50 p-4">
+          <p className="text-sm font-semibold text-amber-900">
+            Before you can submit:
+          </p>
+          <ul className="mt-1 list-disc space-y-0.5 pl-5 text-sm text-amber-900">
+            {requirementMessages.map((msg) => (
+              <li key={msg}>{msg}</li>
+            ))}
+          </ul>
+        </div>
       )}
 
       {/* Sticky submit bar */}
@@ -523,6 +574,16 @@ export default function SurgeryUploadFlowClient({
           </button>
         </div>
       </div>
+
+      {preview && (
+        <ImageLightbox
+          upload={preview.upload as LightboxUpload}
+          label={preview.label}
+          position={preview.position}
+          count={preview.count}
+          onClose={() => setPreview(null)}
+        />
+      )}
     </div>
   );
 }
@@ -616,6 +677,7 @@ function PhotoSlotCard({
   onUpload,
   onRetry,
   onDeleted,
+  onPreview,
 }: {
   slot: ResolvedSurgerySlot;
   existing: SurgeryUploadRow[];
@@ -624,12 +686,17 @@ function PhotoSlotCard({
   onUpload: (files: File[]) => void;
   onRetry: () => void;
   onDeleted: (id: string) => void;
+  onPreview: (index: number) => void;
 }) {
   const remaining = Math.max(0, slot.maxFiles - existing.length);
   const busy = state.uploading > 0;
   // Disable inputs while uploading to prevent double-tap duplicate uploads.
   const disabled = locked || remaining <= 0 || busy;
-  const done = existing.length > 0;
+  const count = existing.length;
+  // Stage 3.1: a required slot is only "complete" once it meets its minCount.
+  const required = slot.requiredCount;
+  const requirementMet = slot.effectiveRequired ? count >= required : count > 0;
+  const incomplete = slot.effectiveRequired && count < required;
   const hasFailures = state.failed.length > 0;
   const justSucceeded = !busy && !hasFailures && state.success;
 
@@ -642,7 +709,7 @@ function PhotoSlotCard({
   return (
     <div
       className={`rounded-xl border p-3 ${
-        slot.effectiveRequired && !done ? "border-amber-300 bg-amber-50/40" : "border-slate-200"
+        incomplete ? "border-amber-300 bg-amber-50/40" : "border-slate-200"
       }`}
     >
       <div className="flex items-start justify-between gap-2">
@@ -656,17 +723,32 @@ function PhotoSlotCard({
             )}
           </p>
           <p className="text-xs text-slate-500">{slot.help}</p>
+          {slot.effectiveRequired && (
+            <p
+              className={`mt-0.5 text-xs font-semibold ${
+                requirementMet ? "text-emerald-700" : "text-amber-700"
+              }`}
+            >
+              {count}/{required} required{requirementMet ? " ✓" : ""}
+            </p>
+          )}
         </div>
         <span
           className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${
             busy
               ? "bg-cyan-100 text-cyan-800"
-              : done
+              : requirementMet && count > 0
                 ? "bg-emerald-100 text-emerald-800"
                 : "bg-slate-100 text-slate-500"
           }`}
         >
-          {busy ? "Uploading…" : done ? `${existing.length} ✓` : "0"}
+          {busy
+            ? "Uploading…"
+            : slot.effectiveRequired
+              ? `${count}/${required}${requirementMet ? " ✓" : ""}`
+              : count > 0
+                ? `${count} ✓`
+                : "0"}
         </span>
       </div>
 
@@ -691,8 +773,14 @@ function PhotoSlotCard({
 
       {existing.length > 0 && (
         <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
-          {existing.map((u) => (
-            <UploadedThumb key={u.id} upload={u} locked={locked} onDeleted={() => onDeleted(u.id)} />
+          {existing.map((u, i) => (
+            <UploadedThumb
+              key={u.id}
+              upload={u}
+              locked={locked}
+              onDeleted={() => onDeleted(u.id)}
+              onPreview={() => onPreview(i)}
+            />
           ))}
         </div>
       )}

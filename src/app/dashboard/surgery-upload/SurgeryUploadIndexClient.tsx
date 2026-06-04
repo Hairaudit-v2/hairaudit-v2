@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 export type SurgeryUploadListRow = {
   case_id: string;
@@ -55,13 +56,45 @@ export default function SurgeryUploadIndexClient({
   isAuditor: boolean;
 }) {
   const totalFor = (caseId: string) => requiredTotalByCase[caseId] ?? requiredPhotoTotal;
-  const [status, setStatus] = useState<StatusFilter>("all");
-  const [clinic, setClinic] = useState("");
-  const [surgeon, setSurgeon] = useState("");
-  const [procedure, setProcedure] = useState("");
-  const [missingOnly, setMissingOnly] = useState(false);
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // Initialise from URL query params so filters are shareable/bookmarkable and the
+  // param shape is ready to be consumed server-side in a future stage. Client-side
+  // filtering below is unchanged.
+  const initStatus = ((): StatusFilter => {
+    const s = searchParams.get("status");
+    return s === "draft" || s === "submitted" ? s : "all";
+  })();
+  const [status, setStatus] = useState<StatusFilter>(initStatus);
+  const [clinic, setClinic] = useState(searchParams.get("clinic") ?? "");
+  const [surgeon, setSurgeon] = useState(searchParams.get("surgeon") ?? "");
+  const [procedure, setProcedure] = useState(searchParams.get("procedure") ?? "");
+  const [missingOnly, setMissingOnly] = useState(searchParams.get("missing") === "1");
+  const [dateFrom, setDateFrom] = useState(searchParams.get("from") ?? "");
+  const [dateTo, setDateTo] = useState(searchParams.get("to") ?? "");
+
+  // Reflect the current filter state in the URL (low-risk, no full reload). The
+  // canonical param names here map directly to future server-side query filters.
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (status !== "all") params.set("status", status);
+    if (clinic) params.set("clinic", clinic);
+    if (surgeon) params.set("surgeon", surgeon);
+    if (procedure) params.set("procedure", procedure);
+    if (missingOnly) params.set("missing", "1");
+    if (dateFrom) params.set("from", dateFrom);
+    if (dateTo) params.set("to", dateTo);
+    const qs = params.toString();
+    const next = qs ? `${pathname}?${qs}` : pathname;
+    const current = `${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ""}`;
+    if (next !== current) {
+      router.replace(next, { scroll: false });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, clinic, surgeon, procedure, missingOnly, dateFrom, dateTo]);
 
   // Distinct option lists, derived from the current result set.
   // Clinics are keyed by clinic_profile_id (Stage 2.2) so text variations of the

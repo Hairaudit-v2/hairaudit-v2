@@ -6,15 +6,7 @@ import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { canAccessCase } from "@/lib/case-access";
 import { resolveSurgeryUploadActor } from "@/lib/surgeryUpload/access";
-import {
-  getMissingRequiredSurgerySlots,
-  SURGERY_PHOTO_SLOTS,
-  type SurgeryPhotoSlotKey,
-} from "@/lib/surgeryUpload/checklist";
-
-const SLOT_LABELS = new Map<SurgeryPhotoSlotKey, string>(
-  SURGERY_PHOTO_SLOTS.map((s) => [s.key, s.label])
-);
+import { getSurgeryRequirementFailures } from "@/lib/surgeryUpload/checklist";
 
 export const runtime = "nodejs";
 
@@ -70,23 +62,27 @@ export async function POST(
     }
 
     // Enforce required photo checklist using THIS case's resolved checklist
-    // (per-case snapshot; null falls back to the base HairAudit checklist).
-    // Server-side validation is authoritative — never trust the client here.
+    // (per-case snapshot; null falls back to the base HairAudit checklist). Stage 3.1
+    // checks per-slot minCount, not just presence. Server-side validation is
+    // authoritative — never trust the client here.
     const { data: uploads } = await admin
       .from("uploads")
       .select("type")
       .eq("case_id", caseId);
-    const missing = getMissingRequiredSurgerySlots(
+    const failures = getSurgeryRequirementFailures(
       uploads ?? [],
       details.photo_checklist_config
     );
-    if (missing.length > 0) {
+    if (failures.length > 0) {
       return NextResponse.json(
         {
           ok: false,
-          error: "Missing required photos",
-          missingRequiredSlots: missing,
-          missingRequiredLabels: missing.map((slot) => SLOT_LABELS.get(slot) ?? slot),
+          error: "Required photo minimums not met",
+          // Slot keys (back-compat with earlier client) + rich, count-aware detail.
+          missingRequiredSlots: failures.map((f) => f.key),
+          missingRequiredLabels: failures.map((f) => f.label),
+          requirementFailures: failures,
+          requirementMessages: failures.map((f) => f.message),
         },
         { status: 422 }
       );

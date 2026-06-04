@@ -2,21 +2,35 @@
 
 import { useEffect, useState } from "react";
 
+type ThumbUpload = {
+  id: string;
+  storage_path: string;
+  metadata?: unknown;
+  [key: string]: unknown;
+};
+
 export default function UploadedThumb({
   upload,
   locked,
   onDeleted,
+  onPreview,
 }: {
-  upload: any;
+  upload: ThumbUpload;
   caseId?: string;
   locked?: boolean;
   onDeleted: () => void;
+  /** When provided, clicking the image opens a larger preview instead of nothing. */
+  onPreview?: () => void;
 }) {
   const [url, setUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const meta = (upload?.metadata ?? {}) as Record<string, unknown>;
   const mime = String(meta.mime ?? "").toLowerCase();
   const path = String(upload?.storage_path ?? "").toLowerCase();
+  const qualityWarning =
+    typeof meta.quality_warning === "string" && meta.quality_warning.trim()
+      ? meta.quality_warning
+      : null;
   const isImageByExt = [".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp", ".heic", ".heif"].some((ext) => path.endsWith(ext));
   const isImage = mime ? mime.startsWith("image/") : isImageByExt;
 
@@ -46,8 +60,8 @@ export default function UploadedThumb({
       const json = await res.json();
       if (!res.ok) throw new Error(json?.error ?? "Delete failed");
       onDeleted();
-    } catch (e: any) {
-      alert(e?.message ?? "Delete failed");
+    } catch (e) {
+      alert((e as Error)?.message ?? "Delete failed");
     } finally {
       setBusy(false);
     }
@@ -55,9 +69,15 @@ export default function UploadedThumb({
 
   return (
     <div className="rounded-lg border p-2">
-      <div className="aspect-square w-full overflow-hidden rounded-md bg-gray-100">
+      <div className="relative aspect-square w-full overflow-hidden rounded-md bg-gray-100">
         {url ? isImage ? (
-          <img src={url} alt="Case evidence thumbnail" className="h-full w-full object-cover" />
+          <img
+            src={url}
+            alt="Case evidence thumbnail"
+            onClick={onPreview}
+            role={onPreview ? "button" : undefined}
+            className={`h-full w-full object-cover ${onPreview ? "cursor-pointer" : ""}`}
+          />
         ) : (
           <a
             href={url}
@@ -69,6 +89,14 @@ export default function UploadedThumb({
           </a>
         ) : (
           <div className="p-2 text-xs text-gray-500">Loading…</div>
+        )}
+        {qualityWarning && (
+          <span
+            className="absolute left-1 top-1 rounded-full bg-amber-500/90 px-1.5 py-0.5 text-[10px] font-semibold text-white"
+            title={qualityWarning}
+          >
+            ⚠ Low res
+          </span>
         )}
       </div>
 
