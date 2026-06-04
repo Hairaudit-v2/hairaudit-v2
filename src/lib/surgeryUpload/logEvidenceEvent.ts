@@ -17,7 +17,9 @@ export type EvidenceEventType =
   // Stage 7B: non-AI evidence review report (never case/submitted; never forensic pipeline).
   | "surgery-upload/report-requested"
   | "surgery-upload/report-completed"
-  | "surgery-upload/report-failed";
+  | "surgery-upload/report-failed"
+  | "photo_export_created"
+  | "photo_export_failed";
 
 export async function logEvidenceEvent(
   admin: SupabaseClient,

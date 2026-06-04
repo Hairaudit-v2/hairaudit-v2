@@ -415,6 +415,9 @@ export default async function Page({
   // Case-scoped access flags (auditor sees all)
   const isAuditor = role === "auditor";
 
+  const canExportSurgeryPhotoPack =
+    role === "auditor" || role === "doctor" || role === "clinic";
+
   // Stage 6C: audit intake status (read-only for clinic/doctor; richer for auditor).
   // Auditor-only fields (priority, assignee, internal notes) are never sent to
   // clinic/doctor — only the bare status is.
@@ -1382,6 +1385,7 @@ export default async function Page({
             uploads={(uploads ?? []) as any}
             caseId={c.id}
             isAuditor={isAuditor}
+            canExportPhotoPack={canExportSurgeryPhotoPack}
             initialSlotReviews={surgerySlotReviews}
             evidenceEvents={surgeryEvidenceEvents}
             auditIntake={surgeryAuditIntakeView}

@@ -21,6 +21,7 @@ import {
   type SurgerySlotReviewRow,
 } from "@/lib/surgeryUpload/evidenceReview";
 import SurgeryUploadEvidenceTimeline from "@/components/surgery-upload/SurgeryUploadEvidenceTimeline";
+import SurgeryPhotoExportPackButton from "@/components/surgery-upload/SurgeryPhotoExportPackButton";
 import { type EvidenceTimelineEvent } from "@/lib/surgeryUpload/evidenceEvents";
 import {
   auditIntakeStatusLabel,
@@ -182,6 +183,11 @@ export default function SurgeryUploadFlowClient({
     }
     return map;
   }, [uploads]);
+
+  const surgeryPhotoCount = useMemo(
+    () => uploads.filter((u) => slotFromSurgeryType(u.type) !== null).length,
+    [uploads]
+  );
 
   const completion = useMemo(
     () => getRequiredPhotoCompletion(uploads, details.photo_checklist_config),
@@ -676,8 +682,9 @@ export default function SurgeryUploadFlowClient({
   if (locked && !needsMoreEvidence) {
     return (
       <SubmittedConfirmation
+        caseId={caseId}
         details={details}
-        photoCount={uploads.length}
+        surgeryPhotoCount={surgeryPhotoCount}
         evidenceEvents={evidenceEvents}
         auditIntakeStatus={auditIntakeStatus}
       />
@@ -765,6 +772,13 @@ export default function SurgeryUploadFlowClient({
             title="Evidence review activity"
             subtitle="What the reviewer has requested and your recent submissions."
           />
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">Photo export</p>
+          <div className="mt-2">
+            <SurgeryPhotoExportPackButton caseId={caseId} surgeryPhotoCount={surgeryPhotoCount} />
+          </div>
         </div>
 
         {/* Aggregate upload-failure banner */}
@@ -1593,13 +1607,15 @@ function PhotoSlotCard({
 }
 
 function SubmittedConfirmation({
+  caseId,
   details,
-  photoCount,
+  surgeryPhotoCount,
   evidenceEvents,
   auditIntakeStatus = null,
 }: {
+  caseId: string;
   details: SurgeryUploadDetails;
-  photoCount: number;
+  surgeryPhotoCount: number;
   evidenceEvents: EvidenceTimelineEvent[];
   auditIntakeStatus?: AuditIntakeStatus | null;
 }) {
@@ -1612,7 +1628,7 @@ function SubmittedConfirmation({
         <h1 className="mt-4 text-xl font-bold text-slate-900">Submitted for review</h1>
         <p className="mt-1 text-sm text-slate-600">
           {details.patient_reference?.trim() || "This surgery upload"} has been submitted with{" "}
-          {photoCount} photo{photoCount === 1 ? "" : "s"}. It is now locked to preserve
+          {surgeryPhotoCount} surgery photo{surgeryPhotoCount === 1 ? "" : "s"}. It is now locked to preserve
           integrity.
         </p>
         {details.submitted_at && (
@@ -1631,6 +1647,16 @@ function SubmittedConfirmation({
         >
           Back to surgery uploads
         </Link>
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+        <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">Photo export</p>
+        <p className="mt-1 text-xs text-slate-500">
+          Available while evidence is under review (submitted, needs more evidence, or accepted).
+        </p>
+        <div className="mt-2">
+          <SurgeryPhotoExportPackButton caseId={caseId} surgeryPhotoCount={surgeryPhotoCount} />
+        </div>
       </div>
 
       {/* Stage 6A: read-only evidence-review activity for the clinic/doctor. */}

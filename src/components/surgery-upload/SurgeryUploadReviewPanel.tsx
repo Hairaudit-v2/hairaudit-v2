@@ -40,6 +40,7 @@ import {
   type AuditIntakeStatus,
 } from "@/lib/surgeryUpload/auditIntake";
 import Link from "next/link";
+import SurgeryPhotoExportPackButton from "@/components/surgery-upload/SurgeryPhotoExportPackButton";
 
 /** Sanitized audit-intake view passed to the review panel (no internal ids). */
 export type SurgeryAuditIntakeView = {
@@ -82,6 +83,7 @@ export default function SurgeryUploadReviewPanel({
   uploads,
   caseId,
   isAuditor = false,
+  canExportPhotoPack = false,
   initialSlotReviews = [],
   evidenceEvents = [],
   auditIntake = null,
@@ -92,6 +94,8 @@ export default function SurgeryUploadReviewPanel({
   uploads: UploadRow[];
   caseId: string;
   isAuditor?: boolean;
+  /** Stage 8A: clinic/doctor/auditor — patients excluded on server and here. */
+  canExportPhotoPack?: boolean;
   initialSlotReviews?: SurgerySlotReviewRow[];
   evidenceEvents?: EvidenceTimelineEvent[];
   auditIntake?: SurgeryAuditIntakeView | null;
@@ -258,6 +262,15 @@ export default function SurgeryUploadReviewPanel({
         <p className="mt-1 text-xs text-slate-500">
           Submitted {new Date(details.submitted_at).toLocaleString()}
         </p>
+      )}
+
+      {canExportPhotoPack && (
+        <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">Photo export</p>
+          <div className="mt-2">
+            <SurgeryPhotoExportPackButton caseId={caseId} surgeryPhotoCount={surgeryUploads.length} />
+          </div>
+        </div>
       )}
 
       {/* Stage 5: overall evidence review (auditor controls / read-only feedback) */}

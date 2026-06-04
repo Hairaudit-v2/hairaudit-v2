@@ -25,6 +25,7 @@ import type {
   AuditIntakeQueueRow,
   SelectOption,
 } from "@/lib/surgeryUpload/auditIntakeQuery";
+import SurgeryPhotoExportPackButton from "@/components/surgery-upload/SurgeryPhotoExportPackButton";
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -464,6 +465,10 @@ function IntakeCard({
         <span>Evidence: {evidenceReviewStatusLabel(row.evidence_review_status)}</span>
         <span>Sent {new Date(row.created_at).toLocaleDateString()}</span>
         {row.assignedLabel && <span>Reviewer: {row.assignedLabel}</span>}
+      </div>
+
+      <div className="mt-2">
+        <SurgeryPhotoExportPackButton caseId={row.case_id} variant="link" />
       </div>
 
       {row.error_message && status === "failed" && (

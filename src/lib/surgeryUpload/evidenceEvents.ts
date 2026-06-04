@@ -50,6 +50,8 @@ export const EVIDENCE_EVENT_LABELS: Record<EvidenceEventType, string> = {
   "surgery-upload/report-requested": "Evidence review report requested",
   "surgery-upload/report-completed": "Evidence review report completed",
   "surgery-upload/report-failed": "Evidence review report failed",
+  photo_export_created: "Surgery photos exported",
+  photo_export_failed: "Photo export failed",
 };
 
 /** Label for a known event type; unknown types render as a safe generic label. */
@@ -230,6 +232,26 @@ function buildSummary(
       return {
         summary: "Evidence review report generation failed.",
         note: readString(meta, "error"),
+      };
+    case "photo_export_created": {
+      const count = readNumber(meta, "photoCount", "count");
+      const scope = readString(meta, "scope");
+      const slotKey = readString(meta, "slotKey");
+      const skipped = readNumber(meta, "skippedCount");
+      const scopeLabel =
+        scope === "slot" && slotKey ? `category “${surgerySlotLabel(slotKey)}”` : "all categories";
+      const summary =
+        count != null
+          ? skipped != null && skipped > 0
+            ? `Surgery photos exported (${count} file${count === 1 ? "" : "s"}, ${scopeLabel}; ${skipped} missing from storage).`
+            : `Surgery photos exported (${count} file${count === 1 ? "" : "s"}, ${scopeLabel}).`
+          : `Surgery photos exported (${scopeLabel}).`;
+      return { summary, note: null };
+    }
+    case "photo_export_failed":
+      return {
+        summary: "Photo export failed.",
+        note: readString(meta, "message", "errorMessage"),
       };
     default:
       return { summary: "Evidence review activity recorded.", note: null };
