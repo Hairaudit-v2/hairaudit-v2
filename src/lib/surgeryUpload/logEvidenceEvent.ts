@@ -13,7 +13,11 @@ export type EvidenceEventType =
   // Stage 6C: audit intake queue lifecycle.
   | "audit_intake_created"
   | "audit_intake_updated"
-  | "audit_intake_status_changed";
+  | "audit_intake_status_changed"
+  // Stage 7B: non-AI evidence review report (never case/submitted; never forensic pipeline).
+  | "surgery-upload/report-requested"
+  | "surgery-upload/report-completed"
+  | "surgery-upload/report-failed";
 
 export async function logEvidenceEvent(
   admin: SupabaseClient,

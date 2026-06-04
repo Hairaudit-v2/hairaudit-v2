@@ -70,6 +70,14 @@ export type SurgeryUploadDetails = {
   audit_handoff_completed_by: string | null;
   audit_handoff_error: string | null;
   audit_handoff_notes: string | null;
+  // Stage 7B: non-AI evidence review report pipeline (never touches cases.status).
+  evidence_report_pipeline_status?: string | null;
+  evidence_report_requested_at?: string | null;
+  evidence_report_requested_by?: string | null;
+  evidence_report_completed_at?: string | null;
+  evidence_report_failed_at?: string | null;
+  evidence_report_error?: string | null;
+  evidence_report_id?: string | null;
   created_at: string;
   updated_at: string;
 };

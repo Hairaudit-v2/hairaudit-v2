@@ -37,6 +37,7 @@ import {
   type AuditIntakeStatus,
 } from "@/lib/surgeryUpload/auditIntake";
 import Link from "next/link";
+import { surgeryUploadReportPipelinePhaseLabel } from "@/lib/surgeryUpload/surgeryUploadReportPipelineStage7a";
 
 /** Sanitized audit-intake view passed to the review panel (no internal ids). */
 export type SurgeryAuditIntakeView = {
@@ -82,6 +83,7 @@ export default function SurgeryUploadReviewPanel({
   initialSlotReviews = [],
   evidenceEvents = [],
   auditIntake = null,
+  evidenceReportPdfPath = null,
 }: {
   details: SurgeryUploadDetails;
   uploads: UploadRow[];
@@ -90,6 +92,8 @@ export default function SurgeryUploadReviewPanel({
   initialSlotReviews?: SurgerySlotReviewRow[];
   evidenceEvents?: EvidenceTimelineEvent[];
   auditIntake?: SurgeryAuditIntakeView | null;
+  /** Stage 7B: storage path for generated evidence review PDF (forensic reports excluded). */
+  evidenceReportPdfPath?: string | null;
 }) {
   const surgeryUploads = useMemo(
     () => uploads.filter((u) => slotFromSurgeryType(u.type) !== null),
@@ -265,6 +269,16 @@ export default function SurgeryUploadReviewPanel({
       {/* Stage 6C: audit intake queue status (once a record exists). */}
       {submitted && auditIntake && (
         <AuditIntakeStatusSection intake={auditIntake} isAuditor={isAuditor} />
+      )}
+
+      {/* Stage 7B: non-AI evidence review report (auditor-only; never legacy case submission). */}
+      {isAuditor && (
+        <EvidenceReviewReportSection
+          caseId={caseId}
+          submitted={submitted}
+          details={details}
+          pdfPath={evidenceReportPdfPath ?? null}
+        />
       )}
 
       {/* Required-photo completeness for reviewers (count-aware) */}
@@ -598,6 +612,131 @@ function SlotReviewEditor({
         placeholder="Reviewer notes (visible to clinic/doctor)"
         className="mt-2 w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-xs text-slate-800"
       />
+    </div>
+  );
+}
+
+/**
+ * Stage 7B: auditor-only request for the non-AI Evidence Review Report PDF.
+ *
+ * REGRESSION GUARDS: this UI must only call `POST /api/admin/hair-audit/surgery-upload/.../request-report`.
+ * Never wire this button to `/api/submit` or any flow that sets `cases.status` to submitted.
+ */
+function EvidenceReviewReportSection({
+  caseId,
+  submitted,
+  details,
+  pdfPath,
+}: {
+  caseId: string;
+  submitted: boolean;
+  details: SurgeryUploadDetails;
+  pdfPath: string | null;
+}) {
+  const router = useRouter();
+  const pipeline = details.evidence_report_pipeline_status ?? "not_started";
+  const [loading, setLoading] = useState(false);
+  const [banner, setBanner] = useState<"idle" | "ok" | "err">("idle");
+  const [localMsg, setLocalMsg] = useState<string | null>(null);
+
+  const requestReport = async () => {
+    setLoading(true);
+    setBanner("idle");
+    setLocalMsg(null);
+    try {
+      const res = await fetch(`/api/admin/hair-audit/surgery-upload/${caseId}/request-report`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const j = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string; message?: string };
+      if (!res.ok || !j.ok) {
+        setBanner("err");
+        setLocalMsg(j.error ?? "Request failed");
+        return;
+      }
+      setBanner("ok");
+      setLocalMsg(
+        j.message ??
+          "Evidence review report requested. Generation runs in the background and does not submit this case for audit."
+      );
+      router.refresh();
+    } catch {
+      setBanner("err");
+      setLocalMsg("Network error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const downloadPdf = async () => {
+    if (!pdfPath) return;
+    try {
+      const res = await fetch(`/api/reports/signed-url?path=${encodeURIComponent(pdfPath)}`);
+      const j = (await res.json()) as { url?: string; error?: string };
+      if (!res.ok || !j.url) {
+        setBanner("err");
+        setLocalMsg(j.error ?? "Could not get download URL");
+        return;
+      }
+      window.open(j.url, "_blank", "noopener,noreferrer");
+    } catch {
+      setBanner("err");
+      setLocalMsg("Download failed");
+    }
+  };
+
+  const disabledRequest =
+    !submitted || loading || pipeline === "queued" || pipeline === "running" || pipeline === "succeeded";
+
+  return (
+    <div className="mt-4 rounded-xl border border-indigo-200 bg-indigo-50/50 p-3">
+      <p className="text-sm font-semibold text-indigo-950">Evidence review report (non-AI)</p>
+      <p className="mt-1 text-xs text-indigo-900/80">
+        Generates a dedicated PDF from surgery evidence and structured fields. This does{" "}
+        <strong>not</strong> submit the case for a forensic HairAudit audit or trigger the legacy patient pipeline.
+      </p>
+      <p className="mt-2 text-xs font-semibold text-indigo-900">
+        Status: {surgeryUploadReportPipelinePhaseLabel(pipeline)}
+      </p>
+      {details.evidence_report_error && pipeline === "failed" && (
+        <p className="mt-1 text-xs text-rose-700">{details.evidence_report_error}</p>
+      )}
+      {banner === "ok" && localMsg && (
+        <p className="mt-2 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs text-emerald-900">
+          {localMsg}
+        </p>
+      )}
+      {banner === "err" && localMsg && (
+        <p className="mt-2 rounded-md border border-rose-200 bg-rose-50 px-2 py-1 text-xs text-rose-900">{localMsg}</p>
+      )}
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={requestReport}
+          disabled={disabledRequest}
+          className="rounded-md bg-indigo-700 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+        >
+          {loading ? "Requesting…" : "Request Evidence Review Report"}
+        </button>
+        {pdfPath && pipeline === "succeeded" && (
+          <button
+            type="button"
+            onClick={downloadPdf}
+            className="rounded-md border border-indigo-300 bg-white px-3 py-1.5 text-xs font-semibold text-indigo-900"
+          >
+            Download evidence review PDF
+          </button>
+        )}
+      </div>
+      {!submitted && (
+        <p className="mt-2 text-xs text-slate-600">Available after the surgery upload is submitted for review.</p>
+      )}
+      {(pipeline === "queued" || pipeline === "running") && (
+        <p className="mt-2 text-xs text-indigo-800">
+          Evidence review report requested — generation is running in the background.
+        </p>
+      )}
     </div>
   );
 }

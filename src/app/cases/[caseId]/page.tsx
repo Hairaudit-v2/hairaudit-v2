@@ -30,6 +30,7 @@ import type { SurgeryUploadDetails } from "@/lib/surgeryUpload/fields";
 import type { SurgerySlotReviewRow } from "@/lib/surgeryUpload/evidenceReview";
 import { loadEvidenceEvents, type EvidenceTimelineEvent } from "@/lib/surgeryUpload/evidenceEvents";
 import { loadAuditIntakeByCase } from "@/lib/surgeryUpload/auditIntakeQuery";
+import { SURGERY_UPLOAD_REPORT_KIND_EVIDENCE_REVIEW_V1 } from "@/lib/surgeryUpload/surgeryUploadReportPipelineStage7a";
 import LatestReportCard from "@/components/reports/LatestReportCard";
 import InviteClinicContributionCard from "@/components/case/InviteClinicContributionCard";
 import ForensicCaseTimelineViewer from "@/components/reports/ForensicCaseTimelineViewer";
@@ -360,25 +361,55 @@ export default async function Page({
   }
 
   // Try with status/error and auditor review columns; fallback if columns don't exist
-  let reports: { id: string; version: number; pdf_path: string | null; summary: unknown; created_at: string; status?: string; error?: string | null; patient_audit_version?: number; patient_audit_v2?: Record<string, unknown> | null; auditor_review_eligibility?: string; auditor_review_status?: string; auditor_review_reason?: string | null; provisional_status?: string; counts_for_awards?: boolean }[] | null = null;
+  type CaseReportRow = {
+    id: string;
+    version: number;
+    pdf_path: string | null;
+    summary: unknown;
+    created_at: string;
+    status?: string;
+    error?: string | null;
+    patient_audit_version?: number;
+    patient_audit_v2?: Record<string, unknown> | null;
+    auditor_review_eligibility?: string;
+    auditor_review_status?: string;
+    auditor_review_reason?: string | null;
+    provisional_status?: string;
+    counts_for_awards?: boolean;
+    report_kind?: string | null;
+  };
+  let reports: CaseReportRow[] | null = null;
   let repErr: { message: string } | null = null;
   const withStatus = await db
     .from("reports")
-    .select("id, version, pdf_path, summary, created_at, status, error, patient_audit_version, patient_audit_v2, auditor_review_eligibility, auditor_review_status, auditor_review_reason, provisional_status, counts_for_awards")
+    .select(
+      "id, version, pdf_path, summary, created_at, status, error, patient_audit_version, patient_audit_v2, auditor_review_eligibility, auditor_review_status, auditor_review_reason, provisional_status, counts_for_awards, report_kind"
+    )
     .eq("case_id", c.id)
     .order("version", { ascending: false });
-  if (withStatus.error && (String(withStatus.error.message).includes("status") || String(withStatus.error.message).includes("patient_audit") || String(withStatus.error.message).includes("auditor_review") || String(withStatus.error.message).includes("provisional") || String(withStatus.error.message).includes("does not exist"))) {
+  if (
+    withStatus.error &&
+    (String(withStatus.error.message).includes("status") ||
+      String(withStatus.error.message).includes("patient_audit") ||
+      String(withStatus.error.message).includes("auditor_review") ||
+      String(withStatus.error.message).includes("provisional") ||
+      String(withStatus.error.message).includes("report_kind") ||
+      String(withStatus.error.message).includes("does not exist"))
+  ) {
     const fallback = await db
       .from("reports")
       .select("id, version, pdf_path, summary, created_at")
       .eq("case_id", c.id)
       .order("version", { ascending: false });
-    reports = fallback.data;
+    reports = fallback.data as CaseReportRow[] | null;
     repErr = fallback.error;
   } else {
-    reports = withStatus.data;
+    reports = withStatus.data as CaseReportRow[] | null;
     repErr = withStatus.error;
   }
+
+  /** Forensic AI audit reports only — excludes Stage 7B surgery evidence review PDFs. */
+  const forensicReports = (reports ?? []).filter((r) => !r.report_kind);
 
   // Case-scoped access flags (auditor sees all)
   const isAuditor = role === "auditor";
@@ -414,6 +445,28 @@ export default async function Page({
       } else {
         surgeryAuditIntakeView = { status: intake.status };
       }
+    }
+  }
+
+  // Stage 7B: pointer to the non-AI evidence review PDF (distinct from forensic reports[]).
+  let surgeryEvidenceReportPdfPath: string | null = null;
+  if (surgeryUploadDetails?.evidence_report_id) {
+    try {
+      const { data: er } = await db
+        .from("reports")
+        .select("pdf_path, report_kind")
+        .eq("id", surgeryUploadDetails.evidence_report_id)
+        .maybeSingle();
+      if (
+        er &&
+        er.report_kind === SURGERY_UPLOAD_REPORT_KIND_EVIDENCE_REVIEW_V1 &&
+        typeof er.pdf_path === "string" &&
+        er.pdf_path.length > 0
+      ) {
+        surgeryEvidenceReportPdfPath = er.pdf_path;
+      }
+    } catch {
+      /* ignore */
     }
   }
   let patientImageEvidenceQuality: ReturnType<typeof computePatientImageEvidenceQualityFromCaseUploads> | null = null;
@@ -476,7 +529,7 @@ export default async function Page({
   const showClinicFlow = isAuditor || isClinicForCase;
 
   const status = String(c.status ?? "draft");
-  const hasReportPdf = !!(reports?.[0] as { pdf_path?: string } | null)?.pdf_path;
+  const hasReportPdf = !!(forensicReports[0] as { pdf_path?: string } | null)?.pdf_path;
   const isCompleteWithReport = status === "complete" && hasReportPdf;
   const isProcessing = status === "submitted" || status === "processing";
   const statusDisplayLabel = isCompleteWithReport
@@ -499,8 +552,8 @@ export default async function Page({
             ? "border-rose-300/20 bg-rose-300/10 text-rose-200"
             : "border-white/10 bg-white/5 text-slate-200/80";
 
-  const latestReport = reports?.[0] ?? null;
-  const previousReport = reports?.[1] ?? null;
+  const latestReport = forensicReports[0] ?? null;
+  const previousReport = forensicReports[1] ?? null;
   const auditorReviewEligibility = (latestReport as { auditor_review_eligibility?: string } | null)?.auditor_review_eligibility;
   const provisionalStatus = (latestReport as { provisional_status?: string } | null)?.provisional_status;
   const countsForAwards = (latestReport as { counts_for_awards?: boolean } | null)?.counts_for_awards;
@@ -1183,9 +1236,9 @@ export default async function Page({
         </div>
       )}
 
-      {isAuditor && reports && reports.length > 0 && (
+      {isAuditor && forensicReports.length > 0 && (
         <div className="mt-6">
-          <AuditorRerunPanel caseId={c.id} latestReportVersion={(reports[0] as any)?.version} />
+          <AuditorRerunPanel caseId={c.id} latestReportVersion={(forensicReports[0] as any)?.version} />
         </div>
       )}
 
@@ -1297,7 +1350,7 @@ export default async function Page({
             <p className="mt-0.5 text-xs text-slate-400">{BENCHMARKING_GLOBAL_STANDARDS}</p>
             {repErr && <p className="text-sm text-rose-300">{repErr.message}</p>}
           </div>
-          {reports && reports.length > 0 && <VersionHistoryDrawer reports={reports as any} />}
+          {forensicReports.length > 0 && <VersionHistoryDrawer reports={forensicReports as any} />}
         </div>
         <div className="mt-4">
           <LatestReportCard report={latestReport as any} caseId={c.id} displayScore={latestReportDisplayScore} />
@@ -1314,6 +1367,7 @@ export default async function Page({
             initialSlotReviews={surgerySlotReviews}
             evidenceEvents={surgeryEvidenceEvents}
             auditIntake={surgeryAuditIntakeView}
+            evidenceReportPdfPath={surgeryEvidenceReportPdfPath}
           />
         </div>
       )}

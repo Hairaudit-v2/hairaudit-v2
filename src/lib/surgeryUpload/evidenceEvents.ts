@@ -47,6 +47,9 @@ export const EVIDENCE_EVENT_LABELS: Record<EvidenceEventType, string> = {
   audit_intake_created: "Audit intake created",
   audit_intake_updated: "Audit intake updated",
   audit_intake_status_changed: "Audit intake status changed",
+  "surgery-upload/report-requested": "Evidence review report requested",
+  "surgery-upload/report-completed": "Evidence review report completed",
+  "surgery-upload/report-failed": "Evidence review report failed",
 };
 
 /** Label for a known event type; unknown types render as a safe generic label. */
@@ -211,6 +214,23 @@ function buildSummary(
       }
       return { summary: "Audit intake record updated.", note: null };
     }
+    case "surgery-upload/report-requested": {
+      const rt = readString(meta, "reportType");
+      return {
+        summary: "Non-AI evidence review report was requested (background job).",
+        note: rt ? `Type: ${rt}` : null,
+      };
+    }
+    case "surgery-upload/report-completed":
+      return {
+        summary: "Evidence review PDF generated.",
+        note: readString(meta, "pdfPath"),
+      };
+    case "surgery-upload/report-failed":
+      return {
+        summary: "Evidence review report generation failed.",
+        note: readString(meta, "error"),
+      };
     default:
       return { summary: "Evidence review activity recorded.", note: null };
   }
