@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
-/* Scan sibling Follicle Intelligence shared UI so utilities used there are generated */
-@source "../../follicleintelligence/packages/ui";
+/* Scan vendored Follicle Intelligence Network UI (packages/fi-network-ui) */
+@source "../../packages/fi-network-ui";
 
 @theme inline {
   --font-display: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;

@@ -1,49 +1,48 @@
 /**
- * Selective re-exports from the sibling Follicle Intelligence `packages/ui`.
- * Avoid importing the package root `index.ts` here so TypeScript does not pull in
- * optional surfaces (e.g. FAQ accordion) that depend on a second `@types/react` tree.
+ * Selective re-exports from the vendored Follicle Intelligence Network UI
+ * (`packages/fi-network-ui`). Keeps HairAudit builds self-contained for CI/Vercel.
  */
 
-export type { NetworkProductSlug } from "../../../../follicleintelligence/packages/ui/ecosystem";
-export { NETWORK_PRODUCTS } from "../../../../follicleintelligence/packages/ui/ecosystem";
+export type { NetworkProductSlug } from "../../../packages/fi-network-ui/ecosystem";
+export { NETWORK_PRODUCTS } from "../../../packages/fi-network-ui/ecosystem";
 
-export { networkButtonVariants, type NetworkButtonProps } from "../../../../follicleintelligence/packages/ui/Button";
-export { NetworkBadge as Badge, type NetworkBadgeProps, type NetworkBadgeTone } from "../../../../follicleintelligence/packages/ui/Badge";
-export { NetworkCard as Card, type NetworkCardProps, type NetworkCardVariant } from "../../../../follicleintelligence/packages/ui/Card";
-export { NetworkContainer as Container, type NetworkContainerProps } from "../../../../follicleintelligence/packages/ui/Container";
-export { NetworkSection as Section, type NetworkSectionProps } from "../../../../follicleintelligence/packages/ui/Section";
-export { Hero, type HeroProps } from "../../../../follicleintelligence/packages/ui/Hero";
-export { NetworkHero, type NetworkHeroProps } from "../../../../follicleintelligence/packages/ui/NetworkHero";
-export { NetworkFeatureGrid as FeatureGrid, type NetworkFeatureGridProps } from "../../../../follicleintelligence/packages/ui/FeatureGrid";
-export { NetworkFeatureCard as FeatureCard, type NetworkFeatureCardProps } from "../../../../follicleintelligence/packages/ui/FeatureCard";
-export { NetworkMetricCard as MetricCard, type NetworkMetricCardProps } from "../../../../follicleintelligence/packages/ui/MetricCard";
-export { NetworkPlatformNav as PlatformNav, type NetworkPlatformNavProps } from "../../../../follicleintelligence/packages/ui/PlatformNav";
+export { networkButtonVariants, type NetworkButtonProps } from "../../../packages/fi-network-ui/Button";
+export { NetworkBadge as Badge, type NetworkBadgeProps, type NetworkBadgeTone } from "../../../packages/fi-network-ui/Badge";
+export { NetworkCard as Card, type NetworkCardProps, type NetworkCardVariant } from "../../../packages/fi-network-ui/Card";
+export { NetworkContainer as Container, type NetworkContainerProps } from "../../../packages/fi-network-ui/Container";
+export { NetworkSection as Section, type NetworkSectionProps } from "../../../packages/fi-network-ui/Section";
+export { Hero, type HeroProps } from "../../../packages/fi-network-ui/Hero";
+export { NetworkHero, type NetworkHeroProps } from "../../../packages/fi-network-ui/NetworkHero";
+export { NetworkFeatureGrid as FeatureGrid, type NetworkFeatureGridProps } from "../../../packages/fi-network-ui/FeatureGrid";
+export { NetworkFeatureCard as FeatureCard, type NetworkFeatureCardProps } from "../../../packages/fi-network-ui/FeatureCard";
+export { NetworkMetricCard as MetricCard, type NetworkMetricCardProps } from "../../../packages/fi-network-ui/MetricCard";
+export { NetworkPlatformNav as PlatformNav, type NetworkPlatformNavProps } from "../../../packages/fi-network-ui/PlatformNav";
 export {
   NetworkEcosystemFooter as EcosystemFooter,
   type NetworkEcosystemFooterProps,
   type LegalLink,
-} from "../../../../follicleintelligence/packages/ui/EcosystemFooter";
-export { NetworkProductPill as ProductPill, type NetworkProductPillProps } from "../../../../follicleintelligence/packages/ui/ProductPill";
-export { NetworkCTASection, NetworkCTASection as CTASection, type NetworkCTASectionProps } from "../../../../follicleintelligence/packages/ui/CTASection";
+} from "../../../packages/fi-network-ui/EcosystemFooter";
+export { NetworkProductPill as ProductPill, type NetworkProductPillProps } from "../../../packages/fi-network-ui/ProductPill";
+export { NetworkCTASection, NetworkCTASection as CTASection, type NetworkCTASectionProps } from "../../../packages/fi-network-ui/CTASection";
 
 export {
   NetworkProblemSolutionSection,
   type NetworkProblemSolutionSectionProps,
   type ProblemSolutionColumn,
-} from "../../../../follicleintelligence/packages/ui/sections/ProblemSolutionSection";
+} from "../../../packages/fi-network-ui/sections/ProblemSolutionSection";
 export {
   NetworkIntelligenceLayerSection,
   type NetworkIntelligenceLayerSectionProps,
   type IntelligenceLayerItem,
-} from "../../../../follicleintelligence/packages/ui/sections/IntelligenceLayerSection";
+} from "../../../packages/fi-network-ui/sections/IntelligenceLayerSection";
 export {
   NetworkEcosystemMapSection,
   type NetworkEcosystemMapSectionProps,
-} from "../../../../follicleintelligence/packages/ui/sections/EcosystemMapSection";
+} from "../../../packages/fi-network-ui/sections/EcosystemMapSection";
 export {
   NetworkAudienceSection,
   type NetworkAudienceSectionProps,
   type AudienceSegment,
-} from "../../../../follicleintelligence/packages/ui/sections/AudienceSection";
+} from "../../../packages/fi-network-ui/sections/AudienceSection";
 
-export * from "../../../../follicleintelligence/packages/ui/tokens";
+export * from "../../../packages/fi-network-ui/tokens";
