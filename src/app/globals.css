@@ -1,5 +1,49 @@
 @import "tailwindcss";
 
+/* Scan sibling Follicle Intelligence shared UI so utilities used there are generated */
+@source "../../follicleintelligence/packages/ui";
+
+@theme inline {
+  --font-display: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --color-background: var(--ha-background);
+  --color-foreground: var(--ha-foreground);
+  --color-muted: var(--ha-muted);
+  --color-muted-foreground: var(--ha-muted-foreground);
+  --color-border: var(--ha-border);
+  --color-card: var(--ha-card);
+  --color-card-foreground: var(--ha-card-foreground);
+  --color-primary: var(--ha-primary);
+  --color-primary-foreground: var(--ha-primary-foreground);
+  --color-ring: var(--ha-ring);
+  --shadow-fi-panel: 0 22px 55px rgb(0 0 0 / 0.45);
+}
+
+:root {
+  --ha-background: #f1f5f9;
+  --ha-foreground: #0f172a;
+  --ha-muted: #e2e8f0;
+  --ha-muted-foreground: #64748b;
+  --ha-border: #cbd5e1;
+  --ha-card: #ffffff;
+  --ha-card-foreground: #0f172a;
+  --ha-primary: #f59e0b;
+  --ha-primary-foreground: #0f172a;
+  --ha-ring: #fbbf24;
+}
+
+[data-hairaudit-fi-network="marketing"] {
+  --ha-background: rgb(4 10 22);
+  --ha-foreground: rgb(248 250 252);
+  --ha-muted: rgb(30 41 59);
+  --ha-muted-foreground: rgb(148 163 184 / 0.92);
+  --ha-border: rgb(51 65 85 / 0.55);
+  --ha-card: rgb(15 23 42 / 0.72);
+  --ha-card-foreground: rgb(248 250 252);
+  --ha-primary: rgb(251 191 36);
+  --ha-primary-foreground: rgb(15 23 42);
+  --ha-ring: rgb(251 191 36 / 0.55);
+}
+
 :root {
   /* Gold palette (matches logo) */
   --color-gold: 245 158 11; /* amber-500 */

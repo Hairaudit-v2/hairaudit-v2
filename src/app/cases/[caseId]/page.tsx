@@ -126,10 +126,10 @@ export default async function Page({
   searchParams,
 }: {
   params: Promise<{ caseId: string }>;
-  searchParams?: Promise<{ from?: string }> | { from?: string };
+  searchParams?: Promise<{ from?: string }>;
 }) {
   const { caseId } = await params;
-  const resolvedSearchParams = await Promise.resolve(searchParams ?? {});
+  const resolvedSearchParams = searchParams ? await searchParams : {};
   const fromContributionRequests = resolvedSearchParams?.from === "contribution-requests";
   const fromBulkUpload = resolvedSearchParams?.from === "bulk-upload";
   let supabase: Awaited<ReturnType<typeof createSupabaseAuthServerClient>>;

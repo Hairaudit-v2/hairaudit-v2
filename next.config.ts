@@ -21,7 +21,13 @@ function getTailwindPath(): string {
 }
 const tailwindcssPath = getTailwindPath();
 
+const fiUiEntry = path.join(process.cwd(), "src", "lib", "fi-ui", "network-ui.ts");
+
 const nextConfig: NextConfig = {
+  /** Allow importing the sibling Follicle Intelligence `packages/ui` via tsconfig paths. */
+  experimental: {
+    externalDir: true,
+  },
   serverExternalPackages: [
     "pdfkit",
     "@supabase/supabase-js",
@@ -52,12 +58,15 @@ const nextConfig: NextConfig = {
   turbopack: {
     resolveAlias: {
       tailwindcss: tailwindcssPath,
+      "@/packages/ui": fiUiEntry,
     },
   },
   webpack: (config) => {
     config.resolve ??= {};
     config.resolve.alias ??= {};
-    (config.resolve.alias as Record<string, string>)["tailwindcss"] = tailwindcssPath;
+    const aliases = config.resolve.alias as Record<string, string>;
+    aliases["tailwindcss"] = tailwindcssPath;
+    aliases["@/packages/ui"] = fiUiEntry;
     return config;
   },
 };

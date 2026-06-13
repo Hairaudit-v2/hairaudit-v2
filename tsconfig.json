@@ -5,7 +5,11 @@
 
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@/packages/ui": ["./src/lib/fi-ui/network-ui.ts"],
+      "@/packages/ui/*": ["../follicleintelligence/packages/ui/*"],
+      "@types/react": ["./node_modules/@types/react"],
+      "@types/react-dom": ["./node_modules/@types/react-dom"]
     },
 
     "allowJs": true,

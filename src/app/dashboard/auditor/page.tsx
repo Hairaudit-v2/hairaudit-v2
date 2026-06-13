@@ -99,9 +99,9 @@ function parseRange(value: string | undefined): DashboardRange {
 export default async function AuditorDashboardPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ range?: string }> | { range?: string };
+  searchParams?: Promise<{ range?: string }>;
 }) {
-  const params = await Promise.resolve(searchParams ?? {});
+  const params = searchParams ? await searchParams : {};
   const range = parseRange(params.range);
   const supabase = await createSupabaseAuthServerClient();
   const {
