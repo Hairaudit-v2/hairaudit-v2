@@ -24,10 +24,6 @@ const tailwindcssPath = getTailwindPath();
 const fiUiEntry = path.join(process.cwd(), "src", "lib", "fi-ui", "network-ui.ts");
 
 const nextConfig: NextConfig = {
-  /** Allow importing the sibling Follicle Intelligence `packages/ui` via tsconfig paths. */
-  experimental: {
-    externalDir: true,
-  },
   serverExternalPackages: [
     "pdfkit",
     "@supabase/supabase-js",
