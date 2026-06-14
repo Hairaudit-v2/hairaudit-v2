@@ -1401,7 +1401,7 @@ export default async function Page({
 
       {upErr && <p className="mt-6 text-sm text-rose-300">{upErr.message}</p>}
       <div className="mt-6">
-        <UploadThumbnailGallery uploads={(uploads ?? []) as any} />
+        <UploadThumbnailGallery caseId={c.id} uploads={(uploads ?? []) as any} />
       </div>
     </div>
   );

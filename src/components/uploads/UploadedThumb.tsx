@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { uploadSignedUrlFetchPath } from "@/lib/uploads/uploadSignedUrlClient";
 
 type ThumbUpload = {
   id: string;
@@ -11,6 +12,7 @@ type ThumbUpload = {
 
 export default function UploadedThumb({
   upload,
+  caseId,
   locked,
   onDeleted,
   onPreview,
@@ -38,7 +40,7 @@ export default function UploadedThumb({
     let alive = true;
 
     async function load() {
-      const res = await fetch(`/api/uploads/signed-url?path=${encodeURIComponent(upload.storage_path)}`);
+      const res = await fetch(uploadSignedUrlFetchPath(upload.storage_path, caseId));
       const json = await res.json();
       if (!alive) return;
       setUrl(json?.url ?? null);
@@ -46,7 +48,7 @@ export default function UploadedThumb({
 
     load();
     return () => { alive = false; };
-  }, [upload.storage_path]);
+  }, [upload.storage_path, caseId]);
 
   async function del() {
     if (locked) return;

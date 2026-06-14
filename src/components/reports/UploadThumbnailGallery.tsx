@@ -7,6 +7,7 @@ import {
   isPatientUploadAuditExcluded,
   storagePathPatientCategoryFolder,
 } from "@/lib/uploads/patientPhotoAuditMeta";
+import { uploadSignedUrlFetchPath } from "@/lib/uploads/uploadSignedUrlClient";
 
 type UploadRow = {
   id: string;
@@ -28,7 +29,14 @@ function patientEvidenceTitle(upload: UploadRow): string {
   return formatType(upload.type);
 }
 
-export default function UploadThumbnailGallery({ uploads }: { uploads: UploadRow[] }) {
+export default function UploadThumbnailGallery({
+  uploads,
+  caseId,
+}: {
+  uploads: UploadRow[];
+  /** When set, passed to signed-url for defense-in-depth (must match paths). */
+  caseId?: string;
+}) {
   const [signed, setSigned] = useState<SignedUrlMap>({});
 
   const imageUploads = useMemo(
@@ -47,7 +55,7 @@ export default function UploadThumbnailGallery({ uploads }: { uploads: UploadRow
       const entries = await Promise.all(
         imageUploads.map(async (upload) => {
           try {
-            const res = await fetch(`/api/uploads/signed-url?path=${encodeURIComponent(upload.storage_path)}`);
+            const res = await fetch(uploadSignedUrlFetchPath(upload.storage_path, caseId));
             const json = await res.json().catch(() => ({}));
             return [upload.id, json?.url ?? null] as const;
           } catch {
@@ -63,7 +71,7 @@ export default function UploadThumbnailGallery({ uploads }: { uploads: UploadRow
     return () => {
       active = false;
     };
-  }, [imageUploads]);
+  }, [imageUploads, caseId]);
 
   if (!uploads || uploads.length === 0) {
     return (

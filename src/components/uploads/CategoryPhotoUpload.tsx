@@ -163,7 +163,7 @@ export default function CategoryPhotoUpload({
           {(uploadsByCategory[cat.key]?.length ?? 0) > 0 && (
             <div className="grid grid-cols-3 gap-2">
               {uploadsByCategory[cat.key].slice(0, 6).map((u) => (
-                <UploadedThumb key={u.id} upload={u} locked={isLocked} onDeleted={() => deleteUpload(u.id)} />
+                <UploadedThumb key={u.id} upload={u} caseId={caseId} locked={isLocked} onDeleted={() => deleteUpload(u.id)} />
               ))}
             </div>
           )}

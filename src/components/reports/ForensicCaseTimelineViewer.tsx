@@ -7,6 +7,7 @@ import {
   isPatientUploadAuditExcluded,
   storagePathPatientCategoryFolder,
 } from "@/lib/uploads/patientPhotoAuditMeta";
+import { uploadSignedUrlFetchPath } from "@/lib/uploads/uploadSignedUrlClient";
 
 type TimelineStage =
   | "preop"
@@ -317,7 +318,7 @@ export default function ForensicCaseTimelineViewer(props: {
       const entries = await Promise.all(
         targets.map(async (item) => {
           try {
-            const res = await fetch(`/api/uploads/signed-url?path=${encodeURIComponent(item.upload.storage_path)}`);
+            const res = await fetch(uploadSignedUrlFetchPath(item.upload.storage_path, props.caseId));
             const json = (await res.json().catch(() => ({}))) as { url?: string };
             return [item.upload.id, json.url ?? null] as const;
           } catch {
@@ -332,7 +333,7 @@ export default function ForensicCaseTimelineViewer(props: {
     return () => {
       active = false;
     };
-  }, [selectedItems, signedUrls]);
+  }, [selectedItems, signedUrls, props.caseId]);
 
   return (
     <section className="mt-6 rounded-2xl border border-slate-700 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-6">

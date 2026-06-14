@@ -1,6 +1,13 @@
 import { describe, it } from "node:test";
 import assert from "node:assert";
-import { parseCaseIdFromCaseFilesPath, storagePathBelongsToCase } from "../src/lib/uploads/caseFilesPath";
+import {
+  parseCaseIdFromCaseFilesPath,
+  storagePathBelongsToCase,
+  gateUploadSignedUrlStoragePath,
+  filterUploadRowsToCaseStorageNamespace,
+  isWellFormedCaseId,
+} from "../src/lib/uploads/caseFilesPath";
+import { uploadSignedUrlFetchPath } from "../src/lib/uploads/uploadSignedUrlClient";
 import {
   isClinicCaseParticipant,
   isDoctorCaseParticipant,
@@ -16,6 +23,21 @@ import { canAccessCase } from "../src/lib/case-access";
 const SAMPLE_CASE = "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11";
 
 describe("caseFilesPath", () => {
+  it("parses audit_photos upload path", () => {
+    const p = `audit_photos/${SAMPLE_CASE}/doctor/img_front/abc.png`;
+    const r = parseCaseIdFromCaseFilesPath(p);
+    assert.ok(r.ok);
+    if (r.ok) {
+      assert.strictEqual(r.caseId, SAMPLE_CASE);
+      assert.strictEqual(r.normalizedPath, p);
+    }
+  });
+
+  it("rejects audit_photos path traversal", () => {
+    const r = parseCaseIdFromCaseFilesPath(`audit_photos/${SAMPLE_CASE}/../${SAMPLE_CASE}/x.png`);
+    assert.strictEqual(r.ok, false);
+  });
+
   it("parses a normal patient upload path", () => {
     const p = `cases/${SAMPLE_CASE}/patient/preop_front/1-photo.jpg`;
     const r = parseCaseIdFromCaseFilesPath(p);
@@ -46,6 +68,75 @@ describe("caseFilesPath", () => {
     const p = `cases/${SAMPLE_CASE}/patient/x.jpg`;
     assert.strictEqual(storagePathBelongsToCase(other, p), false);
     assert.strictEqual(storagePathBelongsToCase(SAMPLE_CASE, p), true);
+  });
+
+  it("storagePathBelongsToCase accepts audit_photos namespace", () => {
+    const p = `audit_photos/${SAMPLE_CASE}/patient/preop_front/uuid.jpg`;
+    assert.strictEqual(storagePathBelongsToCase(SAMPLE_CASE, p), true);
+  });
+});
+
+describe("uploadSignedUrlFetchPath (client helper)", () => {
+  it("includes path and optional caseId query", () => {
+    const p = `cases/${SAMPLE_CASE}/patient/x.jpg`;
+    const u = new URL(uploadSignedUrlFetchPath(p), "http://example.test");
+    assert.strictEqual(u.searchParams.get("path"), p);
+    assert.strictEqual(u.searchParams.get("caseId"), null);
+    const u2 = new URL(uploadSignedUrlFetchPath(p, SAMPLE_CASE), "http://example.test");
+    assert.strictEqual(u2.searchParams.get("path"), p);
+    assert.strictEqual(u2.searchParams.get("caseId"), SAMPLE_CASE);
+  });
+});
+
+describe("gateUploadSignedUrlStoragePath", () => {
+  it("rejects missing path", () => {
+    const r = gateUploadSignedUrlStoragePath(null, null);
+    assert.strictEqual(r.ok, false);
+    if (!r.ok) assert.strictEqual(r.error, "Missing path");
+  });
+
+  it("rejects mismatched caseId query vs path", () => {
+    const p = `cases/${SAMPLE_CASE}/patient/x.jpg`;
+    const other = "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22";
+    const r = gateUploadSignedUrlStoragePath(p, other);
+    assert.strictEqual(r.ok, false);
+  });
+
+  it("accepts path when optional caseId query matches", () => {
+    const p = `cases/${SAMPLE_CASE}/patient/x.jpg`;
+    const r = gateUploadSignedUrlStoragePath(p, SAMPLE_CASE);
+    assert.ok(r.ok);
+    if (r.ok) assert.strictEqual(r.caseId, SAMPLE_CASE);
+  });
+
+  it("accepts path when caseId query omitted", () => {
+    const p = `cases/${SAMPLE_CASE}/patient/x.jpg`;
+    const r = gateUploadSignedUrlStoragePath(p, null);
+    assert.ok(r.ok);
+  });
+});
+
+describe("filterUploadRowsToCaseStorageNamespace", () => {
+  it("drops rows whose storage path targets another case namespace", () => {
+    const other = "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22";
+    const rows = [
+      { id: "1", storage_path: `cases/${SAMPLE_CASE}/patient/x.jpg`, type: "patient_photo:preop_front" },
+      { id: "2", storage_path: `cases/${other}/patient/y.jpg`, type: "patient_photo:preop_front" },
+    ];
+    const out = filterUploadRowsToCaseStorageNamespace(SAMPLE_CASE, rows);
+    assert.strictEqual(out.length, 1);
+    assert.strictEqual(out[0].id, "1");
+  });
+});
+
+describe("isWellFormedCaseId", () => {
+  it("accepts canonical uuid", () => {
+    assert.strictEqual(isWellFormedCaseId(SAMPLE_CASE), true);
+  });
+
+  it("rejects invalid ids", () => {
+    assert.strictEqual(isWellFormedCaseId("not-a-uuid"), false);
+    assert.strictEqual(isWellFormedCaseId(""), false);
   });
 });
 

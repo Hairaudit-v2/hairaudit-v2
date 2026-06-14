@@ -297,6 +297,7 @@ export default function UnifiedPatientUploader({
           return (
             <PhotoCategoryCard
               key={cat.key}
+              caseId={caseId}
               category={cat.key}
               title={cat.title}
               help={cat.help}
@@ -355,6 +356,7 @@ export default function UnifiedPatientUploader({
 }
 
 function PhotoCategoryCard({
+  caseId,
   category,
   title,
   help,
@@ -370,6 +372,7 @@ function PhotoCategoryCard({
   onUpload,
   onDeleted,
 }: {
+  caseId: string;
   category: string;
   title: string;
   help?: string;
@@ -531,6 +534,7 @@ function PhotoCategoryCard({
             <UploadedThumb
               key={u.id}
               upload={u}
+              caseId={caseId}
               locked={locked}
               onDeleted={() => onDeleted(u.id)}
             />

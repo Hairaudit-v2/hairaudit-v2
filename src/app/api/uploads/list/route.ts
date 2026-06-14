@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { requireCaseAccess, requireUser } from "@/lib/auth/permissions";
+import { requireAuthenticatedUser, requireCaseAccess } from "@/lib/security/caseAccess.server";
+import { filterUploadRowsToCaseStorageNamespace, isWellFormedCaseId } from "@/lib/uploads/caseFilesPath";
 import { resolveUploadTypePrefixForList } from "@/lib/uploads/listTypePrefix";
 
 export const runtime = "nodejs";
@@ -15,9 +16,12 @@ export async function GET(req: Request) {
     if (!caseId) {
       return NextResponse.json({ ok: false, error: "Missing caseId" }, { status: 400 });
     }
+    if (!isWellFormedCaseId(caseId)) {
+      return NextResponse.json({ ok: false, error: "Invalid caseId" }, { status: 400 });
+    }
 
     const supabaseAuth = await createSupabaseAuthServerClient();
-    const userGate = await requireUser(supabaseAuth);
+    const userGate = await requireAuthenticatedUser(supabaseAuth);
     if (!userGate.ok) return userGate.response;
 
     const caseGate = await requireCaseAccess({
@@ -40,7 +44,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
     }
 
-    const rows = uploads ?? [];
+    const rows = filterUploadRowsToCaseStorageNamespace(caseId, uploads ?? []);
     const patient = rows.filter((u) => String(u.type ?? "").startsWith(typePrefix));
 
     const signed = await Promise.all(

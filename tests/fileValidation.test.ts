@@ -25,6 +25,17 @@ async function tinyPng(): Promise<Buffer> {
     .toBuffer();
 }
 
+const CASE_FILES_IMAGE_ROUTES = new Set([
+  "src/app/api/uploads/patient-photos/route.ts",
+  "src/app/api/uploads/doctor-photos/route.ts",
+  "src/app/api/uploads/clinic-photos/route.ts",
+  "src/app/api/uploads/audit-photos/route.ts",
+  "src/app/api/surgery-upload/photos/route.ts",
+]);
+
+const CASE_FILES_VALIDATION_IMPORT = 'from "@/lib/uploads/caseFilesRouteImageValidation.server"';
+const LEGACY_VALIDATION_IMPORT = 'from "@/lib/uploads/fileValidation"';
+
 const IMAGE_UPLOAD_ROUTES_RELATIVE = [
   "src/app/api/uploads/patient-photos/route.ts",
   "src/app/api/uploads/doctor-photos/route.ts",
@@ -156,16 +167,22 @@ describe("fileValidation (Stage 1D)", () => {
   });
 
   describe("image upload API routes", () => {
-    it("all use validateUploadedImage from fileValidation", () => {
-      const needle = 'from "@/lib/uploads/fileValidation"';
+    it("case-files routes use validateCaseFilesRouteImage; others use validateUploadedImage", () => {
       for (const rel of IMAGE_UPLOAD_ROUTES_RELATIVE) {
         const abs = join(repoRoot, rel);
         assert.ok(existsSync(abs), `missing route file: ${rel}`);
         const src = readFileSync(abs, "utf8");
-        assert.ok(
-          src.includes("validateUploadedImage") && src.includes(needle),
-          `expected validateUploadedImage import in ${rel}`
-        );
+        if (CASE_FILES_IMAGE_ROUTES.has(rel)) {
+          assert.ok(
+            src.includes("validateCaseFilesRouteImage") && src.includes(CASE_FILES_VALIDATION_IMPORT),
+            `expected validateCaseFilesRouteImage from caseFilesRouteImageValidation in ${rel}`
+          );
+        } else {
+          assert.ok(
+            src.includes("validateUploadedImage") && src.includes(LEGACY_VALIDATION_IMPORT),
+            `expected validateUploadedImage from fileValidation in ${rel}`
+          );
+        }
       }
     });
   });

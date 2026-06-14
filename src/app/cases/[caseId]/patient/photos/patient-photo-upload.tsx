@@ -196,6 +196,7 @@ export default function PatientPhotoUpload({
                 return (
                   <PhotoCategoryCard
                     key={cat.key}
+                    caseId={caseId}
                     category={cat.key}
                     title={cat.title}
                     required={cat.required}
@@ -261,6 +262,7 @@ export default function PatientPhotoUpload({
 /* ---------------- Category Card ---------------- */
 
 function PhotoCategoryCard(props: {
+  caseId: string;
   category: string;
   title: string;
   required: boolean;
@@ -349,6 +351,7 @@ function PhotoCategoryCard(props: {
             <UploadedThumb
               key={u.id}
               upload={u}
+              caseId={props.caseId}
               locked={props.locked}
               onDeleted={() => props.onDeleted(u.id)}
             />

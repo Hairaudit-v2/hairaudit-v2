@@ -76,7 +76,7 @@ HairAudit
 
 ### 3.1 Patient submits case
 
-1. Case created (`POST /api/cases/create` or legacy `POST /cases/create`; shared implementation).
+1. Case created (`POST /api/cases/create` or legacy `POST /cases/create`; both use `handlePostCreateAuditCaseRoute` → `createAuditCase`).
 2. Patient answers saved via `/api/patient-answers`.
 3. Patient photos uploaded via `/api/uploads/patient-photos`.
 4. Submit button calls `/api/submit`.
@@ -166,7 +166,7 @@ HairAudit
 
 ### APIs
 
-- Case: `POST /api/cases/create` (canonical), legacy `POST /cases/create` (same service), `/api/cases/delete`, `/api/submit`
+- Case: `POST /api/cases/create` (canonical), legacy `POST /cases/create` (same `handlePostCreateAuditCaseRoute` + `createAuditCase`), `/api/cases/delete`, `/api/submit`
 - Answers: `/api/patient-answers`, `/api/doctor-answers`, `/api/clinic-answers`
 - Uploads: `/api/uploads/patient-photos`, `/api/uploads/doctor-photos`, `/api/uploads/clinic-photos`, `/api/uploads/audit-photos`, `/api/uploads/list`, `/api/uploads/signed-url`, `/api/uploads/delete`
 - Reports/print: `/api/reports/signed-url`, `/api/reports/[reportId]/download`, `/api/reports/download`, `/api/print/report`, `/api/print/legacy-report`
@@ -227,7 +227,7 @@ Producer routes:
 
 ## 9. Current Weak Points / Risk Areas
 
-1. ~~Duplicate case-create routes (`/cases/create` and `/api/cases/create`) with different auth handling.~~ **Addressed (Stage 1B):** `src/lib/cases/createCase.ts` + `docs/stage1b-case-creation-consolidation.md`.
+1. ~~Duplicate case-create routes (`/cases/create` and `/api/cases/create`) with different auth handling.~~ **Addressed (Stage 1B + 3C):** `createAuditCase` in `src/lib/cases/createCase.ts`; HTTP layer unified in `src/lib/cases/createAuditCasePostHandler.server.ts` — see `docs/stage1b-case-creation-consolidation.md`.
 2. ~~`/api/reports/download` route name/behavior mismatch.~~ **Fixed (Stage 1C):** `GET ?reportId=` streams the same PDF as `GET /api/reports/[reportId]/download` via `loadAuthorizedReportPdfDownloadContext` — see `docs/stage1c-report-access-hardening.md`.
 3. ~~Upload helper endpoints (`/api/uploads/list`, `/api/uploads/signed-url`) are not case-auth scoped.~~ **Addressed (Stage 1):** see `docs/stage1-upload-api-hardening.md`.
 4. `middleware.ts` suggests protection intent but effectively permits pass-through.
@@ -244,7 +244,7 @@ Producer routes:
 ### High Priority
 
 - ~~Add strict authz to `/api/uploads/list` and `/api/uploads/signed-url`.~~ **Done (Stage 1)** — `docs/stage1-upload-api-hardening.md`.
-- ~~Consolidate to one canonical case-create API.~~ **Done (Stage 1B)** — shared `createAuditCase` in `src/lib/cases/createCase.ts`; `POST /cases/create` delegates.
+- ~~Consolidate to one canonical case-create API.~~ **Done (Stage 1B + 3C)** — shared `createAuditCase`; both POST routes call `handlePostCreateAuditCaseRoute` so responses and logging cannot drift.
 - ~~Correct `/api/reports/download` naming or behavior.~~ **Done (Stage 1C)** — `docs/stage1c-report-access-hardening.md`.
 - Separate internal render key from service-role fallback keying.
 - Add robust retry/idempotency handling around submit-event dispatch.

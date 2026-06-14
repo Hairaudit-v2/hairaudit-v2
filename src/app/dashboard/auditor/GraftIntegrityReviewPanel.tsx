@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { isMissingFeatureError } from "@/lib/db/isMissingFeatureError";
+import { uploadSignedUrlFetchPath } from "@/lib/uploads/uploadSignedUrlClient";
 
 type AuditorStatus = "pending" | "approved" | "rejected" | "needs_more_evidence";
 type ConfidenceLabel = "low" | "medium" | "high";
@@ -87,8 +88,8 @@ function confPill(s: ConfidenceLabel) {
   return "bg-cyan-50 text-cyan-900 border-cyan-200";
 }
 
-async function signThumb(path: string): Promise<string | null> {
-  const res = await fetch(`/api/uploads/signed-url?path=${encodeURIComponent(path)}`);
+async function signThumb(path: string, caseId: string): Promise<string | null> {
+  const res = await fetch(uploadSignedUrlFetchPath(path, caseId));
   const json = await res.json().catch(() => ({}));
   if (!res.ok) return null;
   return json?.url ?? null;
@@ -235,13 +236,13 @@ export default function GraftIntegrityReviewPanel(props: {
     });
   }, [rows]);
 
-  async function ensureThumbs(paths: string[]) {
+  async function ensureThumbs(caseId: string, paths: string[]) {
     const missing = paths.filter((p) => !(p in thumbs));
     if (missing.length === 0) return;
     const next: Record<string, string | null> = {};
     await Promise.all(
       missing.slice(0, 16).map(async (p) => {
-        const url = await signThumb(p);
+        const url = await signThumb(p, caseId);
         next[p] = url;
       })
     );
@@ -489,7 +490,7 @@ export default function GraftIntegrityReviewPanel(props: {
                   type="button"
                   onClick={() => {
                     setExpanded((p) => ({ ...p, [e.id]: !isExpanded }));
-                    void ensureThumbs([...donorKeys, ...recipientKeys]);
+                    void ensureThumbs(String(e.case_id), [...donorKeys, ...recipientKeys]);
                   }}
                   className="inline-flex items-center justify-center rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50"
                 >

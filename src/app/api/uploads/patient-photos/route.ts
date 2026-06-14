@@ -16,7 +16,7 @@ import {
   type UploadResult,
 } from "@/lib/uploads/safeUpload";
 import { PATIENT_UPLOAD_CATEGORY_DEFS, type PatientUploadCategoryKey } from "@/lib/patientPhotoCategoryConfig";
-import { validateUploadedImage } from "@/lib/uploads/fileValidation";
+import { validateCaseFilesRouteImage } from "@/lib/uploads/caseFilesRouteImageValidation.server";
 
 export const runtime = "nodejs";
 
@@ -36,7 +36,7 @@ async function uploadSingleFile(
   category: string,
   file: File
 ): Promise<UploadResult<{ id: string; type: string; storage_path: string; metadata: unknown; created_at: string }>> {
-  const validated = await validateUploadedImage(file);
+  const validated = await validateCaseFilesRouteImage(file);
   if (!validated.ok) {
     return { success: false, error: validated.error };
   }

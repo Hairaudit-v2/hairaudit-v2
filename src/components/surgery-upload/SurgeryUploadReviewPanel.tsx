@@ -377,6 +377,7 @@ export default function SurgeryUploadReviewPanel({
 
       {/* Photo groups in reviewer-friendly order: required → optional → hidden-with-evidence */}
       <PhotoGroup
+        caseId={caseId}
         title="Required photos"
         slots={requiredGroup}
         uploadsBySlot={uploadsBySlot}
@@ -388,6 +389,7 @@ export default function SurgeryUploadReviewPanel({
       />
       {optionalGroup.length > 0 && (
         <PhotoGroup
+          caseId={caseId}
           title="Optional photos"
           slots={optionalGroup}
           uploadsBySlot={uploadsBySlot}
@@ -400,6 +402,7 @@ export default function SurgeryUploadReviewPanel({
       )}
       {additionalGroup.length > 0 && (
         <PhotoGroup
+          caseId={caseId}
           title="Additional uploaded evidence"
           subtitle="Categories the clinic hid from new uploads, shown here because photos already exist."
           slots={additionalGroup}
@@ -422,6 +425,7 @@ export default function SurgeryUploadReviewPanel({
       {preview && (
         <ImageLightbox
           upload={preview.upload as LightboxUpload}
+          caseId={caseId}
           label={preview.label}
           position={preview.position}
           count={preview.count}
@@ -460,6 +464,7 @@ function slotStatus(
 }
 
 function PhotoGroup({
+  caseId,
   title,
   subtitle,
   slots,
@@ -470,6 +475,7 @@ function PhotoGroup({
   slotReviews = {},
   onSaveSlotReview,
 }: {
+  caseId: string;
   title: string;
   subtitle?: string;
   slots: readonly ResolvedSurgerySlot[];
@@ -520,6 +526,7 @@ function PhotoGroup({
                     <UploadedThumb
                       key={u.id}
                       upload={u}
+                      caseId={caseId}
                       locked
                       onDeleted={() => {}}
                       onPreview={() => onPreview(slot.label, existing, i)}

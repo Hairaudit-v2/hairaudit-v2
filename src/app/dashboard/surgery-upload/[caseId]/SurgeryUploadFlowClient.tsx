@@ -824,6 +824,7 @@ export default function SurgeryUploadFlowClient({
             {requiredSlots.map((slot) => (
               <PhotoSlotCard
                 key={slot.key}
+                caseId={caseId}
                 slot={slot}
                 existing={uploadsBySlot[slot.key] ?? []}
                 state={slotState[slot.key] ?? EMPTY_SLOT_STATE}
@@ -843,6 +844,7 @@ export default function SurgeryUploadFlowClient({
               {optionalSlots.map((slot) => (
                 <PhotoSlotCard
                   key={slot.key}
+                  caseId={caseId}
                   slot={slot}
                   existing={uploadsBySlot[slot.key] ?? []}
                   state={slotState[slot.key] ?? EMPTY_SLOT_STATE}
@@ -896,6 +898,7 @@ export default function SurgeryUploadFlowClient({
         {preview && (
           <ImageLightbox
             upload={preview.upload as LightboxUpload}
+            caseId={caseId}
             label={preview.label}
             position={preview.position}
             count={preview.count}
@@ -1172,6 +1175,7 @@ export default function SurgeryUploadFlowClient({
           {requiredSlots.map((slot) => (
             <PhotoSlotCard
               key={slot.key}
+              caseId={caseId}
               slot={slot}
               existing={uploadsBySlot[slot.key] ?? []}
               state={slotState[slot.key] ?? EMPTY_SLOT_STATE}
@@ -1193,6 +1197,7 @@ export default function SurgeryUploadFlowClient({
             {optionalSlots.map((slot) => (
               <PhotoSlotCard
                 key={slot.key}
+                caseId={caseId}
                 slot={slot}
                 existing={uploadsBySlot[slot.key] ?? []}
                 state={slotState[slot.key] ?? EMPTY_SLOT_STATE}
@@ -1259,6 +1264,7 @@ export default function SurgeryUploadFlowClient({
       {preview && (
         <ImageLightbox
           upload={preview.upload as LightboxUpload}
+          caseId={caseId}
           label={preview.label}
           position={preview.position}
           count={preview.count}
@@ -1455,6 +1461,7 @@ function RecoveryBanner({
 }
 
 function PhotoSlotCard({
+  caseId,
   slot,
   existing,
   state,
@@ -1465,6 +1472,7 @@ function PhotoSlotCard({
   onDeleted,
   onPreview,
 }: {
+  caseId: string;
   slot: ResolvedSurgerySlot;
   existing: SurgeryUploadRow[];
   state: SlotUploadState;
@@ -1564,6 +1572,7 @@ function PhotoSlotCard({
             <UploadedThumb
               key={u.id}
               upload={u}
+              caseId={caseId}
               locked={!canDelete}
               onDeleted={() => onDeleted(u.id)}
               onPreview={() => onPreview(i)}

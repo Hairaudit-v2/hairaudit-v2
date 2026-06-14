@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { uploadSignedUrlFetchPath } from "@/lib/uploads/uploadSignedUrlClient";
 
 export type LightboxUpload = {
   id: string;
@@ -15,12 +16,15 @@ export type LightboxUpload = {
  */
 export default function ImageLightbox({
   upload,
+  caseId,
   label,
   position,
   count,
   onClose,
 }: {
   upload: LightboxUpload;
+  /** Optional defense-in-depth: must match the UUID in `upload.storage_path` when set. */
+  caseId?: string;
   label: string;
   /** 1-based index of this image within its slot, if known. */
   position?: number;
@@ -41,9 +45,7 @@ export default function ImageLightbox({
     let alive = true;
     (async () => {
       try {
-        const res = await fetch(
-          `/api/uploads/signed-url?path=${encodeURIComponent(upload.storage_path)}`
-        );
+        const res = await fetch(uploadSignedUrlFetchPath(upload.storage_path, caseId));
         const json = await res.json().catch(() => ({}));
         if (!alive) return;
         if (json?.url) setUrl(json.url);
@@ -55,7 +57,7 @@ export default function ImageLightbox({
     return () => {
       alive = false;
     };
-  }, [upload.storage_path]);
+  }, [upload.storage_path, caseId]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {

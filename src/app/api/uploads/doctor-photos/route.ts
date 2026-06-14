@@ -8,7 +8,7 @@ import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { canAccessCase } from "@/lib/case-access";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { DOCTOR_PHOTO_CATEGORIES } from "@/lib/doctorPhotoCategories";
-import { validateUploadedImage } from "@/lib/uploads/fileValidation";
+import { validateCaseFilesRouteImage } from "@/lib/uploads/caseFilesRouteImageValidation.server";
 
 export const runtime = "nodejs";
 
@@ -77,7 +77,7 @@ export async function POST(req: Request) {
 
     for (const f of validFiles) {
       if (!(f instanceof File)) continue;
-      const validated = await validateUploadedImage(f);
+      const validated = await validateCaseFilesRouteImage(f);
       if (!validated.ok) {
         return NextResponse.json({ ok: false, error: validated.error.message }, { status: 400 });
       }

@@ -302,6 +302,7 @@ export default function PhotoUploader({
           return (
             <PhotoCategoryCard
               key={def.key}
+              caseId={caseId}
               category={def.key}
               title={def.title}
               help={def.help}
@@ -417,6 +418,7 @@ export default function PhotoUploader({
 }
 
 function PhotoCategoryCard({
+  caseId,
   category,
   title,
   help,
@@ -434,6 +436,7 @@ function PhotoCategoryCard({
   onUpload,
   onDeleted,
 }: {
+  caseId: string;
   category: string;
   title: string;
   help?: string;
@@ -547,6 +550,7 @@ function PhotoCategoryCard({
             <UploadedThumb
               key={u.id}
               upload={u}
+              caseId={caseId}
               locked={locked}
               onDeleted={() => onDeleted(u.id)}
             />

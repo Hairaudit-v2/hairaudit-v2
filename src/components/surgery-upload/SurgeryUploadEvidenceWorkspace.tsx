@@ -208,6 +208,7 @@ export default function SurgeryUploadEvidenceWorkspace({
                     <UploadedThumb
                       key={u.id}
                       upload={u}
+                      caseId={caseId}
                       locked
                       onDeleted={() => {}}
                       onPreview={() =>
@@ -305,6 +306,7 @@ export default function SurgeryUploadEvidenceWorkspace({
       {preview && (
         <ImageLightbox
           upload={preview.upload as LightboxUpload}
+          caseId={caseId}
           label={preview.label}
           position={preview.position}
           count={preview.count}
