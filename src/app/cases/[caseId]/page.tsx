@@ -71,8 +71,9 @@ import BulkBatchInheritedMetadataPanel from "@/components/hair-audit/BulkBatchIn
 import AuditOsShadowDebugPanel, {
   type AuditOsShadowDebugPanelPayload,
 } from "@/components/auditor/AuditOsShadowDebugPanel";
+import AuditOsReviewPanel, { type AuditOsReviewPanelProps } from "@/components/auditor/AuditOsReviewPanel";
 import type { LegacyUploadRow } from "@/lib/auditos/reports/adaptLegacyReportModel";
-import { isAuditOsDebugPanelEnabled } from "@/lib/auditos/shadow/auditOsShadowEnv.server";
+import { isAuditOsDebugPanelEnabled, isAuditOsReviewPanelEnabled } from "@/lib/auditos/shadow/auditOsShadowEnv.server";
 import { loadBulkBatchContext } from "@/lib/hair-audit/bulkUpload/loadBulkBatchContext";
 
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
@@ -679,6 +680,53 @@ export default async function Page({
       };
     } catch (e) {
       console.warn(LOG_PREFIX, "AuditOS shadow debug payload skipped", { caseId, error: String(e) });
+    }
+  }
+
+  let auditOsReviewPanel: AuditOsReviewPanelProps | null = null;
+  if (isAuditor && isAuditOsReviewPanelEnabled() && forensicReports.length > 0 && latestReport) {
+    try {
+      const { loadLatestPersistedAuditOsShadowBlobForAuditor, structuralDiffStatusFromJson } = await import(
+        "@/lib/auditos/shadow/loadAuditOsShadowSnapshots.server"
+      );
+      const { compareLegacyAndNormalizedReport, persistedPayloadFromReviewBlob, extractNormalizedScoringJsonForReview } =
+        await import("@/lib/auditos/review/compareLegacyAndNormalizedReport");
+      const { buildEvidenceCompletenessViewModel } = await import("@/lib/auditos/review/buildEvidenceCompletenessViewModel");
+      const { buildDomainNormalizationViewModel } = await import("@/lib/auditos/review/buildDomainNormalizationViewModel");
+
+      const blob = await loadLatestPersistedAuditOsShadowBlobForAuditor({
+        sessionSupabase: supabase,
+        caseId: c.id,
+        resolvedRole: role,
+      });
+      const payload = persistedPayloadFromReviewBlob(blob);
+      const comparison = compareLegacyAndNormalizedReport({
+        legacySummary: latestReport.summary,
+        persistedSnapshot: payload,
+      });
+      const evidence = buildEvidenceCompletenessViewModel(blob?.evidenceManifest ?? null);
+      const domains = buildDomainNormalizationViewModel(extractNormalizedScoringJsonForReview(payload));
+
+      auditOsReviewPanel = {
+        snapshotMeta: blob
+          ? {
+              id: blob.id,
+              snapshotKind: blob.snapshotKind,
+              reportVersion: blob.reportVersion,
+              createdAt: blob.createdAt,
+              structuralDiffStatus: structuralDiffStatusFromJson(blob.structuralDiff),
+              warningsCount: blob.warnings.length,
+              sourceEventName: blob.sourceEventName,
+            }
+          : null,
+        comparison,
+        evidence,
+        domains,
+        adapterVersions: blob?.adapterVersions ?? {},
+        snapshotWarnings: blob?.warnings ?? [],
+      };
+    } catch (e) {
+      console.warn(LOG_PREFIX, "AuditOS review panel payload skipped", { caseId, error: String(e) });
     }
   }
 
@@ -1326,6 +1374,7 @@ export default async function Page({
         <div className="mt-6">
           <AuditorRerunPanel caseId={c.id} latestReportVersion={forensicReports[0]?.version} />
           <AuditOsShadowDebugPanel debug={auditOsShadowDebug} />
+          {auditOsReviewPanel ? <AuditOsReviewPanel {...auditOsReviewPanel} /> : null}
         </div>
       )}
 

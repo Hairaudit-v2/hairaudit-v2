@@ -21,3 +21,13 @@ export function isAuditOsDebugPanelEnabled(): boolean {
   if (process.env.HAIRAUDIT_AUDITOS_DEBUG_PANEL === "true") return true;
   return process.env.NODE_ENV !== "production";
 }
+
+/**
+ * AuditOS review panel (Stage 4D): non-production shows for auditors by default; production requires
+ * `HAIRAUDIT_AUDITOS_REVIEW_PANEL=true`.
+ */
+export function isAuditOsReviewPanelEnabled(): boolean {
+  if (typeof process === "undefined") return false;
+  if (process.env.HAIRAUDIT_AUDITOS_REVIEW_PANEL === "true") return true;
+  return process.env.NODE_ENV !== "production";
+}

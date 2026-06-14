@@ -26,6 +26,7 @@
     "test:auditos-stage4a": "tsx --test tests/auditosStage4aBoundaries.test.ts",
     "test:auditos-stage4b": "tsx --test tests/auditosStage4bShadow.test.ts",
     "test:auditos-stage4c": "tsx --test tests/auditosStage4cShadowPersistence.test.ts",
+    "test:auditos-stage4d": "tsx --test tests/auditosStage4dReview.test.ts",
     "test:create-case": "tsx --test tests/createCase.test.ts",
     "test:report-access": "tsx --test tests/reportAccess.test.ts",
     "test:file-validation": "tsx --test tests/fileValidation.test.ts",

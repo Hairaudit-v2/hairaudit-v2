@@ -58,6 +58,7 @@ Failures return `{ ok: false }` and are logged from Inngest; they **do not** fai
 
 - On `/cases/[caseId]` with the existing debug gate (`NODE_ENV !== "production"` or `HAIRAUDIT_AUDITOS_DEBUG_PANEL=true`), the **AuditOS shadow** panel lists recent persisted rows (kind, version, diff status, warning count, time) when any exist.
 - Live adapter metrics remain in the collapsible JSON block.
+- **Stage 4D:** Internal **AuditOS review** panel (structural comparison, evidence completeness, domain normalization) is documented in [`auditos-stage4d-auditor-review-tools.md`](./auditos-stage4d-auditor-review-tools.md) and is gated separately (see that doc).
 
 ## Rollback / disable strategy
 
@@ -67,12 +68,12 @@ Failures return `{ ok: false }` and are logged from Inngest; they **do not** fai
 ## Tests
 
 - `pnpm test:auditos-stage4c` — sanitizer, env default, service-role unavailable path, role gate, migration SQL contract.
+- `pnpm test:auditos-stage4d` — Stage 4D review helpers, env gate, case-page wiring contract (see Stage 4D doc).
 
-## Recommended Stage 4D
+## Stage 4D pointer
 
-Auditor-facing **normalized AuditOS review** tools:
+See **[`auditos-stage4d-auditor-review-tools.md`](./auditos-stage4d-auditor-review-tools.md)** for persisted-snapshot review UI, env flags, and FI export readiness (design-only).
 
-- Side-by-side or diff view: legacy summary keys vs normalized report model.
-- Evidence manifest completeness from stored JSON.
-- Domain normalization table from stored scoring.
-- Internal-only **“ready for FI export”** flag on a case or report metadata **without** changing patient-visible report content.
+## Recommended Stage 4E
+
+Additive **FI export readiness** workflow (internal review status, auditor mark ready/block, export-safe payload builder, no automatic FI export until explicitly enabled).
