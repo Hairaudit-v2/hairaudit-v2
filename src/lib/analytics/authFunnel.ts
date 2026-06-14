@@ -82,7 +82,15 @@ function isFromRequestReview(
 
   try {
     const q = new URLSearchParams(search.startsWith("?") ? search.slice(1) : search);
-    if (q.get("from") === "request_review" || q.get("source") === "request_review") return true;
+    const from = q.get("from");
+    if (
+      from === "request_review" ||
+      from === "request-review" ||
+      q.get("source") === "request_review" ||
+      q.get("source") === "request-review"
+    ) {
+      return true;
+    }
   } catch {
     /* ignore */
   }

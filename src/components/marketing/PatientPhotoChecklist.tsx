@@ -1,20 +1,22 @@
+"use client";
+
+import { useI18n } from "@/components/i18n/I18nProvider";
+import type { TranslationKey } from "@/lib/i18n/translationKeys";
 import { cn } from "@/lib/utils";
 
-const PHOTO_ITEMS = [
-  "Front hairline",
-  "Left side",
-  "Right side",
-  "Top / crown",
-  "Donor area",
-  "Right after surgery (if you have it)",
-  "Graft count or clinic papers (if you have them)",
-] as const;
+const ITEM_KEYS: TranslationKey[] = [
+  "marketing.patientPhoto.itemFront",
+  "marketing.patientPhoto.itemLeft",
+  "marketing.patientPhoto.itemRight",
+  "marketing.patientPhoto.itemTop",
+  "marketing.patientPhoto.itemDonor",
+  "marketing.patientPhoto.itemPostOp",
+  "marketing.patientPhoto.itemDocs",
+];
 
 type PatientPhotoChecklistProps = {
   className?: string;
   id?: string;
-  title?: string;
-  intro?: string;
   /** `ink` matches dark public pages; `fi` matches HairAuditFiMarketingShell tokens. */
   surface?: "ink" | "fi";
 };
@@ -25,10 +27,10 @@ type PatientPhotoChecklistProps = {
 export default function PatientPhotoChecklist({
   className,
   id = "patient-photo-checklist",
-  title = "What you will need (photos)",
-  intro = "You do not need perfect photos. Add what you have now. You can add more later.",
   surface = "ink",
 }: PatientPhotoChecklistProps) {
+  const { t } = useI18n();
+
   const shell =
     surface === "fi"
       ? "rounded-2xl border border-border/50 bg-card/70 p-6 shadow-fi-panel"
@@ -41,19 +43,19 @@ export default function PatientPhotoChecklist({
 
   const itemShell =
     surface === "fi"
-      ? "rounded-xl border border-border/50 bg-background/60 px-4 py-2.5 text-sm text-foreground leading-snug"
-      : "rounded-xl border border-white/10 bg-slate-900/60 px-4 py-2.5 text-sm text-slate-200 leading-snug";
+      ? "min-w-0 rounded-xl border border-border/50 bg-background/60 px-4 py-2.5 text-sm text-foreground leading-snug break-words"
+      : "min-w-0 rounded-xl border border-white/10 bg-slate-900/60 px-4 py-2.5 text-sm text-slate-200 leading-snug break-words";
 
   return (
     <section id={id} aria-labelledby={`${id}-heading`} className={cn(shell, className)}>
       <h2 id={`${id}-heading`} className={heading}>
-        {title}
+        {t("marketing.patientPhoto.title")}
       </h2>
-      {intro ? <p className={introClass}>{intro}</p> : null}
-      <ul className="mt-4 grid gap-2.5 sm:grid-cols-2">
-        {PHOTO_ITEMS.map((item) => (
-          <li key={item} className={itemShell}>
-            {item}
+      <p className={introClass}>{t("marketing.patientPhoto.intro")}</p>
+      <ul className="mt-4 grid min-w-0 gap-2.5 sm:grid-cols-2">
+        {ITEM_KEYS.map((key) => (
+          <li key={key} className={itemShell}>
+            {t(key)}
           </li>
         ))}
       </ul>

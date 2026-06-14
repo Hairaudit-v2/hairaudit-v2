@@ -132,11 +132,11 @@ export default function SampleReportMarketing() {
     t("marketing.sampleReport.previewN").replace(/\{\{n\}\}/g, String(n));
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#070b14] text-slate-100">
+    <div className="min-h-screen flex flex-col bg-[#0a0a0f] text-slate-100">
       <div className="fixed inset-0 pointer-events-none" aria-hidden>
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_45%_at_50%_-10%,rgba(34,211,238,0.12),transparent)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_45%_35%_at_88%_20%,rgba(129,140,248,0.12),transparent)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_48%_28%_at_20%_88%,rgba(59,130,246,0.10),transparent)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(251,191,36,0.07),transparent)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_55%_40%_at_88%_55%,rgba(56,189,248,0.06),transparent)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_45%_35%_at_12%_70%,rgba(139,92,246,0.05),transparent)]" />
       </div>
 
       <SiteHeader />
@@ -154,20 +154,20 @@ export default function SampleReportMarketing() {
               <p className="mt-6 max-w-xl text-base leading-relaxed text-slate-300 sm:text-lg">
                 {t("marketing.sampleReport.heroSubtitle")}
               </p>
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <TrackedLink
-                  href="/demo-report"
-                  eventName="cta_view_sample_audit_hero"
-                  className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-cyan-300 via-sky-300 to-indigo-300 px-6 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/25 transition hover:scale-[1.01]"
-                >
-                  View Sample Report
-                </TrackedLink>
+              <div className="mt-8 flex flex-col flex-wrap gap-3 sm:flex-row">
                 <TrackedLink
                   href="/request-review"
-                  eventName="cta_start_free_audit_sample_hero"
-                  className="inline-flex items-center justify-center rounded-xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white backdrop-blur transition hover:border-white/35 hover:bg-white/10"
+                  eventName="cta_start_free_audit_sample_report_hero"
+                  className="inline-flex min-w-0 items-center justify-center rounded-xl bg-amber-400 px-6 py-3 text-center text-sm font-semibold text-slate-950 shadow-lg shadow-amber-500/20 transition hover:bg-amber-300"
                 >
-                  Start Free Audit
+                  {t("marketing.sampleReport.footerCtaStartAudit")}
+                </TrackedLink>
+                <TrackedLink
+                  href="/demo-report"
+                  eventName="cta_open_interactive_demo_sample_report_hero"
+                  className="inline-flex min-w-0 items-center justify-center rounded-xl border border-white/20 bg-white/5 px-6 py-3 text-center text-sm font-semibold text-white backdrop-blur transition hover:border-white/35 hover:bg-white/10"
+                >
+                  {t("marketing.sampleReport.footerCtaInteractiveDemo")}
                 </TrackedLink>
               </div>
               <p className="mt-5 text-sm text-slate-400">{t("marketing.sampleReport.heroNote")}</p>
@@ -175,7 +175,7 @@ export default function SampleReportMarketing() {
 
             <div>
               <div className="relative mx-auto h-[380px] w-full max-w-[420px]">
-                <div className="absolute right-0 top-4 h-72 w-56 rotate-6 rounded-2xl border border-cyan-200/20 bg-slate-900/75 p-4 shadow-2xl shadow-cyan-950/40 backdrop-blur">
+                <div className="absolute right-0 top-4 h-72 w-56 rotate-6 rounded-2xl border border-cyan-200/20 bg-white/[0.06] p-4 shadow-2xl shadow-cyan-950/40 backdrop-blur">
                   <p className="text-[11px] uppercase tracking-[0.18em] text-cyan-200/90">
                     {t("marketing.sampleReport.floatingEvidence")}
                   </p>
@@ -189,7 +189,7 @@ export default function SampleReportMarketing() {
                     <div className="h-8 rounded-lg bg-white/5" />
                   </div>
                 </div>
-                <div className="absolute left-2 top-16 h-72 w-56 -rotate-3 rounded-2xl border border-indigo-200/20 bg-slate-900/75 p-4 shadow-2xl shadow-indigo-950/40 backdrop-blur">
+                <div className="absolute left-2 top-16 h-72 w-56 -rotate-3 rounded-2xl border border-indigo-200/20 bg-white/[0.06] p-4 shadow-2xl shadow-indigo-950/40 backdrop-blur">
                   <p className="text-[11px] uppercase tracking-[0.18em] text-indigo-200/90">
                     {t("marketing.sampleReport.floatingScorecard")}
                   </p>
@@ -210,7 +210,7 @@ export default function SampleReportMarketing() {
                     ))}
                   </div>
                 </div>
-                <div className="absolute inset-x-8 bottom-2 rounded-2xl border border-white/15 bg-slate-900/80 p-4 shadow-2xl shadow-black/45 backdrop-blur">
+                <div className="absolute inset-x-8 bottom-2 rounded-2xl border border-white/15 bg-white/[0.08] p-4 shadow-2xl shadow-black/45 backdrop-blur">
                   <p className="text-[11px] uppercase tracking-[0.16em] text-emerald-200">
                     {t("marketing.sampleReport.floatingCorrection")}
                   </p>
@@ -233,7 +233,7 @@ export default function SampleReportMarketing() {
 
         <section className="px-4 sm:px-6 pb-8 sm:pb-10">
           <div>
-            <div className="mx-auto flex max-w-5xl flex-col items-center gap-4 rounded-2xl border border-white/12 bg-white/[0.04] px-6 py-6 text-center backdrop-blur sm:flex-row sm:justify-between sm:text-left">
+            <div className="mx-auto flex max-w-5xl flex-col items-center gap-4 rounded-2xl border border-white/12 bg-white/[0.04] px-6 py-6 text-center backdrop-blur sm:flex-row sm:flex-wrap sm:justify-between sm:text-left">
               <div>
                 <p className="text-xs uppercase tracking-[0.18em] text-cyan-200/90">
                   {t("marketing.sampleReport.midBannerEyebrow")}
@@ -242,8 +242,8 @@ export default function SampleReportMarketing() {
               </div>
               <TrackedLink
                 href="/request-review"
-                eventName="cta_get_independent_review_mid"
-                className="inline-flex items-center justify-center rounded-xl border border-cyan-300/35 bg-cyan-300/15 px-5 py-2.5 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-300/25"
+                eventName="cta_start_free_audit_sample_mid"
+                className="inline-flex min-w-0 max-w-full items-center justify-center rounded-xl border border-amber-300/40 bg-amber-400/15 px-5 py-2.5 text-center text-sm font-semibold text-amber-50 transition hover:bg-amber-400/25"
               >
                 {t("marketing.sampleReport.midBannerCta")}
               </TrackedLink>
@@ -362,7 +362,7 @@ export default function SampleReportMarketing() {
                           <span>{t(item.labelKey)}</span>
                           <span>{item.score}</span>
                         </div>
-                        <div className="h-3 rounded-full bg-slate-800">
+                        <div className="h-3 rounded-full bg-white/10">
                           <div
                             className="h-3 rounded-full bg-gradient-to-r from-sky-300 via-cyan-300 to-indigo-300 shadow-[0_0_18px_rgba(125,211,252,0.35)]"
                             style={{ width: `${item.score}%` }}
@@ -379,7 +379,7 @@ export default function SampleReportMarketing() {
                   <h3 className="text-base font-semibold text-white">{t("marketing.sampleReport.meterTitle")}</h3>
                   <p className="mt-1 text-sm text-slate-300">{t("marketing.sampleReport.meterDesc")}</p>
                   <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                    <div className="rounded-xl border border-white/10 bg-slate-900/70 p-4">
+                    <div className="rounded-xl border border-white/10 bg-white/[0.06] p-4">
                       <p className="text-xs uppercase tracking-[0.14em] text-slate-400">
                         {t("marketing.sampleReport.meterEvidenceLabel")}
                       </p>
@@ -388,7 +388,7 @@ export default function SampleReportMarketing() {
                         <div className="h-2 rounded-full bg-cyan-300" style={{ width: `${evidenceIntegrity}%` }} />
                       </div>
                     </div>
-                    <div className="rounded-xl border border-white/10 bg-slate-900/70 p-4">
+                    <div className="rounded-xl border border-white/10 bg-white/[0.06] p-4">
                       <p className="text-xs uppercase tracking-[0.14em] text-slate-400">
                         {t("marketing.sampleReport.meterConfidenceLabel")}
                       </p>
@@ -460,7 +460,7 @@ export default function SampleReportMarketing() {
               </h2>
               <ul className="mt-6 space-y-3">
                 {sampleRecommendations.map((recommendation, idx) => (
-                  <li key={recommendation} className="flex gap-3 rounded-xl border border-white/10 bg-slate-900/55 px-4 py-3">
+                  <li key={recommendation} className="flex gap-3 rounded-xl border border-white/10 bg-white/[0.05] px-4 py-3">
                     <span className="mt-1 inline-block size-2 shrink-0 rounded-full bg-cyan-300" aria-hidden />
                     <span className="text-sm text-slate-200">
                       <span className="mr-1 font-semibold text-white">R{idx + 1}.</span>
@@ -507,7 +507,7 @@ export default function SampleReportMarketing() {
             <div className="mt-8 grid gap-4 md:grid-cols-2">
               {MOTIVATION_KEYS.map((key) => (
                 <div key={key}>
-                  <article className="rounded-2xl border border-white/12 bg-slate-900/60 p-5">
+                  <article className="rounded-2xl border border-white/12 bg-white/[0.04] p-5">
                     <p className="text-sm leading-relaxed text-slate-200">{t(key)}</p>
                   </article>
                 </div>
@@ -517,7 +517,7 @@ export default function SampleReportMarketing() {
         </section>
 
         <section className="px-4 sm:px-6 py-14 sm:py-18">
-          <div className="mx-auto max-w-5xl rounded-3xl border border-cyan-300/25 bg-gradient-to-r from-cyan-400/10 via-indigo-400/10 to-slate-900 p-8 text-center shadow-2xl shadow-cyan-950/35">
+          <div className="mx-auto max-w-5xl rounded-3xl border border-white/12 bg-gradient-to-r from-amber-400/10 via-slate-950/90 to-cyan-400/10 p-8 text-center shadow-2xl shadow-black/40">
             <div>
               <p className="text-xs uppercase tracking-[0.2em] text-cyan-200/90">{t("marketing.sampleReport.footerEyebrow")}</p>
               <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
@@ -526,22 +526,39 @@ export default function SampleReportMarketing() {
               <p className="mx-auto mt-4 max-w-2xl text-sm text-slate-200 sm:text-base">
                 {t("marketing.sampleReport.footerBody")}
               </p>
-              <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row sm:flex-wrap">
                 <TrackedLink
                   href="/request-review"
                   eventName="cta_start_free_audit_sample_footer"
-                  className="inline-flex items-center justify-center rounded-xl bg-white px-6 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
+                  className="inline-flex min-w-0 w-full max-w-sm items-center justify-center rounded-xl bg-amber-400 px-6 py-3 text-center text-sm font-semibold text-slate-950 transition hover:bg-amber-300 sm:w-auto"
                 >
-                  Start Free Audit
+                  {t("marketing.sampleReport.footerCtaStartAudit")}
                 </TrackedLink>
                 <TrackedLink
                   href="/demo-report"
-                  eventName="cta_view_sample_report_sample_footer"
-                  className="inline-flex items-center justify-center rounded-xl border border-white/25 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+                  eventName="cta_open_interactive_demo_sample_footer"
+                  className="inline-flex min-w-0 w-full max-w-sm items-center justify-center rounded-xl border border-white/25 bg-white/5 px-6 py-3 text-center text-sm font-semibold text-white transition hover:bg-white/10 sm:w-auto"
                 >
-                  View Sample Report
+                  {t("marketing.sampleReport.footerCtaInteractiveDemo")}
+                </TrackedLink>
+                <TrackedLink
+                  href="/api/reports/demo-pdf"
+                  eventName="cta_download_demo_pdf_sample_footer"
+                  className="inline-flex min-w-0 w-full max-w-sm items-center justify-center rounded-xl border border-cyan-300/35 bg-cyan-400/10 px-6 py-3 text-center text-sm font-semibold text-cyan-100 transition hover:bg-cyan-400/20 sm:w-auto"
+                >
+                  {t("marketing.sampleReport.footerCtaDownloadSamplePdf")}
                 </TrackedLink>
               </div>
+              <p className="mx-auto mt-6 max-w-2xl text-center text-sm text-slate-400">
+                {t("marketing.sampleReport.footerProfessionalLead")}{" "}
+                <TrackedLink
+                  href="/professionals"
+                  eventName="cta_professional_standards_sample_footer"
+                  className="font-medium text-cyan-200 underline-offset-2 hover:text-cyan-100 hover:underline"
+                >
+                  {t("marketing.sampleReport.footerProfessionalLink")}
+                </TrackedLink>
+              </p>
               <div className="mx-auto mt-8 max-w-3xl text-left">
                 <ReviewProcessReassurance />
               </div>

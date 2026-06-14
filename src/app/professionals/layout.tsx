@@ -15,7 +15,7 @@ export default function ProfessionalsLayout({
       </div>
       <SiteHeader />
       <main className="relative flex-1 px-4 sm:px-6 py-14 sm:py-20">
-        <div className="max-w-6xl mx-auto space-y-8">
+        <div className="mx-auto max-w-6xl min-w-0 space-y-8">
           <ProfessionalPathwayRibbon variant="fi" />
           {children}
         </div>

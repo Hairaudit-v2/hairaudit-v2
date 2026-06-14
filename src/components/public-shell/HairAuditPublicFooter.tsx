@@ -20,10 +20,10 @@ const patientLinks = [
 ] as const;
 
 const professionalLinks = [
-  { href: "/for-clinics", label: "For Clinics" },
-  { href: "/professionals", label: "For Professionals" },
-  { href: "/clinics", label: "Clinic Directory" },
-  { href: "/verified-surgeon-program", label: "Verified Surgeon Program" },
+  { href: "/for-clinics", label: "For Clinics", eventName: "cta_footer_professional_for_clinics" },
+  { href: "/professionals", label: "For Professionals", eventName: "cta_footer_professional_hub" },
+  { href: "/clinics", label: "Clinic Directory", eventName: "cta_footer_professional_directory" },
+  { href: "/verified-surgeon-program", label: "Verified Surgeon Program", eventName: "cta_footer_professional_verified" },
 ] as const;
 
 const legalLinks = [
@@ -56,18 +56,18 @@ export default function HairAuditPublicFooter({ theme = "default" }: HairAuditPu
                 while remaining a standalone review platform.
               </p>
             </div>
-            <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="flex min-w-0 flex-col flex-wrap gap-3 sm:flex-row">
               <TrackedLink
                 href="/request-review"
                 eventName="cta_start_free_audit_footer"
-                className="inline-flex items-center justify-center rounded-full bg-amber-400 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-amber-300"
+                className="inline-flex min-w-0 max-w-full shrink-0 items-center justify-center break-words rounded-full bg-amber-400 px-5 py-3 text-center text-sm font-semibold text-slate-950 transition hover:bg-amber-300"
               >
                 Start Free Audit
               </TrackedLink>
               <Link
                 href="/demo-report"
                 className={cn(
-                  "inline-flex items-center justify-center rounded-full border px-5 py-3 text-sm font-semibold transition",
+                  "inline-flex min-w-0 max-w-full shrink items-center justify-center break-words rounded-full border px-5 py-3 text-center text-sm font-semibold transition",
                   isLight
                     ? "border-slate-300 text-slate-700 hover:bg-slate-50"
                     : "border-white/15 text-slate-100 hover:bg-white/10"
@@ -102,9 +102,9 @@ export default function HairAuditPublicFooter({ theme = "default" }: HairAuditPu
               <ul className="mt-4 space-y-3">
                 {professionalLinks.map((link) => (
                   <li key={link.href}>
-                    <Link href={link.href} className={linkClass}>
+                    <TrackedLink href={link.href} eventName={link.eventName} className={linkClass}>
                       {link.label}
-                    </Link>
+                    </TrackedLink>
                   </li>
                 ))}
               </ul>
@@ -148,12 +148,19 @@ export default function HairAuditPublicFooter({ theme = "default" }: HairAuditPu
 
         <div
           className={cn(
-            "mt-12 flex flex-col gap-3 border-t pt-6 text-xs sm:flex-row sm:items-center sm:justify-between",
+            "mt-12 flex min-w-0 flex-col gap-3 border-t pt-6 text-xs sm:flex-row sm:flex-wrap sm:items-center sm:justify-between",
             isLight ? "border-slate-200 text-slate-500" : "border-white/10 text-slate-500"
           )}
         >
-          <p>HairAudit is independent. It does not sell procedures or clinic referrals.</p>
-          <a href={FI_HOME} target="_blank" rel="noopener noreferrer" className="font-semibold uppercase tracking-[0.16em]">
+          <p className="min-w-0 max-w-prose break-words">
+            HairAudit is independent. It does not sell procedures or clinic referrals.
+          </p>
+          <a
+            href={FI_HOME}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="min-w-0 shrink font-semibold uppercase tracking-[0.16em] break-words sm:text-right"
+          >
             Powered by the Follicle Intelligence Network
           </a>
         </div>

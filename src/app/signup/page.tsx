@@ -16,10 +16,13 @@ function SignUpForm({
   initialRole = "patient",
   fromRequestReview = false,
   compactPatientRolePicker = false,
+  loginHref = "/login",
 }: {
   initialRole?: SignupRole;
   fromRequestReview?: boolean;
   compactPatientRolePicker?: boolean;
+  /** Preserves ?from=request-review and optional ?role= for login ↔ signup continuity. */
+  loginHref?: string;
 }) {
   const { t } = useI18n();
   const supabase = createSupabaseBrowserClient();
@@ -49,10 +52,14 @@ function SignUpForm({
     const search = window.location.search;
     trackAuthFunnel(
       "auth_page_view",
-      { auth_surface: "signup", auth_signup_role: signupRole },
+      {
+        auth_surface: "signup",
+        auth_signup_role: signupRole,
+        ...(fromRequestReview ? { auth_signup_from: "request-review" } : {}),
+      },
       { pathname: path, search }
     );
-  }, [signupRole]);
+  }, [signupRole, fromRequestReview]);
 
   async function signUp(e: React.FormEvent) {
     e.preventDefault();
@@ -136,12 +143,22 @@ function SignUpForm({
       const search = window.location.search;
       trackAuthFunnel(
         "auth_session_success",
-        { auth_method: "password_signup", auth_surface: "signup", auth_signup_role: signupRole },
+        {
+          auth_method: "password_signup",
+          auth_surface: "signup",
+          auth_signup_role: signupRole,
+          ...(fromRequestReview ? { auth_signup_from: "request-review" } : {}),
+        },
         { pathname: path, search }
       );
       trackAuthFunnel(
         "auth_dashboard_redirect_success",
-        { auth_target: "/dashboard", auth_surface: "signup", auth_signup_role: signupRole },
+        {
+          auth_target: "/dashboard",
+          auth_surface: "signup",
+          auth_signup_role: signupRole,
+          ...(fromRequestReview ? { auth_signup_from: "request-review" } : {}),
+        },
         { pathname: path, search }
       );
     }
@@ -191,7 +208,12 @@ function SignUpForm({
     const search = window.location.search;
     trackAuthFunnel(
       "auth_email_submit",
-      { auth_method: "magic_link", auth_surface: "signup", auth_signup_role: signupRole },
+      {
+        auth_method: "magic_link",
+        auth_surface: "signup",
+        auth_signup_role: signupRole,
+        ...(fromRequestReview ? { auth_signup_from: "request-review" } : {}),
+      },
       { pathname: path, search }
     );
     setResending("magic");
@@ -208,7 +230,11 @@ function SignUpForm({
       if (error) throw error;
       trackAuthFunnel(
         "auth_magic_link_sent",
-        { auth_surface: "signup", auth_signup_role: signupRole },
+        {
+          auth_surface: "signup",
+          auth_signup_role: signupRole,
+          ...(fromRequestReview ? { auth_signup_from: "request-review" } : {}),
+        },
         { pathname: path, search }
       );
       setMsgKind("success");
@@ -216,7 +242,11 @@ function SignUpForm({
     } catch (error: unknown) {
       trackAuthFunnel(
         "auth_magic_link_send_failed",
-        { auth_surface: "signup", auth_signup_role: signupRole },
+        {
+          auth_surface: "signup",
+          auth_signup_role: signupRole,
+          ...(fromRequestReview ? { auth_signup_from: "request-review" } : {}),
+        },
         { pathname: path, search }
       );
       setMsgKind("error");
@@ -270,7 +300,14 @@ function SignUpForm({
               />
             </div>
             <h1 className="text-2xl font-bold text-slate-900">{t("auth.signup.title")}</h1>
-            <p className="mt-2 text-sm leading-relaxed text-slate-600">{subtitle}</p>
+            {fromRequestReview ? (
+              <p className="mt-2 inline-flex max-w-full flex-wrap items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-900">
+                {t("auth.signup.continuingFromAudit")}
+              </p>
+            ) : null}
+            <p className={`text-sm leading-relaxed text-slate-600 ${fromRequestReview ? "mt-3" : "mt-2"}`}>
+              {subtitle}
+            </p>
 
             <form onSubmit={signUp} className="mt-6 space-y-4">
               {compactPatientRolePicker && !showFullRolePicker ? (
@@ -425,7 +462,7 @@ function SignUpForm({
 
             <p className="mt-6 text-center text-sm text-slate-600">
               {t("auth.signup.alreadyHaveAccount")}{" "}
-              <Link href="/login" className="font-medium text-amber-600 hover:text-amber-500">
+              <Link href={loginHref} className="font-medium text-amber-600 hover:text-amber-500">
                 {t("nav.signIn")}
               </Link>
             </p>
@@ -445,11 +482,17 @@ function SignUpPageContent() {
   const initialRole: SignupRole = explicitRole ?? "patient";
   const compactPatientRolePicker = fromRequestReview && explicitRole === null;
 
+  const authQ = new URLSearchParams();
+  if (fromRequestReview) authQ.set("from", "request-review");
+  if (explicitRole) authQ.set("role", explicitRole);
+  const loginHref = authQ.toString() ? `/login?${authQ.toString()}` : "/login";
+
   return (
     <SignUpForm
       initialRole={initialRole}
       fromRequestReview={fromRequestReview}
       compactPatientRolePicker={compactPatientRolePicker}
+      loginHref={loginHref}
     />
   );
 }

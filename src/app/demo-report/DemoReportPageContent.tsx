@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import TrackedLink from "@/components/analytics/TrackedLink";
@@ -11,10 +10,10 @@ export default function DemoReportPageContent() {
   const { t } = useI18n();
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#070b14] text-slate-100">
+    <div className="min-h-screen flex flex-col bg-[#0a0a0f] text-slate-100">
       <div className="fixed inset-0 pointer-events-none" aria-hidden>
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_45%_at_50%_-10%,rgba(34,211,238,0.08),transparent)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_45%_35%_at_88%_20%,rgba(129,140,248,0.08),transparent)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(251,191,36,0.06),transparent)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_55%_40%_at_88%_55%,rgba(56,189,248,0.06),transparent)]" />
       </div>
 
       <SiteHeader />
@@ -69,32 +68,41 @@ export default function DemoReportPageContent() {
         </section>
 
         <section className="px-4 sm:px-6 py-12 sm:py-16">
-          <div className="mx-auto max-w-3xl rounded-3xl border border-cyan-300/25 bg-gradient-to-r from-cyan-400/10 via-indigo-400/10 to-slate-900 p-8 text-center shadow-2xl shadow-cyan-950/30">
+          <div className="mx-auto max-w-4xl rounded-3xl border border-white/10 bg-gradient-to-r from-amber-400/10 via-slate-900/80 to-cyan-400/10 p-8 text-center shadow-2xl shadow-black/30 sm:text-left">
             <p className="text-xs uppercase tracking-[0.2em] text-cyan-200/90">{t("reports.chrome.demo.nextStepsEyebrow")}</p>
             <h2 className="mt-3 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
               {t("reports.chrome.demo.nextStepsTitle")}
             </h2>
-            <p className="mx-auto mt-4 max-w-xl text-sm text-slate-200">{t("reports.chrome.demo.nextStepsBody")}</p>
-            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row sm:flex-wrap">
+            <p className="mx-auto mt-4 max-w-xl text-sm text-slate-200 sm:mx-0">{t("reports.chrome.demo.nextStepsBody")}</p>
+            <div className="mt-8 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-start">
               <TrackedLink
                 href="/request-review"
                 eventName="cta_start_free_audit_demo_page"
-                className="inline-flex items-center justify-center rounded-xl bg-white px-6 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
+                className="inline-flex min-w-0 items-center justify-center rounded-xl bg-amber-400 px-6 py-3 text-center text-sm font-semibold text-slate-950 transition hover:bg-amber-300"
               >
-                Start Free Audit
+                {t("marketing.sampleReport.footerCtaStartAudit")}
               </TrackedLink>
-              <Link
+              <TrackedLink
                 href="/sample-report"
-                className="inline-flex items-center justify-center rounded-xl border border-white/25 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+                eventName="cta_sample_report_overview_demo_footer"
+                className="inline-flex min-w-0 items-center justify-center rounded-xl border border-white/25 bg-white/5 px-6 py-3 text-center text-sm font-semibold text-white transition hover:bg-white/10"
               >
-                Sample report overview
-              </Link>
-              <Link
+                {t("marketing.sampleReport.footerCtaInteractiveDemo")}
+              </TrackedLink>
+              <TrackedLink
+                href="/api/reports/demo-pdf"
+                eventName="cta_download_demo_pdf_demo_footer"
+                className="inline-flex min-w-0 items-center justify-center rounded-xl border border-cyan-300/35 bg-cyan-400/10 px-6 py-3 text-center text-sm font-semibold text-cyan-100 transition hover:bg-cyan-400/20"
+              >
+                {t("reports.actions.downloadPdf")}
+              </TrackedLink>
+              <TrackedLink
                 href="/professionals"
-                className="inline-flex items-center justify-center text-sm font-medium text-slate-300 underline-offset-4 hover:text-white hover:underline"
+                eventName="cta_professional_standards_demo_footer"
+                className="inline-flex min-w-0 items-center justify-center rounded-xl border border-white/15 bg-transparent px-4 py-3 text-center text-sm font-medium text-slate-300 underline-offset-4 hover:text-white hover:underline sm:border-0 sm:px-2"
               >
-                Clinics & professionals
-              </Link>
+                {t("marketing.sampleReport.footerProfessionalLink")}
+              </TrackedLink>
             </div>
           </div>
         </section>

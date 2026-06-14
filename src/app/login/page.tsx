@@ -25,6 +25,12 @@ export default function LoginPage() {
   // through /auth/callback so the server exchanges the code for a session.
   const magicLinkRedirectTo = `${appUrl}/auth/callback`;
   const funnelPageTracked = useRef(false);
+  const [signupHref, setSignupHref] = useState("/signup");
+
+  useEffect(() => {
+    const s = window.location.search;
+    setSignupHref(s ? `/signup${s}` : "/signup");
+  }, []);
 
   useEffect(() => {
     if (funnelPageTracked.current) return;
@@ -271,7 +277,7 @@ export default function LoginPage() {
             <p className="mt-6 text-center text-xs leading-relaxed text-slate-500">{t("auth.login.footerRedirect")}</p>
             <p className="mt-2 text-center text-sm text-slate-600">
               {t("auth.login.needAccount")}{" "}
-              <Link href="/signup" className="font-medium text-amber-600 hover:text-amber-500">
+              <Link href={signupHref} className="font-medium text-amber-600 hover:text-amber-500">
                 {t("auth.login.signUpCta")}
               </Link>
             </p>

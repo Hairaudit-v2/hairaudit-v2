@@ -135,7 +135,7 @@ export default function ForClinicsPage() {
         </section>
 
         {/* B. Why clinics participate */}
-        <section className="relative px-4 sm:px-6 py-20 sm:py-24 border-t border-slate-700/60">
+        <section className="relative px-4 sm:px-6 py-20 sm:py-24 border-t border-white/10">
           <div className="max-w-4xl mx-auto">
             <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
               Why clinics participate
@@ -159,14 +159,14 @@ export default function ForClinicsPage() {
         </section>
 
         {/* C. How it works */}
-        <section className="relative px-4 sm:px-6 py-20 sm:py-24 bg-slate-800/30">
+        <section className="relative px-4 sm:px-6 py-20 sm:py-24 bg-white/[0.03]">
           <div className="max-w-4xl mx-auto">
             <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
               How it works
             </h2>
             <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {HOW_IT_WORKS_STEPS.map((step, index) => (
-                <div key={step.title} className="rounded-2xl border border-white/10 bg-slate-900/50 p-6 flex flex-col items-center text-center">
+                <div key={step.title} className="rounded-2xl border border-white/10 bg-white/[0.04] p-6 flex flex-col items-center text-center">
                   <span className="w-12 h-12 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center flex-shrink-0">
                     {step.icon}
                   </span>
@@ -216,7 +216,7 @@ export default function ForClinicsPage() {
         </section>
 
         {/* E. Public proof and visibility */}
-        <section className="relative px-4 sm:px-6 py-20 sm:py-24 border-t border-slate-700/60 bg-slate-800/30">
+        <section className="relative px-4 sm:px-6 py-20 sm:py-24 border-t border-white/10 bg-white/[0.03]">
           <div className="max-w-3xl mx-auto">
             <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
               Public proof and visibility
@@ -274,7 +274,7 @@ export default function ForClinicsPage() {
         </section>
 
         {/* G. Closing CTA */}
-        <section className="relative px-4 sm:px-6 py-24 sm:py-28 border-t border-slate-700/60">
+        <section className="relative px-4 sm:px-6 py-24 sm:py-28 border-t border-white/10">
           <div className="max-w-2xl mx-auto text-center">
             <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
               Get started free

@@ -1,5 +1,7 @@
-import Link from "next/link";
+"use client";
 
+import TrackedLink from "@/components/analytics/TrackedLink";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { cn } from "@/lib/utils";
 
 type ProfessionalPathwayRibbonProps = {
@@ -15,59 +17,64 @@ export default function ProfessionalPathwayRibbon({
   className,
   variant = "fi",
 }: ProfessionalPathwayRibbonProps) {
+  const { t } = useI18n();
+
   const shell =
     variant === "slate"
       ? "border-cyan-400/25 bg-cyan-500/10"
       : "border-white/10 bg-white/[0.04] backdrop-blur-sm";
 
+  const btnNeutral =
+    "inline-flex min-w-0 max-w-full shrink items-center justify-center break-words rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-center text-sm font-semibold text-white hover:bg-white/10 transition-colors sm:px-4";
+
   return (
-    <div
-      className={cn(
-        "rounded-2xl border px-4 py-4 sm:px-6 sm:py-5",
-        shell,
-        className
-      )}
-    >
+    <div className={cn("max-w-full rounded-2xl border px-4 py-4 sm:px-6 sm:py-5", shell, className)}>
       <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-cyan-200/90">
-        Professional & clinic pathway
+        {t("marketing.professionalRibbon.eyebrow")}
       </p>
-      <p className="mt-2 text-sm text-slate-200 leading-relaxed">
-        This area is for clinics, doctors, and teams building verified profiles, internal audits, and transparency
-        records. It is separate from the patient free audit, which starts on{" "}
-        <Link href="/request-review" className="font-medium text-amber-300 hover:text-amber-200">
-          Start Free Audit
-        </Link>
-        .
+      <p className="mt-2 text-sm text-slate-200 leading-relaxed break-words">
+        {t("marketing.professionalRibbon.bodyBefore")}{" "}
+        <TrackedLink
+          href="/request-review"
+          eventName="cta_professional_ribbon_start_free_audit"
+          className="font-medium text-amber-300 hover:text-amber-200 whitespace-normal"
+        >
+          {t("marketing.professionalRibbon.auditLink")}
+        </TrackedLink>
+        {t("marketing.professionalRibbon.bodyAfter")}
       </p>
-      <p className="mt-2 text-xs text-slate-400 leading-relaxed">
-        Verification and public case display follow HairAudit contribution rules — earned through documented participation,
-        not purchased placements.
+      <p className="mt-2 text-xs text-slate-400 leading-relaxed break-words">
+        {t("marketing.professionalRibbon.verification")}
       </p>
       <div className="mt-4 flex flex-wrap gap-2">
-        <Link
+        <TrackedLink
           href="/for-clinics"
-          className="inline-flex items-center justify-center rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10 transition-colors"
+          eventName="cta_professional_ribbon_for_clinics"
+          className={btnNeutral}
         >
-          For Clinics
-        </Link>
-        <Link
+          {t("marketing.professionalRibbon.forClinics")}
+        </TrackedLink>
+        <TrackedLink
           href="/professionals"
-          className="inline-flex items-center justify-center rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10 transition-colors"
+          eventName="cta_professional_ribbon_professionals"
+          className={btnNeutral}
         >
-          For Professionals
-        </Link>
-        <Link
+          {t("marketing.professionalRibbon.forProfessionals")}
+        </TrackedLink>
+        <TrackedLink
           href="/signup?role=clinic"
-          className="inline-flex items-center justify-center rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-sm font-semibold text-amber-100 hover:bg-amber-400/15 transition-colors"
+          eventName="cta_professional_ribbon_signup_clinic"
+          className="inline-flex min-w-0 max-w-full shrink items-center justify-center break-words rounded-xl border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-center text-sm font-semibold text-amber-100 hover:bg-amber-400/15 transition-colors sm:px-4"
         >
-          Create clinic account
-        </Link>
-        <Link
+          {t("marketing.professionalRibbon.createClinic")}
+        </TrackedLink>
+        <TrackedLink
           href="/signup?role=doctor"
-          className="inline-flex items-center justify-center rounded-xl border border-violet-400/25 bg-violet-500/10 px-4 py-2 text-sm font-semibold text-violet-100 hover:bg-violet-500/15 transition-colors"
+          eventName="cta_professional_ribbon_signup_doctor"
+          className="inline-flex min-w-0 max-w-full shrink items-center justify-center break-words rounded-xl border border-violet-400/25 bg-violet-500/10 px-3 py-2 text-center text-sm font-semibold text-violet-100 hover:bg-violet-500/15 transition-colors sm:px-4"
         >
-          Create doctor account
-        </Link>
+          {t("marketing.professionalRibbon.createDoctor")}
+        </TrackedLink>
       </div>
     </div>
   );

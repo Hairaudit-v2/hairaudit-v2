@@ -136,7 +136,8 @@
       "resending": "Resending...",
       "sendMagicLinkInstead": "Send magic link instead",
       "sendingShort": "Sending...",
-      "alreadyHaveAccount": "Already have an account?"
+      "alreadyHaveAccount": "Already have an account?",
+      "continuingFromAudit": "You are continuing from Start Free Audit."
     },
     "recovery": {
       "sessionMissing": "❌ Recovery session missing or expired. Please request a fresh reset link.",
@@ -228,6 +229,49 @@
       "reviewAfterSubmitLi3": "- A clinical reviewer verifies findings before your report is released.",
       "reviewAfterSubmitLi4": "- You receive clear next-step guidance in plain language.",
       "reviewIndependentNote": "HairAudit is independent. We do not sell surgery or clinic referrals."
+    },
+    "patientTrust": {
+      "sectionTitle": "Why patients trust this process",
+      "independentTitle": "Independent review",
+      "independentBody": "HairAudit is separate from your clinic. We do not sell surgery or paid clinic placements.",
+      "privacyTitle": "Privacy protected",
+      "privacyBody": "Your photos and details stay private. Nothing is published without your clear permission.",
+      "notMarketingTitle": "Not clinic marketing",
+      "notMarketingBody": "This is an evidence report, not a sales page. Findings follow what your photos support.",
+      "humanReviewTitle": "Human-reviewed, evidence-aware",
+      "humanReviewBody": "Structured scoring is checked by reviewers when needed. Low photo quality means we say “not sure” — not a fake score.",
+      "secureUploadTitle": "Secure upload",
+      "secureUploadBody": "Patient uploads use the same secure HairAudit flow. Use a private network you trust when you send photos.",
+      "notEmergencyTitle": "Not for emergencies",
+      "notEmergencyBody": "HairAudit is not urgent medical care. If you have severe pain, fever, spreading redness, or other emergency signs, seek local urgent care."
+    },
+    "patientPhoto": {
+      "title": "What you will need (photos)",
+      "intro": "You do not need perfect photos. Add what you have now. You can add more later.",
+      "itemFront": "Front hairline",
+      "itemLeft": "Left side",
+      "itemRight": "Right side",
+      "itemTop": "Top / crown",
+      "itemDonor": "Donor area",
+      "itemPostOp": "Right after surgery (if you have it)",
+      "itemDocs": "Graft count or clinic papers (if you have them)"
+    },
+    "professionalRibbon": {
+      "eyebrow": "Professional & clinic pathway",
+      "bodyBefore": "This area is for clinics, doctors, and teams building verified profiles, internal audits, and transparency records. It is separate from the patient free audit, which starts on",
+      "auditLink": "Start Free Audit",
+      "bodyAfter": ".",
+      "verification": "Verification and public case display follow HairAudit contribution rules — earned through documented participation, not purchased placements.",
+      "forClinics": "For Clinics",
+      "forProfessionals": "For Professionals",
+      "createClinic": "Create clinic account",
+      "createDoctor": "Create doctor account"
+    },
+    "faqFooter": {
+      "ctaStartAudit": "Start Free Audit",
+      "ctaInteractiveDemo": "Interactive demo report",
+      "ctaMethodology": "Methodology",
+      "ctaProfessionals": "Independent audit standards (professionals)"
     },
     "home": {
       "heroTitle": "Independent hair transplant review",
@@ -428,7 +472,7 @@
       "priorityLow": "Low",
       "midBannerEyebrow": "Independent documentation",
       "midBannerBody": "Need clarity before corrective surgery or a formal complaint? Use an evidence-first audit.",
-      "midBannerCta": "Get an Independent Review",
+      "midBannerCta": "Start Free Audit",
       "insideEyebrow": "Inside the report",
       "insideHeading": "What premium review includes",
       "previewN": "Preview {{n}}",
@@ -469,6 +513,11 @@
       "footerEyebrow": "Case clarity starts here",
       "footerTitle": "See What Your Surgery Really Shows",
       "footerBody": "Move from uncertainty to structured evidence. Receive a premium independent report you can use for planning, consultations, and documentation.",
+      "footerCtaStartAudit": "Start Free Audit",
+      "footerCtaInteractiveDemo": "Try interactive demo",
+      "footerCtaDownloadSamplePdf": "Download sample PDF",
+      "footerProfessionalLead": "Clinic or doctor?",
+      "footerProfessionalLink": "Professional standards & participation",
       "footerCtaPrimary": "Request My Audit",
       "footerCtaSecondary": "Get an Independent Review",
       "domainHairline": "Hairline Design",

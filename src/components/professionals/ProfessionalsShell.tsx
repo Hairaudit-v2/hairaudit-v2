@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import TrackedLink from "@/components/analytics/TrackedLink";
 import type { ReactNode } from "react";
 import { useMemo } from "react";
 import { useI18n } from "@/components/i18n/I18nProvider";
@@ -77,9 +78,13 @@ export default function ProfessionalsShell({
             {t("marketing.professionals.footerHowItWorks")}
           </Link>
           {" · "}
-          <Link href="/signup" className="text-cyan-300 hover:text-cyan-200 transition-colors">
+          <TrackedLink
+            href="/signup"
+            eventName="cta_professional_shell_footer_signup"
+            className="text-cyan-300 hover:text-cyan-200 transition-colors"
+          >
             {t("marketing.professionals.footerCreateProfile")}
-          </Link>
+          </TrackedLink>
           .
         </p>
       </div>

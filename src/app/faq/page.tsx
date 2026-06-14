@@ -1,6 +1,6 @@
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
-import Link from "next/link";
+import FaqConversionFooter from "@/components/marketing/FaqConversionFooter";
 import { createPageMetadata } from "@/lib/seo/pageMetadata";
 import FaqPageSchema from "@/components/seo/FaqPageSchema";
 import BreadcrumbListSchema from "@/components/seo/BreadcrumbListSchema";
@@ -100,32 +100,7 @@ export default function FAQPage() {
             ))}
           </div>
 
-          <div className="mt-12 sm:mt-14 flex flex-col sm:flex-row flex-wrap gap-3">
-            <Link
-              href="/request-review"
-              className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors"
-            >
-              Start Free Audit
-            </Link>
-            <Link
-              href="/demo-report"
-              className="inline-flex items-center justify-center px-6 py-3 rounded-xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
-            >
-              View Sample Report
-            </Link>
-            <Link
-              href="/methodology"
-              className="inline-flex items-center justify-center px-6 py-3 rounded-xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
-            >
-              Methodology
-            </Link>
-            <Link
-              href="/professionals"
-              className="inline-flex items-center justify-center px-6 py-3 rounded-xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
-            >
-              Independent audit standards (professionals)
-            </Link>
-          </div>
+          <FaqConversionFooter />
         </div>
       </main>
 

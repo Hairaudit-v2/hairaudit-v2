@@ -136,7 +136,8 @@
       "resending": "Reenviando...",
       "sendMagicLinkInstead": "Enviar enlace mágico",
       "sendingShort": "Enviando...",
-      "alreadyHaveAccount": "¿Ya tiene cuenta?"
+      "alreadyHaveAccount": "¿Ya tiene cuenta?",
+      "continuingFromAudit": "Continúa desde Empezar auditoría gratuita."
     },
     "recovery": {
       "sessionMissing": "❌ Sesión de recuperación ausente o caducada. Solicite un nuevo enlace.",
@@ -228,6 +229,49 @@
       "reviewAfterSubmitLi3": "- Un revisor clínico verifica los hallazgos antes de publicar el informe.",
       "reviewAfterSubmitLi4": "- Recibe orientación clara sobre los próximos pasos en lenguaje sencillo.",
       "reviewIndependentNote": "HairAudit es independiente. No vendemos cirugía ni derivaciones a clínicas."
+    },
+    "patientTrust": {
+      "sectionTitle": "Por qué los pacientes confían en este proceso",
+      "independentTitle": "Revisión independiente",
+      "independentBody": "HairAudit es independiente de su clínica. No vendemos cirugía ni espacios pagados para clínicas.",
+      "privacyTitle": "Privacidad protegida",
+      "privacyBody": "Sus fotos y datos permanecen privados. No se publica nada sin su permiso claro.",
+      "notMarketingTitle": "No es marketing de clínica",
+      "notMarketingBody": "Es un informe basado en evidencia, no una página de ventas. Las conclusiones siguen lo que muestran sus fotos.",
+      "humanReviewTitle": "Revisión humana y consciente de la evidencia",
+      "humanReviewBody": "La puntuación estructurada se revisa cuando hace falta. Si la foto es pobre, decimos «no está claro» — no una nota falsa.",
+      "secureUploadTitle": "Subida segura",
+      "secureUploadBody": "Las subidas de pacientes usan el mismo flujo seguro de HairAudit. Use una red privada de confianza al enviar fotos.",
+      "notEmergencyTitle": "No es para urgencias",
+      "notEmergencyBody": "HairAudit no es atención médica urgente. Si tiene dolor intenso, fiebre, enrojecimiento que se extiende u otros signos de emergencia, busque urgencias locales."
+    },
+    "patientPhoto": {
+      "title": "Qué necesitará (fotos)",
+      "intro": "No necesita fotos perfectas. Añada lo que tenga ahora. Podrá añadir más después.",
+      "itemFront": "Línea frontal",
+      "itemLeft": "Lado izquierdo",
+      "itemRight": "Lado derecho",
+      "itemTop": "Parte superior / coronilla",
+      "itemDonor": "Zona donante",
+      "itemPostOp": "Justo después de la cirugía (si la tiene)",
+      "itemDocs": "Recuento de injertos o papeles de la clínica (si los tiene)"
+    },
+    "professionalRibbon": {
+      "eyebrow": "Vía profesional y de clínica",
+      "bodyBefore": "Esta zona es para clínicas, médicos y equipos que crean perfiles verificados, auditorías internas y registros de transparencia. Está separada de la auditoría gratuita para pacientes, que empieza en",
+      "auditLink": "Empezar auditoría gratuita",
+      "bodyAfter": ".",
+      "verification": "La verificación y la publicación de casos siguen las reglas de contribución de HairAudit: se ganan con participación documentada, no con espacios comprados.",
+      "forClinics": "Para clínicas",
+      "forProfessionals": "Para profesionales",
+      "createClinic": "Crear cuenta de clínica",
+      "createDoctor": "Crear cuenta de médico"
+    },
+    "faqFooter": {
+      "ctaStartAudit": "Empezar auditoría gratuita",
+      "ctaInteractiveDemo": "Informe demo interactivo",
+      "ctaMethodology": "Metodología",
+      "ctaProfessionals": "Normas de auditoría independiente (profesionales)"
     },
     "home": {
       "heroTitle": "Revisión independiente de trasplante capilar",
@@ -428,7 +472,7 @@
       "priorityLow": "Baja",
       "midBannerEyebrow": "Documentación independiente",
       "midBannerBody": "¿Necesita claridad antes de una cirugía correctiva o una reclamación formal? Use una auditoría basada en evidencia.",
-      "midBannerCta": "Obtener una revisión independiente",
+      "midBannerCta": "Empezar auditoría gratuita",
       "insideEyebrow": "Dentro del informe",
       "insideHeading": "Qué incluye la revisión premium",
       "previewN": "Vista previa {{n}}",
@@ -469,6 +513,11 @@
       "footerEyebrow": "La claridad del caso empieza aquí",
       "footerTitle": "Vea lo que su cirugía muestra realmente",
       "footerBody": "Pase de la incertidumbre a la evidencia estructurada. Reciba un informe independiente premium para planificación, consultas y documentación.",
+      "footerCtaStartAudit": "Empezar auditoría gratuita",
+      "footerCtaInteractiveDemo": "Probar demo interactiva",
+      "footerCtaDownloadSamplePdf": "Descargar PDF de ejemplo",
+      "footerProfessionalLead": "¿Clínica o médico?",
+      "footerProfessionalLink": "Normas y participación profesional",
       "footerCtaPrimary": "Solicitar mi auditoría",
       "footerCtaSecondary": "Obtener una revisión independiente",
       "domainHairline": "Diseño de línea frontal",
