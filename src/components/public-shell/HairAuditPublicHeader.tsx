@@ -135,7 +135,7 @@ export default function HairAuditPublicHeader({
           </nav>
         ) : null}
 
-        <div className="flex items-center justify-end gap-2 sm:gap-3">
+        <div className="flex min-w-0 shrink-0 items-center justify-end gap-1.5 sm:gap-3">
           <div className="hidden sm:block">
             <LanguageSwitcher variant={isLight ? "light" : "default"} />
           </div>
@@ -148,7 +148,7 @@ export default function HairAuditPublicHeader({
           <TrackedLink
             href="/request-review"
             eventName="cta_start_free_audit_header"
-            className="inline-flex items-center justify-center rounded-full bg-amber-400 px-4 py-2.5 text-sm font-semibold text-slate-950 shadow-lg shadow-amber-500/15 transition hover:bg-amber-300"
+            className="inline-flex items-center justify-center rounded-full bg-amber-400 px-3 py-2 text-center text-xs font-semibold leading-tight text-slate-950 shadow-lg shadow-amber-500/15 transition hover:bg-amber-300 sm:px-4 sm:py-2.5 sm:text-sm"
           >
             Start Free Audit
           </TrackedLink>
@@ -207,7 +207,7 @@ export default function HairAuditPublicHeader({
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="block rounded-xl border border-current/10 px-4 py-3 text-base font-medium"
+                  className="block break-words rounded-xl border border-current/10 px-4 py-3 text-base font-medium leading-snug"
                 >
                   {item.label}
                 </Link>
@@ -222,7 +222,7 @@ export default function HairAuditPublicHeader({
                   <Link
                     key={item.href}
                     href={item.href}
-                    className="block rounded-xl px-4 py-2.5 text-sm text-current/75 hover:bg-current/5"
+                    className="block break-words rounded-xl px-4 py-2.5 text-sm leading-snug text-current/75 hover:bg-current/5"
                   >
                     {item.label}
                   </Link>

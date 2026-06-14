@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 
 import TrackedLink from "@/components/analytics/TrackedLink";
+import PatientPhotoChecklist from "@/components/marketing/PatientPhotoChecklist";
 import { fiHairauditPrimaryButtonClass } from "@/lib/fi-ui/hairauditPrimaryButton";
 import { cn } from "@/lib/utils";
 import {
@@ -171,6 +172,7 @@ export default function HairAuditNetworkHomePage() {
               </article>
             ))}
           </FeatureGrid>
+          <PatientPhotoChecklist surface="fi" className="mt-10" />
         </div>
       </Section>
 
@@ -220,6 +222,10 @@ export default function HairAuditNetworkHomePage() {
               </article>
             ))}
           </FeatureGrid>
+          <p className="mt-8 max-w-3xl text-xs leading-relaxed text-muted-foreground">
+            HairAudit is not for medical emergencies. If you have severe pain, fever, spreading redness, or other urgent
+            symptoms, seek local urgent care or emergency services.
+          </p>
         </div>
       </Section>
 
@@ -230,19 +236,20 @@ export default function HairAuditNetworkHomePage() {
         description="Preview how HairAudit turns photos and case details into scorecards, confidence notes, findings, and next-step guidance."
         actions={
           <>
-            <Link
-              href="/demo-report"
-              className={cn(networkButtonVariants({ variant: "primary", size: "lg" }))}
-            >
-              View Sample Report
-            </Link>
             <TrackedLink
               href="/request-review"
               eventName="cta_start_free_audit_home_sample"
-              className={cn(networkButtonVariants({ variant: "secondary", size: "lg" }))}
+              className={cn(networkButtonVariants({ variant: "primary", size: "lg" }))}
             >
               Start Free Audit
             </TrackedLink>
+            <Link
+              href="/demo-report"
+              className={cn(networkButtonVariants({ variant: "secondary", size: "lg" }))}
+              prefetch
+            >
+              View Sample Report
+            </Link>
           </>
         }
       />

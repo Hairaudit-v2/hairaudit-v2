@@ -75,24 +75,32 @@ export default function FAQPage() {
       </div>
       <SiteHeader />
 
-      <main className="relative flex-1 px-4 py-16 sm:py-20">
+      <main className="relative flex-1 px-4 sm:px-6 py-14 sm:py-20">
         <div className="max-w-3xl mx-auto">
-          <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
-            Hair transplant audit FAQ
-          </h1>
-          <p className="mt-4 text-slate-300">
-            Process, privacy, reports, and pathways—framed for patients seeking an independent review and for
-            clinics or professionals interested in transparency and standards.
-          </p>
-          <div className="mt-12 space-y-6">
+          <div className="space-y-4">
+            <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
+              Hair transplant audit FAQ
+            </h1>
+            <p className="text-slate-300 leading-relaxed">
+              Process, privacy, reports, and pathways—framed for patients seeking an independent review and for
+              clinics or professionals interested in transparency and standards.
+            </p>
+            <p className="rounded-xl border border-amber-400/20 bg-amber-400/5 px-4 py-3 text-xs leading-relaxed text-amber-50/95">
+              HairAudit is not for medical emergencies. If you have severe pain, fever, spreading infection, or other
+              emergency signs, seek local urgent care or emergency services.
+            </p>
+          </div>
+
+          <div className="mt-10 sm:mt-12 space-y-5 sm:space-y-6">
             {faqs.map(({ q, a }) => (
-              <div key={q} className="rounded-2xl border border-white/10 bg-white/5 p-5">
+              <div key={q} className="rounded-2xl border border-white/10 bg-white/5 p-5 sm:p-6">
                 <h2 className="text-lg font-semibold text-white">{q}</h2>
-                <p className="mt-2 text-slate-300">{a}</p>
+                <p className="mt-2 text-slate-300 leading-relaxed">{a}</p>
               </div>
             ))}
           </div>
-          <div className="mt-12 flex flex-col sm:flex-row flex-wrap gap-3">
+
+          <div className="mt-12 sm:mt-14 flex flex-col sm:flex-row flex-wrap gap-3">
             <Link
               href="/request-review"
               className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors"

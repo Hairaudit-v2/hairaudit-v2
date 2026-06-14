@@ -107,6 +107,12 @@
     "signup": {
       "title": "Create your HairAudit account",
       "subtitle": "Choose your path: Patient, Clinic, or Doctor. Each has a tailored experience.",
+      "subtitleRequestReview": "Create your account to continue your free audit. You can add photos in the next steps.",
+      "subtitleRequestReviewExpanded": "Choose the account type that matches how you will use HairAudit.",
+      "privacyReassurance": "Your photos and details stay private and are never published without your permission.",
+      "patientPathDefault": "You are signing up as a patient (recommended for the free audit).",
+      "expandProfessionalSignup": "Clinic, doctor, or team account instead?",
+      "collapseToPatientSignup": "Back to patient signup",
       "roleLabel": "I am signing up as",
       "rolePatient": "Patient",
       "roleDoctor": "Doctor",

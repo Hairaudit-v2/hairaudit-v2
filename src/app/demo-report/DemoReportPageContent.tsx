@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import TrackedLink from "@/components/analytics/TrackedLink";
@@ -74,7 +75,7 @@ export default function DemoReportPageContent() {
               {t("reports.chrome.demo.nextStepsTitle")}
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-sm text-slate-200">{t("reports.chrome.demo.nextStepsBody")}</p>
-            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row sm:flex-wrap">
               <TrackedLink
                 href="/request-review"
                 eventName="cta_start_free_audit_demo_page"
@@ -82,20 +83,18 @@ export default function DemoReportPageContent() {
               >
                 Start Free Audit
               </TrackedLink>
-              <TrackedLink
-                href="/demo-report"
-                eventName="cta_view_sample_report_demo_page"
-                className="inline-flex items-center justify-center rounded-xl border border-cyan-300/35 bg-cyan-300/15 px-6 py-3 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-300/25"
-              >
-                View Sample Report
-              </TrackedLink>
-              <TrackedLink
-                href="/professionals"
-                eventName="cta_clinic_profile_demo_page"
+              <Link
+                href="/sample-report"
                 className="inline-flex items-center justify-center rounded-xl border border-white/25 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
               >
-                For Clinics and Professionals
-              </TrackedLink>
+                Sample report overview
+              </Link>
+              <Link
+                href="/professionals"
+                className="inline-flex items-center justify-center text-sm font-medium text-slate-300 underline-offset-4 hover:text-white hover:underline"
+              >
+                Clinics & professionals
+              </Link>
             </div>
           </div>
         </section>

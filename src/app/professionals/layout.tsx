@@ -1,5 +1,6 @@
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
+import ProfessionalPathwayRibbon from "@/components/marketing/ProfessionalPathwayRibbon";
 
 export default function ProfessionalsLayout({
   children,
@@ -14,7 +15,10 @@ export default function ProfessionalsLayout({
       </div>
       <SiteHeader />
       <main className="relative flex-1 px-4 sm:px-6 py-14 sm:py-20">
-        <div className="max-w-6xl mx-auto">{children}</div>
+        <div className="max-w-6xl mx-auto space-y-8">
+          <ProfessionalPathwayRibbon variant="fi" />
+          {children}
+        </div>
       </main>
       <SiteFooter />
     </div>

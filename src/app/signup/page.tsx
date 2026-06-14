@@ -12,18 +12,37 @@ import { trackAuthFunnel } from "@/lib/analytics/authFunnel";
 
 type SignupRole = "patient" | "doctor" | "clinic";
 
-function SignUpForm({ initialRole = "patient" }: { initialRole?: SignupRole }) {
+function SignUpForm({
+  initialRole = "patient",
+  fromRequestReview = false,
+  compactPatientRolePicker = false,
+}: {
+  initialRole?: SignupRole;
+  fromRequestReview?: boolean;
+  compactPatientRolePicker?: boolean;
+}) {
   const { t } = useI18n();
   const supabase = createSupabaseBrowserClient();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [signupRole, setSignupRole] = useState<SignupRole>(initialRole);
+  const [showFullRolePicker, setShowFullRolePicker] = useState(() => !compactPatientRolePicker);
   const [msg, setMsg] = useState<string | null>(null);
   const [msgKind, setMsgKind] = useState<"error" | "success">("error");
   const [busy, setBusy] = useState(false);
   const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
   const [resending, setResending] = useState<null | "confirm" | "magic">(null);
+
+  useEffect(() => {
+    setSignupRole(initialRole);
+  }, [initialRole]);
+
+  useEffect(() => {
+    if (!compactPatientRolePicker) {
+      setShowFullRolePicker(true);
+    }
+  }, [compactPatientRolePicker]);
 
   useEffect(() => {
     const path = window.location.pathname;
@@ -221,6 +240,13 @@ function SignUpForm({ initialRole = "patient" }: { initialRole?: SignupRole }) {
         ? t("auth.signup.roleDoctorDesc")
         : t("auth.signup.roleClinicDesc");
 
+  const subtitle =
+    fromRequestReview && !showFullRolePicker
+      ? t("auth.signup.subtitleRequestReview")
+      : fromRequestReview && showFullRolePicker
+        ? t("auth.signup.subtitleRequestReviewExpanded")
+        : t("auth.signup.subtitle");
+
   return (
     <div className="min-h-screen flex flex-col">
       <SiteHeader variant="minimal" />
@@ -244,48 +270,75 @@ function SignUpForm({ initialRole = "patient" }: { initialRole?: SignupRole }) {
               />
             </div>
             <h1 className="text-2xl font-bold text-slate-900">{t("auth.signup.title")}</h1>
-            <p className="mt-2 text-sm leading-relaxed text-slate-600">{t("auth.signup.subtitle")}</p>
+            <p className="mt-2 text-sm leading-relaxed text-slate-600">{subtitle}</p>
 
             <form onSubmit={signUp} className="mt-6 space-y-4">
-              <div>
-                <p className="mb-2 block text-sm font-medium text-slate-700">{t("auth.signup.roleLabel")}</p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {compactPatientRolePicker && !showFullRolePicker ? (
+                <div className="rounded-xl border border-amber-200 bg-amber-50/60 px-4 py-3">
+                  <p className="text-sm font-medium text-slate-800">{t("auth.signup.patientPathDefault")}</p>
                   <button
                     type="button"
-                    onClick={() => setSignupRole("patient")}
-                    className={`rounded-lg border px-3 py-2.5 text-sm font-semibold transition-colors ${
-                      signupRole === "patient"
-                        ? "border-amber-500 bg-amber-50 text-amber-800"
-                        : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
-                    }`}
+                    onClick={() => setShowFullRolePicker(true)}
+                    className="mt-2 text-sm font-semibold text-amber-800 hover:text-amber-900 underline-offset-2 hover:underline"
                   >
-                    {t("auth.signup.rolePatient")}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSignupRole("doctor")}
-                    className={`rounded-lg border px-3 py-2.5 text-sm font-semibold transition-colors ${
-                      signupRole === "doctor"
-                        ? "border-violet-500 bg-violet-50 text-violet-800"
-                        : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
-                    }`}
-                  >
-                    {t("auth.signup.roleDoctor")}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSignupRole("clinic")}
-                    className={`rounded-lg border px-3 py-2.5 text-sm font-semibold transition-colors ${
-                      signupRole === "clinic"
-                        ? "border-cyan-500 bg-cyan-50 text-cyan-800"
-                        : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
-                    }`}
-                  >
-                    {t("auth.signup.roleClinic")}
+                    {t("auth.signup.expandProfessionalSignup")}
                   </button>
                 </div>
-                <p className="mt-2 text-xs leading-relaxed text-slate-500">{roleDescription}</p>
-              </div>
+              ) : (
+                <div>
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="mb-2 block text-sm font-medium text-slate-700">{t("auth.signup.roleLabel")}</p>
+                    {compactPatientRolePicker && showFullRolePicker ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSignupRole("patient");
+                          setShowFullRolePicker(false);
+                        }}
+                        className="shrink-0 text-xs font-semibold text-slate-500 hover:text-amber-700"
+                      >
+                        {t("auth.signup.collapseToPatientSignup")}
+                      </button>
+                    ) : null}
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setSignupRole("patient")}
+                      className={`rounded-lg border px-3 py-2.5 text-sm font-semibold transition-colors ${
+                        signupRole === "patient"
+                          ? "border-amber-500 bg-amber-50 text-amber-800"
+                          : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                      }`}
+                    >
+                      {t("auth.signup.rolePatient")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSignupRole("doctor")}
+                      className={`rounded-lg border px-3 py-2.5 text-sm font-semibold transition-colors ${
+                        signupRole === "doctor"
+                          ? "border-violet-500 bg-violet-50 text-violet-800"
+                          : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                      }`}
+                    >
+                      {t("auth.signup.roleDoctor")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSignupRole("clinic")}
+                      className={`rounded-lg border px-3 py-2.5 text-sm font-semibold transition-colors ${
+                        signupRole === "clinic"
+                          ? "border-cyan-500 bg-cyan-50 text-cyan-800"
+                          : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                      }`}
+                    >
+                      {t("auth.signup.roleClinic")}
+                    </button>
+                  </div>
+                  <p className="mt-2 text-xs leading-relaxed text-slate-500">{roleDescription}</p>
+                </div>
+              )}
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1">
                   {t("auth.common.email")}
@@ -317,6 +370,9 @@ function SignUpForm({ initialRole = "patient" }: { initialRole?: SignupRole }) {
                   className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-slate-900 placeholder-slate-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-colors"
                 />
               </div>
+              <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs leading-relaxed text-slate-600">
+                {t("auth.signup.privacyReassurance")}
+              </p>
               <button
                 type="submit"
                 disabled={busy}
@@ -382,15 +438,25 @@ function SignUpForm({ initialRole = "patient" }: { initialRole?: SignupRole }) {
 
 function SignUpPageContent() {
   const searchParams = useSearchParams();
-  const role = searchParams.get("role");
-  const initialRole: SignupRole =
-    role === "clinic" || role === "doctor" || role === "patient" ? role : "patient";
-  return <SignUpForm initialRole={initialRole} />;
+  const roleRaw = searchParams.get("role");
+  const explicitRole: SignupRole | null =
+    roleRaw === "clinic" || roleRaw === "doctor" || roleRaw === "patient" ? roleRaw : null;
+  const fromRequestReview = searchParams.get("from") === "request-review";
+  const initialRole: SignupRole = explicitRole ?? "patient";
+  const compactPatientRolePicker = fromRequestReview && explicitRole === null;
+
+  return (
+    <SignUpForm
+      initialRole={initialRole}
+      fromRequestReview={fromRequestReview}
+      compactPatientRolePicker={compactPatientRolePicker}
+    />
+  );
 }
 
 export default function SignUpPage() {
   return (
-    <Suspense fallback={<SignUpForm initialRole="patient" />}>
+    <Suspense fallback={<SignUpForm />}>
       <SignUpPageContent />
     </Suspense>
   );

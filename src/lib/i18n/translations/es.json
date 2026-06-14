@@ -107,6 +107,12 @@
     "signup": {
       "title": "Cree su cuenta HairAudit",
       "subtitle": "Elija su perfil: Paciente, Clínica o Médico. Cada uno tiene una experiencia adaptada.",
+      "subtitleRequestReview": "Cree su cuenta para continuar con su auditoría gratuita. Podrá añadir fotos en los siguientes pasos.",
+      "subtitleRequestReviewExpanded": "Elija el tipo de cuenta que coincida con cómo usará HairAudit.",
+      "privacyReassurance": "Sus fotos y datos permanecen privados y nunca se publican sin su permiso.",
+      "patientPathDefault": "Se registra como paciente (recomendado para la auditoría gratuita).",
+      "expandProfessionalSignup": "¿Cuenta de clínica, médico o equipo?",
+      "collapseToPatientSignup": "Volver al registro como paciente",
       "roleLabel": "Me registro como",
       "rolePatient": "Paciente",
       "roleDoctor": "Médico",

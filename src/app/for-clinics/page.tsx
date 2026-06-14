@@ -2,6 +2,7 @@ import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import TrackedLink from "@/components/analytics/TrackedLink";
+import ProfessionalPathwayRibbon from "@/components/marketing/ProfessionalPathwayRibbon";
 import { StepIcons } from "@/components/ui/StepIcons";
 import { createPageMetadata } from "@/lib/seo/pageMetadata";
 import {
@@ -92,9 +93,16 @@ const TRUST_PREVIEW_CLINIC = {
 
 export default function ForClinicsPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-slate-900 text-slate-100">
+    <div className="min-h-screen flex flex-col bg-[#0a0a0f] text-slate-100">
+      <div className="fixed inset-0 pointer-events-none" aria-hidden>
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(251,191,36,0.06),transparent)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_80%_60%,rgba(56,189,248,0.05),transparent)]" />
+      </div>
       <SiteHeader />
       <main id="main-content" className="relative flex-1">
+        <div className="relative px-4 sm:px-6 pt-8 pb-2 max-w-4xl mx-auto">
+          <ProfessionalPathwayRibbon variant="fi" />
+        </div>
         {/* A. Hero — no ScrollReveal so LCP (H1/CTA) paints immediately */}
         <section className="relative px-4 sm:px-6 pt-16 sm:pt-20 pb-20 sm:pb-28 lg:pt-24 lg:pb-32">
           <div className="max-w-3xl mx-auto text-center">
