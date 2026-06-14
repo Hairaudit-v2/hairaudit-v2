@@ -264,6 +264,21 @@ Producer routes:
 
 ---
 
+## 11. AuditOS foundation (Stage 4A)
+
+Stage 4A introduces **read-only adapters and versioned types** under `src/lib/auditos/**` so HairAudit can evolve as an AuditOS node without changing stored scores, PDF output, or patient UI.
+
+| Area | Module(s) | Purpose |
+|------|-----------|---------|
+| Scoring boundary | `src/lib/auditos/scoring/types.ts`, `adaptExistingAuditScore.ts` | Stable `AuditOsScoringInput` / `AuditOsScoringOutput` shapes; legacy summary → normalized snapshot |
+| Evidence boundary | `src/lib/auditos/evidence/types.ts`, `buildEvidenceManifestFromLegacy.ts` | Manifest view from `CaseEvidenceManifest` + `uploads` rows (no storage changes) |
+| Report normalization | `src/lib/auditos/reports/types.ts`, `adaptLegacyReportModel.ts` | Single internal `AuditOsNormalizedReport` for future FI intelligence |
+| FI events (off by default) | `src/lib/auditos/events/emitAuditOsEvent.server.ts` | `HAIRAUDIT_FI_EVENTS_ENABLED` gate; whitelisted scalar payloads; uses `getEventSink()` |
+
+Detailed pipeline map: `docs/auditos-stage4a-pipeline-map.md`.
+
+---
+
 ## Mermaid Diagram
 
 ```mermaid

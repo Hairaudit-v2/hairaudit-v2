@@ -23,6 +23,7 @@
     "test:i18n": "tsx --test tests/i18n/i18n.test.ts",
     "test:upload-auth": "tsx --test tests/uploadSignedUrlAndListAuth.test.ts",
     "test:stage3c-guards": "tsx --test tests/stage3cGuardrails.test.ts",
+    "test:auditos-stage4a": "tsx --test tests/auditosStage4aBoundaries.test.ts",
     "test:create-case": "tsx --test tests/createCase.test.ts",
     "test:report-access": "tsx --test tests/reportAccess.test.ts",
     "test:file-validation": "tsx --test tests/fileValidation.test.ts",
