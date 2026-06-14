@@ -25,6 +25,10 @@ const ALLOWED_PAYLOAD_KEYS = new Set([
   "pipeline_phase",
   "event_schema",
   "scoring_engine_version",
+  /** Policy / narrative generation label when present on legacy summary (string only). */
+  "scoring_version",
+  "evidence_manifest_version",
+  "generated_at",
 ]);
 
 export function isAuditOsFiEventsEnabled(): boolean {

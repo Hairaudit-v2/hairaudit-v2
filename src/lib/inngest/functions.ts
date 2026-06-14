@@ -23,6 +23,8 @@ import { refreshTransparencyMetricsForCase } from "@/lib/transparency/refreshOrc
 import { isPatientUploadAuditExcluded } from "@/lib/uploads/patientPhotoAuditMeta";
 import { evaluateEvidence } from "@/lib/evidence/evidenceEvaluator";
 import { buildEvidenceIntelligencePayload } from "@/lib/evidence/evidenceIntelligencePayload";
+import { emitAuditOsReportGeneratedSafe, runAuditOsShadowAfterReportInsert } from "@/lib/auditos/shadow/inngestAuditOsShadow.server";
+import type { LegacyUploadRow } from "@/lib/auditos/reports/adaptLegacyReportModel";
 
 /** Must match `REASONS` in `src/app/api/auditor/rerun/route.ts`. */
 const AUDITOR_RERUN_REASON_CORRECTED_PATIENT_PHOTOS = "corrected_patient_photos";
@@ -1282,22 +1284,44 @@ export const runAudit = inngest.createFunction(
         benchmarkEligible,
       });
 
-      const { error } = await supabase.from("reports").insert({
-        case_id: caseId,
-        version: nextVersion,
-        pdf_path: pdfPath,
-        summary,
-        status: "processing",
-        error: null,
-        auditor_review_eligibility: auditorReviewEligibility,
-        auditor_review_status: auditorReviewStatus,
-        auditor_review_reason: auditorReviewReason,
-        provisional_status: provisionalStatus,
-        counts_for_awards: countsForAwards,
-        award_contribution_weight: awardContributionWeight,
-      });
+      const { data: insertedReport, error } = await supabase
+        .from("reports")
+        .insert({
+          case_id: caseId,
+          version: nextVersion,
+          pdf_path: pdfPath,
+          summary,
+          status: "processing",
+          error: null,
+          auditor_review_eligibility: auditorReviewEligibility,
+          auditor_review_status: auditorReviewStatus,
+          auditor_review_reason: auditorReviewReason,
+          provisional_status: provisionalStatus,
+          counts_for_awards: countsForAwards,
+          award_contribution_weight: awardContributionWeight,
+        })
+        .select("id, created_at")
+        .single();
 
       if (error) throw new Error(`reports insert failed: ${error.message}`);
+      if (!insertedReport?.id) throw new Error("reports insert returned no id");
+
+      await runAuditOsShadowAfterReportInsert({
+        supabase,
+        caseId,
+        nextVersion,
+        insertedReportId: insertedReport.id,
+        insertedReportCreatedAt: insertedReport.created_at ?? null,
+        summary,
+        legacyEvidenceManifest: preparedVision.manifest,
+        uploads,
+        auditorReviewEligibility,
+        auditorReviewStatus,
+        auditorReviewReason,
+        provisionalStatus,
+        countsForAwards,
+        logger,
+      });
     });
 
     // 11) Mark audit completion phase before PDF phase.
@@ -1402,6 +1426,16 @@ export const runAudit = inngest.createFunction(
       await setCasePipelineStatus(supabase, caseId, "pdf_ready");
       // Keep legacy-compatible terminal state for dashboards that key off "complete".
       await supabase.from("cases").update({ status: "complete" }).eq("id", caseId);
+      await emitAuditOsReportGeneratedSafe({
+        supabase,
+        caseId,
+        reportVersion: nextVersion,
+        logger,
+        shadowContext: {
+          uploads: uploads as LegacyUploadRow[],
+          legacyEvidenceManifest: preparedVision.manifest,
+        },
+      });
     });
 
     await step.run("refresh-transparency-metrics", async () => {

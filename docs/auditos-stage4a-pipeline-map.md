@@ -68,7 +68,7 @@ Other jobs: `run-pdf-rebuild`, `caseSubmitted` (separate file), `runSurgeryUploa
 3. **Override application** — Applied in memory in some routes only; PDF pipeline must stay consistent with patient-visible score rules.
 4. **Inngest step size** — `functions.ts` is a single large module coupling evidence, AI, scoring, PDF, email, transparency refresh.
 5. **GII vs audit timing** — Report insert may read “latest” GII before auditor approval; ordering assumptions matter for PDF copy.
-6. **Two integration-style event gates** — `INTEGRATION_EVENTS_ENABLED` (`emitHairAuditEvent`) vs new **`HAIRAUDIT_FI_EVENTS_ENABLED`** (`emitAuditOsEvent` in `emitAuditOsEvent.server.ts`); document which gate applies for FI network emission.
+6. **Two integration-style event gates** — `INTEGRATION_EVENTS_ENABLED` (`emitHairAuditEvent`) vs new **`HAIRAUDIT_FI_EVENTS_ENABLED`** (`emitAuditOsEvent` in `emitAuditOsEvent.server.ts`); document which gate applies for FI network emission. Stage 4B adds **shadow-only** logging (`HAIRAUDIT_AUDITOS_SHADOW_LOGS` / non-production) and optional auditor debug — see `docs/auditos-stage4b-shadow-wiring.md`.
 
 ## 8. Stage 4A AuditOS artifacts (this PR)
 

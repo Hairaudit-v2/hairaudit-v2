@@ -68,6 +68,11 @@ import AuditorPatientImageManager from "./AuditorPatientImageManager";
 import { evaluateEvidence } from "@/lib/evidence/evidenceEvaluator";
 import { isPatientUploadAuditExcluded } from "@/lib/uploads/patientPhotoAuditMeta";
 import BulkBatchInheritedMetadataPanel from "@/components/hair-audit/BulkBatchInheritedMetadataPanel";
+import AuditOsShadowDebugPanel, {
+  type AuditOsShadowDebugPanelPayload,
+} from "@/components/auditor/AuditOsShadowDebugPanel";
+import type { LegacyUploadRow } from "@/lib/auditos/reports/adaptLegacyReportModel";
+import { isAuditOsDebugPanelEnabled } from "@/lib/auditos/shadow/auditOsShadowEnv.server";
 import { loadBulkBatchContext } from "@/lib/hair-audit/bulkUpload/loadBulkBatchContext";
 
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
@@ -617,6 +622,63 @@ export default async function Page({
       }
     } catch {
       // Overrides table may not exist or RLS may block; keep scoreNum
+    }
+  }
+
+  let auditOsShadowDebug: AuditOsShadowDebugPanelPayload | null = null;
+  if (isAuditor && isAuditOsDebugPanelEnabled() && latestReport) {
+    try {
+      const { loadLatestEvidenceManifest } = await import("@/lib/evidence/evidenceManifest");
+      const { buildAuditOsShadowSnapshot } = await import("@/lib/auditos/shadow/buildAuditOsShadowSnapshot.server");
+      const { diffAuditOsShadowSnapshot } = await import("@/lib/auditos/shadow/diffAuditOsShadowSnapshot");
+      const manifest = await loadLatestEvidenceManifest({ supabase: db, caseId: c.id });
+      let overrideRowsForShadow: Record<string, unknown>[] = [];
+      try {
+        const { data: ov } = await db.from("audit_score_overrides").select("domain_key").eq("report_id", latestReport.id);
+        overrideRowsForShadow = (ov ?? []) as Record<string, unknown>[];
+      } catch {
+        overrideRowsForShadow = [];
+      }
+      const snapshot = buildAuditOsShadowSnapshot({
+        caseId: c.id,
+        reportRow: {
+          id: latestReport.id,
+          version: latestReport.version,
+          created_at: latestReport.created_at,
+          summary: latestReport.summary,
+          auditor_review_eligibility: latestReport.auditor_review_eligibility,
+          auditor_review_status: latestReport.auditor_review_status,
+          auditor_review_reason: latestReport.auditor_review_reason ?? null,
+          provisional_status: latestReport.provisional_status,
+          counts_for_awards: latestReport.counts_for_awards,
+        },
+        legacyEvidenceManifest: manifest,
+        uploads: (uploads ?? []) as LegacyUploadRow[],
+        humanOverrideRows: overrideRowsForShadow,
+        generatedAt: latestReport.created_at,
+      });
+      const diff = diffAuditOsShadowSnapshot({
+        legacySummary: latestReport.summary,
+        legacyEvidenceManifest: manifest,
+        uploadCount: (uploads ?? []).length,
+        snapshot,
+      });
+      const { loadAuditOsShadowSnapshotsForAuditor } = await import("@/lib/auditos/shadow/loadAuditOsShadowSnapshots.server");
+      const persistedSnapshots = await loadAuditOsShadowSnapshotsForAuditor({
+        sessionSupabase: supabase,
+        caseId: c.id,
+        resolvedRole: role,
+        limit: 15,
+      });
+      auditOsShadowDebug = {
+        adapterVersions: snapshot.adapterVersions,
+        diffStatus: diff.status,
+        metrics: diff.metrics,
+        warnings: [...snapshot.warnings, ...diff.warnings],
+        persistedSnapshots: persistedSnapshots.length ? persistedSnapshots : null,
+      };
+    } catch (e) {
+      console.warn(LOG_PREFIX, "AuditOS shadow debug payload skipped", { caseId, error: String(e) });
     }
   }
 
@@ -1263,6 +1325,7 @@ export default async function Page({
       {isAuditor && forensicReports.length > 0 && (
         <div className="mt-6">
           <AuditorRerunPanel caseId={c.id} latestReportVersion={forensicReports[0]?.version} />
+          <AuditOsShadowDebugPanel debug={auditOsShadowDebug} />
         </div>
       )}
 
