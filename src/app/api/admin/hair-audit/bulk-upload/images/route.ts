@@ -13,7 +13,8 @@ import {
   syncSingleBulkImageToUploads,
   type BulkImageRow,
 } from "@/lib/hair-audit/bulkUpload/syncToUploads";
-import { safeFileName, UPLOAD_LIMITS } from "@/lib/uploads/safeUpload";
+import { safeFileName, formatUploadErrorForUser } from "@/lib/uploads/safeUpload";
+import { validateUploadedImage } from "@/lib/uploads/fileValidation";
 
 export const runtime = "nodejs";
 
@@ -54,14 +55,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "Invalid category" }, { status: 400 });
   }
 
-  const maxBytes = UPLOAD_LIMITS.MAX_FILE_SIZE_MB * 1024 * 1024;
-  if (file.size > maxBytes) {
-    return NextResponse.json(
-      { ok: false, error: `Each image must be under ${UPLOAD_LIMITS.MAX_FILE_SIZE_MB}MB` },
-      { status: 400 }
-    );
-  }
-
   const admin = createSupabaseAdminClient();
   const { data: batch } = await admin.from("hair_audit_case_batches").select("id").eq("id", batchId).maybeSingle();
   if (!batch) return NextResponse.json({ ok: false, error: "Batch not found" }, { status: 404 });
@@ -71,13 +64,21 @@ export async function POST(req: Request) {
     if (!valid) return NextResponse.json({ ok: false, error: "Case not in batch" }, { status: 400 });
   }
 
+  const validated = await validateUploadedImage(file);
+  if (!validated.ok) {
+    return NextResponse.json(
+      { ok: false, error: formatUploadErrorForUser(validated.error) },
+      { status: 400 }
+    );
+  }
+  const { buffer, normalizedMime } = validated;
+
   const bucket = process.env.CASE_FILES_BUCKET || "case-files";
   const cleanedName = safeFileName(file.name || "upload.jpg");
   const storagePath = bulkStoragePath(batchId, caseId, cleanedName);
-  const buffer = Buffer.from(await file.arrayBuffer());
 
   const { error: upErr } = await admin.storage.from(bucket).upload(storagePath, buffer, {
-    contentType: file.type || "application/octet-stream",
+    contentType: normalizedMime,
     upsert: false,
   });
   if (upErr) return NextResponse.json({ ok: false, error: upErr.message }, { status: 500 });
@@ -94,7 +95,7 @@ export async function POST(req: Request) {
       case_id: caseId,
       storage_path: storagePath,
       file_name: file.name || cleanedName,
-      mime_type: file.type || null,
+      mime_type: normalizedMime,
       image_category: (categoryRaw as BulkImageCategory | null) ?? null,
       sort_order: count ?? 0,
       uploaded_by: auth.userId,

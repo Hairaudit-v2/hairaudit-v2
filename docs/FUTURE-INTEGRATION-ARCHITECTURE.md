@@ -52,7 +52,7 @@ These are **candidate events** that HairAudit could emit (e.g. to FI or an event
 
 | Event name | When | Suggested payload (minimal) |
 |------------|------|-----------------------------|
-| `hairaudit.case.created` | New case created (`/api/cases/create`) | `case_id`, `audit_type`, `user_id`, `created_at` |
+| `hairaudit.case.created` | New case created (`createAuditCase` via `POST /api/cases/create` or legacy `POST /cases/create`) | `case_id`, `audit_type`, `user_id`, `created_at` |
 | `hairaudit.case.submitted` | Case submitted for audit (`/api/submit` → status `submitted`) | `case_id`, `user_id`, `audit_type`, `submission_channel`, `submitted_at` |
 | `hairaudit.case.deleted` | Case soft/hard deleted (if implemented) | `case_id`, `deleted_at` |
 
@@ -105,7 +105,7 @@ Goal: allow HairAudit to emit the above events **later** without changing existi
   - If disabled or not configured: no-op.
   - If enabled: builds payload (case_id, report_id, timestamps, minimal context), calls adapter (e.g. `emitHairAuditEvent("hairaudit.case.submitted", payload)`).
 - **Where to hook (examples):**
-  - Case created: in `/api/cases/create` after successful insert.
+  - Case created: in `src/lib/cases/createCase.ts` after successful insert (invoked from `POST /api/cases/create` and legacy `POST /cases/create`).
   - Case submitted: in `/api/submit` after status update, alongside existing `inngest.send({ name: "case/submitted", ... })`.
   - Audit completed: in `runAudit` Inngest function after “insert-report-row” / “mark-audit-complete-phase”.
   - Report released: in `runAudit` after “finalize-pdf-ready-phase” and before/after `refreshTransparencyMetricsForCase`.
@@ -207,4 +207,4 @@ This keeps HairAudit fully independent and deployable as today, while making it 
 - **Event layer:** `src/lib/integrations/` provides:
   - `emitHairAuditEvent(eventName, payload)` — call at hook points; no-op when `INTEGRATION_EVENTS_ENABLED` is not `true`.
   - `HairAuditEventSink` interface and `getEventSink()` / `setEventSink()` for swapping in a real sink later.
-- **Hook points** are not wired in this pass; they are listed in §4.2 and §3 so you can add `emitHairAuditEvent(...)` at the right places when you enable the bridge.
+- **Hook points:** `hairaudit.case.created` is emitted from `src/lib/cases/createCase.ts` after a successful audit case insert (see §4.2). Other hook points remain as listed in §4.2 and §3 for future wiring.

@@ -1,0 +1,163 @@
+"use client";
+
+import Link from "next/link";
+
+import TrackedLink from "@/components/analytics/TrackedLink";
+import { FI_HOME } from "@/config/platform-links";
+import { PLATFORM_ECOSYSTEM } from "@/lib/constants/platform";
+import { cn } from "@/lib/utils";
+
+export type HairAuditPublicFooterProps = {
+  theme?: "default" | "light";
+};
+
+const patientLinks = [
+  { href: "/how-it-works", label: "How It Works", tracked: false },
+  { href: "/request-review", label: "Start Free Audit", tracked: true },
+  { href: "/demo-report", label: "View Sample Report", tracked: false },
+  { href: "/hair-transplant-problems", label: "Patient Guides", tracked: false },
+  { href: "/faq", label: "FAQ", tracked: false },
+] as const;
+
+const professionalLinks = [
+  { href: "/for-clinics", label: "For Clinics" },
+  { href: "/professionals", label: "For Professionals" },
+  { href: "/clinics", label: "Clinic Directory" },
+  { href: "/verified-surgeon-program", label: "Verified Surgeon Program" },
+] as const;
+
+const legalLinks = [
+  { href: "/privacy", label: "Privacy" },
+  { href: "/terms", label: "Terms" },
+  { href: "/disclaimer", label: "Disclaimer" },
+] as const;
+
+export default function HairAuditPublicFooter({ theme = "default" }: HairAuditPublicFooterProps) {
+  const isLight = theme === "light";
+  const footerClass = isLight
+    ? "border-t border-slate-200 bg-white text-slate-600"
+    : "border-t border-white/10 bg-slate-950 text-slate-400";
+  const headingClass = isLight
+    ? "text-xs font-semibold uppercase tracking-[0.2em] text-slate-500"
+    : "text-xs font-semibold uppercase tracking-[0.2em] text-slate-500";
+  const linkClass = isLight
+    ? "text-sm text-slate-600 transition hover:text-slate-950"
+    : "text-sm text-slate-300 transition hover:text-white";
+
+  return (
+    <footer className={footerClass}>
+      <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-10">
+        <div className="grid gap-10 lg:grid-cols-[1.25fr_2fr]">
+          <div className="space-y-5">
+            <div>
+              <h2 className={cn("text-lg font-semibold", isLight ? "text-slate-950" : "text-white")}>HairAudit</h2>
+              <p className="mt-3 max-w-md text-sm leading-relaxed">
+                Independent hair transplant audit and patient guidance, powered by the Follicle Intelligence Network
+                while remaining a standalone review platform.
+              </p>
+            </div>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <TrackedLink
+                href="/request-review"
+                eventName="cta_start_free_audit_footer"
+                className="inline-flex items-center justify-center rounded-full bg-amber-400 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-amber-300"
+              >
+                Start Free Audit
+              </TrackedLink>
+              <Link
+                href="/demo-report"
+                className={cn(
+                  "inline-flex items-center justify-center rounded-full border px-5 py-3 text-sm font-semibold transition",
+                  isLight
+                    ? "border-slate-300 text-slate-700 hover:bg-slate-50"
+                    : "border-white/15 text-slate-100 hover:bg-white/10"
+                )}
+              >
+                View Sample Report
+              </Link>
+            </div>
+          </div>
+
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <h3 className={headingClass}>Patients</h3>
+              <ul className="mt-4 space-y-3">
+                {patientLinks.map((link) => (
+                  <li key={link.href}>
+                    {link.tracked ? (
+                      <TrackedLink href={link.href} eventName="cta_start_free_audit_footer_nav" className={linkClass}>
+                        {link.label}
+                      </TrackedLink>
+                    ) : (
+                      <Link href={link.href} className={linkClass}>
+                        {link.label}
+                      </Link>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h3 className={headingClass}>Professionals</h3>
+              <ul className="mt-4 space-y-3">
+                {professionalLinks.map((link) => (
+                  <li key={link.href}>
+                    <Link href={link.href} className={linkClass}>
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h3 className={headingClass}>Company</h3>
+              <ul className="mt-4 space-y-3">
+                <li>
+                  <Link href="/about" className={linkClass}>
+                    About
+                  </Link>
+                </li>
+                <li>
+                  <a href="mailto:auditor@hairaudit.com" className={linkClass}>
+                    Contact
+                  </a>
+                </li>
+                {legalLinks.map((link) => (
+                  <li key={link.href}>
+                    <Link href={link.href} className={linkClass}>
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h3 className={headingClass}>Network</h3>
+              <ul className="mt-4 space-y-3">
+                {PLATFORM_ECOSYSTEM.map((platform) => (
+                  <li key={platform.key}>
+                    <a href={platform.url} target="_blank" rel="noopener noreferrer" className={linkClass}>
+                      {platform.name}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div
+          className={cn(
+            "mt-12 flex flex-col gap-3 border-t pt-6 text-xs sm:flex-row sm:items-center sm:justify-between",
+            isLight ? "border-slate-200 text-slate-500" : "border-white/10 text-slate-500"
+          )}
+        >
+          <p>HairAudit is independent. It does not sell procedures or clinic referrals.</p>
+          <a href={FI_HOME} target="_blank" rel="noopener noreferrer" className="font-semibold uppercase tracking-[0.16em]">
+            Powered by the Follicle Intelligence Network
+          </a>
+        </div>
+      </div>
+    </footer>
+  );
+}

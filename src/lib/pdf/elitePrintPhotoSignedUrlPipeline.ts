@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { CaseEvidenceManifest } from "@/lib/evidence/evidenceManifest";
 import { inferCanonicalPhotoCategory, photoCategoryGroup } from "@/lib/photos/classification";
+import { storagePathBelongsToCase } from "@/lib/uploads/caseFilesPath";
 
 export type ElitePrintPhotoStats = {
   imageCount: number;
@@ -17,8 +18,13 @@ type Row = { storagePath: string; label: string; categoryKey: string };
 async function signedUrlForPath(
   supabase: SupabaseClient,
   bucket: string,
-  path: string
+  path: string,
+  caseId: string
 ): Promise<string | null> {
+  if (!storagePathBelongsToCase(caseId, path)) {
+    console.error("[pdf-print] skip sign: path outside case namespace", { caseId });
+    return null;
+  }
   const { data, error } = await supabase.storage
     .from(bucket)
     .createSignedUrl(path, 60 * 10);
@@ -123,7 +129,7 @@ export async function buildElitePrintPhotosByCategorySignedUrl(params: {
   const resolved = await mapChunked(rows, async (row) => ({
     categoryKey: row.categoryKey,
     label: row.label,
-    signedUrl: await signedUrlForPath(supabase, bucket, row.storagePath),
+    signedUrl: await signedUrlForPath(supabase, bucket, row.storagePath, caseId),
   }));
 
   const photosByCategory: Record<string, { signedUrl: string | null; label: string }[]> = {};

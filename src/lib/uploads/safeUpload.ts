@@ -3,6 +3,12 @@
  * Used across patient, doctor, and clinic upload flows.
  */
 
+import {
+  MAX_CONCURRENT_UPLOADS,
+  MAX_FILES_PER_IMAGE_REQUEST,
+  MAX_IMAGE_UPLOAD_MB,
+} from "./uploadLimits";
+
 export type UploadErrorCode =
   | "STORAGE_ERROR"
   | "DB_ERROR"
@@ -42,9 +48,10 @@ export const DEFAULT_RETRY_CONFIG: RetryConfig = {
 };
 
 export const UPLOAD_LIMITS = {
-  MAX_FILES_PER_REQUEST: 1, // Single file per request to stay under Vercel 4.5MB limit
-  MAX_CONCURRENT_UPLOADS: 3,
-  MAX_FILE_SIZE_MB: 4, // Max 4MB per file to stay under Vercel limit
+  MAX_FILES_PER_REQUEST: MAX_FILES_PER_IMAGE_REQUEST,
+  MAX_CONCURRENT_UPLOADS,
+  /** @deprecated Use MAX_IMAGE_UPLOAD_MB from `@/lib/uploads/uploadLimits` — kept for backward compatibility. */
+  MAX_FILE_SIZE_MB: MAX_IMAGE_UPLOAD_MB,
 };
 
 /**
@@ -246,7 +253,7 @@ export function formatUploadErrorForUser(error: UploadError): string {
     RATE_LIMITED: "Upload rate limit reached. Please wait a moment and try again.",
     UNAUTHORIZED: "Please sign in to upload images.",
     CASE_LOCKED: "This case has been submitted and cannot be modified.",
-    FILE_TOO_LARGE: "File is too large. Maximum size is 50MB per image.",
+    FILE_TOO_LARGE: `File is too large. Maximum size is ${MAX_IMAGE_UPLOAD_MB}MB per image.`,
     INVALID_CATEGORY: "Invalid upload category. Please refresh the page.",
     MAX_FILES_EXCEEDED: error.message,
     NETWORK_ERROR: "Network connection failed. Please check your connection and try again.",

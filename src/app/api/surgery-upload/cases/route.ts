@@ -92,7 +92,7 @@ export async function POST(req: Request) {
       checklistConfig = resolveDefaultChecklistForNewCase(defaultsRow);
     }
 
-    // Create the underlying case as a draft, mirroring /api/cases/create.
+    // Create the underlying case as a draft (same field conventions as createAuditCase in src/lib/cases/createCase.ts).
     const isClinic = actor.role === "clinic";
     const auditType = isClinic ? "clinic" : "doctor";
     const insertCase: Record<string, unknown> = {

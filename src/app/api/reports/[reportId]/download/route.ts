@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
-import { tryCreateSupabaseAdminClient } from "@/lib/supabase/admin";
-import { canAccessCase } from "@/lib/case-access";
-import { reportPdfPathMatchesCase } from "@/lib/reports/pdfPathCaseId";
 import { fetchReportPdfFromStorage } from "@/lib/reports/fetchReportPdfFromStorage";
+import { loadAuthorizedReportPdfDownloadContext } from "@/lib/reports/reportAccess";
 
 function safeDownloadFilename(reportId: string) {
   const id = String(reportId ?? "").replace(/[^a-zA-Z0-9-]/g, "");
@@ -26,60 +24,23 @@ export async function GET(_req: Request, ctx: { params: Promise<{ reportId: stri
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const admin = tryCreateSupabaseAdminClient();
-    const db = admin ?? supabaseAuth;
+    const authz = await loadAuthorizedReportPdfDownloadContext({
+      userId: user.id,
+      reportId,
+      supabaseAuth,
+    });
 
-    const { data: report, error: reportErr } = await db
-      .from("reports")
-      .select("id, case_id, pdf_path, version")
-      .eq("id", reportId)
-      .maybeSingle();
-
-    if (reportErr) {
-      console.error("[reports/download] report lookup error", { reportId, message: reportErr.message });
-      return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
-    }
-    if (!report) {
-      return NextResponse.json({ error: "Report not found" }, { status: 404 });
+    if (!authz.ok) {
+      return NextResponse.json({ error: authz.error }, { status: authz.status });
     }
 
-    const pdfPath = String(report.pdf_path ?? "").trim();
-    if (!pdfPath) {
-      return NextResponse.json({ error: "Report file not ready" }, { status: 404 });
-    }
-
-    const caseId = String(report.case_id ?? "");
-    if (!reportPdfPathMatchesCase(pdfPath, caseId)) {
-      console.error("[reports/download] pdf path does not match case", { reportId, caseId });
-      return NextResponse.json({ error: "Report not found" }, { status: 404 });
-    }
-
-    const { data: caseRow, error: caseErr } = await db
-      .from("cases")
-      .select("id, user_id, patient_id, doctor_id, clinic_id")
-      .eq("id", caseId)
-      .maybeSingle();
-
-    if (caseErr) {
-      console.error("[reports/download] case lookup error", { caseId, message: caseErr.message });
-      return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
-    }
-
-    const allowed = await canAccessCase(user.id, caseRow ?? null);
-    if (!caseRow || !allowed) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
-    const bucket = process.env.CASE_FILES_BUCKET || "case-files";
-    const storage = (admin ?? supabaseAuth).storage;
-
-    const file = await fetchReportPdfFromStorage(storage, bucket, pdfPath);
+    const file = await fetchReportPdfFromStorage(authz.storage, authz.bucket, authz.pdfPath);
     if ("error" in file) {
-      console.error("[reports/download] storage fetch failed", { reportId, pdfPath });
+      console.error("[reports/download] storage fetch failed", { reportId, pdfPath: authz.pdfPath });
       return NextResponse.json({ error: "Could not load report file" }, { status: 500 });
     }
 
-    const filename = safeDownloadFilename(report.id);
+    const filename = safeDownloadFilename(authz.report.id);
     const { blob } = file;
     const headers = new Headers({
       "Content-Type": "application/pdf",
@@ -88,7 +49,6 @@ export async function GET(_req: Request, ctx: { params: Promise<{ reportId: stri
       "Content-Length": String(blob.size),
     });
 
-    // Stream the PDF so we avoid buffering the whole file as ArrayBuffer and start sending sooner on large reports.
     const body = typeof blob.stream === "function" ? blob.stream() : blob;
     return new NextResponse(body, { status: 200, headers });
   } catch (e) {

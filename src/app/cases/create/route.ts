@@ -1,34 +1,47 @@
+/**
+ * Legacy path `POST /cases/create` — delegates to the same service as `POST /api/cases/create`
+ * so behaviour cannot drift. Prefer the `/api` route for new clients.
+ */
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { createAuditCase } from "@/lib/cases/createCase";
 
 export async function POST() {
-  // 1) Read logged-in user from cookies
   const supabaseAuth = await createSupabaseAuthServerClient();
   const {
     data: { user },
   } = await supabaseAuth.auth.getUser();
 
   if (!user) {
-    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ ok: false, error: "Not authenticated" }, { status: 401 });
   }
 
-  // 2) Insert case using admin client (avoids RLS headaches)
-  const supabaseAdmin = createSupabaseAdminClient();
-
-  const { data, error } = await supabaseAdmin
-    .from("cases")
-    .insert({
-      user_id: user.id,
-      title: "Patient Audit",
-      status: "draft",
-    })
-    .select("id")
-    .single();
-
-  if (error) {
-    return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+  let supabaseAdmin;
+  try {
+    supabaseAdmin = createSupabaseAdminClient();
+  } catch {
+    return NextResponse.json({ ok: false, error: "Server configuration error" }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true, caseId: data.id });
+  let devRoleCookieValue: string | null = null;
+  if (process.env.NODE_ENV === "development") {
+    const cookieStore = await cookies();
+    devRoleCookieValue = cookieStore.get("dev_role")?.value ?? null;
+  }
+
+  const result = await createAuditCase({
+    admin: supabaseAdmin,
+    userId: user.id,
+    userMetadata: user.user_metadata as Record<string, unknown> | undefined,
+    devRoleCookieValue,
+    nodeEnv: process.env.NODE_ENV,
+  });
+
+  if (!result.ok) {
+    return NextResponse.json({ ok: false, error: result.error }, { status: result.status });
+  }
+
+  return NextResponse.json({ ok: true, caseId: result.caseId });
 }

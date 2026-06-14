@@ -2,9 +2,8 @@ import { NextResponse } from "next/server";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getUserRole } from "@/lib/case-access";
+import { isAuditor } from "@/lib/auth/isAuditor";
 import { normalizeAuditMode } from "@/lib/pdf/reportBuilder";
-
-const AUDITOR_EMAIL = "auditor@hairaudit.com";
 
 export async function POST(req: Request) {
   try {
@@ -17,8 +16,9 @@ export async function POST(req: Request) {
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const role = await getUserRole(user.id);
-    const isAuditor = role === "auditor" || user.email === AUDITOR_EMAIL;
-    if (!isAuditor) return NextResponse.json({ error: "Forbidden: auditors only" }, { status: 403 });
+    if (!isAuditor({ profileRole: role, userEmail: user.email })) {
+      return NextResponse.json({ error: "Forbidden: auditors only" }, { status: 403 });
+    }
 
     const admin = createSupabaseAdminClient();
     const { data: c, error: caseErr } = await admin

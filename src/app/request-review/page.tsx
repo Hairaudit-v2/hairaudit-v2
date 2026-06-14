@@ -9,29 +9,28 @@ import TrackedLink from "@/components/analytics/TrackedLink";
 import { GeoContextLine } from "@/components/patient-education/GeoContentBlocks";
 
 export const metadata = createPageMetadata({
-  title: "Request a Hair Transplant Review | Secure Upload | HairAudit",
+  title: "Start a Free Hair Transplant Audit | Secure Upload | HairAudit",
   description:
-    "Start an independent hair transplant audit: secure photo upload, structured forensic review of donor, growth, density, design, and technique, and a clear report—not clinic marketing.",
+    "Start a free independent hair transplant audit with secure photo upload, structured review of donor area, growth, density, design, and technique, and a clear HairAudit report.",
   pathname: "/request-review",
 });
 
 const requestFaqs = [
   {
     question: "How long does submission take?",
-    answer:
-      "Most patients finish the upload and details form in about 6 to 8 minutes if photos are ready.",
+    answer: "Most patients finish the upload and details form in about 6 to 8 minutes if photos are ready.",
   },
   {
     question: "What do I need before I start?",
-    answer:
-      "Prepare pre-op, post-op, donor, and recipient photos with your timeline information for best review quality.",
+    answer: "Prepare pre-op, post-op, donor, and recipient photos with your timeline information for best review quality.",
   },
   {
     question: "Is HairAudit independent from clinics?",
-    answer:
-      "Yes. HairAudit is independent and does not sell surgery or clinic referrals.",
+    answer: "Yes. HairAudit is independent and does not sell surgery, clinic referrals, or promotional placements.",
   },
 ];
+
+const helpfulPhotos = ["front hairline", "left side", "right side", "top view", "crown", "donor area"] as const;
 
 export default function RequestReviewPage() {
   return (
@@ -39,37 +38,39 @@ export default function RequestReviewPage() {
       <BreadcrumbListSchema
         items={[
           { name: "Home", pathname: "/" },
-          { name: "Request a hair transplant review", pathname: "/request-review" },
+          { name: "Start a free HairAudit", pathname: "/request-review" },
         ]}
       />
       <MedicalProcedureFaqSchema
-        pageName="Request a Hair Transplant Review"
+        pageName="Start a Free HairAudit"
         pageDescription="Submit your case for independent hair transplant evidence review and reporting."
         faqs={requestFaqs}
       />
 
       <div className="fixed inset-0 pointer-events-none" aria-hidden>
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(251,191,36,0.06),transparent)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_80%_60%,rgba(139,92,246,0.05),transparent)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_80%_60%,rgba(56,189,248,0.06),transparent)]" />
       </div>
 
       <SiteHeader />
 
       <main className="relative flex-1 px-4 sm:px-6 py-16 sm:py-20">
         <div className="max-w-4xl mx-auto">
-          {/* Hero: no ScrollReveal so LCP (H1/CTA) paints immediately */}
-          <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
-            Request a hair transplant review
+          <p className="inline-flex rounded-full border border-amber-300/25 bg-amber-300/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-amber-200">
+            Independent patient audit
+          </p>
+          <h1 className="mt-5 text-3xl sm:text-4xl font-bold text-white tracking-tight">
+            Start your free HairAudit
           </h1>
           <p className="mt-4 text-slate-300 max-w-2xl">
-            Send your surgery photos and timeline for an independent, evidence-based forensic audit—structured
-            like a second opinion on donor area, growth, density, design, and technique—whether you have concerns
-            or want documentation of quality.
+            Upload your surgery photos and timeline for an independent review of donor area, growth, density,
+            hairline design, implantation, and evidence quality.
           </p>
+
           <GeoContextLine label="What this page is for">
             <p>
-              This is the conversion path: secure signup and case submission. Long-form education, comparisons, and
-              “what photos can show” guides live in the{" "}
+              This is the patient audit path: create your account, add photos, and submit the evidence you have.
+              Longer education and photo guidance live in the{" "}
               <Link href="/hair-transplant-problems" className="text-amber-400 hover:text-amber-300 font-medium">
                 patient guides hub
               </Link>
@@ -80,13 +81,13 @@ export default function RequestReviewPage() {
               .
             </p>
           </GeoContextLine>
+
           <p className="mt-4 text-sm text-slate-400 max-w-2xl leading-relaxed">
-            You upload photos and case details; we review them with the same independent forensic framework used for
-            every audit. You receive a structured, confidence-aware report for your planning and conversations—not clinic
-            marketing and not a remote diagnosis.
+            Your report explains what the evidence supports, where confidence is limited, and what may be worth
+            discussing with your clinician. HairAudit does not sell surgery, clinic referrals, or remote diagnoses.
           </p>
           <p className="mt-3 text-xs text-amber-300 font-medium">
-            Independent review · Secure upload · Not a substitute for in-person medical diagnosis
+            Independent review · Secure upload · Powered by the Follicle Intelligence Network
           </p>
           <p className="mt-2 text-sm text-emerald-200 font-medium">Estimated completion time: 6 to 8 minutes</p>
 
@@ -96,112 +97,108 @@ export default function RequestReviewPage() {
               They are only used for your HairAudit review and are never shared publicly without permission.
             </p>
             <div className="mt-4 flex flex-wrap gap-2 text-xs">
-              <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-slate-200">Independent review platform</span>
-              <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-slate-200">Structured review process</span>
+              <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-slate-200">Independent platform</span>
+              <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-slate-200">Structured process</span>
               <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-slate-200">Expert-reviewed findings</span>
               <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-slate-200">Secure photo handling</span>
             </div>
           </div>
 
-          <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              <div className="rounded-2xl border border-amber-300/25 bg-amber-300/10 p-5">
-                <p className="text-xs uppercase tracking-wider text-amber-200 font-semibold">For Patients</p>
-                <p className="mt-2 text-sm text-amber-50/95">Start your case submission and secure upload.</p>
-                <TrackedLink
-                  href="/signup"
-                  eventName="cta_secure_upload_request_review"
-                  className="mt-4 inline-flex items-center rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-slate-900 hover:bg-amber-400 transition-colors"
-                >
-                  Continue to Secure Upload
-                </TrackedLink>
-              </div>
-              <div className="rounded-2xl border border-cyan-300/25 bg-cyan-300/10 p-5">
-                <p className="text-xs uppercase tracking-wider text-cyan-100 font-semibold">For Clinics / Doctors</p>
-                <p className="mt-2 text-sm text-cyan-50/95">Create a free clinic or doctor profile and start with internal audits.</p>
-                <TrackedLink
-                  href="/signup"
-                  eventName="cta_professional_apply_request_review_split"
-                  className="mt-4 inline-flex items-center rounded-xl border border-slate-500 px-4 py-2.5 text-sm font-medium text-slate-100 hover:bg-white/5 transition-colors"
-                >
-                  Create Clinic or Doctor Profile
-                </TrackedLink>
-              </div>
-            </div>
+          <div className="mt-6 rounded-2xl border border-amber-300/25 bg-amber-300/10 p-5">
+            <p className="text-xs uppercase tracking-wider text-amber-200 font-semibold">Patient audit pathway</p>
+            <p className="mt-2 text-sm text-amber-50/95">
+              Start your secure upload, then add surgery details and submit when you are ready.
+            </p>
+            <TrackedLink
+              href="/signup"
+              eventName="cta_start_free_audit_request_review_card"
+              className="mt-4 inline-flex items-center rounded-xl bg-amber-400 px-4 py-2.5 text-sm font-semibold text-slate-950 hover:bg-amber-300 transition-colors"
+            >
+              Start Free Audit
+            </TrackedLink>
+          </div>
 
           <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-6">
-              <h2 className="text-lg font-semibold text-white">Helpful photos include</h2>
-              <ul className="mt-4 grid sm:grid-cols-2 gap-3 text-slate-300 text-sm">
-                {[
-                  "front hairline",
-                  "left side",
-                  "right side",
-                  "top view",
-                  "crown",
-                  "donor area",
-                ].map((item) => (
-                  <li key={item} className="rounded-xl border border-white/10 bg-slate-900/60 px-4 py-2.5">
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
+            <h2 className="text-lg font-semibold text-white">Helpful photos include</h2>
+            <ul className="mt-4 grid sm:grid-cols-2 gap-3 text-slate-300 text-sm">
+              {helpfulPhotos.map((item) => (
+                <li key={item} className="rounded-xl border border-white/10 bg-slate-900/60 px-4 py-2.5">
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
 
           <div className="mt-8 flex flex-col sm:flex-row gap-4">
-              <TrackedLink
-                href="/signup"
-                eventName="cta_secure_upload_request_review"
-                className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors shadow-lg shadow-amber-500/20"
-              >
-                Continue to Secure Upload
-              </TrackedLink>
-              <TrackedLink
-                href="/demo-report"
-                eventName="cta_example_report_request_review"
-                className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
-              >
-                Sample hair transplant audit report
-              </TrackedLink>
-            </div>
-            <div className="mt-5 rounded-2xl border border-white/10 bg-white/5 p-5">
-              <h2 className="text-base font-semibold text-white">What happens next</h2>
-              <ol className="mt-3 space-y-2 text-sm text-slate-300">
-                <li>- Submit your case details and photos.</li>
-                <li>- We review the evidence through the HairAudit process.</li>
-                <li>- Your case is assessed with structured, confidence-aware findings.</li>
-                <li>- You receive next-step report guidance.</li>
-              </ol>
-              <p className="mt-3 text-xs text-slate-400">
-                Your photos stay private and are never shared without permission.
-              </p>
-            </div>
-            <ReviewProcessReassurance className="mt-6" />
-            <p className="mt-5 text-sm text-slate-400">
-              Many patients only realise something may be wrong months after surgery. HairAudit helps
-              you understand whether your result is normal — or if something went wrong.
+            <TrackedLink
+              href="/signup"
+              eventName="cta_start_free_audit_request_review"
+              className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl bg-amber-400 text-slate-950 font-semibold hover:bg-amber-300 transition-colors shadow-lg shadow-amber-500/20"
+            >
+              Start Free Audit
+            </TrackedLink>
+            <TrackedLink
+              href="/demo-report"
+              eventName="cta_view_sample_report_request_review"
+              className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
+            >
+              View Sample Report
+            </TrackedLink>
+          </div>
+
+          <div className="mt-5 rounded-2xl border border-white/10 bg-white/5 p-5">
+            <h2 className="text-base font-semibold text-white">What happens next</h2>
+            <ol className="mt-3 space-y-2 text-sm text-slate-300">
+              <li>1. Submit your case details and photos.</li>
+              <li>2. HairAudit reviews the evidence through a structured process.</li>
+              <li>3. Your case is assessed with confidence-aware findings.</li>
+              <li>4. You receive clear report guidance for your next conversation.</li>
+            </ol>
+            <p className="mt-3 text-xs text-slate-400">
+              Your photos stay private and are never shared without permission.
             </p>
-            <p className="mt-3 text-sm text-slate-400">
-              Looking for a validation-first pathway?{" "}
-              <Link href="/rate-my-hair-transplant" className="text-emerald-300 hover:text-emerald-200 transition-colors">
-                How Good Is My Hair Transplant?
-              </Link>
+          </div>
+
+          <ReviewProcessReassurance className="mt-6" />
+
+          <p className="mt-5 text-sm text-slate-400">
+            Many patients only realise something may be wrong months after surgery. HairAudit helps you understand
+            whether your result is within an expected range, evidence-limited, or worth further review.
+          </p>
+          <p className="mt-3 text-sm text-slate-400">
+            Looking for a validation-first pathway?{" "}
+            <Link href="/rate-my-hair-transplant" className="text-emerald-300 hover:text-emerald-200 transition-colors">
+              How Good Is My Hair Transplant?
+            </Link>
+          </p>
+
+          <div className="mt-6 rounded-2xl border border-cyan-300/20 bg-cyan-300/10 p-5">
+            <p className="text-xs uppercase tracking-wider text-cyan-100 font-semibold">Clinics and doctors</p>
+            <p className="mt-2 text-sm text-cyan-50/90">
+              Professional profiles and internal audits use a separate pathway so patient submission stays focused.
             </p>
-            <p className="mt-4 text-sm text-slate-500">
-              <Link href="/methodology" className="text-amber-400 hover:text-amber-300 transition-colors">
-                How we review your surgery (methodology)
-              </Link>
-              {" · "}
-              <Link href="/faq" className="text-amber-400 hover:text-amber-300 transition-colors">
-                Hair transplant audit FAQ
-              </Link>
-              {" · "}
-              <Link href="/professionals" className="text-amber-400 hover:text-amber-300 transition-colors">
-                Independent audit standards for professionals
-              </Link>
-              {" · "}
-              <Link href="/clinics" className="text-amber-400 hover:text-amber-300 transition-colors">
-                Clinic transparency directory
-              </Link>
-            </p>
+            <TrackedLink
+              href="/signup"
+              eventName="cta_professional_apply_request_review_secondary"
+              className="mt-4 inline-flex items-center rounded-xl border border-cyan-200/35 px-4 py-2.5 text-sm font-medium text-cyan-50 hover:bg-white/5 transition-colors"
+            >
+              Create Clinic or Doctor Profile
+            </TrackedLink>
+          </div>
+
+          <p className="mt-4 text-sm text-slate-500">
+            <Link href="/methodology" className="text-amber-400 hover:text-amber-300 transition-colors">
+              Methodology
+            </Link>
+            {" · "}
+            <Link href="/faq" className="text-amber-400 hover:text-amber-300 transition-colors">
+              Hair transplant audit FAQ
+            </Link>
+            {" · "}
+            <Link href="/professionals" className="text-amber-400 hover:text-amber-300 transition-colors">
+              Independent audit standards for professionals
+            </Link>
+          </p>
         </div>
       </main>
 

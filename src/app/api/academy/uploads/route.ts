@@ -13,6 +13,7 @@ import {
   formatUploadErrorForLog,
   type UploadResult,
 } from "@/lib/uploads/safeUpload";
+import { validateUploadedImage } from "@/lib/uploads/fileValidation";
 
 export const runtime = "nodejs";
 
@@ -38,18 +39,21 @@ async function uploadOne(
     created_at: string;
   }>
 > {
+  const validated = await validateUploadedImage(file);
+  if (!validated.ok) {
+    return { success: false as const, error: validated.error };
+  }
+  const { buffer, normalizedMime } = validated;
+
   const fileName = safeFileName(file.name || "upload.jpg");
   const stamp = Date.now();
   const storagePath = `academy/training-cases/${caseId}/${category}/${stamp}-${fileName}`;
   const uploadType = trainingPhotoType(category as Parameters<typeof trainingPhotoType>[0]);
 
-  const arrayBuffer = await file.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
-
   const storageResult = await withRetry(
     async () => {
       const up = await supabase.storage.from(bucket).upload(storagePath, buffer, {
-        contentType: file.type || "application/octet-stream",
+        contentType: normalizedMime,
         upsert: false,
       });
       if (up.error) {
@@ -69,8 +73,8 @@ async function uploadOne(
 
   const metadata_json = {
     original_name: file.name,
-    mime: file.type,
-    size: file.size,
+    mime: normalizedMime,
+    size: buffer.length,
     category,
   };
 
@@ -166,9 +170,11 @@ export async function POST(req: Request) {
   const result = await uploadOne(supabase, bucket, caseId.trim(), user.id, category, file);
   if (!result.success) {
     console.error(`[${requestId}] Academy upload failed`, formatUploadErrorForLog(result.error));
+    const status =
+      result.error.code === "VALIDATION_ERROR" || result.error.code === "FILE_TOO_LARGE" ? 400 : 500;
     return NextResponse.json(
       { ok: false, error: formatUploadErrorForUser(result.error), requestId },
-      { status: 500 }
+      { status }
     );
   }
 

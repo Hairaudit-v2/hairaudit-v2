@@ -2,8 +2,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getUserRole } from "@/lib/case-access";
-
-const AUDITOR_EMAIL = "auditor@hairaudit.com";
+import { isAuditor } from "@/lib/auth/isAuditor";
 
 export async function POST(req: Request) {
   try {
@@ -16,8 +15,9 @@ export async function POST(req: Request) {
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const role = await getUserRole(user.id);
-    const isAuditor = role === "auditor" || user.email === AUDITOR_EMAIL;
-    if (!isAuditor) return NextResponse.json({ error: "Forbidden: auditors only" }, { status: 403 });
+    if (!isAuditor({ profileRole: role, userEmail: user.email })) {
+      return NextResponse.json({ error: "Forbidden: auditors only" }, { status: 403 });
+    }
 
     const body = await req.json().catch(() => ({}));
     const { score, notes, findings } = body;

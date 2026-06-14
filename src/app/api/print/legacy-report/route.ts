@@ -6,6 +6,8 @@ import rubric from "@/lib/audit/rubrics/hairaudit_clinical_v1.json";
 import { scoreAudit } from "@/lib/audit/score";
 import { buildReportViewModel, normalizeAuditMode, type AuditMode } from "@/lib/pdf/reportBuilder";
 import { resolveAuditModeFromCaseAccess } from "@/lib/reports/accessMode";
+import { canAccessCase } from "@/lib/case-access";
+import { storagePathBelongsToCase } from "@/lib/uploads/caseFilesPath";
 import { verifyRenderToken } from "@/lib/reports/internalRenderToken";
 import { effectivePatientPhotoCategoryKey } from "@/lib/uploads/patientPhotoAuditMeta";
 import { pdfEnvConfig } from "@/lib/pdf/pdfEnvConfig";
@@ -110,12 +112,7 @@ export async function GET(req: Request) {
   if (caseErr || !c) return new NextResponse("Case not found", { status: 404 });
 
   if (sessionUserId) {
-    const allowed =
-      sessionUserId === c.user_id ||
-      sessionUserId === c.patient_id ||
-      sessionUserId === c.doctor_id ||
-      sessionUserId === c.clinic_id ||
-      sessionRole === "auditor";
+    const allowed = await canAccessCase(sessionUserId, c);
     if (!allowed) return new NextResponse("Forbidden", { status: 403 });
     try {
       const { data: profile } = await supabase
@@ -169,6 +166,11 @@ export async function GET(req: Request) {
     imageUploads.map(async (u) => {
       const path = String(u.storage_path ?? "");
       if (!path) return { ...u, signedUrl: null };
+
+      if (!storagePathBelongsToCase(caseId, path)) {
+        console.error("[legacy-print] skip sign: path outside case namespace");
+        return { ...u, signedUrl: null };
+      }
 
       const { data, error } = await supabase.storage
         .from(bucket)

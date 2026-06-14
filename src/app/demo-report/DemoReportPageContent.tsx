@@ -77,24 +77,24 @@ export default function DemoReportPageContent() {
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <TrackedLink
                 href="/request-review"
-                eventName="cta_request_audit_demo_page"
+                eventName="cta_start_free_audit_demo_page"
                 className="inline-flex items-center justify-center rounded-xl bg-white px-6 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
               >
-                {t("reports.chrome.demo.ctaRequestAudit")}
+                Start Free Audit
               </TrackedLink>
               <TrackedLink
-                href="/request-review"
-                eventName="cta_book_demo_demo_page"
+                href="/demo-report"
+                eventName="cta_view_sample_report_demo_page"
                 className="inline-flex items-center justify-center rounded-xl border border-cyan-300/35 bg-cyan-300/15 px-6 py-3 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-300/25"
               >
-                {t("reports.chrome.demo.ctaBookDemo")}
+                View Sample Report
               </TrackedLink>
               <TrackedLink
                 href="/professionals"
                 eventName="cta_clinic_profile_demo_page"
                 className="inline-flex items-center justify-center rounded-xl border border-white/25 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
               >
-                {t("reports.chrome.demo.ctaCreateClinic")}
+                For Clinics and Professionals
               </TrackedLink>
             </div>
           </div>

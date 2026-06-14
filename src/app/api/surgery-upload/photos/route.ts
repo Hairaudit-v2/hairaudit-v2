@@ -22,6 +22,7 @@ import {
   formatUploadErrorForLog,
   type UploadResult,
 } from "@/lib/uploads/safeUpload";
+import { validateUploadedImage } from "@/lib/uploads/fileValidation";
 
 export const runtime = "nodejs";
 
@@ -92,16 +93,20 @@ async function uploadSingleFile(
   clientMeta: ClientImageMeta,
   additionalEvidenceMeta: AdditionalEvidenceMeta | null
 ): Promise<UploadResult<{ id: string; type: string; storage_path: string; metadata: unknown; created_at: string }>> {
+  const validated = await validateUploadedImage(file);
+  if (!validated.ok) {
+    return { success: false, error: validated.error };
+  }
+  const { buffer, normalizedMime } = validated;
+
   const fileName = safeFileName(file.name || "upload.jpg");
   const stamp = Date.now();
   const storagePath = `cases/${caseId}/surgery/${slot}/${stamp}-${fileName}`;
 
-  const buffer = Buffer.from(await file.arrayBuffer());
-
   const storageResult = await withRetry(
     async () => {
       const up = await admin.storage.from(bucket).upload(storagePath, buffer, {
-        contentType: file.type || "application/octet-stream",
+        contentType: normalizedMime,
         upsert: false,
       });
       if (up.error) {
@@ -128,8 +133,8 @@ async function uploadSingleFile(
     submitter_type: role,
     source: "surgery_upload_portal",
     original_name: file.name,
-    mime: file.type,
-    size: file.size,
+    mime: normalizedMime,
+    size: buffer.length,
     // Stage 3.1: enhanced (best-effort) client metadata. Absent fields are omitted
     // so existing/legacy upload rows without these keys remain valid.
     ...clientMeta,

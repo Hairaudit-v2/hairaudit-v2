@@ -8,6 +8,8 @@ import ScoreAreaGraph from "@/components/reports/ScoreAreaGraph";
 import { buildRubricTitles } from "@/lib/audit/rubricTitles";
 import { buildReportViewModel, normalizeAuditMode, type AuditMode } from "@/lib/pdf/reportBuilder";
 import { resolveAuditModeFromCaseAccess } from "@/lib/reports/accessMode";
+import { canAccessCase } from "@/lib/case-access";
+import { storagePathBelongsToCase } from "@/lib/uploads/caseFilesPath";
 import { verifyRenderToken } from "@/lib/reports/internalRenderToken";
 import { formatTemplate } from "@/lib/i18n/formatTemplate";
 import { getTranslation } from "@/lib/i18n/getTranslation";
@@ -147,12 +149,7 @@ export default async function ReportHtmlPage({
   }
 
   if (sessionUserId) {
-    const allowed =
-      sessionUserId === c.user_id ||
-      sessionUserId === c.patient_id ||
-      sessionUserId === c.doctor_id ||
-      sessionUserId === c.clinic_id ||
-      sessionRole === "auditor";
+    const allowed = await canAccessCase(sessionUserId, c);
     if (!allowed) redirect("/dashboard");
   }
 
@@ -197,9 +194,11 @@ export default async function ReportHtmlPage({
 
   const signedImages = await Promise.all(
     imageUploads.map(async (u) => {
-      const { data } = await supabase.storage
-        .from(bucket)
-        .createSignedUrl(u.storage_path, 60 * 10);
+      const path = String(u.storage_path ?? "");
+      if (!path || !storagePathBelongsToCase(caseId, path)) {
+        return { ...u, signedUrl: null };
+      }
+      const { data } = await supabase.storage.from(bucket).createSignedUrl(path, 60 * 10);
       return { ...u, signedUrl: data?.signedUrl ?? null };
     })
   );

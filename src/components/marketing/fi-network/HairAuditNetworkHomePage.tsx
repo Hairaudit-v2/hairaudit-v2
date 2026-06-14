@@ -3,145 +3,140 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
-  Activity,
   BarChart3,
   Camera,
-  Compass,
-  HeartPulse,
-  Smile,
+  FileText,
+  LockKeyhole,
+  Microscope,
+  ShieldCheck,
+  Sparkles,
+  Stethoscope,
 } from "lucide-react";
 
 import TrackedLink from "@/components/analytics/TrackedLink";
-import { HA_FI_HOME } from "@/content/hairauditFiNetworkHome";
 import { fiHairauditPrimaryButtonClass } from "@/lib/fi-ui/hairauditPrimaryButton";
 import { cn } from "@/lib/utils";
-import { resolveProductHref } from "@/lib/network/resolveProductHref";
 import {
   Badge,
   FeatureGrid,
-  MetricCard,
-  NETWORK_PRODUCTS,
-  NetworkAudienceSection,
   NetworkCTASection,
   NetworkEcosystemMapSection,
   NetworkHero,
-  NetworkIntelligenceLayerSection,
-  NetworkProblemSolutionSection,
-  ProductPill,
   Section,
   networkButtonVariants,
 } from "@/packages/ui";
+import { resolveProductHref } from "@/lib/network/resolveProductHref";
 
 const CertifiedClinicsSection = dynamic(
   () => import("@/components/home/CertifiedClinicsSection").then((m) => m.default),
   { ssr: true }
 );
 
-const INTELLIGENCE_ICONS = [Camera, Activity, HeartPulse, Compass, Smile, BarChart3] as const;
+const auditSteps = [
+  {
+    title: "Upload your photos",
+    body: "Add your donor, hairline, crown, and timeline images through a secure patient flow.",
+    icon: Camera,
+  },
+  {
+    title: "Evidence is reviewed",
+    body: "HairAudit structures the photos, timeline, and surgery details into a consistent audit record.",
+    icon: Microscope,
+  },
+  {
+    title: "Receive clear guidance",
+    body: "Your report explains what the evidence supports, where confidence is limited, and what to monitor next.",
+    icon: FileText,
+  },
+] as const;
+
+const analysisAreas = [
+  "Donor area preservation",
+  "Hairline design and framing",
+  "Density and placement",
+  "Growth pattern and timeline",
+  "Technique consistency",
+  "Evidence confidence",
+] as const;
+
+const trustItems = [
+  {
+    title: "Independent by design",
+    body: "HairAudit does not perform surgery, sell procedures, or route patients into clinic referral funnels.",
+    icon: ShieldCheck,
+  },
+  {
+    title: "Private photo handling",
+    body: "Patient uploads are used for the audit workflow and are never made public without explicit permission.",
+    icon: LockKeyhole,
+  },
+  {
+    title: "FI-powered, HairAudit-owned",
+    body: "The Follicle Intelligence Network supports the scoring infrastructure while HairAudit remains the audit platform.",
+    icon: Sparkles,
+  },
+] as const;
 
 export default function HairAuditNetworkHomePage() {
-  const intelligenceLayers = HA_FI_HOME.intelligence.layers.map((layer, idx) => {
-    const Icon = INTELLIGENCE_ICONS[idx] ?? BarChart3;
-    return {
-      title: layer.title,
-      description: layer.description,
-      icon: <Icon className="h-9 w-9 text-sky-200/90" aria-hidden />,
-    };
-  });
-
   return (
     <main id="main-content" className="relative flex-1">
       <NetworkHero
         platform="hairaudit"
-        eyebrow={HA_FI_HOME.hero.eyebrow}
-        title={HA_FI_HOME.hero.title}
-        subtitle={HA_FI_HOME.hero.subtitle}
-        networkLabel="HairAudit · Follicle Intelligence Network"
+        eyebrow="Independent AuditOS node"
+        title="Understand your hair transplant result with an independent audit."
+        subtitle="Upload your photos and timeline for a structured HairAudit review of donor area, growth, density, hairline design, implantation, and evidence quality."
+        networkLabel="HairAudit · Powered by the Follicle Intelligence Network"
         actions={
           <>
             <TrackedLink
-              href="/for-clinics"
-              eventName="cta_request_clinic_access_hero"
+              href="/request-review"
+              eventName="cta_start_free_audit_home_hero"
               className={fiHairauditPrimaryButtonClass("lg")}
             >
-              {HA_FI_HOME.hero.ctaClinic}
+              Start Free Audit
             </TrackedLink>
             <Link
-              href="/follicle-intelligence"
+              href="/demo-report"
               className={cn(networkButtonVariants({ variant: "secondary", size: "lg" }))}
               prefetch
             >
-              {HA_FI_HOME.hero.ctaNetwork}
+              View Sample Report
             </Link>
           </>
         }
         aside={
-          <div className="flex flex-col gap-4 lg:items-end">
-            <p className="max-w-sm text-right text-xs leading-relaxed text-muted-foreground">
-              HairAudit helps clinics, surgeons and patients measure surgical quality, verify outcomes and build trust
-              through structured evidence.
-            </p>
-            <div className="flex flex-wrap justify-end gap-2">
-              {NETWORK_PRODUCTS.map((p) => (
-                <ProductPill
-                  key={p.slug}
-                  slug={p.slug}
-                  name={p.name}
-                  category={p.category}
-                  href={resolveProductHref(p.slug)}
-                  active={p.slug === "hairaudit"}
-                />
+          <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 shadow-fi-panel backdrop-blur">
+            <div className="flex items-center gap-3">
+              <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-300/15 text-amber-200">
+                <BarChart3 className="h-5 w-5" aria-hidden />
+              </span>
+              <div>
+                <p className="text-sm font-semibold text-foreground">Audit score and evidence map</p>
+                <p className="text-xs text-muted-foreground">Plain-language report, not clinic marketing.</p>
+              </div>
+            </div>
+            <div className="mt-5 space-y-3">
+              {[
+                ["Donor preservation", 78],
+                ["Density confidence", 64],
+                ["Design naturalness", 72],
+              ].map(([label, score]) => (
+                <div key={label}>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>{label}</span>
+                    <span>{score}</span>
+                  </div>
+                  <div className="mt-1 h-2 rounded-full bg-white/10">
+                    <div
+                      className="h-2 rounded-full bg-gradient-to-r from-amber-300 via-sky-300 to-emerald-300"
+                      style={{ width: `${score}%` }}
+                    />
+                  </div>
+                </div>
               ))}
             </div>
-            <div className="flex flex-wrap justify-end gap-2">
-              <Badge tone="accent">Verification infrastructure</Badge>
-              <Badge tone="neutral">Surgical QA</Badge>
-            </div>
-          </div>
-        }
-      />
-
-      <NetworkProblemSolutionSection
-        eyebrow={HA_FI_HOME.trust.eyebrow}
-        title={HA_FI_HOME.trust.title}
-        description={HA_FI_HOME.trust.description}
-        problems={{
-          title: HA_FI_HOME.trust.problem.title,
-          body: HA_FI_HOME.trust.problem.body,
-        }}
-        solutions={{
-          title: HA_FI_HOME.trust.solution.title,
-          body: HA_FI_HOME.trust.solution.body,
-        }}
-      />
-
-      <NetworkIntelligenceLayerSection
-        eyebrow={HA_FI_HOME.intelligence.eyebrow}
-        title={HA_FI_HOME.intelligence.title}
-        description={HA_FI_HOME.intelligence.description}
-        layers={intelligenceLayers}
-      />
-
-      <NetworkAudienceSection
-        eyebrow={HA_FI_HOME.audience.eyebrow}
-        title={HA_FI_HOME.audience.title}
-        description={HA_FI_HOME.audience.description}
-        segments={HA_FI_HOME.audience.segments}
-      />
-
-      <CertifiedClinicsSection />
-
-      <NetworkEcosystemMapSection
-        eyebrow={HA_FI_HOME.ecosystem.eyebrow}
-        title={HA_FI_HOME.ecosystem.title}
-        description={HA_FI_HOME.ecosystem.description}
-        resolveProductHref={resolveProductHref}
-        footer={
-          <div className="mt-10 max-w-3xl space-y-3">
-            <Badge tone="accent">Global Intelligence Network</Badge>
-            <p className="text-sm leading-relaxed text-muted-foreground">
-              HairAudit connects into the network&apos;s shared intelligence layer so structured signals can compound
-              across clinics, regions and time — without turning patient care into promotional leaderboards.
+            <p className="mt-5 text-xs leading-relaxed text-muted-foreground">
+              Free during public beta. AI-assisted scoring is monitored and corrected when needed.
             </p>
           </div>
         }
@@ -149,33 +144,167 @@ export default function HairAuditNetworkHomePage() {
 
       <Section className="border-t border-border/30">
         <div className="space-y-8">
-          <div className="space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">{HA_FI_HOME.metrics.eyebrow}</p>
+          <div className="max-w-3xl space-y-3">
+            <Badge tone="accent">Patient pathway</Badge>
             <h2 className="font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-              {HA_FI_HOME.metrics.title}
+              A clearer path from uncertainty to evidence.
+            </h2>
+            <p className="text-base leading-relaxed text-muted-foreground">
+              HairAudit keeps the patient flow simple: upload photos, add context, and receive a structured audit
+              that explains what can and cannot be concluded from the evidence.
+            </p>
+          </div>
+          <FeatureGrid columnsClassName="md:grid-cols-3">
+            {auditSteps.map(({ title, body, icon: Icon }, index) => (
+              <article
+                key={title}
+                className="rounded-2xl border border-border/50 bg-card/70 p-6 shadow-fi-panel"
+              >
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-sky-300/10 text-sky-200">
+                  <Icon className="h-5 w-5" aria-hidden />
+                </span>
+                <p className="mt-5 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                  Step {index + 1}
+                </p>
+                <h3 className="mt-2 text-xl font-semibold text-foreground">{title}</h3>
+                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{body}</p>
+              </article>
+            ))}
+          </FeatureGrid>
+        </div>
+      </Section>
+
+      <Section className="border-t border-border/30">
+        <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+          <div className="space-y-4">
+            <Badge tone="neutral">What HairAudit analyses</Badge>
+            <h2 className="font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+              Surgical quality signals, translated into patient language.
+            </h2>
+            <p className="text-base leading-relaxed text-muted-foreground">
+              The audit framework focuses on what patients struggle to judge from appearance alone: donor management,
+              density distribution, design realism, growth context, and the strength of the available documentation.
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {analysisAreas.map((area) => (
+              <div key={area} className="rounded-2xl border border-border/50 bg-card/65 p-4">
+                <div className="flex items-center gap-3">
+                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-amber-300/12 text-amber-200">
+                    <Stethoscope className="h-4 w-4" aria-hidden />
+                  </span>
+                  <p className="text-sm font-semibold text-foreground">{area}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </Section>
+
+      <Section className="border-t border-border/30">
+        <div className="space-y-8">
+          <div className="max-w-3xl space-y-3">
+            <Badge tone="accent">Trust and privacy</Badge>
+            <h2 className="font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+              Independent review, protected patient data.
             </h2>
           </div>
           <FeatureGrid columnsClassName="md:grid-cols-3">
-            {HA_FI_HOME.metrics.items.map((m) => (
-              <MetricCard key={m.label} label={m.label} value={m.value} hint={m.hint} />
+            {trustItems.map(({ title, body, icon: Icon }) => (
+              <article key={title} className="rounded-2xl border border-border/50 bg-card/70 p-6">
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-300/10 text-emerald-200">
+                  <Icon className="h-5 w-5" aria-hidden />
+                </span>
+                <h3 className="mt-5 text-xl font-semibold text-foreground">{title}</h3>
+                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{body}</p>
+              </article>
             ))}
           </FeatureGrid>
         </div>
       </Section>
 
       <NetworkCTASection
-        id="request-hairaudit-access"
         align="center"
-        eyebrow={HA_FI_HOME.finalCta.eyebrow}
-        title={HA_FI_HOME.finalCta.title}
-        description={HA_FI_HOME.finalCta.description}
+        eyebrow="Sample report"
+        title="See the structure before you submit."
+        description="Preview how HairAudit turns photos and case details into scorecards, confidence notes, findings, and next-step guidance."
+        actions={
+          <>
+            <Link
+              href="/demo-report"
+              className={cn(networkButtonVariants({ variant: "primary", size: "lg" }))}
+            >
+              View Sample Report
+            </Link>
+            <TrackedLink
+              href="/request-review"
+              eventName="cta_start_free_audit_home_sample"
+              className={cn(networkButtonVariants({ variant: "secondary", size: "lg" }))}
+            >
+              Start Free Audit
+            </TrackedLink>
+          </>
+        }
+      />
+
+      <Section className="border-t border-border/30">
+        <div className="grid gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
+          <div className="space-y-4">
+            <Badge tone="neutral">Clinics and professionals</Badge>
+            <h2 className="font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+              Professional pathways stay available, but separate.
+            </h2>
+            <p className="text-base leading-relaxed text-muted-foreground">
+              Clinics and doctors can use HairAudit for internal QA, verified participation, and transparent public
+              proof. Patient review remains the primary public path.
+            </p>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Link href="/for-clinics" className={cn(networkButtonVariants({ variant: "secondary", size: "md" }))}>
+                For Clinics
+              </Link>
+              <Link href="/professionals" className={cn(networkButtonVariants({ variant: "ghost", size: "md" }))}>
+                For Professionals
+              </Link>
+            </div>
+          </div>
+          <div className="rounded-3xl border border-border/50 bg-card/60 p-6">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+              Standalone platform positioning
+            </p>
+            <p className="mt-3 text-lg font-semibold text-foreground">
+              HairAudit is the independent audit layer, not a clinic marketplace and not a Follicle Intelligence
+              subpage.
+            </p>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+              FI provides shared intelligence infrastructure and ecosystem coherence; HairAudit owns the audit
+              experience, patient trust posture, and surgical review workflow.
+            </p>
+          </div>
+        </div>
+      </Section>
+
+      <CertifiedClinicsSection />
+
+      <NetworkEcosystemMapSection
+        eyebrow="Network context"
+        title="Part of the Follicle Intelligence Network."
+        description="HairAudit connects surgical audit signals into the broader network architecture while keeping patient audits independent, private, and evidence-led."
+        resolveProductHref={resolveProductHref}
+      />
+
+      <NetworkCTASection
+        id="start-free-audit"
+        align="center"
+        eyebrow="Start"
+        title="Get clarity on your hair transplant."
+        description="Start with secure upload. Add the photos you have now; the report will explain where evidence is strong and where confidence is limited."
         actions={
           <TrackedLink
-            href="/signup"
-            eventName="cta_request_hairaudit_access_footer"
+            href="/request-review"
+            eventName="cta_start_free_audit_home_footer"
             className={fiHairauditPrimaryButtonClass("lg")}
           >
-            {HA_FI_HOME.finalCta.button}
+            Start Free Audit
           </TrackedLink>
         }
       />

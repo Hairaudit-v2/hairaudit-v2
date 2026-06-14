@@ -1,24 +1,15 @@
 import type { ReactNode } from "react";
 
-import { EcosystemFooter } from "@/packages/ui";
-
-import { resolveProductHref } from "@/lib/network/resolveProductHref";
-
-import HairAuditFiNavBar from "./HairAuditFiNavBar";
-
-const LEGAL_LINKS = [
-  { label: "Privacy", href: "/privacy" },
-  { label: "Terms", href: "/terms" },
-  { label: "Disclaimer", href: "/disclaimer" },
-] as const;
+import SiteFooter from "@/components/SiteFooter";
+import SiteHeader from "@/components/SiteHeader";
 
 type HairAuditFiMarketingShellProps = {
   children: ReactNode;
 };
 
 /**
- * Follicle Intelligence Network chrome for HairAudit marketing surfaces.
- * Scoped design tokens apply via `data-hairaudit-fi-network` (see `globals.css`).
+ * Public HairAudit chrome with Follicle Intelligence network alignment.
+ * Keeps HairAudit standalone while sharing the upgraded corporate surface.
  */
 export default function HairAuditFiMarketingShell({ children }: HairAuditFiMarketingShellProps) {
   return (
@@ -31,15 +22,9 @@ export default function HairAuditFiMarketingShell({ children }: HairAuditFiMarke
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_55%_40%_at_90%_55%,rgba(56,189,248,0.06),transparent)]" />
       </div>
 
-      <HairAuditFiNavBar />
-
+      <SiteHeader />
       {children}
-
-      <EcosystemFooter
-        resolveProductHref={resolveProductHref}
-        legalLinks={LEGAL_LINKS}
-        statement="HairAudit is the outcome verification and surgical quality assurance layer of the Follicle Intelligence Network — structured evidence, independent review discipline, and reporting designed for real-world accountability."
-      />
+      <SiteFooter />
     </div>
   );
 }

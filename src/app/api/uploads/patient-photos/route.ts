@@ -16,6 +16,7 @@ import {
   type UploadResult,
 } from "@/lib/uploads/safeUpload";
 import { PATIENT_UPLOAD_CATEGORY_DEFS, type PatientUploadCategoryKey } from "@/lib/patientPhotoCategoryConfig";
+import { validateUploadedImage } from "@/lib/uploads/fileValidation";
 
 export const runtime = "nodejs";
 
@@ -35,18 +36,21 @@ async function uploadSingleFile(
   category: string,
   file: File
 ): Promise<UploadResult<{ id: string; type: string; storage_path: string; metadata: unknown; created_at: string }>> {
+  const validated = await validateUploadedImage(file);
+  if (!validated.ok) {
+    return { success: false, error: validated.error };
+  }
+  const { buffer, normalizedMime } = validated;
+
   const fileName = safeFileName(file.name || "upload.jpg");
   const stamp = Date.now();
   const storagePath = `cases/${caseId}/patient/${category}/${stamp}-${fileName}`;
-
-  const arrayBuffer = await file.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
 
   // Upload to storage with retry
   const storageResult = await withRetry(
     async () => {
       const up = await supabase.storage.from(bucket).upload(storagePath, buffer, {
-        contentType: file.type || "application/octet-stream",
+        contentType: normalizedMime,
         upsert: false,
       });
 
@@ -77,8 +81,8 @@ async function uploadSingleFile(
     category as any,
     {
       original_name: file.name,
-      mime: file.type,
-      size: file.size,
+      mime: normalizedMime,
+      size: buffer.length,
     }
   );
 

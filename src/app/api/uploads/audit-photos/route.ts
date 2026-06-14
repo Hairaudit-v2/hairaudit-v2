@@ -19,6 +19,7 @@ import {
   formatUploadErrorForLog,
   type UploadResult,
 } from "@/lib/uploads/safeUpload";
+import { validateUploadedImage } from "@/lib/uploads/fileValidation";
 
 export const runtime = "nodejs";
 
@@ -96,19 +97,23 @@ async function uploadSingleFile(
   typeValue: string,
   file: File
 ): Promise<UploadResult<{ id: string; type: string; storage_path: string; metadata: unknown; created_at: string }>> {
+  const validated = await validateUploadedImage(file);
+  if (!validated.ok) {
+    return { success: false, error: validated.error };
+  }
+  const { buffer, normalizedMime } = validated;
+
   const fileName = safeFileName(file.name || "upload.jpg");
   const uuid = crypto.randomUUID();
-  const ext = (fileName.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z]/g, "jpg");
+  const ext =
+    normalizedMime === "image/png" ? "png" : normalizedMime === "image/webp" ? "webp" : "jpg";
   const storagePath = `audit_photos/${caseId}/${st}/${category}/${uuid}.${ext}`;
-
-  const arrayBuffer = await file.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
 
   // Upload to storage with retry
   const storageResult = await withRetry(
     async () => {
       const { error: upErr } = await admin.storage.from(bucket).upload(storagePath, buffer, {
-        contentType: file.type || "image/jpeg",
+        contentType: normalizedMime,
         upsert: false,
       });
 
@@ -143,8 +148,8 @@ async function uploadSingleFile(
             category,
             submitter_type: st,
             original_name: file.name,
-            mime: file.type,
-            size: file.size,
+            mime: normalizedMime,
+            size: buffer.length,
           },
         })
         .select("id, type, storage_path, metadata, created_at")

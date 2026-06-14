@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
+// Legacy / alternate implementation (not wired: App Router uses route.ts only).
 // GET /api/uploads/signed-url?uploadId=...
 export async function GET(req: Request) {
   const url = new URL(req.url);

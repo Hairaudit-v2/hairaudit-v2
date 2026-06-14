@@ -2,6 +2,8 @@
 
 The `ALLOW_AUDITOR_EMAIL_OVERRIDE` env var allows `auditor@hairaudit.com` to be treated as an auditor even when `profiles.role` is not set. Once all auditors have `profiles.role = 'auditor'`, you can retire this temporary dependency.
 
+In **production**, the app only applies this email fallback when `ALLOW_AUDITOR_EMAIL_OVERRIDE=true`. In **`NODE_ENV=development`**, the same email fallback remains enabled for local convenience (see `src/lib/auth/isAuditor.ts`).
+
 ## Exact Steps to Disable
 
 ### 1. Verify all auditors have profile.role set

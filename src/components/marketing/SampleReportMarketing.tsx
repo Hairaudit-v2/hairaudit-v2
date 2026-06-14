@@ -160,14 +160,14 @@ export default function SampleReportMarketing() {
                   eventName="cta_view_sample_audit_hero"
                   className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-cyan-300 via-sky-300 to-indigo-300 px-6 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/25 transition hover:scale-[1.01]"
                 >
-                  {t("marketing.sampleReport.ctaViewSample")}
+                  View Sample Report
                 </TrackedLink>
                 <TrackedLink
                   href="/request-review"
-                  eventName="cta_request_my_audit_hero"
+                  eventName="cta_start_free_audit_sample_hero"
                   className="inline-flex items-center justify-center rounded-xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white backdrop-blur transition hover:border-white/35 hover:bg-white/10"
                 >
-                  {t("marketing.sampleReport.ctaRequestAudit")}
+                  Start Free Audit
                 </TrackedLink>
               </div>
               <p className="mt-5 text-sm text-slate-400">{t("marketing.sampleReport.heroNote")}</p>
@@ -529,17 +529,17 @@ export default function SampleReportMarketing() {
               <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
                 <TrackedLink
                   href="/request-review"
-                  eventName="cta_request_my_audit_footer"
+                  eventName="cta_start_free_audit_sample_footer"
                   className="inline-flex items-center justify-center rounded-xl bg-white px-6 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
                 >
-                  {t("marketing.sampleReport.footerCtaPrimary")}
+                  Start Free Audit
                 </TrackedLink>
                 <TrackedLink
-                  href="/request-review"
-                  eventName="cta_get_independent_review_footer"
+                  href="/demo-report"
+                  eventName="cta_view_sample_report_sample_footer"
                   className="inline-flex items-center justify-center rounded-xl border border-white/25 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
                 >
-                  {t("marketing.sampleReport.footerCtaSecondary")}
+                  View Sample Report
                 </TrackedLink>
               </div>
               <div className="mx-auto mt-8 max-w-3xl text-left">

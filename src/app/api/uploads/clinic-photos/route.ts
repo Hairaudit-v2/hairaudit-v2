@@ -3,6 +3,7 @@ import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { canAccessCase } from "@/lib/case-access";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { CLINIC_PHOTO_CATEGORIES } from "@/lib/clinicPhotoCategories";
+import { validateUploadedImage } from "@/lib/uploads/fileValidation";
 
 export const runtime = "nodejs";
 
@@ -71,11 +72,15 @@ export async function POST(req: Request) {
 
     for (const f of validFiles) {
       if (!(f instanceof File)) continue;
+      const validated = await validateUploadedImage(f);
+      if (!validated.ok) {
+        return NextResponse.json({ ok: false, error: validated.error.message }, { status: 400 });
+      }
+      const { buffer, normalizedMime } = validated;
       const storagePath = `cases/${caseId}/clinic/${category}/${Date.now()}-${safeName(f.name || "upload.jpg")}`;
-      const buffer = Buffer.from(await f.arrayBuffer());
 
       const { error: upErr } = await admin.storage.from(bucket).upload(storagePath, buffer, {
-        contentType: f.type || "application/octet-stream",
+        contentType: normalizedMime,
         upsert: false,
       });
       if (upErr) return NextResponse.json({ ok: false, error: upErr.message }, { status: 500 });
@@ -87,7 +92,7 @@ export async function POST(req: Request) {
           user_id: userId,
           type: `clinic_photo:${category}`,
           storage_path: storagePath,
-          metadata: { category, original_name: f.name, mime: f.type, size: f.size },
+          metadata: { category, original_name: f.name, mime: normalizedMime, size: buffer.length },
         })
         .select("id, case_id, type, storage_path, metadata, created_at")
         .maybeSingle();
