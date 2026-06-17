@@ -9,6 +9,7 @@
  * See: docs/hairaudit-v2-phase-2f-upload-deleted-events-readiness.md
  *      docs/hairaudit-v2-phase-2g-event-sink-fi-bridge.md
  *      docs/hairaudit-v2-phase-3a-fi-image-intelligence-enqueue.md
+ *      docs/hairaudit-v2-phase-3b-fi-image-intelligence-worker-scaffold.md
  */
 
 import { fileURLToPath } from "node:url";
@@ -38,6 +39,11 @@ const UPLOAD_EVENT_FLAGS = [
     id: "HAIRAUDIT_FI_IMAGE_INTELLIGENCE_ENABLED",
     requiredForDelivery: false,
     description: "FI image-intelligence enqueue switch (Phase 3A — no AI execution)",
+  },
+  {
+    id: "HAIRAUDIT_FI_IMAGE_INTELLIGENCE_WORKER_ENABLED",
+    requiredForDelivery: false,
+    description: "FI image-intelligence worker dry-run switch (Phase 3B — no AI execution)",
   },
 ];
 
@@ -95,6 +101,8 @@ export function runHairAuditEventReadinessChecks(env = process.env) {
   const uploadEventsEnabled = env.HAIRAUDIT_UPLOAD_EVENTS_ENABLED === "true";
   const integrationEventsEnabled = env.INTEGRATION_EVENTS_ENABLED === "true";
   const fiImageIntelligenceEnabled = env.HAIRAUDIT_FI_IMAGE_INTELLIGENCE_ENABLED === "true";
+  const fiImageIntelligenceWorkerEnabled =
+    env.HAIRAUDIT_FI_IMAGE_INTELLIGENCE_WORKER_ENABLED === "true";
   const debugEnabled = env.HAIRAUDIT_UPLOAD_EVENTS_DEBUG === "true";
   const nodeEnv = (env.NODE_ENV ?? "").trim();
 
@@ -118,7 +126,7 @@ export function runHairAuditEventReadinessChecks(env = process.env) {
           id: flag.id,
           status: "WARN",
           message:
-            `${flag.id}=true — FI image-intelligence enqueue active (Phase 3A); AI worker not implemented yet (Phase 3B)`,
+            `${flag.id}=true — FI image-intelligence enqueue active (Phase 3A); worker dry-run available when HAIRAUDIT_FI_IMAGE_INTELLIGENCE_WORKER_ENABLED=true`,
         });
         if (!inngestKey) {
           lines.push({
@@ -145,6 +153,30 @@ export function runHairAuditEventReadinessChecks(env = process.env) {
           id: flag.id,
           status: "PASS",
           message: `${flag.id} off (default — bridge mapping only, no enqueue)`,
+        });
+      }
+      continue;
+    }
+
+    if (flag.id === "HAIRAUDIT_FI_IMAGE_INTELLIGENCE_WORKER_ENABLED") {
+      if (isTrue) {
+        lines.push({
+          id: flag.id,
+          status: "WARN",
+          message:
+            `${flag.id}=true — FI image-intelligence worker active (Phase 3B dry-run only; no AI execution)`,
+        });
+      } else if (value !== undefined && value !== "false" && value !== "") {
+        lines.push({
+          id: flag.id,
+          status: "WARN",
+          message: `${flag.id} is set but not "true" (value: ${value})`,
+        });
+      } else {
+        lines.push({
+          id: flag.id,
+          status: "PASS",
+          message: `${flag.id} off (default — worker registered but returns skipped)`,
         });
       }
       continue;
@@ -301,7 +333,22 @@ export function runHairAuditEventReadinessChecks(env = process.env) {
       id: "fi-ai-execution",
       status: "WARN",
       message:
-        "HAIRAUDIT_FI_IMAGE_INTELLIGENCE_ENABLED=true — jobs enqueue via Inngest; AI worker execution is Phase 3B",
+        "HAIRAUDIT_FI_IMAGE_INTELLIGENCE_ENABLED=true — jobs enqueue via Inngest; worker dry-run requires HAIRAUDIT_FI_IMAGE_INTELLIGENCE_WORKER_ENABLED",
+    });
+  }
+
+  if (fiImageIntelligenceWorkerEnabled) {
+    lines.push({
+      id: "fi-worker-dry-run",
+      status: "WARN",
+      message:
+        "HAIRAUDIT_FI_IMAGE_INTELLIGENCE_WORKER_ENABLED=true — worker returns dry-run placeholders only (Phase 3B; AI execution is Phase 3C)",
+    });
+  } else {
+    lines.push({
+      id: "fi-worker-dry-run",
+      status: "PASS",
+      message: "FI image-intelligence worker disabled (expected default — jobs skipped at handler)",
     });
   }
 
@@ -316,7 +363,7 @@ export function printReadinessReport(lines) {
   let hasFail = false;
   let hasWarn = false;
 
-  console.log("HairAudit upload event readiness (Phase 2G / 3A)\n");
+  console.log("HairAudit upload event readiness (Phase 2G / 3A / 3B)\n");
 
   for (const line of lines) {
     const prefix = `[${line.status}]`;
