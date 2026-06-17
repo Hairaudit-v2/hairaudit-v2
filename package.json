@@ -45,6 +45,7 @@
     "test:upload-phase3c": "tsx --test tests/uploadPhase3c.test.ts",
     "test:upload-phase3d": "tsx --test tests/uploadPhase3d.test.ts",
     "test:upload-phase3e": "tsx --test tests/uploadPhase3e.test.ts",
+    "test:upload-phase3f": "tsx --test tests/hairauditImageClassifyEndpoint.test.ts",
     "check:hairaudit-events": "node scripts/check-hairaudit-event-readiness.mjs",
     "gen:supabase-types": "node scripts/gen-supabase-types.mjs",
     "test:file-validation": "tsx --test tests/fileValidation.test.ts",
