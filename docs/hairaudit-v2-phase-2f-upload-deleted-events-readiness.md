@@ -3,6 +3,7 @@
 **Date:** 2026-06-17  
 **Scope:** `hairaudit.upload.deleted` event contract, delete-route hook, staging readiness checker  
 **Prerequisites:** [Phase 2E](./hairaudit-v2-phase-2e-upload-events-manifest-parity.md)  
+**Follow-up:** [Phase 2G — Event sink & FI bridge](./hairaudit-v2-phase-2g-event-sink-fi-bridge.md)  
 **Integration reference:** [FUTURE-INTEGRATION-ARCHITECTURE.md](../FUTURE-INTEGRATION-ARCHITECTURE.md)
 
 ---
@@ -131,11 +132,11 @@ HAIRAUDIT_UPLOAD_EVENTS_ENABLED=true
 INTEGRATION_EVENTS_ENABLED=true
 ```
 
-Configure sink when adapter exists:
+Configure sink (Phase 2G adapter):
 
 ```env
 INTEGRATION_EVENTS_SINK_URL=https://…
-INTEGRATION_EVENTS_HEADERS=Authorization: Bearer …
+INTEGRATION_EVENTS_HEADERS={"Authorization":"Bearer …"}
 ```
 
 Re-run `npm run check:hairaudit-events` before deploy.
@@ -161,13 +162,16 @@ Upload and delete routes continue to work; events become no-ops again.
 
 ## Recommended Next Phase
 
+See [Phase 2G doc](./hairaudit-v2-phase-2g-event-sink-fi-bridge.md) for event sink adapter and FI bridge contract (✅).
+
 | Work | Phase |
 |------|-------|
-| Real HTTP/queue sink adapter for staging | 2G |
-| Bridge upload events to FI image intelligence schema | 2G+ |
-| `audit_photos` dual-write consistency across forensic routes | 2G |
+| Real HTTP/queue sink adapter for staging | 2G ✅ |
+| Bridge upload events to FI image intelligence schema | 2G ✅ (contract only) |
+| FI image intelligence execution / queue | 3A |
+| `audit_photos` dual-write consistency across forensic routes | 2G / 3A |
 | Manifest generation from event stream | 3.x |
-| Storage path alignment / backfill (see 2D) | 2G |
+| Storage path alignment / backfill (see 2D) | 2G / 3A |
 | RLS on `uploads` | After path inventory frozen |
 
 ---
@@ -181,4 +185,5 @@ Upload and delete routes continue to work; events become no-ops again.
 | `src/app/api/uploads/delete/route.ts` | Delete hook |
 | `scripts/check-hairaudit-event-readiness.mjs` | Staging readiness |
 | `src/lib/integrations/emit.ts` | Integration bridge |
+| `src/lib/hairaudit/integrationEventSink.ts` | HTTP sink adapter (Phase 2G) |
 | `tests/uploadPhase2f.test.ts` | Phase 2F test suite |

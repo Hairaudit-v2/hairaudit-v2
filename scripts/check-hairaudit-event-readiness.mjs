@@ -1,5 +1,5 @@
 /**
- * HairAudit upload event staging readiness checker — Phase 2F
+ * HairAudit upload event staging readiness checker — Phase 2F / 2G
  *
  * Validates environment flags and secret hygiene for FI-compatible event
  * forwarding without making external network calls.
@@ -7,6 +7,7 @@
  * Usage: npm run check:hairaudit-events
  *
  * See: docs/hairaudit-v2-phase-2f-upload-deleted-events-readiness.md
+ *      docs/hairaudit-v2-phase-2g-event-sink-fi-bridge.md
  */
 
 import { fileURLToPath } from "node:url";
@@ -32,6 +33,11 @@ const UPLOAD_EVENT_FLAGS = [
     requiredForDelivery: false,
     description: "debug logging for upload events (non-production only)",
   },
+  {
+    id: "HAIRAUDIT_FI_IMAGE_INTELLIGENCE_ENABLED",
+    requiredForDelivery: false,
+    description: "future FI image-intelligence enqueue switch (contract only in Phase 2G)",
+  },
 ];
 
 const INTEGRATION_SINK_VARS = [
@@ -46,6 +52,38 @@ const SECRET_ENV_KEYS = [
 ];
 
 /**
+ * @param {string | undefined} raw
+ * @returns {{ ok: true } | { ok: false; reason: string }}
+ */
+export function validateIntegrationHeadersJson(raw) {
+  const trimmed = raw?.trim();
+  if (!trimmed) return { ok: true };
+
+  if (trimmed.startsWith("{")) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        return { ok: false, reason: "must be a JSON object" };
+      }
+      for (const value of Object.values(parsed)) {
+        if (typeof value !== "string") {
+          return { ok: false, reason: "header values must be strings" };
+        }
+      }
+      return { ok: true };
+    } catch {
+      return { ok: false, reason: "invalid JSON" };
+    }
+  }
+
+  const colonIdx = trimmed.indexOf(":");
+  if (colonIdx <= 0) {
+    return { ok: false, reason: 'use JSON object or "Header-Name: value"' };
+  }
+  return { ok: true };
+}
+
+/**
  * @param {NodeJS.ProcessEnv} env
  * @returns {ReadinessLine[]}
  */
@@ -55,6 +93,7 @@ export function runHairAuditEventReadinessChecks(env = process.env) {
 
   const uploadEventsEnabled = env.HAIRAUDIT_UPLOAD_EVENTS_ENABLED === "true";
   const integrationEventsEnabled = env.INTEGRATION_EVENTS_ENABLED === "true";
+  const fiImageIntelligenceEnabled = env.HAIRAUDIT_FI_IMAGE_INTELLIGENCE_ENABLED === "true";
   const debugEnabled = env.HAIRAUDIT_UPLOAD_EVENTS_DEBUG === "true";
   const nodeEnv = (env.NODE_ENV ?? "").trim();
 
@@ -68,6 +107,30 @@ export function runHairAuditEventReadinessChecks(env = process.env) {
         status: "WARN",
         message: `${flag.id}=true in production — debug logging should stay off in prod`,
       });
+      continue;
+    }
+
+    if (flag.id === "HAIRAUDIT_FI_IMAGE_INTELLIGENCE_ENABLED") {
+      if (isTrue) {
+        lines.push({
+          id: flag.id,
+          status: "WARN",
+          message:
+            `${flag.id}=true — FI bridge contract active but AI execution is not implemented yet (Phase 2G)`,
+        });
+      } else if (value !== undefined && value !== "false" && value !== "") {
+        lines.push({
+          id: flag.id,
+          status: "WARN",
+          message: `${flag.id} is set but not "true" (value: ${value})`,
+        });
+      } else {
+        lines.push({
+          id: flag.id,
+          status: "PASS",
+          message: `${flag.id} off (default — bridge mapping only, no enqueue execution)`,
+        });
+      }
       continue;
     }
 
@@ -108,32 +171,73 @@ export function runHairAuditEventReadinessChecks(env = process.env) {
     });
   }
 
-  for (const varName of INTEGRATION_SINK_VARS) {
-    const value = env[varName]?.trim();
-    if (!value) {
-      if (deliveryRequested) {
-        lines.push({
-          id: varName,
-          status: "WARN",
-          message: `${varName} unset — real sink adapter may not be configured yet`,
-        });
-      } else {
-        lines.push({
-          id: varName,
-          status: "PASS",
-          message: `${varName} unset (ok while delivery disabled)`,
-        });
-      }
-      continue;
-    }
-
+  const sinkUrl = env.INTEGRATION_EVENTS_SINK_URL?.trim() ?? "";
+  if (deliveryRequested && !sinkUrl) {
     lines.push({
-      id: varName,
+      id: "INTEGRATION_EVENTS_SINK_URL",
+      status: "FAIL",
+      message: "INTEGRATION_EVENTS_SINK_URL is required when delivery flags are enabled",
+    });
+  } else if (!sinkUrl) {
+    lines.push({
+      id: "INTEGRATION_EVENTS_SINK_URL",
+      status: "PASS",
+      message: "INTEGRATION_EVENTS_SINK_URL unset (ok while delivery disabled)",
+    });
+  } else {
+    lines.push({
+      id: "INTEGRATION_EVENTS_SINK_URL",
       status: deliveryRequested ? "PASS" : "WARN",
       message: deliveryRequested
-        ? `${varName} is set`
-        : `${varName} is set while delivery flags are off — no outbound calls expected`,
+        ? "INTEGRATION_EVENTS_SINK_URL is set"
+        : "INTEGRATION_EVENTS_SINK_URL is set while delivery flags are off — no outbound calls expected",
     });
+
+    if (nodeEnv === "production" && !sinkUrl.startsWith("https://")) {
+      lines.push({
+        id: "sink-url-https",
+        status: "FAIL",
+        message: "INTEGRATION_EVENTS_SINK_URL must use HTTPS in production",
+      });
+    } else if (sinkUrl.startsWith("https://")) {
+      lines.push({
+        id: "sink-url-https",
+        status: "PASS",
+        message: "Sink URL uses HTTPS",
+      });
+    } else if (sinkUrl) {
+      lines.push({
+        id: "sink-url-https",
+        status: "PASS",
+        message: "Sink URL is HTTP (allowed outside production)",
+      });
+    }
+  }
+
+  const headersRaw = env.INTEGRATION_EVENTS_HEADERS?.trim();
+  if (!headersRaw) {
+    lines.push({
+      id: "INTEGRATION_EVENTS_HEADERS",
+      status: deliveryRequested ? "PASS" : "PASS",
+      message: deliveryRequested
+        ? "INTEGRATION_EVENTS_HEADERS unset (optional auth headers)"
+        : "INTEGRATION_EVENTS_HEADERS unset (ok while delivery disabled)",
+    });
+  } else {
+    const headerCheck = validateIntegrationHeadersJson(headersRaw);
+    if (!headerCheck.ok) {
+      lines.push({
+        id: "INTEGRATION_EVENTS_HEADERS",
+        status: "FAIL",
+        message: `INTEGRATION_EVENTS_HEADERS invalid — ${headerCheck.reason}`,
+      });
+    } else {
+      lines.push({
+        id: "INTEGRATION_EVENTS_HEADERS",
+        status: "PASS",
+        message: "INTEGRATION_EVENTS_HEADERS is valid JSON or Header-Name: value",
+      });
+    }
   }
 
   const serviceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY?.trim();
@@ -170,6 +274,21 @@ export function runHairAuditEventReadinessChecks(env = process.env) {
     });
   }
 
+  if (!fiImageIntelligenceEnabled) {
+    lines.push({
+      id: "fi-ai-execution",
+      status: "PASS",
+      message: "FI image intelligence AI execution not enabled (expected — contract-only in Phase 2G)",
+    });
+  } else {
+    lines.push({
+      id: "fi-ai-execution",
+      status: "WARN",
+      message:
+        "HAIRAUDIT_FI_IMAGE_INTELLIGENCE_ENABLED=true but queue/AI execution is not implemented yet",
+    });
+  }
+
   return lines;
 }
 
@@ -181,7 +300,7 @@ export function printReadinessReport(lines) {
   let hasFail = false;
   let hasWarn = false;
 
-  console.log("HairAudit upload event readiness (Phase 2F)\n");
+  console.log("HairAudit upload event readiness (Phase 2G)\n");
 
   for (const line of lines) {
     const prefix = `[${line.status}]`;

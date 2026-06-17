@@ -39,6 +39,7 @@
     "test:upload-phase2d": "tsx --test tests/uploadPhase2d.test.ts",
     "test:upload-phase2e": "tsx --test tests/uploadPhase2e.test.ts",
     "test:upload-phase2f": "tsx --test tests/uploadPhase2f.test.ts",
+    "test:upload-phase2g": "tsx --test tests/uploadPhase2g.test.ts",
     "check:hairaudit-events": "node scripts/check-hairaudit-event-readiness.mjs",
     "gen:supabase-types": "node scripts/gen-supabase-types.mjs",
     "test:file-validation": "tsx --test tests/fileValidation.test.ts",
