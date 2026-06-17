@@ -4,6 +4,11 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { requireAuthenticatedUser, requireCaseAccess } from "@/lib/security/caseAccess.server";
 import { filterUploadRowsToCaseStorageNamespace, isWellFormedCaseId } from "@/lib/uploads/caseFilesPath";
 import { resolveUploadTypePrefixForList } from "@/lib/uploads/listTypePrefix";
+import {
+  gateUploadCaseStoragePath,
+  resolveCaseFilesBucketForRoute,
+} from "@/lib/hairaudit/uploadStorage";
+import { getErrorMessage } from "@/lib/security/errorLogging";
 
 export const runtime = "nodejs";
 
@@ -31,8 +36,14 @@ export async function GET(req: Request) {
     });
     if (!caseGate.ok) return caseGate.response;
 
+    const bucketGate = resolveCaseFilesBucketForRoute();
+    if (!bucketGate.ok) {
+      console.error("[uploads/list] Bucket resolution failed");
+      return NextResponse.json({ ok: false, error: bucketGate.error }, { status: bucketGate.status });
+    }
+
     const supabase = createSupabaseAdminClient();
-    const bucket = process.env.CASE_FILES_BUCKET || "case-files";
+    const bucket = bucketGate.bucket;
 
     const { data: uploads, error } = await supabase
       .from("uploads")
@@ -41,7 +52,8 @@ export async function GET(req: Request) {
       .order("created_at", { ascending: true });
 
     if (error) {
-      return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+      console.error("[uploads/list] Upload query failed:", getErrorMessage(error));
+      return NextResponse.json({ ok: false, error: "Could not list uploads" }, { status: 500 });
     }
 
     const rows = filterUploadRowsToCaseStorageNamespace(caseId, uploads ?? []);
@@ -49,21 +61,38 @@ export async function GET(req: Request) {
 
     const signed = await Promise.all(
       patient.map(async (u) => {
-        const { data } = await supabase.storage.from(bucket).createSignedUrl(String(u.storage_path), 60 * 10);
+        const rawPath = String(u.storage_path ?? "");
+        const pathGate = gateUploadCaseStoragePath(caseId, rawPath);
+        if (!pathGate.ok) {
+          return { ...u, signedUrl: null };
+        }
+
+        const { data, error: signErr } = await supabase.storage
+          .from(bucket)
+          .createSignedUrl(pathGate.normalizedPath, 60 * 10);
+
+        if (signErr) {
+          console.error("[uploads/list] Signed URL failed:", getErrorMessage(signErr));
+          return { ...u, signedUrl: null };
+        }
+
         return { ...u, signedUrl: data?.signedUrl ?? null };
       })
     );
 
     const byCategory: Record<string, unknown[]> = {};
     for (const u of signed) {
-      const cat = (u as { metadata?: { category?: string }; type?: string }).metadata?.category ?? String(u.type).split(":")[1] ?? "uncategorized";
+      const cat =
+        (u as { metadata?: { category?: string }; type?: string }).metadata?.category ??
+        String(u.type).split(":")[1] ??
+        "uncategorized";
       byCategory[cat] = byCategory[cat] || [];
       byCategory[cat].push(u);
     }
 
     return NextResponse.json({ ok: true, byCategory, uploads: signed });
   } catch (e) {
-    console.error("[uploads/list] Error:", e);
-    return NextResponse.json({ ok: false, error: (e as Error)?.message ?? "Internal server error" }, { status: 500 });
+    console.error("[uploads/list] Error:", getErrorMessage(e));
+    return NextResponse.json({ ok: false, error: "Could not list uploads" }, { status: 500 });
   }
 }

@@ -1,7 +1,9 @@
 /**
  * Legacy doctor upload API. Canonical flow: use POST /api/uploads/audit-photos with
  * submitterType=doctor and category=img_* keys (see auditPhotoSchemas / photoSchemas).
- * This route is kept for backward compatibility and uses the same img_* category set.
+ *
+ * Phase 2C: blocked in production (410 Gone). Dev/test retain hardened handler for
+ * backward compatibility with legacy integrations.
  */
 import { NextResponse } from "next/server";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
@@ -9,8 +11,15 @@ import { canAccessCase } from "@/lib/case-access";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { DOCTOR_PHOTO_CATEGORIES } from "@/lib/doctorPhotoCategories";
 import { validateCaseFilesRouteImage } from "@/lib/uploads/caseFilesRouteImageValidation.server";
+import {
+  gateUploadCaseStoragePath,
+  resolveCaseFilesBucketForRoute,
+} from "@/lib/hairaudit/uploadStorage";
 
 export const runtime = "nodejs";
+
+const DEPRECATED_MIGRATION =
+  "Use POST /api/uploads/audit-photos with submitterType=doctor and category (img_*) instead.";
 
 const VALID_CATEGORIES: ReadonlySet<string> = new Set(DOCTOR_PHOTO_CATEGORIES.map((c) => c.key));
 const CATEGORY_MAP: ReadonlyMap<string, (typeof DOCTOR_PHOTO_CATEGORIES)[number]> = new Map(
@@ -38,6 +47,13 @@ function safeName(name: string) {
 }
 
 export async function POST(req: Request) {
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json(
+      { ok: false, error: "This upload endpoint is deprecated.", migration: DEPRECATED_MIGRATION },
+      { status: 410, headers: { "X-Deprecated": DEPRECATED_MIGRATION } }
+    );
+  }
+
   try {
     const form = await req.formData();
     const caseId = form.get("caseId") as string | null;
@@ -71,8 +87,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Case already submitted" }, { status: 409 });
     }
 
+    const bucketGate = resolveCaseFilesBucketForRoute();
+    if (!bucketGate.ok) {
+      console.error("[uploads/doctor-photos] Bucket resolution failed");
+      return NextResponse.json({ ok: false, error: bucketGate.error }, { status: bucketGate.status });
+    }
+
     const userId = (c as { user_id?: string }).user_id ?? user.id;
-    const bucket = process.env.CASE_FILES_BUCKET || "case-files";
+    const bucket = bucketGate.bucket;
     const saved: unknown[] = [];
 
     for (const f of validFiles) {
@@ -83,12 +105,19 @@ export async function POST(req: Request) {
       }
       const { buffer, normalizedMime } = validated;
       const storagePath = `cases/${caseId}/doctor/${category}/${Date.now()}-${safeName(f.name || "upload.jpg")}`;
+      const pathGate = gateUploadCaseStoragePath(caseId, storagePath);
+      if (!pathGate.ok) {
+        return NextResponse.json({ ok: false, error: "Invalid storage path" }, { status: pathGate.status });
+      }
 
-      const { error: upErr } = await admin.storage.from(bucket).upload(storagePath, buffer, {
+      const { error: upErr } = await admin.storage.from(bucket).upload(pathGate.normalizedPath, buffer, {
         contentType: normalizedMime,
         upsert: false,
       });
-      if (upErr) return NextResponse.json({ ok: false, error: upErr.message }, { status: 500 });
+      if (upErr) {
+        console.error("[uploads/doctor-photos] Storage upload failed:", upErr.message);
+        return NextResponse.json({ ok: false, error: "Upload failed" }, { status: 500 });
+      }
 
       const { data: row, error: insErr } = await admin
         .from("uploads")
@@ -96,21 +125,24 @@ export async function POST(req: Request) {
           case_id: caseId,
           user_id: userId,
           type: `doctor_photo:${category}`,
-          storage_path: storagePath,
+          storage_path: pathGate.normalizedPath,
           metadata: { category, original_name: f.name, mime: normalizedMime, size: buffer.length },
         })
         .select("id, case_id, type, storage_path, metadata, created_at")
         .maybeSingle();
 
-      if (insErr) return NextResponse.json({ ok: false, error: insErr.message }, { status: 500 });
+      if (insErr) {
+        console.error("[uploads/doctor-photos] DB insert failed:", insErr.message);
+        return NextResponse.json({ ok: false, error: "Upload failed" }, { status: 500 });
+      }
       if (row) saved.push(row);
     }
 
     const res = NextResponse.json({ ok: true, savedCount: saved.length, saved });
-    res.headers.set("X-Deprecated", "Use POST /api/uploads/audit-photos with submitterType=doctor and category (img_*) instead.");
+    res.headers.set("X-Deprecated", DEPRECATED_MIGRATION);
     return res;
   } catch (e: unknown) {
-    console.error("doctor-photos:", e);
-    return NextResponse.json({ ok: false, error: (e as Error)?.message ?? "Server error" }, { status: 500 });
+    console.error("[uploads/doctor-photos] Error:", e);
+    return NextResponse.json({ ok: false, error: "Upload failed" }, { status: 500 });
   }
 }

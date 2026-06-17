@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { getAcademyAccess } from "@/lib/academy/auth";
+import { getCaseFilesBucketNameForReadOnlyUse } from "@/lib/hairaudit/uploadStorage";
 
 export const runtime = "nodejs";
 
@@ -67,7 +68,7 @@ export async function DELETE(_req: Request, ctx: { params: Promise<{ uploadId: s
     return NextResponse.json({ ok: false, error: "Could not remove upload", requestId }, { status: 500 });
   }
 
-  const bucket = process.env.CASE_FILES_BUCKET || "case-files";
+  const bucket = getCaseFilesBucketNameForReadOnlyUse();
   const { error: stErr } = await admin.storage.from(bucket).remove([row.storage_path]);
   if (stErr) {
     console.warn(`[${requestId}] Academy upload storage remove failed (row deleted)`, stErr.message);

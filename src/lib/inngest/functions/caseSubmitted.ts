@@ -1,6 +1,7 @@
 import { inngest } from "@/lib/inngest/client";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { notifyPatientReportReady } from "@/lib/email";
+import { getCaseFilesBucketNameForReadOnlyUse } from "@/lib/hairaudit/uploadStorage";
 import { Buffer } from "buffer";
 
 // Optional: simple PDF generator (Node)
@@ -53,7 +54,7 @@ export const caseSubmitted = inngest.createFunction(
     const { caseId, userId } = event.data as { caseId: string; userId: string };
 
     const supabase = createSupabaseAdminClient();
-    const bucket = process.env.CASE_FILES_BUCKET || "case-files";
+    const bucket = getCaseFilesBucketNameForReadOnlyUse();
 
     // 1) Load & validate case
     const c = await step.run("load case", async () => {

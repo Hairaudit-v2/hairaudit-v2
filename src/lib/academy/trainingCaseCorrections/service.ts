@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { getCaseFilesBucketNameForReadOnlyUse } from "@/lib/hairaudit/uploadStorage";
 import { normalizeAcademyPhotoCategoryInput, trainingPhotoType } from "@/lib/academy/photoCategories";
 import { readMetricsPatch, upsertTrainingCaseMetrics } from "@/lib/academy/trainingCaseMetrics";
 import { recordFieldCorrections, recordTrainingCaseCorrection } from "./audit";
@@ -219,7 +220,7 @@ export async function deleteTrainingCaseUpload(
 
   if (updErr) return { ok: false as const, status: 500, error: updErr.message };
 
-  const bucket = process.env.CASE_FILES_BUCKET || "case-files";
+  const bucket = getCaseFilesBucketNameForReadOnlyUse();
   const { error: stErr } = await admin.storage.from(bucket).remove([row.storage_path]);
   if (stErr) {
     console.warn("[training_case_corrections] storage remove failed (soft-deleted in DB)", stErr.message);

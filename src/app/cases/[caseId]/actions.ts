@@ -3,6 +3,7 @@
 import { cookies } from "next/headers";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { tryCreateSupabaseAdminClient } from "@/lib/supabase/admin";
+import { getCaseFilesBucketNameForReadOnlyUse } from "@/lib/hairaudit/uploadStorage";
 
 export async function getReportDownloadUrl(pdfPath: string) {
   if (!pdfPath) {
@@ -19,7 +20,7 @@ export async function getReportDownloadUrl(pdfPath: string) {
 
   const admin = tryCreateSupabaseAdminClient();
   const supabase = admin ?? await createSupabaseAuthServerClient();
-  const bucket = process.env.CASE_FILES_BUCKET || "case-files";
+  const bucket = getCaseFilesBucketNameForReadOnlyUse();
 
   const { data, error } = await supabase.storage
     .from(bucket)

@@ -6,6 +6,8 @@ import {
   requireCaseAccess,
 } from "@/lib/security/caseAccess.server";
 import { gateUploadSignedUrlStoragePath } from "@/lib/uploads/caseFilesPath";
+import { resolveCaseFilesBucketForRoute } from "@/lib/hairaudit/uploadStorage";
+import { getErrorMessage } from "@/lib/security/errorLogging";
 
 export async function GET(req: Request) {
   try {
@@ -13,7 +15,7 @@ export async function GET(req: Request) {
     const path = searchParams.get("path");
     const pathGate = gateUploadSignedUrlStoragePath(path, searchParams.get("caseId"));
     if (!pathGate.ok) {
-      return NextResponse.json({ error: pathGate.error }, { status: pathGate.status });
+      return NextResponse.json({ error: "Invalid request" }, { status: pathGate.status });
     }
 
     const supabaseAuth = await createSupabaseAuthServerClient();
@@ -27,19 +29,27 @@ export async function GET(req: Request) {
     });
     if (!caseGate.ok) return caseGate.response;
 
-    const bucket = process.env.CASE_FILES_BUCKET || "case-files";
+    const bucketGate = resolveCaseFilesBucketForRoute();
+    if (!bucketGate.ok) {
+      console.error("[uploads/signed-url] Bucket resolution failed");
+      return NextResponse.json({ error: bucketGate.error }, { status: bucketGate.status });
+    }
+
     const admin = tryCreateSupabaseAdminClient();
     const storage = (admin ?? supabaseAuth).storage;
 
-    const { data, error } = await storage.from(bucket).createSignedUrl(pathGate.normalizedPath, 60);
+    const { data, error } = await storage
+      .from(bucketGate.bucket)
+      .createSignedUrl(pathGate.normalizedPath, 60);
 
     if (error || !data?.signedUrl) {
-      return NextResponse.json({ error: error?.message ?? "Could not sign URL" }, { status: 500 });
+      console.error("[uploads/signed-url] Sign failed:", getErrorMessage(error));
+      return NextResponse.json({ error: "Could not sign URL" }, { status: 500 });
     }
 
     return NextResponse.json({ url: data.signedUrl });
   } catch (e) {
-    console.error("[uploads/signed-url] Error:", e);
-    return NextResponse.json({ error: (e as Error)?.message ?? "Internal server error" }, { status: 500 });
+    console.error("[uploads/signed-url] Error:", getErrorMessage(e));
+    return NextResponse.json({ error: "Could not sign URL" }, { status: 500 });
   }
 }

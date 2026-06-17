@@ -25,6 +25,7 @@ import { evaluateEvidence } from "@/lib/evidence/evidenceEvaluator";
 import { buildEvidenceIntelligencePayload } from "@/lib/evidence/evidenceIntelligencePayload";
 import { emitAuditOsReportGeneratedSafe, runAuditOsShadowAfterReportInsert } from "@/lib/auditos/shadow/inngestAuditOsShadow.server";
 import type { LegacyUploadRow } from "@/lib/auditos/reports/adaptLegacyReportModel";
+import { getCaseFilesBucketNameForReadOnlyUse } from "@/lib/hairaudit/uploadStorage";
 
 /** Must match `REASONS` in `src/app/api/auditor/rerun/route.ts`. */
 const AUDITOR_RERUN_REASON_CORRECTED_PATIENT_PHOTOS = "corrected_patient_photos";
@@ -41,7 +42,9 @@ async function loadPdfRenderModule() {
   return import("@/lib/reports/renderPdfInternal");
 }
 
-const BUCKET = process.env.CASE_FILES_BUCKET || "case-files";
+function caseFilesBucket(): string {
+  return getCaseFilesBucketNameForReadOnlyUse();
+}
 
 // Minimal required categories for “submit”
 function isImageUpload(type: string): boolean {
@@ -418,7 +421,7 @@ export const runGraftIntegrityEstimate = inngest.createFunction(
       const { manifest } = await prepareCaseEvidenceManifest({
         supabase,
         caseId,
-        bucket: BUCKET,
+        bucket: caseFilesBucket(),
         logger: {
           warn: (message, data) => logger.warn(message, data),
           error: (message, data) => logger.error(message, data),
@@ -462,8 +465,8 @@ export const runGraftIntegrityEstimate = inngest.createFunction(
         })
         .slice(0, 10);
       const { loadPreparedModelImageInputs } = await loadEvidencePrepModule();
-      const donorPrepared = await loadPreparedModelImageInputs({ supabase, bucket: BUCKET, items: donorItems });
-      const recipientPrepared = await loadPreparedModelImageInputs({ supabase, bucket: BUCKET, items: recipientItems });
+      const donorPrepared = await loadPreparedModelImageInputs({ supabase, bucket: caseFilesBucket(), items: donorItems });
+      const recipientPrepared = await loadPreparedModelImageInputs({ supabase, bucket: caseFilesBucket(), items: recipientItems });
       return await runGraftIntegrityModelEstimate({
         claimed_grafts: claimedGrafts,
         donor: donorPrepared.map((img) => ({
@@ -748,7 +751,7 @@ export const runAudit = inngest.createFunction(
       const { manifest } = await prepareCaseEvidenceManifest({
         supabase,
         caseId,
-        bucket: BUCKET,
+        bucket: caseFilesBucket(),
         uploads: uploads as {
           id: string;
           type?: string | null;
@@ -836,7 +839,7 @@ export const runAudit = inngest.createFunction(
       const { loadPreparedModelImageInputs } = await loadEvidencePrepModule();
       const modelInputs = await loadPreparedModelImageInputs({
         supabase,
-        bucket: BUCKET,
+        bucket: caseFilesBucket(),
         items: manifestPrepared,
         maxItems: 10,
         caseId,

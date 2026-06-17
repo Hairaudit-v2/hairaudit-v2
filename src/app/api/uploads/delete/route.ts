@@ -1,73 +1,87 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { canAccessCase } from "@/lib/case-access";
-
-function supabaseAdmin() {
-  return createSupabaseAdminClient();
-}
+import {
+  requireAuthenticatedUser,
+  requireCaseAccess,
+} from "@/lib/security/caseAccess.server";
+import {
+  gateUploadCaseStoragePath,
+  isWellFormedUploadId,
+  resolveCaseFilesBucket,
+} from "@/lib/hairaudit/uploadStorage";
+import { notifyHairAuditUploadDeleted } from "@/lib/hairaudit/uploadEventDispatcher";
 
 // DELETE /api/uploads/delete?uploadId=...
 export async function DELETE(req: Request) {
   try {
     const url = new URL(req.url);
-    const uploadId = url.searchParams.get("uploadId");
+    const uploadId = url.searchParams.get("uploadId")?.trim();
 
     if (!uploadId) {
       return NextResponse.json({ error: "Missing uploadId" }, { status: 400 });
     }
 
-    // 1) Identify logged-in user (cookie-aware)
-    const supabaseAuth = await createSupabaseAuthServerClient();
-    const {
-      data: { user },
-    } = await supabaseAuth.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!isWellFormedUploadId(uploadId)) {
+      return NextResponse.json({ error: "Invalid uploadId" }, { status: 400 });
     }
 
-    const admin = supabaseAdmin();
+    const bucketGate = resolveCaseFilesBucket();
+    if (!bucketGate.ok) {
+      console.error("[uploads/delete] Bucket resolution failed:", bucketGate.error);
+      return NextResponse.json({ error: "Storage is unavailable" }, { status: 503 });
+    }
 
-    // 2) Load upload row
+    const supabaseAuth = await createSupabaseAuthServerClient();
+    const userGate = await requireAuthenticatedUser(supabaseAuth);
+    if (!userGate.ok) return userGate.response;
+
+    const admin = createSupabaseAdminClient();
+
     const { data: upload, error: upErr } = await admin
       .from("uploads")
-      .select("id, case_id, user_id, storage_path, type")
+      .select("id, case_id, user_id, storage_path, type, created_at")
       .eq("id", uploadId)
       .maybeSingle();
 
     if (upErr) {
-      return NextResponse.json({ error: upErr.message }, { status: 500 });
+      console.error("[uploads/delete] Upload lookup failed:", upErr.message);
+      return NextResponse.json({ error: "Could not delete upload" }, { status: 500 });
     }
     if (!upload) {
       return NextResponse.json({ error: "Upload not found" }, { status: 404 });
     }
 
-    const { data: c, error: caseErr } = await admin
+    const caseGate = await requireCaseAccess({
+      userId: userGate.data.user.id,
+      caseId: upload.case_id,
+      supabaseAuth,
+    });
+    if (!caseGate.ok) return caseGate.response;
+
+    const pathGate = gateUploadCaseStoragePath(upload.case_id, upload.storage_path);
+    if (!pathGate.ok) {
+      return NextResponse.json({ error: pathGate.error }, { status: pathGate.status });
+    }
+
+    const { data: caseSubmit, error: caseSubmitErr } = await admin
       .from("cases")
-      .select("id, user_id, patient_id, doctor_id, clinic_id, status, submitted_at")
+      .select("submitted_at, status")
       .eq("id", upload.case_id)
       .maybeSingle();
 
-    if (caseErr) {
-      return NextResponse.json({ error: caseErr.message }, { status: 500 });
-    }
-    const allowed = await canAccessCase(user.id, c);
-    if (!c || !allowed) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (caseSubmitErr) {
+      console.error("[uploads/delete] Case submit lookup failed:", caseSubmitErr.message);
+      return NextResponse.json({ error: "Could not delete upload" }, { status: 500 });
     }
 
-    // Optional: stop deletions after submit (recommended)
-    if (c.submitted_at || c.status === "submitted") {
+    if (caseSubmit?.submitted_at || caseSubmit?.status === "submitted") {
       return NextResponse.json(
         { error: "This case has been submitted and cannot be modified." },
         { status: 409 }
       );
     }
 
-    // Targeted Stage 2 lock: surgery upload photos cannot be removed once the
-    // surgery upload itself has been submitted (the case row stays in 'draft',
-    // so the check above does not cover this). Only affects surgery_photo:* rows.
     if (String(upload.type ?? "").startsWith("surgery_photo:")) {
       const { data: surgeryDetails } = await admin
         .from("surgery_upload_details")
@@ -82,32 +96,41 @@ export async function DELETE(req: Request) {
       }
     }
 
-    // 4) Delete from Storage (bucket is in the first segment of storage_path)
-    // Your storage_path currently looks like: "cases/<caseId>/patient/..."
-    // So we delete from the "case-files" bucket using that path.
-    const bucket = "case-files";
     const { error: storageErr } = await admin.storage
-      .from(bucket)
-      .remove([upload.storage_path]);
+      .from(bucketGate.bucket)
+      .remove([pathGate.normalizedPath]);
 
     if (storageErr) {
-      return NextResponse.json({ error: storageErr.message }, { status: 500 });
+      console.error("[uploads/delete] Storage remove failed:", storageErr.message);
+      return NextResponse.json({ error: "Could not delete upload" }, { status: 500 });
     }
 
     const { error: delErr } = await admin.from("uploads").delete().eq("id", upload.id);
 
     if (delErr) {
-      return NextResponse.json({ error: delErr.message }, { status: 500 });
+      console.error("[uploads/delete] DB delete failed:", delErr.message);
+      return NextResponse.json({ error: "Could not delete upload" }, { status: 500 });
     }
 
     try {
-      await admin.from("audit_photos").delete().eq("storage_path", upload.storage_path);
+      await admin.from("audit_photos").delete().eq("storage_path", pathGate.normalizedPath);
     } catch {
       /* audit_photos may not exist */
     }
 
+    notifyHairAuditUploadDeleted({
+      upload_id: upload.id,
+      case_id: upload.case_id,
+      source_case_table: "cases",
+      storage_bucket: bucketGate.bucket,
+      storage_path: pathGate.normalizedPath,
+      legacy_upload_type: upload.type,
+      occurred_at: upload.created_at ?? undefined,
+    });
+
     return NextResponse.json({ ok: true });
-  } catch (e: any) {
-    return NextResponse.json({ error: e?.message ?? "Unknown error" }, { status: 500 });
+  } catch (e) {
+    console.error("[uploads/delete] Error:", e);
+    return NextResponse.json({ error: "Could not delete upload" }, { status: 500 });
   }
 }

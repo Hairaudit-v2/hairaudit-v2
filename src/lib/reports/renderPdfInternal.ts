@@ -22,6 +22,7 @@ import { auditorPatientPhotoCategoryLabel } from "@/lib/auditor/auditorPatientPh
 import { effectivePatientPhotoCategoryKey } from "@/lib/uploads/patientPhotoAuditMeta";
 import { evaluateEvidence, type EvidenceEvaluationResult } from "@/lib/evidence/evidenceEvaluator";
 import { enrichKeyMetricsAfterNormalize } from "@/lib/evidence/evidenceMissingCopy";
+import { resolveCaseFilesBucketForReportRender } from "@/lib/hairaudit/uploadStorage";
 
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
@@ -125,7 +126,9 @@ export async function renderAndUploadPdfForCase(args: {
   const auditMode = normalizeAuditMode(args.auditMode);
 
   const supabase = createSupabaseAdminClient();
-  const bucket = process.env.CASE_FILES_BUCKET || "case-files";
+  const bucketResult = resolveCaseFilesBucketForReportRender();
+  if (!bucketResult.ok) throw new Error(bucketResult.error);
+  const bucket = bucketResult.bucket;
 
   let version =
     Number.isFinite(Number(args.version)) && Number(args.version) > 0
@@ -337,14 +340,8 @@ export async function renderAndUploadPdfForCase(args: {
   if (renderer === "pdfkit") {
     pdfBuffer = await buildAuditReportPdf(content);
   } else {
-    const tokenSecret =
-      String(process.env.REPORT_RENDER_TOKEN ?? "").trim() ||
-      String(process.env.INTERNAL_API_KEY ?? "").trim() ||
-      String(process.env.SUPABASE_SERVICE_ROLE_KEY ?? "").trim();
-
-    if (!tokenSecret) {
-      throw new Error("Missing REPORT_RENDER_TOKEN/INTERNAL_API_KEY/SUPABASE_SERVICE_ROLE_KEY for PDF render.");
-    }
+    const { requireReportRenderTokenSecret } = await import("@/lib/security/secrets");
+    const tokenSecret = requireReportRenderTokenSecret();
 
     const token = signRenderToken({
       caseId,

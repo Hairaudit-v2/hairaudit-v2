@@ -3,6 +3,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { requireHairAuditBulkAdmin } from "@/lib/hair-audit/bulkUpload/auth";
 import { refreshCaseIntakeStatus } from "@/lib/hair-audit/bulkUpload/caseIntake";
 import { removeBulkImageFromUploads } from "@/lib/hair-audit/bulkUpload/syncToUploads";
+import { getCaseFilesBucketNameForReadOnlyUse } from "@/lib/hairaudit/uploadStorage";
 
 export const runtime = "nodejs";
 
@@ -24,7 +25,7 @@ export async function DELETE(_req: Request, ctx: { params: Promise<{ imageId: st
 
   const sync = await removeBulkImageFromUploads(admin, image);
 
-  const bucket = process.env.CASE_FILES_BUCKET || "case-files";
+  const bucket = getCaseFilesBucketNameForReadOnlyUse();
   await admin.storage.from(bucket).remove([image.storage_path]);
 
   const { error: delErr } = await admin.from("hair_audit_case_images").delete().eq("id", imageId);

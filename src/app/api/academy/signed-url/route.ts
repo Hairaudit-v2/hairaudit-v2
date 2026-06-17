@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { getAcademyAccess } from "@/lib/academy/auth";
+import { getCaseFilesBucketNameForReadOnlyUse } from "@/lib/hairaudit/uploadStorage";
 
 export const runtime = "nodejs";
 
@@ -44,7 +45,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
   }
 
-  const bucket = process.env.CASE_FILES_BUCKET || "case-files";
+  const bucket = getCaseFilesBucketNameForReadOnlyUse();
   const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, 120);
 

@@ -14,6 +14,8 @@ import {
   type UploadResult,
 } from "@/lib/uploads/safeUpload";
 import { validateUploadedImage } from "@/lib/uploads/fileValidation";
+import { resolveCaseFilesBucketForRoute } from "@/lib/hairaudit/uploadStorage";
+import { notifyHairAuditUploadCreated } from "@/lib/hairaudit/uploadEventDispatcher";
 
 export const runtime = "nodejs";
 
@@ -161,7 +163,14 @@ export async function POST(req: Request) {
   }
 
   const supabase = admin();
-  const bucket = process.env.CASE_FILES_BUCKET || "case-files";
+  const bucketGate = resolveCaseFilesBucketForRoute();
+  if (!bucketGate.ok) {
+    return NextResponse.json(
+      { ok: false, error: bucketGate.error, requestId },
+      { status: bucketGate.status }
+    );
+  }
+  const bucket = bucketGate.bucket;
   const file = files[0];
   if (!(file instanceof File)) {
     return NextResponse.json({ ok: false, error: "Missing file", requestId }, { status: 400 });
@@ -177,6 +186,19 @@ export async function POST(req: Request) {
       { status }
     );
   }
+
+  notifyHairAuditUploadCreated({
+    upload_id: result.data.id,
+    case_id: result.data.training_case_id,
+    actor_type: "doctor",
+    upload_surface: "training",
+    source_case_table: "training_cases",
+    storage_bucket: bucket,
+    storage_path: result.data.storage_path,
+    legacy_upload_type: result.data.type,
+    canonical_photo_category: category,
+    occurred_at: result.data.created_at,
+  });
 
   return NextResponse.json({ ok: true, saved: result.data, requestId });
 }

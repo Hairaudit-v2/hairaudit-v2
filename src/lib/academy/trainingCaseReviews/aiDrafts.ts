@@ -27,6 +27,7 @@ import {
   type TrainingCaseAiReviewImageInput,
 } from "./trainingCaseAiReviewProvider";
 import { normalizeStructuredFeedbackFromRaw } from "./aiDraftValidation";
+import { getCaseFilesBucketNameForReadOnlyUse } from "@/lib/hairaudit/uploadStorage";
 
 function sectionTitleForKey(key: string): string {
   return TRAINING_CASE_REVIEW_SECTIONS.find((s) => s.key === key)?.title ?? key;
@@ -43,7 +44,7 @@ async function signTrainingUploadUrls(
   uploads: TrainingCaseUploadRow[],
   ttlSeconds: number,
 ): Promise<TrainingCaseAiReviewImageInput[]> {
-  const bucket = process.env.CASE_FILES_BUCKET || "case-files";
+  const bucket = getCaseFilesBucketNameForReadOnlyUse();
   const admin = createSupabaseAdminClient();
   const config = getTrainingCaseAiReviewProviderConfig();
   const signed: TrainingCaseAiReviewImageInput[] = [];

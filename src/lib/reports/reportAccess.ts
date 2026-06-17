@@ -7,6 +7,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { tryCreateSupabaseAdminClient } from "@/lib/supabase/admin";
 import { requireCaseAccess, type CaseAccessRow, type AuthFailure } from "@/lib/auth/permissions";
 import { extractCaseIdFromPdfPath } from "@/lib/reports/pdfPathCaseId";
+import { getCaseFilesBucketNameForReadOnlyUse } from "@/lib/hairaudit/uploadStorage";
 
 export type ReportRowForAccess = {
   id: string;
@@ -105,7 +106,7 @@ export async function loadAuthorizedReportPdfDownloadContext(args: {
     return { ok: false, status: 404, error: "Report not found" };
   }
 
-  const bucket = process.env.CASE_FILES_BUCKET || "case-files";
+  const bucket = getCaseFilesBucketNameForReadOnlyUse();
   const storage = (admin ?? args.supabaseAuth).storage;
 
   return {

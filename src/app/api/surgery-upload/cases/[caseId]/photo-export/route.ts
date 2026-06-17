@@ -24,6 +24,7 @@ import {
 } from "@/lib/surgeryUpload/checklist";
 import { SURGERY_PROCEDURE_TYPES } from "@/lib/surgeryUpload/fields";
 import { logEvidenceEvent } from "@/lib/surgeryUpload/logEvidenceEvent";
+import { getCaseFilesBucketNameForReadOnlyUse } from "@/lib/hairaudit/uploadStorage";
 import {
   SURGERY_EXPORT_SLOT_DIRECTORIES,
   buildExportedImageBasename,
@@ -202,7 +203,7 @@ export async function GET(
 
   const patientReference =
     typeof details.patient_reference === "string" ? details.patient_reference.trim() : "";
-  const bucket = process.env.CASE_FILES_BUCKET || "case-files";
+  const bucket = getCaseFilesBucketNameForReadOnlyUse();
   const shortId = shortCaseId(caseId);
   const caseReference = resolveCaseReferenceForExport({
     patientReference: details.patient_reference as string | null,

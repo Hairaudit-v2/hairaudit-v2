@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { requireHairAuditBulkAdmin } from "@/lib/hair-audit/bulkUpload/auth";
+import { getCaseFilesBucketNameForReadOnlyUse } from "@/lib/hairaudit/uploadStorage";
 
 export const runtime = "nodejs";
 
@@ -14,7 +15,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ ok: false, error: "Invalid path" }, { status: 400 });
   }
 
-  const bucket = process.env.CASE_FILES_BUCKET || "case-files";
+  const bucket = getCaseFilesBucketNameForReadOnlyUse();
   const admin = createSupabaseAdminClient();
   const { data, error } = await admin.storage.from(bucket).createSignedUrl(path, 120);
 

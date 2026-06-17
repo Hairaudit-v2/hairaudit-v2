@@ -32,6 +32,8 @@ import {
 import { isInternalImageEvidenceQualityPanelEnabled } from "@/lib/features/enableInternalImageEvidenceQualityPanel";
 import { auditorPatientPhotoCategoryLabel } from "@/lib/auditor/auditorPatientPhotoCategories";
 import { effectivePatientPhotoCategoryKey } from "@/lib/uploads/patientPhotoAuditMeta";
+import { getReportRenderTokenSecret } from "@/lib/security/secrets";
+import { getCaseFilesBucketNameForReadOnlyUse } from "@/lib/hairaudit/uploadStorage";
 
 function reportUploadImageAlt(u: { type?: string | null; metadata?: unknown }): string {
   const t = String(u.type ?? "");
@@ -104,10 +106,7 @@ export default async function ReportHtmlPage({
   const token = sp?.token ?? "";
   const requestedAuditMode = normalizeAuditMode(sp?.auditMode);
 
-  const tokenSecret =
-    String(process.env.REPORT_RENDER_TOKEN ?? "").trim() ||
-    String(process.env.INTERNAL_API_KEY ?? "").trim() ||
-    String(process.env.SUPABASE_SERVICE_ROLE_KEY ?? "").trim();
+  const tokenSecret = getReportRenderTokenSecret();
   const tokenPayload = tokenSecret ? verifyRenderToken(token, tokenSecret) : null;
   const allowToken = !!tokenPayload && tokenPayload.caseId === caseId && tokenPayload.auditMode === requestedAuditMode;
 
@@ -184,7 +183,7 @@ export default async function ReportHtmlPage({
     }
   }
 
-  const bucket = process.env.CASE_FILES_BUCKET || "case-files";
+  const bucket = getCaseFilesBucketNameForReadOnlyUse();
 
   // Generate signed URLs for image uploads so Playwright can embed them
   const imageUploads = (uploads ?? []).filter((u) => {

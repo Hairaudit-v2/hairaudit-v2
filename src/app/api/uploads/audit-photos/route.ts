@@ -20,6 +20,11 @@ import {
   type UploadResult,
 } from "@/lib/uploads/safeUpload";
 import { validateCaseFilesRouteImage } from "@/lib/uploads/caseFilesRouteImageValidation.server";
+import {
+  gateUploadCaseStoragePath,
+  resolveCaseFilesBucketForRoute,
+} from "@/lib/hairaudit/uploadStorage";
+import { notifyHairAuditUploadCreated } from "@/lib/hairaudit/uploadEventDispatcher";
 
 export const runtime = "nodejs";
 
@@ -108,11 +113,19 @@ async function uploadSingleFile(
   const ext =
     normalizedMime === "image/png" ? "png" : normalizedMime === "image/webp" ? "webp" : "jpg";
   const storagePath = `audit_photos/${caseId}/${st}/${category}/${uuid}.${ext}`;
+  const pathGate = gateUploadCaseStoragePath(caseId, storagePath);
+  if (!pathGate.ok) {
+    return {
+      success: false,
+      error: createUploadError("STORAGE_ERROR", "Invalid storage path"),
+    };
+  }
+  const normalizedPath = pathGate.normalizedPath;
 
   // Upload to storage with retry
   const storageResult = await withRetry(
     async () => {
-      const { error: upErr } = await admin.storage.from(bucket).upload(storagePath, buffer, {
+      const { error: upErr } = await admin.storage.from(bucket).upload(normalizedPath, buffer, {
         contentType: normalizedMime,
         upsert: false,
       });
@@ -125,7 +138,7 @@ async function uploadSingleFile(
       }
       return { success: true as const, data: null };
     },
-    `storage upload: ${storagePath}`,
+    `storage upload: ${normalizedPath}`,
     undefined,
     { warn: console.warn, error: console.error }
   );
@@ -143,7 +156,7 @@ async function uploadSingleFile(
           case_id: caseId,
           user_id: userId,
           type: typeValue,
-          storage_path: storagePath,
+          storage_path: normalizedPath,
           metadata: {
             category,
             submitter_type: st,
@@ -175,7 +188,7 @@ async function uploadSingleFile(
           case_id: caseId,
           submitter_type: st,
           photo_key: category,
-          storage_path: storagePath,
+          storage_path: normalizedPath,
         });
       } catch {
         // Silently ignore - audit_photos may not exist
@@ -183,7 +196,7 @@ async function uploadSingleFile(
 
       return { success: true as const, data: row as any };
     },
-    `db insert: ${storagePath}`,
+    `db insert: ${normalizedPath}`,
     undefined,
     { warn: console.warn, error: console.error }
   );
@@ -281,7 +294,15 @@ export async function POST(req: Request) {
 
     const prefix = st === "doctor" ? "doctor_photo" : "patient_photo";
     const typeValue = `${prefix}:${category}`;
-    const bucket = process.env.CASE_FILES_BUCKET || "case-files";
+    const bucketGate = resolveCaseFilesBucketForRoute();
+    if (!bucketGate.ok) {
+      console.error(`[${requestId}] Bucket resolution failed`);
+      return NextResponse.json(
+        { ok: false, error: bucketGate.error, requestId },
+        { status: bucketGate.status }
+      );
+    }
+    const bucket = bucketGate.bucket;
     const userId = (c as { user_id?: string }).user_id ?? process.env.UPLOAD_SYSTEM_USER_ID ?? null;
 
     if (!userId) {
@@ -326,6 +347,18 @@ export async function POST(req: Request) {
 
       if (result.success) {
         saved.push(result.data);
+        notifyHairAuditUploadCreated({
+          upload_id: result.data.id,
+          case_id: caseId,
+          actor_type: st,
+          upload_surface: "forensic_audit",
+          source_case_table: "cases",
+          storage_bucket: bucket,
+          storage_path: result.data.storage_path,
+          legacy_upload_type: result.data.type,
+          canonical_photo_category: category,
+          occurred_at: result.data.created_at,
+        });
       } else {
         console.error(`[${requestId}] Failed to upload ${file.name}:`, formatUploadErrorForLog(result.error));
         errors.push({

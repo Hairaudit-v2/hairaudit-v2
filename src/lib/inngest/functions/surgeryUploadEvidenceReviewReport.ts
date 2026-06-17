@@ -17,8 +17,11 @@ import { SURGERY_UPLOAD_REPORT_KIND_EVIDENCE_REVIEW_V1 } from "@/lib/surgeryUplo
 import { buildSurgeryEvidenceReviewPdfBuffer } from "@/lib/reports/surgeryUpload/buildSurgeryEvidenceReviewPdf";
 import type { SurgeryUploadDetails } from "@/lib/surgeryUpload/fields";
 import type { SurgerySlotReviewRow } from "@/lib/surgeryUpload/evidenceReview";
+import { getCaseFilesBucketNameForReadOnlyUse } from "@/lib/hairaudit/uploadStorage";
 
-const BUCKET = process.env.CASE_FILES_BUCKET || "case-files";
+function caseFilesBucket(): string {
+  return getCaseFilesBucketNameForReadOnlyUse();
+}
 
 function supabaseAdmin() {
   return createSupabaseAdminClient();
@@ -120,7 +123,7 @@ export const runSurgeryUploadEvidenceReviewReport = inngest.createFunction(
 
         const pdfPath = `cases/${caseId}/surgery-upload/evidence-review-v${nextVersion}.pdf`;
 
-        const pdfBuffer = await buildSurgeryEvidenceReviewPdfBuffer(supabase, BUCKET, {
+        const pdfBuffer = await buildSurgeryEvidenceReviewPdfBuffer(supabase, caseFilesBucket(), {
           caseId,
           generatedAtIso: new Date().toISOString(),
           requestedByDisplay: display,
@@ -129,7 +132,7 @@ export const runSurgeryUploadEvidenceReviewReport = inngest.createFunction(
           slotReviews,
         });
 
-        const { error: upErr } = await supabase.storage.from(BUCKET).upload(pdfPath, pdfBuffer, {
+        const { error: upErr } = await supabase.storage.from(caseFilesBucket()).upload(pdfPath, pdfBuffer, {
           contentType: "application/pdf",
           upsert: true,
         });

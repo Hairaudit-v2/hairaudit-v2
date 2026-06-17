@@ -15,6 +15,8 @@ import {
 } from "@/lib/hair-audit/bulkUpload/syncToUploads";
 import { safeFileName, formatUploadErrorForUser } from "@/lib/uploads/safeUpload";
 import { validateUploadedImage } from "@/lib/uploads/fileValidation";
+import { resolveCaseFilesBucketForRoute } from "@/lib/hairaudit/uploadStorage";
+import { notifyHairAuditUploadCreated } from "@/lib/hairaudit/uploadEventDispatcher";
 
 export const runtime = "nodejs";
 
@@ -73,7 +75,11 @@ export async function POST(req: Request) {
   }
   const { buffer, normalizedMime } = validated;
 
-  const bucket = process.env.CASE_FILES_BUCKET || "case-files";
+  const bucketGate = resolveCaseFilesBucketForRoute();
+  if (!bucketGate.ok) {
+    return NextResponse.json({ ok: false, error: bucketGate.error }, { status: bucketGate.status });
+  }
+  const bucket = bucketGate.bucket;
   const cleanedName = safeFileName(file.name || "upload.jpg");
   const storagePath = bulkStoragePath(batchId, caseId, cleanedName);
 
@@ -116,6 +122,34 @@ export async function POST(req: Request) {
       batch_id: batchId,
     });
     await refreshCaseIntakeStatus(admin, caseId);
+
+    if (sync.synced > 0 || sync.updated > 0) {
+      const { data: uploadRow } = await admin
+        .from("uploads")
+        .select("id, type, storage_path, metadata, created_at")
+        .contains("metadata", { bulk_image_id: row.id })
+        .maybeSingle();
+
+      if (uploadRow) {
+        const meta =
+          uploadRow.metadata && typeof uploadRow.metadata === "object"
+            ? (uploadRow.metadata as Record<string, unknown>)
+            : {};
+        notifyHairAuditUploadCreated({
+          upload_id: uploadRow.id,
+          case_id: caseId,
+          actor_type: "system",
+          upload_surface: "bulk_admin",
+          source_case_table: "cases",
+          storage_bucket: bucket,
+          storage_path: uploadRow.storage_path,
+          legacy_upload_type: uploadRow.type,
+          canonical_photo_category:
+            typeof meta.audit_category === "string" ? meta.audit_category : categoryRaw,
+          occurred_at: uploadRow.created_at,
+        });
+      }
+    }
   }
 
   const reviewSyncStatus = row
