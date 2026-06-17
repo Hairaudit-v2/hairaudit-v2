@@ -294,7 +294,7 @@ describe("upload phase 2g", () => {
 
       const result = evaluateFiImageIntelligenceEnqueue(event);
       assert.strictEqual(result.should_enqueue_image_intelligence, true);
-      assert.ok(result.reason?.includes("not implemented"));
+      assert.ok(result.reason?.includes("eligible"));
     });
   });
 
@@ -357,12 +357,13 @@ describe("upload phase 2g", () => {
       assert.strictEqual(validateIntegrationHeadersJson("{bad").ok, false);
     });
 
-    it("warns that FI AI execution is not implemented when flag enabled", () => {
+    it("warns that FI AI worker is not implemented when flag enabled", () => {
       const lines = runHairAuditEventReadinessChecks({
         HAIRAUDIT_FI_IMAGE_INTELLIGENCE_ENABLED: "true",
       });
 
       assert.ok(lines.some((l) => l.id === "fi-ai-execution" && l.status === "WARN"));
+      assert.ok(lines.some((l) => l.id === "HAIRAUDIT_FI_IMAGE_INTELLIGENCE_ENABLED" && l.status === "WARN"));
     });
   });
 });

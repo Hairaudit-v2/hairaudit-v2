@@ -9,6 +9,7 @@
  */
 
 import { emitHairAuditEvent } from "@/lib/integrations/emit";
+import { enqueueFiImageIntelligenceFromUploadEvent } from "./fiImageIntelligenceEnqueue";
 import {
   buildHairAuditUploadCreatedEvent,
   buildHairAuditUploadDeletedEvent,
@@ -73,6 +74,7 @@ export function notifyHairAuditUploadCreated(input: BuildHairAuditUploadCreatedE
   try {
     const event = buildHairAuditUploadCreatedEvent(input);
     dispatchHairAuditUploadEvent(event);
+    enqueueFiImageIntelligenceFromUploadEvent(event);
   } catch {
     /* never block upload success */
   }

@@ -183,6 +183,6 @@ export function evaluateFiImageIntelligenceEnqueue(
   return {
     input,
     should_enqueue_image_intelligence: true,
-    reason: "forensic pipeline upload.created eligible when FI flag enabled (execution not implemented)",
+    reason: "forensic pipeline upload.created eligible for FI image intelligence enqueue",
   };
 }

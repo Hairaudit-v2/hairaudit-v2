@@ -8,6 +8,7 @@
  *
  * See: docs/hairaudit-v2-phase-2f-upload-deleted-events-readiness.md
  *      docs/hairaudit-v2-phase-2g-event-sink-fi-bridge.md
+ *      docs/hairaudit-v2-phase-3a-fi-image-intelligence-enqueue.md
  */
 
 import { fileURLToPath } from "node:url";
@@ -36,7 +37,7 @@ const UPLOAD_EVENT_FLAGS = [
   {
     id: "HAIRAUDIT_FI_IMAGE_INTELLIGENCE_ENABLED",
     requiredForDelivery: false,
-    description: "future FI image-intelligence enqueue switch (contract only in Phase 2G)",
+    description: "FI image-intelligence enqueue switch (Phase 3A — no AI execution)",
   },
 ];
 
@@ -112,12 +113,27 @@ export function runHairAuditEventReadinessChecks(env = process.env) {
 
     if (flag.id === "HAIRAUDIT_FI_IMAGE_INTELLIGENCE_ENABLED") {
       if (isTrue) {
+        const inngestKey = env.INNGEST_EVENT_KEY?.trim();
         lines.push({
           id: flag.id,
           status: "WARN",
           message:
-            `${flag.id}=true — FI bridge contract active but AI execution is not implemented yet (Phase 2G)`,
+            `${flag.id}=true — FI image-intelligence enqueue active (Phase 3A); AI worker not implemented yet (Phase 3B)`,
         });
+        if (!inngestKey) {
+          lines.push({
+            id: "INNGEST_EVENT_KEY",
+            status: "WARN",
+            message:
+              "INNGEST_EVENT_KEY unset — FI enqueue will skip until Inngest is configured",
+          });
+        } else {
+          lines.push({
+            id: "INNGEST_EVENT_KEY",
+            status: "PASS",
+            message: "INNGEST_EVENT_KEY is set (durable FI enqueue available)",
+          });
+        }
       } else if (value !== undefined && value !== "false" && value !== "") {
         lines.push({
           id: flag.id,
@@ -128,7 +144,7 @@ export function runHairAuditEventReadinessChecks(env = process.env) {
         lines.push({
           id: flag.id,
           status: "PASS",
-          message: `${flag.id} off (default — bridge mapping only, no enqueue execution)`,
+          message: `${flag.id} off (default — bridge mapping only, no enqueue)`,
         });
       }
       continue;
@@ -278,14 +294,14 @@ export function runHairAuditEventReadinessChecks(env = process.env) {
     lines.push({
       id: "fi-ai-execution",
       status: "PASS",
-      message: "FI image intelligence AI execution not enabled (expected — contract-only in Phase 2G)",
+      message: "FI image intelligence enqueue disabled (expected default — no jobs submitted)",
     });
   } else {
     lines.push({
       id: "fi-ai-execution",
       status: "WARN",
       message:
-        "HAIRAUDIT_FI_IMAGE_INTELLIGENCE_ENABLED=true but queue/AI execution is not implemented yet",
+        "HAIRAUDIT_FI_IMAGE_INTELLIGENCE_ENABLED=true — jobs enqueue via Inngest; AI worker execution is Phase 3B",
     });
   }
 
@@ -300,7 +316,7 @@ export function printReadinessReport(lines) {
   let hasFail = false;
   let hasWarn = false;
 
-  console.log("HairAudit upload event readiness (Phase 2G)\n");
+  console.log("HairAudit upload event readiness (Phase 2G / 3A)\n");
 
   for (const line of lines) {
     const prefix = `[${line.status}]`;
