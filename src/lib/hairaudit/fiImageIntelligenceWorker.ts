@@ -1,11 +1,12 @@
 /**
- * FI image-intelligence worker lifecycle — Phase 3B scaffold, Phase 3C persistence
+ * FI image-intelligence worker lifecycle — Phase 3B scaffold, Phase 3C persistence, Phase 3D fetch/classifier
  *
- * Validates queued jobs, persists idempotency/results, returns dry-run placeholders.
- * No AI execution.
+ * Validates queued jobs, persists idempotency/results, optional storage fetch,
+ * and classifier adapter scaffold. No real AI execution.
  *
  * See: docs/hairaudit-v2-phase-3b-fi-image-intelligence-worker-scaffold.md
  *      docs/hairaudit-v2-phase-3c-image-intelligence-persistence.md
+ *      docs/hairaudit-v2-phase-3d-image-fetch-classifier-adapter.md
  */
 
 import {
@@ -20,7 +21,20 @@ import {
   buildFiImageIntelligenceIdempotencyKey,
   type FiImageIntelligenceJobPayload,
 } from "./fiImageIntelligenceQueue";
-import { buildDryRunFiImageIntelligenceResult, type FiImageIntelligenceResult } from "./fiImageIntelligenceResult";
+import {
+  classifyHairAuditImage,
+  resolveFiImageClassifierProvider,
+  workerStatusForClassification,
+  type FiImageClassifierProvider,
+} from "./fiImageClassifierAdapter";
+import {
+  fetchFiImageIntelligenceImage,
+  isFiImageIntelligenceImageFetchEnabled,
+  type FiImageFetchResult,
+  type FiImageStorageDownloadFn,
+} from "./fiImageIntelligenceImageFetch";
+import type { FiOsClassifierFetchImpl } from "./fiOsImageClassifierClient";
+import type { FiImageIntelligenceResult } from "./fiImageIntelligenceResult";
 import {
   type FiImageIntelligencePersistenceAdapter,
   resolveFiImageIntelligencePersistence,
@@ -31,7 +45,7 @@ import { uploadEventPayloadIsSafe } from "./uploadEvents";
 
 const LOG_PREFIX = "[hairaudit:fi-image-intelligence-worker]";
 
-export type FiImageIntelligenceWorkerStatus = "skipped" | "dry_run" | "failed";
+export type FiImageIntelligenceWorkerStatus = "skipped" | "dry_run" | "classified" | "failed";
 
 export type FiImageIntelligenceWorkerOutcome = {
   status: FiImageIntelligenceWorkerStatus;
@@ -45,6 +59,14 @@ export type FiImageIntelligenceWorkerOutcome = {
 export type FiImageIntelligenceWorkerOptions = {
   /** Override env flag for tests. */
   workerEnabled?: boolean;
+  /** Override HAIRAUDIT_FI_IMAGE_FETCH_ENABLED for tests. */
+  imageFetchEnabled?: boolean;
+  /** Override HAIRAUDIT_FI_IMAGE_CLASSIFIER_PROVIDER for tests. */
+  classifierProvider?: FiImageClassifierProvider;
+  /** Injectable storage download for tests. */
+  imageDownloadFn?: FiImageStorageDownloadFn;
+  /** Injectable FI OS classifier fetch for tests. */
+  fiOsFetchImpl?: FiOsClassifierFetchImpl;
   /** Injectable persistence adapter; defaults to Supabase or in-memory fallback. */
   persistence?: FiImageIntelligencePersistenceAdapter;
   /** @deprecated Use `persistence` — retained for Phase 3B in-memory idempotency parity. */
@@ -271,12 +293,48 @@ export async function processFiImageIntelligenceJob(
     return failJob(storageValidation.reason);
   }
 
-  const result = buildDryRunFiImageIntelligenceResult({
-    idempotency_key: payload.idempotency_key,
-    source_case_id: payload.input.source_case_id,
-    source_upload_id: payload.input.source_upload_id,
-    canonical_photo_category: payload.input.canonical_photo_category,
-  });
+  const fetchEnabled = options.imageFetchEnabled ?? isFiImageIntelligenceImageFetchEnabled();
+  let imageFetch: FiImageFetchResult | undefined;
+
+  if (fetchEnabled) {
+    imageFetch = await fetchFiImageIntelligenceImage(
+      {
+        case_id: payload.input.source_case_id,
+        storage_bucket: payload.input.storage_bucket,
+        storage_path: payload.input.storage_path,
+      },
+      {
+        workerEnabled,
+        fetchEnabled: true,
+        downloadFn: options.imageDownloadFn,
+      }
+    );
+
+    if (imageFetch.status === "failed") {
+      return failJob(`image fetch failed: ${imageFetch.reason}`);
+    }
+  }
+
+  const classifierProvider =
+    options.classifierProvider ?? resolveFiImageClassifierProvider();
+
+  const classification = await classifyHairAuditImage(
+    {
+      idempotency_key: payload.idempotency_key,
+      source_case_id: payload.input.source_case_id,
+      source_upload_id: payload.input.source_upload_id,
+      canonical_photo_category: payload.input.canonical_photo_category,
+      legacy_upload_type: payload.input.legacy_upload_type,
+      image_fetch: imageFetch,
+    },
+    { provider: classifierProvider, fiOsFetchImpl: options.fiOsFetchImpl }
+  );
+
+  if (!classification.ok) {
+    return failJob(classification.reason);
+  }
+
+  const result = classification.result;
 
   const completedPersist = await persistence.markJobCompleted({
     idempotency_key: payload.idempotency_key,
@@ -295,9 +353,11 @@ export async function processFiImageIntelligenceJob(
     markFiImageIntelligenceKeyProcessed(options.processedKeys, payload.idempotency_key);
   }
 
+  const workerStatus = workerStatusForClassification(result);
+
   return {
-    status: "dry_run",
-    reason: "worker enabled — dry-run placeholder (AI execution deferred to Phase 3D)",
+    status: workerStatus,
+    reason: result.classification_notes,
     idempotency_key: payload.idempotency_key,
     result,
     storage_metadata_validated: true,

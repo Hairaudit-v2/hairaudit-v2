@@ -11,6 +11,8 @@
  *      docs/hairaudit-v2-phase-3a-fi-image-intelligence-enqueue.md
  *      docs/hairaudit-v2-phase-3b-fi-image-intelligence-worker-scaffold.md
  *      docs/hairaudit-v2-phase-3c-image-intelligence-persistence.md
+ *      docs/hairaudit-v2-phase-3d-image-fetch-classifier-adapter.md
+ *      docs/hairaudit-v2-phase-3e-fi-os-classifier-adapter.md
  */
 
 import { fileURLToPath } from "node:url";
@@ -91,6 +93,64 @@ export function validateIntegrationHeadersJson(raw) {
   return { ok: true };
 }
 
+const FI_OS_CLASSIFIER_ENV = {
+  url: "FI_OS_IMAGE_CLASSIFIER_URL",
+  token: "FI_OS_IMAGE_CLASSIFIER_TOKEN",
+};
+
+/**
+ * @param {NodeJS.ProcessEnv} env
+ * @returns {{ ok: true } | { ok: false; reason: string }}
+ */
+function validateFiOsClassifierReadiness(env) {
+  const url = env[FI_OS_CLASSIFIER_ENV.url]?.trim() ?? "";
+  const token = env[FI_OS_CLASSIFIER_ENV.token]?.trim() ?? "";
+  const nodeEnv = (env.NODE_ENV ?? "").trim();
+  const serviceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+
+  if (!url) {
+    return {
+      ok: false,
+      reason: `${FI_OS_CLASSIFIER_ENV.url} is required when HAIRAUDIT_FI_IMAGE_CLASSIFIER_PROVIDER=fi_os`,
+    };
+  }
+
+  if (!token) {
+    return {
+      ok: false,
+      reason: `${FI_OS_CLASSIFIER_ENV.token} is required when HAIRAUDIT_FI_IMAGE_CLASSIFIER_PROVIDER=fi_os`,
+    };
+  }
+
+  try {
+    // eslint-disable-next-line no-new
+    new URL(url);
+  } catch {
+    return {
+      ok: false,
+      reason: `${FI_OS_CLASSIFIER_ENV.url} is not a valid URL`,
+    };
+  }
+
+  if (nodeEnv === "production" && !url.startsWith("https://")) {
+    return {
+      ok: false,
+      reason: `${FI_OS_CLASSIFIER_ENV.url} must use HTTPS in production`,
+    };
+  }
+
+  if (serviceRoleKey) {
+    if (token === serviceRoleKey || url.includes(serviceRoleKey)) {
+      return {
+        ok: false,
+        reason: `${FI_OS_CLASSIFIER_ENV.token} must not reuse SUPABASE_SERVICE_ROLE_KEY`,
+      };
+    }
+  }
+
+  return { ok: true };
+}
+
 /**
  * @param {NodeJS.ProcessEnv} env
  * @returns {ReadinessLine[]}
@@ -104,6 +164,10 @@ export function runHairAuditEventReadinessChecks(env = process.env) {
   const fiImageIntelligenceEnabled = env.HAIRAUDIT_FI_IMAGE_INTELLIGENCE_ENABLED === "true";
   const fiImageIntelligenceWorkerEnabled =
     env.HAIRAUDIT_FI_IMAGE_INTELLIGENCE_WORKER_ENABLED === "true";
+  const fiImageFetchEnabled = env.HAIRAUDIT_FI_IMAGE_FETCH_ENABLED === "true";
+  const fiClassifierProvider = (
+    env.HAIRAUDIT_FI_IMAGE_CLASSIFIER_PROVIDER?.trim().toLowerCase() || "dry_run"
+  );
   const debugEnabled = env.HAIRAUDIT_UPLOAD_EVENTS_DEBUG === "true";
   const nodeEnv = (env.NODE_ENV ?? "").trim();
 
@@ -359,7 +423,7 @@ export function runHairAuditEventReadinessChecks(env = process.env) {
       id: "fi-worker-dry-run",
       status: "WARN",
       message:
-        "HAIRAUDIT_FI_IMAGE_INTELLIGENCE_WORKER_ENABLED=true — worker persists dry-run placeholders only (Phase 3C; AI execution is Phase 3D)",
+        "HAIRAUDIT_FI_IMAGE_INTELLIGENCE_WORKER_ENABLED=true — worker active (Phase 3D fetch/classifier scaffold; real AI not implemented)",
     });
   } else {
     lines.push({
@@ -369,12 +433,93 @@ export function runHairAuditEventReadinessChecks(env = process.env) {
     });
   }
 
-  lines.push({
-    id: "fi-ai-execution-phase3c",
-    status: "PASS",
-    message:
-      "FI image classification (OpenAI/Claude/Gemini) not implemented — worker dry-run + persistence only",
-  });
+  if (fiImageFetchEnabled && !fiImageIntelligenceWorkerEnabled) {
+    lines.push({
+      id: "fi-image-fetch-without-worker",
+      status: "WARN",
+      message:
+        "HAIRAUDIT_FI_IMAGE_FETCH_ENABLED=true but HAIRAUDIT_FI_IMAGE_INTELLIGENCE_WORKER_ENABLED is off — fetch will not run until worker is enabled",
+    });
+  } else if (fiImageFetchEnabled) {
+    lines.push({
+      id: "fi-image-fetch",
+      status: "WARN",
+      message:
+        "HAIRAUDIT_FI_IMAGE_FETCH_ENABLED=true — worker will download image bytes from Supabase storage (requires SUPABASE_SERVICE_ROLE_KEY)",
+    });
+  } else {
+    lines.push({
+      id: "fi-image-fetch",
+      status: "PASS",
+      message: "HAIRAUDIT_FI_IMAGE_FETCH_ENABLED off (default — path validation only, no byte fetch)",
+    });
+  }
+
+  const validProviders = new Set(["dry_run", "fi_os", "openai", "manual_stub"]);
+  if (!validProviders.has(fiClassifierProvider)) {
+    lines.push({
+      id: "fi-classifier-provider",
+      status: "WARN",
+      message: `HAIRAUDIT_FI_IMAGE_CLASSIFIER_PROVIDER=${fiClassifierProvider} is unknown — defaulting to dry_run`,
+    });
+  } else {
+    lines.push({
+      id: "fi-classifier-provider",
+      status: fiClassifierProvider === "dry_run" ? "PASS" : "WARN",
+      message: `HAIRAUDIT_FI_IMAGE_CLASSIFIER_PROVIDER=${fiClassifierProvider}`,
+    });
+  }
+
+  if (fiClassifierProvider === "fi_os") {
+    const fiOsCheck = validateFiOsClassifierReadiness(env);
+    if (!fiOsCheck.ok) {
+      lines.push({
+        id: "fi-classifier-ai-env",
+        status: "FAIL",
+        message: fiOsCheck.reason,
+      });
+    } else {
+      lines.push({
+        id: "fi-classifier-ai-env",
+        status: "WARN",
+        message:
+          "FI_OS_IMAGE_CLASSIFIER_URL and FI_OS_IMAGE_CLASSIFIER_TOKEN are set — fi_os adapter will call the internal FI endpoint",
+      });
+    }
+  } else if (fiClassifierProvider === "openai") {
+    const hasKey = Boolean(env.OPENAI_API_KEY?.trim());
+    if (!hasKey) {
+      lines.push({
+        id: "fi-classifier-ai-env",
+        status: "FAIL",
+        message:
+          "OPENAI_API_KEY is required when HAIRAUDIT_FI_IMAGE_CLASSIFIER_PROVIDER=openai",
+      });
+    } else {
+      lines.push({
+        id: "fi-classifier-ai-env",
+        status: "WARN",
+        message:
+          "OPENAI_API_KEY is set but openai classification is not implemented (Phase 3F+)",
+      });
+    }
+  }
+
+  if (fiClassifierProvider === "fi_os") {
+    lines.push({
+      id: "fi-ai-execution-phase3e",
+      status: "PASS",
+      message:
+        "fi_os provider uses internal FI HTTP adapter only — no direct OpenAI / Claude / Gemini calls",
+    });
+  } else {
+    lines.push({
+      id: "fi-ai-execution-phase3e",
+      status: "PASS",
+      message:
+        "Direct OpenAI / Claude / Gemini classification not wired — use fi_os adapter or manual_stub/dry_run",
+    });
+  }
 
   return lines;
 }
@@ -387,7 +532,7 @@ export function printReadinessReport(lines) {
   let hasFail = false;
   let hasWarn = false;
 
-  console.log("HairAudit upload event readiness (Phase 2G / 3A / 3B / 3C)\n");
+  console.log("HairAudit upload event readiness (Phase 2G / 3A / 3B / 3C / 3D / 3E)\n");
 
   for (const line of lines) {
     const prefix = `[${line.status}]`;

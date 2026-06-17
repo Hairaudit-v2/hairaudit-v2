@@ -250,15 +250,17 @@ describe("upload phase 3c", () => {
       assert.ok(workerPersist?.message.includes("SUPABASE_SERVICE_ROLE_KEY"));
     });
 
-    it("confirms AI execution is still not implemented", () => {
+    it("confirms openai execution is still not implemented", () => {
       const lines = runHairAuditEventReadinessChecks({
         HAIRAUDIT_FI_IMAGE_INTELLIGENCE_WORKER_ENABLED: "true",
         SUPABASE_SERVICE_ROLE_KEY: "test-key",
+        HAIRAUDIT_FI_IMAGE_CLASSIFIER_PROVIDER: "openai",
+        OPENAI_API_KEY: "test-key",
       });
 
-      const aiLine = lines.find((l) => l.id === "fi-ai-execution-phase3c");
+      const aiLine = lines.find((l) => l.id === "fi-classifier-ai-env");
       assert.ok(aiLine);
-      assert.strictEqual(aiLine?.status, "PASS");
+      assert.strictEqual(aiLine?.status, "WARN");
       assert.ok(aiLine?.message.includes("not implemented"));
     });
   });
@@ -267,11 +269,15 @@ describe("upload phase 3c", () => {
     const SOURCE_FILES = [
       "src/lib/hairaudit/fiImageIntelligenceWorker.ts",
       "src/lib/hairaudit/fiImageIntelligencePersistence.ts",
+      "src/lib/hairaudit/fiImageIntelligenceImageFetch.ts",
+      "src/lib/hairaudit/fiImageClassifierAdapter.ts",
+      "src/lib/hairaudit/fiOsImageClassifierClient.ts",
       "src/lib/inngest/functions/fiImageIntelligenceWorker.ts",
     ];
 
     const FORBIDDEN_PATTERNS = [
-      /\bopenai\b/i,
+      /\bfrom\s+["']openai["']/,
+      /\bfrom\s+["']@anthropic-ai\//,
       /\banthropic\b/i,
       /\bclaude\b/i,
       /\bgemini\b/i,
