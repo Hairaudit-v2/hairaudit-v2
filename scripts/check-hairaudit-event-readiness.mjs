@@ -10,6 +10,7 @@
  *      docs/hairaudit-v2-phase-2g-event-sink-fi-bridge.md
  *      docs/hairaudit-v2-phase-3a-fi-image-intelligence-enqueue.md
  *      docs/hairaudit-v2-phase-3b-fi-image-intelligence-worker-scaffold.md
+ *      docs/hairaudit-v2-phase-3c-image-intelligence-persistence.md
  */
 
 import { fileURLToPath } from "node:url";
@@ -164,8 +165,24 @@ export function runHairAuditEventReadinessChecks(env = process.env) {
           id: flag.id,
           status: "WARN",
           message:
-            `${flag.id}=true — FI image-intelligence worker active (Phase 3B dry-run only; no AI execution)`,
+            `${flag.id}=true — FI image-intelligence worker active (Phase 3C dry-run + persistence; no AI execution)`,
         });
+        const serviceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+        if (!serviceRoleKey) {
+          lines.push({
+            id: "fi-worker-persistence",
+            status: "WARN",
+            message:
+              "SUPABASE_SERVICE_ROLE_KEY unset — worker persists to in-memory fallback only; enable service role for durable fi_image_intelligence_processed_jobs writes",
+          });
+        } else {
+          lines.push({
+            id: "fi-worker-persistence",
+            status: "PASS",
+            message:
+              "SUPABASE_SERVICE_ROLE_KEY is set (fi_image_intelligence_processed_jobs persistence available)",
+          });
+        }
       } else if (value !== undefined && value !== "false" && value !== "") {
         lines.push({
           id: flag.id,
@@ -342,7 +359,7 @@ export function runHairAuditEventReadinessChecks(env = process.env) {
       id: "fi-worker-dry-run",
       status: "WARN",
       message:
-        "HAIRAUDIT_FI_IMAGE_INTELLIGENCE_WORKER_ENABLED=true — worker returns dry-run placeholders only (Phase 3B; AI execution is Phase 3C)",
+        "HAIRAUDIT_FI_IMAGE_INTELLIGENCE_WORKER_ENABLED=true — worker persists dry-run placeholders only (Phase 3C; AI execution is Phase 3D)",
     });
   } else {
     lines.push({
@@ -351,6 +368,13 @@ export function runHairAuditEventReadinessChecks(env = process.env) {
       message: "FI image-intelligence worker disabled (expected default — jobs skipped at handler)",
     });
   }
+
+  lines.push({
+    id: "fi-ai-execution-phase3c",
+    status: "PASS",
+    message:
+      "FI image classification (OpenAI/Claude/Gemini) not implemented — worker dry-run + persistence only",
+  });
 
   return lines;
 }
@@ -363,7 +387,7 @@ export function printReadinessReport(lines) {
   let hasFail = false;
   let hasWarn = false;
 
-  console.log("HairAudit upload event readiness (Phase 2G / 3A / 3B)\n");
+  console.log("HairAudit upload event readiness (Phase 2G / 3A / 3B / 3C)\n");
 
   for (const line of lines) {
     const prefix = `[${line.status}]`;

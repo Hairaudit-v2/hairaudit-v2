@@ -10,6 +10,7 @@ import {
   decideFiImageIntelligenceProcessedKey,
   markFiImageIntelligenceKeyProcessed,
 } from "../src/lib/hairaudit/fiImageIntelligenceIdempotency";
+import { createMemoryFiImageIntelligencePersistence } from "../src/lib/hairaudit/fiImageIntelligencePersistence";
 import {
   isFiImageIntelligenceWorkerEnabled,
   processFiImageIntelligenceJob,
@@ -57,10 +58,10 @@ describe("upload phase 3b", () => {
   });
 
   describe("worker disabled", () => {
-    it("skips when HAIRAUDIT_FI_IMAGE_INTELLIGENCE_WORKER_ENABLED is off", () => {
+    it("skips when HAIRAUDIT_FI_IMAGE_INTELLIGENCE_WORKER_ENABLED is off", async () => {
       delete process.env.HAIRAUDIT_FI_IMAGE_INTELLIGENCE_WORKER_ENABLED;
 
-      const outcome = processFiImageIntelligenceJob(buildSampleJobPayload());
+      const outcome = await processFiImageIntelligenceJob(buildSampleJobPayload());
       assert.strictEqual(outcome.status, "skipped");
       assert.ok(outcome.reason.includes("HAIRAUDIT_FI_IMAGE_INTELLIGENCE_WORKER_ENABLED"));
       assert.strictEqual(isFiImageIntelligenceWorkerEnabled(), false);
@@ -68,16 +69,16 @@ describe("upload phase 3b", () => {
   });
 
   describe("invalid payload", () => {
-    it("fails safely on missing idempotency_key", () => {
-      const outcome = processFiImageIntelligenceJob(
+    it("fails safely on missing idempotency_key", async () => {
+      const outcome = await processFiImageIntelligenceJob(
         { enqueued_at: "2026-06-17T14:00:00.000Z", input: {} },
-        { workerEnabled: true }
+        { workerEnabled: true, persistence: createMemoryFiImageIntelligencePersistence() }
       );
       assert.strictEqual(outcome.status, "failed");
       assert.ok(outcome.reason.includes("idempotency_key"));
     });
 
-    it("fails safely when idempotency_key does not match case/upload", () => {
+    it("fails safely when idempotency_key does not match case/upload", async () => {
       const payload = buildSampleJobPayload({
         idempotency_key: "hairaudit:image-intelligence:wrong:wrong:v1",
       });
@@ -88,11 +89,14 @@ describe("upload phase 3b", () => {
         assert.ok(validation.reason.includes("idempotency_key"));
       }
 
-      const outcome = processFiImageIntelligenceJob(payload, { workerEnabled: true });
+      const outcome = await processFiImageIntelligenceJob(payload, {
+        workerEnabled: true,
+        persistence: createMemoryFiImageIntelligencePersistence(),
+      });
       assert.strictEqual(outcome.status, "failed");
     });
 
-    it("fails safely when storage path does not belong to case", () => {
+    it("fails safely when storage path does not belong to case", async () => {
       const payload = buildSampleJobPayload({
         input: {
           ...buildSampleJobPayload().input,
@@ -100,18 +104,27 @@ describe("upload phase 3b", () => {
         },
       });
 
-      const outcome = processFiImageIntelligenceJob(payload, { workerEnabled: true });
+      const persistence = createMemoryFiImageIntelligencePersistence();
+      const outcome = await processFiImageIntelligenceJob(payload, {
+        workerEnabled: true,
+        persistence,
+      });
       assert.strictEqual(outcome.status, "failed");
       assert.ok(outcome.reason.includes("storage_path"));
+
+      const record = await persistence.findProcessedJobByIdempotencyKey(payload.idempotency_key);
+      assert.strictEqual(record?.status, "failed");
+      assert.ok(record?.error_message?.includes("storage_path"));
     });
   });
 
   describe("dry-run enabled", () => {
-    it("returns placeholder result when worker enabled", () => {
+    it("returns placeholder result when worker enabled", async () => {
       process.env.HAIRAUDIT_FI_IMAGE_INTELLIGENCE_WORKER_ENABLED = "true";
 
-      const outcome = processFiImageIntelligenceJob(buildSampleJobPayload(), {
+      const outcome = await processFiImageIntelligenceJob(buildSampleJobPayload(), {
         workerEnabled: true,
+        persistence: createMemoryFiImageIntelligencePersistence(),
       });
 
       assert.strictEqual(outcome.status, "dry_run");
@@ -149,29 +162,29 @@ describe("upload phase 3b", () => {
       );
     });
 
-    it("skips duplicate jobs via processed-key decision", () => {
-      const processedKeys = new Set<string>();
+    it("skips duplicate jobs via processed-key decision", async () => {
+      const persistence = createMemoryFiImageIntelligencePersistence();
       const payload = buildSampleJobPayload();
       const key = payload.idempotency_key;
 
-      const first = processFiImageIntelligenceJob(payload, {
+      const first = await processFiImageIntelligenceJob(payload, {
         workerEnabled: true,
-        processedKeys,
+        persistence,
       });
       assert.strictEqual(first.status, "dry_run");
 
-      const decision = decideFiImageIntelligenceProcessedKey(key, processedKeys);
+      const decision = decideFiImageIntelligenceProcessedKey(key, new Set([key]));
       assert.strictEqual(decision.action, "skip");
 
-      const second = processFiImageIntelligenceJob(payload, {
+      const second = await processFiImageIntelligenceJob(payload, {
         workerEnabled: true,
-        processedKeys,
+        persistence,
       });
       assert.strictEqual(second.status, "skipped");
       assert.ok(second.reason.includes("already processed"));
     });
 
-    it("markFiImageIntelligenceKeyProcessed records keys for future persistence parity", () => {
+    it("markFiImageIntelligenceKeyProcessed records keys for legacy in-memory parity", () => {
       const processedKeys = new Set<string>();
       const key = buildFiImageIntelligenceIdempotencyKey(SAMPLE_CASE, SAMPLE_UPLOAD);
 
@@ -186,6 +199,7 @@ describe("upload phase 3b", () => {
       "src/lib/hairaudit/fiImageIntelligenceWorker.ts",
       "src/lib/hairaudit/fiImageIntelligenceResult.ts",
       "src/lib/hairaudit/fiImageIntelligenceIdempotency.ts",
+      "src/lib/hairaudit/fiImageIntelligencePersistence.ts",
       "src/lib/inngest/functions/fiImageIntelligenceWorker.ts",
     ];
 

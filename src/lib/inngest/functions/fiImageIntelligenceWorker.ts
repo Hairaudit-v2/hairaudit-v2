@@ -24,7 +24,7 @@ export const runFiImageIntelligenceWorker = inngest.createFunction(
     const data = event.data as FiImageIntelligenceJobPayload;
 
     const outcome = await step.run("process-fi-image-intelligence", async () => {
-      return processFiImageIntelligenceJob(data);
+      return await processFiImageIntelligenceJob(data);
     });
 
     if (outcome.status === "failed") {

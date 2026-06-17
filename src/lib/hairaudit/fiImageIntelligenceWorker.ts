@@ -1,9 +1,11 @@
 /**
- * FI image-intelligence worker lifecycle — Phase 3B scaffold
+ * FI image-intelligence worker lifecycle — Phase 3B scaffold, Phase 3C persistence
  *
- * Validates queued jobs and returns dry-run placeholders. No AI execution.
+ * Validates queued jobs, persists idempotency/results, returns dry-run placeholders.
+ * No AI execution.
  *
  * See: docs/hairaudit-v2-phase-3b-fi-image-intelligence-worker-scaffold.md
+ *      docs/hairaudit-v2-phase-3c-image-intelligence-persistence.md
  */
 
 import {
@@ -19,6 +21,11 @@ import {
   type FiImageIntelligenceJobPayload,
 } from "./fiImageIntelligenceQueue";
 import { buildDryRunFiImageIntelligenceResult, type FiImageIntelligenceResult } from "./fiImageIntelligenceResult";
+import {
+  type FiImageIntelligencePersistenceAdapter,
+  resolveFiImageIntelligencePersistence,
+} from "./fiImageIntelligencePersistence";
+import { canCreateSupabaseAdminClient } from "@/lib/supabase/admin";
 import { gateUploadCaseStoragePath } from "./uploadStorage";
 import { uploadEventPayloadIsSafe } from "./uploadEvents";
 
@@ -32,12 +39,15 @@ export type FiImageIntelligenceWorkerOutcome = {
   idempotency_key?: string;
   result?: FiImageIntelligenceResult;
   storage_metadata_validated?: boolean;
+  persistence_fallback?: boolean;
 };
 
 export type FiImageIntelligenceWorkerOptions = {
   /** Override env flag for tests. */
   workerEnabled?: boolean;
-  /** In-memory processed keys; future Phase 3C loads from DB. */
+  /** Injectable persistence adapter; defaults to Supabase or in-memory fallback. */
+  persistence?: FiImageIntelligencePersistenceAdapter;
+  /** @deprecated Use `persistence` — retained for Phase 3B in-memory idempotency parity. */
   processedKeys?: Set<string>;
 };
 
@@ -136,14 +146,37 @@ export function validateFiImageIntelligenceStorageMetadata(
   return { valid: true, normalized_path: pathGate.normalizedPath };
 }
 
+async function shouldSkipDuplicateJob(
+  idempotencyKey: string,
+  persistence: FiImageIntelligencePersistenceAdapter,
+  processedKeys?: Set<string>
+): Promise<{ skip: true; reason: string } | { skip: false }> {
+  const existing = await persistence.findProcessedJobByIdempotencyKey(idempotencyKey);
+  if (existing) {
+    return {
+      skip: true,
+      reason: `idempotency_key already processed: ${idempotencyKey}`,
+    };
+  }
+
+  if (processedKeys) {
+    const decision = decideFiImageIntelligenceProcessedKey(idempotencyKey, processedKeys);
+    if (decision.action === "skip") {
+      return { skip: true, reason: decision.reason };
+    }
+  }
+
+  return { skip: false };
+}
+
 /**
- * Process one FI image-intelligence job. Pure aside from optional in-memory idempotency set.
- * Never calls AI providers.
+ * Process one FI image-intelligence job. Persists idempotency and dry-run results.
+ * Never calls AI providers; never throws upload-blocking errors.
  */
-export function processFiImageIntelligenceJob(
+export async function processFiImageIntelligenceJob(
   data: unknown,
   options: FiImageIntelligenceWorkerOptions = {}
-): FiImageIntelligenceWorkerOutcome {
+): Promise<FiImageIntelligenceWorkerOutcome> {
   const workerEnabled = options.workerEnabled ?? isFiImageIntelligenceWorkerEnabled();
 
   if (!workerEnabled) {
@@ -162,36 +195,80 @@ export function processFiImageIntelligenceJob(
   }
 
   const { payload } = validation;
-  const processedKeys = options.processedKeys ?? new Set<string>();
-  const idempotencyDecision = decideFiImageIntelligenceProcessedKey(
-    payload.idempotency_key,
-    processedKeys
-  );
+  const persistence = resolveFiImageIntelligencePersistence(options.persistence);
+  const usingMemoryFallback = !options.persistence && !canCreateSupabaseAdminClient();
 
-  if (idempotencyDecision.action === "skip") {
+  const duplicateCheck = await shouldSkipDuplicateJob(
+    payload.idempotency_key,
+    persistence,
+    options.processedKeys
+  );
+  if (duplicateCheck.skip) {
     return {
       status: "skipped",
-      reason: idempotencyDecision.reason,
+      reason: duplicateCheck.reason,
       idempotency_key: payload.idempotency_key,
     };
   }
 
-  const safety = uploadEventPayloadIsSafe(payload.input as unknown as Record<string, unknown>);
-  if (!safety.safe) {
+  const processingResult = await persistence.markJobProcessing({
+    idempotency_key: payload.idempotency_key,
+    case_id: payload.input.source_case_id,
+    upload_id: payload.input.source_upload_id,
+    event_name: payload.input.source_event_name,
+    source_system: payload.input.source_system,
+  });
+
+  if (!processingResult.ok) {
+    if (process.env?.NODE_ENV !== "production") {
+      console.warn(LOG_PREFIX, "markJobProcessing failed", {
+        idempotency_key: payload.idempotency_key,
+        error: processingResult.error,
+      });
+    }
     return {
       status: "failed",
-      reason: "FI worker input failed payload safety check",
+      reason: "FI worker could not persist processing state",
+      idempotency_key: payload.idempotency_key,
+      persistence_fallback: usingMemoryFallback,
+    };
+  }
+
+  if (!processingResult.created) {
+    return {
+      status: "skipped",
+      reason: `idempotency_key already processed: ${payload.idempotency_key}`,
       idempotency_key: payload.idempotency_key,
     };
+  }
+
+  const failJob = async (reason: string): Promise<FiImageIntelligenceWorkerOutcome> => {
+    const failedPersist = await persistence.markJobFailed({
+      idempotency_key: payload.idempotency_key,
+      error_message: reason,
+    });
+    if (!failedPersist.ok && process.env?.NODE_ENV !== "production") {
+      console.warn(LOG_PREFIX, "markJobFailed failed", {
+        idempotency_key: payload.idempotency_key,
+        error: failedPersist.error,
+      });
+    }
+    return {
+      status: "failed",
+      reason,
+      idempotency_key: payload.idempotency_key,
+      persistence_fallback: usingMemoryFallback,
+    };
+  };
+
+  const safety = uploadEventPayloadIsSafe(payload.input as unknown as Record<string, unknown>);
+  if (!safety.safe) {
+    return failJob("FI worker input failed payload safety check");
   }
 
   const storageValidation = validateFiImageIntelligenceStorageMetadata(payload.input);
   if (!storageValidation.valid) {
-    return {
-      status: "failed",
-      reason: storageValidation.reason,
-      idempotency_key: payload.idempotency_key,
-    };
+    return failJob(storageValidation.reason);
   }
 
   const result = buildDryRunFiImageIntelligenceResult({
@@ -201,13 +278,29 @@ export function processFiImageIntelligenceJob(
     canonical_photo_category: payload.input.canonical_photo_category,
   });
 
-  markFiImageIntelligenceKeyProcessed(processedKeys, payload.idempotency_key);
+  const completedPersist = await persistence.markJobCompleted({
+    idempotency_key: payload.idempotency_key,
+    result,
+    processed_at: result.processed_at,
+  });
+
+  if (!completedPersist.ok && process.env?.NODE_ENV !== "production") {
+    console.warn(LOG_PREFIX, "markJobCompleted failed", {
+      idempotency_key: payload.idempotency_key,
+      error: completedPersist.error,
+    });
+  }
+
+  if (options.processedKeys) {
+    markFiImageIntelligenceKeyProcessed(options.processedKeys, payload.idempotency_key);
+  }
 
   return {
     status: "dry_run",
-    reason: "worker enabled — dry-run placeholder (AI execution deferred to Phase 3C)",
+    reason: "worker enabled — dry-run placeholder (AI execution deferred to Phase 3D)",
     idempotency_key: payload.idempotency_key,
     result,
     storage_metadata_validated: true,
+    persistence_fallback: usingMemoryFallback,
   };
 }

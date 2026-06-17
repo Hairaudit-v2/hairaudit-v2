@@ -1,15 +1,11 @@
 /**
- * FI image-intelligence idempotency scaffold — Phase 3B
+ * FI image-intelligence idempotency helpers — Phase 3B scaffold, Phase 3C DB persistence
  *
- * Pure processed-key decision helper. No database persistence in this phase.
- *
- * Future persistence (Phase 3C+):
- *   Table: fi_image_intelligence_processed_jobs (proposed)
- *   Columns: idempotency_key (PK), source_case_id, source_upload_id,
- *            classification_status, processed_at, result_json
- *   Worker checks INSERT ... ON CONFLICT DO NOTHING before processing.
+ * Pure processed-key decision helper for in-memory tests. Production worker uses
+ * `fiImageIntelligencePersistence.ts` (table: fi_image_intelligence_processed_jobs).
  *
  * See: docs/hairaudit-v2-phase-3b-fi-image-intelligence-worker-scaffold.md
+ *      docs/hairaudit-v2-phase-3c-image-intelligence-persistence.md
  */
 
 export type FiImageIntelligenceProcessedKeyDecision =
