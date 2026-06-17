@@ -13,6 +13,8 @@ import { effectivePatientPhotoCategoryKey } from "@/lib/uploads/patientPhotoAudi
 import { pdfEnvConfig } from "@/lib/pdf/pdfEnvConfig";
 import { evaluateEvidence, type EvidenceEvaluationResult } from "@/lib/evidence/evidenceEvaluator";
 import { enrichLegacyKeyMetricsRecord } from "@/lib/evidence/evidenceMissingCopy";
+import { requireReportRenderTokenSecret } from "@/lib/security/secrets";
+import { getCaseFilesBucketNameForReadOnlyUse } from "@/lib/hairaudit/uploadStorage";
 
 /* Admin client (NO cookies, NO sessions — Playwright safe) */
 function supabaseAdmin() {
@@ -49,10 +51,12 @@ export async function GET(req: Request) {
   const caseId = url.searchParams.get("caseId") ?? "";
   const token = url.searchParams.get("token") ?? "";
   const requestedAuditMode = normalizeAuditMode(url.searchParams.get("auditMode") ?? undefined);
-  const tokenSecret =
-    String(process.env.REPORT_RENDER_TOKEN ?? "").trim() ||
-    String(process.env.INTERNAL_API_KEY ?? "").trim() ||
-    String(process.env.SUPABASE_SERVICE_ROLE_KEY ?? "").trim();
+  let tokenSecret: string | null = null;
+  try {
+    tokenSecret = requireReportRenderTokenSecret();
+  } catch {
+    tokenSecret = null;
+  }
   const tokenPayload = tokenSecret ? verifyRenderToken(token, tokenSecret) : null;
   const allowToken =
     !!tokenPayload &&
@@ -146,7 +150,7 @@ export async function GET(req: Request) {
 
   if (upErr) console.error("uploads error:", upErr.message);
 
-  const bucket = process.env.CASE_FILES_BUCKET || "case-files";
+  const bucket = getCaseFilesBucketNameForReadOnlyUse();
 
   /* Signed image URLs (only for patient_photo + image types) */
   const imageUploads = (uploads ?? []).filter((u) => {

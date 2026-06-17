@@ -2,27 +2,26 @@ import { NextResponse } from "next/server";
 import rubric from "@/lib/audit/rubrics/hairaudit_patient_basic_v1.json";
 import { buildEmptyAnswers } from "@/lib/audit/template";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-
-console.log("rubric loaded:", rubric?.rubric_id, "domains:", rubric?.domains?.length);
-
-function supabaseAdmin() {
-  return createSupabaseAdminClient();
-}
+import { requireDevRouteAccess } from "@/lib/security/routeGuards";
 
 // GET /api/audit/seed-answers  (health check)
 export async function GET() {
+  const gate = await requireDevRouteAccess();
+  if (!gate.ok) return gate.response;
   return new NextResponse("seed-answers route is alive", { status: 200 });
 }
 
 // POST /api/audit/seed-answers?caseId=...
 export async function POST(req: Request) {
+  const gate = await requireDevRouteAccess();
+  if (!gate.ok) return gate.response;
+
   const url = new URL(req.url);
   const caseId = url.searchParams.get("caseId") ?? "";
   if (!caseId) return new NextResponse("Missing caseId", { status: 400 });
 
-  const supabase = supabaseAdmin();
+  const supabase = createSupabaseAdminClient();
 
-  // 1) Confirm case exists (better error message)
   const { data: c, error: caseErr } = await supabase
     .from("cases")
     .select("id")
@@ -31,7 +30,6 @@ export async function POST(req: Request) {
 
   if (caseErr || !c) return NextResponse.json({ ok: false, error: "Case not found", caseId }, { status: 404 });
 
-  // 2) Load latest report (if any)
   const { data: existing, error: repErr } = await supabase
     .from("reports")
     .select("id, summary, version")
@@ -42,7 +40,6 @@ export async function POST(req: Request) {
 
   if (repErr) return new NextResponse(repErr.message, { status: 500 });
 
-  // 3) If no report exists, create v1 report row
   let report = existing;
   if (!report) {
     const { data: created, error: createErr } = await supabase
@@ -53,8 +50,8 @@ export async function POST(req: Request) {
         pdf_path: "",
         summary: {
           notes: "Seeded answers template",
-          rubric: { rubric_id: rubric.rubric_id, version: rubric.version, title: rubric.title }
-        }
+          rubric: { rubric_id: rubric.rubric_id, version: rubric.version, title: rubric.title },
+        },
       })
       .select("id, summary, version")
       .maybeSingle();
@@ -63,21 +60,17 @@ export async function POST(req: Request) {
     report = created;
   }
 
-  // 4) Seed answers into report summary (idempotent)
-  const summary = (report.summary ?? {}) as any;
+  const summary = (report.summary ?? {}) as Record<string, unknown>;
 
   if (!summary.rubric) {
     summary.rubric = { rubric_id: rubric.rubric_id, version: rubric.version, title: rubric.title };
   }
 
   if (!summary.answers) {
-    summary.answers = buildEmptyAnswers(rubric as any);
+    summary.answers = buildEmptyAnswers(rubric as Parameters<typeof buildEmptyAnswers>[0]);
   }
 
-  const { error: upErr } = await supabase
-    .from("reports")
-    .update({ summary })
-    .eq("id", report.id);
+  const { error: upErr } = await supabase.from("reports").update({ summary }).eq("id", report.id);
 
   if (upErr) return new NextResponse(upErr.message, { status: 500 });
 

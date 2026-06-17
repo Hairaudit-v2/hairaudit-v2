@@ -4,6 +4,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { isAuditor } from "@/lib/auth/isAuditor";
 import { parseRole } from "@/lib/roles";
 import { isSupportedLocale, normalizeLocale } from "@/lib/i18n/constants";
+import { resolveProfileUpsertRole } from "@/lib/security/profileRolePolicy";
 
 // GET — fetch current user's profile (role)
 export async function GET() {
@@ -79,10 +80,20 @@ export async function POST(req: Request) {
 
   const admin = createSupabaseAdminClient();
   const { data: profile } = await admin.from("profiles").select("role").eq("id", user.id).maybeSingle();
-  const requested = parseRole(requestedRole);
-  const role = requested === "auditor"
-    ? (isAuditor({ profileRole: profile?.role, userEmail: user.email }) ? "auditor" : parseRole(profile?.role))
-    : requested;
+  const roleDecision = resolveProfileUpsertRole({
+    existingProfileRole: profile?.role,
+    requestedRole,
+    userEmail: user.email,
+    userMetadataRole: (user.user_metadata as Record<string, unknown> | undefined)?.role,
+  });
+  if (!roleDecision.ok) {
+    const message =
+      roleDecision.reason === "invalid_signup_role"
+        ? "Doctor/clinic roles must match signup intent"
+        : "Role elevation to doctor/clinic is not permitted";
+    return NextResponse.json({ error: message }, { status: 403 });
+  }
+  const role = roleDecision.role;
   const { error } = await admin.from("profiles").upsert(
     {
       id: user.id,

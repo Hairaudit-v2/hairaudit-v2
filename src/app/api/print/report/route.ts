@@ -19,6 +19,8 @@ import {
   parseEvidenceIntelligencePayload,
 } from "@/lib/evidence/evidenceIntelligencePayload";
 import { enrichKeyMetricsAfterNormalize } from "@/lib/evidence/evidenceMissingCopy";
+import { getCaseFilesBucketNameForReadOnlyUse } from "@/lib/hairaudit/uploadStorage";
+import { requireReportRenderTokenSecret } from "@/lib/security/secrets";
 
 function clamp100(n: number) {
   return Math.max(0, Math.min(100, n));
@@ -93,12 +95,10 @@ export async function GET(req: Request) {
 
   const mode: AuditMode = normalizeAuditMode(rawAuditMode ?? undefined);
 
-  const tokenSecret =
-    String(process.env.REPORT_RENDER_TOKEN ?? "").trim() ||
-    String(process.env.INTERNAL_API_KEY ?? "").trim() ||
-    String(process.env.SUPABASE_SERVICE_ROLE_KEY ?? "").trim();
-
-  if (!tokenSecret) {
+  let tokenSecret: string;
+  try {
+    tokenSecret = requireReportRenderTokenSecret();
+  } catch {
     return new NextResponse("Render token secret not configured", {
       status: 500,
       headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" },
@@ -133,7 +133,7 @@ export async function GET(req: Request) {
       headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" },
     });
   }
-  const bucket = process.env.CASE_FILES_BUCKET || "case-files";
+  const bucket = getCaseFilesBucketNameForReadOnlyUse();
   const manifest = await loadLatestEvidenceManifest({
     supabase: supabase as any,
     caseId,

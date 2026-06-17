@@ -12,11 +12,12 @@ import {
   summarizePatientPhotoCategoryIntegrity,
   syncPatientPhotoMetadataCategoryToType,
 } from "@/lib/uploads/patientPhotoCategoryIntegrity";
+import { getCaseFilesBucketNameForReadOnlyUse } from "@/lib/hairaudit/uploadStorage";
 
 export const runtime = "nodejs";
 
 function supabaseBucket() {
-  return process.env.CASE_FILES_BUCKET || "case-files";
+  return getCaseFilesBucketNameForReadOnlyUse();
 }
 
 function categoryFromUploadRow(u: { type?: string | null; metadata?: unknown }): string {

@@ -1,15 +1,15 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-
-function supabaseAdmin() {
-  return createSupabaseAdminClient();
-}
+import { requireDevRouteAccess } from "@/lib/security/routeGuards";
 
 /**
  * GET /api/debug/reports?caseId=...
  * Quick view of latest reports + summary keys for debugging.
  */
 export async function GET(req: Request) {
+  const gate = await requireDevRouteAccess();
+  if (!gate.ok) return gate.response;
+
   const url = new URL(req.url);
   const caseId = url.searchParams.get("caseId") ?? "";
 
@@ -17,7 +17,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ ok: false, error: "Missing caseId" }, { status: 400 });
   }
 
-  const supabase = supabaseAdmin();
+  const supabase = createSupabaseAdminClient();
 
   const { data, error } = await supabase
     .from("reports")
@@ -30,8 +30,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
   }
 
-  // Helpful: return summary keys only (so it doesn't flood terminal)
-  const reports = (data ?? []).map((r: any) => ({
+  const reports = (data ?? []).map((r: { id: string; case_id: string; version: number; created_at: string; summary?: Record<string, unknown> | null }) => ({
     id: r.id,
     case_id: r.case_id,
     version: r.version,

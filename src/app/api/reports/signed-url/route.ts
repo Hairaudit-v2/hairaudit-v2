@@ -4,6 +4,7 @@ import { tryCreateSupabaseAdminClient } from "@/lib/supabase/admin";
 import { requireCaseAccess, requireUser } from "@/lib/auth/permissions";
 import { extractCaseIdFromPdfPath } from "@/lib/reports/pdfPathCaseId";
 import { storagePathBelongsToReportCase } from "@/lib/reports/reportAccess";
+import { getCaseFilesBucketNameForReadOnlyUse } from "@/lib/hairaudit/uploadStorage";
 
 export async function GET(req: Request) {
   try {
@@ -31,7 +32,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Invalid path" }, { status: 400 });
     }
 
-    const bucket = process.env.CASE_FILES_BUCKET || "case-files";
+    const bucket = getCaseFilesBucketNameForReadOnlyUse();
     let data: { signedUrl: string } | null = null;
     let storageError: Error | null = null;
 

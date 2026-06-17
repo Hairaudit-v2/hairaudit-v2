@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-
-function supabaseAdmin() {
-  return createSupabaseAdminClient();
-}
+import { requireDevRouteAccess } from "@/lib/security/routeGuards";
 
 export async function GET() {
-  const supabase = supabaseAdmin();
+  const gate = await requireDevRouteAccess();
+  if (!gate.ok) return gate.response;
+
+  const supabase = createSupabaseAdminClient();
 
   const { data, error } = await supabase
     .from("cases")

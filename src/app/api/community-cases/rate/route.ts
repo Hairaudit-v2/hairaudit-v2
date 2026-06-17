@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { guardCommunityRatingValues } from "@/lib/security/communityApiGuard";
 
 type RateBody = {
   caseId?: string;
@@ -25,9 +26,8 @@ export async function POST(req: Request) {
     const naturalness = normalizeRating(body.naturalness);
     const density = normalizeRating(body.density);
     const hairlineDesign = normalizeRating(body.hairlineDesign);
-    if (!naturalness || !density || !hairlineDesign) {
-      return NextResponse.json({ ok: false, error: "Ratings must be between 1 and 5." }, { status: 400 });
-    }
+    const ratingGuard = guardCommunityRatingValues({ naturalness, density, hairlineDesign });
+    if (ratingGuard) return ratingGuard;
 
     const supabase = createSupabaseAdminClient();
     const { data: found, error: caseError } = await supabase

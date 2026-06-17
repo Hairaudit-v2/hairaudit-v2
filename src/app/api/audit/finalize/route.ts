@@ -4,6 +4,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getUserRole } from "@/lib/case-access";
 import { isAuditor } from "@/lib/auth/isAuditor";
 import { normalizeAuditMode } from "@/lib/pdf/reportBuilder";
+import { requireInternalApiKey } from "@/lib/security/secrets";
 
 export async function POST(req: Request) {
   try {
@@ -76,15 +77,13 @@ export async function POST(req: Request) {
       .update({ status: "complete", error: null, summary: nextSummary })
       .eq("id", latestReport.id);
 
-    const internalApiKey =
-      String(process.env.INTERNAL_API_KEY ?? "").trim() ||
-      String(process.env.SUPABASE_SERVICE_ROLE_KEY ?? "").trim() ||
-      String(process.env.REPORT_RENDER_TOKEN ?? "").trim() ||
-      String(process.env.INTERNAL_BUILD_PDF_TOKEN ?? "").trim();
-    const vercelBypass = String(process.env.VERCEL_AUTOMATION_BYPASS_SECRET ?? "").trim();
-    if (!internalApiKey) {
+    let internalApiKey: string;
+    try {
+      internalApiKey = requireInternalApiKey();
+    } catch {
       return NextResponse.json({ error: "Missing internal API key configuration" }, { status: 500 });
     }
+    const vercelBypass = String(process.env.VERCEL_AUTOMATION_BYPASS_SECRET ?? "").trim();
     const baseUrl = new URL(req.url).origin;
     const renderRes = await fetch(`${baseUrl}/api/internal/render-pdf`, {
       method: "POST",

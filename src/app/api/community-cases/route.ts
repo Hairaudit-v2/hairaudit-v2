@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { buildHairAuditScore } from "@/lib/communityCases";
+import { guardCommunityWritePayload } from "@/lib/security/communityApiGuard";
 
 type CreateCaseBody = {
   imageDataUrls: string[];
@@ -45,6 +46,9 @@ export async function POST(req: Request) {
     if (!imageDataUrls.length) {
       return NextResponse.json({ ok: false, error: "At least one image is required." }, { status: 400 });
     }
+
+    const payloadGuard = guardCommunityWritePayload(req, imageDataUrls);
+    if (payloadGuard) return payloadGuard;
 
     const monthsSinceProcedure =
       typeof body.monthsSinceProcedure === "number" && Number.isFinite(body.monthsSinceProcedure)

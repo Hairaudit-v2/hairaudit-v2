@@ -1,43 +1,13 @@
+import { CASE_STATUS_IMPLYING_SUBMIT_SET } from "@/lib/hairaudit/statusCatalog";
+import type { CaseRow } from "@/lib/hairaudit/tableTypes";
+
 /** Case row fields needed for submission / guide-unlock logic. */
-export type CaseSubmitStatusFields = {
-  status?: string | null;
-  submitted_at?: string | null;
-};
+export type CaseSubmitStatusFields = Pick<CaseRow, "status" | "submitted_at">;
 
 /** Fields used for Post-Operative Hair Protection Guide eligibility (patient transplant audits). */
-export type CaseRowForPostOpGuide = CaseSubmitStatusFields & {
-  audit_type?: string | null;
-};
+export type CaseRowForPostOpGuide = CaseSubmitStatusFields & Pick<CaseRow, "audit_type">;
 
-export type CaseRowForSubmitCta = CaseSubmitStatusFields & { id: string };
-
-/**
- * Status values that may appear on `cases.status` after a successful /api/submit, including
- * pipeline phases (see setCasePipelineStatus in inngest) and post-submit workflow states.
- * Used as a fallback when submitted_at is missing on legacy rows.
- */
-const CASE_STATUS_AFTER_PATIENT_SUBMIT = new Set<string>([
-  "submitted",
-  "processing",
-  "complete",
-  "audit_failed",
-  "evidence_preparing",
-  "evidence_ready",
-  "audit_running",
-  "audit_complete",
-  "pdf_pending",
-  "pdf_ready",
-  "failed",
-  "clinic_request_sent",
-  "clinic_request_pending",
-  "clinic_viewed_request",
-  "doctor_contribution_received",
-  "benchmark_recalculated",
-  "benchmark_eligible",
-  "request_closed",
-  "request_expired",
-  "in_review",
-]);
+export type CaseRowForSubmitCta = CaseSubmitStatusFields & Pick<CaseRow, "id">;
 
 export function hasSubmittedAtTimestamp(c: CaseSubmitStatusFields): boolean {
   const v = c.submitted_at;
@@ -49,7 +19,7 @@ export function isCaseMarkedSuccessfullySubmitted(c: CaseSubmitStatusFields): bo
   if (hasSubmittedAtTimestamp(c)) return true;
   const s = String(c.status ?? "").trim();
   if (!s || s === "draft") return false;
-  return CASE_STATUS_AFTER_PATIENT_SUBMIT.has(s);
+  return CASE_STATUS_IMPLYING_SUBMIT_SET.has(s);
 }
 
 /**

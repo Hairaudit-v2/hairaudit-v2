@@ -1,0 +1,176 @@
+-- =============================================================================
+-- HairAudit Core Forensic Baseline — PLACEHOLDER ONLY
+-- =============================================================================
+--
+-- ⚠️  DO NOT APPLY THIS FILE TO ANY ENVIRONMENT
+-- ⚠️  This is a documentation placeholder awaiting verified staging DDL
+--
+-- Phase: 1B (Baseline Schema Capture)
+-- Guide: docs/hairaudit-v2-phase-1b-baseline-schema-capture.md
+-- Prerequisites: Staging schema dump, scrub, review, type generation
+--
+-- This file contains NO operative DDL — only commented sections indicating
+-- what must be captured from staging/production before RLS can be applied.
+--
+-- =============================================================================
+
+-- =============================================================================
+-- SECTION 1: cases
+-- =============================================================================
+--
+-- Table: public.cases
+-- Status: CREATE TABLE predates migrations (baseline-only in production)
+--
+-- Required columns (confirmed from Phase 1A tableTypes.ts):
+--   - id: uuid PRIMARY KEY
+--   - user_id: uuid (nullable, case creator)
+--   - patient_id: uuid (nullable, patient participant)
+--   - doctor_id: uuid (nullable, doctor participant)
+--   - clinic_id: uuid (nullable, clinic participant)
+--   - title: text (nullable)
+--   - status: text (no DB CHECK, app-enforced via statusCatalog.ts)
+--   - submitted_at: timestamptz (nullable)
+--   - created_at: timestamptz DEFAULT now()
+--   - audit_type: text ('patient', 'doctor', 'clinic')
+--   - audit_mode: text ('internal', 'public')
+--   - visibility_scope: text ('public', 'internal')
+--   - submission_channel: text
+--   - assigned_auditor_id: uuid (nullable)
+--   - archived_at: timestamptz (nullable)
+--   - deleted_at: timestamptz (nullable)
+--   - is_test: boolean (nullable)
+--   - intake_status: text ('draft', 'incomplete', 'ready_for_audit')
+--   - external_case_id: text (nullable)
+--   - batch_id: uuid (nullable)
+--   - rerun_count: integer (nullable)
+--   - ... (additional columns from ALTER migrations)
+--
+-- Required indexes:
+--   - idx_cases_user_id ON user_id
+--   - idx_cases_patient_id ON patient_id
+--   - idx_cases_status ON status
+--   - idx_cases_created_at ON created_at
+--   - idx_cases_submitted_at ON submitted_at
+--   - idx_cases_batch_id ON batch_id (if exists)
+--
+-- TODO: Replace this comment with actual CREATE TABLE from staging dump
+-- Command: npx supabase db dump --schema-only (staging)
+-- Scrub: Remove OWNER TO, privileges, env-specific defaults
+--
+-- PLACEHOLDER — NO DDL EXECUTES
+-- CREATE TABLE public.cases (...);
+
+
+-- =============================================================================
+-- SECTION 2: reports
+-- =============================================================================
+--
+-- Table: public.reports
+-- Status: CREATE TABLE predates migrations (baseline-only in production)
+-- Foreign Key: reports.case_id → cases.id (assumed)
+--
+-- Required columns (confirmed from Phase 1A tableTypes.ts):
+--   - id: uuid PRIMARY KEY
+--   - case_id: uuid NOT NULL
+--   - version: integer (nullable, default 1)
+--   - status: text ('complete', 'processing', 'failed', etc.)
+--   - error: text (nullable)
+--   - pdf_path: text (nullable)
+--   - summary: jsonb (nullable)
+--   - created_at: timestamptz DEFAULT now()
+--   - report_kind: text (nullable, NULL = forensic audit)
+--   - patient_audit_version: integer (nullable)
+--   - patient_audit_v2: jsonb (nullable)
+--   - auditor_review_eligibility: text
+--   - auditor_review_status: text
+--   - auditor_review_reason: text
+--   - provisional_status: text
+--   - counts_for_awards: boolean
+--   - validation_method: text
+--   - validated_at: timestamptz (nullable)
+--   - report_ready_email_sent_at: timestamptz (nullable)
+--   - external_document_id: text (nullable)
+--   - ... (additional columns from ALTER migrations)
+--
+-- Required indexes:
+--   - idx_reports_case_id ON case_id
+--   - idx_reports_status ON status
+--   - idx_reports_created_at ON created_at
+--   - idx_reports_case_id_version ON (case_id, version)
+--
+-- TODO: Replace this comment with actual CREATE TABLE from staging dump
+-- Verify FK: ON DELETE behavior on reports.case_id
+--
+-- PLACEHOLDER — NO DDL EXECUTES
+-- CREATE TABLE public.reports (...);
+
+
+-- =============================================================================
+-- SECTION 3: uploads
+-- =============================================================================
+--
+-- Table: public.uploads
+-- Status: CREATE TABLE predates migrations (baseline-only in production)
+-- Foreign Key: uploads.case_id → cases.id (assumed)
+--
+-- Required columns (confirmed from Phase 1A tableTypes.ts):
+--   - id: uuid PRIMARY KEY
+--   - case_id: uuid NOT NULL
+--   - user_id: uuid (nullable, upload creator)
+--   - type: text NOT NULL (e.g., 'patient_photo:*', 'surgery_photo:*')
+--   - storage_path: text NOT NULL (path in case-files bucket)
+--   - metadata: jsonb (nullable, {category, mime, size, original_name})
+--   - created_at: timestamptz DEFAULT now()
+--   - ... (additional columns from ALTER migrations)
+--
+-- Required indexes:
+--   - idx_uploads_case_id ON case_id
+--   - idx_uploads_case_id_type ON (case_id, type)
+--   - idx_uploads_storage_path ON storage_path (unique?)
+--   - idx_uploads_created_at ON created_at
+--
+-- TODO: Replace this comment with actual CREATE TABLE from staging dump
+-- Verify: uploads.id may be client-provided in legacy paths
+--
+-- PLACEHOLDER — NO DDL EXECUTES
+-- CREATE TABLE public.uploads (...);
+
+
+-- =============================================================================
+-- SECTION 4: Validation Checklist
+-- =============================================================================
+--
+-- Before replacing this placeholder with real DDL, confirm:
+--
+-- [ ] Staging schema dump completed (npx supabase db dump --schema-only)
+-- [ ] DDL scrubbed: no OWNER TO, no privileges, no env-specific paths
+-- [ ] Column names match Phase 1A inferred types in tableTypes.ts
+-- [ ] Index names follow repo convention (idx_{table}_{column})
+-- [ ] Foreign key constraints documented (ON DELETE behavior)
+-- [ ] Generated Supabase types committed (src/lib/supabase/database.types.ts)
+-- [ ] Staging regression test passed (create → submit → PDF)
+-- [ ] Phase 0B RLS draft reviewed against actual column names
+--
+
+
+-- =============================================================================
+-- SECTION 5: Migration Transition
+-- =============================================================================
+--
+-- When ready to replace placeholder:
+--
+-- 1. Generate timestamp: date +%Y%m%d%H%M%S (e.g., 20260617120000)
+-- 2. Create migration: supabase/migrations/{TS}_hairaudit_core_forensic_baseline.sql
+-- 3. Copy verified DDL from this placeholder (remove these comments)
+-- 4. Delete this placeholder file
+-- 5. Apply to staging: npx supabase migration up
+-- 6. Run full regression test
+-- 7. Commit migration with message:
+--    "feat(schema): add core tables baseline DDL for cases/reports/uploads"
+--
+-- DO NOT apply this placeholder file directly — it contains no executable DDL.
+--
+
+-- =============================================================================
+-- END OF PLACEHOLDER
+-- =============================================================================

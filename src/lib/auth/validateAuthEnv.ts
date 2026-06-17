@@ -41,4 +41,19 @@ export function logAuthEnvHealthOnce() {
       });
     }
   }
+
+  if (process.env.NODE_ENV === "production") {
+    const tokenSecrets = ["CONTRIBUTION_TOKEN_SECRET", "REPORT_RENDER_TOKEN", "INTERNAL_API_KEY"] as const;
+    const missingTokenSecrets = tokenSecrets.filter((name) => !String(process.env[name] ?? "").trim());
+    if (missingTokenSecrets.length === tokenSecrets.length) {
+      console.error("[auth/env] no dedicated token/render secrets configured in production", {
+        expectedOneOf: tokenSecrets,
+      });
+    } else if (!process.env.CONTRIBUTION_TOKEN_SECRET?.trim()) {
+      console.error("[auth/env] CONTRIBUTION_TOKEN_SECRET is missing in production");
+    }
+    if (process.env.ALLOW_AUDITOR_EMAIL_OVERRIDE === "true") {
+      console.error("[auth/env] ALLOW_AUDITOR_EMAIL_OVERRIDE=true in production is unsafe");
+    }
+  }
 }
