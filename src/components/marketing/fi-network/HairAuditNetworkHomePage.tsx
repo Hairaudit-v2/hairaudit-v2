@@ -41,7 +41,7 @@ const auditSteps = [
   },
   {
     title: "Evidence is reviewed",
-    body: "HairAudit structures the photos, timeline, and surgery details into a consistent audit record.",
+    body: "HairAudit organizes your photos, timeline, and surgery details into a consistent review record.",
     icon: Microscope,
   },
   {
@@ -72,8 +72,8 @@ const trustItems = [
     icon: LockKeyhole,
   },
   {
-    title: "FI-powered, HairAudit-owned",
-    body: "The Follicle Intelligence Network supports the scoring infrastructure while HairAudit remains the audit platform.",
+    title: "Structured clinical review",
+    body: "HairAudit applies consistent review standards while remaining an independent platform focused on patient clarity.",
     icon: Sparkles,
   },
 ] as const;
@@ -83,10 +83,10 @@ export default function HairAuditNetworkHomePage() {
     <main id="main-content" className="relative flex-1">
       <NetworkHero
         platform="hairaudit"
-        eyebrow="Independent AuditOS node"
+        eyebrow="Independent hair transplant review"
         title="Understand your hair transplant result with an independent audit."
-        subtitle="Upload your photos and timeline for a structured HairAudit review of donor area, growth, density, hairline design, implantation, and evidence quality."
-        networkLabel="HairAudit · Powered by the Follicle Intelligence Network"
+        subtitle="Upload your photos and timeline for a structured HairAudit review of donor area, growth, density, hairline design, implantation, and photo quality."
+        networkLabel="HairAudit · Independent review platform"
         actions={
           <>
             <TrackedLink

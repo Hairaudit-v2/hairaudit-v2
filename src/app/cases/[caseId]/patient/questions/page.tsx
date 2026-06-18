@@ -59,10 +59,6 @@ export default async function Page({
           <p className="mt-2 text-sm sm:text-base text-slate-200/70 max-w-2xl">
             {tr("dashboard.patient.forms.questionsPage.subtitle")}
           </p>
-          <div className="mt-4 text-xs leading-relaxed text-slate-300/70">
-            <div>{tr("dashboard.patient.forms.questionsPage.poweredBy")}</div>
-            <div>{tr("dashboard.patient.forms.questionsPage.visionModel")}</div>
-          </div>
         </div>
       </section>
 

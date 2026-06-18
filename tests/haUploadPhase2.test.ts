@@ -93,21 +93,22 @@ describe("legacy report findings layout HTML", () => {
       risks: [],
       esc,
     });
-    assert.doesNotMatch(html, /Areas Requiring Review/);
-    assert.match(html, /Key Positive Indicators/);
+    assert.doesNotMatch(html, /Areas to discuss with your clinician/);
+    assert.match(html, /What looks reassuring/);
   });
 
-  it("shows patient review before positives with disclaimer", () => {
+  it("shows patient positives before review with disclaimer", () => {
     const html = buildLegacyReportFindingsLayoutHtml({
       auditMode: "patient",
       highlights: ["Hairline looks natural"],
       risks: ["This may indicate: Uneven density. This should be reviewed by a qualified clinician."],
       esc,
     });
-    const reviewIdx = html.indexOf("Areas Requiring Review");
-    const positiveIdx = html.indexOf("Key Positive Indicators");
+    const reviewIdx = html.indexOf("Areas to discuss with your clinician");
+    const positiveIdx = html.indexOf("What looks reassuring");
     assert.ok(reviewIdx >= 0);
-    assert.ok(positiveIdx > reviewIdx);
+    assert.ok(positiveIdx >= 0);
+    assert.ok(positiveIdx < reviewIdx);
     assert.match(html, /not a medical diagnosis/i);
   });
 
@@ -161,18 +162,20 @@ describe("buildPatientPdfReviewAreas", () => {
 describe("Elite PDF Areas Requiring Review", () => {
   it("omits review section for patient when no concerns", () => {
     const html = renderEliteReportHtml(makeEliteVm("patient", []));
-    assert.doesNotMatch(html, /Areas Requiring Review/);
-    assert.match(html, /Key Positive Indicators/);
+    assert.doesNotMatch(html, /Areas to discuss with your clinician/);
+    assert.match(html, /What looks reassuring/);
   });
 
-  it("shows patient-safe review section before positive indicators when concerns exist", () => {
+  it("shows patient-safe review section after reassuring indicators when concerns exist", () => {
     const concern =
       "This may indicate: Uneven density in crown zone. This should be reviewed by a qualified clinician.";
     const html = renderEliteReportHtml(makeEliteVm("patient", [concern]));
-    const reviewIdx = html.indexOf("Areas Requiring Review");
-    const positiveIdx = html.indexOf("Key Positive Indicators");
+    const reviewIdx = html.indexOf("Areas to discuss with your clinician");
+    const positiveIdx = html.indexOf("What looks reassuring");
     assert.ok(reviewIdx >= 0);
-    assert.ok(positiveIdx > reviewIdx);
+    assert.ok(positiveIdx >= 0);
+    assert.ok(positiveIdx < reviewIdx);
+    assert.match(html, /What happens next/);
     assert.match(html, /not a medical diagnosis/i);
     assert.match(html, /Image quality may limit interpretation/i);
     assert.match(html, new RegExp(concern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));

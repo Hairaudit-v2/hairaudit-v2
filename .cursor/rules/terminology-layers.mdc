@@ -1,0 +1,59 @@
+---
+description: Patient vs clinic/auditor terminology — banned and allowed product language
+alwaysApply: true
+---
+
+# Terminology Layers
+
+HairAudit has two **user-visible** language layers. Internal code names (e.g. `AuditOS` in `src/lib/auditos/`) are fine; **never expose forbidden terms in UI, reports, emails, or i18n shown to patients**.
+
+## Patient layer — never show
+
+Do not use these words or phrases in patient-facing copy:
+
+- AI
+- GPT
+- Forensic
+- Intelligence Engine
+- AuditOS
+- Precision Score
+- Surgical Intelligence
+- Platinum Tier
+- Gold Tier
+
+**Applies to:** `src/components/patient/**`, `src/app/**/patient/**`, `src/app/dashboard/patient/**`, patient-safe summaries/reports, patient i18n keys, and any marketing or intake flow aimed at patients.
+
+Use neutral, clinical language instead — e.g. "independent review", "case summary", "areas to discuss with your clinic".
+
+```tsx
+// ❌ BAD (patient dashboard)
+<p>Powered by Forensic AI — Precision Score: 82</p>
+
+// ✅ GOOD
+<p>Your independent case review summary</p>
+```
+
+## Clinic / auditor layer — can show
+
+These terms are allowed (and expected) in professional-facing UI:
+
+- Forensic AI
+- Graft Integrity Index
+- Donor Density Analytics
+- Extraction Pattern Review
+- Surgical Intelligence
+- Procedural Analytics
+
+**Applies to:** `src/app/dashboard/clinic/**`, `src/app/dashboard/auditor/**`, `src/app/dashboard/doctor/**`, clinic/doctor audit forms, and professional report views.
+
+```tsx
+// ✅ GOOD (auditor dashboard)
+<h2>Extraction Pattern Review</h2>
+<p>Forensic AI findings for this case</p>
+```
+
+## When editing i18n
+
+- Check which audience a key serves before adding terms.
+- Patient keys: scan for forbidden terms before merging.
+- Clinic/auditor keys: professional terminology above is allowed.

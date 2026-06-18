@@ -3,6 +3,7 @@
 import Link from "next/link";
 import DownloadReport from "@/app/cases/[caseId]/download-report";
 import ReportShareButton from "@/components/reports/ReportShareButton";
+import PatientProcessingWaitingExperience from "@/components/patient/PatientProcessingWaitingExperience";
 import { CONTACT_EMAIL } from "@/lib/constants";
 import { useI18n } from "@/components/i18n/I18nProvider";
 
@@ -17,6 +18,9 @@ export type PatientNextActionPanelProps = {
   /** Latest completed report row id for server-side PDF download */
   reportId?: string;
   variant?: PatientNextActionVariant;
+  /** Masked in UI; used to confirm report-ready email destination during processing */
+  notificationEmail?: string | null;
+  submittedAt?: string | null;
 };
 
 function normalizeStatus(status: string): "draft" | "processing" | "complete" | "audit_failed" {
@@ -33,6 +37,8 @@ export default function PatientNextActionPanel({
   pdfPath,
   reportId,
   variant = "case",
+  notificationEmail,
+  submittedAt,
 }: PatientNextActionPanelProps) {
   const { t } = useI18n();
   const state = normalizeStatus(status);
@@ -84,38 +90,17 @@ export default function PatientNextActionPanel({
     );
   }
 
-  // Submitted or processing: Your report is being prepared
+  // Submitted or processing: premium waiting experience (no partial report surfacing)
   if (state === "processing") {
     return (
-      <div
-        className={
-          compact
-            ? "rounded-xl border border-cyan-300/20 bg-cyan-300/5 p-3"
-            : "rounded-2xl border border-cyan-300/25 bg-cyan-300/5 p-4 sm:p-5"
-        }
-      >
-        <p className={compact ? "text-xs font-semibold uppercase tracking-wide text-cyan-200/90" : "text-xs font-semibold uppercase tracking-wide text-cyan-200/90"}>
-          {t("dashboard.patient.nextAction.eyebrow")}
-        </p>
-        <p className={compact ? "mt-1 text-sm font-semibold text-white" : "mt-2 text-base font-semibold text-white"}>
-          {t("dashboard.patient.nextAction.processingTitle")}
-        </p>
-        <p className={compact ? "mt-0.5 text-xs text-slate-200/80" : "mt-1 text-sm text-slate-200/80"}>
-          {t("dashboard.patient.nextAction.processingBody")}
-        </p>
-        <div className={compact ? "mt-2" : "mt-4"}>
-          <Link
-            href="/dashboard/patient"
-            className={
-              compact
-                ? "text-xs font-medium text-cyan-200 hover:text-cyan-100"
-                : "text-sm font-medium text-cyan-200 hover:text-cyan-100"
-            }
-          >
-            {t("dashboard.patient.nextAction.returnToDashboard")}
-          </Link>
-        </div>
-      </div>
+      <PatientProcessingWaitingExperience
+        caseStatus={status}
+        hasReportPdf={Boolean(pdfPath)}
+        notificationEmail={notificationEmail}
+        submittedAt={submittedAt}
+        variant={variant}
+        showReturnLink
+      />
     );
   }
 

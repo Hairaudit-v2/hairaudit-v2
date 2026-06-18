@@ -64,7 +64,7 @@ export function buildLegacyReportFindingsLayoutHtml(args: {
 
   const highlightsSection = `
         <div class="listCard">
-          <div class="listTitle">${isPatientFacing ? "Key Positive Indicators" : "Highlights"}</div>
+          <div class="listTitle">${isPatientFacing ? "What looks reassuring" : "Highlights"}</div>
           ${
             highlights.length
               ? `<ul>${highlights.map((x) => `<li>${esc(String(x))}</li>`).join("")}</ul>`
@@ -76,7 +76,7 @@ export function buildLegacyReportFindingsLayoutHtml(args: {
     risks.length > 0
       ? `
         <div class="listCard"${isPatientFacing ? ' style="margin-bottom:12px;border-color:#d97706;"' : ""}>
-          <div class="listTitle">${isPatientFacing ? "Areas Requiring Review" : "Risks / Watch-outs"}</div>
+          <div class="listTitle">${isPatientFacing ? "Areas to discuss with your clinician" : "Risks / Watch-outs"}</div>
           ${
             isPatientFacing
               ? `<div class="subtitle" style="margin-bottom:8px;">Based on uploaded images only — not a medical diagnosis. Image quality may limit interpretation.</div>`
@@ -98,7 +98,7 @@ export function buildLegacyReportFindingsLayoutHtml(args: {
         </div>`;
 
   if (isPatientFacing) {
-    return `${reviewSection}${highlightsSection}`;
+    return `${highlightsSection}${reviewSection}`;
   }
 
   return `<div class="twoCol">${highlightsSection}${reviewSection}</div>`;

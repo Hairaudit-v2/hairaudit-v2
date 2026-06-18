@@ -32,10 +32,12 @@ export default function PatientDashboardCaseHistorySection({
   cases,
   pdfByCase,
   reportIdByCase,
+  notificationEmail,
 }: {
   cases: PatientCaseRow[] | null | undefined;
   pdfByCase: Record<string, string>;
   reportIdByCase: Record<string, string>;
+  notificationEmail?: string | null;
 }) {
   const { t } = useI18n();
   const list = cases ?? [];
@@ -111,6 +113,8 @@ export default function PatientDashboardCaseHistorySection({
                         pdfPath={pdfPath}
                         reportId={reportId}
                         variant="dashboard"
+                        notificationEmail={notificationEmail}
+                        submittedAt={c.submitted_at}
                       />
                     </div>
                   </div>

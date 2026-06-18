@@ -76,7 +76,7 @@ export default function RequestReviewPage() {
               Takes around 6–8 minutes. You can add missing details later.
             </p>
             <p className="text-xs text-amber-200/90 font-medium">
-              Independent review · Secure upload · Subtly powered by the Follicle Intelligence Network
+              Independent review · Secure upload · Private photo handling
             </p>
           </header>
 

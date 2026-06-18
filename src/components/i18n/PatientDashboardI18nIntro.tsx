@@ -56,10 +56,7 @@ export default function PatientDashboardI18nIntro({
           </div>
 
           <div className="pt-2 text-xs leading-relaxed text-slate-300/70">
-            <div>{t("dashboard.patient.poweredBy")}</div>
-            <div>{t("dashboard.patient.mlEngine")}</div>
-            <div>{t("dashboard.patient.visionModel")}</div>
-            <div className="mt-1 text-slate-400/90">{benchmarkingLine}</div>
+            {benchmarkingLine ? <div className="text-slate-400/90">{benchmarkingLine}</div> : null}
           </div>
         </div>
       </section>

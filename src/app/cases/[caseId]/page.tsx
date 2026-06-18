@@ -38,6 +38,11 @@ import InviteClinicContributionCard from "@/components/case/InviteClinicContribu
 import ForensicCaseTimelineViewer from "@/components/reports/ForensicCaseTimelineViewer";
 import PatientNextActionPanel from "@/components/patient/PatientNextActionPanel";
 import PatientSafeSummaryShell from "@/components/patient/PatientSafeSummaryShell";
+import {
+  resolvePatientReportDeliveryPhase,
+  shouldHidePatientForensicWorkspace,
+  shouldShowPatientReportContent,
+} from "@/lib/patient/patientProcessingView";
 import { BENCHMARKING_GLOBAL_STANDARDS } from "@/lib/benchmarkingCopy";
 import CaseNotFoundRecovery from "@/components/case/CaseNotFoundRecovery";
 import EvidenceCoveragePanel from "@/components/audit/EvidenceCoveragePanel";
@@ -563,6 +568,15 @@ export default async function Page({
   const hasReportPdf = !!(forensicReports[0] as { pdf_path?: string } | null)?.pdf_path;
   const isCompleteWithReport = status === "complete" && hasReportPdf;
   const isProcessing = status === "submitted" || status === "processing";
+  const patientDeliveryPhase = isPatientForCase
+    ? resolvePatientReportDeliveryPhase({ caseStatus: status, hasReportPdf })
+    : null;
+  const patientHidesForensicWorkspace =
+    patientDeliveryPhase != null &&
+    shouldHidePatientForensicWorkspace({ isPatientForCase, deliveryPhase: patientDeliveryPhase });
+  const patientShowReportContent =
+    patientDeliveryPhase != null &&
+    shouldShowPatientReportContent({ isPatientForCase, deliveryPhase: patientDeliveryPhase });
   const statusDisplayLabel = isCompleteWithReport
     ? tr("dashboard.reports.statusReportReady")
     : isProcessing
@@ -825,9 +839,7 @@ export default async function Page({
     Array.isArray(graftIntegrityEstimate?.limitations) ? (graftIntegrityEstimate.limitations as string[]) : [];
   const giiNotes = typeof graftIntegrityEstimate?.auditor_notes === "string" ? (graftIntegrityEstimate.auditor_notes as string) : null;
   const summaryObservations = buildPatientSafeSummaryObservations(latestSummary);
-  const patientReportSummary = buildPatientSafeReportSummary(latestSummary, {
-    score: latestReportDisplayScore,
-  });
+  const patientReportSummary = buildPatientSafeReportSummary(latestSummary);
   const patientSafeSummaryNarrative = await resolvePatientSafeSummaryNarrativePresentation({
     db: admin,
     caseId: c.id,
@@ -997,7 +1009,9 @@ export default async function Page({
         <div className="relative grid gap-6">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Forensic AI Workspace</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
+                {isPatientForCase ? "Your HairAudit Review" : "Forensic AI Workspace"}
+              </p>
               <h1 className="mt-2 text-2xl font-semibold text-white">{c.title ?? "Untitled case"}</h1>
               {bulkBatchContext ? (
                 <p className="mt-2 inline-flex flex-wrap items-center gap-2">
@@ -1029,13 +1043,14 @@ export default async function Page({
               pdfPath={(latestReport as { pdf_path?: string } | null)?.pdf_path}
               reportId={latestReport?.id}
               variant="case"
+              notificationEmail={isPatientForCase ? user.email : undefined}
+              submittedAt={c.submitted_at ?? null}
             />
           )}
 
-          {isPatientForCase && latestReport && (
+          {patientShowReportContent && latestReport && (
             <PatientSafeSummaryShell
               statusLabel={statusDisplayLabel}
-              score={latestReportDisplayScore}
               observations={patientSafeSummaryNarrative.observations}
               reportSummary={patientReportSummary}
               translatedNarrativeActive={patientSafeSummaryNarrative.translatedNarrativeActive}
@@ -1056,6 +1071,7 @@ export default async function Page({
             />
           ) : null}
 
+          {!patientHidesForensicWorkspace ? (
           <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               <div className="rounded-xl border border-white/10 bg-white/5 p-3 transition-colors hover:bg-white/10">
@@ -1134,6 +1150,7 @@ export default async function Page({
               </div>
             </div>
           </div>
+          ) : null}
         </div>
       </section>
 
@@ -1205,6 +1222,7 @@ export default async function Page({
         </div>
       )}
 
+      {!patientHidesForensicWorkspace ? (
       <section className="mt-6 rounded-2xl border border-slate-700 bg-slate-900 p-6">
         <h2 className="mb-4 text-lg font-semibold text-white">Contribution Paths</h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -1234,8 +1252,9 @@ export default async function Page({
           )}
         </div>
       </section>
+      ) : null}
 
-      {isPatientForCase && (
+      {isPatientForCase && !patientHidesForensicWorkspace && (
         <InviteClinicContributionCard
           caseId={c.id}
           defaultClinicName={clinicLabel === "Unknown clinic" ? "" : clinicLabel}
@@ -1281,6 +1300,7 @@ export default async function Page({
         </div>
       ) : null}
 
+      {!patientHidesForensicWorkspace ? (
       <section className="mt-6 grid gap-6 lg:grid-cols-2">
         <div className="grid gap-6">
           <EvidenceSummary caseRow={c} uploads={uploads ?? []} />
@@ -1293,6 +1313,7 @@ export default async function Page({
           />
           <CompletenessIndexCard ci={completenessIndex} />
         </div>
+        {!isPatientForCase ? (
         <div className="rounded-2xl border border-slate-700 bg-slate-900 p-6">
           <h2 className="text-lg font-semibold text-white">Intelligence Dashboard</h2>
           <p className="mt-1 text-sm text-slate-300/80">Domain signal strengths and benchmark readiness.</p>
@@ -1352,7 +1373,9 @@ export default async function Page({
             </div>
           </div>
         </div>
+        ) : null}
       </section>
+      ) : null}
 
       {patientImageEvidenceQuality && (
         <PatientImageEvidenceQualityPanel result={patientImageEvidenceQuality} />
@@ -1369,7 +1392,7 @@ export default async function Page({
           />
         </div>
       )}
-      {isPatientForCase && (
+      {isPatientForCase && !patientHidesForensicWorkspace && (
         <div className="mt-6">
           <GraftIntegrityCard caseId={c.id} initialEstimate={graftIntegrityEstimate} />
         </div>
@@ -1383,7 +1406,7 @@ export default async function Page({
         </div>
       )}
 
-      {domains.length > 0 && (
+      {domains.length > 0 && !patientHidesForensicWorkspace && (
         <div className="mt-6">
           {showAuditorReview && latestReport ? (
             <>
@@ -1420,7 +1443,7 @@ export default async function Page({
             </>
           ) : (
             <>
-              <DomainIntelligenceAccordion domains={domains as any} />
+              {!isPatientForCase ? <DomainIntelligenceAccordion domains={domains as any} /> : null}
               {isAuditor && latestReport && !showAuditorReview && (
                 <UnlockAuditorReviewButton reportId={latestReport.id} />
               )}
@@ -1429,7 +1452,7 @@ export default async function Page({
         </div>
       )}
 
-      {latestReport && (() => {
+      {latestReport && !patientHidesForensicWorkspace && (() => {
         const latest = latestReport;
         const summary = latest?.summary as Record<string, unknown> | undefined;
         const raw = summary?.doctor_answers as Record<string, unknown> | undefined;
@@ -1484,6 +1507,7 @@ export default async function Page({
         );
       })()}
 
+      {!patientHidesForensicWorkspace ? (
       <section className="mt-6 rounded-2xl border border-slate-700 bg-slate-900 p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -1497,6 +1521,7 @@ export default async function Page({
           <LatestReportCard report={latestReport} caseId={c.id} displayScore={latestReportDisplayScore} />
         </div>
       </section>
+      ) : null}
 
       {surgeryUploadDetails && (
         <div className="mt-6">
@@ -1517,9 +1542,11 @@ export default async function Page({
       )}
 
       {upErr && <p className="mt-6 text-sm text-rose-300">{upErr.message}</p>}
+      {!patientHidesForensicWorkspace ? (
       <div className="mt-6">
         <UploadThumbnailGallery caseId={c.id} uploads={(uploads ?? []) as any} />
       </div>
+      ) : null}
     </div>
   );
 }

@@ -6,6 +6,7 @@ import {
   PATIENT_CLINICAL_SAFETY_DISCLAIMER,
   type PatientConcernBand,
 } from "./patientConcernBands";
+import { buildPatientWhatHappensNext } from "./patientWhatHappensNext";
 
 export type PatientSafeSummaryObservationStage =
   | "preop"
@@ -35,6 +36,7 @@ export type PatientSafeReportSummary = {
   acceptableHighlights: string[];
   attentionItems: PatientSafeSummaryObservation[];
   concernItems: PatientSafeSummaryObservation[];
+  whatHappensNext: ReturnType<typeof buildPatientWhatHappensNext>;
   clinicalDisclaimer: string;
   /** Backward-compatible flat list for translation pipeline */
   observations: PatientSafeSummaryObservation[];
@@ -115,34 +117,25 @@ function isPositiveFinding(text: string, severity: ReturnType<typeof normalizeFo
   );
 }
 
-function buildPlainEnglishSummary(
-  band: PatientConcernBand,
-  score: number | null | undefined,
-  concernCount: number
-): string {
-  const scorePart =
-    typeof score === "number"
-      ? `Your overall audit score is ${score} out of 100. `
-      : "";
+function buildPlainEnglishSummary(band: PatientConcernBand, concernCount: number): string {
   switch (band) {
     case "none":
-      return `${scorePart}Based on your uploaded images, your results look broadly acceptable. Keep up routine follow-up with your clinic.`;
+      return "Based on your uploaded images, nothing urgent stands out in this review. Continue routine follow-up with your clinic.";
     case "minor":
-      return `${scorePart}Most areas look acceptable. We noted a few minor observations you may want to discuss at your next check-in.`;
+      return "Most areas look acceptable. We noted a few minor observations you may want to mention at your next check-in.";
     case "needs_review":
-      return `${scorePart}Some areas may need a closer look. This does not confirm a problem — please review these points with a qualified clinician.`;
+      return "Some areas may benefit from a closer look with your clinician. This does not confirm a problem — it highlights topics worth discussing.";
     case "significant":
-      return `${scorePart}We found ${concernCount} area${concernCount === 1 ? "" : "s"} that may need attention. Please follow up with your treating clinic.`;
+      return `We identified ${concernCount} area${concernCount === 1 ? "" : "s"} that may need attention. Please follow up with your treating clinic.`;
     case "urgent":
-      return `${scorePart}We identified findings that should be reviewed by a clinician promptly. HairAudit cannot diagnose — please contact your doctor or clinic.`;
+      return "We identified findings that should be reviewed by a clinician promptly. HairAudit cannot diagnose — please contact your doctor or clinic.";
     default:
-      return `${scorePart}Your report summary is ready. Download the full report for detailed domain-by-domain explanations.`;
+      return "Your review summary is ready. The sections below explain what we observed and practical next steps.";
   }
 }
 
 export function buildPatientSafeReportSummary(
-  summary: Record<string, unknown> | null | undefined,
-  opts?: { score?: number | null }
+  summary: Record<string, unknown> | null | undefined
 ): PatientSafeReportSummary {
   const keyFindings = Array.isArray(summary?.key_findings) ? summary.key_findings : [];
   const redFlags = Array.isArray(summary?.red_flags) ? summary.red_flags : [];
@@ -183,10 +176,11 @@ export function buildPatientSafeReportSummary(
     overallConcernBand: overallBand,
     overallConcernLabel: display.label,
     overallConcernDescription: display.description,
-    plainEnglishSummary: buildPlainEnglishSummary(overallBand, opts?.score, concernItems.length),
+    plainEnglishSummary: buildPlainEnglishSummary(overallBand, concernItems.length),
     acceptableHighlights,
     attentionItems,
     concernItems,
+    whatHappensNext: buildPatientWhatHappensNext(overallBand),
     clinicalDisclaimer: PATIENT_CLINICAL_SAFETY_DISCLAIMER,
     observations: structured,
   };

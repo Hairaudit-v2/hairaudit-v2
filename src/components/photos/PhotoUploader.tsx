@@ -269,6 +269,21 @@ export default function PhotoUploader({
     }
   }
 
+  function patientImageQualityLabel(score: string): string {
+    switch (score) {
+      case "A":
+        return "Excellent for review";
+      case "B":
+        return "Good for review";
+      case "C":
+        return "Adequate for review";
+      case "D":
+        return "Limited — extra photos may help";
+      default:
+        return score;
+    }
+  }
+
   const toggleSkipped = (key: string) => {
     if (schema.find((c) => c.key === key)?.required) return;
     setSkippedOptional((prev) => {
@@ -288,7 +303,7 @@ export default function PhotoUploader({
         <p className="mt-1 text-sm text-gray-600">
           {submitterType === "doctor"
             ? "Upload the required standardized photo set for best audit quality."
-            : "Upload at least the 3 required current photos. Extra photos improve your evidence score."}
+            : "Upload at least the 3 required current photos. Extra photos can help us give you a clearer review."}
         </p>
 
         {submitterType === "patient" && (
@@ -330,11 +345,11 @@ export default function PhotoUploader({
           </div>
         ) : null}
 
-        <div className="mt-4 flex items-center gap-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
+        <div className="mt-4 flex flex-wrap items-center gap-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
           <div>
-            <span className="text-sm font-medium text-slate-600">Evidence Score:</span>{" "}
+            <span className="text-sm font-medium text-slate-600">Image quality:</span>{" "}
             <span
-              className={`inline-flex items-center rounded px-2 py-0.5 text-sm font-bold ${
+              className={`inline-flex items-center rounded px-2 py-0.5 text-sm font-semibold ${
                 score === "A"
                   ? "bg-green-100 text-green-800"
                   : score === "B"
@@ -344,22 +359,19 @@ export default function PhotoUploader({
                       : "bg-red-100 text-red-800"
               }`}
             >
-              {score}
+              {submitterType === "patient" ? patientImageQualityLabel(score) : score}
             </span>
           </div>
           <div>
-            <span className="text-sm font-medium text-slate-600">Confidence:</span>{" "}
+            <span className="text-sm font-medium text-slate-600">Review confidence:</span>{" "}
             <span className="text-sm font-medium">{confidence}</span>
           </div>
           {missingRequired.length > 0 && (
             <div className="text-sm text-amber-700">
-              Missing required:{" "}
+              Still needed:{" "}
               {missingRequired
                 .map((k) => schema.find((d) => d.key === k)?.title ?? k)
                 .join(", ")}
-              <span className="mt-0.5 block font-mono text-xs text-amber-800/90">
-                {missingRequired.join(", ")}
-              </span>
             </div>
           )}
         </div>

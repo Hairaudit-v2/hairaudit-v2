@@ -16,6 +16,7 @@ import {
   firstCaseOpenForSubmit,
   patientHasUnlockedPostOpGuide,
 } from "@/lib/patient/caseSubmitStatus";
+import { isPatientReportDelivered, resolvePatientReportDeliveryPhase } from "@/lib/patient/patientProcessingView";
 import { fetchPatientCasesForPostOpGuide } from "@/lib/patient/fetchPatientCasesForPostOpGuide";
 import { computePatientRequiredPhotoProgress } from "@/lib/patient/patientRequiredPhotoProgress";
 
@@ -124,6 +125,16 @@ export default async function PatientDashboardPage() {
     }
   }
 
+  const latestSubmittedPdfPath = latestSubmittedCase ? pdfByCase[latestSubmittedCase.id] : undefined;
+  const latestSubmittedDelivered =
+    latestSubmittedCase != null &&
+    isPatientReportDelivered(
+      resolvePatientReportDeliveryPhase({
+        caseStatus: latestSubmittedCase.status,
+        hasReportPdf: Boolean(latestSubmittedPdfPath),
+      })
+    );
+
   let patientAnswers: PatientAuditAnswers = {};
   let patientPhotoProgress = {
     completedCount: 0,
@@ -176,7 +187,7 @@ export default async function PatientDashboardPage() {
 
   let graftIntegrityInitial: unknown = null;
   let graftIntegrityRolloutPending = false;
-  if (latestSubmittedCase?.id) {
+  if (latestSubmittedCase?.id && latestSubmittedDelivered) {
     const giiRes = await admin
       .from("graft_integrity_estimates")
       .select(
@@ -234,7 +245,7 @@ export default async function PatientDashboardPage() {
         benchmarkingLine={BENCHMARKING_GLOBAL_STANDARDS}
       />
 
-      {/* Intelligence gateway surface */}
+      {/* Patient review dashboard */}
       <section className="relative mt-8 overflow-hidden rounded-2xl border border-slate-900 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4 sm:p-6">
         <div className="pointer-events-none absolute -top-24 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-emerald-500/10 blur-3xl" />
 
@@ -282,6 +293,7 @@ export default async function PatientDashboardPage() {
         }))}
         pdfByCase={pdfByCase}
         reportIdByCase={reportIdByCase}
+        notificationEmail={user.email}
       />
     </div>
   );

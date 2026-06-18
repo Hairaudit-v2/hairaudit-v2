@@ -15,6 +15,8 @@ import {
 import { PATIENT_CLINICAL_SAFETY_DISCLAIMER } from "@/lib/reports/patientConcernBands";
 import { buildPatientLongTermHairEducation } from "@/lib/reports/patientLongTermHairEducation";
 import { buildPatientWhatToMonitorOverTime } from "@/lib/reports/patientWhatToMonitorOverTime";
+import { buildPatientSafeReportSummary } from "@/lib/reports/patientSafeSummary";
+import { getPatientDomainAssessment } from "@/lib/reports/patientDomainAssessment";
 
 type AreaScoreItem = {
   title: string;
@@ -104,6 +106,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     debugFooter,
   } = vm;
   const overallScore = typeof vm.viewModel.score === "number" && Number.isFinite(vm.viewModel.score) ? vm.viewModel.score : null;
+  const isPatientFacing = vm.viewModel.auditMode === "patient";
   const viewModelExt = vm.viewModel as ReportViewModel & {
     model?: string;
     evidenceCoverageScore?: number | null;
@@ -165,6 +168,14 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
   };
   const forensic = viewModelExt.forensic;
   const keyFindings = Array.isArray(forensic?.key_findings) ? forensic.key_findings : [];
+  const patientReportSummary = isPatientFacing
+    ? buildPatientSafeReportSummary({
+        key_findings: keyFindings,
+        red_flags: Array.isArray((forensic as { red_flags?: unknown[] } | undefined)?.red_flags)
+          ? (forensic as { red_flags: unknown[] }).red_flags
+          : [],
+      })
+    : null;
   const narrativeText = String(forensic?.summary ?? "").trim();
   const confidenceNumeric =
     typeof viewModelExt.confidencePanel?.confidenceScore === "number"
@@ -183,7 +194,16 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     confidencePct == null ? "Limited" : confidencePct >= 80 ? "High" : confidencePct >= 60 ? "Moderate" : "Low";
   const modelVersion = String(viewModelExt.model ?? version ? `v${String(version ?? "")}` : "N/A").trim();
   const scoreBand = (() => {
-    if (overallScore == null) return { label: "Review", color: "#F6C46D" };
+    if (overallScore == null) {
+      return { label: isPatientFacing ? "Under review" : "Review", color: "#F6C46D" };
+    }
+    if (isPatientFacing) {
+      if (overallScore >= 90) return { label: "Excellent overall quality", color: "#DDE7F5" };
+      if (overallScore >= 80) return { label: "Strong overall quality", color: "#F5E6A7" };
+      if (overallScore >= 70) return { label: "Good overall quality", color: "#E6E6E6" };
+      if (overallScore >= 60) return { label: "Moderate overall quality", color: "#E9D0B3" };
+      return { label: "Needs clinical follow-up", color: "#F6C46D" };
+    }
     if (overallScore >= 90) return { label: "Platinum", color: "#DDE7F5" };
     if (overallScore >= 80) return { label: "Gold", color: "#F5E6A7" };
     if (overallScore >= 70) return { label: "Silver", color: "#E6E6E6" };
@@ -202,7 +222,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       .map((s) => s.score);
     return average(secScores);
   };
-  const isPatientFacing = vm.viewModel.auditMode === "patient";
+  const observationLabel = isPatientFacing ? "Clinical observation" : "AI Observation";
   const domains: Array<{
     title: string;
     match: string[];
@@ -322,13 +342,22 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
         score == null ? domainCardScoreLabelWhenNoScore(domain.title, evidenceEvaluation ?? null) : `${Math.round(score)} / 100`;
       const domainScoreValueClass =
         score == null && scoreLabel.startsWith("Missing required evidence") ? "domainScoreValue domainScoreValueWrap" : "domainScoreValue";
+      const patientAssessment = isPatientFacing ? getPatientDomainAssessment(score) : null;
       return `
         <div class="domainCard ${idx % 2 ? "domainAlt" : ""}">
           <div class="domainTop">
             <h3>${esc(domain.title)}</h3>
-            <div class="${domainScoreValueClass}">${esc(scoreLabel)}</div>
+            ${
+              isPatientFacing && patientAssessment
+                ? `<span class="domainAssessment domainAssessment-${patientAssessment.tone}">${esc(patientAssessment.label)}</span>`
+                : `<div class="${domainScoreValueClass}">${esc(scoreLabel)}</div>`
+            }
           </div>
-          <div class="bar"><div class="barFill ${scoreClass}" style="width:${scoreWidth}%;"></div></div>
+          ${
+            isPatientFacing
+              ? ""
+              : `<div class="bar"><div class="barFill ${scoreClass}" style="width:${scoreWidth}%;"></div></div>`
+          }
           <div class="microTitle">${isPatientFacing ? "Clinical finding" : "Observation"}</div>
           <p class="miniText">${esc(patientNarrative?.clinicalFinding ?? observation)}</p>
           ${
@@ -373,7 +402,9 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
   const executiveSummary =
     narrativeText.length > 0
       ? narrativeText.split(".").slice(0, 2).join(".").trim() + (narrativeText.includes(".") ? "." : "")
-      : "This report summarizes pattern-based AI observations across donor, recipient, implantation, and documentation evidence.";
+      : isPatientFacing
+        ? "This report summarizes structured observations from your uploaded photos across donor, recipient, and healing stages."
+        : "This report summarizes pattern-based AI observations across donor, recipient, implantation, and documentation evidence.";
   const scoreConfLine =
     confidencePct == null
       ? "Confidence: N/A - based on available donor and recipient evidence."
@@ -511,14 +542,14 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
   const confidenceIntegrityCards = `
     <div class="infoGrid evidenceInfoGrid">
       <div class="panelCard">
-        <div class="panelTitle">AI Confidence</div>
+        <div class="panelTitle">${isPatientFacing ? "Review confidence" : "AI Confidence"}</div>
         <div class="kpiValue">${esc(confidenceScorePct)}</div>
         <div class="kpiSub">${esc(confidenceBand)} confidence band</div>
-        ${evidenceCoverageDisplay ? `<div class="kpiSub" style="margin-top:10px;font-weight:700;color:#0f2344;">${esc(evidenceCoverageDisplay)}</div>` : ""}
-        <div class="miniText">Confidence reflects visual evidence clarity and completeness across submitted documentation.</div>
+        ${evidenceCoverageDisplay && !isPatientFacing ? `<div class="kpiSub" style="margin-top:10px;font-weight:700;color:#0f2344;">${esc(evidenceCoverageDisplay)}</div>` : ""}
+        <div class="miniText">${isPatientFacing ? "Confidence reflects how clearly your photos support the observations in this report." : "Confidence reflects visual evidence clarity and completeness across submitted documentation."}</div>
       </div>
       <div class="panelCard">
-        <div class="panelTitle">Data Integrity</div>
+        <div class="panelTitle">${isPatientFacing ? "Photos reviewed" : "Data Integrity"}</div>
         <div class="kpiValue">${allPhotos.length}</div>
         <div class="kpiSub">images analyzed</div>
         <ul class="kpiList">
@@ -527,8 +558,8 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
           <li>Intra-operative images: ${intraViews}</li>
           <li>Missing categories: ${missingCats.length > 0 ? esc(missingCats.join(", ")) : "None reported"}</li>
         </ul>
-        <div class="miniText">Evidence completeness: ${allPhotos.length >= 6 ? "sufficient for broader interpretation." : "limited for high-confidence interpretation."}</div>
-        ${dataIntegrityEiNote}
+        <div class="miniText">${isPatientFacing ? "Photo coverage: " : "Evidence completeness: "}${allPhotos.length >= 6 ? (isPatientFacing ? "broad coverage across key views." : "sufficient for broader interpretation.") : (isPatientFacing ? "limited views — additional photos may help." : "limited for high-confidence interpretation.")}</div>
+        ${isPatientFacing ? "" : dataIntegrityEiNote}
       </div>
     </div>
   `;
@@ -671,7 +702,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     risks.length > 0
       ? `
         <div class="listCard" style="${isPatientFacing ? "margin-bottom:12px;border-color:#f59e0b55;" : ""}">
-          <div class="listTitle"><span class="iconWatch">●</span> Areas Requiring Review</div>
+          <div class="listTitle"><span class="iconWatch">●</span> ${isPatientFacing ? "Areas to discuss with your clinician" : "Areas Requiring Review"}</div>
           ${
             isPatientFacing
               ? `<div class="miniText" style="margin-bottom:8px;">Based on uploaded images only — not a medical diagnosis. Image quality may limit interpretation.</div>`
@@ -692,19 +723,53 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
           <div class="subtitle">No major concerns flagged from current evidence.</div>
         </div>`;
 
+  const effectiveHighlights =
+    isPatientFacing && highlights.length === 0 && (patientReportSummary?.acceptableHighlights.length ?? 0) > 0
+      ? patientReportSummary!.acceptableHighlights
+      : highlights;
+
   const positiveIndicatorsCard = `
         <div class="listCard">
-          <div class="listTitle"><span class="iconPositive">●</span> Key Positive Indicators</div>
+          <div class="listTitle"><span class="iconPositive">●</span> ${isPatientFacing ? "What looks reassuring" : "Key Positive Indicators"}</div>
           ${
-            highlights.length > 0
-              ? `<ul>${highlights.map((x) => `<li class="wrapText">✔ ${esc(String(x))}</li>`).join("")}</ul>`
-              : `<div class="subtitle">No strong indicators identified with high confidence.</div>`
+            effectiveHighlights.length > 0
+              ? `<ul>${effectiveHighlights.map((x) => `<li class="wrapText">✔ ${esc(String(x))}</li>`).join("")}</ul>`
+              : `<div class="subtitle">${isPatientFacing ? "No strong reassuring indicators were identified with high confidence from the available photos." : "No strong indicators identified with high confidence."}</div>`
           }
         </div>`;
 
   const findingsTwoCol = isPatientFacing
-    ? `${risks.length > 0 ? reviewAreasCard : ""}${positiveIndicatorsCard}`
+    ? `${positiveIndicatorsCard}${risks.length > 0 ? reviewAreasCard : ""}`
     : `<div class="twoCol">${positiveIndicatorsCard}${reviewAreasCard}</div>`;
+
+  const whatHappensNextCard =
+    isPatientFacing && patientReportSummary
+      ? (() => {
+          const next = patientReportSummary.whatHappensNext;
+          return `
+      <div class="listCard patientNextStepsCard" style="margin-top:12px;">
+        <div class="listTitle"><span class="iconGuide">●</span> ${esc(next.sectionTitle)}</div>
+        <p class="miniText">${esc(next.intro)}</p>
+        <ol class="patientNextStepsList">${next.steps.map((step) => `<li>${esc(step)}</li>`).join("")}</ol>
+        <p class="miniText patientNextReassurance">${esc(next.reassurance)}</p>
+      </div>`;
+        })()
+      : "";
+
+  const patientClinicalOverview =
+    isPatientFacing && patientReportSummary
+      ? `
+      <div class="clinicalOverview">
+        <div class="clinicalOverviewBand band-${esc(patientReportSummary.overallConcernBand)}">${esc(patientReportSummary.overallConcernLabel)}</div>
+        <p class="clinicalOverviewLead">${esc(patientReportSummary.plainEnglishSummary)}</p>
+        <p class="clinicalOverviewSub">${esc(patientReportSummary.overallConcernDescription)}</p>
+        <div class="clinicalOverviewMeta">
+          <div><span class="metaLabel">Photos reviewed</span><b>${allPhotos.length}</b></div>
+          <div><span class="metaLabel">Review confidence</span><b>${esc(confidenceBand)}</b></div>
+        </div>
+        <p class="clinicalTrustLine">Independent image-based review. Not a medical diagnosis. Discuss findings with your treating clinician.</p>
+      </div>`
+      : "";
 
   const fingerprintSummary = buildSurgicalFingerprintSummary({
     areaDomains,
@@ -735,7 +800,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
           <span class="fpPill ${confidenceClass}">${esc(confidenceText)}</span>
         </div>
         <div class="fpLabel">${esc(card.label)}</div>
-        <p class="miniText"><b>AI Observation:</b> ${esc(card.observation)}</p>
+        <p class="miniText"><b>${observationLabel}:</b> ${esc(card.observation)}</p>
         <p class="miniText"><b>Why It Matters:</b> ${esc(card.whyItMatters)}</p>
         ${card.limitation ? `<p class="miniText"><b>Limitation:</b> ${esc(card.limitation)}</p>` : ""}
         <div class="fpStrength">${stripe}</div>
@@ -812,6 +877,42 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       </div>
     `
       : "";
+
+  const reportMainTitle = isPatientFacing ? "HairAudit Review Report" : "HairAudit AI Surgical Analysis";
+  const reportSubtitle = isPatientFacing ? "Independent hair transplant review" : "AI-Assisted Transplant Quality Review";
+  const executiveSummaryHeading = isPatientFacing ? "Your Review Summary" : "Executive Intelligence Summary";
+  const executiveSummaryPanelTitle = isPatientFacing ? "Summary" : "Executive AI Summary";
+  const tierLinePrefix = isPatientFacing ? "Overall quality" : "Tier";
+  const sectionAnalysisPill = isPatientFacing ? "Clinical review sections" : "Clinical intelligence cards";
+  const visualEvidenceTitle = isPatientFacing ? "Your uploaded photos" : "Visual Evidence Analysis";
+  const visualEvidenceSubtitle = isPatientFacing
+    ? "Review of donor, recipient, and timeline images you provided."
+    : "AI-assisted review of donor, recipient, and procedural image documentation.";
+  const visualEvidencePill = isPatientFacing ? "Photo review" : "Forensic evidence board";
+  const findingsSectionTitle = isPatientFacing ? "Findings and guidance" : "Findings, Recommendations, and Premium Layers";
+  const findingsSectionPill = isPatientFacing ? "Your review overview" : "Conclusive intelligence view";
+  const fingerprintTitle = isPatientFacing ? "Procedure pattern review" : "AI Surgical Fingerprint Analysis";
+  const fingerprintSubtitle = isPatientFacing
+    ? "Structured review of extraction, implantation, spacing, and density patterns from your photos."
+    : "Pattern-based visual review of extraction, implantation, spacing, and density consistency.";
+  const footerDisclaimer = isPatientFacing
+    ? "This report summarizes structured observations from your submitted photos. It does not represent a definitive graft count or medical diagnosis."
+    : "This report provides an AI-assisted visual assessment based on the submitted images and available metadata. It does not represent a definitive graft count or medical diagnosis.";
+  const patientEvidenceIntelligenceLayerHtml = isPatientFacing ? "" : evidenceIntelligenceLayerHtml;
+  const patientDataIntegrityEiNote = isPatientFacing ? "" : dataIntegrityEiNote;
+
+  const patientEarlyFindingsSection = isPatientFacing
+    ? `
+    <div class="section">
+      <div class="sectionHead">
+        <h2>${findingsSectionTitle}</h2>
+        <span class="pill">${findingsSectionPill}</span>
+      </div>
+      <div class="sectionDivider"></div>
+      ${findingsTwoCol}
+      ${whatHappensNextCard}
+    </div>`
+    : "";
 
   const html = `<!doctype html>
 <html>
@@ -1365,6 +1466,64 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       color: var(--ink);
     }
     .patientTimelineCell li { margin: 3px 0; }
+    .clinicalOverview {
+      position: relative;
+      z-index: 1;
+      border: 1px solid #c9d9ec;
+      border-radius: 16px;
+      padding: 24px;
+      background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+    }
+    .clinicalOverviewBand {
+      display: inline-flex;
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      border: 1px solid transparent;
+    }
+    .clinicalOverviewBand.band-none { background: #ecfdf5; color: #166534; border-color: #a7f3d0; }
+    .clinicalOverviewBand.band-minor { background: #f7fee7; color: #3f6212; border-color: #bef264; }
+    .clinicalOverviewBand.band-needs_review { background: #fffbeb; color: #92400e; border-color: #fcd34d; }
+    .clinicalOverviewBand.band-significant { background: #fff7ed; color: #9a3412; border-color: #fdba74; }
+    .clinicalOverviewBand.band-urgent { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
+    .clinicalOverviewLead { margin: 14px 0 0; font-size: 15px; line-height: 1.65; color: #102543; max-width: 52em; }
+    .clinicalOverviewSub { margin: 10px 0 0; font-size: 13px; line-height: 1.6; color: #4f6486; max-width: 52em; }
+    .clinicalOverviewMeta {
+      margin-top: 18px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .clinicalOverviewMeta > div {
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 12px 14px;
+      background: #fff;
+    }
+    .metaLabel { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: #64748b; font-weight: 700; }
+    .clinicalOverviewMeta b { display: block; margin-top: 4px; font-size: 20px; color: #0f2344; }
+    .clinicalTrustLine { margin-top: 16px; font-size: 11px; line-height: 1.55; color: #475569; }
+    .domainAssessment {
+      font-size: 11px;
+      font-weight: 800;
+      border-radius: 999px;
+      padding: 5px 10px;
+      border: 1px solid transparent;
+      text-align: right;
+      max-width: 58%;
+      line-height: 1.35;
+    }
+    .domainAssessment-positive { background: #ecfdf5; color: #166534; border-color: #a7f3d0; }
+    .domainAssessment-neutral { background: #eff6ff; color: #1e40af; border-color: #bfdbfe; }
+    .domainAssessment-attention { background: #fffbeb; color: #92400e; border-color: #fcd34d; }
+    .domainAssessment-limited { background: #f1f5f9; color: #334155; border-color: #cbd5e1; }
+    .patientNextStepsList { margin: 10px 0 0; padding-left: 20px; font-size: 12px; line-height: 1.55; }
+    .patientNextStepsList li { margin: 6px 0; }
+    .patientNextReassurance { margin-top: 10px; color: #475569; }
+    .patientP1Zone { padding: 0; background: transparent; border: none; box-shadow: none; }
     p, li { orphans: 3; widows: 3; }
     .footer {
       margin-top: 18px;
@@ -1381,6 +1540,22 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     }
 
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+    @media screen and (max-width: 640px) {
+      .wrap { padding: 0 12px; }
+      .hero { padding: 20px 16px; }
+      .title { font-size: 22px; }
+      .topbar { flex-direction: column; }
+      .meta { text-align: left; min-width: 0; width: 100%; }
+      .section { padding: 14px; margin-top: 18px; }
+      .execLayout, .infoGrid, .domainGrid, .twoCol, .metricList, .riskStrip, .clinicalOverviewMeta, .patientEduGrid, .patientTimelineGrid, .fpGrid, .forensicGrid, .premiumGrid {
+        grid-template-columns: 1fr;
+      }
+      .clinicalOverviewLead { font-size: 16px; }
+      .miniText, .listCard li { font-size: 12px; line-height: 1.6; }
+      .domainAssessment { max-width: 100%; text-align: left; margin-top: 6px; }
+      .domainTop { flex-direction: column; align-items: flex-start; }
+    }
 
     @media print {
       .wrap { padding: 0; }
@@ -1425,21 +1600,45 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       <div class="heroTexture"></div>
       <div class="topbar">
         <div class="brand">
-          <h1 class="title">HairAudit AI Surgical Analysis</h1>
-          <div class="heroSubtitle">AI-Assisted Transplant Quality Review</div>
+          <h1 class="title">${reportMainTitle}</h1>
+          <div class="heroSubtitle">${reportSubtitle}</div>
         </div>
         <div class="meta">
           <div class="metaRow"><b>Case ID</b> <span class="mono">${esc(caseId)}</span></div>
           <div class="metaRow"><b>Report Date</b> ${esc(generatedAt)}</div>
-          <div class="metaRow"><b>Model Version</b> ${esc(modelVersion || "N/A")}</div>
-          <div class="metaRow"><b>Confidence Label</b> ${esc(confidenceBand)}</div>
+          ${isPatientFacing ? "" : `<div class="metaRow"><b>Model Version</b> ${esc(modelVersion || "N/A")}</div>`}
+          ${isPatientFacing ? `<div class="metaRow"><b>Review confidence</b> ${esc(confidenceBand)}</div>` : `<div class="metaRow"><b>Confidence Label</b> ${esc(confidenceBand)}</div>`}
         </div>
       </div>
     </div>
 
+    ${
+      isPatientFacing
+        ? `
     <div class="section p1Section">
       <div class="sectionHead">
-        <h2>Executive Intelligence Summary</h2>
+        <h2>${executiveSummaryHeading}</h2>
+        <div class="pillRow">
+          ${
+            version
+              ? `<span class="pill">Report: <b>v${esc(String(version))}</b></span>`
+              : `<span class="pill">Report: <b>—</b></span>`
+          }
+        </div>
+      </div>
+      <div class="sectionDivider"></div>
+      <div class="p1Zone patientP1Zone">${patientClinicalOverview}</div>
+      ${
+        limitationNotes.length > 0
+          ? `<div class="limitPanel"><b>Photo limitations:</b> ${esc(limitationNotes.slice(0, 3).join(" | "))}</div>`
+          : ""
+      }
+    </div>
+    ${patientEarlyFindingsSection}`
+        : `
+    <div class="section p1Section">
+      <div class="sectionHead">
+        <h2>${executiveSummaryHeading}</h2>
         <div class="pillRow">
           <span class="pill">Overall Surgical Quality Score</span>
           ${
@@ -1460,7 +1659,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
               <div class="scoreValue">${overallScore === null ? "—" : esc(String(overallScore))}</div>
               <div class="scoreSub">out of 100</div>
             </div>
-            <div class="tierTag" style="background:${scoreBand.color};">Tier: ${esc(scoreBand.label)}</div>
+            <div class="tierTag" style="background:${scoreBand.color};">${tierLinePrefix}: ${esc(scoreBand.label)}</div>
             <div class="scoreConfLine">${esc(scoreConfLine)}</div>
           </div>
 
@@ -1473,7 +1672,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
 
       <div class="executiveDivider"></div>
       <div class="summaryCard">
-        <div class="panelTitle">Executive AI Summary</div>
+        <div class="panelTitle">${executiveSummaryPanelTitle}</div>
         <div class="miniText">${esc(executiveSummary)}</div>
       </div>
       ${
@@ -1481,53 +1680,83 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
           ? `<div class="limitPanel"><b>Evidence limitations:</b> ${esc(limitationNotes.slice(0, 3).join(" | "))}</div>`
           : ""
       }
-    </div>
+    </div>`
+    }
 
     <div class="section pageBreak">
       <div class="sectionHead">
-        <h2>Section-by-Section Analysis</h2>
-        <span class="pill">Clinical intelligence cards</span>
+        <h2>${isPatientFacing ? "Review by clinical area" : "Section-by-Section Analysis"}</h2>
+        <span class="pill">${sectionAnalysisPill}</span>
       </div>
       <div class="sectionDivider"></div>
-      ${keyMetricsCard}
-      ${evidenceIntelligenceLayerHtml}
+      ${isPatientFacing ? "" : keyMetricsCard}
+      ${patientEvidenceIntelligenceLayerHtml}
       <div class="domainGrid">${domainCards}</div>
     </div>
 
     <div class="section pageBreak">
       <div class="sectionHead">
         <div>
-          <h2 class="evidenceSectionTitle">Visual Evidence Analysis</h2>
-          <div class="evidenceSectionSubtitle">AI-assisted review of donor, recipient, and procedural image documentation.</div>
+          <h2 class="evidenceSectionTitle">${visualEvidenceTitle}</h2>
+          <div class="evidenceSectionSubtitle">${visualEvidenceSubtitle}</div>
         </div>
-        <span class="pill">Forensic evidence board</span>
+        <span class="pill">${visualEvidencePill}</span>
       </div>
       <div class="sectionDivider"></div>
       <div class="forensicBoard">${photoGroups}</div>
       ${confidenceIntegrityCards}
-      ${riskStrip}
+      ${isPatientFacing ? "" : riskStrip}
       <div class="evidenceLimitationsPanel">
-        <div class="panelLabel">Evidence Limitations</div>
+        <div class="panelLabel">${isPatientFacing ? "Photo coverage notes" : "Evidence Limitations"}</div>
         ${
           allPhotos.length === 0
-            ? "Limited visual evidence was available for image-level interpretation."
+            ? isPatientFacing
+              ? "Limited photos were available for this review. Additional matched-angle images may help your clinician interpret changes over time."
+              : "Limited visual evidence was available for image-level interpretation."
             : allPhotos.length >= 6 && missingCats.length === 0
-              ? "Available images provide moderate to strong coverage of the donor and recipient areas. Further intra-operative documentation may improve assessment depth for graft handling practices."
-              : `Available images provide ${allPhotos.length >= 4 ? "moderate" : "limited"} coverage of the donor and recipient areas.${missingCats.length ? ` Limited ${esc(missingCats.join(", "))} documentation prevents deeper assessment in some domains.` : " Limited intra-operative documentation may constrain graft handling evaluation."}`
+              ? isPatientFacing
+                ? "Your photos provide moderate to strong coverage of donor and recipient areas. Additional intra-operative images may still help if you want deeper procedural context."
+                : "Available images provide moderate to strong coverage of the donor and recipient areas. Further intra-operative documentation may improve assessment depth for graft handling practices."
+              : isPatientFacing
+                ? `Your photos provide ${allPhotos.length >= 4 ? "moderate" : "limited"} coverage.${missingCats.length ? ` Some views were missing (${esc(missingCats.join(", "))}), which can limit interpretation in parts of the review.` : " Some angles or timepoints may still be incomplete."}`
+                : `Available images provide ${allPhotos.length >= 4 ? "moderate" : "limited"} coverage of the donor and recipient areas.${missingCats.length ? ` Limited ${esc(missingCats.join(", "))} documentation prevents deeper assessment in some domains.` : " Limited intra-operative documentation may constrain graft handling evaluation."}`
         }
       </div>
     </div>
 
+    ${
+      isPatientFacing
+        ? `
     <div class="section pageBreak">
       <div class="sectionHead">
-        <h2>Findings, Recommendations, and Premium Layers</h2>
-        <span class="pill">Conclusive intelligence view</span>
+        <h2>Long-term guidance</h2>
+        <span class="pill">Patient education</span>
+      </div>
+      <div class="sectionDivider"></div>
+      <div class="fingerprintSection">
+        <div class="panelTitle">${fingerprintTitle}</div>
+        <div class="miniText">${fingerprintSubtitle}</div>
+        <div class="fpGrid">${fingerprintCards}</div>
+        ${
+          fingerprintSummary.limitedEvidence
+            ? `<div class="limitPanel"><b>Photo note:</b> Some pattern interpretations are limited by image quality or angle coverage.</div>`
+            : ""
+        }
+      </div>
+      ${longTermEducationCard}
+      ${whatToMonitorOverTimeCard}
+    </div>`
+        : `
+    <div class="section pageBreak">
+      <div class="sectionHead">
+        <h2>${findingsSectionTitle}</h2>
+        <span class="pill">${findingsSectionPill}</span>
       </div>
       <div class="sectionDivider"></div>
       ${(graftIntegrityModule || auditorModule) ? `<div class="premiumGrid">${graftIntegrityModule}${auditorModule}</div>` : ""}
       <div class="fingerprintSection">
-        <div class="panelTitle">AI Surgical Fingerprint Analysis</div>
-        <div class="miniText">Pattern-based visual review of extraction, implantation, spacing, and density consistency.</div>
+        <div class="panelTitle">${fingerprintTitle}</div>
+        <div class="miniText">${fingerprintSubtitle}</div>
         <div class="fpGrid">${fingerprintCards}</div>
         ${
           fingerprintSummary.limitedEvidence
@@ -1551,13 +1780,13 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
           ? `<div class="listCard" style="margin-top:12px;"><div class="listTitle">Clinical Narrative</div><div class="miniText">${esc(narrativeText).replaceAll("\n", "<br/>")}</div></div>`
           : ""
       }
-    </div>
+    </div>`
+    }
 
     ${(vm.viewModel.auditMode === "doctor" || vm.viewModel.auditMode === "auditor") && doctorBlockHtml ? doctorBlockHtml : ""}
 
     <div class="footer">
-      This report provides an AI-assisted visual assessment based on the submitted images and available metadata.
-      It does not represent a definitive graft count or medical diagnosis.
+      ${footerDisclaimer}
       ${typeof debugFooter === "string" && debugFooter.trim().length > 0 ? `<div class="footerDebug">${debugFooter}</div>` : ""}
     </div>
 

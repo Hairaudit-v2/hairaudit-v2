@@ -52,16 +52,17 @@ describe("patient safe report summary", () => {
   };
 
   it("builds structured report with concern band at top", () => {
-    const report = buildPatientSafeReportSummary(sampleSummary, { score: 72 });
-    assert.ok(report.plainEnglishSummary.includes("72"));
+    const report = buildPatientSafeReportSummary(sampleSummary);
+    assert.doesNotMatch(report.plainEnglishSummary, /score|out of 100/i);
     assert.equal(report.overallConcernBand, "significant");
     assert.ok(report.concernItems.length >= 1);
     assert.ok(report.clinicalDisclaimer.includes("not a medical diagnosis"));
     assert.equal(report.clinicalDisclaimer, PATIENT_CLINICAL_SAFETY_DISCLAIMER);
+    assert.match(report.whatHappensNext.sectionTitle, /What happens next/i);
   });
 
   it("uses cautious language in plain English summary", () => {
-    const report = buildPatientSafeReportSummary(sampleSummary, { score: 72 });
+    const report = buildPatientSafeReportSummary(sampleSummary);
     assert.match(report.plainEnglishSummary, /may need|follow up|clinician/i);
   });
 
@@ -72,9 +73,9 @@ describe("patient safe report summary", () => {
   });
 
   it("shows none band when no findings", () => {
-    const report = buildPatientSafeReportSummary({}, { score: 90 });
+    const report = buildPatientSafeReportSummary({});
     assert.equal(report.overallConcernBand, "none");
-    assert.match(report.plainEnglishSummary, /acceptable/i);
+    assert.match(report.plainEnglishSummary, /acceptable|urgent stands out/i);
   });
 
   it("surfaces impact and next steps when present", () => {
@@ -88,8 +89,7 @@ describe("patient safe report summary", () => {
             recommended_next_step: "Discuss with your surgeon at next visit",
           },
         ],
-      },
-      { score: 65 }
+      }
     );
     const item = report.observations[0];
     assert.equal(item.impact, "May affect styling options");
