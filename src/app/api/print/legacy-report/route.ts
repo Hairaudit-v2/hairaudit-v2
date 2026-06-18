@@ -14,7 +14,12 @@ import { pdfEnvConfig } from "@/lib/pdf/pdfEnvConfig";
 import { evaluateEvidence, type EvidenceEvaluationResult } from "@/lib/evidence/evidenceEvaluator";
 import { enrichLegacyKeyMetricsRecord } from "@/lib/evidence/evidenceMissingCopy";
 import { requireReportRenderTokenSecret } from "@/lib/security/secrets";
+import {
+  buildLegacyReportFindingsLayoutHtml,
+  resolvePdfReviewRisks,
+} from "@/lib/reports/patientPdfReviewAreas";
 import { getCaseFilesBucketNameForReadOnlyUse } from "@/lib/hairaudit/uploadStorage";
+import { createLegacyReportUsageTracker } from "@/lib/reports/legacyReportUsageLog";
 
 /* Admin client (NO cookies, NO sessions — Playwright safe) */
 function supabaseAdmin() {
@@ -45,12 +50,18 @@ function clamp100(n: number) {
   return Math.max(0, Math.min(100, n));
 }
 
-/* GET /api/print/report?caseId=...&token=... */
+/* GET /api/print/legacy-report?caseId=...&token=... */
 export async function GET(req: Request) {
+  const requestId = crypto.randomUUID();
+  const usage = createLegacyReportUsageTracker(requestId);
+
+  try {
   const url = new URL(req.url);
   const caseId = url.searchParams.get("caseId") ?? "";
   const token = url.searchParams.get("token") ?? "";
   const requestedAuditMode = normalizeAuditMode(url.searchParams.get("auditMode") ?? undefined);
+  usage.setRequestedAuditMode(requestedAuditMode);
+  usage.setHasCaseId(!!caseId.trim());
   let tokenSecret: string | null = null;
   try {
     tokenSecret = requireReportRenderTokenSecret();
@@ -63,9 +74,14 @@ export async function GET(req: Request) {
     tokenPayload.caseId === caseId &&
     tokenPayload.auditMode === requestedAuditMode;
 
-  if (!caseId) return new NextResponse("Missing caseId", { status: 400 });
+  if (!caseId) {
+    usage.finish("missing_case_id", 400);
+    return new NextResponse("Missing caseId", { status: 400 });
+  }
 
   if (token && !allowToken) {
+    usage.setAuthPath("token");
+    usage.finish("invalid_token", 401);
     return new NextResponse(
       "<!doctype html><html><body><h1>Unauthorized</h1><p>Invalid report token.</p></body></html>",
       {
@@ -93,7 +109,14 @@ export async function GET(req: Request) {
     // ignore: cookie-less/internal render path
   }
 
+  if (allowToken) {
+    usage.setAuthPath("token");
+  } else if (sessionUserId) {
+    usage.setAuthPath("session");
+  }
+
   if (!allowToken && !sessionUserId) {
+    usage.finish("unauthorized", 401);
     return new NextResponse(
       "<!doctype html><html><body><h1>Unauthorized</h1><p>Authentication required.</p></body></html>",
       {
@@ -113,11 +136,17 @@ export async function GET(req: Request) {
     .eq("id", caseId)
     .maybeSingle();
 
-  if (caseErr || !c) return new NextResponse("Case not found", { status: 404 });
+  if (caseErr || !c) {
+    usage.finish("case_not_found", 404);
+    return new NextResponse("Case not found", { status: 404 });
+  }
 
   if (sessionUserId) {
     const allowed = await canAccessCase(sessionUserId, c);
-    if (!allowed) return new NextResponse("Forbidden", { status: 403 });
+    if (!allowed) {
+      usage.finish("forbidden", 403);
+      return new NextResponse("Forbidden", { status: 403 });
+    }
     try {
       const { data: profile } = await supabase
         .from("profiles")
@@ -140,6 +169,7 @@ export async function GET(req: Request) {
     });
   }
   auditMode = normalizeAuditMode(auditMode);
+  usage.setAuditMode(auditMode);
 
     /* Load uploads */
   const { data: uploads, error: upErr } = await supabase
@@ -352,7 +382,14 @@ export async function GET(req: Request) {
       ? summary.highlights
       : [];
 
-  const risks = Array.isArray(summary.risks) ? summary.risks : [];
+  const risks = resolvePdfReviewRisks(summary as Record<string, unknown>, auditMode);
+
+  const findingsLayoutHtml = buildLegacyReportFindingsLayoutHtml({
+    auditMode,
+    highlights: highlights.map(String),
+    risks,
+    esc,
+  });
 
   const doctorAnswers = summary?.doctor_answers as Record<string, unknown> | undefined;
   const procLabels: Record<string, string> = {
@@ -677,23 +714,7 @@ export async function GET(req: Request) {
 
       ${""}
 
-      <div class="twoCol">
-        <div class="listCard">
-          <div class="listTitle">Highlights</div>
-          ${highlights.length
-      ? `<ul>${highlights.map((x: string) => `<li>${esc(String(x))}</li>`).join("")}</ul>`
-      : `<div class="subtitle">No highlights captured yet.</div>`
-    }
-        </div>
-
-        <div class="listCard">
-          <div class="listTitle">Risks / Watch-outs</div>
-          ${risks.length
-      ? `<ul>${risks.map((x: string) => `<li>${esc(String(x))}</li>`).join("")}</ul>`
-      : `<div class="subtitle">No risks flagged yet.</div>`
-    }
-        </div>
-      </div>
+      ${findingsLayoutHtml}
     </div>
 
     ${areaScores.length > 0 || sectionScoresList.length > 0
@@ -768,11 +789,23 @@ export async function GET(req: Request) {
 </body>
 </html>`;
 
+  usage.setSuccessMeta({
+    reviewAreaCount: risks.length,
+    hasReportVersion: latestReport?.version != null,
+  });
+  usage.finish("success", 200);
+
   return new NextResponse(html, {
     headers: {
       "Content-Type": "text/html; charset=utf-8",
       "Cache-Control": "no-store",
+      "X-Legacy-Report-Request-Id": requestId,
     },
   });
+  } catch (e) {
+    console.error("[legacy-report-usage] render_error", { requestId, error: e });
+    usage.finish("error", 500);
+    throw e;
+  }
 }
 

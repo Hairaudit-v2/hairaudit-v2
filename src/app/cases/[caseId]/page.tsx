@@ -85,6 +85,7 @@ import { getTranslation } from "@/lib/i18n/getTranslation";
 import type { TranslationKey } from "@/lib/i18n/translationKeys";
 import {
   buildPatientSafeSummaryObservations,
+  buildPatientSafeReportSummary,
   hasClinicAnswersInSummary,
 } from "@/lib/reports/patientSafeSummary";
 import { resolvePatientSafeSummaryNarrativePresentation } from "@/lib/reports/patientSafeSummaryNarrativeTranslation";
@@ -824,6 +825,9 @@ export default async function Page({
     Array.isArray(graftIntegrityEstimate?.limitations) ? (graftIntegrityEstimate.limitations as string[]) : [];
   const giiNotes = typeof graftIntegrityEstimate?.auditor_notes === "string" ? (graftIntegrityEstimate.auditor_notes as string) : null;
   const summaryObservations = buildPatientSafeSummaryObservations(latestSummary);
+  const patientReportSummary = buildPatientSafeReportSummary(latestSummary, {
+    score: latestReportDisplayScore,
+  });
   const patientSafeSummaryNarrative = await resolvePatientSafeSummaryNarrativePresentation({
     db: admin,
     caseId: c.id,
@@ -1033,6 +1037,7 @@ export default async function Page({
               statusLabel={statusDisplayLabel}
               score={latestReportDisplayScore}
               observations={patientSafeSummaryNarrative.observations}
+              reportSummary={patientReportSummary}
               translatedNarrativeActive={patientSafeSummaryNarrative.translatedNarrativeActive}
               requestedLocale={seoLocale}
               fallbackReason={patientSafeSummaryNarrative.fallbackReason}

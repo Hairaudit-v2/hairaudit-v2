@@ -21,6 +21,7 @@ import {
 import { enrichKeyMetricsAfterNormalize } from "@/lib/evidence/evidenceMissingCopy";
 import { getCaseFilesBucketNameForReadOnlyUse } from "@/lib/hairaudit/uploadStorage";
 import { requireReportRenderTokenSecret } from "@/lib/security/secrets";
+import { resolvePdfReviewRisks } from "@/lib/reports/patientPdfReviewAreas";
 
 function clamp100(n: number) {
   return Math.max(0, Math.min(100, n));
@@ -228,7 +229,7 @@ export async function GET(req: Request) {
       ? summary.highlights
       : [];
 
-  const risks = Array.isArray(summary.risks) ? summary.risks : [];
+  const risks = resolvePdfReviewRisks(summary as Record<string, unknown>, mode);
 
   const metricsRaw = {
     donorQuality: normalizeMetric(

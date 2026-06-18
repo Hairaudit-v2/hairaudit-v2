@@ -17,6 +17,7 @@ import {
   patientHasUnlockedPostOpGuide,
 } from "@/lib/patient/caseSubmitStatus";
 import { fetchPatientCasesForPostOpGuide } from "@/lib/patient/fetchPatientCasesForPostOpGuide";
+import { computePatientRequiredPhotoProgress } from "@/lib/patient/patientRequiredPhotoProgress";
 
 function isMissingFeatureError(error: unknown): boolean {
   const e = error as { status?: number; code?: string; message?: string } | null;
@@ -124,7 +125,14 @@ export default async function PatientDashboardPage() {
   }
 
   let patientAnswers: PatientAuditAnswers = {};
-  let patientPhotoCount = 0;
+  let patientPhotoProgress = {
+    completedCount: 0,
+    totalRequired: 3,
+    percent: 0,
+    missingKeys: [] as string[],
+    missingLabels: [] as string[],
+    isComplete: false,
+  };
   let hasAnyCaseData = false;
 
   if (nextCase?.id) {
@@ -133,7 +141,7 @@ export default async function PatientDashboardPage() {
       .select("id, type")
       .eq("case_id", nextCase.id);
     const patientUploads = (uploads ?? []).filter((u) => String(u.type ?? "").startsWith("patient_photo:"));
-    patientPhotoCount = patientUploads.length;
+    patientPhotoProgress = computePatientRequiredPhotoProgress(patientUploads);
 
     const withAuditCols = await admin
       .from("reports")
@@ -163,7 +171,7 @@ export default async function PatientDashboardPage() {
       }
     }
 
-    hasAnyCaseData = patientPhotoCount > 0 || Object.keys(patientAnswers).length > 0;
+    hasAnyCaseData = patientPhotoProgress.completedCount > 0 || Object.keys(patientAnswers).length > 0;
   }
 
   let graftIntegrityInitial: unknown = null;
@@ -191,8 +199,7 @@ export default async function PatientDashboardPage() {
     }
   }
 
-  const PHOTOS_TARGET = 8;
-  const photosPct = clamp01(patientPhotoCount / PHOTOS_TARGET);
+  const photosPct = clamp01(patientPhotoProgress.percent / 100);
   const required = computeRequiredQuestionsCompletion(patientAnswers);
   const modules = Object.fromEntries(
     MODULE_DEFS.map((m) => [m.key, computeModuleCompletion(patientAnswers, m.prefixes)])
@@ -238,8 +245,7 @@ export default async function PatientDashboardPage() {
               nextCaseId={nextCase?.id ?? null}
               completionPct={completionPct}
               hasAnyCaseData={hasAnyCaseData}
-              patientPhotoCount={patientPhotoCount}
-              photosTarget={PHOTOS_TARGET}
+              photoProgress={patientPhotoProgress}
               required={required}
               modules={{
                 graftHandling: modules.graftHandling,

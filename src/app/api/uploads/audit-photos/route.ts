@@ -25,6 +25,7 @@ import {
   resolveCaseFilesBucketForRoute,
 } from "@/lib/hairaudit/uploadStorage";
 import { notifyHairAuditUploadCreated } from "@/lib/hairaudit/uploadEventDispatcher";
+import { caseSubmitSurfaceOpen } from "@/lib/patient/caseSubmitStatus";
 
 export const runtime = "nodejs";
 
@@ -91,6 +92,40 @@ function acceptsFile(file: File, accept: string): boolean {
   });
 }
 
+type ClientUploadMeta = {
+  originalFilename?: string;
+  originalSizeBytes?: number;
+  compressedSizeBytes?: number;
+  width?: number | null;
+  height?: number | null;
+  compressionApplied?: boolean;
+  qualityWarning?: string | null;
+};
+
+function parseClientUploadMeta(form: FormData): ClientUploadMeta {
+  const num = (key: string) => {
+    const v = form.get(key);
+    if (v == null || v === "") return undefined;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : undefined;
+  };
+  const originalFilename = form.get("originalFilename");
+  const qualityWarning = form.get("qualityWarning");
+  return {
+    originalFilename: typeof originalFilename === "string" ? originalFilename : undefined,
+    originalSizeBytes: num("originalSizeBytes"),
+    compressedSizeBytes: num("compressedSizeBytes"),
+    width: num("width") ?? null,
+    height: num("height") ?? null,
+    compressionApplied: form.get("compressionApplied") === "true",
+    qualityWarning: typeof qualityWarning === "string" && qualityWarning.trim() ? qualityWarning.trim() : null,
+  };
+}
+
+function logUploadAudit(event: string, payload: Record<string, unknown>) {
+  console.info(`[patient-upload-audit] ${event}`, payload);
+}
+
 /** Upload a single file with retry logic. */
 async function uploadSingleFile(
   admin: ReturnType<typeof createSupabaseAdminClient>,
@@ -100,7 +135,9 @@ async function uploadSingleFile(
   st: SubmitterType,
   category: string,
   typeValue: string,
-  file: File
+  file: File,
+  clientMeta?: ClientUploadMeta,
+  requestId?: string
 ): Promise<UploadResult<{ id: string; type: string; storage_path: string; metadata: unknown; created_at: string }>> {
   const validated = await validateCaseFilesRouteImage(file);
   if (!validated.ok) {
@@ -121,6 +158,15 @@ async function uploadSingleFile(
     };
   }
   const normalizedPath = pathGate.normalizedPath;
+
+  logUploadAudit("upload_start", {
+    requestId,
+    caseId,
+    category,
+    submitterType: st,
+    fileName: file.name,
+    storagePath: normalizedPath,
+  });
 
   // Upload to storage with retry
   const storageResult = await withRetry(
@@ -144,12 +190,33 @@ async function uploadSingleFile(
   );
 
   if (!storageResult.success) {
+    logUploadAudit("upload_failure", {
+      requestId,
+      caseId,
+      category,
+      phase: "storage",
+      error: formatUploadErrorForLog(storageResult.error),
+    });
     return storageResult;
   }
 
   // Insert DB record with retry
   const dbResult = await withRetry(
     async () => {
+      const metadata: Record<string, unknown> = {
+        category,
+        submitter_type: st,
+        original_name: clientMeta?.originalFilename ?? file.name,
+        mime: normalizedMime,
+        size: buffer.length,
+      };
+      if (clientMeta?.originalSizeBytes != null) metadata.original_size_bytes = clientMeta.originalSizeBytes;
+      if (clientMeta?.compressedSizeBytes != null) metadata.compressed_size_bytes = clientMeta.compressedSizeBytes;
+      if (clientMeta?.width != null) metadata.width = clientMeta.width;
+      if (clientMeta?.height != null) metadata.height = clientMeta.height;
+      if (clientMeta?.compressionApplied != null) metadata.compression_applied = clientMeta.compressionApplied;
+      if (clientMeta?.qualityWarning) metadata.quality_warning = clientMeta.qualityWarning;
+
       const { data: row, error: insErr } = await admin
         .from("uploads")
         .insert({
@@ -157,13 +224,7 @@ async function uploadSingleFile(
           user_id: userId,
           type: typeValue,
           storage_path: normalizedPath,
-          metadata: {
-            category,
-            submitter_type: st,
-            original_name: file.name,
-            mime: normalizedMime,
-            size: buffer.length,
-          },
+          metadata,
         })
         .select("id, type, storage_path, metadata, created_at")
         .maybeSingle();
@@ -200,6 +261,32 @@ async function uploadSingleFile(
     undefined,
     { warn: console.warn, error: console.error }
   );
+
+  if (!dbResult.success) {
+    // Roll back orphaned storage object — upload is not complete without DB row
+    try {
+      await admin.storage.from(bucket).remove([normalizedPath]);
+      logUploadAudit("upload_rollback", { requestId, caseId, category, storagePath: normalizedPath });
+    } catch (rollbackErr) {
+      console.error(`[${requestId}] Storage rollback failed after DB error:`, rollbackErr);
+    }
+    logUploadAudit("upload_failure", {
+      requestId,
+      caseId,
+      category,
+      phase: "database",
+      error: formatUploadErrorForLog(dbResult.error),
+    });
+    return dbResult;
+  }
+
+  logUploadAudit("upload_success", {
+    requestId,
+    caseId,
+    category,
+    uploadId: dbResult.data.id,
+    storagePath: normalizedPath,
+  });
 
   return dbResult;
 }
@@ -288,8 +375,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: "Forbidden", requestId }, { status: 403 });
     }
 
-    if (c.submitted_at || c.status === "submitted") {
-      return NextResponse.json({ ok: false, error: "Case submitted; cannot modify", requestId }, { status: 409 });
+    if (!caseSubmitSurfaceOpen({ status: c.status ?? "draft", submitted_at: c.submitted_at })) {
+      return NextResponse.json(
+        { ok: false, error: "Case submitted; cannot modify", requestId, code: "CASE_LOCKED" },
+        { status: 409 }
+      );
     }
 
     const prefix = st === "doctor" ? "doctor_photo" : "patient_photo";
@@ -335,6 +425,7 @@ export async function POST(req: Request) {
 
     // Apply per-category max limit (after validation)
     const finalFiles = toUpload.slice(0, maxFiles);
+    const clientMeta = parseClientUploadMeta(form);
 
     const saved: { id: string; type: string; storage_path: string; metadata: unknown; created_at: string }[] = [];
     const errors: Array<{ file: string; error: string; code?: string }> = [];
@@ -343,7 +434,18 @@ export async function POST(req: Request) {
     for (const [index, file] of finalFiles.entries()) {
       console.log(`[${requestId}] Uploading ${st}/${category} file ${index + 1}/${finalFiles.length}: ${file.name}`);
 
-      const result = await uploadSingleFile(admin, bucket, caseId, userId, st, category, typeValue, file);
+      const result = await uploadSingleFile(
+        admin,
+        bucket,
+        caseId,
+        userId,
+        st,
+        category,
+        typeValue,
+        file,
+        clientMeta,
+        requestId
+      );
 
       if (result.success) {
         saved.push(result.data);

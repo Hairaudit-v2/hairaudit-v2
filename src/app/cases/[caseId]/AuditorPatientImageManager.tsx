@@ -27,6 +27,13 @@ function categoryFromRow(u: UploadRow): string {
   return resolvePatientPhotoCategoryKeyAligned(u) ?? "uncategorized";
 }
 
+function qualityWarningFromUpload(u: UploadRow): string | null {
+  const meta = u.metadata;
+  if (!meta || typeof meta !== "object") return null;
+  const w = (meta as Record<string, unknown>).quality_warning;
+  return typeof w === "string" && w.trim() ? w.trim() : null;
+}
+
 export default function AuditorPatientImageManager({ caseId }: { caseId: string }) {
   const [uploads, setUploads] = useState<UploadRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -72,6 +79,11 @@ export default function AuditorPatientImageManager({ caseId }: { caseId: string 
     const active = uploads.filter((u) => !isPatientUploadAuditExcluded(u));
     return getMissingRequiredPatientPhotoCategories(active.map((u) => ({ type: u.type })));
   }, [uploads]);
+
+  const qualityWarningCount = useMemo(
+    () => uploads.filter((u) => qualityWarningFromUpload(u)).length,
+    [uploads]
+  );
 
   async function patchUpload(uploadId: string, body: Record<string, unknown>) {
     setBusyId(uploadId);
@@ -150,6 +162,14 @@ export default function AuditorPatientImageManager({ caseId }: { caseId: string 
         </div>
       )}
 
+      {qualityWarningCount > 0 ? (
+        <div className="mt-3 rounded-lg border border-amber-500/35 bg-amber-500/10 px-3 py-2 text-xs text-amber-100">
+          <span className="font-semibold">Image quality advisories: </span>
+          {qualityWarningCount} upload{qualityWarningCount === 1 ? "" : "s"} flagged at upload time (e.g. low resolution).
+          Review thumbnails below before finalizing the report.
+        </div>
+      ) : null}
+
       {message ? (
         <p className={`mt-2 text-xs ${message === "Saved." ? "text-emerald-300" : "text-rose-300"}`}>{message}</p>
       ) : null}
@@ -223,6 +243,11 @@ export default function AuditorPatientImageManager({ caseId }: { caseId: string 
                           title={u.categoryIntegrity.issues.join("\n")}
                         >
                           Category mismatch (debug)
+                        </span>
+                      ) : null}
+                      {qualityWarningFromUpload(u) ? (
+                        <span className="mt-1 inline-block rounded border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-amber-100">
+                          Quality advisory
                         </span>
                       ) : null}
                     </div>

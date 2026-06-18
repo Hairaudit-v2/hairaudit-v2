@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import type { TranslationKey } from "@/lib/i18n/translationKeys";
+import type { RequiredPhotoProgress } from "@/lib/patient/patientRequiredPhotoProgress";
+import { formatTemplate } from "@/lib/i18n/formatTemplate";
 
 export type CompletionItemKey = "photos" | "procedure" | "graftHandling" | "healingCourse" | "currentStatus";
 
@@ -22,16 +24,14 @@ export default function PatientDashboardCompletionCard({
   nextCaseId,
   completionPct,
   hasAnyCaseData,
-  patientPhotoCount,
-  photosTarget,
+  photoProgress,
   required,
   modules,
 }: {
   nextCaseId: string | null;
   completionPct: number;
   hasAnyCaseData: boolean;
-  patientPhotoCount: number;
-  photosTarget: number;
+  photoProgress: RequiredPhotoProgress;
   required: { answered: number; total: number; pct: number };
   modules: {
     graftHandling: { answered: number; total: number; pct: number };
@@ -41,31 +41,46 @@ export default function PatientDashboardCompletionCard({
 }) {
   const { t } = useI18n();
 
+  const photoDetail =
+    nextCaseId && photoProgress.totalRequired > 0
+      ? `${photoProgress.completedCount}/${photoProgress.totalRequired} ${t("dashboard.patient.completion.requiredViews")}`
+      : "—";
+
   const items = [
     {
       key: "photos" as CompletionItemKey,
-      done: patientPhotoCount >= 6,
-      detail: nextCaseId ? `${patientPhotoCount}/${photosTarget}` : "—",
+      done: photoProgress.isComplete,
+      detail: photoDetail,
+      missingHint:
+        nextCaseId && !photoProgress.isComplete && photoProgress.missingLabels.length > 0
+          ? formatTemplate(t("dashboard.patient.completion.missingPhotoViews"), {
+              views: photoProgress.missingLabels.join(", "),
+            })
+          : null,
     },
     {
       key: "procedure" as CompletionItemKey,
       done: required.pct >= 0.95,
       detail: nextCaseId ? `${required.answered}/${required.total}` : "—",
+      missingHint: null,
     },
     {
       key: "graftHandling" as CompletionItemKey,
       done: modules.graftHandling.pct >= 0.6,
       detail: nextCaseId ? `${modules.graftHandling.answered}/${modules.graftHandling.total}` : "—",
+      missingHint: null,
     },
     {
       key: "healingCourse" as CompletionItemKey,
       done: modules.healingCourse.pct >= 0.6,
       detail: nextCaseId ? `${modules.healingCourse.answered}/${modules.healingCourse.total}` : "—",
+      missingHint: null,
     },
     {
       key: "currentStatus" as CompletionItemKey,
       done: modules.currentStatus.pct >= 0.6,
       detail: nextCaseId ? `${modules.currentStatus.answered}/${modules.currentStatus.total}` : "—",
+      missingHint: null,
     },
   ].map((row) => ({ ...row, label: t(ITEM_LABEL[row.key]) }));
 
@@ -100,9 +115,9 @@ export default function PatientDashboardCompletionCard({
       <div className="mt-5 space-y-3">
         {items.map((item) => (
           <div key={item.key} className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 min-w-0">
               <span
-                className={`inline-flex h-6 w-6 items-center justify-center rounded-lg border ${
+                className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border ${
                   nextCaseId && item.done
                     ? "border-emerald-300/30 bg-emerald-300/10 text-emerald-200"
                     : "border-white/10 bg-white/5 text-slate-300/70"
@@ -120,13 +135,18 @@ export default function PatientDashboardCompletionCard({
                   </svg>
                 )}
               </span>
-              <div>
+              <div className="min-w-0">
                 <div className="text-sm font-medium text-white">{item.label}</div>
                 <div className="text-xs text-slate-300/70">{item.detail}</div>
+                {item.missingHint ? (
+                  <div className="mt-0.5 text-xs text-amber-200/90">{item.missingHint}</div>
+                ) : null}
               </div>
             </div>
             {nextCaseId && !item.done && (
-              <span className="text-xs font-medium text-cyan-200/80">{t("dashboard.patient.completion.inProgress")}</span>
+              <span className="shrink-0 text-xs font-medium text-cyan-200/80">
+                {t("dashboard.patient.completion.inProgress")}
+              </span>
             )}
           </div>
         ))}

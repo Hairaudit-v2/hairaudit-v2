@@ -27,6 +27,14 @@ import type { PatientPhotoUploadGuidancePanel } from "@/lib/patientPhoto/patient
 import { evaluateEvidence, type CasePhotoInput } from "@/lib/evidence/evidenceEvaluator";
 import { getUploadHighlightKeys } from "@/lib/evidence/evidenceUploadUiHints";
 import { caseSubmitSurfaceOpen } from "@/lib/patient/caseSubmitStatus";
+import PatientUploadRequirementsBanner from "@/components/patient/PatientUploadRequirementsBanner";
+import {
+  appendPatientUploadMetadata,
+  formatPatientUploadError,
+  PATIENT_UPLOAD_SAVE_LATER_MESSAGE,
+  preparePatientUploadFile,
+  computeRequiredUploadProgress,
+} from "@/lib/uploads/patientUploadClient";
 
 type UploadRow = {
   id: string;
@@ -83,6 +91,10 @@ export default function PhotoUploader({
 }) {
   const [uploads, setUploads] = useState(initialUploads);
   const [busyCats, setBusyCats] = useState<Record<string, boolean>>({});
+  const [categoryErrors, setCategoryErrors] = useState<Record<string, string>>({});
+  const [categorySuccess, setCategorySuccess] = useState<Record<string, string>>({});
+  const [qualityWarnings, setQualityWarnings] = useState<Record<string, string>>({});
+  const [failedFilesByCategory, setFailedFilesByCategory] = useState<Record<string, File[]>>({});
   const [skippedOptional, setSkippedOptional] = useState<Set<string>>(new Set());
 
   const prefix = submitterType === "doctor" ? "doctor_photo" : "patient_photo";
@@ -111,6 +123,10 @@ export default function PhotoUploader({
   const requiredKeys = getRequiredKeys(submitterType);
   const missingRequired = requiredKeys.filter((k) => !completed.has(k));
   const canProceed = missingRequired.length === 0;
+  const requiredProgress =
+    submitterType === "patient"
+      ? computeRequiredUploadProgress(requiredKeys, completed)
+      : null;
 
   const evidenceNudges = useMemo(() => {
     if (submitterType !== "patient" || !isPatientImageEvidenceNudgesEnabled()) return [];
@@ -139,25 +155,41 @@ export default function PhotoUploader({
     }
   }, [uploads, submitterType]);
 
-  async function uploadFiles(category: string, files: File[]) {
+  async function uploadFiles(category: string, files: File[], isRetry = false) {
     if (isLocked || !files.length) return;
 
     setBusyCats((p) => ({ ...p, [category]: true }));
-    
+    setCategoryErrors((p) => {
+      const next = { ...p };
+      delete next[category];
+      return next;
+    });
+    setCategorySuccess((p) => {
+      const next = { ...p };
+      delete next[category];
+      return next;
+    });
+
     const errors: string[] = [];
+    const retryQueue: File[] = [];
     let successCount = 0;
-    
+
     try {
-      // Upload files sequentially to stay under Vercel 4.5MB limit
       for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        
+        const original = files[i];
+
         try {
+          const { file, meta } = await preparePatientUploadFile(original);
+          if (meta.qualityWarning) {
+            setQualityWarnings((p) => ({ ...p, [category]: meta.qualityWarning! }));
+          }
+
           const fd = new FormData();
           fd.append("caseId", caseId);
           fd.append("submitterType", submitterType);
           fd.append("category", category);
           fd.append("files[]", file);
+          appendPatientUploadMetadata(fd, meta);
 
           const res = await fetch("/api/uploads/audit-photos", {
             method: "POST",
@@ -166,7 +198,8 @@ export default function PhotoUploader({
 
           const json = await res.json().catch(() => ({}));
           if (!res.ok) {
-            throw new Error(json?.error ?? `Upload failed for ${file.name}`);
+            const formatted = formatPatientUploadError(json);
+            throw new Error(formatted.message);
           }
 
           if (json.saved?.length) {
@@ -175,17 +208,44 @@ export default function PhotoUploader({
           successCount++;
         } catch (e: unknown) {
           const msg = (e as Error)?.message ?? "Upload failed";
-          errors.push(`${file.name}: ${msg}`);
+          errors.push(`${original.name}: ${msg}`);
+          retryQueue.push(original);
         }
       }
-      
-      // Show summary if there were errors
+
+      if (successCount > 0) {
+        setCategorySuccess((p) => ({
+          ...p,
+          [category]:
+            successCount === 1
+              ? "Photo saved successfully."
+              : `${successCount} photos saved successfully.`,
+        }));
+        setFailedFilesByCategory((p) => {
+          const next = { ...p };
+          if (retryQueue.length === 0) delete next[category];
+          else next[category] = retryQueue;
+          return next;
+        });
+      }
+
       if (errors.length > 0) {
-        if (successCount === 0) {
-          alert(`Upload failed:\n${errors[0]}`);
-        } else {
-          console.warn(`Partial upload success:`, errors);
+        setCategoryErrors((p) => ({
+          ...p,
+          [category]:
+            successCount > 0
+              ? `${successCount} saved, but ${errors.length} failed. Tap retry to try again.`
+              : errors[0] ?? "Upload failed. Please try again.",
+        }));
+        if (retryQueue.length > 0) {
+          setFailedFilesByCategory((p) => ({ ...p, [category]: retryQueue }));
         }
+      } else if (isRetry) {
+        setFailedFilesByCategory((p) => {
+          const next = { ...p };
+          delete next[category];
+          return next;
+        });
       }
     } finally {
       setBusyCats((p) => ({ ...p, [category]: false }));
@@ -230,6 +290,45 @@ export default function PhotoUploader({
             ? "Upload the required standardized photo set for best audit quality."
             : "Upload at least the 3 required current photos. Extra photos improve your evidence score."}
         </p>
+
+        {submitterType === "patient" && (
+          <>
+            <div className="mt-4">
+              <PatientUploadRequirementsBanner />
+            </div>
+            <p className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
+              {PATIENT_UPLOAD_SAVE_LATER_MESSAGE}
+            </p>
+          </>
+        )}
+
+        {requiredProgress && requiredProgress.total > 0 ? (
+          <div className="mt-4">
+            <div className="flex items-center justify-between text-sm">
+              <span className="font-medium text-slate-700">Required photos progress</span>
+              <span className="text-slate-600">
+                {requiredProgress.completed} / {requiredProgress.total}
+              </span>
+            </div>
+            <div
+              className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200"
+              role="progressbar"
+              aria-valuenow={requiredProgress.percent}
+              aria-valuemin={0}
+              aria-valuemax={100}
+            >
+              <div
+                className="h-full rounded-full bg-amber-500 transition-all duration-300"
+                style={{ width: `${requiredProgress.percent}%` }}
+              />
+            </div>
+            {canProceed ? (
+              <p className="mt-2 text-sm font-medium text-emerald-700">
+                All required photos uploaded — you can submit when ready.
+              </p>
+            ) : null}
+          </div>
+        ) : null}
 
         <div className="mt-4 flex items-center gap-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
           <div>
@@ -316,6 +415,14 @@ export default function PhotoUploader({
               locked={isLocked}
               emphasize={evidenceUi?.highlightKeys.has(def.key) ?? false}
               showCantProvide={def.required === false && submitterType === "patient"}
+              errorMessage={categoryErrors[def.key]}
+              successMessage={categorySuccess[def.key]}
+              qualityWarning={qualityWarnings[def.key]}
+              failedFiles={failedFilesByCategory[def.key]}
+              onRetry={() => {
+                const failed = failedFilesByCategory[def.key];
+                if (failed?.length) void uploadFiles(def.key, failed, true);
+              }}
               onSkip={() => toggleSkipped(def.key)}
               onUpload={(files) => uploadFiles(def.key, files)}
               onDeleted={deleteUpload}
@@ -432,6 +539,11 @@ function PhotoCategoryCard({
   locked,
   emphasize,
   showCantProvide,
+  errorMessage,
+  successMessage,
+  qualityWarning,
+  failedFiles,
+  onRetry,
   onSkip,
   onUpload,
   onDeleted,
@@ -450,15 +562,33 @@ function PhotoCategoryCard({
   locked: boolean;
   emphasize?: boolean;
   showCantProvide: boolean;
+  errorMessage?: string;
+  successMessage?: string;
+  qualityWarning?: string;
+  failedFiles?: File[];
+  onRetry?: () => void;
   onSkip: () => void;
   onUpload: (files: File[]) => void;
   onDeleted: (id: string) => void;
 }) {
   const [drag, setDrag] = useState(false);
+  const remaining = Math.max(0, max - existing.length);
+  const disabled = locked || busy || remaining <= 0;
   const borderCls =
     emphasize && !locked
       ? "border-amber-400 ring-2 ring-amber-400/70 bg-amber-50/25"
-      : "border-slate-200";
+      : errorMessage
+        ? "border-rose-300 bg-rose-50/30"
+        : successMessage
+          ? "border-emerald-300 bg-emerald-50/20"
+          : "border-slate-200";
+
+  const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    onUpload(files.slice(0, remaining));
+    e.target.value = "";
+  };
+
   return (
     <section
       className={`rounded-xl border p-4 space-y-3 ${borderCls} ${locked ? "opacity-60" : ""}`}
@@ -495,7 +625,38 @@ function PhotoCategoryCard({
 
       <p className="text-sm text-slate-600">
         {existing.length} / {max} max • min {min}
+        {existing.length >= min ? (
+          <span className="ml-2 text-emerald-600 font-medium">✓ Complete</span>
+        ) : null}
       </p>
+
+      {qualityWarning ? (
+        <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900" role="note">
+          Advisory: {qualityWarning} You can still upload — a clearer photo helps your audit.
+        </p>
+      ) : null}
+
+      {errorMessage ? (
+        <div className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800" role="alert">
+          {errorMessage}
+          {failedFiles && failedFiles.length > 0 && onRetry ? (
+            <button
+              type="button"
+              onClick={onRetry}
+              disabled={busy}
+              className="mt-2 block rounded-md bg-rose-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-rose-800 disabled:opacity-50"
+            >
+              Retry failed upload{failedFiles.length > 1 ? "s" : ""}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+
+      {successMessage ? (
+        <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800" role="status">
+          {successMessage}
+        </p>
+      ) : null}
 
       <div
         className={`border-2 border-dashed rounded-lg p-4 text-sm ${
@@ -513,34 +674,55 @@ function PhotoCategoryCard({
           e.preventDefault();
           setDrag(false);
           const files = Array.from(e.dataTransfer.files).filter((f) => acceptsFile(f, accept));
-          onUpload(files.slice(0, max - existing.length));
+          onUpload(files.slice(0, remaining));
         }}
       >
         <div className="flex justify-between items-center">
           <span>{existing.length} uploaded</span>
-          <label
-            htmlFor={`audit-photo-${category}`}
-            className={`cursor-pointer rounded-md px-3 py-2 ${
-              locked || busy
-                ? "bg-gray-200 text-gray-500"
-                : "bg-slate-900 text-white hover:bg-slate-800"
-            }`}
-          >
-            {locked ? "Locked" : busy ? "Uploading…" : "Choose files"}
-            <input
-              id={`audit-photo-${category}`}
-              type="file"
-              className="hidden"
-              accept={accept}
-              multiple
-              disabled={locked || busy}
-              onChange={(e) => {
-                const files = Array.from(e.target.files ?? []);
-                onUpload(files.slice(0, max - existing.length));
-                e.target.value = "";
-              }}
-            />
-          </label>
+          {!locked && remaining > 0 ? (
+            <div className="grid grid-cols-2 gap-2">
+              <label
+                htmlFor={`audit-photo-camera-${category}`}
+                className={`cursor-pointer rounded-md px-3 py-2 text-center text-xs font-semibold ${
+                  disabled
+                    ? "bg-gray-200 text-gray-500"
+                    : "border border-cyan-200 bg-cyan-50 text-cyan-900 hover:bg-cyan-100"
+                }`}
+              >
+                {busy ? "Uploading…" : "Take photo"}
+                <input
+                  id={`audit-photo-camera-${category}`}
+                  type="file"
+                  className="hidden"
+                  accept={accept}
+                  capture="environment"
+                  disabled={disabled}
+                  onChange={handleInput}
+                />
+              </label>
+              <label
+                htmlFor={`audit-photo-${category}`}
+                className={`cursor-pointer rounded-md px-3 py-2 text-center text-xs font-semibold ${
+                  disabled
+                    ? "bg-gray-200 text-gray-500"
+                    : "bg-slate-900 text-white hover:bg-slate-800"
+                }`}
+              >
+                Choose
+                <input
+                  id={`audit-photo-${category}`}
+                  type="file"
+                  className="hidden"
+                  accept={accept}
+                  multiple
+                  disabled={disabled}
+                  onChange={handleInput}
+                />
+              </label>
+            </div>
+          ) : (
+            <span className="text-xs text-slate-500">{locked ? "Locked" : "Maximum reached"}</span>
+          )}
         </div>
       </div>
 

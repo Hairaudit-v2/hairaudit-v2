@@ -12,6 +12,7 @@ import {
   getPatientNarrativeState,
   type PatientNarrativeDomainId,
 } from "@/lib/reports/patientNarrativeTemplates";
+import { PATIENT_CLINICAL_SAFETY_DISCLAIMER } from "@/lib/reports/patientConcernBands";
 import { buildPatientLongTermHairEducation } from "@/lib/reports/patientLongTermHairEducation";
 import { buildPatientWhatToMonitorOverTime } from "@/lib/reports/patientWhatToMonitorOverTime";
 
@@ -665,6 +666,45 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
     metricTextImpliesWeakEvidence(metrics.graftSurvival)
       ? "Current visual evidence supports only a low-confidence graft survival outlook estimate."
       : `Observed implantation and density patterns appear broadly consistent with a ${esc(metrics.graftSurvival)} graft survival expectation range.`;
+
+  const reviewAreasCard =
+    risks.length > 0
+      ? `
+        <div class="listCard" style="${isPatientFacing ? "margin-bottom:12px;border-color:#f59e0b55;" : ""}">
+          <div class="listTitle"><span class="iconWatch">●</span> Areas Requiring Review</div>
+          ${
+            isPatientFacing
+              ? `<div class="miniText" style="margin-bottom:8px;">Based on uploaded images only — not a medical diagnosis. Image quality may limit interpretation.</div>`
+              : ""
+          }
+          <ul>${risks.map((x) => `<li class="wrapText">⚠ ${esc(String(x))}</li>`).join("")}</ul>
+          ${
+            isPatientFacing
+              ? `<div class="miniText" style="margin-top:8px;">${esc(PATIENT_CLINICAL_SAFETY_DISCLAIMER)}</div>`
+              : ""
+          }
+        </div>`
+      : isPatientFacing
+        ? ""
+        : `
+        <div class="listCard">
+          <div class="listTitle"><span class="iconWatch">●</span> Areas Requiring Review</div>
+          <div class="subtitle">No major concerns flagged from current evidence.</div>
+        </div>`;
+
+  const positiveIndicatorsCard = `
+        <div class="listCard">
+          <div class="listTitle"><span class="iconPositive">●</span> Key Positive Indicators</div>
+          ${
+            highlights.length > 0
+              ? `<ul>${highlights.map((x) => `<li class="wrapText">✔ ${esc(String(x))}</li>`).join("")}</ul>`
+              : `<div class="subtitle">No strong indicators identified with high confidence.</div>`
+          }
+        </div>`;
+
+  const findingsTwoCol = isPatientFacing
+    ? `${risks.length > 0 ? reviewAreasCard : ""}${positiveIndicatorsCard}`
+    : `<div class="twoCol">${positiveIndicatorsCard}${reviewAreasCard}</div>`;
 
   const fingerprintSummary = buildSurgicalFingerprintSummary({
     areaDomains,
@@ -1495,24 +1535,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
             : ""
         }
       </div>
-      <div class="twoCol">
-        <div class="listCard">
-          <div class="listTitle"><span class="iconPositive">●</span> Key Positive Indicators</div>
-          ${
-            highlights.length > 0
-              ? `<ul>${highlights.map((x) => `<li class="wrapText">✔ ${esc(String(x))}</li>`).join("")}</ul>`
-              : `<div class="subtitle">No strong indicators identified with high confidence.</div>`
-          }
-        </div>
-        <div class="listCard">
-          <div class="listTitle"><span class="iconWatch">●</span> Areas Requiring Review</div>
-          ${
-            risks.length > 0
-              ? `<ul>${risks.map((x) => `<li class="wrapText">⚠ ${esc(String(x))}</li>`).join("")}</ul>`
-              : `<div class="subtitle">No major concerns flagged from current evidence.</div>`
-          }
-        </div>
-      </div>
+      ${findingsTwoCol}
       <div class="listCard" style="margin-top:12px;">
         <div class="listTitle"><span class="iconGuide">●</span> Patient Guidance</div>
         <ul>${patientGuidance.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>
