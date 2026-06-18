@@ -12,6 +12,8 @@ import {
   type FiImageIntelligenceJobPayload,
 } from "@/lib/hairaudit/fiImageIntelligenceQueue";
 import { processFiImageIntelligenceJob } from "@/lib/hairaudit/fiImageIntelligenceWorker";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { createSupabaseClassifierMetadataWriteBackAdapter } from "@/lib/hairaudit/classifierMetadataWritebackAdapter.server";
 
 export const runFiImageIntelligenceWorker = inngest.createFunction(
   {
@@ -24,7 +26,11 @@ export const runFiImageIntelligenceWorker = inngest.createFunction(
     const data = event.data as FiImageIntelligenceJobPayload;
 
     const outcome = await step.run("process-fi-image-intelligence", async () => {
-      return await processFiImageIntelligenceJob(data);
+      const admin = createSupabaseAdminClient();
+      return await processFiImageIntelligenceJob(data, {
+        uploadMetadataWriter: createSupabaseClassifierMetadataWriteBackAdapter(admin),
+        logger,
+      });
     });
 
     if (outcome.status === "failed") {

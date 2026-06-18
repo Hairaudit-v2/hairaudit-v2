@@ -24,6 +24,7 @@ import { isPatientUploadAuditExcluded } from "@/lib/uploads/patientPhotoAuditMet
 import { evaluateEvidence } from "@/lib/evidence/evidenceEvaluator";
 import { buildEvidenceIntelligencePayload } from "@/lib/evidence/evidenceIntelligencePayload";
 import { emitAuditOsReportGeneratedSafe, runAuditOsShadowAfterReportInsert } from "@/lib/auditos/shadow/inngestAuditOsShadow.server";
+import { attachHairAuditIntelligenceToReportSummarySafeWithClassifier } from "@/lib/hairaudit-intelligence/shadow/inngestHairAuditIntelligence.server";
 import type { LegacyUploadRow } from "@/lib/auditos/reports/adaptLegacyReportModel";
 import { getCaseFilesBucketNameForReadOnlyUse } from "@/lib/hairaudit/uploadStorage";
 
@@ -1221,7 +1222,7 @@ export const runAudit = inngest.createFunction(
       const evidenceCoverageScore = overallEvidenceCoverageFromUploads(uploads);
       const evidenceIntelligence = buildEvidenceIntelligencePayload(casePhotosForEvidenceFromUploads(uploads));
 
-      const summary = {
+      const summaryBase = {
         ...existingSummary,
         image_ingestion_stats: imageIngestionStats,
         evidenceCoverageScore,
@@ -1275,6 +1276,23 @@ export const runAudit = inngest.createFunction(
           image_ingestion_stats: imageIngestionStats,
         },
       };
+
+      const { summary } = await attachHairAuditIntelligenceToReportSummarySafeWithClassifier({
+        summary: summaryBase,
+        caseId,
+        uploads,
+        logger,
+        uploadMetadataWriter: {
+          async updateUploadMetadata(uploadId, metadata) {
+            const { error } = await supabase
+              .from("uploads")
+              .update({ metadata })
+              .eq("id", uploadId);
+            if (error) return { ok: false, error: error.message };
+            return { ok: true };
+          },
+        },
+      });
 
       const finalAiScore = Number(overall?.performance_score ?? overall?.benchmark_score ?? 0);
       const { eligibility: auditorReviewEligibility, status: auditorReviewStatus, reason: auditorReviewReason } = computeAuditorReviewEligibility(finalAiScore);

@@ -42,6 +42,14 @@ import {
 import { canCreateSupabaseAdminClient } from "@/lib/supabase/admin";
 import { gateUploadCaseStoragePath } from "./uploadStorage";
 import { uploadEventPayloadIsSafe } from "./uploadEvents";
+import type { ClassifierMetadataWriteBackAdapter } from "@/lib/hairaudit-intelligence/shadow/classifierMetadataWriteback.server";
+import { writeBackClassifierMetadataForCompletedJob } from "@/lib/hairaudit-intelligence/shadow/classifierMetadataWriteback.server";
+import { resolveClassifierMetadataWriteBackAdapter } from "./classifierMetadataWritebackAdapter.server";
+import {
+  buildClassifierWritebackLogPayload,
+  logClassifierWriteback,
+} from "@/lib/hairaudit-intelligence/shadow/classifierWritebackObservability.server";
+import type { FiImageIntelligenceProcessedJobRecord } from "./fiImageIntelligencePersistence";
 
 const LOG_PREFIX = "[hairaudit:fi-image-intelligence-worker]";
 
@@ -69,6 +77,12 @@ export type FiImageIntelligenceWorkerOptions = {
   fiOsFetchImpl?: FiOsClassifierFetchImpl;
   /** Injectable persistence adapter; defaults to Supabase or in-memory fallback. */
   persistence?: FiImageIntelligencePersistenceAdapter;
+  /** Injectable upload metadata writer for worker-time classifier write-back. */
+  uploadMetadataWriter?: ClassifierMetadataWriteBackAdapter;
+  /** Admin/service-only — bypasses auditor correction protection when true. */
+  forceClassifierWriteback?: boolean;
+  /** Optional logger for structured write-back observability. */
+  logger?: { info: (msg: string, meta?: Record<string, unknown>) => void };
   /** @deprecated Use `persistence` — retained for Phase 3B in-memory idempotency parity. */
   processedKeys?: Set<string>;
 };
@@ -354,6 +368,68 @@ export async function processFiImageIntelligenceJob(
   }
 
   const workerStatus = workerStatusForClassification(result);
+
+  if (workerStatus === "classified" && completedPersist.ok) {
+    const completedJob: FiImageIntelligenceProcessedJobRecord = {
+      id: processingResult.record.id,
+      idempotency_key: payload.idempotency_key,
+      case_id: payload.input.source_case_id,
+      upload_id: payload.input.source_upload_id,
+      event_name: payload.input.source_event_name,
+      source_system: payload.input.source_system,
+      status: "completed",
+      result,
+      error_message: null,
+      processed_at: result.processed_at,
+      created_at: processingResult.record.created_at,
+      updated_at: result.processed_at,
+    };
+
+    const writeBackAdapter = resolveClassifierMetadataWriteBackAdapter(
+      options.uploadMetadataWriter
+    );
+    if (writeBackAdapter) {
+      const writeBackStartedAt = Date.now();
+      try {
+        const writeBackResult = await writeBackClassifierMetadataForCompletedJob({
+          job: completedJob,
+          adapter: writeBackAdapter,
+          forceClassifierWriteback: options.forceClassifierWriteback,
+        });
+
+        if (options.logger) {
+          logClassifierWriteback(
+            options.logger,
+            buildClassifierWritebackLogPayload({
+              caseId: payload.input.source_case_id,
+              uploadId: payload.input.source_upload_id,
+              outcome: writeBackResult.outcome,
+              fieldsAppliedCount: writeBackResult.fieldsAppliedCount ?? 0,
+              protectedByAuditorCorrection: writeBackResult.protectedByAuditorCorrection ?? false,
+              durationMs: Date.now() - writeBackStartedAt,
+              forceWriteback: options.forceClassifierWriteback,
+            })
+          );
+        }
+      } catch {
+        if (options.logger) {
+          logClassifierWriteback(
+            options.logger,
+            buildClassifierWritebackLogPayload({
+              caseId: payload.input.source_case_id,
+              uploadId: payload.input.source_upload_id,
+              outcome: "failed",
+              fieldsAppliedCount: 0,
+              protectedByAuditorCorrection: false,
+              durationMs: Date.now() - writeBackStartedAt,
+              forceWriteback: options.forceClassifierWriteback,
+            })
+          );
+        }
+        // fail-safe: write-back must never block worker completion
+      }
+    }
+  }
 
   return {
     status: workerStatus,

@@ -4,6 +4,10 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { isAuditor } from "@/lib/auth/isAuditor";
 import { canAccessCase } from "@/lib/case-access";
 import { normalizeAuditorPatientPhotoCategory } from "@/lib/auditor/auditorPatientPhotoCategories";
+import {
+  isAuditorClassifierCorrectionAction,
+  markAuditorClassifierCorrection,
+} from "@/lib/auditor/auditorClassifierCorrection.server";
 import type { PatientUploadMetadata } from "@/lib/uploads/patientPhotoAuditMeta";
 import {
   applyPatientPhotoCategoryFields,
@@ -259,6 +263,12 @@ export async function PATCH(req: Request) {
       });
     } else {
       return NextResponse.json({ ok: false, error: "Invalid action" }, { status: 400 });
+    }
+
+    if (isAuditorClassifierCorrectionAction(action)) {
+      nextMeta = markAuditorClassifierCorrection(
+        nextMeta as Record<string, unknown>
+      ) as PatientUploadMetadata;
     }
 
     nextMeta = syncPatientPhotoMetadataCategoryToType(nextType, nextMeta as Record<string, unknown>) as PatientUploadMetadata;

@@ -248,6 +248,40 @@ export const PROTOCOL_STANDARDS = [
 export type ProtocolStandard = (typeof PROTOCOL_STANDARDS)[number];
 
 // ============================================================================
+// Classifier Metadata — FI sync and auditor correction
+// ============================================================================
+
+/** Known sources for classifier metadata on upload rows */
+export const CLASSIFIER_SOURCES = [
+  "fi_persisted_jobs",
+  "fi_os",
+  "fi_and_upload_metadata",
+  "upload_metadata",
+  "auditor",
+  "manual",
+  "manual_stub",
+  "clinic_manual",
+  "auditor_correction",
+  "rule_based_placeholder",
+] as const;
+
+export type ClassifierSource = (typeof CLASSIFIER_SOURCES)[number] | (string & {});
+
+/** Classifier fields written by FI worker or auditor correction flows */
+export type ClassifierMetadataFields = {
+  /** Raw FI quality token before contract normalization */
+  fi_quality_status_raw?: string;
+  /** Raw FI protocol token before contract normalization */
+  fi_protocol_status_raw?: string;
+  /** Origin of the current classifier metadata */
+  classifier_source?: ClassifierSource;
+  /** ISO timestamp when FI classifier fields were last synced */
+  classifier_synced_at?: string;
+  /** ISO timestamp when an auditor manually corrected classification/review state */
+  corrected_at?: string;
+};
+
+// ============================================================================
 // Storage Conventions — Path and bucket patterns
 // ============================================================================
 
@@ -341,7 +375,7 @@ export type MetadataVersion = (typeof METADATA_VERSIONS)[number];
  * NOTE: Not all fields are currently populated. This is a forward-looking
  * contract that includes fields for planned features.
  */
-export interface UploadMetadataContract {
+export interface UploadMetadataContract extends ClassifierMetadataFields {
   // Core Identification
   /** Contract version for schema evolution */
   metadata_version: MetadataVersion;

@@ -77,8 +77,14 @@ import AuditOsShadowDebugPanel, {
   type AuditOsShadowDebugPanelPayload,
 } from "@/components/auditor/AuditOsShadowDebugPanel";
 import AuditOsReviewPanel, { type AuditOsReviewPanelProps } from "@/components/auditor/AuditOsReviewPanel";
+import HairAuditIntelligencePanel from "@/components/auditor/HairAuditIntelligencePanel";
 import type { LegacyUploadRow } from "@/lib/auditos/reports/adaptLegacyReportModel";
 import { isAuditOsDebugPanelEnabled, isAuditOsReviewPanelEnabled } from "@/lib/auditos/shadow/auditOsShadowEnv.server";
+import {
+  canShowHairAuditIntelligencePanelForRole,
+  isHairAuditIntelligenceReviewPanelEnabled,
+} from "@/lib/hairaudit-intelligence/shadow/hairAuditIntelligenceEnv.server";
+import { extractHairAuditIntelligenceFromSummary } from "@/lib/hairaudit-intelligence/shadow/extractHairAuditIntelligenceForReview";
 import { loadBulkBatchContext } from "@/lib/hair-audit/bulkUpload/loadBulkBatchContext";
 
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
@@ -745,6 +751,13 @@ export default async function Page({
     }
   }
 
+  const hairAuditIntelligenceBundle =
+    isHairAuditIntelligenceReviewPanelEnabled() &&
+    canShowHairAuditIntelligencePanelForRole(role) &&
+    latestReport
+      ? extractHairAuditIntelligenceFromSummary(latestReport.summary)
+      : null;
+
   const isHighScore = scoreNum > 90;
   const isHighScoreProvisional = isHighScore && provisionalStatus === "pending_validation";
   const isHighScoreValidated = isHighScore && countsForAwards === true && (provisionalStatus === "validated_by_auditor" || provisionalStatus === "validated_by_evidence" || provisionalStatus === "validated_by_consistency");
@@ -1405,6 +1418,12 @@ export default async function Page({
           {auditOsReviewPanel ? <AuditOsReviewPanel {...auditOsReviewPanel} /> : null}
         </div>
       )}
+
+      {hairAuditIntelligenceBundle ? (
+        <div className="mt-6">
+          <HairAuditIntelligencePanel bundle={hairAuditIntelligenceBundle} reportVersion={latestReport?.version} />
+        </div>
+      ) : null}
 
       {domains.length > 0 && !patientHidesForensicWorkspace && (
         <div className="mt-6">

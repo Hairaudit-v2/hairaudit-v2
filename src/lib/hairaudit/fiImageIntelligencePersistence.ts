@@ -37,6 +37,9 @@ export type FiImageIntelligencePersistenceAdapter = {
   findProcessedJobByIdempotencyKey(
     idempotencyKey: string
   ): Promise<FiImageIntelligenceProcessedJobRecord | null>;
+  findProcessedJobsByIdempotencyKeys(
+    idempotencyKeys: string[]
+  ): Promise<FiImageIntelligenceProcessedJobRecord[]>;
   markJobProcessing(args: {
     idempotency_key: string;
     case_id: string;
@@ -98,6 +101,15 @@ export function createMemoryFiImageIntelligencePersistence(): FiImageIntelligenc
   return {
     async findProcessedJobByIdempotencyKey(idempotencyKey) {
       return jobs.get(idempotencyKey.trim()) ?? null;
+    },
+
+    async findProcessedJobsByIdempotencyKeys(idempotencyKeys) {
+      const records: FiImageIntelligenceProcessedJobRecord[] = [];
+      for (const key of idempotencyKeys) {
+        const record = jobs.get(key.trim());
+        if (record) records.push(record);
+      }
+      return records;
     },
 
     async markJobProcessing(args) {
@@ -181,6 +193,19 @@ export function createSupabaseFiImageIntelligencePersistence(
 
       if (error || !data || !isRecord(data)) return null;
       return parseJobRecord(data);
+    },
+
+    async findProcessedJobsByIdempotencyKeys(idempotencyKeys) {
+      const keys = idempotencyKeys.map((key) => key.trim()).filter(Boolean);
+      if (keys.length === 0) return [];
+
+      const { data, error } = await admin
+        .from(FI_IMAGE_INTELLIGENCE_PROCESSED_JOBS_TABLE)
+        .select("*")
+        .in("idempotency_key", keys);
+
+      if (error || !Array.isArray(data)) return [];
+      return data.filter(isRecord).map(parseJobRecord);
     },
 
     async markJobProcessing(args) {
@@ -268,6 +293,14 @@ export async function findProcessedJobByIdempotencyKey(
 ): Promise<FiImageIntelligenceProcessedJobRecord | null> {
   const persistence = resolveFiImageIntelligencePersistence(adapter);
   return persistence.findProcessedJobByIdempotencyKey(idempotencyKey);
+}
+
+export async function findProcessedJobsByIdempotencyKeys(
+  idempotencyKeys: string[],
+  adapter?: FiImageIntelligencePersistenceAdapter
+): Promise<FiImageIntelligenceProcessedJobRecord[]> {
+  const persistence = resolveFiImageIntelligencePersistence(adapter);
+  return persistence.findProcessedJobsByIdempotencyKeys(idempotencyKeys);
 }
 
 export async function markJobProcessing(
