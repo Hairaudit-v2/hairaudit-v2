@@ -8,6 +8,7 @@ import BreadcrumbListSchema from "@/components/seo/BreadcrumbListSchema";
 import { FI_HOME } from "@/config/platform-links";
 import { fiHairauditPrimaryButtonClass } from "@/lib/fi-ui/hairauditPrimaryButton";
 import { PUBLIC_CTAS, PUBLIC_ECOSYSTEM_FOOTER } from "@/lib/marketing/publicMarketingCopy";
+import { PATHWAY_CHOOSER_HREF } from "@/lib/patient/patientReviewPathway";
 import { createPageMetadata } from "@/lib/seo/pageMetadata";
 import { Badge, FeatureGrid, Section, networkButtonVariants } from "@/packages/ui";
 import { cn } from "@/lib/utils";
@@ -57,7 +58,7 @@ export default function AboutPage() {
         >
           <div className="flex flex-col flex-wrap gap-3 sm:flex-row">
             <TrackedLink
-              href="/request-review"
+              href={PATHWAY_CHOOSER_HREF}
               eventName="cta_start_free_hairaudit_about"
               className={fiHairauditPrimaryButtonClass("lg")}
             >

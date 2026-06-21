@@ -31,7 +31,7 @@ describe("buildAuditCaseInsertData", () => {
   const uid = "00000000-0000-4000-8000-000000000001";
 
   it("patient row has public visibility and patient_id", () => {
-    const row = buildAuditCaseInsertData(uid, "patient");
+    const row = buildAuditCaseInsertData(uid, "patient", "post_surgery");
     assert.strictEqual(row.status, "draft");
     assert.strictEqual(row.user_id, uid);
     assert.strictEqual(row.patient_id, uid);
@@ -122,6 +122,53 @@ describe("duplicate entry points share insert shape", () => {
       const b = buildAuditCaseInsertData(uid, role);
       assert.deepStrictEqual(a, b);
     }
+  });
+});
+
+describe("createAuditCase requires explicit patient pathway", () => {
+  it("returns 400 without inserting when patient pathway is missing", async () => {
+    let inserts = 0;
+    const admin = {
+      from(table: string) {
+        if (table === "profiles") {
+          return {
+            select() {
+              return this;
+            },
+            eq() {
+              return this;
+            },
+            maybeSingle: async () => ({ data: { role: "patient" }, error: null }),
+          };
+        }
+        if (table === "cases") {
+          return {
+            insert() {
+              inserts++;
+              return {
+                select() {
+                  return { single: async () => ({ data: null, error: { message: "should not run" } }) };
+                },
+              };
+            },
+          };
+        }
+        throw new Error(`unexpected table ${table}`);
+      },
+    };
+    const r = await createAuditCase({
+      admin: admin as never,
+      userId: "u1",
+      userMetadata: {},
+      devRoleCookieValue: null,
+      nodeEnv: "production",
+    });
+    assert.strictEqual(r.ok, false);
+    if (!r.ok) {
+      assert.strictEqual(r.status, 400);
+      assert.match(r.error, /choose a review type/i);
+    }
+    assert.strictEqual(inserts, 0);
   });
 });
 

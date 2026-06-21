@@ -13,6 +13,7 @@ import { computeClinicCertificationRanking } from "@/lib/ranking";
 import { createPageMetadata } from "@/lib/seo/pageMetadata";
 import BreadcrumbListSchema from "@/components/seo/BreadcrumbListSchema";
 import { PUBLIC_CTAS } from "@/lib/marketing/publicMarketingCopy";
+import { PATHWAY_CHOOSER_HREF } from "@/lib/patient/patientReviewPathway";
 import { fiHairauditPrimaryButtonClass } from "@/lib/fi-ui/hairauditPrimaryButton";
 import { Badge, Section, networkButtonVariants } from "@/packages/ui";
 import { cn } from "@/lib/utils";
@@ -141,7 +142,7 @@ export default async function ClinicDirectoryPage({
             >
               Verified Surgeon Program
             </Link>
-            <Link href="/request-review" className={fiHairauditPrimaryButtonClass("md")}>
+            <Link href={PATHWAY_CHOOSER_HREF} className={fiHairauditPrimaryButtonClass("md")}>
               {PUBLIC_CTAS.startFreeHairAudit}
             </Link>
           </div>

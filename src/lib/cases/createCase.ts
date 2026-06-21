@@ -9,7 +9,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { emitHairAuditEvent } from "@/lib/integrations";
 import {
   DEFAULT_PATIENT_REVIEW_PATHWAY,
-  normalizePatientReviewPathway,
+  MISSING_PATIENT_REVIEW_PATHWAY_ERROR,
+  parseExplicitPatientReviewPathway,
   type PatientReviewPathway,
 } from "@/lib/patient/patientReviewPathway";
 
@@ -127,7 +128,17 @@ export async function createAuditCase(args: {
   }
 
   const role: CaseCreationResolvedRole = eff;
-  const patientReviewPathway = normalizePatientReviewPathway(args.patientReviewPathway);
+  const explicitPathway = parseExplicitPatientReviewPathway(args.patientReviewPathway);
+  if (role === "patient" && !explicitPathway) {
+    return {
+      ok: false,
+      error: MISSING_PATIENT_REVIEW_PATHWAY_ERROR,
+      status: 400,
+      logContext: { userId: args.userId },
+    };
+  }
+
+  const patientReviewPathway = explicitPathway ?? DEFAULT_PATIENT_REVIEW_PATHWAY;
   const insertData = buildAuditCaseInsertData(args.userId, role, patientReviewPathway);
 
   console.info(LOG_PREFIX, "insert payload summary", {

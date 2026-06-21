@@ -9,6 +9,7 @@ import { createPageMetadata } from "@/lib/seo/pageMetadata";
 import { patientIssueLibrary } from "@/lib/patientEducationIssues";
 import { listPatientIntentGuidesGroupedByTheme } from "@/lib/seo/patient-intent-hub-themes";
 import { PUBLIC_CTAS } from "@/lib/marketing/publicMarketingCopy";
+import { PATHWAY_CHOOSER_HREF } from "@/lib/patient/patientReviewPathway";
 import { fiHairauditPrimaryButtonClass } from "@/lib/fi-ui/hairauditPrimaryButton";
 import { Badge, Section, networkButtonVariants } from "@/packages/ui";
 import { cn } from "@/lib/utils";
@@ -106,7 +107,7 @@ export default function HairTransplantProblemsHubPage() {
             data-analytics-region="patient-guides-hub-hero-ctas"
           >
             <Link
-              href="/request-review"
+              href={PATHWAY_CHOOSER_HREF}
               className={fiHairauditPrimaryButtonClass("md")}
               data-cta="patient-guides-hub-hero-request-review"
               data-cta-destination="/request-review"
@@ -248,7 +249,7 @@ export default function HairTransplantProblemsHubPage() {
                 data-analytics-region="patient-guides-hub-footer-ctas"
               >
                 <Link
-                  href="/request-review"
+                  href={PATHWAY_CHOOSER_HREF}
                   className={fiHairauditPrimaryButtonClass("md")}
                   data-cta="patient-guides-hub-footer-request-review"
                   data-cta-destination="/request-review"

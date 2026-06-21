@@ -4,8 +4,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useI18n } from "@/components/i18n/I18nProvider";
-import { PUBLIC_CTAS } from "@/lib/marketing/publicMarketingCopy";
-import type { PatientReviewPathway } from "@/lib/patient/patientReviewPathway";
+import TrackedLink from "@/components/analytics/TrackedLink";
+import {
+  PATHWAY_CHOOSER_HREF,
+  type PatientReviewPathway,
+} from "@/lib/patient/patientReviewPathway";
 
 function isValidCaseId(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
@@ -46,8 +49,10 @@ export default function CreateCaseButton({
         ? "inline-flex items-center justify-center gap-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-4 text-center text-sm font-semibold leading-snug text-slate-900 hover:border-amber-300 hover:shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
         : "inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-amber-500 text-slate-900 font-medium hover:bg-amber-400 transition-colors disabled:opacity-60 disabled:cursor-not-allowed";
 
+  const requiresPathwayChoice = !pathway && dashboardHref === "/dashboard/patient";
+
   const runCreate = async () => {
-    if (busy) return;
+    if (busy || requiresPathwayChoice) return;
     setBusy(true);
     setCreateError(null);
 
@@ -80,6 +85,19 @@ export default function CreateCaseButton({
       setBusy(false);
     }
   };
+
+  if (requiresPathwayChoice) {
+    return (
+      <TrackedLink
+        href={PATHWAY_CHOOSER_HREF}
+        eventName="cta_choose_review_pathway_dashboard_create"
+        className={`${styles} ${className}`}
+        data-testid="dashboard-choose-review-pathway"
+      >
+        {displayLabel}
+      </TrackedLink>
+    );
+  }
 
   if (createError) {
     return (

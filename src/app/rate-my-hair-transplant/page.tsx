@@ -9,6 +9,7 @@ import ReviewProcessReassurance from "@/components/seo/ReviewProcessReassurance"
 import MedicalProcedureFaqSchema from "@/components/seo/MedicalProcedureFaqSchema";
 import { validationFunnelPages } from "@/lib/validationFunnelPages";
 import { PUBLIC_CTAS } from "@/lib/marketing/publicMarketingCopy";
+import { PATHWAY_CHOOSER_HREF } from "@/lib/patient/patientReviewPathway";
 import { fiHairauditPrimaryButtonClass } from "@/lib/fi-ui/hairauditPrimaryButton";
 import { cn } from "@/lib/utils";
 import { Section, networkButtonVariants } from "@/packages/ui";
@@ -60,7 +61,7 @@ export default function RateMyHairTransplantPage() {
               before-and-after guidance—not a simplistic score or guaranteed judgement. For full
               independent analysis, use{" "}
               <Link
-                href="/request-review"
+                href={PATHWAY_CHOOSER_HREF}
                 className="font-medium text-amber-400 hover:text-amber-300"
               >
                 Start Post-Surgery Audit
@@ -70,14 +71,14 @@ export default function RateMyHairTransplantPage() {
           }
         >
           <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Link href="/request-review" className={fiHairauditPrimaryButtonClass("lg")}>
-              {PUBLIC_CTAS.startPostSurgeryAudit}
+            <Link href={PATHWAY_CHOOSER_HREF} className={fiHairauditPrimaryButtonClass("lg")}>
+              {PUBLIC_CTAS.chooseYourReview}
             </Link>
             <Link
-              href="/request-review"
+              href="/demo-report"
               className={cn(networkButtonVariants({ variant: "secondary", size: "lg" }))}
             >
-              {PUBLIC_CTAS.startFreeHairAudit}
+              {PUBLIC_CTAS.viewSampleReport}
             </Link>
           </div>
         </PublicMarketingHero>
@@ -100,7 +101,7 @@ export default function RateMyHairTransplantPage() {
                     This is a lighter pathway. For structured independent analysis and a Clinical
                     Intelligence Report, use{" "}
                     <Link
-                      href="/request-review"
+                      href={PATHWAY_CHOOSER_HREF}
                       className="font-medium text-amber-400 hover:text-amber-300"
                     >
                       Start Post-Surgery Audit
@@ -130,7 +131,7 @@ export default function RateMyHairTransplantPage() {
                   depth.
                 </p>
                 <Link
-                  href="/request-review"
+                  href={PATHWAY_CHOOSER_HREF}
                   className={cn(fiHairauditPrimaryButtonClass("md"), "mt-5 inline-flex")}
                 >
                   {PUBLIC_CTAS.startPostSurgeryAudit}
@@ -151,7 +152,7 @@ export default function RateMyHairTransplantPage() {
                   <li>
                     Optional: download or share your card. For full analysis,{" "}
                     <Link
-                      href="/request-review"
+                      href={PATHWAY_CHOOSER_HREF}
                       className="font-medium text-amber-400 hover:text-amber-300"
                     >
                       Start Post-Surgery Audit
@@ -214,7 +215,7 @@ export default function RateMyHairTransplantPage() {
                   Use the form above for a lighter before-and-after snapshot. When you need independent
                   reassurance with structured documentation,{" "}
                   <Link
-                    href="/request-review"
+                    href={PATHWAY_CHOOSER_HREF}
                     className="font-medium text-amber-400 hover:text-amber-300"
                   >
                     Start Post-Surgery Audit
@@ -232,12 +233,10 @@ export default function RateMyHairTransplantPage() {
           description="Start Post-Surgery Audit for a Clinical Intelligence Report, or preview a sample report first."
           actions={[
             {
-              href: "/request-review",
-              label: PUBLIC_CTAS.startPostSurgeryAudit,
+              href: PATHWAY_CHOOSER_HREF,
+              label: PUBLIC_CTAS.chooseYourReview,
               variant: "primary",
-              eventName: "cta_start_post_surgery_audit_rate_my",
-              useStartFreeAuditButton: true,
-              pathway: "post_surgery",
+              eventName: "cta_choose_review_pathway_rate_my",
             },
             {
               href: "/demo-report",

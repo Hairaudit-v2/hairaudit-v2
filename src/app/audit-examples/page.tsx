@@ -8,6 +8,7 @@ import BreadcrumbListSchema from "@/components/seo/BreadcrumbListSchema";
 import { createPageMetadata } from "@/lib/seo/pageMetadata";
 import { patientIssueLibrary } from "@/lib/patientEducationIssues";
 import { PUBLIC_CTAS } from "@/lib/marketing/publicMarketingCopy";
+import { PATHWAY_CHOOSER_HREF } from "@/lib/patient/patientReviewPathway";
 import { fiHairauditPrimaryButtonClass } from "@/lib/fi-ui/hairauditPrimaryButton";
 import { cn } from "@/lib/utils";
 import { Badge, Section, networkButtonVariants } from "@/packages/ui";
@@ -90,7 +91,7 @@ export default function AuditExamplesPage() {
               Upload photos and case details for independent analysis with a Clinical Intelligence Report.
             </p>
             <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-              <Link href="/request-review" className={fiHairauditPrimaryButtonClass("md")}>
+              <Link href={PATHWAY_CHOOSER_HREF} className={fiHairauditPrimaryButtonClass("md")}>
                 {PUBLIC_CTAS.startFreeHairAudit}
               </Link>
             </div>

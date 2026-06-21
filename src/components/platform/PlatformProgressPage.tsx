@@ -16,6 +16,7 @@ import {
   type ModuleStatus,
 } from "@/content/platformProgress";
 import { PUBLIC_CTAS } from "@/lib/marketing/publicMarketingCopy";
+import { PATHWAY_CHOOSER_HREF } from "@/lib/patient/patientReviewPathway";
 import { fiHairauditPrimaryButtonClass } from "@/lib/fi-ui/hairauditPrimaryButton";
 import { cn } from "@/lib/utils";
 import {
@@ -69,7 +70,7 @@ export default function PlatformProgressPage() {
         networkLabel="HairAudit · Engineering progress"
         actions={
           <>
-            <Link href="/request-review" className={fiHairauditPrimaryButtonClass("lg")}>
+            <Link href={PATHWAY_CHOOSER_HREF} className={fiHairauditPrimaryButtonClass("lg")}>
               {PUBLIC_CTAS.startFreeHairAudit}
             </Link>
             <Link
@@ -437,7 +438,7 @@ export default function PlatformProgressPage() {
             experience evolve — with the rigor expected of enterprise medical infrastructure.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Link href="/request-review" className={fiHairauditPrimaryButtonClass("lg")}>
+            <Link href={PATHWAY_CHOOSER_HREF} className={fiHairauditPrimaryButtonClass("lg")}>
               {PUBLIC_CTAS.startFreeHairAudit}
             </Link>
             <Link

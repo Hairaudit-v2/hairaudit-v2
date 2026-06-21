@@ -1,6 +1,7 @@
 "use client";
 
 import TrackedLink from "@/components/analytics/TrackedLink";
+import { PATHWAY_CHOOSER_HREF } from "@/lib/patient/patientReviewPathway";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { cn } from "@/lib/utils";
 
@@ -35,7 +36,7 @@ export default function ProfessionalPathwayRibbon({
       <p className="mt-2 text-sm text-slate-200 leading-relaxed break-words">
         {t("marketing.professionalRibbon.bodyBefore")}{" "}
         <TrackedLink
-          href="/request-review"
+          href={PATHWAY_CHOOSER_HREF}
           eventName="cta_professional_ribbon_start_free_audit"
           className="font-medium text-amber-300 hover:text-amber-200 whitespace-normal"
         >

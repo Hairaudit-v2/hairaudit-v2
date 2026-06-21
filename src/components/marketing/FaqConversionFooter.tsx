@@ -5,6 +5,7 @@ import Link from "next/link";
 import TrackedLink from "@/components/analytics/TrackedLink";
 import { fiHairauditPrimaryButtonClass } from "@/lib/fi-ui/hairauditPrimaryButton";
 import { PUBLIC_CTAS } from "@/lib/marketing/publicMarketingCopy";
+import { PATHWAY_CHOOSER_HREF } from "@/lib/patient/patientReviewPathway";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { networkButtonVariants } from "@/packages/ui";
@@ -15,7 +16,7 @@ export default function FaqConversionFooter() {
   return (
     <div className="mt-12 flex flex-col flex-wrap gap-3 sm:mt-14 sm:flex-row">
       <TrackedLink
-        href="/request-review"
+        href={PATHWAY_CHOOSER_HREF}
         eventName="cta_start_free_audit_faq_footer"
         className={fiHairauditPrimaryButtonClass("md")}
       >

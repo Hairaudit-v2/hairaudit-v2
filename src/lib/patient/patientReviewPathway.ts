@@ -20,6 +20,9 @@ export const DEFAULT_PATIENT_REVIEW_PATHWAY: PatientReviewPathway = "post_surger
 /** Public entry point for explicit pathway selection before case creation. */
 export const PATHWAY_CHOOSER_HREF = "/request-review#choose-pathway";
 
+/** Alias for marketing CTAs — never link public surfaces directly to case creation APIs. */
+export const PATIENT_PUBLIC_REVIEW_ENTRY_HREF = PATHWAY_CHOOSER_HREF;
+
 export const MISSING_PATIENT_REVIEW_PATHWAY_ERROR =
   "Please choose a review type before starting.";
 

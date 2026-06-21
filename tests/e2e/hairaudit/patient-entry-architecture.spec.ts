@@ -66,4 +66,22 @@ test.describe("Patient entry architecture", () => {
     expect(json.ok).toBe(false);
     expect(json.error).toMatch(/choose a review type/i);
   });
+
+  test("rate-my CTA routes to pathway chooser without starting audit", async ({ page }) => {
+    await page.goto("/rate-my-hair-transplant");
+
+    const auditStart = page
+      .waitForRequest(
+        (req) => req.url().includes("/api/audit/start") && req.method() === "POST",
+        { timeout: 2000 }
+      )
+      .catch(() => null);
+
+    await page.getByRole("link", { name: "Choose Your Review" }).first().click();
+    await page.waitForURL(/\/request-review/);
+    await expect(page.locator("#choose-pathway")).toBeVisible();
+
+    const pending = await auditStart;
+    expect(pending).toBeNull();
+  });
 });

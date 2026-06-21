@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import TrackedLink from "@/components/analytics/TrackedLink";
+import { PATHWAY_CHOOSER_HREF } from "@/lib/patient/patientReviewPathway";
 
 type SampleAuditReportSectionProps = {
   theme?: "light" | "dark";
@@ -334,7 +335,7 @@ export default function SampleAuditReportSection({
               </p>
               <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
                 <TrackedLink
-                  href="/request-review"
+                  href={PATHWAY_CHOOSER_HREF}
                   eventName="cta_get_audit_sample_section"
                   className="inline-flex items-center justify-center px-8 py-4 rounded-2xl bg-amber-500 text-slate-900 font-semibold text-lg hover:bg-amber-600 transition-colors border border-amber-600/20"
                 >

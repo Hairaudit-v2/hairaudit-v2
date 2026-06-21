@@ -4,6 +4,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import HairAuditFiMarketingShell from "@/components/marketing/fi-network/HairAuditFiMarketingShell";
 import { createPageMetadata } from "@/lib/seo/pageMetadata";
 import { PUBLIC_CTAS } from "@/lib/marketing/publicMarketingCopy";
+import { PATHWAY_CHOOSER_HREF } from "@/lib/patient/patientReviewPathway";
 import { fiHairauditPrimaryButtonClass } from "@/lib/fi-ui/hairauditPrimaryButton";
 import { networkButtonVariants } from "@/packages/ui";
 import { cn } from "@/lib/utils";
@@ -444,7 +445,7 @@ export default async function PublicClinicProfilePage({
               Choose your next step based on your pathway: patient review or professional participation.
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-4">
-              <Link href="/request-review" className={fiHairauditPrimaryButtonClass("md")}>
+              <Link href={PATHWAY_CHOOSER_HREF} className={fiHairauditPrimaryButtonClass("md")}>
                 {PUBLIC_CTAS.startFreeHairAudit}
               </Link>
               <Link

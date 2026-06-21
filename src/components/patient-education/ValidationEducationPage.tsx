@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PATHWAY_CHOOSER_HREF } from "@/lib/patient/patientReviewPathway";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import ScrollReveal from "@/components/ui/ScrollReveal";
@@ -97,7 +98,7 @@ export default function ValidationEducationPage({
               </p>
               <div className="mt-5 flex flex-col sm:flex-row gap-4">
                 <Link
-                  href="/request-review"
+                  href={PATHWAY_CHOOSER_HREF}
                   className="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors"
                 >
                   Get Your Hair Transplant Score

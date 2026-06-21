@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { PATHWAY_CHOOSER_HREF } from "@/lib/patient/patientReviewPathway";
 import HairAuditScoreVisual from "@/components/seo/HairAuditScoreVisual";
 
 type CommunityCase = {
@@ -456,7 +457,7 @@ export default function RateMyHairTransplantClient() {
         <p className="mt-2 max-w-xl text-xs text-slate-500 leading-relaxed text-pretty break-words">
           For step-by-step intake, deeper review, and a shareable score suited to formal use, use{" "}
           <Link
-            href="/request-review"
+            href={PATHWAY_CHOOSER_HREF}
             className="text-amber-200/90 hover:text-amber-100 underline-offset-2 hover:underline rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
           >
             Request a formal HairAudit quality review
@@ -481,7 +482,7 @@ export default function RateMyHairTransplantClient() {
             Built for speed—not the full structured HairAudit quality pathway. When you want complete intake, a
             thorough review, and a shareable score for serious conversations, use{" "}
             <Link
-              href="/request-review"
+              href={PATHWAY_CHOOSER_HREF}
               className="text-emerald-200 underline-offset-2 hover:underline rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-200"
             >
               Request a formal HairAudit quality review

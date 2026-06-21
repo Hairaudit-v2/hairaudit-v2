@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { PUBLIC_CTAS } from "@/lib/marketing/publicMarketingCopy";
+import { PATHWAY_CHOOSER_HREF } from "@/lib/patient/patientReviewPathway";
 import HairAuditFiMarketingShell from "@/components/marketing/fi-network/HairAuditFiMarketingShell";
 import PublicTrustArchitectureBlock from "@/components/marketing/PublicTrustArchitectureBlock";
 import ReviewProcessReassurance from "@/components/seo/ReviewProcessReassurance";
@@ -142,7 +143,7 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
               <ul className="mt-3 flex flex-col gap-2 text-sm text-muted-foreground sm:flex-row sm:flex-wrap sm:gap-x-1 sm:gap-y-2">
                 <li className="sm:after:px-2 sm:after:text-muted-foreground sm:after:content-['·'] sm:last:after:content-none">
                   <Link
-                    href="/request-review"
+                    href={PATHWAY_CHOOSER_HREF}
                     className="font-medium text-amber-400 underline underline-offset-2 hover:text-amber-300"
                     data-cta="patient-guide-next-request-review"
                     data-cta-destination="/request-review"
@@ -224,7 +225,7 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
               </p>
               <div className="mt-6 flex flex-col flex-wrap gap-3 sm:flex-row">
                 <Link
-                  href="/request-review"
+                  href={PATHWAY_CHOOSER_HREF}
                   className={fiHairauditPrimaryButtonClass("md")}
                   data-cta="patient-guide-cta-request-review"
                   data-cta-destination="/request-review"

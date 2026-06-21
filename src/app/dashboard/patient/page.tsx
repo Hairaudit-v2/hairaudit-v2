@@ -16,6 +16,7 @@ import {
 } from "@/lib/patient/fetchPatientCasesForPostOpGuide";
 import { isPatientReportDelivered, resolvePatientReportDeliveryPhase } from "@/lib/patient/patientProcessingView";
 import { shouldShowPatientDashboardAnalytics } from "@/lib/patient/patientResumeReview";
+import { PATHWAY_CHOOSER_HREF } from "@/lib/patient/patientReviewPathway";
 import PatientDashboardHliGuideCard from "@/components/patient/PatientDashboardHliGuideCard";
 
 function isMissingFeatureError(error: unknown): boolean {
@@ -109,7 +110,7 @@ export default async function PatientDashboardPage() {
       submitted_at: c.submitted_at,
     }))
   );
-  const hliGuideSubmitCtaHref = openSubmitCase ? `/cases/${openSubmitCase.id}` : "/request-review";
+  const hliGuideSubmitCtaHref = openSubmitCase ? `/cases/${openSubmitCase.id}` : PATHWAY_CHOOSER_HREF;
   const showAnalytics = shouldShowPatientDashboardAnalytics(resumeModel.step);
 
   return (

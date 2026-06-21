@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import StartFreeAuditButton from "@/components/audit/StartFreeAuditButton";
 import TrackedLink from "@/components/analytics/TrackedLink";
 import HairAuditFiMarketingShell from "@/components/marketing/fi-network/HairAuditFiMarketingShell";
 import PublicTrustArchitectureBlock from "@/components/marketing/PublicTrustArchitectureBlock";
@@ -35,13 +34,6 @@ export default function DemoReportPageContent() {
               >
                 {PUBLIC_CTAS.chooseYourReview}
               </TrackedLink>
-              <StartFreeAuditButton
-                pathway="pre_surgery"
-                eventName="cta_start_pre_surgery_demo_hero"
-                className={cn(networkButtonVariants({ variant: "secondary", size: "lg" }))}
-              >
-                {PUBLIC_CTAS.startPreSurgeryReview}
-              </StartFreeAuditButton>
               <DemoReportCtaLinks />
             </div>
           </div>
@@ -99,13 +91,6 @@ export default function DemoReportPageContent() {
               >
                 {PUBLIC_CTAS.chooseYourReview}
               </TrackedLink>
-              <StartFreeAuditButton
-                pathway="pre_surgery"
-                eventName="cta_start_pre_surgery_demo_footer"
-                className={cn(networkButtonVariants({ variant: "secondary", size: "md" }))}
-              >
-                {PUBLIC_CTAS.startPreSurgeryReview}
-              </StartFreeAuditButton>
               <Link
                 href="/how-it-works"
                 className={cn(networkButtonVariants({ variant: "ghost", size: "md" }))}

@@ -12,6 +12,7 @@ import {
   GeoShortAnswer,
 } from "@/components/patient-education/GeoContentBlocks";
 import { PUBLIC_CTAS } from "@/lib/marketing/publicMarketingCopy";
+import { PATHWAY_CHOOSER_HREF } from "@/lib/patient/patientReviewPathway";
 import { fiHairauditPrimaryButtonClass } from "@/lib/fi-ui/hairauditPrimaryButton";
 import { Badge, Section, networkButtonVariants } from "@/packages/ui";
 import { cn } from "@/lib/utils";
@@ -166,7 +167,7 @@ export default function IssueEducationPage({
               HairAudit can review your photos and case timeline, then explain findings in plain language.
             </p>
             <div className="mt-6 flex flex-col flex-wrap gap-4 sm:flex-row">
-              <Link href="/request-review" className={fiHairauditPrimaryButtonClass("md")}>
+              <Link href={PATHWAY_CHOOSER_HREF} className={fiHairauditPrimaryButtonClass("md")}>
                 {PUBLIC_CTAS.startFreeHairAudit}
               </Link>
               <Link href="/demo-report" className={cn(networkButtonVariants({ variant: "secondary", size: "md" }))}>

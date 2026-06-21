@@ -19,6 +19,7 @@ import PatientPathwayChooser from "@/components/marketing/PatientPathwayChooser"
 import PublicTrustArchitectureBlock from "@/components/marketing/PublicTrustArchitectureBlock";
 import { fiHairauditPrimaryButtonClass } from "@/lib/fi-ui/hairauditPrimaryButton";
 import { PUBLIC_CTAS } from "@/lib/marketing/publicMarketingCopy";
+import { PATHWAY_CHOOSER_HREF } from "@/lib/patient/patientReviewPathway";
 import { cn } from "@/lib/utils";
 import {
   Badge,
@@ -230,7 +231,7 @@ export default function HairAuditNetworkHomePage() {
         actions={
           <>
             <TrackedLink
-              href="/request-review"
+              href={PATHWAY_CHOOSER_HREF}
               eventName="cta_start_free_audit_home_sample"
               className={cn(networkButtonVariants({ variant: "primary", size: "lg" }))}
             >
@@ -302,7 +303,7 @@ export default function HairAuditNetworkHomePage() {
         description="Start with secure upload. Add the photos you have now; the report will explain where evidence is strong and where confidence is limited."
         actions={
           <TrackedLink
-            href="/request-review"
+            href={PATHWAY_CHOOSER_HREF}
             eventName="cta_start_free_audit_home_footer"
             className={fiHairauditPrimaryButtonClass("lg")}
           >

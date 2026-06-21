@@ -7,6 +7,7 @@ import TrackedLink from "@/components/analytics/TrackedLink";
 import { createPageMetadata } from "@/lib/seo/pageMetadata";
 import { fiHairauditPrimaryButtonClass } from "@/lib/fi-ui/hairauditPrimaryButton";
 import { PUBLIC_CTAS } from "@/lib/marketing/publicMarketingCopy";
+import { PATHWAY_CHOOSER_HREF } from "@/lib/patient/patientReviewPathway";
 import { cn } from "@/lib/utils";
 import { Badge, FeatureGrid, Section, networkButtonVariants } from "@/packages/ui";
 
@@ -30,7 +31,7 @@ const pathways = [
     ],
     deliverable: "Clinical Intelligence Report focused on planning concerns, evidence strength, and questions to discuss before surgery.",
     cta: PUBLIC_CTAS.startPreSurgeryReview,
-    href: "/request-review?pathway=pre_surgery",
+    href: PATHWAY_CHOOSER_HREF,
     eventName: "cta_start_pre_surgery_services",
   },
   {
@@ -45,7 +46,7 @@ const pathways = [
     ],
     deliverable: "Clinical Intelligence Report with structured findings, confidence-aware conclusions, and practical next-step context.",
     cta: PUBLIC_CTAS.startPostSurgeryAudit,
-    href: "/request-review?pathway=post_surgery",
+    href: PATHWAY_CHOOSER_HREF,
     eventName: "cta_start_post_surgery_services",
   },
   {

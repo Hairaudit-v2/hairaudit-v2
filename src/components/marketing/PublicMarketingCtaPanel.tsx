@@ -15,8 +15,12 @@ export type PublicMarketingCtaAction = {
   label: string;
   variant?: "primary" | "secondary";
   eventName?: string;
-  /** When true, starts audit via API — requires `pathway` unless linking to chooser. */
+  /**
+   * When true, routes to the pathway chooser (never starts an audit inline).
+   * @deprecated Prefer a plain `href: PATHWAY_CHOOSER_HREF` action — kept for existing panels.
+   */
   useStartFreeAuditButton?: boolean;
+  /** Ignored — public panels must route to the pathway chooser first. */
   pathway?: PatientReviewPathway;
 };
 
@@ -67,9 +71,8 @@ export default function PublicMarketingCtaPanel({
             if (action.useStartFreeAuditButton) {
               return (
                 <StartFreeAuditButton
-                  key={`${action.href}-${action.pathway ?? "chooser"}`}
-                  pathway={action.pathway}
-                  eventName={action.eventName ?? "cta_start_free_audit_marketing_panel"}
+                  key={`${action.href}-chooser`}
+                  eventName={action.eventName ?? "cta_choose_review_pathway_marketing_panel"}
                   className={className}
                 >
                   {action.label}
