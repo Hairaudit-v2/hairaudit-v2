@@ -4,15 +4,25 @@ import { buildReportViewModel, normalizeAuditMode, type AuditMode, type AuditRep
 import { verifyRenderToken } from "@/lib/reports/internalRenderToken";
 import { renderEliteReportHtml } from "@/lib/reports/EliteReportHtml";
 import { renderPostSurgeryAuditReportHtml } from "@/lib/reports/PostSurgeryAuditReportHtml";
+import { renderPreSurgeryPlanningReportHtml } from "@/lib/reports/PreSurgeryPlanningReportHtml";
 import {
   resolvePostSurgeryAuditReport,
   shouldUsePostSurgeryReportTemplate,
 } from "@/lib/reports/postSurgeryAuditReport";
 import {
+  resolvePreSurgeryPlanningReport,
+  resolvePatientReportTemplateName,
+  shouldUsePreSurgeryReportTemplate,
+} from "@/lib/reports/preSurgeryPlanningReport";
+import {
   buildPostSurgeryReportHtmlLabelsEn,
   POST_SURGERY_OUTCOME_LABELS_EN,
   POST_SURGERY_REPAIR_LABELS_EN,
 } from "@/lib/reports/postSurgeryReportLabels";
+import {
+  buildPreSurgeryReportHtmlLabelsEn,
+  PRE_SURGERY_OUTCOME_LABELS_EN,
+} from "@/lib/reports/preSurgeryReportLabels";
 import rubric from "@/lib/audit/rubrics/hairaudit_clinical_v1.json";
 import { buildElitePrintPhotosByCategorySignedUrl } from "@/lib/pdf/elitePrintPhotoSignedUrlPipeline";
 import {
@@ -584,6 +594,25 @@ export async function GET(req: Request) {
         });
       }
     }
+    if (shouldUsePreSurgeryReportTemplate(c.patient_review_pathway, mode)) {
+      const preReport = resolvePreSurgeryPlanningReport(summary as Record<string, unknown>, {
+        caseId,
+        reportVersion: content.version,
+        patientReviewPathway: c.patient_review_pathway,
+        photosByCategory,
+      });
+      if (preReport) {
+        const outcomeLabel =
+          PRE_SURGERY_OUTCOME_LABELS_EN[preReport.planningOutcomeId] ??
+          preReport.planningOutcomeId;
+        return renderPreSurgeryPlanningReportHtml({
+          report: preReport,
+          caseId,
+          generatedAtDisplay: content.generatedAt,
+          labels: buildPreSurgeryReportHtmlLabelsEn(outcomeLabel),
+        });
+      }
+    }
     return renderEliteReportHtml(eliteVm);
   })();
   const htmlUtf8Bytes = Buffer.byteLength(html, "utf8");
@@ -592,9 +621,7 @@ export async function GET(req: Request) {
     headers: {
       "Content-Type": "text/html; charset=utf-8",
       "Cache-Control": "no-store",
-      "X-Report-Template": shouldUsePostSurgeryReportTemplate(c.patient_review_pathway, mode)
-        ? "post-surgery-audit"
-        : "elite",
+      "X-Report-Template": resolvePatientReportTemplateName(c.patient_review_pathway, mode),
       "X-Audit-Mode": mode,
       "X-Pdf-Print-Html-Bytes": String(htmlUtf8Bytes),
       "X-Pdf-Print-Image-Count": String(printPhotoStats.imageCount),

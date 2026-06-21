@@ -30,6 +30,7 @@ import { isHairAuditIntelligenceSnapshotPersistenceEnabled } from "@/lib/hairaud
 import type { LegacyUploadRow } from "@/lib/auditos/reports/adaptLegacyReportModel";
 import { getCaseFilesBucketNameForReadOnlyUse } from "@/lib/hairaudit/uploadStorage";
 import { generatePostSurgeryAuditReport } from "@/lib/reports/postSurgeryAuditReport";
+import { generatePreSurgeryPlanningReport } from "@/lib/reports/preSurgeryPlanningReport";
 import { normalizePatientReviewPathway } from "@/lib/patient/patientReviewPathway";
 
 /** Must match `REASONS` in `src/app/api/auditor/rerun/route.ts`. */
@@ -1314,7 +1315,18 @@ export const runAudit = inngest.createFunction(
                 patientReviewPathway,
               }),
             }
-          : summary;
+          : patientReviewPathway === "pre_surgery"
+            ? {
+                ...summary,
+                pre_surgery_planning_report: generatePreSurgeryPlanningReport({
+                  summary,
+                  intelligenceBundle: hairAuditIntelligenceBundle,
+                  caseId,
+                  reportVersion: nextVersion,
+                  patientReviewPathway,
+                }),
+              }
+            : summary;
 
       const finalAiScore = Number(overall?.performance_score ?? overall?.benchmark_score ?? 0);
       const { eligibility: auditorReviewEligibility, status: auditorReviewStatus, reason: auditorReviewReason } = computeAuditorReviewEligibility(finalAiScore);

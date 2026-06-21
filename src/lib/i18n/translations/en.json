@@ -874,6 +874,67 @@
           "unknown": "General"
         }
       },
+      "preSurgeryReport": {
+        "badges": {
+          "complete": "Pre-surgery review complete"
+        },
+        "hero": {
+          "title": "Your Pre-Surgery Review is Complete",
+          "subtitle": "We have independently reviewed your hair pattern, donor area, restoration suitability, and long-term treatment considerations. This report is designed to help you make a more informed decision before pursuing treatment.",
+          "outcomeLabel": "Primary planning outcome"
+        },
+        "outcomes": {
+          "strong_surgical_candidate": "STRONG SURGICAL CANDIDATE",
+          "suitable_with_long_term_planning": "SUITABLE WITH LONG-TERM PLANNING",
+          "medical_stabilisation_recommended_first": "MEDICAL STABILISATION RECOMMENDED FIRST",
+          "donor_limitations_identified": "DONOR LIMITATIONS IDENTIFIED",
+          "further_professional_review_recommended": "FURTHER PROFESSIONAL REVIEW RECOMMENDED"
+        },
+        "scorecards": {
+          "title": "Planning assessment scorecards",
+          "subtitle": "Key metrics from your independent pre-surgery planning review.",
+          "metrics": {
+            "hair_loss_progression_risk": "Hair Loss Progression Risk",
+            "donor_area_strength": "Donor Area Strength",
+            "restoration_suitability": "Restoration Suitability",
+            "estimated_graft_requirement": "Estimated Graft Requirement",
+            "long_term_preservation_score": "Long-Term Preservation Score",
+            "treatment_stabilisation_priority": "Treatment Stabilisation Priority"
+          }
+        },
+        "sections": {
+          "title": "Independent planning sections",
+          "overall_planning": "Overall Planning Assessment",
+          "hair_loss_pattern": "Hair Loss Pattern Review",
+          "donor_area": "Donor Area Review",
+          "estimated_graft_requirement": "Estimated Graft Requirement",
+          "surgical_suitability": "Surgical Suitability Review",
+          "future_progression": "Future Hair Loss and Preservation Planning",
+          "medical_treatment": "Medical Treatment Considerations"
+        },
+        "images": {
+          "title": "Your uploaded images",
+          "noPhoto": "Photo not available",
+          "views": {
+            "front": "Front Hairline View",
+            "crown": "Crown / Top View",
+            "donor": "Donor View"
+          }
+        },
+        "trust": {
+          "title": "Independent Review Completed",
+          "body": "This assessment was generated through an independent review process designed to help patients understand their hair restoration options before making treatment decisions.",
+          "neutrality": "This report is not a clinic sales recommendation. It is intended to support informed decision-making."
+        },
+        "nextSteps": {
+          "title": "Recommended Next Steps",
+          "subtitle": "Practical actions to help you feel protected before committing financially."
+        },
+        "meta": {
+          "reportId": "Report ID",
+          "pdfTitle": "Independent Pre-Surgery Planning Report"
+        }
+      },
       "postSurgeryReport": {
         "badges": {
           "complete": "Post-surgery review complete"

@@ -130,6 +130,42 @@ export const PATIENT_EXPERIENCE_ENGINE = {
     "End-to-end patient surfaces — pathway routing, intake, uploads, processing UX, and report delivery — measured against production readiness.",
 } as const;
 
+/** HA-REPORT-4B / independent review headline rollups — edit completionPercent as milestones land. */
+export const PLATFORM_CAPABILITY_ROLLUPS: readonly PatientUxFeature[] = [
+  {
+    id: "post-surgery-audit-infrastructure",
+    name: "Post-Surgery Audit Infrastructure",
+    completionPercent: 99,
+    description:
+      "Dedicated post-surgery premium procedural review report, pathway uploads, intelligence hooks, separate UI and PDF rendering, and repair guidance.",
+    focus: "Pathway B — independent post-surgical procedural review.",
+  },
+  {
+    id: "patient-report-experience",
+    name: "Patient Report Experience",
+    completionPercent: 95,
+    description:
+      "Premium report opening, procedural scorecards, eight review sections, concern flagging, image assessments, trust messaging, and recommended next steps.",
+    focus: "Patient-facing report clarity and actionability.",
+  },
+  {
+    id: "procedural-intelligence-layer",
+    name: "Procedural Intelligence Layer",
+    completionPercent: 94,
+    description:
+      "Pathway-scoped procedural integrity scoring, donor and density signals, repair intelligence, and mapping into post-surgery report generation.",
+    focus: "Procedural analytics feeding patient-safe review output.",
+  },
+  {
+    id: "independent-review-infrastructure",
+    name: "Independent Review Infrastructure",
+    completionPercent: 97,
+    description:
+      "Neutral review architecture separating clinic recommendations from independent assessment — trust surfaces, disclaimers, and dual-pathway report pipelines.",
+    focus: "Independent credibility and clinical neutrality.",
+  },
+];
+
 /** HA-DUAL-PATHWAY-1 pathway infrastructure — edit completionPercent as each path matures. */
 export const PATIENT_PATHWAY_INFRASTRUCTURE: readonly PatientUxFeature[] = [
   {
@@ -143,10 +179,10 @@ export const PATIENT_PATHWAY_INFRASTRUCTURE: readonly PatientUxFeature[] = [
   {
     id: "post-surgery-audit-infrastructure",
     name: "Post-Surgery Audit Infrastructure",
-    completionPercent: 97,
+    completionPercent: 99,
     description:
-      "Post-procedure upload gates, recovery intake, and Post-Surgery Audit Report focus: procedural quality, donor condition, density, concerns, and repair guidance.",
-    focus: "Pathway B — reviewing completed transplant evidence.",
+      "Dedicated post-surgery premium procedural review report with separate rendering, procedural integrity scoring, concern detection, image intelligence, trust architecture, repair guidance, and premium PDF generation.",
+    focus: "Pathway B — independent post-surgical procedural review.",
   },
   {
     id: "pre-surgery-review-infrastructure",
@@ -166,13 +202,6 @@ export const PATIENT_UX_FEATURES: readonly PatientUxFeature[] = [
     completionPercent: 94,
     description: "Step-by-step capture guidance with quality feedback before submission.",
     focus: "Reduce incomplete submissions and retake cycles.",
-  },
-  {
-    id: "report-readability",
-    name: "Report readability",
-    completionPercent: 86,
-    description: "Plain-language summaries, confidence callouts, and scannable finding sections.",
-    focus: "Translate clinical signals into patient-usable clarity.",
   },
   {
     id: "timeline-upload",
@@ -199,6 +228,13 @@ export const PATIENT_UX_FEATURES: readonly PatientUxFeature[] = [
 
 /** Public engineering changelog — newest first. */
 export const ENGINEERING_CHANGELOG: readonly EngineeringChangelogEntry[] = [
+  {
+    date: "2026-06-21",
+    title: "HA-REPORT-4B deployed",
+    description:
+      "HairAudit now generates a dedicated post-surgery premium procedural review report with separate rendering architecture, procedural integrity scoring, concern detection, image intelligence, trust architecture, repair guidance, and premium PDF generation.",
+    area: "Patient Experience",
+  },
   {
     date: "2026-06-21",
     title: "HA-DUAL-PATHWAY-1 deployed",

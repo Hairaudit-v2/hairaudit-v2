@@ -7,6 +7,7 @@ import {
   ENGINEERING_CHANGELOG,
   INTELLIGENCE_MODULES,
   PATIENT_EXPERIENCE_ENGINE,
+  PLATFORM_CAPABILITY_ROLLUPS,
   PATIENT_PATHWAY_INFRASTRUCTURE,
   PATIENT_UX_FEATURES,
   PLATFORM_MISSION,
@@ -221,6 +222,34 @@ export default function PlatformProgressPage() {
                 style={{ width: `${PATIENT_EXPERIENCE_ENGINE.completionPercent}%` }}
               />
             </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            {PLATFORM_CAPABILITY_ROLLUPS.map((feature) => (
+              <article
+                key={feature.id}
+                className="rounded-2xl border border-amber-300/15 bg-amber-300/[0.04] p-5 shadow-fi-panel sm:p-6"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h3 className="font-display text-lg font-semibold text-foreground">{feature.name}</h3>
+                    <p className="mt-1 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                      {feature.focus}
+                    </p>
+                  </div>
+                  <span className="font-display text-2xl font-semibold tabular-nums text-foreground">
+                    {feature.completionPercent}%
+                  </span>
+                </div>
+                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{feature.description}</p>
+                <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-amber-300/80 to-emerald-300/80"
+                    style={{ width: `${feature.completionPercent}%` }}
+                  />
+                </div>
+              </article>
+            ))}
           </div>
 
           <div className="grid gap-4 lg:grid-cols-3">

@@ -874,6 +874,67 @@
           "unknown": "General"
         }
       },
+      "preSurgeryReport": {
+        "badges": {
+          "complete": "Revisión preoperatoria completada"
+        },
+        "hero": {
+          "title": "Su revisión preoperatoria está completa",
+          "subtitle": "Hemos revisado de forma independiente su patrón capilar, área donante, idoneidad para restauración y consideraciones de tratamiento a largo plazo. Este informe está diseñado para ayudarle a tomar una decisión más informada antes de iniciar un tratamiento.",
+          "outcomeLabel": "Resultado principal de planificación"
+        },
+        "outcomes": {
+          "strong_surgical_candidate": "CANDIDATO QUIRÚRGICO FUERTE",
+          "suitable_with_long_term_planning": "IDÓNEO CON PLANIFICACIÓN A LARGO PLAZO",
+          "medical_stabilisation_recommended_first": "ESTABILIZACIÓN MÉDICA RECOMENDADA PRIMERO",
+          "donor_limitations_identified": "LIMITACIONES DEL DONANTE IDENTIFICADAS",
+          "further_professional_review_recommended": "SE RECOMIENDA REVISIÓN PROFESIONAL ADICIONAL"
+        },
+        "scorecards": {
+          "title": "Tarjetas de evaluación de planificación",
+          "subtitle": "Métricas clave de su revisión independiente de planificación preoperatoria.",
+          "metrics": {
+            "hair_loss_progression_risk": "Riesgo de progresión de la caída",
+            "donor_area_strength": "Fortaleza del área donante",
+            "restoration_suitability": "Idoneidad para restauración",
+            "estimated_graft_requirement": "Requerimiento estimado de injertos",
+            "long_term_preservation_score": "Puntuación de preservación a largo plazo",
+            "treatment_stabilisation_priority": "Prioridad de estabilización del tratamiento"
+          }
+        },
+        "sections": {
+          "title": "Secciones de planificación independiente",
+          "overall_planning": "Evaluación general de planificación",
+          "hair_loss_pattern": "Revisión del patrón de caída",
+          "donor_area": "Revisión del área donante",
+          "estimated_graft_requirement": "Requerimiento estimado de injertos",
+          "surgical_suitability": "Revisión de idoneidad quirúrgica",
+          "future_progression": "Planificación de progresión futura y preservación",
+          "medical_treatment": "Consideraciones de tratamiento médico"
+        },
+        "images": {
+          "title": "Sus imágenes subidas",
+          "noPhoto": "Foto no disponible",
+          "views": {
+            "front": "Vista frontal de la línea capilar",
+            "crown": "Vista de corona / parte superior",
+            "donor": "Vista del donante"
+          }
+        },
+        "trust": {
+          "title": "Revisión independiente completada",
+          "body": "Esta evaluación se generó mediante un proceso de revisión independiente diseñado para ayudar a los pacientes a comprender sus opciones de restauración capilar antes de tomar decisiones de tratamiento.",
+          "neutrality": "Este informe no es una recomendación de venta de una clínica. Está destinado a apoyar la toma de decisiones informada."
+        },
+        "nextSteps": {
+          "title": "Próximos pasos recomendados",
+          "subtitle": "Acciones prácticas para sentirse protegido antes de comprometerse financieramente."
+        },
+        "meta": {
+          "reportId": "ID del informe",
+          "pdfTitle": "Informe independiente de planificación preoperatoria"
+        }
+      },
       "postSurgeryReport": {
         "badges": {
           "complete": "Revisión postoperatoria completada"

@@ -103,7 +103,9 @@ import {
   hasClinicAnswersInSummary,
 } from "@/lib/reports/patientSafeSummary";
 import { resolvePostSurgeryAuditReport } from "@/lib/reports/postSurgeryAuditReport";
+import { resolvePreSurgeryPlanningReport } from "@/lib/reports/preSurgeryPlanningReport";
 import PostSurgeryAuditReportShell from "@/components/patient/PostSurgeryAuditReportShell";
+import PreSurgeryPlanningReportShell from "@/components/patient/PreSurgeryPlanningReportShell";
 import { resolvePatientSafeSummaryNarrativePresentation } from "@/lib/reports/patientSafeSummaryNarrativeTranslation";
 import { resolvePatientReviewPathwayFromCase } from "@/lib/patient/patientReviewPathway";
 import { resolvePublicSeoLocale } from "@/lib/seo/localeMetadata";
@@ -877,6 +879,14 @@ export default async function Page({
           patientReviewPathway,
         })
       : null;
+  const preSurgeryPlanningReport =
+    patientReviewPathway === "pre_surgery" && latestSummary
+      ? resolvePreSurgeryPlanningReport(latestSummary as Record<string, unknown>, {
+          caseId: c.id,
+          reportVersion: latestReport?.version,
+          patientReviewPathway,
+        })
+      : null;
   const patientSafeSummaryNarrative = await resolvePatientSafeSummaryNarrativePresentation({
     db: admin,
     caseId: c.id,
@@ -1094,7 +1104,19 @@ export default async function Page({
               fallbackReason={patientSafeSummaryNarrative.fallbackReason}
             />
           ) : null}
-          {patientShowReportContent && latestReport && !postSurgeryAuditReport ? (
+          {patientShowReportContent && latestReport && preSurgeryPlanningReport ? (
+            <PreSurgeryPlanningReportShell
+              report={preSurgeryPlanningReport}
+              statusLabel={statusDisplayLabel}
+              translatedNarrativeActive={patientSafeSummaryNarrative.translatedNarrativeActive}
+              requestedLocale={seoLocale}
+              fallbackReason={patientSafeSummaryNarrative.fallbackReason}
+            />
+          ) : null}
+          {patientShowReportContent &&
+          latestReport &&
+          !postSurgeryAuditReport &&
+          !preSurgeryPlanningReport ? (
             <PatientSafeSummaryShell
               statusLabel={statusDisplayLabel}
               observations={patientSafeSummaryNarrative.observations}
