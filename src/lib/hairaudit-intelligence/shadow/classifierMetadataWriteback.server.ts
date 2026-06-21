@@ -208,14 +208,13 @@ export function shouldOverwriteClassifierField(args: {
   forceClassifierWriteback?: boolean;
 }): boolean {
   if (args.forceClassifierWriteback) {
-    if (args.field === "corrected_at") return false;
     return true;
   }
 
   const auditorProtected = isAuditorClassifierProtected(args.existingMetadata);
 
   if (auditorProtected) {
-    if (args.field === "classifier_source" || args.field === "corrected_at") return false;
+    if (args.field === "classifier_source") return false;
     const existing = args.existingMetadata[args.field];
     if (!isFieldEmpty(existing)) return false;
   }
