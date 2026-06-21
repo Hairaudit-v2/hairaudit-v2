@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import PathwayEvidenceUploadSection from "@/components/patient/PathwayEvidenceUploadSection";
 import UploadPhotoCard, { type PhotoSlotStatus } from "@/components/patient/upload/UploadPhotoCard";
 import UploadErrorToast, { type UploadToast } from "@/components/patient/upload/UploadErrorToast";
 import { useI18n } from "@/components/i18n/I18nProvider";
@@ -18,10 +19,13 @@ import {
 } from "@/lib/patient/guidedPatientUploadWizard";
 import {
   computePathwayUploadProgress,
-  getPathwayEvidencePack,
   resolvePathwayPhotoSlotDef,
   type PatientReviewPathway,
 } from "@/lib/patient/patientReviewPathway";
+import {
+  getPatientUploadEncouragementMessageKey,
+  PATIENT_UPLOAD_ENCOURAGEMENT_PAUSE_MS,
+} from "@/lib/uploads/patientUploadEncouragementMessages";
 import {
   uploadPatientPhotoFiles,
   type PerFileUploadState,
@@ -34,6 +38,11 @@ type UploadRow = {
   storage_path: string;
   metadata: unknown;
   created_at: string;
+};
+
+type PendingEncouragement = {
+  nextPhotos: Array<{ type?: string | null }>;
+  messageKey: TranslationKey;
 };
 
 function categoryFromType(type: string): string | null {
@@ -73,13 +82,18 @@ export default function GuidedPatientUploadWizard({
   >({});
   const [toast, setToast] = useState<UploadToast | null>(null);
   const [replaceBusy, setReplaceBusy] = useState(false);
+  const [optionalRevealed, setOptionalRevealed] = useState(false);
+  const [skippedOptional, setSkippedOptional] = useState<Set<string>>(new Set());
+  const [pendingEncouragement, setPendingEncouragement] = useState<PendingEncouragement | null>(
+    null
+  );
+  const advanceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const initialView = getGuidedWizardInitialView(patientReviewPathway, initialUploads);
   const [view, setView] = useState<GuidedWizardView>(initialView);
 
   const isLocked = !caseSubmitSurfaceOpen({ status: caseStatus, submitted_at: submittedAt });
   const requiredKeys = getGuidedWizardRequiredKeys(patientReviewPathway);
-  const evidencePack = getPathwayEvidencePack(patientReviewPathway);
   const pathwayLabelKey =
     patientReviewPathway === "pre_surgery"
       ? "marketing.home.pathways.preSurgery.title"
@@ -130,6 +144,32 @@ export default function GuidedPatientUploadWizard({
     [t]
   );
 
+  const clearAdvanceTimeout = useCallback(() => {
+    if (advanceTimeoutRef.current) {
+      clearTimeout(advanceTimeoutRef.current);
+      advanceTimeoutRef.current = null;
+    }
+  }, []);
+
+  const scheduleAdvanceAfterEncouragement = useCallback(
+    (nextPhotos: Array<{ type?: string | null }>, messageKey: TranslationKey) => {
+      clearAdvanceTimeout();
+      setPendingEncouragement({ nextPhotos, messageKey });
+      const encouragementText = t(messageKey);
+      showToast(encouragementText, "success");
+
+      advanceTimeoutRef.current = setTimeout(() => {
+        setPendingEncouragement(null);
+        const nextView = resolveGuidedWizardStepAfterUpload(patientReviewPathway, nextPhotos);
+        setView(nextView);
+        advanceTimeoutRef.current = null;
+      }, PATIENT_UPLOAD_ENCOURAGEMENT_PAUSE_MS);
+    },
+    [clearAdvanceTimeout, patientReviewPathway, showToast, t]
+  );
+
+  useEffect(() => () => clearAdvanceTimeout(), [clearAdvanceTimeout]);
+
   const syncViewAfterPhotos = useCallback(
     (nextPhotos: Array<{ type?: string | null }>) => {
       const nextView = resolveGuidedWizardStepAfterUpload(patientReviewPathway, nextPhotos);
@@ -146,8 +186,50 @@ export default function GuidedPatientUploadWizard({
     return "required";
   }
 
+  function maybeEncourageRequiredUpload(
+    category: string,
+    nextUploads: UploadRow[],
+    stepBeforeUpload: number
+  ) {
+    const wasComplete = isGuidedWizardStepComplete(
+      patientReviewPathway,
+      uploads.map((u) => ({ type: u.type })),
+      stepBeforeUpload
+    );
+    const nextPhotos = nextUploads.map((u) => ({ type: u.type }));
+    const nowComplete = isGuidedWizardStepComplete(
+      patientReviewPathway,
+      nextPhotos,
+      stepBeforeUpload
+    );
+
+    if (
+      requiredKeys.includes(category) &&
+      !wasComplete &&
+      nowComplete &&
+      view.mode === "step"
+    ) {
+      const completedCount = computePathwayUploadProgress(
+        patientReviewPathway,
+        nextPhotos
+      ).completed;
+      const messageKey = getPatientUploadEncouragementMessageKey(
+        patientReviewPathway,
+        completedCount
+      );
+      if (messageKey) {
+        scheduleAdvanceAfterEncouragement(nextPhotos, messageKey);
+        return;
+      }
+    }
+
+    syncViewAfterPhotos(nextPhotos);
+  }
+
   async function uploadFiles(category: string, files: File[], isRetry = false) {
     if (isLocked || !files.length) return;
+
+    const stepBeforeUpload = view.mode === "step" ? view.stepIndex : stepIndex;
 
     setBusyCats((p) => ({ ...p, [category]: true }));
     setCategoryErrors((p) => {
@@ -184,13 +266,28 @@ export default function GuidedPatientUploadWizard({
         if (result.qualityWarning) {
           setQualityWarnings((p) => ({ ...p, [category]: result.qualityWarning! }));
         }
-        const nextPhotos = nextUploads.map((u) => ({ type: u.type }));
-        syncViewAfterPhotos(nextPhotos);
-      }
 
-      if (result.confidenceMessage) {
-        setCategorySuccess((p) => ({ ...p, [category]: result.confidenceMessage! }));
-        showToast(result.confidenceMessage, "success");
+        const isRequiredWizardStep = requiredKeys.includes(category);
+        if (isRequiredWizardStep) {
+          const completedCount = computePathwayUploadProgress(
+            patientReviewPathway,
+            nextUploads.map((u) => ({ type: u.type }))
+          ).completed;
+          const encouragementKey = getPatientUploadEncouragementMessageKey(
+            patientReviewPathway,
+            completedCount
+          );
+          if (encouragementKey) {
+            const encouragementText = t(encouragementKey);
+            setCategorySuccess((p) => ({ ...p, [category]: encouragementText }));
+          }
+          maybeEncourageRequiredUpload(category, nextUploads, stepBeforeUpload);
+        } else {
+          if (result.confidenceMessage) {
+            setCategorySuccess((p) => ({ ...p, [category]: result.confidenceMessage! }));
+            showToast(result.confidenceMessage, "success");
+          }
+        }
       }
 
       if (result.partialErrors.length > 0) {
@@ -236,6 +333,7 @@ export default function GuidedPatientUploadWizard({
   }
 
   function goToStep(index: number) {
+    if (pendingEncouragement) return;
     if (!canAccessGuidedWizardStep(index, patientReviewPathway, photosForScoring)) return;
     setView({ mode: "step", stepIndex: index });
   }
@@ -251,15 +349,38 @@ export default function GuidedPatientUploadWizard({
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json?.error ?? "Delete failed");
       deleteUpload(first.id);
-    } catch (e: unknown) {
+    } catch {
       showToast(t("patient.upload.messages.replaceFailed" as TranslationKey));
     } finally {
       setReplaceBusy(false);
     }
   }
 
-  const continueLabel = t(evidencePack.continueButtonKey as TranslationKey);
+  function toggleSkippedOptional(key: string) {
+    setSkippedOptional((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+  const continueLabel = t("patient.upload.completion.continue" as TranslationKey);
   const canContinue = allRequiredComplete && !isLocked;
+  const showingEncouragement = pendingEncouragement !== null;
+  const showCompletionChoices = view.mode === "complete" && !optionalRevealed && !showingEncouragement;
+  const showOptionalSection = view.mode === "complete" && optionalRevealed;
+
+  const extraPhotosTierOverrides = {
+    recommended: {
+      titleKey: "patient.upload.extraPhotos.accuracyPrompt",
+      descriptionKey: "patient.upload.extraPhotos.accuracyHint",
+    },
+    optional: {
+      titleKey: "patient.upload.optionalReveal.title",
+      descriptionKey: "patient.upload.optionalReveal.subcopy",
+    },
+  };
 
   return (
     <div
@@ -280,7 +401,7 @@ export default function GuidedPatientUploadWizard({
           {t("patient.upload.wizard.subcopy" as TranslationKey)}
         </p>
 
-        {view.mode === "step" ? (
+        {view.mode === "step" || showingEncouragement ? (
           <div className="space-y-2 pt-2">
             <p className="text-sm font-medium text-slate-800" data-testid="guided-upload-step-label">
               {formatTemplate(t("patient.upload.wizard.stepLabel" as TranslationKey), {
@@ -321,35 +442,135 @@ export default function GuidedPatientUploadWizard({
         ) : null}
       </header>
 
-      {view.mode === "complete" ? (
+      {showingEncouragement ? (
+        <section
+          data-testid="guided-upload-encouragement"
+          className="rounded-xl border border-emerald-200 bg-emerald-50/80 p-6 text-center sm:text-left"
+        >
+          <p className="whitespace-pre-line text-base leading-relaxed text-slate-800">
+            {t(pendingEncouragement.messageKey)}
+          </p>
+        </section>
+      ) : null}
+
+      {showCompletionChoices ? (
         <section
           data-testid="guided-upload-completion"
           className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-6 text-center sm:text-left"
         >
-          <h2 className="text-lg font-semibold text-slate-900">
-            {t("patient.upload.wizard.completionHeadline" as TranslationKey)}
-          </h2>
-          <p className="mt-2 text-sm text-slate-600">
-            {t("patient.upload.wizard.completionSubcopy" as TranslationKey)}
+          <div
+            className="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-sm font-semibold text-emerald-800"
+            data-testid="guided-upload-celebration"
+          >
+            <span aria-hidden>✓</span>
+            <span>{t("patient.upload.completion.celebration" as TranslationKey)}</span>
+          </div>
+          <p className="mt-3 text-sm text-emerald-800">
+            {t("patient.upload.completion.celebrationDetail" as TranslationKey)}
           </p>
-          {canContinue ? (
-            <Link
-              href={questionsHref}
-              data-testid="guided-upload-continue"
-              className="mt-6 inline-flex w-full items-center justify-center rounded-lg bg-amber-500 px-4 py-3 text-sm font-semibold text-slate-900 hover:bg-amber-400 sm:w-auto"
+          <h2 className="mt-4 text-lg font-semibold text-slate-900">
+            {t("patient.upload.completion.headline" as TranslationKey)}
+          </h2>
+          <p className="mt-1 text-sm text-slate-700">
+            {t("patient.upload.completion.headlineDetail" as TranslationKey)}
+          </p>
+          <p className="mt-2 text-sm text-slate-600">
+            {t("patient.upload.completion.subcopy" as TranslationKey)}
+          </p>
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            {canContinue ? (
+              <Link
+                href={questionsHref}
+                data-testid="guided-upload-continue"
+                className="inline-flex w-full items-center justify-center rounded-lg bg-amber-500 px-4 py-3 text-sm font-semibold text-slate-900 hover:bg-amber-400 sm:w-auto"
+              >
+                {continueLabel}
+              </Link>
+            ) : (
+              <span
+                data-testid="guided-upload-continue-disabled"
+                className="inline-flex w-full cursor-not-allowed items-center justify-center rounded-lg bg-gray-200 px-4 py-3 text-sm font-semibold text-gray-500 sm:w-auto"
+              >
+                {continueLabel}
+              </span>
+            )}
+            <button
+              type="button"
+              data-testid="guided-upload-add-extra"
+              onClick={() => setOptionalRevealed(true)}
+              disabled={isLocked}
+              className="inline-flex w-full items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 sm:w-auto"
             >
-              {continueLabel}
-            </Link>
-          ) : (
-            <span
-              data-testid="guided-upload-continue-disabled"
-              className="mt-6 inline-flex w-full cursor-not-allowed items-center justify-center rounded-lg bg-gray-200 px-4 py-3 text-sm font-semibold text-gray-500 sm:w-auto"
-            >
-              {continueLabel}
-            </span>
-          )}
+              {t("patient.upload.extraPhotos.addButton" as TranslationKey)}
+            </button>
+          </div>
         </section>
-      ) : currentSlotDef ? (
+      ) : null}
+
+      {showOptionalSection ? (
+        <section data-testid="guided-upload-optional-reveal" className="space-y-4">
+          <header className="space-y-2">
+            <h2 className="text-lg font-semibold text-slate-900">
+              {t("patient.upload.optionalReveal.title" as TranslationKey)}
+            </h2>
+            <p className="text-sm text-slate-600">
+              {t("patient.upload.optionalReveal.subcopy" as TranslationKey)}
+            </p>
+            <p className="text-sm font-medium text-slate-800">
+              {t("patient.upload.extraPhotos.accuracyPrompt" as TranslationKey)}
+            </p>
+            <p className="text-sm text-slate-600">
+              {t("patient.upload.extraPhotos.alreadyEnough" as TranslationKey)}
+            </p>
+          </header>
+          <PathwayEvidenceUploadSection
+            pathway={patientReviewPathway}
+            caseId={caseId}
+            locked={isLocked}
+            busyCats={busyCats}
+            uploadsByCategory={uploadsByCategory}
+            categoryErrors={categoryErrors}
+            categorySuccess={categorySuccess}
+            qualityWarnings={qualityWarnings}
+            partialErrorsByCategory={partialErrorsByCategory}
+            fileUploadStatesByCategory={fileUploadStatesByCategory}
+            failedFilesByCategory={failedFilesByCategory}
+            skippedOptional={skippedOptional}
+            visibleTiers={["recommended", "optional"]}
+            tierTitleOverrides={extraPhotosTierOverrides}
+            expandNonRequiredSections
+            onUpload={(category, files) => void uploadFiles(category, files)}
+            onDeleted={deleteUpload}
+            onRetryCategory={(category) => {
+              const failed = failedFilesByCategory[category];
+              if (failed?.length) void uploadFiles(category, failed, true);
+            }}
+            onRetryFile={(category, file) => void uploadFiles(category, [file], true)}
+            onDeleteError={(msg) => showToast(patientError(msg))}
+            onSkipOptional={toggleSkippedOptional}
+          />
+          <div className="border-t border-slate-200 pt-4">
+            {canContinue ? (
+              <Link
+                href={questionsHref}
+                data-testid="guided-upload-continue"
+                className="inline-flex w-full items-center justify-center rounded-lg bg-amber-500 px-4 py-3 text-sm font-semibold text-slate-900 hover:bg-amber-400 sm:w-auto"
+              >
+                {continueLabel}
+              </Link>
+            ) : (
+              <span
+                data-testid="guided-upload-continue-disabled"
+                className="inline-flex w-full cursor-not-allowed items-center justify-center rounded-lg bg-gray-200 px-4 py-3 text-sm font-semibold text-gray-500 sm:w-auto"
+              >
+                {continueLabel}
+              </span>
+            )}
+          </div>
+        </section>
+      ) : null}
+
+      {!showingEncouragement && view.mode === "step" && currentSlotDef ? (
         <div data-testid="guided-upload-step" data-step-key={currentKey}>
           <UploadPhotoCard
             caseId={caseId}
@@ -383,7 +604,7 @@ export default function GuidedPatientUploadWizard({
         </div>
       ) : null}
 
-      {view.mode === "step" ? (
+      {view.mode === "step" && !showingEncouragement ? (
         <nav
           className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-4"
           aria-label="Upload step navigation"

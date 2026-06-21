@@ -38,6 +38,9 @@ export default function PathwayEvidenceUploadSection({
   fileUploadStatesByCategory,
   failedFilesByCategory,
   skippedOptional,
+  visibleTiers,
+  tierTitleOverrides,
+  expandNonRequiredSections,
   onUpload,
   onDeleted,
   onRetryCategory,
@@ -58,6 +61,9 @@ export default function PathwayEvidenceUploadSection({
   fileUploadStatesByCategory?: Record<string, PerFileUploadState[]>;
   failedFilesByCategory?: Record<string, File[]>;
   skippedOptional: Set<string>;
+  visibleTiers?: readonly PathwayEvidenceTier[];
+  tierTitleOverrides?: Partial<Record<PathwayEvidenceTier, { titleKey: string; descriptionKey: string }>>;
+  expandNonRequiredSections?: boolean;
   onUpload: (category: string, files: File[]) => void;
   onDeleted: (uploadId: string) => void;
   onRetryCategory?: (category: string) => void;
@@ -66,7 +72,9 @@ export default function PathwayEvidenceUploadSection({
   onSkipOptional: (key: string) => void;
 }) {
   const { t } = useI18n();
-  const groups = uploadGroupsByPathway[pathway];
+  const groups = uploadGroupsByPathway[pathway].filter(
+    (group) => !visibleTiers || visibleTiers.includes(group.tier)
+  );
 
   function resolveSlotStatus(
     tier: PathwayEvidenceTier,
@@ -137,15 +145,19 @@ export default function PathwayEvidenceUploadSection({
           </div>
         );
 
+        const tierOverride = tierTitleOverrides?.[group.tier];
+        const sectionTitleKey = tierOverride?.titleKey ?? group.titleKey;
+        const sectionDescriptionKey = tierOverride?.descriptionKey ?? group.descriptionKey;
+
         if (group.tier === "required") {
           return (
             <section key={group.tier} data-testid="upload-required-section" className="space-y-3">
               <header>
                 <h2 className="text-lg font-semibold text-slate-900">
-                  {t(group.titleKey as TranslationKey)}
+                  {t(sectionTitleKey as TranslationKey)}
                 </h2>
                 <p className="mt-1 text-sm text-slate-600">
-                  {t(group.descriptionKey as TranslationKey)}
+                  {t(sectionDescriptionKey as TranslationKey)}
                 </p>
               </header>
               {sectionBody}
@@ -165,12 +177,12 @@ export default function PathwayEvidenceUploadSection({
             key={group.tier}
             data-testid={tierTestId}
             className="rounded-xl border border-slate-200 bg-white group"
-            open={tierDefaultOpen(group.tier)}
+            open={expandNonRequiredSections || tierDefaultOpen(group.tier)}
           >
             <summary className="cursor-pointer list-none px-4 py-3 font-medium text-slate-800 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
               <span className="flex items-center justify-between gap-2">
                 <span>
-                  {t(group.titleKey as TranslationKey)}{" "}
+                  {t(sectionTitleKey as TranslationKey)}{" "}
                   <span className="text-xs font-normal text-slate-500">
                     ({t(`patient.upload.tiers.${group.tier}.label` as TranslationKey)})
                   </span>
@@ -180,7 +192,7 @@ export default function PathwayEvidenceUploadSection({
                 </span>
               </span>
               <span className="mt-1 block text-xs font-normal text-slate-600">
-                {t(group.descriptionKey as TranslationKey)}
+                {t(sectionDescriptionKey as TranslationKey)}
               </span>
             </summary>
             <div className="space-y-4 border-t border-slate-200/80 px-3 py-4">{sectionBody}</div>

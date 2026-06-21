@@ -26,6 +26,8 @@ test.describe("Upload pathway evidence UI", () => {
 
     await expect(page.getByTestId("guided-upload-continue")).toHaveCount(0);
     await expect(page.getByTestId("guided-upload-completion")).toHaveCount(0);
+    await expect(page.getByTestId("guided-upload-add-extra")).toHaveCount(0);
+    await expect(page.getByTestId("guided-upload-optional-reveal")).toHaveCount(0);
   });
 
   test("post-surgery draft case shows guided wizard with one required card", async ({ page }) => {
@@ -49,6 +51,7 @@ test.describe("Upload pathway evidence UI", () => {
     await expect(page.getByText("Photo Facing Forward")).toHaveCount(0);
 
     await expect(page.getByTestId("guided-upload-continue")).toHaveCount(0);
+    await expect(page.getByTestId("guided-upload-add-extra")).toHaveCount(0);
   });
 
   test("continue is hidden until all required uploads complete", async ({ page }) => {
@@ -65,5 +68,7 @@ test.describe("Upload pathway evidence UI", () => {
     await expect(page.getByTestId("guided-upload-completion")).toHaveCount(0);
     await expect(page.getByTestId("guided-upload-continue")).toHaveCount(0);
     await expect(page.getByTestId("guided-upload-continue-disabled")).toHaveCount(0);
+    await expect(page.getByTestId("guided-upload-add-extra")).toHaveCount(0);
+    await expect(page.getByTestId("guided-upload-encouragement")).toHaveCount(0);
   });
 });

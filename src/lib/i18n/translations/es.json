@@ -5218,6 +5218,40 @@
         "confirmBusy": "Eliminando…",
         "cancel": "Conservar foto"
       },
+      "encouragement": {
+        "preSurgery": {
+          "1": "Excelente.\n\nAhora podemos empezar a entender su patrón capilar.\n\nQuedan 4 fotos.",
+          "2": "Genial.\n\nAhora tenemos una vista clara de un lado de su línea capilar.\n\nQuedan 3 fotos.",
+          "3": "Perfecto.\n\nAhora podemos comparar ambos lados con equilibrio.\n\nQuedan 2 fotos.",
+          "4": "Lo está haciendo muy bien.\n\nAhora podemos entender mejor su zona de la corona.\n\nQueda 1 foto.",
+          "5": "Excelente.\n\nAhora tenemos todo lo necesario para revisar su caso."
+        },
+        "postSurgery": {
+          "1": "Excelente.\n\nAhora podemos empezar a entender su resultado actual.\n\nQuedan 4 fotos.",
+          "2": "Genial.\n\nAhora tenemos una vista más cercana del área trasplantada.\n\nQuedan 3 fotos.",
+          "3": "Perfecto.\n\nAhora podemos entender mejor la cobertura general.\n\nQuedan 2 fotos.",
+          "4": "Lo está haciendo muy bien.\n\nAhora podemos revisar el área donante.\n\nQueda 1 foto.",
+          "5": "Excelente.\n\nAhora tenemos todo lo necesario para revisar su caso."
+        }
+      },
+      "completion": {
+        "celebration": "Fotos completadas",
+        "celebrationDetail": "Tenemos todo lo necesario para empezar su revisión.",
+        "headline": "Perfecto.",
+        "headlineDetail": "Ahora tenemos todo lo que necesitamos para empezar a revisar su caso.",
+        "subcopy": "Puede continuar ahora o añadir fotos extra si desea mejorar la precisión del informe.",
+        "continue": "Casi listo — Continuar"
+      },
+      "optionalReveal": {
+        "title": "Fotos extra (opcional)",
+        "subcopy": "Estas fotos son completamente opcionales, pero pueden ayudarnos a elaborar una revisión más completa si las tiene disponibles."
+      },
+      "extraPhotos": {
+        "accuracyPrompt": "¿Quiere mejorar la precisión del informe?",
+        "accuracyHint": "Las fotos extra pueden ayudarnos a entender mejor su situación.",
+        "alreadyEnough": "Ya tiene suficientes fotos para continuar, pero fotos adicionales a veces pueden ayudarnos a elaborar una revisión más sólida.",
+        "addButton": "Añadir fotos extra"
+      },
       "wizard": {
         "heading": "Su revisión independiente ha comenzado",
         "subcopy": "Solo necesitamos 5 fotos rápidas para entender bien su situación. La mayoría termina en menos de 2 minutos.",
@@ -5235,7 +5269,7 @@
           "packTitle": "Fotos antes de su cirugía",
           "purpose": "Estas fotos nos ayudan a entender su patrón capilar y si la cirugía podría ser adecuada para usted.",
           "confidenceMessage": "Fotos claras nos ayudan a darle orientación útil y fácil de entender.",
-          "continueButton": "Continuar a unas preguntas rápidas",
+          "continueButton": "Casi listo — Continuar",
           "requiredDescription": "Cinco fotos sencillas para ver su línea capilar, lados, parte superior y nuca.",
           "recommendedDescription": "Fotos extra que suelen ayudarnos a dar consejos más precisos — nunca obligatorias.",
           "optionalDescription": "Documentos o referencias — solo si ya los tiene.",
@@ -5290,7 +5324,7 @@
           "packTitle": "Fotos después de su cirugía",
           "purpose": "Estas fotos nos ayudan a entender cómo se ve hoy su trasplante y cómo está curando la nuca.",
           "confidenceMessage": "Fotos actuales nos ayudan a revisar su resultado y darle orientación clara y práctica.",
-          "continueButton": "Continuar a unas preguntas rápidas",
+          "continueButton": "Casi listo — Continuar",
           "requiredDescription": "Cinco fotos sencillas de su resultado, zona trasplantada, parte superior y nuca.",
           "recommendedDescription": "Fotos del día de la cirugía o curación temprana — útiles pero nunca obligatorias.",
           "optionalDescription": "Documentos de clínica o fotos por hitos — solo si ya las tiene.",

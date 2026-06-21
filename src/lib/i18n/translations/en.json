@@ -5220,6 +5220,40 @@
         "confirmBusy": "Removing…",
         "cancel": "Keep photo"
       },
+      "encouragement": {
+        "preSurgery": {
+          "1": "Excellent.\n\nWe can now begin understanding your hair pattern.\n\n4 photos remaining.",
+          "2": "Great.\n\nWe now have a clear view of one side of your hairline.\n\n3 photos remaining.",
+          "3": "Perfect.\n\nWe can now compare both sides evenly.\n\n2 photos remaining.",
+          "4": "You're doing great.\n\nWe can now understand your crown area more clearly.\n\n1 photo remaining.",
+          "5": "Excellent.\n\nWe now have everything needed to review your case."
+        },
+        "postSurgery": {
+          "1": "Excellent.\n\nWe can now begin understanding your current result.\n\n4 photos remaining.",
+          "2": "Great.\n\nWe now have a closer view of the transplanted area.\n\n3 photos remaining.",
+          "3": "Perfect.\n\nWe can now better understand overall coverage.\n\n2 photos remaining.",
+          "4": "You're doing great.\n\nWe can now review the donor area.\n\n1 photo remaining.",
+          "5": "Excellent.\n\nWe now have everything needed to review your case."
+        }
+      },
+      "completion": {
+        "celebration": "Photos complete",
+        "celebrationDetail": "We have everything needed to begin your review.",
+        "headline": "Perfect.",
+        "headlineDetail": "We now have everything we need to begin reviewing your case.",
+        "subcopy": "You can continue now, or add extra photos if you would like to improve report accuracy.",
+        "continue": "Almost done — Continue"
+      },
+      "optionalReveal": {
+        "title": "Extra Photos (Optional)",
+        "subcopy": "These photos are completely optional, but they may help us build a more complete review if you have them available."
+      },
+      "extraPhotos": {
+        "accuracyPrompt": "Want to improve report accuracy?",
+        "accuracyHint": "Extra photos may help us better understand your situation.",
+        "alreadyEnough": "You already have enough photos to continue, but additional photos can sometimes help us build a stronger review.",
+        "addButton": "Add Extra Photos"
+      },
       "wizard": {
         "heading": "Your Independent Review Has Started",
         "subcopy": "We just need 5 quick photos so we can understand your situation clearly. Most people finish this in under 2 minutes.",
@@ -5237,7 +5271,7 @@
           "packTitle": "Photos Before Your Surgery",
           "purpose": "These photos help us understand your hair pattern and whether surgery might be a good fit for you.",
           "confidenceMessage": "Clear photos help us give you useful, easy-to-understand guidance.",
-          "continueButton": "Continue to a few quick questions",
+          "continueButton": "Almost done — Continue",
           "requiredDescription": "Five simple photos so we can see your hairline, sides, top, and back of head.",
           "recommendedDescription": "Extra photos that often help us give sharper advice — never required.",
           "optionalDescription": "Documents or references — only if you already have them.",
@@ -5292,7 +5326,7 @@
           "packTitle": "Photos After Your Surgery",
           "purpose": "These photos help us understand how your transplant looks today and how the back of your head is healing.",
           "confidenceMessage": "Current photos help us review your result and give you clear, practical guidance.",
-          "continueButton": "Continue to a few quick questions",
+          "continueButton": "Almost done — Continue",
           "requiredDescription": "Five simple photos of your result, transplanted area, top, and back of head.",
           "recommendedDescription": "Photos from surgery day or early healing — helpful but never required.",
           "optionalDescription": "Clinic documents or milestone photos — only if you already have them.",
