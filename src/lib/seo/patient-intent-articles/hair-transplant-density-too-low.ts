@@ -135,7 +135,7 @@ export const hairTransplantDensityTooLowArticle: PatientIntentArticle = {
         },
         {
           type: "p",
-          text: "See [when is a hair transplant result final](/when-is-a-hair-transplant-final), [shock loss vs graft failure](/shock-loss-vs-graft-failure), and [can a hair transplant be audited from photos](/can-a-hair-transplant-be-audited-from-photos). A compact guide on thin results: [hair transplant too thin](/hair-transplant-too-thin). [Request an independent HairAudit review](/request-review) or [view a sample HairAudit report](/sample-report).",
+          text: "See [when is a hair transplant result final](/when-is-a-hair-transplant-final), [shock loss vs graft failure](/shock-loss-vs-graft-failure), and [can a hair transplant be audited from photos](/can-a-hair-transplant-be-audited-from-photos). A compact guide on thin results: [hair transplant too thin](/hair-transplant-too-thin). [Request an independent HairAudit review](/request-review) or [view a sample HairAudit report](/demo-report).",
         },
       ],
     },

@@ -130,7 +130,7 @@ export const whenShouldYouSeekAnIndependentHairTransplantReviewArticle: PatientI
         },
         {
           type: "p",
-          text: "Evidence prep: [what photos are needed for a proper hair transplant review](/what-photos-are-needed-for-a-proper-hair-transplant-review) (shot list) and [how to document a hair transplant problem properly](/how-to-document-a-hair-transplant-problem-properly) (timeline and files). Photo scope and honesty: [can a hair transplant be audited from photos](/can-a-hair-transplant-be-audited-from-photos). [Request an independent HairAudit review](/request-review) or [preview a sample HairAudit report](/sample-report).",
+          text: "Evidence prep: [what photos are needed for a proper hair transplant review](/what-photos-are-needed-for-a-proper-hair-transplant-review) (shot list) and [how to document a hair transplant problem properly](/how-to-document-a-hair-transplant-problem-properly) (timeline and files). Photo scope and honesty: [can a hair transplant be audited from photos](/can-a-hair-transplant-be-audited-from-photos). [Request an independent HairAudit review](/request-review) or [preview a sample HairAudit report](/demo-report).",
         },
       ],
     },

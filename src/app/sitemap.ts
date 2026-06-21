@@ -38,6 +38,7 @@ const PUBLIC_ROUTES = [
   "/follicle-intelligence",
   "/about",
   "/faq",
+  "/platform/progress",
   "/privacy",
   "/terms",
   "/disclaimer",

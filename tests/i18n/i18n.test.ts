@@ -131,7 +131,7 @@ test("isLocalizedPublicPathname: recognizes Batch 18 localized marketing routes"
   assert.equal(isLocalizedPublicPathname("/"), true);
   assert.equal(isLocalizedPublicPathname("/how-it-works"), true);
   assert.equal(isLocalizedPublicPathname("/professionals"), true);
-  assert.equal(isLocalizedPublicPathname("/sample-report"), true);
+  assert.equal(isLocalizedPublicPathname("/demo-report"), true);
   assert.equal(isLocalizedPublicPathname("/clinics"), false);
 });
 
@@ -635,7 +635,7 @@ test("createPatientSafeSummaryShellBlueprint: remains English narrative only", (
 test("getTranslation: marketing meta resolves Spanish when present", () => {
   assert.equal(
     getTranslation("marketing.meta.howItWorks.title", "es"),
-    "Cómo funcionan las auditorías de trasplante capilar | Proceso y evidencia | HairAudit"
+    "Cómo funciona el análisis independiente de HairAudit | Protección del paciente | HairAudit"
   );
 });
 

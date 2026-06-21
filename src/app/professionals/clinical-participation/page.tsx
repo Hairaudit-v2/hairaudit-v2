@@ -16,16 +16,16 @@ export default function ClinicalParticipationPage() {
       title="Clinical Participation"
       intro="Clinical participation is voluntary and designed to support documentation completeness, confidence, and quality-improvement pathways."
     >
-      <div className="space-y-6 text-slate-300">
-        <section className="rounded-2xl border border-white/10 bg-white/5 p-6">
-          <h2 className="text-xl font-semibold text-white">How clinics can participate</h2>
+      <div className="space-y-6 text-muted-foreground">
+        <section className="rounded-2xl border border-border/50 bg-card/70 shadow-fi-panel p-6">
+          <h2 className="text-xl font-semibold text-foreground">How clinics can participate</h2>
           <p className="mt-3">
             Clinics can contribute documentation when a patient requests a review. This may increase
             evidence completeness and improve confidence in case interpretation.
           </p>
         </section>
-        <section className="rounded-2xl border border-white/10 bg-white/5 p-6">
-          <h2 className="text-xl font-semibold text-white">Verified program context</h2>
+        <section className="rounded-2xl border border-border/50 bg-card/70 shadow-fi-panel p-6">
+          <h2 className="text-xl font-semibold text-foreground">Verified program context</h2>
           <p className="mt-3">
             Participation in structured documentation pathways can support transparent reporting and
             recognition-readiness over time.
@@ -36,8 +36,8 @@ export default function ClinicalParticipationPage() {
             </Link>
           </p>
         </section>
-        <section className="rounded-2xl border border-white/10 bg-white/5 p-6">
-          <h2 className="text-xl font-semibold text-white">Quality-improvement use case</h2>
+        <section className="rounded-2xl border border-border/50 bg-card/70 shadow-fi-panel p-6">
+          <h2 className="text-xl font-semibold text-foreground">Quality-improvement use case</h2>
           <p className="mt-3">
             Structured outputs may be used internally by clinics to identify consistency gaps,
             monitor documentation standards, and support evidence-informed process improvements.

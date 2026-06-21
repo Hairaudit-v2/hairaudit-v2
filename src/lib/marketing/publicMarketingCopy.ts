@@ -21,19 +21,23 @@ export const PUBLIC_CTAS = {
 
 export const PUBLIC_AUDIT_FLOW_STEPS = [
   {
+    title: "Start Free HairAudit",
+    body: "Open your secure patient pathway and choose pre-surgery review or post-surgery independent analysis.",
+  },
+  {
     title: "Upload images",
     body: "Add donor, hairline, crown, and timeline photos through the secure patient upload flow.",
   },
   {
-    title: "Intelligence review",
+    title: "Independent Analysis",
     body: "HairAudit structures your evidence for independent analysis against consistent clinical review standards.",
   },
   {
-    title: "Clinical verification",
-    body: "Findings are verified where needed so your report reflects evidence strength and documented limits.",
+    title: "Clinical Intelligence Report",
+    body: "Your report explains what the evidence supports, where confidence is limited, and documented limits.",
   },
   {
-    title: "Receive your Clinical Intelligence Report",
-    body: "Your report explains what the evidence supports, where confidence is limited, and what may be worth discussing with your clinician.",
+    title: "Next-step guidance",
+    body: "Practical guidance on what may be worth discussing with your clinician and when structured follow-up may help.",
   },
 ] as const;

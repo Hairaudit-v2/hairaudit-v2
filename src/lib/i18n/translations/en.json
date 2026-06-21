@@ -205,8 +205,8 @@
         "description": "The global quality assurance platform for hair restoration — measure surgical quality, verify outcomes and build trust through structured evidence. Part of the Follicle Intelligence Network."
       },
       "howItWorks": {
-        "title": "How Hair Transplant Audits Work | Process & Evidence | HairAudit",
-        "description": "How HairAudit delivers independent hair transplant reviews: secure photo intake, structured forensic assessment, confidence-aware reporting, and clear next steps—without clinic marketing."
+        "title": "How HairAudit Independent Analysis Works | Patient Protection | HairAudit",
+        "description": "How HairAudit delivers independent analysis: secure photo intake, Clinical Intelligence Reports, confidence-aware reporting, and patient protection—without selling surgery."
       },
       "professionals": {
         "title": "For Professionals | Independent Hair Transplant Audit Standards | HairAudit",
@@ -420,23 +420,24 @@
       "disclaimer": "Hair Longevity Institute provides the educational guide. HairAudit remains the independent audit platform. Educational content does not influence audit findings, scoring, or review outcomes."
     },
     "howItWorks": {
-      "heroTitle": "How HairAudit Reviews Your Surgery",
-      "heroSubtitle": "We use your photos and case details to build a clear, independent review.",
+      "heroTitle": "How HairAudit independent analysis works",
+      "heroSubtitle": "A structured patient pathway from secure upload to Clinical Intelligence Report and next-step guidance.",
       "ctaRequestReview": "Start Free HairAudit",
-      "ctaExampleReport": "Sample hair transplant audit report",
-      "badgeIndependent": "Independent Surgery Assessment",
-      "afterSubmitNote": "Many patients only realise something may be wrong months after surgery. HairAudit helps you understand whether your result is normal — or if something went wrong.",
+      "ctaExampleReport": "View Sample Report",
+      "badgeIndependent": "Independent patient protection",
+      "afterSubmitNote": "Many patients only realise something may be wrong months after surgery. HairAudit helps you understand whether your result is within expected recovery—or if independent review may help.",
       "stepsTitle": "Step-by-step",
-      "flowStep1": "Upload your surgery photos",
-      "flowStep2": "Our system analyzes the images",
-      "flowStep3": "A medical expert reviews the case",
-      "flowStep4": "You receive a detailed report",
+      "flowStep1": "Start your free HairAudit pathway and choose pre-surgery review or post-surgery independent analysis.",
+      "flowStep2": "Upload donor, hairline, crown, and timeline photos through the secure patient upload flow.",
+      "flowStep3": "HairAudit structures your evidence for independent analysis against consistent clinical review standards.",
+      "flowStep4": "Receive your Clinical Intelligence Report explaining evidence strength, confidence limits, and key findings.",
+      "flowStep5": "Use next-step guidance to discuss supported findings with your clinician and plan structured follow-up when appropriate.",
       "afterTitle": "What happens after your review",
-      "afterBody": "Your report explains what looks well supported, where confidence is limited, and what next steps may help.",
-      "standardsPrompt": "Looking for our technical standards?",
-      "forProfessionalsLink": "For Professionals",
+      "afterBody": "Your Clinical Intelligence Report explains what looks well supported, where confidence is limited, and what next steps may help.",
+      "standardsPrompt": "Looking for professional standards infrastructure?",
+      "forProfessionalsLink": "Professional Standards Infrastructure",
       "closingTitle": "Move from uncertainty to structured evidence",
-      "closingSubtitle": "Choose the next entry point based on what you need now."
+      "closingSubtitle": "Start Free HairAudit when you are ready, or preview a sample Clinical Intelligence Report first."
     },
     "professionals": {
       "sidebarSection": "Professional section",

@@ -205,8 +205,8 @@
         "description": "La plataforma global de garantía de calidad para restauración capilar: mida la calidad quirúrgica, verifique resultados y genere confianza con evidencia estructurada. Parte de la Follicle Intelligence Network."
       },
       "howItWorks": {
-        "title": "Cómo funcionan las auditorías de trasplante capilar | Proceso y evidencia | HairAudit",
-        "description": "Cómo HairAudit ofrece revisiones independientes de trasplante capilar: recepción segura de fotos, evaluación forense estructurada, informes con grados de confianza y próximos pasos claros, sin marketing clínico."
+        "title": "Cómo funciona el análisis independiente de HairAudit | Protección del paciente | HairAudit",
+        "description": "Cómo HairAudit ofrece análisis independiente: carga segura de fotos, Informes de Inteligencia Clínica, informes con grados de confianza y protección del paciente—sin vender cirugía."
       },
       "professionals": {
         "title": "Para profesionales | Estándares de auditoría independiente | HairAudit",
@@ -420,23 +420,24 @@
       "disclaimer": "Hair Longevity Institute proporciona la guía educativa. HairAudit sigue siendo la plataforma de auditoría independiente. El contenido educativo no influye en los hallazgos de la auditoría, la puntuación ni los resultados de la revisión."
     },
     "howItWorks": {
-      "heroTitle": "Cómo HairAudit revisa su cirugía",
-      "heroSubtitle": "Usamos sus fotos y datos del caso para elaborar una revisión clara e independiente.",
-      "ctaRequestReview": "Solicitar una auditoría de trasplante capilar",
-      "ctaExampleReport": "Informe de auditoría de ejemplo",
-      "badgeIndependent": "Evaluación quirúrgica independiente",
-      "afterSubmitNote": "Muchos pacientes solo sospechan meses después de la cirugía. HairAudit le ayuda a saber si su resultado es normal o si algo falló.",
+      "heroTitle": "Cómo funciona el análisis independiente de HairAudit",
+      "heroSubtitle": "Una vía estructurada desde la carga segura hasta el Informe de Inteligencia Clínica y la orientación de siguientes pasos.",
+      "ctaRequestReview": "Iniciar HairAudit gratuito",
+      "ctaExampleReport": "Ver informe de ejemplo",
+      "badgeIndependent": "Protección independiente del paciente",
+      "afterSubmitNote": "Muchos pacientes solo sospechan meses después de la cirugía. HairAudit le ayuda a saber si su resultado está dentro de la recuperación esperada o si una revisión independiente puede ayudar.",
       "stepsTitle": "Paso a paso",
-      "flowStep1": "Suba las fotos de su cirugía",
-      "flowStep2": "Nuestro sistema analiza las imágenes",
-      "flowStep3": "Un experto médico revisa el caso",
-      "flowStep4": "Recibe un informe detallado",
+      "flowStep1": "Inicie su vía gratuita de HairAudit y elija revisión pre-cirugía o análisis independiente post-cirugía.",
+      "flowStep2": "Suba fotos del donante, línea frontal, coronilla y cronología a través del flujo seguro de carga.",
+      "flowStep3": "HairAudit estructura su evidencia para análisis independiente con criterios clínicos consistentes.",
+      "flowStep4": "Recibe su Informe de Inteligencia Clínica con fortaleza de evidencia, límites de confianza y hallazgos clave.",
+      "flowStep5": "Use la orientación de siguientes pasos para discutir hallazgos con su clínico y planificar seguimiento estructurado.",
       "afterTitle": "Qué ocurre después de su revisión",
-      "afterBody": "Su informe explica qué está bien respaldado, dónde hay limitaciones de confianza y qué pasos pueden ayudar.",
-      "standardsPrompt": "¿Busca nuestros estándares técnicos?",
-      "forProfessionalsLink": "Para profesionales",
+      "afterBody": "Su Informe de Inteligencia Clínica explica qué está bien respaldado, dónde hay limitaciones de confianza y qué pasos pueden ayudar.",
+      "standardsPrompt": "¿Busca infraestructura de estándares profesionales?",
+      "forProfessionalsLink": "Infraestructura de estándares profesionales",
       "closingTitle": "Del desconocimiento a la evidencia estructurada",
-      "closingSubtitle": "Elija el siguiente paso según lo que necesite ahora."
+      "closingSubtitle": "Inicie HairAudit gratuito cuando esté listo, o vea primero un informe de ejemplo."
     },
     "professionals": {
       "sidebarSection": "Sección profesional",

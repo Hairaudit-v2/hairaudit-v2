@@ -100,7 +100,7 @@ export const whenIsAHairTransplantFinalArticle: PatientIntentArticle = {
         },
         {
           type: "p",
-          text: "For shedding versus survival concerns, see [shock loss vs graft failure](/shock-loss-vs-graft-failure). You can [Request an independent HairAudit review](/request-review), [view a sample HairAudit report](/sample-report), or read the [FAQ](/faq).",
+          text: "For shedding versus survival concerns, see [shock loss vs graft failure](/shock-loss-vs-graft-failure). You can [Request an independent HairAudit review](/request-review), [view a sample HairAudit report](/demo-report), or read the [FAQ](/faq).",
         },
       ],
     },

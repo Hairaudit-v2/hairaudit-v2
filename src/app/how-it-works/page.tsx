@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import HowItWorksMarketing from "@/components/marketing/HowItWorksMarketing";
+import HairAuditFiMarketingShell from "@/components/marketing/fi-network/HairAuditFiMarketingShell";
 import BreadcrumbListSchema from "@/components/seo/BreadcrumbListSchema";
 import { createLocalizedPageMetadata, resolvePublicSeoLocale } from "@/lib/seo/localeMetadata";
 
@@ -14,7 +15,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default function HowItWorksPage() {
   return (
-    <>
+    <HairAuditFiMarketingShell>
       <BreadcrumbListSchema
         items={[
           { name: "Home", pathname: "/" },
@@ -22,6 +23,6 @@ export default function HowItWorksPage() {
         ]}
       />
       <HowItWorksMarketing />
-    </>
+    </HairAuditFiMarketingShell>
   );
 }

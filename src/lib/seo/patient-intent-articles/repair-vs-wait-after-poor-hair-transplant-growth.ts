@@ -80,7 +80,7 @@ export const repairVsWaitAfterPoorHairTransplantGrowthArticle: PatientIntentArti
         },
         {
           type: "p",
-          text: "You can [request a hair transplant audit](/request-review) when you want an independent forensic read of the evidence, or compare with a [sample HairAudit report](/sample-report) first.",
+          text: "You can [Request an independent HairAudit review](/request-review) when you want an independent read of the evidence, or compare with a [sample HairAudit report](/demo-report) first.",
         },
       ],
     },

@@ -26,11 +26,11 @@ export default function VerifiedCaseHighlights({
           <h2 className="text-xs font-semibold uppercase tracking-wider text-cyan-400 mb-4">
             Verified Case Highlights
           </h2>
-          <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-8 text-center">
-            <p className="text-slate-300 font-medium">
+          <div className="rounded-2xl border border-border/50 bg-card/70 p-8 text-center shadow-fi-panel">
+            <p className="font-medium text-foreground">
               This clinic is building its verified case library.
             </p>
-            <p className="mt-2 text-sm text-slate-500">
+            <p className="mt-2 text-sm text-muted-foreground">
               Publicly verified cases will appear here as they are released.
             </p>
           </div>
@@ -49,16 +49,16 @@ export default function VerifiedCaseHighlights({
           {highlights.map((h) => (
             <div
               key={h.id}
-              className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm p-4"
+              className="rounded-xl border border-border/50 bg-card/70 p-4 shadow-fi-panel"
             >
-              <p className="text-[10px] font-mono text-slate-500 uppercase tracking-wider">
+              <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">
                 {shortCaseRef(h.id)}
               </p>
-              <p className="mt-2 text-sm font-medium text-slate-200">
+              <p className="mt-2 text-sm font-medium text-foreground">
                 Verified public audit
               </p>
               {h.submittedAt && (
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-1 text-xs text-muted-foreground">
                   {new Date(h.submittedAt).toLocaleDateString(undefined, {
                     year: "numeric",
                     month: "short",

@@ -108,7 +108,7 @@ export const badHairTransplantSignsArticle: PatientIntentArticle = {
         },
         {
           type: "p",
-          text: "You can [Request an independent HairAudit review](/request-review), [view a sample HairAudit report](/sample-report), or browse the [FAQ](/faq). If you are deciding whether now is the right time for formal review, see [when should you seek an independent hair transplant review?](/when-should-you-seek-an-independent-hair-transplant-review). The [patient guides hub](/hair-transplant-problems) lists quick topic pages and full guides by theme.",
+          text: "You can [Request an independent HairAudit review](/request-review), [view a sample HairAudit report](/demo-report), or browse the [FAQ](/faq). If you are deciding whether now is the right time for formal review, see [when should you seek an independent hair transplant review?](/when-should-you-seek-an-independent-hair-transplant-review). The [patient guides hub](/hair-transplant-problems) lists quick topic pages and full guides by theme.",
         },
       ],
     },

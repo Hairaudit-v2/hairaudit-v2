@@ -6,6 +6,7 @@ import ProfessionalsShell from "@/components/professionals/ProfessionalsShell";
 import PublicTrustArchitectureBlock from "@/components/marketing/PublicTrustArchitectureBlock";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { PUBLIC_CTAS } from "@/lib/marketing/publicMarketingCopy";
+import { fiHairauditPrimaryButtonClass } from "@/lib/fi-ui/hairauditPrimaryButton";
 import type { TranslationKey } from "@/lib/i18n/translationKeys";
 
 const CARDS: { href: string; titleKey: TranslationKey; descKey: TranslationKey }[] = [
@@ -55,27 +56,27 @@ export default function ProfessionalsHub() {
       title={t("marketing.professionals.pageTitle")}
       intro={t("marketing.professionals.pageIntro")}
     >
-      <PublicTrustArchitectureBlock className="mb-8" />
+      <PublicTrustArchitectureBlock surface="fi" className="mb-8" />
       <div className="mb-8">
         <TrackedLink
           href="/professionals/apply"
           eventName="cta_create_professional_profile_hub"
-          className="inline-flex items-center justify-center rounded-2xl bg-amber-400 px-6 py-3.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300"
+          className={fiHairauditPrimaryButtonClass("md")}
         >
           {PUBLIC_CTAS.createProfessionalProfile}
         </TrackedLink>
       </div>
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {CARDS.map((card) => (
           <div key={card.href}>
             <Link
               href={card.href}
-              className="group block rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-6 hover:border-white/20 transition-colors h-full"
+              className="group block h-full rounded-2xl border border-border/50 bg-card/70 p-6 shadow-fi-panel transition-colors hover:border-border"
             >
-              <h2 className="text-lg font-semibold text-white group-hover:text-amber-300 transition-colors">
+              <h2 className="text-lg font-semibold text-foreground transition-colors group-hover:text-amber-300">
                 {t(card.titleKey)}
               </h2>
-              <p className="mt-3 text-sm text-slate-400">{t(card.descKey)}</p>
+              <p className="mt-3 text-sm text-muted-foreground">{t(card.descKey)}</p>
             </Link>
           </div>
         ))}

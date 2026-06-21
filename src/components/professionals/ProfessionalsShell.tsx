@@ -5,6 +5,8 @@ import TrackedLink from "@/components/analytics/TrackedLink";
 import type { ReactNode } from "react";
 import { useMemo } from "react";
 import { useI18n } from "@/components/i18n/I18nProvider";
+import { PUBLIC_CTAS } from "@/lib/marketing/publicMarketingCopy";
+import { fiHairauditPrimaryButtonClass } from "@/lib/fi-ui/hairauditPrimaryButton";
 import type { TranslationKey } from "@/lib/i18n/translationKeys";
 
 const NAV_ITEMS: { href: string; labelKey: TranslationKey }[] = [
@@ -41,10 +43,10 @@ export default function ProfessionalsShell({
   );
 
   return (
-    <div className="grid lg:grid-cols-[250px_1fr] gap-8 lg:gap-10">
+    <div className="grid gap-8 lg:grid-cols-[250px_1fr] lg:gap-10">
       <aside className="lg:sticky lg:top-8 lg:self-start">
-        <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-4">
-          <p className="text-xs uppercase tracking-wider text-slate-500 font-semibold px-2 pb-2">
+        <div className="rounded-2xl border border-border/50 bg-card/70 p-4 shadow-fi-panel">
+          <p className="px-2 pb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             {t("marketing.professionals.sidebarSection")}
           </p>
           <nav className="space-y-1">
@@ -56,8 +58,8 @@ export default function ProfessionalsShell({
                   href={item.href}
                   className={`block rounded-lg px-3 py-2 text-sm transition-colors ${
                     active
-                      ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
-                      : "text-slate-300 hover:text-white hover:bg-white/5"
+                      ? "border border-amber-500/30 bg-amber-500/15 text-amber-300"
+                      : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                   }`}
                 >
                   {item.label}
@@ -69,19 +71,24 @@ export default function ProfessionalsShell({
       </aside>
 
       <div>
-        <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">{title}</h1>
-        <p className="mt-4 text-slate-400 max-w-3xl">{intro}</p>
+        <h1 className="font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+          {title}
+        </h1>
+        <p className="mt-4 max-w-3xl text-muted-foreground">{intro}</p>
         <div className="mt-8">{children}</div>
-        <p className="mt-10 text-sm text-slate-500">
+        <p className="mt-10 text-sm text-muted-foreground">
           {t("marketing.professionals.footerPatient")}{" "}
-          <Link href="/how-it-works" className="text-amber-400 hover:text-amber-300 transition-colors">
+          <Link
+            href="/how-it-works"
+            className="font-medium text-amber-400 transition-colors hover:text-amber-300"
+          >
             {t("marketing.professionals.footerHowItWorks")}
           </Link>
           {" · "}
           <TrackedLink
             href="/signup"
             eventName="cta_professional_shell_footer_signup"
-            className="text-cyan-300 hover:text-cyan-200 transition-colors"
+            className="font-medium text-cyan-300 transition-colors hover:text-cyan-200"
           >
             {t("marketing.professionals.footerCreateProfile")}
           </TrackedLink>
@@ -89,5 +96,21 @@ export default function ProfessionalsShell({
         </p>
       </div>
     </div>
+  );
+}
+
+export function ProfessionalsPrimaryCta({
+  eventName = "cta_create_professional_profile_professionals",
+}: {
+  eventName?: string;
+}) {
+  return (
+    <TrackedLink
+      href="/professionals/apply"
+      eventName={eventName}
+      className={fiHairauditPrimaryButtonClass("md")}
+    >
+      {PUBLIC_CTAS.createProfessionalProfile}
+    </TrackedLink>
   );
 }

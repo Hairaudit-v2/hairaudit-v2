@@ -50,13 +50,13 @@ export default function ScoringFrameworkPage() {
     >
       <div className="space-y-4">
         {domains.map((domain) => (
-          <section key={domain.name} className="rounded-2xl border border-white/10 bg-white/5 p-6">
-            <h2 className="text-xl font-semibold text-white">{domain.name}</h2>
-            <p className="mt-3 text-sm text-slate-400">
-              <span className="font-semibold text-slate-300">Patient explanation:</span> {domain.patient}
+          <section key={domain.name} className="rounded-2xl border border-border/50 bg-card/70 shadow-fi-panel p-6">
+            <h2 className="text-xl font-semibold text-foreground">{domain.name}</h2>
+            <p className="mt-3 text-sm text-muted-foreground">
+              <span className="font-semibold text-foreground/90">Patient explanation:</span> {domain.patient}
             </p>
-            <p className="mt-2 text-sm text-slate-400">
-              <span className="font-semibold text-slate-300">Technical explanation:</span> {domain.technical}
+            <p className="mt-2 text-sm text-muted-foreground">
+              <span className="font-semibold text-foreground/90">Technical explanation:</span> {domain.technical}
             </p>
           </section>
         ))}

@@ -90,7 +90,7 @@ export const normalDonorHealingAfterFueArticle: PatientIntentArticle = {
         },
         {
           type: "p",
-          text: "If you want an independent, evidence-based read of your timeline, you can [request a hair transplant audit](/request-review) or [view a sample HairAudit report](/sample-report).",
+          text: "If you want an independent, evidence-based read of your timeline, you can [request a hair transplant audit](/request-review) or [view a sample HairAudit report](/demo-report).",
         },
       ],
     },

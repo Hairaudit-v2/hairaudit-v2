@@ -230,12 +230,12 @@ export default async function PublicClinicProfilePage({
     <HairAuditFiMarketingShell>
       <main id="main-content" className="relative flex-1">
         <nav className="relative px-4 sm:px-6 pt-6 pb-0 max-w-4xl mx-auto" aria-label="Breadcrumb">
-          <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-500">
-            <li><Link href="/" className="hover:text-slate-300 transition-colors">Home</Link></li>
+          <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+            <li><Link href="/" className="hover:text-foreground transition-colors">Home</Link></li>
             <li aria-hidden>/</li>
-            <li><Link href="/clinics" className="hover:text-slate-300 transition-colors">Clinics</Link></li>
+            <li><Link href="/clinics" className="hover:text-foreground transition-colors">Clinics</Link></li>
             <li aria-hidden>/</li>
-            <li className="text-slate-400 truncate max-w-[200px] sm:max-w-none" aria-current="page">{row.clinic_name}</li>
+            <li className="truncate max-w-[200px] sm:max-w-none text-foreground/80" aria-current="page">{row.clinic_name}</li>
           </ol>
         </nav>
         <PublicProfileHero
@@ -345,11 +345,11 @@ export default async function PublicClinicProfilePage({
         />
 
         <section className="relative px-4 sm:px-6 py-12 sm:py-16">
-          <div className="max-w-4xl mx-auto rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-6 sm:p-8">
+          <div className="max-w-4xl mx-auto rounded-2xl border border-border/50 bg-card/70 p-6 sm:p-8 shadow-fi-panel">
             <h2 className="text-sm font-semibold uppercase tracking-wider text-cyan-400">
               Why this profile matters
             </h2>
-            <p className="mt-4 text-slate-400 leading-relaxed">
+            <p className="mt-4 text-muted-foreground leading-relaxed">
               HairAudit provides independent, evidence-based benchmarking. Profiles are based on
               evidence contribution and validated case metrics. Recognition is not purchased — it is
               earned through transparency participation, documentation quality, and consistent
@@ -365,15 +365,15 @@ export default async function PublicClinicProfilePage({
               <h2 className="text-sm font-semibold uppercase tracking-wider text-cyan-400 mb-4">
                 Participating doctors
               </h2>
-              <ul className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm divide-y divide-white/10 overflow-hidden">
+              <ul className="rounded-2xl border border-border/50 bg-card/70 divide-y divide-border/50 overflow-hidden shadow-fi-panel">
                 {doctorList.map((d, i) => (
                   <li
                     key={i}
                     className="flex flex-wrap items-center justify-between gap-3 px-5 py-4"
                   >
-                    <span className="font-medium text-white">{d.doctor_name}</span>
+                    <span className="font-medium text-foreground">{d.doctor_name}</span>
                     {d.current_award_tier && (
-                      <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                         {d.current_award_tier}
                       </span>
                     )}
@@ -391,23 +391,23 @@ export default async function PublicClinicProfilePage({
             </h2>
             <div className="grid sm:grid-cols-2 gap-4">
               {benchmarkValidated > 0 && (
-                <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-5">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                <div className="rounded-2xl border border-border/50 bg-card/70 p-5 shadow-fi-panel">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     Benchmark readiness
                   </p>
-                  <p className="mt-2 text-sm text-slate-300">
+                  <p className="mt-2 text-sm text-muted-foreground">
                     {benchmarkValidated} validated benchmark-eligible case
                     {benchmarkValidated !== 1 ? "s" : ""} contributing to recognition.
                   </p>
                 </div>
               )}
               {contributed > 0 && (
-                <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-5">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                <div className="rounded-2xl border border-border/50 bg-card/70 p-5 shadow-fi-panel">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     Documentation-led contribution
                   </p>
-                  <p className="mt-2 text-sm text-slate-300">
-                    Case documentation contributed to support fair forensic review.
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Case documentation contributed to support fair independent review.
                   </p>
                 </div>
               )}
@@ -422,11 +422,11 @@ export default async function PublicClinicProfilePage({
               </div>
               {(row.participation_status === "active" ||
                 row.participation_status === "high_transparency") && (
-                <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-5">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                <div className="rounded-2xl border border-border/50 bg-card/70 p-5 shadow-fi-panel">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     Transparency engagement
                   </p>
-                  <p className="mt-2 text-sm text-slate-300">
+                  <p className="mt-2 text-sm text-muted-foreground">
                     Active transparency participant in the HairAudit ecosystem.
                   </p>
                 </div>
@@ -436,11 +436,11 @@ export default async function PublicClinicProfilePage({
         </section>
 
         <section className="relative px-4 sm:px-6 py-16 sm:py-20">
-          <div className="max-w-4xl mx-auto rounded-2xl border border-cyan-500/20 bg-gradient-to-b from-cyan-500/10 to-violet-500/5 p-8 sm:p-10 text-center backdrop-blur-sm">
-            <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+          <div className="max-w-4xl mx-auto rounded-2xl border border-cyan-500/20 bg-gradient-to-b from-cyan-500/10 to-violet-500/5 p-8 sm:p-10 text-center shadow-fi-panel">
+            <h2 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">
               Get involved
             </h2>
-            <p className="mt-3 text-slate-400 text-sm max-w-xl mx-auto">
+            <p className="mt-3 text-muted-foreground text-sm max-w-xl mx-auto">
               Choose your next step based on your pathway: patient review or professional participation.
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-4">
