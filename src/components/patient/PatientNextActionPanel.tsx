@@ -6,6 +6,7 @@ import ReportShareButton from "@/components/reports/ReportShareButton";
 import PatientProcessingWaitingExperience from "@/components/patient/PatientProcessingWaitingExperience";
 import { CONTACT_EMAIL } from "@/lib/constants";
 import { useI18n } from "@/components/i18n/I18nProvider";
+import { resolvePatientReportDeliveryPhase } from "@/lib/patient/patientProcessingView";
 
 export type PatientNextActionVariant = "dashboard" | "case";
 
@@ -23,14 +24,6 @@ export type PatientNextActionPanelProps = {
   submittedAt?: string | null;
 };
 
-function normalizeStatus(status: string): "draft" | "processing" | "complete" | "audit_failed" {
-  const s = String(status ?? "draft").toLowerCase();
-  if (s === "submitted" || s === "processing") return "processing";
-  if (s === "complete") return "complete";
-  if (s === "audit_failed") return "audit_failed";
-  return "draft";
-}
-
 export default function PatientNextActionPanel({
   status,
   caseId,
@@ -41,7 +34,18 @@ export default function PatientNextActionPanel({
   submittedAt,
 }: PatientNextActionPanelProps) {
   const { t } = useI18n();
-  const state = normalizeStatus(status);
+  const deliveryPhase = resolvePatientReportDeliveryPhase({
+    caseStatus: status,
+    hasReportPdf: Boolean(pdfPath),
+  });
+  const state =
+    deliveryPhase === "audit_failed"
+      ? "audit_failed"
+      : deliveryPhase === "delivered"
+        ? "complete"
+        : deliveryPhase === "processing"
+          ? "processing"
+          : "draft";
   const caseHref = `/cases/${caseId}`;
   const compact = variant === "dashboard";
 
@@ -94,6 +98,7 @@ export default function PatientNextActionPanel({
   if (state === "processing") {
     return (
       <PatientProcessingWaitingExperience
+        caseId={caseId}
         caseStatus={status}
         hasReportPdf={Boolean(pdfPath)}
         notificationEmail={notificationEmail}
