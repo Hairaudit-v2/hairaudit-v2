@@ -6,6 +6,7 @@ import { z } from "zod";
 import { buildPatientUploadToAuditKeyMap } from "./patientPhotoCategoryConfig";
 import { PATIENT_PHOTO_SCHEMA as PATIENT_SCHEMA, DOCTOR_PHOTO_SCHEMA as DOCTOR_SCHEMA } from "./photoSchemas";
 import {
+  isPathwayRequiredUploadComplete,
   PATHWAY_REQUIRED_AUDIT_KEYS,
   type PatientReviewPathway,
 } from "@/lib/patient/patientReviewPathway";
@@ -331,9 +332,13 @@ export { submitterUsesDoctorSchema };
 /** Check if all required categories are satisfied for submitter */
 export function canSubmit(
   submitterType: SubmitterType,
-  photos: Array<{ type?: string; photo_key?: string; submitter_type?: string }>
+  photos: Array<{ type?: string; photo_key?: string; submitter_type?: string }>,
+  patientReviewPathway?: PatientReviewPathway
 ): boolean {
+  if (submitterType === "patient" && patientReviewPathway) {
+    return isPathwayRequiredUploadComplete(patientReviewPathway, photos);
+  }
   const completed = getCompletedCategories(submitterType, photos);
-  const required = getRequiredKeys(submitterType);
+  const required = getRequiredKeys(submitterType, patientReviewPathway);
   return required.every((k) => completed.has(k));
 }

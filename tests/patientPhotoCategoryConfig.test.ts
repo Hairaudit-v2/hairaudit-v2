@@ -90,13 +90,13 @@ test("Stage-2 hidden keys: only defs with mapsToAuditEvidenceKey appear in legac
 });
 
 test("PATIENT_UPLOAD_CATEGORY_DEFS: Stage 1 visible count + Stage 2 hidden optional", () => {
-  assert.equal(PATIENT_UPLOAD_CATEGORY_DEFS.length, 46);
+  assert.equal(PATIENT_UPLOAD_CATEGORY_DEFS.length, 53);
   assert.equal(
     PATIENT_UPLOAD_CATEGORY_DEFS.filter((d) => d.required).length,
     8
   );
   assert.equal(PATIENT_UPLOAD_CATEGORY_DEFS.filter((d) => d.visibleInUi).length, 10);
-  assert.equal(STAGE2_HIDDEN_PATIENT_UPLOAD_KEYS.length, 36);
+  assert.equal(STAGE2_HIDDEN_PATIENT_UPLOAD_KEYS.length, 43);
 });
 
 test("PatientPhotoCategorySchema accepts Stage-2 storage keys (backend-ready)", () => {

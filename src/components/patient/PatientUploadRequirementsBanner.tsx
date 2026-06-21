@@ -1,28 +1,31 @@
 "use client";
 
-import { PATIENT_REQUIRED_VIEWS_COPY } from "@/lib/uploads/patientUploadClient";
+import { useI18n } from "@/components/i18n/I18nProvider";
+import type { TranslationKey } from "@/lib/i18n/translationKeys";
+import {
+  getPathwayEvidencePack,
+  type PatientReviewPathway,
+} from "@/lib/patient/patientReviewPathway";
 
-export default function PatientUploadRequirementsBanner() {
+export default function PatientUploadRequirementsBanner({
+  patientReviewPathway,
+}: {
+  patientReviewPathway: PatientReviewPathway;
+}) {
+  const { t } = useI18n();
+  const pack = getPathwayEvidencePack(patientReviewPathway);
+
   return (
     <section
       className="rounded-xl border border-sky-200 bg-gradient-to-br from-sky-50 to-white p-4"
       aria-label="Photo requirements"
     >
-      <h2 className="text-sm font-semibold text-slate-900">{PATIENT_REQUIRED_VIEWS_COPY.title}</h2>
-      <p className="mt-1 text-sm leading-relaxed text-slate-600">{PATIENT_REQUIRED_VIEWS_COPY.body}</p>
-      <div className="mt-3 grid gap-2 sm:grid-cols-3">
-        {PATIENT_REQUIRED_VIEWS_COPY.slots.map((slot) => (
-          <div
-            key={slot.label}
-            className="rounded-lg border border-sky-100 bg-white px-3 py-2 text-center"
-          >
-            <p className="text-xs font-semibold uppercase tracking-wide text-sky-800">{slot.label}</p>
-            <p className="mt-0.5 text-xs text-slate-600">{slot.hint}</p>
-          </div>
-        ))}
-      </div>
+      <h2 className="text-sm font-semibold text-slate-900">{t(pack.titleKey as TranslationKey)}</h2>
+      <p className="mt-1 text-sm leading-relaxed text-slate-600">
+        {t(pack.purposeKey as TranslationKey)}
+      </p>
       <p className="mt-3 text-xs text-slate-500">
-        Accepted formats: JPEG, PNG, WebP. Max 50 MB per image (large phone photos are compressed automatically).
+        {t("patient.upload.formatsHint" as TranslationKey)}
       </p>
     </section>
   );

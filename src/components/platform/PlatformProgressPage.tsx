@@ -6,6 +6,8 @@ import ProgressStatusBadge from "@/components/platform/ProgressStatusBadge";
 import {
   ENGINEERING_CHANGELOG,
   INTELLIGENCE_MODULES,
+  PATIENT_EXPERIENCE_ENGINE,
+  PATIENT_PATHWAY_INFRASTRUCTURE,
   PATIENT_UX_FEATURES,
   PLATFORM_MISSION,
   type ModuleStatus,
@@ -194,6 +196,59 @@ export default function PlatformProgressPage() {
               UX surfaces actively being improved — intake clarity, report readability, and accessibility for global
               patients seeking independent review.
             </p>
+          </div>
+
+          <div className="rounded-3xl border border-emerald-300/20 bg-emerald-300/[0.06] p-6 shadow-fi-panel sm:p-8">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="max-w-2xl space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-200/90">
+                  Engine rollup
+                </p>
+                <h3 className="font-display text-2xl font-semibold text-foreground sm:text-3xl">
+                  {PATIENT_EXPERIENCE_ENGINE.name}
+                </h3>
+                <p className="text-sm leading-relaxed text-muted-foreground sm:text-base">
+                  {PATIENT_EXPERIENCE_ENGINE.description}
+                </p>
+              </div>
+              <span className="font-display text-4xl font-semibold tabular-nums text-foreground sm:text-5xl">
+                {PATIENT_EXPERIENCE_ENGINE.completionPercent}%
+              </span>
+            </div>
+            <div className="mt-5 h-2 overflow-hidden rounded-full bg-white/10">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-emerald-300/90 to-sky-300/90"
+                style={{ width: `${PATIENT_EXPERIENCE_ENGINE.completionPercent}%` }}
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-3">
+            {PATIENT_PATHWAY_INFRASTRUCTURE.map((feature) => (
+              <article
+                key={feature.id}
+                className="rounded-2xl border border-border/50 bg-card/65 p-5 shadow-fi-panel sm:p-6"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h3 className="font-display text-lg font-semibold text-foreground">{feature.name}</h3>
+                    <p className="mt-1 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                      {feature.focus}
+                    </p>
+                  </div>
+                  <span className="font-display text-2xl font-semibold tabular-nums text-foreground">
+                    {feature.completionPercent}%
+                  </span>
+                </div>
+                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{feature.description}</p>
+                <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-emerald-300/80 to-sky-300/80"
+                    style={{ width: `${feature.completionPercent}%` }}
+                  />
+                </div>
+              </article>
+            ))}
           </div>
 
           <div className="grid gap-4 lg:grid-cols-2">

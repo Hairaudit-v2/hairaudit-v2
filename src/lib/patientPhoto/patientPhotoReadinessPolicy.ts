@@ -8,6 +8,7 @@
 
 import { canSubmit } from "@/lib/auditPhotoSchemas";
 import { filterPatientPhotosForAuditUse } from "@/lib/uploads/patientPhotoAuditMeta";
+import type { PatientReviewPathway } from "@/lib/patient/patientReviewPathway";
 
 export const MONTHS_SINCE_VALUES = ["under_3", "3_6", "6_9", "9_12", "12_plus"] as const;
 export type PatientIntakeMonthsSince = (typeof MONTHS_SINCE_VALUES)[number];
@@ -167,12 +168,16 @@ export function evaluatePatientPhotoSubmitGate(args: {
   uploadRows: PatientPhotoUploadRow[];
   patientAnswers: Record<string, unknown> | null | undefined;
   stageAwareSubmitEnabled: boolean;
+  patientReviewPathway?: PatientReviewPathway;
 }): PatientPhotoSubmitGateResult {
   const patientRows = filterPatientPhotosForAuditUse(
     args.uploadRows.filter((u) => String(u.type ?? "").toLowerCase().startsWith("patient_photo:"))
   );
   const photoPayload = patientRows.map((u) => ({ type: u.type ?? undefined }));
-  const viaBaseline = canSubmit("patient", photoPayload);
+  const pathway = args.patientReviewPathway;
+  const viaBaseline = pathway
+    ? canSubmit("patient", photoPayload, pathway)
+    : canSubmit("patient", photoPayload);
 
   const monthsSince = readMonthsSinceFromPatientAnswers(args.patientAnswers ?? null);
   const milestoneSpec =

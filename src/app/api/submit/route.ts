@@ -16,6 +16,7 @@ import {
   PATIENT_ALTERNATE_OUTCOME_SUBMIT_HINT,
 } from "@/lib/patientPhoto/patientPhotoReadinessPolicy";
 import { isPatientPhotoStageAwareSubmitEnabled } from "@/lib/features/enablePatientPhotoStageAwareSubmit";
+import { normalizePatientReviewPathway } from "@/lib/patient/patientReviewPathway";
 import { filterPatientPhotosForAuditUse } from "@/lib/uploads/patientPhotoAuditMeta";
 
 function buildPhotosForPatientScoring(
@@ -51,7 +52,7 @@ export async function POST(req: Request) {
 
     const { data: c, error: caseErr } = await admin
       .from("cases")
-      .select("id,user_id,patient_id,doctor_id,clinic_id,audit_type,status,submitted_at")
+      .select("id,user_id,patient_id,doctor_id,clinic_id,audit_type,status,submitted_at,patient_review_pathway")
       .eq("id", caseId)
       .maybeSingle();
 
@@ -96,10 +97,14 @@ export async function POST(req: Request) {
         .maybeSingle();
 
       const patientAnswers = normalizedPatientAnswersFromReportRow(reportRow);
+      const patientReviewPathway = normalizePatientReviewPathway(
+        (c as { patient_review_pathway?: string | null }).patient_review_pathway
+      );
       const photoGate = evaluatePatientPhotoSubmitGate({
         uploadRows,
         patientAnswers,
         stageAwareSubmitEnabled: isPatientPhotoStageAwareSubmitEnabled(),
+        patientReviewPathway,
       });
       patientPhotoGateForMeta = photoGate;
 

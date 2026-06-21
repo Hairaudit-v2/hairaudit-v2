@@ -16,7 +16,6 @@ import {
   PATIENT_UPLOADER_REASSURANCE,
   PATIENT_UPLOADER_TIPS,
 } from "@/lib/photoSchemas";
-import ExtendedPatientPhotoUploadGroups from "@/components/patient/ExtendedPatientPhotoUploadGroups";
 import PatientImageEvidenceNudgeCallout from "@/components/patient/PatientImageEvidenceNudgeCallout";
 import EvidenceUploadGuidancePanel from "@/components/patient/EvidenceUploadGuidancePanel";
 import { computePatientImageEvidenceQualityFromCaseUploads } from "@/lib/audit/patientImageEvidenceConfidence";
@@ -28,9 +27,17 @@ import { getUploadHighlightKeys } from "@/lib/evidence/evidenceUploadUiHints";
 import { caseSubmitSurfaceOpen } from "@/lib/patient/caseSubmitStatus";
 import {
   DEFAULT_PATIENT_REVIEW_PATHWAY,
+  computePathwayUploadProgress,
+  getMissingPathwayRequiredUploadKeys,
+  getPathwayEvidencePack,
+  resolvePathwayPhotoSlotDefs,
   type PatientReviewPathway,
 } from "@/lib/patient/patientReviewPathway";
 import PatientUploadRequirementsBanner from "@/components/patient/PatientUploadRequirementsBanner";
+import PathwayEvidenceUploadSection from "@/components/patient/PathwayEvidenceUploadSection";
+import { useI18n } from "@/components/i18n/I18nProvider";
+import type { TranslationKey } from "@/lib/i18n/translationKeys";
+import { formatTemplate } from "@/lib/i18n/formatTemplate";
 import {
   PATIENT_UPLOAD_SAVE_LATER_MESSAGE,
   computeRequiredUploadProgress,
@@ -96,6 +103,7 @@ export default function PhotoUploader({
   >({});
   const [toast, setToast] = useState<UploadToast | null>(null);
   const [skippedOptional, setSkippedOptional] = useState<Set<string>>(new Set());
+  const { t } = useI18n();
 
   const prefix = submitterType === "doctor" ? "doctor_photo" : "patient_photo";
   const schema = submitterType === "doctor" ? DOCTOR_PHOTO_SCHEMA : PATIENT_PHOTO_SCHEMA;
@@ -124,12 +132,35 @@ export default function PhotoUploader({
     submitterType === "patient"
       ? getRequiredKeys("patient", patientReviewPathway)
       : getRequiredKeys(submitterType);
-  const missingRequired = requiredKeys.filter((k) => !completed.has(k));
+  const pathwayProgress =
+    submitterType === "patient"
+      ? computePathwayUploadProgress(patientReviewPathway, photosForScoring)
+      : null;
+  const missingPathwayRequired =
+    submitterType === "patient"
+      ? getMissingPathwayRequiredUploadKeys(patientReviewPathway, photosForScoring)
+      : [];
+  const missingRequired =
+    submitterType === "patient" ? missingPathwayRequired : requiredKeys.filter((k) => !completed.has(k));
   const canProceed = missingRequired.length === 0;
   const requiredProgress =
-    submitterType === "patient"
-      ? computeRequiredUploadProgress(requiredKeys, completed)
-      : null;
+    submitterType === "patient" && pathwayProgress
+      ? {
+          completed: pathwayProgress.completed,
+          total: pathwayProgress.total,
+          percent: pathwayProgress.percent,
+        }
+      : submitterType === "patient"
+        ? computeRequiredUploadProgress(requiredKeys, completed)
+        : null;
+  const evidencePack =
+    submitterType === "patient" ? getPathwayEvidencePack(patientReviewPathway) : null;
+  const pathwaySlotDefs =
+    submitterType === "patient" ? resolvePathwayPhotoSlotDefs(patientReviewPathway) : [];
+  const resolvedNextLabel =
+    submitterType === "patient" && evidencePack
+      ? t(evidencePack.continueButtonKey as TranslationKey)
+      : nextLabel;
 
   const evidenceNudges = useMemo(() => {
     if (submitterType !== "patient" || !isPatientImageEvidenceNudgesEnabled()) return [];
@@ -291,13 +322,15 @@ export default function PhotoUploader({
         <p className="mt-1 text-sm text-gray-600">
           {submitterType === "doctor"
             ? "Upload the required standardized photo set for best audit quality."
-            : "Upload at least the 3 required current photos. Extra photos can help us give you a clearer review."}
+            : evidencePack
+              ? t(evidencePack.purposeKey as TranslationKey)
+              : "Upload at least the 3 required current photos. Extra photos can help us give you a clearer review."}
         </p>
 
         {submitterType === "patient" && (
           <>
             <div className="mt-4">
-              <PatientUploadRequirementsBanner />
+              <PatientUploadRequirementsBanner patientReviewPathway={patientReviewPathway} />
             </div>
             <p className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
               {PATIENT_UPLOAD_SAVE_LATER_MESSAGE}
@@ -306,28 +339,63 @@ export default function PhotoUploader({
         )}
 
         {requiredProgress && requiredProgress.total > 0 ? (
-          <div className="mt-4">
-            <div className="flex items-center justify-between text-sm">
-              <span className="font-medium text-slate-700">Required photos progress</span>
-              <span className="text-slate-600">
-                {requiredProgress.completed} / {requiredProgress.total}
-              </span>
-            </div>
-            <div
-              className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200"
-              role="progressbar"
-              aria-valuenow={requiredProgress.percent}
-              aria-valuemin={0}
-              aria-valuemax={100}
-            >
+          <div className="mt-4 space-y-3">
+            <div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-medium text-slate-700">
+                  {t("patient.upload.progress.required" as TranslationKey)}
+                </span>
+                <span className="text-slate-600">
+                  {requiredProgress.completed} / {requiredProgress.total}
+                </span>
+              </div>
               <div
-                className="h-full rounded-full bg-amber-500 transition-all duration-300"
-                style={{ width: `${requiredProgress.percent}%` }}
-              />
+                className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200"
+                role="progressbar"
+                aria-valuenow={requiredProgress.percent}
+                aria-valuemin={0}
+                aria-valuemax={100}
+              >
+                <div
+                  className="h-full rounded-full bg-amber-500 transition-all duration-300"
+                  style={{ width: `${requiredProgress.percent}%` }}
+                />
+              </div>
+              {canProceed ? (
+                <p className="mt-2 text-sm font-medium text-emerald-700">
+                  {t("patient.upload.progress.requiredComplete" as TranslationKey)}
+                </p>
+              ) : null}
             </div>
-            {canProceed ? (
-              <p className="mt-2 text-sm font-medium text-emerald-700">
-                All required photos uploaded — you can submit when ready.
+            {pathwayProgress && pathwayProgress.recommendedTotal > 0 ? (
+              <div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-medium text-slate-700">
+                    {t("patient.upload.progress.recommended" as TranslationKey)}
+                  </span>
+                  <span className="text-slate-600">
+                    {pathwayProgress.recommendedCompleted} / {pathwayProgress.recommendedTotal}
+                  </span>
+                </div>
+                <div
+                  className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200"
+                  role="progressbar"
+                  aria-valuenow={pathwayProgress.recommendedPercent}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                >
+                  <div
+                    className="h-full rounded-full bg-sky-400 transition-all duration-300"
+                    style={{ width: `${pathwayProgress.recommendedPercent}%` }}
+                  />
+                </div>
+              </div>
+            ) : null}
+            {pathwayProgress && pathwayProgress.optionalAvailable > 0 ? (
+              <p className="text-xs text-slate-500">
+                {formatTemplate(t("patient.upload.progress.optionalAvailable" as TranslationKey), {
+                  count: String(pathwayProgress.optionalAvailable),
+                })}
               </p>
             ) : null}
           </div>
@@ -356,12 +424,20 @@ export default function PhotoUploader({
           </div>
           {missingRequired.length > 0 && (
             <div className="text-sm text-amber-700">
-              Still needed:{" "}
+              {t("patient.upload.progress.stillNeeded" as TranslationKey)}:{" "}
               {missingRequired
-                .map((k) => schema.find((d) => d.key === k)?.title ?? k)
+                .map((k) => {
+                  const def = pathwaySlotDefs.find((d) => d.key === k);
+                  return def ? t(def.labelKey as TranslationKey) : k;
+                })
                 .join(", ")}
             </div>
           )}
+          {evidencePack ? (
+            <div className="text-sm text-slate-600">
+              {t(evidencePack.confidenceMessageKey as TranslationKey)}
+            </div>
+          ) : null}
         </div>
 
         {isLocked && (
@@ -394,73 +470,74 @@ export default function PhotoUploader({
       </header>
 
       <div className="space-y-4">
-        {schema.map((def) => {
-          const hidden = def.required === false && skippedOptional.has(def.key);
-          if (hidden) return null;
+        {submitterType === "patient" ? (
+          <PathwayEvidenceUploadSection
+            pathway={patientReviewPathway}
+            caseId={caseId}
+            locked={isLocked}
+            busyCats={busyCats}
+            uploadsByCategory={uploadsByCategory}
+            highlightCategoryKeys={evidenceUi?.highlightKeys}
+            categoryErrors={categoryErrors}
+            categorySuccess={categorySuccess}
+            qualityWarnings={qualityWarnings}
+            partialErrorsByCategory={partialErrorsByCategory}
+            fileUploadStatesByCategory={fileUploadStatesByCategory}
+            failedFilesByCategory={failedFilesByCategory}
+            skippedOptional={skippedOptional}
+            onUpload={(cat, files) => {
+              void uploadFiles(cat, files);
+            }}
+            onDeleted={deleteUpload}
+            onRetryCategory={(cat) => {
+              const failed = failedFilesByCategory[cat];
+              if (failed?.length) void uploadFiles(cat, failed, true);
+            }}
+            onRetryFile={(cat, file) => void uploadFiles(cat, file, true)}
+            onDeleteError={(msg) => showToast(msg)}
+            onSkipOptional={(key) => toggleSkipped(key)}
+          />
+        ) : (
+          schema.map((def) => {
+            const hidden = def.required === false && skippedOptional.has(def.key);
+            if (hidden) return null;
 
-          return (
-            <UploadPhotoCard
-              key={def.key}
-              caseId={caseId}
-              category={def.key}
-              title={def.title}
-              help={def.help}
-              quickTips={def.quickTips}
-              slotStatus={resolveSlotStatus(def, def.key, evidenceUi?.highlightKeys.has(def.key))}
-              min={def.min}
-              max={def.max}
-              accept={def.accept ?? "image/*"}
-              existing={uploadsByCategory[def.key] ?? []}
-              locked={isLocked}
-              emphasize={evidenceUi?.highlightKeys.has(def.key) ?? false}
-              showCantProvide={def.required === false && submitterType === "patient"}
-              errorMessage={categoryErrors[def.key]}
-              successMessage={categorySuccess[def.key]}
-              qualityWarning={qualityWarnings[def.key]}
-              partialErrors={partialErrorsByCategory[def.key]}
-              fileUploadStates={fileUploadStatesByCategory[def.key]}
-              failedFiles={failedFilesByCategory[def.key]}
-              onRetry={() => {
-                const failed = failedFilesByCategory[def.key];
-                if (failed?.length) void uploadFiles(def.key, failed, true);
-              }}
-              onRetryFile={(file) => void uploadFiles(def.key, [file], true)}
-              onSkip={() => toggleSkipped(def.key)}
-              onUpload={(files) => uploadFiles(def.key, files)}
-              onDeleted={deleteUpload}
-              onDeleteError={(msg) => showToast(msg)}
-            />
-          );
-        })}
+            return (
+              <UploadPhotoCard
+                key={def.key}
+                caseId={caseId}
+                category={def.key}
+                title={def.title}
+                help={def.help}
+                quickTips={def.quickTips}
+                slotStatus={resolveSlotStatus(def, def.key, evidenceUi?.highlightKeys.has(def.key))}
+                min={def.min}
+                max={def.max}
+                accept={def.accept ?? "image/*"}
+                existing={uploadsByCategory[def.key] ?? []}
+                locked={isLocked}
+                emphasize={evidenceUi?.highlightKeys.has(def.key) ?? false}
+                showCantProvide={def.required === false && submitterType === "patient"}
+                errorMessage={categoryErrors[def.key]}
+                successMessage={categorySuccess[def.key]}
+                qualityWarning={qualityWarnings[def.key]}
+                partialErrors={partialErrorsByCategory[def.key]}
+                fileUploadStates={fileUploadStatesByCategory[def.key]}
+                failedFiles={failedFilesByCategory[def.key]}
+                onRetry={() => {
+                  const failed = failedFilesByCategory[def.key];
+                  if (failed?.length) void uploadFiles(def.key, failed, true);
+                }}
+                onRetryFile={(file) => void uploadFiles(def.key, [file], true)}
+                onSkip={() => toggleSkipped(def.key)}
+                onUpload={(files) => uploadFiles(def.key, files)}
+                onDeleted={deleteUpload}
+                onDeleteError={(msg) => showToast(msg)}
+              />
+            );
+          })
+        )}
       </div>
-
-      {submitterType === "patient" && (
-        <ExtendedPatientPhotoUploadGroups
-          locked={isLocked}
-          busyCats={busyCats}
-          uploadsByCategory={uploadsByCategory}
-          onUpload={(cat, files) => {
-            void uploadFiles(cat, files);
-          }}
-          onDeleted={deleteUpload}
-          skin="audit"
-          extendedGroupOrderHint={patientPhotoStageGuidance?.extendedGroupOrderHint}
-          highlightCategoryKeys={submitterType === "patient" ? evidenceUi?.highlightKeys : undefined}
-          categoryErrors={categoryErrors}
-          categorySuccess={categorySuccess}
-          qualityWarnings={qualityWarnings}
-          partialErrorsByCategory={partialErrorsByCategory}
-          fileUploadStatesByCategory={fileUploadStatesByCategory}
-          failedFilesByCategory={failedFilesByCategory}
-          onRetryCategory={(cat) => {
-            const failed = failedFilesByCategory[cat];
-            if (failed?.length) void uploadFiles(cat, failed, true);
-          }}
-          onRetryFile={(cat, file) => void uploadFiles(cat, [file], true)}
-          onDeleteError={(msg) => showToast(msg)}
-          caseId={caseId}
-        />
-      )}
 
       {submitterType === "patient" && (
         <p className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
@@ -484,14 +561,20 @@ export default function PhotoUploader({
       <div className="rounded-xl border border-slate-200 bg-white p-4">
         <h2 className="font-semibold text-slate-900">Review Summary</h2>
         <ul className="mt-2 space-y-1 text-sm text-slate-600">
-          {schema.map((def) => {
-            const count = uploadsByCategory[def.key]?.length ?? 0;
-            const ok = count >= def.min;
+          {(submitterType === "patient" ? pathwaySlotDefs : schema).map((def) => {
+            const key = def.key;
+            const title =
+              submitterType === "patient"
+                ? t((def as (typeof pathwaySlotDefs)[number]).labelKey as TranslationKey)
+                : (def as (typeof schema)[number]).title;
+            const min = def.min;
+            const count = uploadsByCategory[key]?.length ?? 0;
+            const ok = min > 0 ? count >= min : count > 0;
             return (
-              <li key={def.key} className="flex justify-between">
-                <span>{def.title}</span>
+              <li key={key} className="flex justify-between">
+                <span>{title}</span>
                 <span className={ok ? "text-green-600" : "text-amber-600"}>
-                  {count} / {def.min} min {ok ? "✓" : ""}
+                  {count} / {min} min {ok ? "✓" : ""}
                 </span>
               </li>
             );
@@ -513,11 +596,11 @@ export default function PhotoUploader({
               href={nextHref}
               className="rounded-md px-4 py-2 font-medium bg-amber-500 text-slate-900 hover:bg-amber-400"
             >
-              {nextLabel}
+              {resolvedNextLabel}
             </Link>
           ) : (
             <span className="rounded-md px-4 py-2 font-medium cursor-not-allowed bg-gray-200 text-gray-500">
-              {nextLabel}
+              {resolvedNextLabel}
             </span>
           )
         ) : (

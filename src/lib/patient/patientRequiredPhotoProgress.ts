@@ -1,9 +1,11 @@
 import {
-  getCompletedCategories,
-  getRequiredKeys,
-  type SubmitterType,
-} from "@/lib/auditPhotoSchemas";
-import { PATIENT_PHOTO_SCHEMA } from "@/lib/photoSchemas";
+  DEFAULT_PATIENT_REVIEW_PATHWAY,
+  getMissingPathwayRequiredUploadKeys,
+  isPathwayRequiredUploadComplete,
+  requiredPhotoKeys,
+  resolvePathwayPhotoSlotDef,
+  type PatientReviewPathway,
+} from "@/lib/patient/patientReviewPathway";
 
 export type RequiredPhotoProgress = {
   completedCount: number;
@@ -14,30 +16,31 @@ export type RequiredPhotoProgress = {
   isComplete: boolean;
 };
 
-function titleForKey(submitterType: SubmitterType, key: string): string {
-  const schema = submitterType === "patient" ? PATIENT_PHOTO_SCHEMA : [];
-  return schema.find((d) => d.key === key)?.title ?? key.replace(/_/g, " ");
+function titleForPathwayKey(pathway: PatientReviewPathway, key: string): string {
+  const def = resolvePathwayPhotoSlotDef(pathway, key);
+  return def?.title ?? key.replace(/_/g, " ");
 }
 
 /**
  * Required-category completion for patient dashboard / progress UIs.
- * Counts satisfied required views (front, top, donor) — not raw upload row count.
+ * Uses pathway-specific required upload keys.
  */
 export function computePatientRequiredPhotoProgress(
-  uploads: Array<{ type?: string | null }>
+  uploads: Array<{ type?: string | null }>,
+  patientReviewPathway: PatientReviewPathway = DEFAULT_PATIENT_REVIEW_PATHWAY
 ): RequiredPhotoProgress {
   const photos = uploads.map((u) => ({ type: u.type ?? undefined }));
-  const completed = getCompletedCategories("patient", photos);
-  const required = [...getRequiredKeys("patient")];
-  const missingKeys = required.filter((k) => !completed.has(k));
-  const completedCount = required.length - missingKeys.length;
+  const totalRequired = requiredPhotoKeys[patientReviewPathway].length;
+  const missingKeys = getMissingPathwayRequiredUploadKeys(patientReviewPathway, photos);
+  const completedCount = totalRequired - missingKeys.length;
+  const isComplete = isPathwayRequiredUploadComplete(patientReviewPathway, photos);
 
   return {
     completedCount,
-    totalRequired: required.length,
-    percent: required.length > 0 ? Math.round((completedCount / required.length) * 100) : 0,
+    totalRequired,
+    percent: totalRequired > 0 ? Math.round((completedCount / totalRequired) * 100) : 0,
     missingKeys,
-    missingLabels: missingKeys.map((k) => titleForKey("patient", k)),
-    isComplete: missingKeys.length === 0,
+    missingLabels: missingKeys.map((k) => titleForPathwayKey(patientReviewPathway, k)),
+    isComplete,
   };
 }

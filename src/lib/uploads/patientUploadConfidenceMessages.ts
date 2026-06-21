@@ -36,6 +36,19 @@ const BY_CATEGORY: Record<string, string> = {
   preop_crown: "Great — this crown view helps us understand coverage.",
   day0_recipient: "Thank you — this documents your recipient area on surgery day.",
   day0_donor: "Thank you — this documents your donor area on surgery day.",
+  preop_wet_top: "Thank you — wet-hair views often sharpen density assessment.",
+  preop_hairline_closeup: "Great — hairline detail helps planning discussions.",
+  preop_clinic_quote: "Thank you — clinic documents add useful planning context.",
+  preop_styling_reference: "Thank you — styling reference helps set realistic expectations.",
+  preop_family_pattern: "Thank you — family pattern context supports progression outlook.",
+  current_recipient_closeup: "Excellent — recipient detail helps us review placement and density.",
+  postop_wet_recipient: "Thank you — wet recipient views clarify density and coverage.",
+  preop_donor_closeup: "Great — donor close-up adds important detail for your review.",
+  graft_count_board: "Thank you — graft count records help reconcile documented numbers.",
+  postop_day1_recipient: "Thank you — day-one photos document early healing on the hairline.",
+  postop_week1_recipient: "Thank you — one-week photos help track early recovery.",
+  postop_month3_front: "Thank you — three-month progress adds longitudinal context.",
+  postop_month6_front: "Thank you — six-month photos help judge mid-cycle results.",
 };
 
 export function getPatientUploadConfidenceMessage(category: string): string {

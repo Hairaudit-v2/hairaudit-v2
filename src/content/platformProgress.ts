@@ -122,16 +122,44 @@ export const INTELLIGENCE_MODULES: readonly IntelligenceModule[] = [
   },
 ];
 
+/** Overall patient experience engine readiness (rollup). */
+export const PATIENT_EXPERIENCE_ENGINE = {
+  name: "Patient Experience Engine",
+  completionPercent: 96,
+  description:
+    "End-to-end patient surfaces — pathway routing, intake, uploads, processing UX, and report delivery — measured against production readiness.",
+} as const;
+
+/** HA-DUAL-PATHWAY-1 pathway infrastructure — edit completionPercent as each path matures. */
+export const PATIENT_PATHWAY_INFRASTRUCTURE: readonly PatientUxFeature[] = [
+  {
+    id: "patient-pathway-architecture",
+    name: "Patient Pathway Architecture",
+    completionPercent: 100,
+    description:
+      "Homepage dual-pathway entry, case creation routing, and pathway persistence across the patient funnel.",
+    focus: "Pre-Surgery Review and Post-Surgery Audit split at intake.",
+  },
+  {
+    id: "post-surgery-audit-infrastructure",
+    name: "Post-Surgery Audit Infrastructure",
+    completionPercent: 95,
+    description:
+      "Post-procedure upload gates, recovery intake, donor trauma and overharvesting intelligence, and result-audit report focus.",
+    focus: "Pathway B — reviewing completed transplant evidence.",
+  },
+  {
+    id: "pre-surgery-review-infrastructure",
+    name: "Pre-Surgery Review Infrastructure",
+    completionPercent: 90,
+    description:
+      "Pre-operative photo requirements, planning intake, suitability and graft estimation intelligence, and pre-surgery report focus.",
+    focus: "Pathway A — planning before surgery.",
+  },
+];
+
 /** Patient experience improvements — edit completionPercent as UX work lands. */
 export const PATIENT_UX_FEATURES: readonly PatientUxFeature[] = [
-  {
-    id: "dual-pathway-intake",
-    name: "Dual patient pathway architecture",
-    completionPercent: 82,
-    description:
-      "Separate pre-surgery planning and post-surgery audit paths with tailored uploads, intake, intelligence modules, and report focus.",
-    focus: "Route patients to the right review experience from the homepage.",
-  },
   {
     id: "photo-intake",
     name: "Guided photo intake",
@@ -173,9 +201,9 @@ export const PATIENT_UX_FEATURES: readonly PatientUxFeature[] = [
 export const ENGINEERING_CHANGELOG: readonly EngineeringChangelogEntry[] = [
   {
     date: "2026-06-21",
-    title: "Dual patient pathway architecture (HA-DUAL-PATHWAY-1)",
+    title: "HA-DUAL-PATHWAY-1 deployed",
     description:
-      "Homepage and intake now split pre-surgery review and post-surgery audit paths with pathway-specific uploads, questions, intelligence execution, and report focus areas.",
+      "HairAudit now supports two patient pathways end-to-end: Pre-Surgery Review and Post-Surgery Audit. Each pathway has dedicated upload requirements, intake logic, intelligence execution, and report focus areas.",
     area: "Patient Experience",
   },
   {

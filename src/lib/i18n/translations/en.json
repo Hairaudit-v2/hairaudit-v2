@@ -4993,5 +4993,166 @@
         }
       }
     }
+  },
+  "patient": {
+    "upload": {
+      "formatsHint": "Accepted formats: JPEG, PNG, WebP, and PDF where noted. Max 50 MB per file (large phone photos are compressed automatically).",
+      "tiers": {
+        "required": {
+          "title": "Required evidence",
+          "label": "Required",
+          "description": "These photos are needed before you can continue."
+        },
+        "recommended": {
+          "title": "Recommended evidence",
+          "label": "Recommended",
+          "description": "Extra angles that often sharpen your review."
+        },
+        "optional": {
+          "title": "Optional evidence",
+          "label": "Optional",
+          "description": "Helpful context — never required to continue."
+        }
+      },
+      "progress": {
+        "required": "Required evidence complete",
+        "requiredComplete": "All required photos uploaded — you can continue when ready.",
+        "recommended": "Recommended evidence",
+        "optionalAvailable": "{{count}} optional uploads available to strengthen your review",
+        "stillNeeded": "Still needed"
+      },
+      "pathways": {
+        "preSurgery": {
+          "packTitle": "Pre-Surgery Planning Photos",
+          "purpose": "These photos help us assess your hair pattern, donor area, and whether surgery is likely to be suitable.",
+          "confidenceMessage": "Clear planning photos help us discuss candidacy, donor strength, and graft range with more confidence.",
+          "continueButton": "Continue to pre-surgery questions",
+          "requiredDescription": "Five views we use to understand your hair pattern, temples, crown, and donor area before surgery.",
+          "recommendedDescription": "Optional detail that often improves graft planning and hairline discussions.",
+          "optionalDescription": "Documents and references that add planning context if you have them.",
+          "photos": {
+            "preop_front": {
+              "title": "Front hairline",
+              "description": "Face the camera straight on so we can see your hairline and frontal density — key for candidacy and hairline planning."
+            },
+            "preop_left": {
+              "title": "Left temple / side",
+              "description": "Your left profile helps us assess temple recession and side coverage before any procedure."
+            },
+            "preop_right": {
+              "title": "Right temple / side",
+              "description": "Your right profile balances the side view so we can compare symmetry and recession pattern."
+            },
+            "preop_top": {
+              "title": "Crown / top",
+              "description": "A view from above shows crown and mid-scalp thinning — important for graft range and area prioritization."
+            },
+            "preop_donor_rear": {
+              "title": "Donor area (back)",
+              "description": "The back of your head shows donor density and reserve — central to suitability and long-term planning."
+            },
+            "preop_wet_top": {
+              "title": "Wet hair top view",
+              "description": "Damp hair on top reveals true scalp show-through and helps estimate density more accurately."
+            },
+            "preop_hairline_closeup": {
+              "title": "Hairline close-up",
+              "description": "A closer front photo clarifies miniaturization and design options along the hairline."
+            },
+            "preop_donor_closeup": {
+              "title": "Donor close-up",
+              "description": "A closer donor photo helps us judge hair calibre and extraction suitability."
+            },
+            "preop_clinic_quote": {
+              "title": "Previous clinic quote",
+              "description": "A quote or plan from a clinic helps us compare proposed graft counts with what your photos support."
+            },
+            "preop_styling_reference": {
+              "title": "Current hair length / styling reference",
+              "description": "How you usually wear your hair sets realistic expectations for coverage and styling after surgery."
+            },
+            "preop_family_pattern": {
+              "title": "Family hair loss pattern (if relevant)",
+              "description": "Family pattern photos help discuss long-term progression risk alongside a surgical plan."
+            }
+          }
+        },
+        "postSurgery": {
+          "packTitle": "Post-Surgery Result Photos",
+          "purpose": "These photos help us review your transplant result, donor condition, density, and whether repair planning may be needed.",
+          "confidenceMessage": "Current result and donor photos help us assess density, placement, and repair options with clearer context.",
+          "continueButton": "Continue to post-surgery questions",
+          "requiredDescription": "Current views of your result, recipient zone, crown, and donor — the core set for an independent audit.",
+          "recommendedDescription": "Surgery-day and healing photos that often clarify graft placement and donor handling.",
+          "optionalDescription": "Clinic documents and milestone photos if you have them — useful but never required.",
+          "photos": {
+            "preop_front": {
+              "title": "Current front view",
+              "description": "How your hairline and front density look today — the baseline for result and design review."
+            },
+            "current_recipient_closeup": {
+              "title": "Current recipient area close-up",
+              "description": "A close view of the transplanted zone shows graft direction, gaps, and density where it matters most."
+            },
+            "preop_top": {
+              "title": "Current crown / top view",
+              "description": "The top and crown reveal coverage and density across the treated area."
+            },
+            "preop_donor_rear": {
+              "title": "Current donor area",
+              "description": "The back of your head shows donor condition, scarring, and signs of overharvesting."
+            },
+            "preop_donor_closeup": {
+              "title": "Donor close-up",
+              "description": "Fine detail in the donor helps us assess punch marks, density loss, and repair implications."
+            },
+            "day0_recipient": {
+              "title": "Immediate post-op graft placement",
+              "description": "Surgery-day recipient photos document graft spacing and placement at the source."
+            },
+            "day0_donor": {
+              "title": "Immediate post-op donor photo",
+              "description": "Surgery-day donor photos show extraction pattern and acute donor trauma."
+            },
+            "postop_wet_recipient": {
+              "title": "Wet hair recipient view",
+              "description": "Damp hair over the recipient area reveals true density and any thin spots."
+            },
+            "any_preop": {
+              "title": "Pre-surgery comparison photo",
+              "description": "Before-surgery photos help us compare starting point with your current result."
+            },
+            "postop_day0": {
+              "title": "Healing progression images",
+              "description": "Early healing photos show how grafts and donor settled in the first days."
+            },
+            "graft_count_board": {
+              "title": "Clinic graft count document",
+              "description": "Graft count records help reconcile claimed numbers with visible evidence."
+            },
+            "preop_clinic_quote": {
+              "title": "Clinic quote or treatment plan",
+              "description": "Your clinic plan adds context for what was promised versus what photos show."
+            },
+            "postop_day1_recipient": {
+              "title": "Day 1 recipient photo",
+              "description": "Day-one views capture early crusting and graft retention on the hairline."
+            },
+            "postop_week1_recipient": {
+              "title": "Day 7 recipient photo",
+              "description": "One-week photos show early healing trajectory on the recipient area."
+            },
+            "postop_month3_front": {
+              "title": "Month 3 progress photo",
+              "description": "Three-month front views show early growth and shock-loss recovery."
+            },
+            "postop_month6_front": {
+              "title": "Month 6 progress photo",
+              "description": "Six-month photos help judge mid-cycle density and hairline maturation."
+            }
+          }
+        }
+      }
+    }
   }
 }

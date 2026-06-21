@@ -4991,5 +4991,166 @@
         }
       }
     }
+  },
+  "patient": {
+    "upload": {
+      "formatsHint": "Formatos aceptados: JPEG, PNG, WebP y PDF cuando se indique. Máx. 50 MB por archivo (las fotos grandes del móvil se comprimen automáticamente).",
+      "tiers": {
+        "required": {
+          "title": "Evidencia obligatoria",
+          "label": "Obligatoria",
+          "description": "Estas fotos son necesarias antes de continuar."
+        },
+        "recommended": {
+          "title": "Evidencia recomendada",
+          "label": "Recomendada",
+          "description": "Ángulos extra que suelen mejorar su revisión."
+        },
+        "optional": {
+          "title": "Evidencia opcional",
+          "label": "Opcional",
+          "description": "Contexto útil — nunca obligatorio para continuar."
+        }
+      },
+      "progress": {
+        "required": "Evidencia obligatoria completa",
+        "requiredComplete": "Todas las fotos obligatorias subidas — puede continuar cuando quiera.",
+        "recommended": "Evidencia recomendada",
+        "optionalAvailable": "{{count}} subidas opcionales disponibles para reforzar su revisión",
+        "stillNeeded": "Aún falta"
+      },
+      "pathways": {
+        "preSurgery": {
+          "packTitle": "Fotos de planificación preoperatoria",
+          "purpose": "Estas fotos nos ayudan a evaluar su patrón capilar, zona donante y si la cirugía probablemente sea adecuada.",
+          "confidenceMessage": "Fotos claras de planificación nos permiten hablar de candidatura, fuerza donante y rango de injertos con más confianza.",
+          "continueButton": "Continuar a preguntas preoperatorias",
+          "requiredDescription": "Cinco vistas para entender su patrón capilar, sienes, coronilla y donante antes de la cirugía.",
+          "recommendedDescription": "Detalle opcional que suele mejorar la planificación de injertos y la línea frontal.",
+          "optionalDescription": "Documentos y referencias que aportan contexto de planificación si los tiene.",
+          "photos": {
+            "preop_front": {
+              "title": "Línea frontal",
+              "description": "De frente a la cámara para ver la línea capilar y densidad frontal — clave para candidatura y planificación."
+            },
+            "preop_left": {
+              "title": "Sien / lateral izquierdo",
+              "description": "El perfil izquierdo ayuda a evaluar recesión temporal y cobertura lateral antes del procedimiento."
+            },
+            "preop_right": {
+              "title": "Sien / lateral derecho",
+              "description": "El perfil derecho equilibra la vista lateral para comparar simetría y patrón de recesión."
+            },
+            "preop_top": {
+              "title": "Coronilla / parte superior",
+              "description": "Vista desde arriba que muestra adelgazamiento en coronilla y mid-scalp — importante para rango de injertos."
+            },
+            "preop_donor_rear": {
+              "title": "Zona donante (parte posterior)",
+              "description": "La parte posterior muestra densidad y reserva donante — central para idoneidad y planificación a largo plazo."
+            },
+            "preop_wet_top": {
+              "title": "Parte superior con cabello húmedo",
+              "description": "El cabello húmedo en la parte superior revela el cuero cabelludo y ayuda a estimar densidad con más precisión."
+            },
+            "preop_hairline_closeup": {
+              "title": "Primer plano de la línea frontal",
+              "description": "Una foto frontal más cercana aclara miniaturización y opciones de diseño en la línea capilar."
+            },
+            "preop_donor_closeup": {
+              "title": "Primer plano del donante",
+              "description": "Un primer plano del donante ayuda a juzgar calibre capilar e idoneidad de extracción."
+            },
+            "preop_clinic_quote": {
+              "title": "Presupuesto previo de clínica",
+              "description": "Un presupuesto o plan de clínica ayuda a comparar injertos propuestos con lo que muestran sus fotos."
+            },
+            "preop_styling_reference": {
+              "title": "Referencia de longitud / peinado actual",
+              "description": "Cómo lleva el cabello habitualmente marca expectativas realistas de cobertura y peinado tras la cirugía."
+            },
+            "preop_family_pattern": {
+              "title": "Patrón familiar de alopecia (si aplica)",
+              "description": "Fotos del patrón familiar ayudan a hablar del riesgo de progresión a largo plazo junto al plan quirúrgico."
+            }
+          }
+        },
+        "postSurgery": {
+          "packTitle": "Fotos del resultado postoperatorio",
+          "purpose": "Estas fotos nos ayudan a revisar su resultado, estado del donante, densidad y si puede hacer falta planificar una reparación.",
+          "confidenceMessage": "Fotos actuales del resultado y donante nos permiten evaluar densidad, colocación y opciones de reparación con más contexto.",
+          "continueButton": "Continuar a preguntas postoperatorias",
+          "requiredDescription": "Vistas actuales del resultado, zona receptora, coronilla y donante — el núcleo de una auditoría independiente.",
+          "recommendedDescription": "Fotos del día de la cirugía y curación que suelen aclarar colocación de injertos y manejo del donante.",
+          "optionalDescription": "Documentos de clínica y fotos por hitos si las tiene — útiles pero nunca obligatorias.",
+          "photos": {
+            "preop_front": {
+              "title": "Vista frontal actual",
+              "description": "Cómo se ve hoy su línea frontal y densidad anterior — base para revisar resultado y diseño."
+            },
+            "current_recipient_closeup": {
+              "title": "Primer plano de la zona receptora",
+              "description": "Un primer plano de la zona trasplantada muestra dirección de injertos, huecos y densidad donde más importa."
+            },
+            "preop_top": {
+              "title": "Vista actual de coronilla / parte superior",
+              "description": "La parte superior y coronilla revelan cobertura y densidad en el área tratada."
+            },
+            "preop_donor_rear": {
+              "title": "Zona donante actual",
+              "description": "La parte posterior muestra estado del donante, cicatrices y signos de sobre-extracción."
+            },
+            "preop_donor_closeup": {
+              "title": "Primer plano del donante",
+              "description": "El detalle fino del donante ayuda a evaluar marcas de punch, pérdida de densidad e implicaciones de reparación."
+            },
+            "day0_recipient": {
+              "title": "Colocación de injertos justo postoperatorio",
+              "description": "Fotos del día de la cirugía en la zona receptora documentan espaciado y colocación en origen."
+            },
+            "day0_donor": {
+              "title": "Foto donante inmediata postoperatoria",
+              "description": "Fotos donantes del día de la cirugía muestran patrón de extracción y trauma agudo del donante."
+            },
+            "postop_wet_recipient": {
+              "title": "Vista receptora con cabello húmedo",
+              "description": "Cabello húmedo sobre la zona receptora revela densidad real y zonas finas."
+            },
+            "any_preop": {
+              "title": "Foto de comparación preoperatoria",
+              "description": "Fotos antes de la cirugía ayudan a comparar el punto de partida con su resultado actual."
+            },
+            "postop_day0": {
+              "title": "Imágenes de evolución de la curación",
+              "description": "Fotos de curación temprana muestran cómo se asentaron injertos y donante en los primeros días."
+            },
+            "graft_count_board": {
+              "title": "Documento de conteo de injertos de clínica",
+              "description": "Registros de conteo ayudan a conciliar cifras declaradas con la evidencia visible."
+            },
+            "preop_clinic_quote": {
+              "title": "Presupuesto o plan de tratamiento de clínica",
+              "description": "Su plan clínico aporta contexto sobre lo prometido frente a lo que muestran las fotos."
+            },
+            "postop_day1_recipient": {
+              "title": "Foto receptora día 1",
+              "description": "Vistas del primer día capturan costras tempranas y retención de injertos en la línea frontal."
+            },
+            "postop_week1_recipient": {
+              "title": "Foto receptora día 7",
+              "description": "Fotos de una semana muestran la trayectoria de curación temprana en la zona receptora."
+            },
+            "postop_month3_front": {
+              "title": "Foto de progreso mes 3",
+              "description": "Vistas frontales a tres meses muestran crecimiento temprano y recuperación del shock loss."
+            },
+            "postop_month6_front": {
+              "title": "Foto de progreso mes 6",
+              "description": "Fotos a seis meses ayudan a juzgar densidad a mitad de ciclo y maduración de la línea frontal."
+            }
+          }
+        }
+      }
+    }
   }
 }

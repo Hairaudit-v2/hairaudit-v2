@@ -4,6 +4,8 @@ import React from "react";
 import UploadPhotoCard, { type PhotoSlotStatus } from "@/components/patient/upload/UploadPhotoCard";
 import { isExtendedPatientUploadsEnabled } from "@/lib/features/enableExtendedPatientUploads";
 import type { PatientUploadCategoryKey } from "@/lib/patientPhotoCategoryConfig";
+import type { PatientReviewPathway } from "@/lib/patient/patientReviewPathway";
+import { filterUploadCategoriesForPathway } from "@/lib/patient/patientReviewPathway";
 import {
   getPatientExtendedUploadGroupsResolved,
   PATIENT_EXTENDED_UPLOAD_MICROCOPY,
@@ -56,6 +58,7 @@ export default function ExtendedPatientPhotoUploadGroups({
   onRetryCategory,
   onRetryFile,
   onDeleteError,
+  patientReviewPathway,
 }: {
   enabled?: boolean;
   locked: boolean;
@@ -76,6 +79,8 @@ export default function ExtendedPatientPhotoUploadGroups({
   onRetryCategory?: (category: string) => void;
   onRetryFile?: (category: string, file: File) => void;
   onDeleteError?: (message: string) => void;
+  /** When set, only categories relevant to this pathway are shown. */
+  patientReviewPathway?: PatientReviewPathway;
 }) {
   const envEnabled = isExtendedPatientUploadsEnabled();
   const enabled = envEnabled || enabledProp === true;
@@ -135,7 +140,10 @@ export default function ExtendedPatientPhotoUploadGroups({
           </summary>
 
           <div className="space-y-4 border-t border-slate-200/80 px-3 py-4">
-            {group.categories.map((cat) => {
+            {(patientReviewPathway
+              ? filterUploadCategoriesForPathway(group.categories, patientReviewPathway)
+              : group.categories
+            ).map((cat) => {
               const k = cat.key as PatientUploadCategoryKey;
               const existing = uploadsByCategory[cat.key] ?? [];
               const emphasize = highlightCategoryKeys?.has(cat.key) ?? false;
