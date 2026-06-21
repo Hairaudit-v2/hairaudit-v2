@@ -63,12 +63,40 @@ export default function HairAuditIntelligencePanel({ bundle, reportVersion }: Ha
       <div className="mt-4 space-y-3">
         {engines.map(({ label, output }) => (
           <div key={output.engineId} className="rounded-lg border border-violet-500/20 bg-black/20 px-3 py-2">
-            <p className="text-[11px] font-semibold text-violet-100">{label}</p>
+            <div className="flex flex-wrap items-center justify-between gap-1">
+              <p className="text-[11px] font-semibold text-violet-100">{label}</p>
+              <code className="text-[9px] text-violet-300/60">{output.engineId}</code>
+            </div>
             <p className="mt-1 text-[11px] text-violet-50/90">{output.classification}</p>
             <p className="mt-1 text-[10px] text-violet-200/75">
-              severity {output.severity} · confidence {output.confidence} · advisoryOnly {String(output.advisoryOnly)}
+              severity {output.severity} · confidence {output.confidence} · mode {output.executionMode} · advisoryOnly{" "}
+              {String(output.advisoryOnly)}
             </p>
-            <p className="mt-2 text-[10px] text-violet-100/80">{output.clinicianNotes}</p>
+
+            {/* Raw engine fields — professional review only (HA-INTELLIGENCE-7). */}
+            <dl className="mt-2 grid gap-x-3 gap-y-0.5 text-[10px] text-violet-100/80 sm:grid-cols-2">
+              {Object.entries(output.fields as Record<string, unknown>).map(([key, value]) => (
+                <div key={key} className="flex justify-between gap-2">
+                  <dt className="text-violet-300/60">{key}</dt>
+                  <dd className="text-right font-mono text-violet-50/85">
+                    {Array.isArray(value)
+                      ? value.length
+                        ? value.join("; ")
+                        : "—"
+                      : String(value ?? "—")}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+
+            <p className="mt-2 text-[10px] text-violet-100/80">
+              <span className="text-violet-300/60">clinicianNotes: </span>
+              {output.clinicianNotes}
+            </p>
+            <p className="mt-1 text-[10px] text-violet-100/80">
+              <span className="text-violet-300/60">suggestedNextStep: </span>
+              {output.suggestedNextStep}
+            </p>
           </div>
         ))}
       </div>

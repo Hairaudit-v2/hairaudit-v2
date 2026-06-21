@@ -82,9 +82,12 @@ import type { LegacyUploadRow } from "@/lib/auditos/reports/adaptLegacyReportMod
 import { isAuditOsDebugPanelEnabled, isAuditOsReviewPanelEnabled } from "@/lib/auditos/shadow/auditOsShadowEnv.server";
 import {
   canShowHairAuditIntelligencePanelForRole,
+  isHairAuditIntelligencePatientObservationsEnabled,
   isHairAuditIntelligenceReviewPanelEnabled,
 } from "@/lib/hairaudit-intelligence/shadow/hairAuditIntelligenceEnv.server";
 import { extractHairAuditIntelligenceFromSummary } from "@/lib/hairaudit-intelligence/shadow/extractHairAuditIntelligenceForReview";
+import { translateIntelligenceForPatient } from "@/lib/hairaudit-intelligence/patient/patientIntelligenceTranslation";
+import PatientIntelligenceObservations from "@/components/patient/PatientIntelligenceObservations";
 import { loadBulkBatchContext } from "@/lib/hair-audit/bulkUpload/loadBulkBatchContext";
 
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
@@ -758,6 +761,13 @@ export default async function Page({
       ? extractHairAuditIntelligenceFromSummary(latestReport.summary)
       : null;
 
+  // HA-INTELLIGENCE-7 — patient-safe "What we observed from your images".
+  // Translated server-side; only calm observation strings reach the client.
+  const patientIntelligenceTranslation =
+    isHairAuditIntelligencePatientObservationsEnabled() && isPatientForCase && latestReport
+      ? translateIntelligenceForPatient(extractHairAuditIntelligenceFromSummary(latestReport.summary))
+      : null;
+
   const isHighScore = scoreNum > 90;
   const isHighScoreProvisional = isHighScore && provisionalStatus === "pending_validation";
   const isHighScoreValidated = isHighScore && countsForAwards === true && (provisionalStatus === "validated_by_auditor" || provisionalStatus === "validated_by_evidence" || provisionalStatus === "validated_by_consistency");
@@ -1070,6 +1080,9 @@ export default async function Page({
               requestedLocale={seoLocale}
               fallbackReason={patientSafeSummaryNarrative.fallbackReason}
             />
+          )}
+          {patientShowReportContent && patientIntelligenceTranslation?.hasObservations && (
+            <PatientIntelligenceObservations translation={patientIntelligenceTranslation} />
           )}
           {isAuditor && latestReport && (
             <PatientSafeSummaryTranslationOpsPanel caseId={c.id} locale={seoLocale} />

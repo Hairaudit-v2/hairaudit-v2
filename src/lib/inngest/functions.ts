@@ -25,6 +25,8 @@ import { evaluateEvidence } from "@/lib/evidence/evidenceEvaluator";
 import { buildEvidenceIntelligencePayload } from "@/lib/evidence/evidenceIntelligencePayload";
 import { emitAuditOsReportGeneratedSafe, runAuditOsShadowAfterReportInsert } from "@/lib/auditos/shadow/inngestAuditOsShadow.server";
 import { attachHairAuditIntelligenceToReportSummarySafeWithClassifier } from "@/lib/hairaudit-intelligence/shadow/inngestHairAuditIntelligence.server";
+import { persistHairAuditIntelligenceSnapshot } from "@/lib/hairaudit-intelligence/shadow/persistHairAuditIntelligenceSnapshot.server";
+import { isHairAuditIntelligenceSnapshotPersistenceEnabled } from "@/lib/hairaudit-intelligence/shadow/hairAuditIntelligenceEnv.server";
 import type { LegacyUploadRow } from "@/lib/auditos/reports/adaptLegacyReportModel";
 import { getCaseFilesBucketNameForReadOnlyUse } from "@/lib/hairaudit/uploadStorage";
 
@@ -1277,7 +1279,7 @@ export const runAudit = inngest.createFunction(
         },
       };
 
-      const { summary } = await attachHairAuditIntelligenceToReportSummarySafeWithClassifier({
+      const { summary, bundle: hairAuditIntelligenceBundle } = await attachHairAuditIntelligenceToReportSummarySafeWithClassifier({
         summary: summaryBase,
         caseId,
         uploads,
@@ -1343,6 +1345,32 @@ export const runAudit = inngest.createFunction(
         countsForAwards,
         logger,
       });
+
+      // HA-INTELLIGENCE-7 — persist historical intelligence snapshot (fail-safe; never blocks pipeline).
+      if (hairAuditIntelligenceBundle && isHairAuditIntelligenceSnapshotPersistenceEnabled()) {
+        try {
+          const result = await persistHairAuditIntelligenceSnapshot({
+            caseId,
+            reportId: insertedReport.id,
+            reportVersion: nextVersion,
+            bundle: hairAuditIntelligenceBundle,
+            sourceEventName: "report_generated",
+          });
+          if (!result.ok) {
+            logger.warn("HairAudit intelligence snapshot persist failed (ignored)", {
+              caseId,
+              reportVersion: nextVersion,
+              error: result.error,
+            });
+          }
+        } catch (e) {
+          logger.warn("HairAudit intelligence snapshot persist threw (ignored)", {
+            caseId,
+            reportVersion: nextVersion,
+            message: String((e as Error)?.message ?? e),
+          });
+        }
+      }
     });
 
     // 11) Mark audit completion phase before PDF phase.
