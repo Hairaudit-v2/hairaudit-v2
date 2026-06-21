@@ -1,27 +1,29 @@
 import Link from "next/link";
-import SiteHeader from "@/components/SiteHeader";
-import SiteFooter from "@/components/SiteFooter";
-import ScrollReveal from "@/components/ui/ScrollReveal";
+
+import HairAuditFiMarketingShell from "@/components/marketing/fi-network/HairAuditFiMarketingShell";
+import PublicMarketingHero from "@/components/marketing/PublicMarketingHero";
 import ReviewProcessReassurance from "@/components/seo/ReviewProcessReassurance";
 import MedicalProcedureFaqSchema from "@/components/seo/MedicalProcedureFaqSchema";
+import BreadcrumbListSchema from "@/components/seo/BreadcrumbListSchema";
 import { createPageMetadata } from "@/lib/seo/pageMetadata";
 import { patientIssueLibrary } from "@/lib/patientEducationIssues";
+import { PUBLIC_CTAS } from "@/lib/marketing/publicMarketingCopy";
+import { fiHairauditPrimaryButtonClass } from "@/lib/fi-ui/hairauditPrimaryButton";
+import { cn } from "@/lib/utils";
+import { Badge, Section, networkButtonVariants } from "@/packages/ui";
 
 const faqs = [
   {
     question: "Are these real patient reports?",
-    answer:
-      "This library uses redacted and educational examples. Private patient data is not published.",
+    answer: "This library uses redacted and educational examples. Private patient data is not published.",
   },
   {
-    question: "Why should I review examples first?",
-    answer:
-      "Examples help you understand report language, evidence limits, and how decisions are supported.",
+    question: "Why review examples first?",
+    answer: "Examples help you understand report language, evidence limits, and how decisions are supported.",
   },
   {
-    question: "Can examples predict my own result?",
-    answer:
-      "No. Every case is different. Examples show format and method, not personal medical outcomes.",
+    question: "Can examples predict my own outcome?",
+    answer: "No. Every case is different. Examples show format and method, not personal medical outcomes.",
   },
 ];
 
@@ -34,97 +36,68 @@ export const metadata = createPageMetadata({
 
 export default function AuditExamplesPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-[#0a0a0f] text-slate-100">
+    <HairAuditFiMarketingShell>
       <MedicalProcedureFaqSchema
-        pageName="Hair Transplant Audit Examples Library"
+        pageName="HairAudit Audit Examples Library"
         pageDescription="Educational library of report examples and patient concern explainers."
         faqs={faqs}
       />
 
-      <div className="fixed inset-0 pointer-events-none" aria-hidden>
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(251,191,36,0.06),transparent)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_80%_60%,rgba(139,92,246,0.05),transparent)]" />
-      </div>
+      <main id="main-content" className="relative flex-1">
+        <PublicMarketingHero
+          badge="Examples library"
+          title="Audit examples library"
+          description="Review sample report structure and common concern guides before you begin your HairAudit. Built for trust, transparency, and plain-language clarity."
+        />
 
-      <SiteHeader />
-
-      <main className="relative flex-1 px-4 sm:px-6 py-16 sm:py-20">
-        <div className="max-w-5xl mx-auto">
-          <ScrollReveal>
-            <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
-              Audit Examples Library
-            </h1>
-            <p className="mt-4 text-slate-300 max-w-3xl">
-              Review sample structures and common concern guides before you submit. This library is
-              designed for trust, transparency, and easy understanding.
+        <Section className="border-t border-border/30">
+          <article className="mx-auto max-w-4xl rounded-2xl border border-border/50 bg-card/70 p-6 shadow-fi-panel sm:p-8">
+            <Badge tone="neutral">Core report example</Badge>
+            <h2 className="mt-4 font-display text-2xl font-semibold text-foreground">Clinical Intelligence Report preview</h2>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground sm:text-base">
+              See how a full analysis is organized: summary, evidence status, domain findings, and next-step context.
             </p>
-          </ScrollReveal>
+            <div className="mt-5">
+              <Link href="/demo-report" className={cn(networkButtonVariants({ variant: "secondary", size: "md" }))}>
+                {PUBLIC_CTAS.viewSampleReport}
+              </Link>
+            </div>
+          </article>
+        </Section>
 
-          <ScrollReveal delay={0.05}>
-            <section className="mt-10 rounded-2xl border border-white/10 bg-white/5 p-6">
-              <h2 className="text-xl font-semibold text-white">Core report example</h2>
-              <p className="mt-3 text-slate-300">
-                See how a full review is organized: summary, evidence status, scores, findings, and
-                next-step context.
-              </p>
-              <div className="mt-5">
+        <Section className="border-t border-border/30">
+          <div className="mx-auto max-w-5xl space-y-6">
+            <h2 className="font-display text-2xl font-semibold text-foreground">Patient concern guides</h2>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {patientIssueLibrary.map((issue) => (
                 <Link
-                  href="/demo-report"
-                  className="inline-flex items-center justify-center px-6 py-3 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
+                  key={issue.slug}
+                  href={`/${issue.slug}`}
+                  className="rounded-2xl border border-border/50 bg-card/70 p-5 transition hover:border-amber-400/40 shadow-fi-panel"
                 >
-                  See Example Report
+                  <h3 className="font-semibold text-foreground">{issue.title}</h3>
+                  <p className="mt-2 text-sm text-muted-foreground">{issue.description}</p>
                 </Link>
-              </div>
-            </section>
-          </ScrollReveal>
+              ))}
+            </div>
+          </div>
+        </Section>
 
-          <ScrollReveal delay={0.1}>
-            <section className="mt-8">
-              <h2 className="text-xl font-semibold text-white">Patient concern guides</h2>
-              <div className="mt-4 grid sm:grid-cols-2 gap-4">
-                {patientIssueLibrary.map((issue) => (
-                  <Link
-                    key={issue.slug}
-                    href={`/${issue.slug}`}
-                    className="rounded-2xl border border-white/10 bg-white/5 p-5 hover:border-amber-300/60 transition-colors"
-                  >
-                    <h3 className="font-semibold text-white">{issue.title}</h3>
-                    <p className="mt-2 text-sm text-slate-300">{issue.description}</p>
-                  </Link>
-                ))}
-              </div>
-            </section>
-          </ScrollReveal>
-
-          <ScrollReveal delay={0.15}>
-            <section className="mt-8 rounded-2xl border border-white/10 bg-white/5 p-6">
-              <h2 className="text-xl font-semibold text-white">Ready to begin your HairAudit?</h2>
-              <p className="mt-3 text-slate-300">
-                Upload photos and case details for independent analysis with clear, plain-language reporting.
-              </p>
-              <div className="mt-5">
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <Link
-                    href="/request-review"
-                    className="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors"
-                  >
-                    Start Free HairAudit
-                  </Link>
-                  <Link
-                    href="/rate-my-hair-transplant"
-                    className="inline-flex items-center justify-center px-6 py-3 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
-                  >
-                    Get Your Hair Transplant Score
-                  </Link>
-                </div>
-              </div>
-              <ReviewProcessReassurance className="mt-6" />
-            </section>
-          </ScrollReveal>
-        </div>
+        <Section className="border-t border-border/30">
+          <div className="mx-auto max-w-4xl rounded-2xl border border-border/50 bg-card/70 p-6 shadow-fi-panel sm:p-8">
+            <h2 className="text-xl font-semibold text-foreground">Ready to begin your HairAudit?</h2>
+            <p className="mt-3 text-muted-foreground">
+              Upload photos and case details for independent analysis with a Clinical Intelligence Report.
+            </p>
+            <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+              <Link href="/request-review" className={fiHairauditPrimaryButtonClass("md")}>
+                {PUBLIC_CTAS.startFreeHairAudit}
+              </Link>
+            </div>
+            <ReviewProcessReassurance className="mt-6 border-emerald-400/25 bg-emerald-400/5 text-foreground [&_h3]:text-emerald-200 [&_li]:text-emerald-50/90 [&_p]:text-emerald-100/80" />
+          </div>
+        </Section>
       </main>
-
-      <SiteFooter />
-    </div>
+    </HairAuditFiMarketingShell>
   );
 }

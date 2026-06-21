@@ -1,12 +1,14 @@
 import Link from "next/link";
-import SiteHeader from "@/components/SiteHeader";
-import SiteFooter from "@/components/SiteFooter";
-import TrackedLink from "@/components/analytics/TrackedLink";
+import HairAuditFiMarketingShell from "@/components/marketing/fi-network/HairAuditFiMarketingShell";
 import ProfessionalPathwayRibbon from "@/components/marketing/ProfessionalPathwayRibbon";
-import PublicTrustArchitectureBlock from "@/components/marketing/PublicTrustArchitectureBlock";
+import PublicMarketingCtaPanel from "@/components/marketing/PublicMarketingCtaPanel";
+import PublicMarketingHero from "@/components/marketing/PublicMarketingHero";
+import TrackedLink from "@/components/analytics/TrackedLink";
 import { PUBLIC_CTAS } from "@/lib/marketing/publicMarketingCopy";
 import { StepIcons } from "@/components/ui/StepIcons";
 import { createPageMetadata } from "@/lib/seo/pageMetadata";
+import { fiHairauditPrimaryButtonClass } from "@/lib/fi-ui/hairauditPrimaryButton";
+import { Badge, Section } from "@/packages/ui";
 import {
   CertificationBadge,
   CertificatePresentation,
@@ -95,161 +97,145 @@ const TRUST_PREVIEW_CLINIC = {
 
 export default function ForClinicsPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-[#0a0a0f] text-slate-100">
-      <div className="fixed inset-0 pointer-events-none" aria-hidden>
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(251,191,36,0.06),transparent)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_80%_60%,rgba(56,189,248,0.05),transparent)]" />
-      </div>
-      <SiteHeader />
+    <HairAuditFiMarketingShell>
       <main id="main-content" className="relative flex-1">
-        <div className="relative px-4 sm:px-6 pt-8 pb-2 max-w-4xl mx-auto">
-          <ProfessionalPathwayRibbon variant="fi" />
-        </div>
-        {/* A. Hero — no ScrollReveal so LCP (H1/CTA) paints immediately */}
-        <section className="relative px-4 sm:px-6 pt-16 sm:pt-20 pb-20 sm:pb-28 lg:pt-24 lg:pb-32">
-          <div className="max-w-3xl mx-auto text-center">
-            <p className="inline-flex rounded-full border border-amber-300/25 bg-amber-300/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-amber-200">
-              Clinic quality assurance
-            </p>
-            <h1 className="mt-6 text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-[1.08]">
-              Clinic accountability and quality assurance infrastructure
-            </h1>
-            <p className="mt-6 text-xl text-slate-300 max-w-xl mx-auto leading-relaxed">
-              HairAudit gives clinics structured internal audits, transparency participation, and certification-ready
-              benchmarking—without turning quality assurance into a directory listing.
-            </p>
-            <div className="mt-8 max-w-2xl mx-auto">
-              <PublicTrustArchitectureBlock />
-            </div>
-            <div className="mt-12 flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <TrackedLink
-                href="/signup?role=clinic"
-                eventName="cta_create_clinic_profile_for_clinics"
-                className="inline-flex items-center justify-center px-10 py-4 rounded-2xl bg-amber-500 text-slate-900 font-semibold text-lg hover:bg-amber-400 transition-colors border border-amber-400/50 shadow-lg shadow-amber-500/20"
-              >
-                {PUBLIC_CTAS.createClinicProfile}
-              </TrackedLink>
-            </div>
+        <Section className="pt-6 pb-0">
+          <div className="mx-auto max-w-4xl">
+            <ProfessionalPathwayRibbon variant="fi" />
           </div>
-        </section>
+        </Section>
 
-        {/* B. Why clinics participate */}
-        <section className="relative px-4 sm:px-6 py-20 sm:py-24 border-t border-white/10">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
-              Why clinics participate
-            </h2>
-            <p className="mt-4 text-slate-400 max-w-2xl">
-              HairAudit gives you a structured way to improve, prove, and display your commitment to quality — without changing how you submit or manage cases.
-            </p>
-            <div className="mt-12 grid sm:grid-cols-2 gap-4">
+        <PublicMarketingHero
+          badge="Clinic quality assurance"
+          title="Clinic accountability and quality assurance infrastructure"
+          description="HairAudit gives clinics structured internal audits, transparency participation, and certification-ready benchmarking—without turning quality assurance into a basic directory listing."
+          centered
+        >
+          <div className="flex justify-center">
+            <TrackedLink
+              href="/signup?role=clinic"
+              eventName="cta_create_clinic_profile_for_clinics"
+              className={fiHairauditPrimaryButtonClass("lg")}
+            >
+              {PUBLIC_CTAS.createClinicProfile}
+            </TrackedLink>
+          </div>
+        </PublicMarketingHero>
+
+        <Section className="border-t border-border/30">
+          <div className="max-w-4xl space-y-8">
+            <div className="space-y-3">
+              <Badge tone="neutral">Why participate</Badge>
+              <h2 className="font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+                Why clinics participate
+              </h2>
+              <p className="max-w-2xl text-muted-foreground">
+                HairAudit gives you a structured way to improve, prove, and display commitment to quality—without
+                changing how you submit or manage cases.
+              </p>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
               {WHY_PARTICIPATE_ITEMS.map((item) => (
-                <div key={item.title} className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:p-6">
-                  <h3 className="text-base font-semibold text-white">
-                    {item.title}
-                  </h3>
-                  <p className="mt-2 text-sm text-slate-400 leading-relaxed">
-                    {item.description}
-                  </p>
+                <div key={item.title} className="rounded-2xl border border-border/50 bg-card/70 p-5 shadow-fi-panel sm:p-6">
+                  <h3 className="text-base font-semibold text-foreground">{item.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.description}</p>
                 </div>
               ))}
             </div>
           </div>
-        </section>
+        </Section>
 
-        {/* C. How it works */}
-        <section className="relative px-4 sm:px-6 py-20 sm:py-24 bg-white/[0.03]">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
-              How it works
-            </h2>
-            <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Section className="border-t border-border/30 bg-card/30">
+          <div className="max-w-4xl space-y-8">
+            <Badge tone="neutral">How it works</Badge>
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {HOW_IT_WORKS_STEPS.map((step, index) => (
-                <div key={step.title} className="rounded-2xl border border-white/10 bg-white/[0.04] p-6 flex flex-col items-center text-center">
-                  <span className="w-12 h-12 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center flex-shrink-0">
+                <div
+                  key={step.title}
+                  className="flex flex-col items-center rounded-2xl border border-border/50 bg-card/70 p-6 text-center shadow-fi-panel"
+                >
+                  <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-400/15 text-amber-300">
                     {step.icon}
                   </span>
-                  <p className="mt-4 text-sm font-semibold text-amber-400/90 uppercase tracking-wider">
+                  <p className="mt-4 text-sm font-semibold uppercase tracking-wider text-amber-300/90">
                     Step {index + 1}
                   </p>
-                  <h3 className="mt-2 text-lg font-semibold text-white">
-                    {step.title}
-                  </h3>
-                  <p className="mt-3 text-slate-400 text-sm leading-relaxed">
-                    {step.description}
-                  </p>
+                  <h3 className="mt-2 text-lg font-semibold text-foreground">{step.title}</h3>
+                  <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{step.description}</p>
                 </div>
               ))}
             </div>
           </div>
-        </section>
+        </Section>
 
-        {/* D. Certification */}
-        <section className="relative px-4 sm:px-6 py-20 sm:py-24">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
-              Certification
-            </h2>
-            <p className="mt-4 text-slate-400 max-w-2xl">
-              Recognition is based on independently audited surgical data and verified case submissions. Not purchased — earned through documented contribution and validated outcomes.
-            </p>
-            <div className="mt-10 flex flex-wrap gap-4">
+        <Section className="border-t border-border/30">
+          <div className="max-w-4xl space-y-8">
+            <div className="space-y-3">
+              <Badge tone="neutral">Certification</Badge>
+              <h2 className="font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+                Verified clinic intelligence
+              </h2>
+              <p className="max-w-2xl text-muted-foreground">
+                Recognition is based on independently reviewed surgical data and verified case submissions—not
+                purchased placements.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-4">
               {CERTIFICATION_TIERS.map(({ tier, blurb }) => (
-                <div key={tier} className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 min-w-[200px] max-w-[240px]">
+                <div
+                  key={tier}
+                  className="min-w-[200px] max-w-[240px] rounded-2xl border border-border/50 bg-card/70 p-5 shadow-fi-panel"
+                >
                   <CertificationBadge tier={tier} variant="full" />
-                  <p className="mt-3 text-xs text-slate-400 leading-relaxed">
-                    {blurb}
-                  </p>
+                  <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{blurb}</p>
                 </div>
               ))}
             </div>
-            <div className="mt-8">
-              <Link
-                href="/certification-explained"
-                className="text-sm font-medium text-cyan-400 hover:text-cyan-300 transition-colors"
-              >
+            <div>
+              <Link href="/certification-explained" className="text-sm font-medium text-sky-300 hover:text-sky-200">
                 Learn more about certification →
               </Link>
             </div>
           </div>
-        </section>
+        </Section>
 
-        {/* E. Public proof and visibility */}
-        <section className="relative px-4 sm:px-6 py-20 sm:py-24 border-t border-white/10 bg-white/[0.03]">
-          <div className="max-w-3xl mx-auto">
-            <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+        <Section className="border-t border-border/30 bg-card/30">
+          <div className="mx-auto max-w-3xl space-y-4">
+            <Badge tone="neutral">Clinic transparency</Badge>
+            <h2 className="font-display text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
               Public proof and visibility
             </h2>
-            <p className="mt-5 text-slate-300 leading-relaxed text-lg">
-              When you choose to make cases publicly visible, they strengthen your clinic profile and help patients evaluate transparency and commitment to quality. Public cases are verified by HairAudit and displayed with clear context — no cherry-picking, no opaque claims.
+            <p className="text-lg leading-relaxed text-muted-foreground">
+              When you choose to make cases publicly visible, they strengthen your clinic profile and help patients
+              evaluate transparency and commitment to quality. Public cases are verified by HairAudit and displayed with
+              clear context—no cherry-picking, no opaque claims.
             </p>
           </div>
-        </section>
+        </Section>
 
-        {/* F. Trust assets */}
-        <section className="relative px-4 sm:px-6 py-20 sm:py-24">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
-              Trust assets you can display
-            </h2>
-            <p className="mt-4 text-slate-400 max-w-2xl">
-              Certification comes with displayable assets: a certification badge, certificate-style recognition, and a website badge you can embed on your site.
-            </p>
-            <div className="mt-12 space-y-16">
+        <Section className="border-t border-border/30">
+          <div className="max-w-4xl space-y-12">
+            <div className="space-y-3">
+              <Badge tone="neutral">Trust assets</Badge>
+              <h2 className="font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+                Trust assets you can display
+              </h2>
+              <p className="max-w-2xl text-muted-foreground">
+                Certification comes with displayable assets: a certification badge, certificate-style recognition, and a
+                website badge you can embed on your site.
+              </p>
+            </div>
+            <div className="space-y-16">
               <div>
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-cyan-400 mb-3">
-                  Certification badge
-                </h3>
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-6 flex flex-wrap items-center gap-4">
+                <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-sky-300">Certification badge</h3>
+                <div className="flex flex-wrap items-center gap-4 rounded-2xl border border-border/50 bg-card/70 p-6 shadow-fi-panel">
                   <CertificationBadge tier="GOLD" variant="full" />
                   <CertificationBadge tier="PLATINUM" variant="compact" />
-                  <p className="text-sm text-slate-500 w-full mt-2">
-                    Shown on your profile and in clinic discovery.
-                  </p>
+                  <p className="mt-2 w-full text-sm text-muted-foreground">Shown on your profile and in clinic discovery.</p>
                 </div>
               </div>
               <div>
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-cyan-400 mb-3">
+                <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-sky-300">
                   Certificate recognition
                 </h3>
                 <div className="max-w-md">
@@ -270,30 +256,22 @@ export default function ForClinicsPage() {
               </div>
             </div>
           </div>
-        </section>
+        </Section>
 
-        {/* G. Closing CTA */}
-        <section className="relative px-4 sm:px-6 py-24 sm:py-28 border-t border-white/10">
-          <div className="max-w-2xl mx-auto text-center">
-            <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
-              Create your clinic profile
-            </h2>
-            <p className="mt-5 text-xl text-slate-300">
-              Begin with internal audits, build certification recognition, and demonstrate accountability over time.
-            </p>
-            <div className="mt-10">
-              <TrackedLink
-                href="/signup?role=clinic"
-                eventName="cta_join_clinics_final"
-                className="inline-flex items-center justify-center px-10 py-4 rounded-2xl bg-amber-500 text-slate-900 font-semibold text-lg hover:bg-amber-400 transition-colors border border-amber-400/50 shadow-lg shadow-amber-500/20"
-              >
-                {PUBLIC_CTAS.createClinicProfile}
-              </TrackedLink>
-            </div>
-          </div>
-        </section>
+        <PublicMarketingCtaPanel
+          title="Create your clinic profile"
+          description="Begin with internal audits, build certification recognition, and demonstrate accountability over time."
+          actions={[
+            {
+              href: "/signup?role=clinic",
+              label: PUBLIC_CTAS.createClinicProfile,
+              variant: "primary",
+              eventName: "cta_join_clinics_final",
+              useStartFreeAuditButton: false,
+            },
+          ]}
+        />
       </main>
-      <SiteFooter />
-    </div>
+    </HairAuditFiMarketingShell>
   );
 }

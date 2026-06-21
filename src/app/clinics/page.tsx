@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import SiteHeader from "@/components/SiteHeader";
-import SiteFooter from "@/components/SiteFooter";
+import HairAuditFiMarketingShell from "@/components/marketing/fi-network/HairAuditFiMarketingShell";
+import PublicMarketingHero from "@/components/marketing/PublicMarketingHero";
 import ClinicDirectoryCard from "@/components/clinics/ClinicDirectoryCard";
 import ClinicDirectoryFilters from "@/components/clinics/ClinicDirectoryFilters";
 import TopCertifiedClinicsSection from "@/components/clinics/TopCertifiedClinicsSection";
@@ -12,6 +12,10 @@ import type { DirectoryClinicRow } from "@/lib/clinics/directoryFilters";
 import { computeClinicCertificationRanking } from "@/lib/ranking";
 import { createPageMetadata } from "@/lib/seo/pageMetadata";
 import BreadcrumbListSchema from "@/components/seo/BreadcrumbListSchema";
+import { PUBLIC_CTAS } from "@/lib/marketing/publicMarketingCopy";
+import { fiHairauditPrimaryButtonClass } from "@/lib/fi-ui/hairauditPrimaryButton";
+import { Badge, Section, networkButtonVariants } from "@/packages/ui";
+import { cn } from "@/lib/utils";
 
 const CLINIC_SELECT =
   "id, clinic_slug, clinic_name, country, city, participation_status, current_award_tier, transparency_score, audited_case_count, contributed_case_count, benchmark_eligible_count, benchmark_eligible_validated_count, average_forensic_score, documentation_integrity_average, award_progression_paused, linked_user_id";
@@ -116,120 +120,95 @@ export default async function ClinicDirectoryPage({
   const featuredStrip = featured.slice(0, 6);
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#0a0a0f] text-slate-100">
+    <HairAuditFiMarketingShell>
       <BreadcrumbListSchema
         items={[
           { name: "Home", pathname: "/" },
-          { name: "Clinic transparency directory", pathname: "/clinics" },
+          { name: "Verified clinic directory", pathname: "/clinics" },
         ]}
       />
-      <div className="fixed inset-0 pointer-events-none" aria-hidden>
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(56,189,248,0.08),transparent)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_80%_60%,rgba(139,92,246,0.06),transparent)]" />
-      </div>
-
-      <SiteHeader />
-      <main className="relative flex-1">
-        <section className="relative px-4 sm:px-6 py-16 sm:py-24">
-          <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white">
-              Explore clinics participating in the HairAudit transparency ecosystem
-            </h1>
-            <p className="mt-6 text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed">
-              Independent, evidence-based benchmarking. These profiles reflect validated participation,
-              documented case contribution, and recognised transparency standards.
-            </p>
-            <div className="mt-8 flex flex-wrap justify-center gap-4">
-              <Link
-                href="/verified-surgeon-program"
-                className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl border border-cyan-500/30 text-cyan-300 text-sm font-medium hover:bg-cyan-500/10 transition-colors"
-              >
-                Learn About the Verified Program
-              </Link>
-              <Link
-                href="/request-review"
-                className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl text-slate-400 text-sm font-medium hover:text-slate-200 transition-colors"
-              >
-                Start Free HairAudit
-              </Link>
-              <Link
-                href="/how-it-works"
-                className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl text-slate-400 text-sm font-medium hover:text-slate-200 transition-colors"
-              >
-                How hair transplant audits work
-              </Link>
-            </div>
-            <p className="mt-6 text-sm text-slate-500 max-w-2xl mx-auto">
-              Want to understand what these recognition tiers mean?{" "}
-              <Link href="/verified-surgeon-program" className="text-cyan-400 hover:text-cyan-300 transition-colors font-medium">
-                View the Verified Surgeon Transparency Program
-              </Link>
-              .
-            </p>
+      <main id="main-content" className="relative flex-1">
+        <PublicMarketingHero
+          badge="Verified clinic intelligence"
+          title="Clinic transparency directory"
+          description="Independent, evidence-based profiles that reflect validated participation, documented case contribution, and recognised transparency standards—not a basic listing page."
+          centered
+        >
+          <div className="flex flex-wrap justify-center gap-3">
+            <Link
+              href="/verified-surgeon-program"
+              className={cn(networkButtonVariants({ variant: "secondary", size: "md" }))}
+            >
+              Verified Surgeon Program
+            </Link>
+            <Link href="/request-review" className={fiHairauditPrimaryButtonClass("md")}>
+              {PUBLIC_CTAS.startFreeHairAudit}
+            </Link>
           </div>
-        </section>
+        </PublicMarketingHero>
 
-        <section className="relative px-4 sm:px-6 pb-8">
-          <div className="max-w-5xl mx-auto">
-            <Suspense fallback={<div className="rounded-2xl border border-white/10 bg-white/5 h-24 animate-pulse" />}>
+        <Section className="border-t border-border/30 pb-8">
+          <div className="mx-auto max-w-5xl">
+            <Suspense fallback={<div className="h-24 animate-pulse rounded-2xl border border-border/50 bg-card/60" />}>
               <ClinicDirectoryFilters countries={countries} foundingSlugs={FOUNDING_SLUGS} />
             </Suspense>
           </div>
-        </section>
+        </Section>
 
         {topCertified.length > 0 && (
           <TopCertifiedClinicsSection topClinics={topCertified} />
         )}
 
         {featuredStrip.length > 0 && (
-          <section className="relative px-4 sm:px-6 py-8">
-            <div className="max-w-5xl mx-auto">
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-cyan-400 mb-4">
-                Featured recognition
-              </h2>
-              <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin">
+          <Section className="border-t border-border/30 py-8">
+            <div className="mx-auto max-w-5xl">
+              <Badge tone="neutral">Featured recognition</Badge>
+              <div className="mt-4 flex gap-4 overflow-x-auto pb-2">
                 {featuredStrip.map((clinic) => (
-                  <div key={clinic.clinic_slug} className="flex-shrink-0 w-[280px]">
+                  <div key={clinic.clinic_slug} className="w-[280px] shrink-0">
                     <ClinicDirectoryCard clinic={clinic} />
                   </div>
                 ))}
               </div>
             </div>
-          </section>
+          </Section>
         )}
 
-        <section className="relative px-4 sm:px-6 py-12 sm:py-16">
-          <div className="max-w-5xl mx-auto">
+        <Section className="border-t border-border/30">
+          <div className="mx-auto max-w-5xl">
             <nav className="mb-6" aria-label="Breadcrumb">
-              <Link href="/" className="text-sm text-slate-500 hover:text-slate-300 transition-colors">Home</Link>
-              <span className="text-slate-600 mx-2">/</span>
-              <Link href="/verified-surgeon-program" className="text-sm text-slate-500 hover:text-slate-300 transition-colors">Verified Program</Link>
-              <span className="text-slate-600 mx-2">/</span>
-              <span className="text-slate-400 text-sm">Clinics</span>
+              <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">
+                Home
+              </Link>
+              <span className="mx-2 text-muted-foreground">/</span>
+              <Link href="/verified-surgeon-program" className="text-sm text-muted-foreground hover:text-foreground">
+                Verified Program
+              </Link>
+              <span className="mx-2 text-muted-foreground">/</span>
+              <span className="text-sm text-foreground">Clinics</span>
             </nav>
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-cyan-400 mb-6">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-sky-300">
               {clinics.length === 0 ? "No clinics match" : "All participating clinics"}
             </h2>
             {clinics.length === 0 ? (
-              <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-12 text-center">
-                <p className="text-slate-400">
+              <div className="mt-6 rounded-2xl border border-border/50 bg-card/70 p-12 text-center shadow-fi-panel">
+                <p className="text-muted-foreground">
                   No clinics match your filters. Try adjusting search or filters to see more profiles.
                 </p>
-                <p className="mt-2 text-sm text-slate-500">
+                <p className="mt-2 text-sm text-muted-foreground/80">
                   Only clinics with a public profile and valid slug are listed.
                 </p>
               </div>
             ) : (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {clinics.map((clinic) => (
                   <ClinicDirectoryCard key={clinic.clinic_slug} clinic={clinic} />
                 ))}
               </div>
             )}
           </div>
-        </section>
+        </Section>
       </main>
-      <SiteFooter />
-    </div>
+    </HairAuditFiMarketingShell>
   );
 }

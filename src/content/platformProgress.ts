@@ -130,38 +130,38 @@ export const PATIENT_EXPERIENCE_ENGINE = {
     "End-to-end patient surfaces — pathway routing, intake, uploads, processing UX, and report delivery — measured against production readiness.",
 } as const;
 
-/** HA-REPORT-4B / independent review headline rollups — edit completionPercent as milestones land. */
+/** HA-REPORT-4A/4B / independent review headline rollups — edit completionPercent as milestones land. */
 export const PLATFORM_CAPABILITY_ROLLUPS: readonly PatientUxFeature[] = [
   {
-    id: "post-surgery-audit-infrastructure",
-    name: "Post-Surgery Audit Infrastructure",
+    id: "pre-surgery-review-infrastructure",
+    name: "Pre-Surgery Review Infrastructure",
     completionPercent: 99,
     description:
-      "Dedicated post-surgery premium procedural review report, pathway uploads, intelligence hooks, separate UI and PDF rendering, and repair guidance.",
-    focus: "Pathway B — independent post-surgical procedural review.",
+      "Dedicated pre-surgery planning report with pathway-specific planning outcomes, suitability scorecards, graft range estimates, donor review, preservation guidance, and premium PDF generation.",
+    focus: "Pathway A — planning before surgery.",
   },
   {
     id: "patient-report-experience",
     name: "Patient Report Experience",
-    completionPercent: 95,
+    completionPercent: 98,
     description:
-      "Premium report opening, procedural scorecards, eight review sections, concern flagging, image assessments, trust messaging, and recommended next steps.",
+      "Premium report opening, pathway-specific scorecards, review sections, image assessments, trust messaging, and recommended next steps across pre- and post-surgery reports.",
     focus: "Patient-facing report clarity and actionability.",
   },
   {
-    id: "procedural-intelligence-layer",
-    name: "Procedural Intelligence Layer",
-    completionPercent: 94,
+    id: "dual-pathway-report-architecture",
+    name: "Dual Pathway Report Architecture",
+    completionPercent: 100,
     description:
-      "Pathway-scoped procedural integrity scoring, donor and density signals, repair intelligence, and mapping into post-surgery report generation.",
-    focus: "Procedural analytics feeding patient-safe review output.",
+      "Separate pre-surgery planning and post-surgery audit report pipelines — dedicated generators, UI shells, PDF templates, and summary storage per pathway.",
+    focus: "Pre-surgery planning intelligence vs post-surgery procedural review.",
   },
   {
-    id: "independent-review-infrastructure",
-    name: "Independent Review Infrastructure",
-    completionPercent: 97,
+    id: "independent-patient-intelligence",
+    name: "Independent Patient Intelligence",
+    completionPercent: 98,
     description:
-      "Neutral review architecture separating clinic recommendations from independent assessment — trust surfaces, disclaimers, and dual-pathway report pipelines.",
+      "Pathway-scoped intelligence execution, patient-safe narrative generation, donor and suitability signals, and mapping into dedicated report output without clinic bias.",
     focus: "Independent credibility and clinical neutrality.",
   },
 ];
@@ -187,9 +187,9 @@ export const PATIENT_PATHWAY_INFRASTRUCTURE: readonly PatientUxFeature[] = [
   {
     id: "pre-surgery-review-infrastructure",
     name: "Pre-Surgery Review Infrastructure",
-    completionPercent: 94,
+    completionPercent: 99,
     description:
-      "Pre-operative photo requirements, planning intake, and Pre-Surgery Review Report focus: planning, suitability, graft estimate, and treatment path.",
+      "Dedicated pre-surgery planning report with pathway-specific planning outcomes, suitability scorecards, graft range estimates, donor review, preservation guidance, and premium PDF generation.",
     focus: "Pathway A — planning before surgery.",
   },
 ];
@@ -228,6 +228,13 @@ export const PATIENT_UX_FEATURES: readonly PatientUxFeature[] = [
 
 /** Public engineering changelog — newest first. */
 export const ENGINEERING_CHANGELOG: readonly EngineeringChangelogEntry[] = [
+  {
+    date: "2026-06-21",
+    title: "HA-REPORT-4A deployed",
+    description:
+      "HairAudit now generates a dedicated Pre-Surgery Planning Report for patients considering treatment, with pathway-specific planning outcomes, suitability scorecards, graft range estimates, donor review, preservation guidance, and a premium PDF template.",
+    area: "Patient Experience",
+  },
   {
     date: "2026-06-21",
     title: "HA-REPORT-4B deployed",

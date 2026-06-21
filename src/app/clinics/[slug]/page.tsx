@@ -1,9 +1,12 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import HairAuditFiMarketingShell from "@/components/marketing/fi-network/HairAuditFiMarketingShell";
 import { createPageMetadata } from "@/lib/seo/pageMetadata";
-import SiteHeader from "@/components/SiteHeader";
-import SiteFooter from "@/components/SiteFooter";
+import { PUBLIC_CTAS } from "@/lib/marketing/publicMarketingCopy";
+import { fiHairauditPrimaryButtonClass } from "@/lib/fi-ui/hairauditPrimaryButton";
+import { networkButtonVariants } from "@/packages/ui";
+import { cn } from "@/lib/utils";
 import {
   PublicProfileHero,
   PublicProofSummary,
@@ -224,14 +227,8 @@ export default async function PublicClinicProfilePage({
   const docIntegrity = Number(row.documentation_integrity_average ?? 0);
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#0a0a0f] text-slate-100">
-      <div className="fixed inset-0 pointer-events-none" aria-hidden>
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(56,189,248,0.08),transparent)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_80%_60%,rgba(139,92,246,0.06),transparent)]" />
-      </div>
-
-      <SiteHeader />
-      <main className="relative flex-1">
+    <HairAuditFiMarketingShell>
+      <main id="main-content" className="relative flex-1">
         <nav className="relative px-4 sm:px-6 pt-6 pb-0 max-w-4xl mx-auto" aria-label="Breadcrumb">
           <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-500">
             <li><Link href="/" className="hover:text-slate-300 transition-colors">Home</Link></li>
@@ -447,23 +444,19 @@ export default async function PublicClinicProfilePage({
               Choose your next step based on your pathway: patient review or professional participation.
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-4">
-              <Link
-                href="/request-review"
-                className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-cyan-500 text-slate-950 font-semibold text-sm hover:bg-cyan-400 transition-colors"
-              >
-                Start Free HairAudit
+              <Link href="/request-review" className={fiHairauditPrimaryButtonClass("md")}>
+                {PUBLIC_CTAS.startFreeHairAudit}
               </Link>
               <Link
                 href="/signup?role=clinic"
-                className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl border border-slate-600 text-slate-200 text-sm font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
+                className={cn(networkButtonVariants({ variant: "secondary", size: "md" }))}
               >
-                Create Clinic Profile
+                {PUBLIC_CTAS.createClinicProfile}
               </Link>
             </div>
           </div>
         </section>
       </main>
-      <SiteFooter />
-    </div>
+    </HairAuditFiMarketingShell>
   );
 }

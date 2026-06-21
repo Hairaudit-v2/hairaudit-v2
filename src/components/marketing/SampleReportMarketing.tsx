@@ -1,5 +1,7 @@
 "use client";
 
+// TODO(HA-LIGHTHOUSE-2): orphaned after /sample-report redirect — safe to remove once localized routing no longer references this page.
+
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import ReviewProcessReassurance from "@/components/seo/ReviewProcessReassurance";

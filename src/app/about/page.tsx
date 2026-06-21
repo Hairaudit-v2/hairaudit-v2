@@ -1,91 +1,160 @@
 import Link from "next/link";
-import SiteHeader from "@/components/SiteHeader";
-import SiteFooter from "@/components/SiteFooter";
-import ScrollReveal from "@/components/ui/ScrollReveal";
+
+import HairAuditFiMarketingShell from "@/components/marketing/fi-network/HairAuditFiMarketingShell";
+import PublicMarketingCtaPanel from "@/components/marketing/PublicMarketingCtaPanel";
+import PublicMarketingHero from "@/components/marketing/PublicMarketingHero";
 import TrackedLink from "@/components/analytics/TrackedLink";
-import PublicTrustArchitectureBlock from "@/components/marketing/PublicTrustArchitectureBlock";
+import BreadcrumbListSchema from "@/components/seo/BreadcrumbListSchema";
+import { FI_HOME } from "@/config/platform-links";
+import { fiHairauditPrimaryButtonClass } from "@/lib/fi-ui/hairauditPrimaryButton";
+import { PUBLIC_CTAS, PUBLIC_ECOSYSTEM_FOOTER } from "@/lib/marketing/publicMarketingCopy";
 import { createPageMetadata } from "@/lib/seo/pageMetadata";
-import { PUBLIC_CTAS } from "@/lib/marketing/publicMarketingCopy";
+import { Badge, FeatureGrid, Section, networkButtonVariants } from "@/packages/ui";
+import { cn } from "@/lib/utils";
 
 export const metadata = createPageMetadata({
-  title: "About HairAudit | Independent Hair Transplant Audits | HairAudit",
+  title: "About HairAudit | Independent Patient Protection | HairAudit",
   description:
-    "HairAudit is an independent platform for evidence-based forensic hair transplant audits—patients get structured review; clinics and professionals get transparency, QA, and benchmarking context.",
+    "HairAudit is independent patient protection infrastructure—an intelligence layer for patients, clinics, and professionals built for transparency, donor safety, and long-term planning.",
   pathname: "/about",
 });
 
+const pillars = [
+  {
+    title: "Independent analysis for patients",
+    body: "Patients receive evidence-led Clinical Intelligence Reports that explain what photos support, where confidence is limited, and what may be worth discussing with a clinician—without clinic marketing.",
+  },
+  {
+    title: "Quality assurance for clinics",
+    body: "Clinics use structured internal audits, transparency participation, and certification-ready benchmarking to improve documentation, donor stewardship, and accountability over time.",
+  },
+  {
+    title: "Standards for professionals",
+    body: "Surgeons and professional teams can build verified profiles, contribute documented cases, and align with consistent review standards across the Follicle Intelligence Network.",
+  },
+] as const;
+
 export default function AboutPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-[#0a0a0f] text-slate-100">
-      <div className="fixed inset-0 pointer-events-none" aria-hidden>
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(251,191,36,0.06),transparent)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_80%_60%,rgba(139,92,246,0.05),transparent)]" />
-      </div>
-      <SiteHeader />
+    <HairAuditFiMarketingShell>
+      <BreadcrumbListSchema
+        items={[
+          { name: "Home", pathname: "/" },
+          { name: "About HairAudit", pathname: "/about" },
+        ]}
+      />
 
-      <main className="relative flex-1 px-4 sm:px-6 py-16 sm:py-20">
-        <div className="max-w-3xl mx-auto">
-          <ScrollReveal>
-            <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
-              About HairAudit
-            </h1>
-            <p className="mt-4 text-slate-300 text-sm sm:text-base leading-relaxed">
-              HairAudit was created to bring transparency, accountability, and clinical clarity to hair
-              restoration review.
-            </p>
-            <PublicTrustArchitectureBlock className="mt-6" />
-          </ScrollReveal>
-
-          <div className="mt-8 space-y-6">
-            <ScrollReveal delay={0.06}>
-              <section className="rounded-2xl border border-white/10 bg-white/5 p-6">
-                <h2 className="text-xl font-semibold text-white">What we do</h2>
-                <p className="mt-3 text-slate-300 text-sm sm:text-base leading-relaxed">
-                  We provide independent, evidence-based forensic reviews of hair transplant outcomes
-                  using structured methodology across design, density, donor preservation, and evidence
-                  confidence.
-                </p>
-              </section>
-            </ScrollReveal>
-            <ScrollReveal delay={0.1}>
-              <section className="rounded-2xl border border-white/10 bg-white/5 p-6">
-                <h2 className="text-xl font-semibold text-white">What we do not do</h2>
-                <p className="mt-3 text-slate-300 text-sm sm:text-base leading-relaxed">
-                  HairAudit does not perform surgeries and does not promote clinics. Our role is
-                  independent reporting that supports informed patient and professional decisions.
-                </p>
-              </section>
-            </ScrollReveal>
-            <ScrollReveal delay={0.14}>
-              <section className="rounded-2xl border border-white/10 bg-white/5 p-6">
-                <h2 className="text-xl font-semibold text-white">Current platform status</h2>
-                <p className="mt-3 text-slate-300 text-sm sm:text-base leading-relaxed">
-                  Patient independent analysis is available now. Clinics and doctors can create a professional profile
-                  and begin with internal audits or build verified participation over time.
-                </p>
-                <div className="mt-5 flex flex-col sm:flex-row gap-3">
-                  <TrackedLink
-                    href="/request-review"
-                    eventName="cta_start_free_hairaudit_about"
-                    className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors"
-                  >
-                    {PUBLIC_CTAS.startFreeHairAudit}
-                  </TrackedLink>
-                  <TrackedLink
-                    href="/professionals/apply"
-                    eventName="cta_create_professional_profile_about"
-                    className="inline-flex items-center justify-center px-6 py-3 rounded-xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
-                  >
-                    {PUBLIC_CTAS.createProfessionalProfile}
-                  </TrackedLink>
-                </div>
-              </section>
-            </ScrollReveal>
+      <main id="main-content" className="relative flex-1">
+        <PublicMarketingHero
+          badge="Independent Patient Protection"
+          title="Independent patient protection infrastructure"
+          description={
+            <>
+              HairAudit is an independent intelligence layer for hair restoration medicine—built to improve
+              transparency, accountability, and long-term outcomes for patients, clinics, and professionals.
+            </>
+          }
+        >
+          <div className="flex flex-col flex-wrap gap-3 sm:flex-row">
+            <TrackedLink
+              href="/request-review"
+              eventName="cta_start_free_hairaudit_about"
+              className={fiHairauditPrimaryButtonClass("lg")}
+            >
+              {PUBLIC_CTAS.startFreeHairAudit}
+            </TrackedLink>
+            <TrackedLink
+              href="/professionals/apply"
+              eventName="cta_create_professional_profile_about"
+              className={cn(networkButtonVariants({ variant: "secondary", size: "lg" }))}
+            >
+              {PUBLIC_CTAS.createProfessionalProfile}
+            </TrackedLink>
           </div>
-        </div>
-      </main>
+        </PublicMarketingHero>
 
-      <SiteFooter />
-    </div>
+        <Section className="border-t border-border/30">
+          <div className="space-y-8">
+            <div className="max-w-3xl space-y-3">
+              <Badge tone="neutral">What HairAudit is</Badge>
+              <h2 className="font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+                An intelligence layer—not a clinic, not a referral funnel
+              </h2>
+              <p className="text-base leading-relaxed text-muted-foreground">
+                HairAudit structures patient evidence for independent analysis, supports clinical verification where
+                needed, and delivers confidence-aware reporting. We do not perform surgery or promote clinics.
+              </p>
+            </div>
+            <FeatureGrid columnsClassName="md:grid-cols-3">
+              {pillars.map(({ title, body }) => (
+                <article
+                  key={title}
+                  className="rounded-2xl border border-border/50 bg-card/70 p-6 shadow-fi-panel"
+                >
+                  <h3 className="text-lg font-semibold text-foreground">{title}</h3>
+                  <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{body}</p>
+                </article>
+              ))}
+            </FeatureGrid>
+          </div>
+        </Section>
+
+        <Section className="border-t border-border/30">
+          <div className="mx-auto max-w-3xl space-y-6">
+            <Badge tone="neutral">Ecosystem positioning</Badge>
+            <h2 className="font-display text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+              Standalone review platform within the Follicle Intelligence Network
+            </h2>
+            <p className="text-base leading-relaxed text-muted-foreground">
+              HairAudit remains a standalone patient protection platform while sharing engineering standards with the
+              wider Follicle Intelligence ecosystem. Methodology, transparency infrastructure, and long-term planning
+              tools are designed to work together without compromising independence.
+            </p>
+            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+              <a href={FI_HOME} target="_blank" rel="noopener noreferrer" className="hover:text-foreground">
+                {PUBLIC_ECOSYSTEM_FOOTER}
+              </a>
+            </p>
+          </div>
+        </Section>
+
+        <Section className="border-t border-border/30">
+          <div className="mx-auto grid max-w-4xl gap-6 md:grid-cols-2">
+            <article className="rounded-2xl border border-border/50 bg-card/70 p-6 shadow-fi-panel">
+              <h2 className="text-xl font-semibold text-foreground">What we do</h2>
+              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                We deliver independent, evidence-led analysis across donor safety, recipient planning, procedural
+                concerns, and documentation quality—structured for patient protection and professional accountability.
+              </p>
+            </article>
+            <article className="rounded-2xl border border-border/50 bg-card/70 p-6 shadow-fi-panel">
+              <h2 className="text-xl font-semibold text-foreground">What we do not do</h2>
+              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                HairAudit does not sell surgery, paid clinic placements, or promotional directory listings. Reports
+                support informed conversations—they do not replace in-person medical diagnosis.
+              </p>
+            </article>
+          </div>
+        </Section>
+
+        <PublicMarketingCtaPanel
+          title="Start with the pathway that fits you"
+          description={
+            <>
+              Patients can begin a free HairAudit today. Clinics and professionals can create a profile and build
+              transparency records over time. Explore{" "}
+              <Link href="/methodology" className="font-medium text-amber-400 hover:text-amber-300">
+                methodology
+              </Link>{" "}
+              or{" "}
+              <Link href="/services" className="font-medium text-amber-400 hover:text-amber-300">
+                HairAudit pathways
+              </Link>
+              .
+            </>
+          }
+        />
+      </main>
+    </HairAuditFiMarketingShell>
   );
 }

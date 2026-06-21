@@ -1,112 +1,112 @@
-import SiteHeader from "@/components/SiteHeader";
-import SiteFooter from "@/components/SiteFooter";
+import HairAuditFiMarketingShell from "@/components/marketing/fi-network/HairAuditFiMarketingShell";
 import FaqConversionFooter from "@/components/marketing/FaqConversionFooter";
-import PublicTrustArchitectureBlock from "@/components/marketing/PublicTrustArchitectureBlock";
-import { createPageMetadata } from "@/lib/seo/pageMetadata";
-import FaqPageSchema from "@/components/seo/FaqPageSchema";
+import PublicMarketingFaqList from "@/components/marketing/PublicMarketingFaqList";
+import PublicMarketingHero from "@/components/marketing/PublicMarketingHero";
 import BreadcrumbListSchema from "@/components/seo/BreadcrumbListSchema";
+import FaqPageSchema from "@/components/seo/FaqPageSchema";
+import { createPageMetadata } from "@/lib/seo/pageMetadata";
+import { Section } from "@/packages/ui";
 
 export const metadata = createPageMetadata({
-  title: "Hair Transplant Audit FAQ | Process, Privacy & Reports | HairAudit",
+  title: "HairAudit FAQ | Process, Privacy & Clinical Intelligence Reports | HairAudit",
   description:
-    "HairAudit audit FAQ—process, privacy, confidence scores, what reports include, and common objections. Long-form patient education lives in the guides hub, not on this FAQ page.",
+    "HairAudit FAQ—process, privacy, confidence-aware reporting, and what Clinical Intelligence Reports include. Long-form patient education lives in the guides hub.",
   pathname: "/faq",
 });
 
 const faqs = [
   {
-    q: "What does HairAudit do?",
-    a: "HairAudit provides independent, evidence-based forensic audits of hair transplant procedures. We assess surgical quality, donor area integrity, graft handling, implantation accuracy, and outcome potential using structured scoring and visual evidence analysis. We do not perform procedures or promote clinics.",
+    question: "What does HairAudit do?",
+    answer:
+      "HairAudit provides independent, evidence-led analysis of hair transplant procedures. We review donor safety, recipient planning, procedural concerns, and documentation quality using structured methodology and visual evidence. We do not perform procedures or promote clinics.",
   },
   {
-    q: "Does HairAudit perform hair transplants?",
-    a: "No. HairAudit does not perform hair transplants and does not promote clinics, surgeons, or products. Our role is to deliver unbiased, independent evaluation only.",
+    question: "Does HairAudit perform hair transplants?",
+    answer:
+      "No. HairAudit does not perform hair transplants and does not promote clinics, surgeons, or products. Our role is independent analysis and patient protection only.",
   },
   {
-    q: "How do confidence scores work?",
-    a: "Confidence reflects how complete the evidence is for each part of the audit. More complete documentation (e.g. pre-op, donor, recipient, post-op photos and key details) supports higher confidence. Lower confidence does not mean a negative finding — it means we are more limited in what we can conclude. The report states where evidence is strong and where it is limited.",
+    question: "Does HairAudit replace medical advice from my doctor?",
+    answer:
+      "No. HairAudit supports informed decision-making with structured documentation and plain-language findings. It does not replace in-person examination, diagnosis, or treatment plans from your treating clinician.",
   },
   {
-    q: "What happens if I do not have full documentation?",
-    a: "You can still submit. We analyse what you provide and score confidence by domain. Missing photos or details will be noted and may limit the strength of conclusions in those areas. The report will state what was assessed and what could not be assessed due to missing evidence. In some cases, clinic or doctor contribution can later improve evidence completeness.",
+    question: "How do confidence scores work?",
+    answer:
+      "Confidence reflects how complete the evidence is for each part of the analysis. More complete documentation supports higher confidence. Lower confidence means conclusions are more limited—not necessarily a negative finding. Reports state where evidence is strong and where it is thin.",
   },
   {
-    q: "How is HairAudit different from asking the clinic for an opinion?",
-    a: "A clinic opinion is from the same provider whose work is being evaluated. HairAudit is an independent third party with no financial interest in the outcome. Our audit uses defined criteria and benchmark methodology, not provider self-assessment. That independence can provide a separate reference point for understanding quality and outcome.",
+    question: "What happens if I do not have full documentation?",
+    answer:
+      "You can still begin your HairAudit. We analyze what you provide and note missing photos or details. The report explains what was reviewed and where evidence limits conclusions. Clinic or doctor contribution can sometimes improve completeness later.",
   },
   {
-    q: "Can HairAudit help me understand corrective options?",
-    a: "Yes. The report can help structure your thinking about next steps. It identifies strengths and limitations in the procedure and may suggest areas that could be relevant to corrective planning (e.g. density, design, donor capacity). We do not give medical advice or recommend specific treatments; we provide independent forensic context that you and your clinician can use in decisions.",
+    question: "How is HairAudit different from asking the clinic for an opinion?",
+    answer:
+      "A clinic opinion comes from the same provider whose work is being evaluated. HairAudit is an independent third party with no financial interest in the outcome. Analysis uses defined criteria and consistent review standards—not provider self-review.",
   },
   {
-    q: "Can an audit report be useful if I need independent documentation of concerns?",
-    a: "An audit report can provide independent documentation of what was assessed and what the evidence showed. It may assist in structuring a conversation with a provider or in providing context if you pursue other avenues. We do not give legal advice or guarantee any particular outcome; we deliver a clear, evidence-based record of our analysis that you can use as you see fit.",
+    question: "Can HairAudit help me understand corrective options?",
+    answer:
+      "Yes. The Clinical Intelligence Report can help structure thinking about next steps—density, design, donor capacity, and timeline fit. We do not prescribe treatments or recommend specific surgeons; we provide independent context you and your clinician can use.",
   },
   {
-    q: "How does HairAudit compare cases or determine benchmark quality?",
-    a: "We use a fixed set of scoring domains and criteria so that cases are assessed consistently. Benchmark quality is determined by how well a case meets defined standards across those domains (e.g. planning, donor preservation, graft handling, implantation, documentation). We do not compare your case to other patients by name; we compare it to the same clinical and evidence standards we apply to all audits.",
+    question: "Can a report be useful if I need independent documentation of concerns?",
+    answer:
+      "A report can document what the evidence showed and how conclusions were reached. It may help structure conversations with a provider or other advisers. We do not give legal advice or guarantee outcomes.",
   },
   {
-    q: "Who can submit a case?",
-    a: "Patients can request independent review today through the request flow. Professional participation has a separate pathway for clinics, surgeons, partners, and expert stakeholders.",
+    question: "How does HairAudit compare cases or determine benchmark quality?",
+    answer:
+      "We use fixed scoring domains and criteria so cases are reviewed consistently. Benchmark quality reflects how well a case meets defined standards across planning, donor preservation, graft handling, implantation, and documentation—not comparisons to other patients by name.",
   },
   {
-    q: "Is my information kept confidential?",
-    a: "Yes. All submissions are handled confidentially and never shared without your consent.",
+    question: "Who can start a HairAudit?",
+    answer:
+      "Patients can begin independent analysis today through the secure upload flow. Professional participation has a separate pathway for clinics, surgeons, and expert stakeholders.",
   },
   {
-    q: "What does the audit report include?",
-    a: "Reports include a structured scorecard by domain, confidence where relevant, donor and recipient analysis, findings on technique and outcome potential, and corrective-planning context where applicable. Each case is assessed using the same defined criteria for consistency and transparency.",
+    question: "Is my information kept confidential?",
+    answer: "Yes. Submissions are handled confidentially and are not shared without your consent.",
+  },
+  {
+    question: "What does the Clinical Intelligence Report include?",
+    answer:
+      "Reports include structured findings by domain, confidence where relevant, donor and recipient analysis, procedural concerns visible in photos, and practical next-step context. Each case uses the same defined criteria for consistency.",
   },
 ];
 
 export default function FAQPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-[#0a0a0f] text-slate-100">
+    <HairAuditFiMarketingShell>
       <BreadcrumbListSchema
         items={[
           { name: "Home", pathname: "/" },
-          { name: "Hair transplant audit FAQ", pathname: "/faq" },
+          { name: "HairAudit FAQ", pathname: "/faq" },
         ]}
       />
-      <FaqPageSchema faqs={faqs.map(({ q, a }) => ({ question: q, answer: a }))} />
-      <div className="fixed inset-0 pointer-events-none" aria-hidden>
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(251,191,36,0.06),transparent)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_80%_60%,rgba(139,92,246,0.05),transparent)]" />
-      </div>
-      <SiteHeader />
+      <FaqPageSchema faqs={faqs.map(({ question, answer }) => ({ question, answer }))} />
 
-      <main className="relative flex-1 px-4 sm:px-6 py-14 sm:py-20">
-        <div className="max-w-3xl mx-auto">
-          <div className="space-y-4">
-            <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
-              Hair transplant audit FAQ
-            </h1>
-            <p className="text-slate-300 leading-relaxed">
-              Process, privacy, reports, and pathways—framed for patients seeking an independent review and for
-              clinics or professionals interested in transparency and standards.
+      <main id="main-content" className="relative flex-1 pb-16">
+        <PublicMarketingHero
+          badge="FAQ"
+          title="HairAudit FAQ"
+          description="Process, privacy, Clinical Intelligence Reports, and pathways—for patients seeking independent analysis and for clinics or professionals building transparency records."
+        />
+
+        <Section className="border-t border-border/30">
+          <div className="mx-auto max-w-3xl">
+            <p className="rounded-2xl border border-amber-400/25 bg-amber-400/5 px-5 py-4 text-sm leading-relaxed text-foreground/90">
+              HairAudit supports informed decision-making but does not replace medical advice. If you have severe pain,
+              fever, spreading infection, or other emergency signs, seek local urgent care or emergency services.
             </p>
-            <PublicTrustArchitectureBlock className="mt-2" />
-            <p className="rounded-xl border border-amber-400/20 bg-amber-400/5 px-4 py-3 text-xs leading-relaxed text-amber-50/95">
-              HairAudit is not for medical emergencies. If you have severe pain, fever, spreading infection, or other
-              emergency signs, seek local urgent care or emergency services.
-            </p>
+            <div className="mt-10">
+              <PublicMarketingFaqList faqs={faqs} />
+            </div>
+            <FaqConversionFooter />
           </div>
-
-          <div className="mt-10 sm:mt-12 space-y-5 sm:space-y-6">
-            {faqs.map(({ q, a }) => (
-              <div key={q} className="rounded-2xl border border-white/10 bg-white/5 p-5 sm:p-6">
-                <h2 className="text-lg font-semibold text-white">{q}</h2>
-                <p className="mt-2 text-slate-300 leading-relaxed">{a}</p>
-              </div>
-            ))}
-          </div>
-
-          <FaqConversionFooter />
-        </div>
+        </Section>
       </main>
-
-      <SiteFooter />
-    </div>
+    </HairAuditFiMarketingShell>
   );
 }

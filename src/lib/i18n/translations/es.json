@@ -213,8 +213,8 @@
         "description": "Metodología, puntuación, estándares de evidencia y marcos de participación para clínicas y profesionales que buscan transparencia, control de calidad y referencias, alineados con el modelo forense independiente de HairAudit."
       },
       "sampleReport": {
-        "title": "Informe de auditoría de trasplante capilar de ejemplo | HairAudit",
-        "description": "Ejemplo del formato de salida HairAudit: puntuación por dominios, análisis de donante y receptor, notas de técnica y diseño, límites de confianza y próximos pasos en lenguaje claro—recorrido de muestra; para su caso, use Solicitar revisión."
+        "title": "Vista previa del Informe de Inteligencia Clínica | HairAudit",
+        "description": "Vea cómo HairAudit evalúa la calidad del donante, el riesgo de progresión, la viabilidad del receptor y las preocupaciones de planificación. Contenido de muestra—inicie su HairAudit gratuito cuando esté listo."
       },
       "postOpHairProtectionGuide": {
         "title": "Guía de protección capilar posoperatoria | Educación para pacientes | HairAudit",
@@ -224,11 +224,11 @@
     "shared": {
       "stepEyebrow": "Paso {{n}}",
       "reviewAfterSubmitTitle": "Qué ocurre después de enviar",
-      "reviewAfterSubmitLi1": "- Revisamos sus fotos y el calendario para ver si están completos.",
-      "reviewAfterSubmitLi2": "- Un análisis asistido prepara un mapa de evidencia para la revisión médica.",
-      "reviewAfterSubmitLi3": "- Un revisor clínico verifica los hallazgos antes de publicar el informe.",
-      "reviewAfterSubmitLi4": "- Recibe orientación clara sobre los próximos pasos en lenguaje sencillo.",
-      "reviewIndependentNote": "HairAudit es independiente. No vendemos cirugía ni derivaciones a clínicas."
+      "reviewAfterSubmitLi1": "Revisamos sus fotos y el calendario para ver si están completos.",
+      "reviewAfterSubmitLi2": "Sus fotos y el calendario se estructuran para un análisis clínico independiente.",
+      "reviewAfterSubmitLi3": "Un revisor clínico verifica los hallazgos antes de publicar el informe.",
+      "reviewAfterSubmitLi4": "Recibe orientación clara sobre los próximos pasos en lenguaje sencillo.",
+      "reviewIndependentNote": "HairAudit no vende cirugía."
     },
     "patientTrust": {
       "sectionTitle": "Por qué los pacientes confían en este proceso",
@@ -259,7 +259,7 @@
     "professionalRibbon": {
       "eyebrow": "Vía profesional y de clínica",
       "bodyBefore": "Esta zona es para clínicas, médicos y equipos que crean perfiles verificados, auditorías internas y registros de transparencia. Está separada de la auditoría gratuita para pacientes, que empieza en",
-      "auditLink": "Empezar auditoría gratuita",
+      "auditLink": "Iniciar HairAudit gratuito",
       "bodyAfter": ".",
       "verification": "La verificación y la publicación de casos siguen las reglas de contribución de HairAudit: se ganan con participación documentada, no con espacios comprados.",
       "forClinics": "Para clínicas",
@@ -268,17 +268,17 @@
       "createDoctor": "Crear cuenta de médico"
     },
     "faqFooter": {
-      "ctaStartAudit": "Empezar auditoría gratuita",
-      "ctaInteractiveDemo": "Informe demo interactivo",
+      "ctaStartAudit": "Iniciar HairAudit gratuito",
+      "ctaInteractiveDemo": "Ver informe de muestra",
       "ctaMethodology": "Metodología",
-      "ctaProfessionals": "Normas de auditoría independiente (profesionales)"
+      "ctaProfessionals": "Estándares de auditoría independiente (profesionales)"
     },
     "home": {
       "heroTitle": "Revisión independiente de trasplante capilar",
       "heroLead": "Auditoría forense basada en evidencia de su resultado—área donante, crecimiento, densidad, diseño de línea frontal, implantación y técnica—con informes claros y estructurados.",
       "heroSupporting": "Análisis asistido por IA dentro de un marco de revisión independiente. No es un discurso comercial de la clínica: transparencia para decidir y hablar con su médico.",
-      "ctaStartAudit": "Solicitar una auditoría de trasplante capilar",
-      "ctaSampleReport": "Informe de auditoría de ejemplo",
+      "ctaStartAudit": "Iniciar HairAudit gratuito",
+      "ctaSampleReport": "Ver informe de muestra",
       "heroFootnote": "Usado por tricólogos, cirujanos y academias de formación internacionales",
       "howItWorksTitle": "Cómo funciona HairAudit",
       "howStep1Title": "Suba sus fotos",

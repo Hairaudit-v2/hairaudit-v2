@@ -1,177 +1,179 @@
 import Link from "next/link";
-import SiteHeader from "@/components/SiteHeader";
-import SiteFooter from "@/components/SiteFooter";
-import { createPageMetadata } from "@/lib/seo/pageMetadata";
+
+import HairAuditFiMarketingShell from "@/components/marketing/fi-network/HairAuditFiMarketingShell";
+import PublicMarketingCtaPanel from "@/components/marketing/PublicMarketingCtaPanel";
+import PublicMarketingHero from "@/components/marketing/PublicMarketingHero";
 import BreadcrumbListSchema from "@/components/seo/BreadcrumbListSchema";
 import { GeoContextLine } from "@/components/patient-education/GeoContentBlocks";
+import { createPageMetadata } from "@/lib/seo/pageMetadata";
+import { PUBLIC_CTAS } from "@/lib/marketing/publicMarketingCopy";
+import { Badge, FeatureGrid, Section } from "@/packages/ui";
 
 export const metadata = createPageMetadata({
-  title: "Hair Transplant Audit Methodology | Independent Forensic Review | HairAudit",
+  title: "HairAudit Methodology | Evidence-Led Independent Analysis | HairAudit",
   description:
-    "How HairAudit conducts independent hair transplant audits: donor area, growth, density, design, implantation, and technique—AI-assisted analysis with clinical review, confidence-aware reporting, and clear limits.",
+    "How HairAudit conducts evidence-led independent analysis: donor quality, hair loss classification, recipient planning, progression risk, procedural concerns, and confidence-aware Clinical Intelligence Reports.",
   pathname: "/methodology",
 });
 
+const reviewDomains = [
+  {
+    title: "Donor quality & safety",
+    body: "Extraction pattern, spacing, sustainability, and signs of overharvest risk visible in submitted photos.",
+  },
+  {
+    title: "Hair loss classification",
+    body: "Pattern and progression context that affects long-term planning and conservative recipient design.",
+  },
+  {
+    title: "Recipient planning",
+    body: "Hairline framing, density distribution, and design choices that affect naturalness and future options.",
+  },
+  {
+    title: "Progression risk",
+    body: "Timeline fit, growth expectations, and when apparent concerns may reflect normal healing vs evidence of problems.",
+  },
+  {
+    title: "Procedural concerns",
+    body: "Implantation cues, direction, and technique-related observations supported by visual evidence.",
+  },
+  {
+    title: "Confidence-aware reporting",
+    body: "Explicit documentation of evidence strength, missing inputs, and limits of photo-only review.",
+  },
+] as const;
+
 export default function MethodologyPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-[#0a0a0f] text-slate-100">
+    <HairAuditFiMarketingShell>
       <BreadcrumbListSchema
         items={[
           { name: "Home", pathname: "/" },
-          { name: "Audit methodology", pathname: "/methodology" },
+          { name: "Methodology", pathname: "/methodology" },
         ]}
       />
-      <div className="fixed inset-0 pointer-events-none" aria-hidden>
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(251,191,36,0.06),transparent)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_80%_60%,rgba(139,92,246,0.05),transparent)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_50%_30%_at_20%_80%,rgba(56,189,248,0.04),transparent)]" />
-      </div>
 
-      <SiteHeader />
+      <main id="main-content" className="relative flex-1">
+        <PublicMarketingHero
+          badge="Evidence-Led Methodology"
+          title="Evidence-led methodology for independent analysis"
+          description={
+            <>
+              HairAudit applies consistent review standards across donor safety, recipient planning, procedural
+              concerns, and documentation quality. Clinical Intelligence Reports explain what the evidence supports,
+              where confidence is limited, and practical next steps—without selling surgery or replacing in-person
+              medical diagnosis.
+            </>
+          }
+        />
 
-      <main className="relative flex-1">
-        <section className="relative px-4 sm:px-6 py-16 sm:py-20 lg:py-24">
-          <div className="max-w-3xl mx-auto">
-            <h1 className="mt-3 text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white leading-[1.15]">
-              Hair transplant audit methodology
-            </h1>
-            <p className="mt-6 text-lg text-slate-400 leading-relaxed">
-              HairAudit uses your photos and case details in an independent, evidence-based forensic audit—structured
-              like a second opinion across donor stewardship, recipient growth and density, design and naturalness visible
-              in photos, implantation cues images can support, and explicit confidence when documentation is incomplete.
-              AI-assisted analysis supports clinical reviewers. Reports explain what the evidence supports, where
-              confidence is limited, and practical next steps—the output is structured documentation, not a sales
-              assessment and not a substitute for in-person medical diagnosis or a treatment prescription.
-            </p>
+        <Section className="border-t border-border/30">
+          <div className="mx-auto max-w-3xl">
             <GeoContextLine label="How this differs from a typical clinic opinion">
               <p>
                 A clinic that performed the procedure can offer useful operative context, but it also has a different
-                position when interpreting the same result. HairAudit does not sell surgery or promote clinics; the audit
-                is framed to describe what the submitted evidence appears to show, where conclusions are strong, and
-                where they are limited. For a patient-facing comparison, read{" "}
+                position when interpreting the same result. HairAudit does not sell surgery or promote clinics. For a
+                patient-facing comparison, read{" "}
                 <Link
                   href="/hair-transplant-second-opinion-vs-clinic-opinion"
-                  className="text-amber-400 hover:text-amber-300 font-medium"
+                  className="font-medium text-amber-400 hover:text-amber-300"
                 >
-                  second opinion vs clinic opinion
+                  independent analysis vs clinic opinion
                 </Link>
                 .
               </p>
             </GeoContextLine>
           </div>
-        </section>
+        </Section>
 
-        <section className="relative px-4 sm:px-6 py-16 sm:py-20 lg:py-24">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="mt-3 text-2xl sm:text-3xl font-bold text-white tracking-tight">
-              What we look at
-            </h2>
-            <ul className="mt-6 space-y-3 text-slate-300">
-              {[
-                "Donor area integrity, extraction pattern, and overharvesting risk",
-                "Recipient density, growth pattern, and cosmetic design (e.g. hairline framing)",
-                "Implantation angles, direction, and technique-related cues visible in photos",
-                "Evidence quality, timeline fit, and confidence for each part of the audit",
-              ].map((item) => (
-                <li key={item} className="flex gap-2">
-                  <span className="text-amber-400">-</span>
-                  <span>{item}</span>
-                </li>
+        <Section className="border-t border-border/30">
+          <div className="space-y-8">
+            <div className="max-w-3xl space-y-3">
+              <Badge tone="neutral">Review domains</Badge>
+              <h2 className="font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+                What independent analysis examines
+              </h2>
+            </div>
+            <FeatureGrid columnsClassName="md:grid-cols-2 lg:grid-cols-3">
+              {reviewDomains.map(({ title, body }) => (
+                <article
+                  key={title}
+                  className="rounded-2xl border border-border/50 bg-card/70 p-6 shadow-fi-panel"
+                >
+                  <h3 className="text-lg font-semibold text-foreground">{title}</h3>
+                  <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{body}</p>
+                </article>
               ))}
-            </ul>
-            <p className="mt-6 text-slate-400">
-              This is structured forensic assessment against defined criteria—not a promotional clinic assessment.
+            </FeatureGrid>
+          </div>
+        </Section>
+
+        <Section className="border-t border-border/30">
+          <div className="mx-auto max-w-3xl space-y-4">
+            <Badge tone="neutral">Limits & honesty</Badge>
+            <h2 className="font-display text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+              Confidence in your Clinical Intelligence Report
+            </h2>
+            <p className="text-base leading-relaxed text-muted-foreground">
+              Some cases have strong photo evidence. Others have missing images or incomplete timelines. HairAudit states
+              those limits directly so you know how confident each conclusion is.
             </p>
-            <GeoContextLine label="What photos and a remote audit cannot replace">
+            <GeoContextLine label="What photos and remote review cannot replace">
               <p>
-                No photo set proves every microscopic detail of graft handling or exact survival rates. HairAudit states
-                those limits directly and uses confidence scoring so you can see where evidence is complete vs thin.
-                Scope and boundaries are also summarized in{" "}
+                No photo set proves every microscopic detail of graft handling or exact survival rates. Scope and
+                boundaries are summarized in{" "}
                 <Link
                   href="/what-an-independent-hair-transplant-audit-can-and-cannot-do"
-                  className="text-amber-400 hover:text-amber-300 font-medium"
+                  className="font-medium text-amber-400 hover:text-amber-300"
                 >
-                  what an independent hair transplant audit can and cannot do
+                  what independent analysis can and cannot do
                 </Link>{" "}
                 and{" "}
-                <Link href="/can-a-hair-transplant-be-audited-from-photos" className="text-amber-400 hover:text-amber-300 font-medium">
-                  auditing from photos
+                <Link
+                  href="/can-a-hair-transplant-be-audited-from-photos"
+                  className="font-medium text-amber-400 hover:text-amber-300"
+                >
+                  reviewing from photos
                 </Link>
                 .
               </p>
             </GeoContextLine>
-          </div>
-        </section>
-
-        <section className="relative px-4 sm:px-6 py-16 sm:py-20 lg:py-24">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="mt-3 text-2xl sm:text-3xl font-bold text-white tracking-tight">
-              Confidence in your report
-            </h2>
-            <p className="mt-4 text-slate-400">
-              Some cases have strong photo evidence. Others have missing images. HairAudit explains
-              this clearly so you know how confident each conclusion is.
-            </p>
-            <p className="mt-4 text-slate-400">
-              Looking for technical standards, scoring, and evidence rules? See{" "}
-              <Link href="/professionals" className="text-amber-400 hover:text-amber-300 transition-colors font-medium">
-                independent hair transplant audit standards for professionals
+            <p className="text-sm text-muted-foreground">
+              For technical standards and professional participation frameworks, see{" "}
+              <Link href="/professionals" className="font-medium text-amber-400 hover:text-amber-300">
+                professional standards
               </Link>
               .
             </p>
           </div>
-        </section>
+        </Section>
 
-        <section className="relative px-4 sm:px-6 py-16 sm:py-20 lg:py-24">
-          <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-              Next steps
-            </h2>
-            <p className="mt-4 text-slate-400 text-sm sm:text-base">
-              Request your review, see an example report, or learn how the process works.
-            </p>
-            <div className="mt-10 flex flex-col sm:flex-row flex-wrap justify-center gap-4">
-              <Link
-                href="/request-review"
-                className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors shadow-lg shadow-amber-500/20"
-              >
-                Start Free HairAudit
-              </Link>
-              <Link
-                href="/demo-report"
-                className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
-              >
-                Sample hair transplant audit report
-              </Link>
-              <Link
-                href="/faq"
-                className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
-              >
-                Hair transplant audit FAQ
-              </Link>
-              <Link
-                href="/how-it-works"
-                className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
-              >
-                How hair transplant audits work
-              </Link>
-            </div>
-            <p className="mt-5 text-sm text-slate-400">
-              For process detail, see{" "}
-              <Link href="/how-it-works" className="text-amber-400 hover:text-amber-300">
-                how hair transplant audits work
-              </Link>
-              . Patient education and comparisons live in the{" "}
-              <Link href="/hair-transplant-problems" className="text-amber-400 hover:text-amber-300">
-                patient guides hub
-              </Link>
-              —this page stays focused on review framework and trust.
-            </p>
-          </div>
-        </section>
+        <PublicMarketingCtaPanel
+          title="See the methodology in a real report preview"
+          description="Start your free HairAudit when ready, or preview a sample Clinical Intelligence Report first."
+          actions={[
+            {
+              href: "/request-review",
+              label: PUBLIC_CTAS.startFreeHairAudit,
+              variant: "primary",
+              eventName: "cta_start_free_audit_methodology",
+              useStartFreeAuditButton: true,
+            },
+            {
+              href: "/demo-report",
+              label: PUBLIC_CTAS.viewSampleReport,
+              variant: "secondary",
+              eventName: "cta_view_sample_report_methodology",
+            },
+            {
+              href: "/faq",
+              label: "HairAudit FAQ",
+              variant: "secondary",
+              eventName: "cta_faq_methodology",
+            },
+          ]}
+        />
       </main>
-
-      <SiteFooter />
-    </div>
+    </HairAuditFiMarketingShell>
   );
 }

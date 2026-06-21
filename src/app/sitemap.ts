@@ -7,7 +7,6 @@ const PUBLIC_ROUTES = [
   "/",
   "/how-it-works",
   "/request-review",
-  "/sample-report",
   "/demo-report",
   "/audit-examples",
   "/hair-transplant-problems",

@@ -1,13 +1,17 @@
 import Link from "next/link";
-import SiteHeader from "@/components/SiteHeader";
-import SiteFooter from "@/components/SiteFooter";
-import ScrollReveal from "@/components/ui/ScrollReveal";
+import HairAuditFiMarketingShell from "@/components/marketing/fi-network/HairAuditFiMarketingShell";
+import PublicMarketingHero from "@/components/marketing/PublicMarketingHero";
+import PublicTrustArchitectureBlock from "@/components/marketing/PublicTrustArchitectureBlock";
 import ReviewProcessReassurance from "@/components/seo/ReviewProcessReassurance";
 import MedicalProcedureFaqSchema from "@/components/seo/MedicalProcedureFaqSchema";
 import BreadcrumbListSchema from "@/components/seo/BreadcrumbListSchema";
 import { createPageMetadata } from "@/lib/seo/pageMetadata";
 import { patientIssueLibrary } from "@/lib/patientEducationIssues";
 import { listPatientIntentGuidesGroupedByTheme } from "@/lib/seo/patient-intent-hub-themes";
+import { PUBLIC_CTAS } from "@/lib/marketing/publicMarketingCopy";
+import { fiHairauditPrimaryButtonClass } from "@/lib/fi-ui/hairauditPrimaryButton";
+import { Badge, Section, networkButtonVariants } from "@/packages/ui";
+import { cn } from "@/lib/utils";
 
 const faqs = [
   {
@@ -54,15 +58,15 @@ function GuideCard({
   return (
     <Link
       href={href}
-      className="rounded-2xl border border-white/10 bg-white/5 p-5 hover:border-amber-300/60 transition-colors flex flex-col h-full"
+      className="flex h-full flex-col rounded-2xl border border-border/50 bg-card/70 p-5 shadow-fi-panel transition hover:border-amber-400/40"
       data-cta="patient-guides-hub-card"
       data-hub-card-type={hubCardType}
       data-hub-card-slug={hubCardSlug}
       data-cta-destination={href}
       {...(hubThemeId ? { "data-hub-theme": hubThemeId } : {})}
     >
-      <h3 className="text-lg font-semibold text-white leading-snug">{title}</h3>
-      <p className="mt-3 text-sm text-slate-300 leading-relaxed flex-1 line-clamp-4">{description}</p>
+      <h3 className="text-lg font-semibold leading-snug text-foreground">{title}</h3>
+      <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground line-clamp-4">{description}</p>
       <p className="mt-4 text-sm font-medium text-amber-300">{linkLabel}</p>
     </Link>
   );
@@ -72,7 +76,7 @@ export default function HairTransplantProblemsHubPage() {
   const themedSections = listPatientIntentGuidesGroupedByTheme();
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#0a0a0f] text-slate-100">
+    <HairAuditFiMarketingShell>
       <BreadcrumbListSchema
         items={[
           { name: "Home", pathname: "/" },
@@ -81,90 +85,66 @@ export default function HairTransplantProblemsHubPage() {
       />
       <MedicalProcedureFaqSchema
         pageName="Hair transplant patient guides"
-        pageDescription="Independent patient education on post-transplant concerns, photo-based review, and when structured assessment helps."
+        pageDescription="Independent patient education on post-transplant concerns, photo-based review, and when structured independent analysis helps."
         faqs={faqs}
       />
 
-      <div className="fixed inset-0 pointer-events-none" aria-hidden>
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(251,191,36,0.06),transparent)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_80%_60%,rgba(139,92,246,0.05),transparent)]" />
-      </div>
-
-      <SiteHeader />
-
-      <main
-        className="relative flex-1 px-4 sm:px-6 py-16 sm:py-20"
-        data-analytics-scope="patient-guides-hub"
-      >
-        <div className="max-w-5xl mx-auto">
-          <ScrollReveal>
-            <nav className="mb-6" aria-label="Breadcrumb">
-              <Link href="/" className="text-sm text-slate-500 hover:text-slate-300 transition-colors">
-                Home
-              </Link>
-              <span className="text-slate-600 mx-2">/</span>
-              <span className="text-sm text-slate-400">Patient guides</span>
-            </nav>
-            <p className="text-xs font-semibold uppercase tracking-wider text-amber-300">Independent patient education</p>
-            <h1 className="mt-3 text-3xl sm:text-4xl lg:text-[2.25rem] font-bold text-white tracking-tight leading-tight">
-              Hair transplant patient guides
-            </h1>
-            <p className="mt-5 text-lg text-slate-300 max-w-3xl leading-relaxed">
-              Worried about density, hairline shape, donor thinning, or slow growth? These guides explain what often drives those concerns, what can still be normal during recovery, and{" "}
-              <span className="text-slate-200">where an independent, photo-based HairAudit review fits</span>—separate from any clinic’s sales story.
-            </p>
-            <p className="mt-4 text-slate-400 max-w-3xl leading-relaxed">
-              Use the short topic pages for a fast orientation, then open the in-depth guides grouped by theme. Every guide is written in the same evidence-aware voice as our reports.
-            </p>
-
-            <div
-              className="mt-8 flex flex-col sm:flex-row flex-wrap gap-3"
-              data-analytics-region="patient-guides-hub-hero-ctas"
+      <main id="main-content" className="relative flex-1" data-analytics-scope="patient-guides-hub">
+        <PublicMarketingHero
+          badge="Patient guides"
+          title="Hair transplant patient guides"
+          description={
+            <>
+              Worried about density, hairline shape, donor thinning, or slow growth? These guides explain common
+              concerns, what can still be normal during recovery, and where an independent HairAudit fits—separate from
+              any clinic’s sales story.
+            </>
+          }
+        >
+          <div
+            className="flex flex-col flex-wrap gap-3 sm:flex-row"
+            data-analytics-region="patient-guides-hub-hero-ctas"
+          >
+            <Link
+              href="/request-review"
+              className={fiHairauditPrimaryButtonClass("md")}
+              data-cta="patient-guides-hub-hero-request-review"
+              data-cta-destination="/request-review"
             >
-              <Link
-                href="/request-review"
-                className="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors"
-                data-cta="patient-guides-hub-hero-request-review"
-                data-cta-destination="/request-review"
-              >
-                Start Free HairAudit
-              </Link>
-              <Link
-                href="/sample-report"
-                className="inline-flex items-center justify-center px-6 py-3 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
-                data-cta="patient-guides-hub-hero-sample-report"
-                data-cta-destination="/sample-report"
-              >
-                View Sample Report
-              </Link>
-              <Link
-                href="/methodology"
-                className="inline-flex items-center justify-center px-6 py-3 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
-                data-cta="patient-guides-hub-hero-methodology"
-                data-cta-destination="/methodology"
-              >
-                Audit methodology
-              </Link>
-              <Link
-                href="/faq"
-                className="inline-flex items-center justify-center px-6 py-3 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
-                data-cta="patient-guides-hub-hero-faq"
-                data-cta-destination="/faq"
-              >
-                Hair transplant audit FAQ
-              </Link>
-            </div>
-          </ScrollReveal>
+              {PUBLIC_CTAS.startFreeHairAudit}
+            </Link>
+            <Link
+              href="/demo-report"
+              className={cn(networkButtonVariants({ variant: "secondary", size: "md" }))}
+              data-cta="patient-guides-hub-hero-sample-report"
+              data-cta-destination="/demo-report"
+            >
+              {PUBLIC_CTAS.viewSampleReport}
+            </Link>
+            <Link
+              href="/methodology"
+              className={cn(networkButtonVariants({ variant: "secondary", size: "md" }))}
+              data-cta="patient-guides-hub-hero-methodology"
+              data-cta-destination="/methodology"
+            >
+              Methodology
+            </Link>
+          </div>
+        </PublicMarketingHero>
 
-          <ScrollReveal delay={0.04}>
-            <section className="mt-14" aria-labelledby="quick-topics-heading">
-              <h2 id="quick-topics-heading" className="text-xl font-semibold text-white">
+        <Section className="border-t border-border/30">
+          <div className="mx-auto max-w-5xl space-y-14">
+            <PublicTrustArchitectureBlock surface="fi" />
+
+            <section aria-labelledby="quick-topics-heading">
+              <Badge tone="neutral">Quick topics</Badge>
+              <h2 id="quick-topics-heading" className="mt-3 text-xl font-semibold text-foreground sm:text-2xl">
                 Quick topic guides
               </h2>
-              <p className="mt-3 text-slate-400 max-w-3xl text-sm sm:text-base leading-relaxed">
+              <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted-foreground sm:text-base">
                 Shorter pages on frequent search questions. Pair them with the themed guides below when you want more depth.
               </p>
-              <div className="mt-6 grid sm:grid-cols-2 gap-4" data-analytics-region="patient-guides-hub-quick-topics">
+              <div className="mt-6 grid gap-4 sm:grid-cols-2" data-analytics-region="patient-guides-hub-quick-topics">
                 {patientIssueLibrary.map((issue) => (
                   <GuideCard
                     key={issue.slug}
@@ -178,28 +158,28 @@ export default function HairTransplantProblemsHubPage() {
                 ))}
               </div>
             </section>
-          </ScrollReveal>
 
-          <ScrollReveal delay={0.06}>
             <section className="mt-16" aria-labelledby="in-depth-heading">
-              <h2 id="in-depth-heading" className="text-xl font-semibold text-white">
+              <Badge tone="neutral">In-depth guides</Badge>
+              <h2 id="in-depth-heading" className="mt-3 text-xl font-semibold text-foreground sm:text-2xl">
                 In-depth guides by theme
               </h2>
-              <p className="mt-3 text-slate-400 max-w-3xl text-sm sm:text-base leading-relaxed">
-                Longer reads organised into clusters so you can explore one concern without losing the surrounding context—healing versus design versus donor planning versus independent review.
+              <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted-foreground sm:text-base">
+                Longer reads organised into clusters so you can explore one concern without losing surrounding
+                context—healing versus design versus donor planning versus independent analysis.
               </p>
             </section>
-          </ScrollReveal>
 
-          {themedSections.map((section, idx) => (
-            <ScrollReveal key={section.id} delay={0.07 + idx * 0.02}>
-              <section className="mt-12 scroll-mt-24" aria-labelledby={`theme-${section.id}`}>
-                <h3 id={`theme-${section.id}`} className="text-lg sm:text-xl font-semibold text-white">
+            {themedSections.map((section) => (
+              <section key={section.id} className="scroll-mt-24" aria-labelledby={`theme-${section.id}`}>
+                <h3 id={`theme-${section.id}`} className="text-lg font-semibold text-foreground sm:text-xl">
                   {section.title}
                 </h3>
-                <p className="mt-2 text-sm sm:text-base text-slate-400 max-w-3xl leading-relaxed">{section.description}</p>
+                <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground sm:text-base">
+                  {section.description}
+                </p>
                 <div
-                  className="mt-5 grid sm:grid-cols-2 gap-4"
+                  className="mt-5 grid gap-4 sm:grid-cols-2"
                   data-analytics-region={`patient-guides-hub-theme-${section.id}`}
                 >
                   {section.guides.map((guide) => (
@@ -216,19 +196,18 @@ export default function HairTransplantProblemsHubPage() {
                   ))}
                 </div>
               </section>
-            </ScrollReveal>
-          ))}
+            ))}
 
-          <ScrollReveal delay={0.2}>
-            <section className="mt-14 rounded-2xl border border-white/10 bg-white/5 p-6">
-              <h2 className="text-xl font-semibold text-white">Want example findings, not theory?</h2>
-              <p className="mt-3 text-slate-300 leading-relaxed">
-                The audit example library shows how structured findings, evidence limits, and next steps appear in practice.
+            <section className="rounded-2xl border border-border/50 bg-card/70 p-6 shadow-fi-panel">
+              <h2 className="text-xl font-semibold text-foreground">Want example findings, not theory?</h2>
+              <p className="mt-3 leading-relaxed text-muted-foreground">
+                The audit example library shows how structured findings, evidence limits, and next steps appear in
+                practice.
               </p>
               <div className="mt-5" data-analytics-region="patient-guides-hub-audit-examples">
                 <Link
                   href="/audit-examples"
-                  className="inline-flex items-center justify-center px-6 py-3 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
+                  className={cn(networkButtonVariants({ variant: "secondary", size: "md" }))}
                   data-cta="patient-guides-hub-audit-examples"
                   data-cta-destination="/audit-examples"
                 >
@@ -236,38 +215,18 @@ export default function HairTransplantProblemsHubPage() {
                 </Link>
               </div>
             </section>
-          </ScrollReveal>
 
-          <ScrollReveal delay={0.22}>
-            <section className="mt-6 rounded-2xl border border-emerald-300/30 bg-emerald-300/10 p-6">
-              <h2 className="text-xl font-semibold text-emerald-100">Happy with your result and want validation?</h2>
-              <p className="mt-3 text-emerald-50/90 leading-relaxed">
-                Use the dedicated quality pathway for objective confirmation and a shareable score.
-              </p>
-              <div className="mt-5" data-analytics-region="patient-guides-hub-rate-my">
-                <Link
-                  href="/rate-my-hair-transplant"
-                  className="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-emerald-500 text-slate-900 font-semibold hover:bg-emerald-400 transition-colors"
-                  data-cta="patient-guides-hub-rate-my-transplant"
-                  data-cta-destination="/rate-my-hair-transplant"
-                >
-                  How good is my hair transplant?
-                </Link>
-              </div>
-            </section>
-          </ScrollReveal>
-
-          <ScrollReveal delay={0.24}>
             <section
-              className="mt-8 rounded-2xl border border-amber-300/25 bg-gradient-to-br from-amber-500/10 to-transparent p-6 sm:p-8"
-              data-analytics-region="patient-guides-hub-footer-assessment"
+              className="rounded-2xl border border-amber-400/25 bg-gradient-to-br from-amber-400/10 to-transparent p-6 sm:p-8"
+              data-analytics-region="patient-guides-hub-footer-cta"
             >
-              <h2 className="text-xl font-semibold text-white">Ready for structured, independent analysis?</h2>
-              <p className="mt-3 text-slate-300 leading-relaxed">
-                If something still feels off after reading, upload photos and timeline for an independent HairAudit that does not depend on your clinic’s narrative. Preview a{" "}
+              <h2 className="text-xl font-semibold text-foreground">Ready for structured, independent analysis?</h2>
+              <p className="mt-3 leading-relaxed text-muted-foreground">
+                If something still feels off after reading, begin your HairAudit with photos and timeline evidence.
+                Preview a{" "}
                 <Link
                   href="/demo-report"
-                  className="text-amber-400 hover:text-amber-300 font-medium underline underline-offset-2"
+                  className="font-medium text-amber-400 underline underline-offset-2 hover:text-amber-300"
                   data-cta="patient-guides-hub-footer-inline-sample-report"
                   data-cta-destination="/demo-report"
                 >
@@ -276,7 +235,7 @@ export default function HairTransplantProblemsHubPage() {
                 or read the{" "}
                 <Link
                   href="/faq"
-                  className="text-amber-400 hover:text-amber-300 font-medium underline underline-offset-2"
+                  className="font-medium text-amber-400 underline underline-offset-2 hover:text-amber-300"
                   data-cta="patient-guides-hub-footer-inline-faq"
                   data-cta-destination="/faq"
                 >
@@ -285,41 +244,39 @@ export default function HairTransplantProblemsHubPage() {
                 first if that helps.
               </p>
               <div
-                className="mt-6 flex flex-col sm:flex-row flex-wrap gap-3"
+                className="mt-6 flex flex-col flex-wrap gap-3 sm:flex-row"
                 data-analytics-region="patient-guides-hub-footer-ctas"
               >
                 <Link
                   href="/request-review"
-                  className="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors"
+                  className={fiHairauditPrimaryButtonClass("md")}
                   data-cta="patient-guides-hub-footer-request-review"
                   data-cta-destination="/request-review"
                 >
-                  Start Free HairAudit
+                  {PUBLIC_CTAS.startFreeHairAudit}
                 </Link>
                 <Link
                   href="/demo-report"
-                  className="inline-flex items-center justify-center px-6 py-3 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
+                  className={cn(networkButtonVariants({ variant: "secondary", size: "md" }))}
                   data-cta="patient-guides-hub-footer-sample-report"
                   data-cta-destination="/demo-report"
                 >
-                  View Sample Report
+                  {PUBLIC_CTAS.viewSampleReport}
                 </Link>
                 <Link
                   href="/faq"
-                  className="inline-flex items-center justify-center px-6 py-3 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
+                  className={cn(networkButtonVariants({ variant: "secondary", size: "md" }))}
                   data-cta="patient-guides-hub-footer-faq"
                   data-cta-destination="/faq"
                 >
                   FAQ
                 </Link>
               </div>
-              <ReviewProcessReassurance className="mt-6" />
+              <ReviewProcessReassurance className="mt-6 border-emerald-400/25 bg-emerald-400/5 text-foreground [&_h3]:text-emerald-200 [&_li]:text-emerald-50/90 [&_p]:text-emerald-100/80" />
             </section>
-          </ScrollReveal>
-        </div>
+          </div>
+        </Section>
       </main>
-
-      <SiteFooter />
-    </div>
+    </HairAuditFiMarketingShell>
   );
 }

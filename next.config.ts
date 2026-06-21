@@ -24,6 +24,15 @@ const tailwindcssPath = getTailwindPath();
 const fiUiEntry = path.join(process.cwd(), "src", "lib", "fi-ui", "network-ui.ts");
 
 const nextConfig: NextConfig = {
+  async redirects() {
+    return [
+      {
+        source: "/sample-report",
+        destination: "/demo-report",
+        permanent: true,
+      },
+    ];
+  },
   serverExternalPackages: [
     "pdfkit",
     "@supabase/supabase-js",

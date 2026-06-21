@@ -1,6 +1,6 @@
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES, type SupportedLocale } from "@/lib/i18n/constants";
 
-export const LOCALIZED_PUBLIC_PATHNAMES = ["/", "/how-it-works", "/professionals", "/sample-report"] as const;
+export const LOCALIZED_PUBLIC_PATHNAMES = ["/", "/how-it-works", "/professionals", "/demo-report"] as const;
 
 export type LocalizedPublicPathname = (typeof LOCALIZED_PUBLIC_PATHNAMES)[number];
 
