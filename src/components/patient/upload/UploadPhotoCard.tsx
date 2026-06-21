@@ -4,6 +4,9 @@ import React, { useState } from "react";
 import UploadedThumb from "@/components/uploads/UploadedThumb";
 import DeletePhotoConfirm from "@/components/patient/upload/DeletePhotoConfirm";
 import UploadProgressBar from "@/components/patient/upload/UploadProgressBar";
+import { useI18n } from "@/components/i18n/I18nProvider";
+import type { TranslationKey } from "@/lib/i18n/translationKeys";
+import { formatTemplate } from "@/lib/i18n/formatTemplate";
 import type { PerFileUploadState } from "@/lib/uploads/uploadPatientPhotos";
 
 type UploadRow = {
@@ -38,20 +41,23 @@ function acceptsFile(file: File, accept: string): boolean {
   });
 }
 
-function statusBadge(status: PhotoSlotStatus): { label: string; className: string } {
+function statusBadge(
+  status: PhotoSlotStatus,
+  labels: Record<PhotoSlotStatus, string>
+): { label: string; className: string } {
   switch (status) {
     case "required":
-      return { label: "Required", className: "bg-amber-100 text-amber-900" };
+      return { label: labels.required, className: "bg-amber-100 text-amber-900" };
     case "recommended":
-      return { label: "Recommended", className: "bg-sky-100 text-sky-900" };
+      return { label: labels.recommended, className: "bg-sky-100 text-sky-900" };
     case "optional":
-      return { label: "Optional", className: "bg-slate-100 text-slate-600" };
+      return { label: labels.optional, className: "bg-slate-100 text-slate-600" };
     case "uploading":
-      return { label: "Uploading", className: "bg-cyan-100 text-cyan-900" };
+      return { label: labels.uploading, className: "bg-cyan-100 text-cyan-900" };
     case "complete":
-      return { label: "Complete", className: "bg-emerald-100 text-emerald-800" };
+      return { label: labels.complete, className: "bg-emerald-100 text-emerald-800" };
     case "needs_retry":
-      return { label: "Needs retry", className: "bg-rose-100 text-rose-800" };
+      return { label: labels.needs_retry, className: "bg-rose-100 text-rose-800" };
   }
 }
 
@@ -82,6 +88,7 @@ export default function UploadPhotoCard({
   onDeleted,
   onDeleteError,
   compact = false,
+  patientCopy = false,
 }: {
   caseId: string;
   category: string;
@@ -109,7 +116,10 @@ export default function UploadPhotoCard({
   onDeleted: (id: string) => void;
   onDeleteError?: (message: string) => void;
   compact?: boolean;
+  /** When true, use calm patient-facing i18n copy for buttons and status labels. */
+  patientCopy?: boolean;
 }) {
+  const { t } = useI18n();
   const [drag, setDrag] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
@@ -117,7 +127,82 @@ export default function UploadPhotoCard({
   const busy = slotStatus === "uploading";
   const remaining = Math.max(0, max - existing.length);
   const disabled = locked || busy || remaining <= 0;
-  const badge = statusBadge(slotStatus);
+
+  const copy = patientCopy
+    ? {
+        badgeRequired: t("patient.upload.card.badgeRequired" as TranslationKey),
+        badgeRecommended: t("patient.upload.card.badgeRecommended" as TranslationKey),
+        badgeOptional: t("patient.upload.card.badgeOptional" as TranslationKey),
+        badgeUploading: t("patient.upload.card.badgeUploading" as TranslationKey),
+        badgeComplete: t("patient.upload.card.badgeComplete" as TranslationKey),
+        badgeNeedsRetry: t("patient.upload.card.badgeNeedsRetry" as TranslationKey),
+        choosePhoto: t("patient.upload.card.choosePhoto" as TranslationKey),
+        takePhoto: t("patient.upload.card.takePhoto" as TranslationKey),
+        tryAgain: t("patient.upload.card.tryAgain" as TranslationKey),
+        retryFailedUploads: t("patient.upload.card.retryFailedUploads" as TranslationKey),
+        dragHint: t("patient.upload.card.dragHint" as TranslationKey),
+        dropHint: t("patient.upload.card.dropHint" as TranslationKey),
+        qualityAdvisoryPrefix: t("patient.upload.card.qualityAdvisoryPrefix" as TranslationKey),
+        qualityAdvisorySuffix: t("patient.upload.card.qualityAdvisorySuffix" as TranslationKey),
+        partialUploadError: t("patient.upload.card.partialUploadError" as TranslationKey),
+        preparing: t("patient.upload.card.preparing" as TranslationKey),
+        uploading: t("patient.upload.card.uploading" as TranslationKey),
+        done: t("patient.upload.card.done" as TranslationKey),
+        failed: t("patient.upload.card.failed" as TranslationKey),
+        cantProvide: t("patient.upload.card.cantProvide" as TranslationKey),
+        locked: t("patient.upload.card.locked" as TranslationKey),
+        maxReached: t("patient.upload.card.maxReached" as TranslationKey),
+        deleteFailed: t("patient.upload.messages.deleteFailed" as TranslationKey),
+      }
+    : {
+        badgeRequired: "Required",
+        badgeRecommended: "Recommended",
+        badgeOptional: "Optional",
+        badgeUploading: "Uploading",
+        badgeComplete: "Complete",
+        badgeNeedsRetry: "Needs retry",
+        choosePhoto: "Choose files",
+        takePhoto: "Take photo",
+        tryAgain: "Retry",
+        retryFailedUploads: "Retry failed upload",
+        dragHint: "Drag photos here",
+        dropHint: "Drop to upload",
+        qualityAdvisoryPrefix: "Advisory:",
+        qualityAdvisorySuffix: "You can still upload — a clearer photo helps your review.",
+        partialUploadError: "Some files could not be uploaded:",
+        preparing: "Preparing…",
+        uploading: "Uploading…",
+        done: "Done",
+        failed: "Failed",
+        cantProvide: "I can't provide this",
+        locked: "Locked",
+        maxReached: "Maximum reached",
+        deleteFailed: "Could not delete photo",
+      };
+
+  const badgeLabels: Record<PhotoSlotStatus, string> = {
+    required: copy.badgeRequired,
+    recommended: copy.badgeRecommended,
+    optional: copy.badgeOptional,
+    uploading: copy.badgeUploading,
+    complete: copy.badgeComplete,
+    needs_retry: copy.badgeNeedsRetry,
+  };
+  const badge = statusBadge(slotStatus, badgeLabels);
+
+  const minMaxHint = patientCopy
+    ? formatTemplate(t("patient.upload.card.minMaxHint" as TranslationKey), {
+        current: String(existing.length),
+        max: String(max),
+        min: String(min),
+      })
+    : `${existing.length} / ${max} max • min ${min}`;
+
+  const uploadedLine = patientCopy
+    ? `${formatTemplate(t("patient.upload.card.uploadedCount" as TranslationKey), {
+        count: String(existing.length),
+      })}${remaining > 0 ? ` • ${formatTemplate(t("patient.upload.card.moreAllowed" as TranslationKey), { count: String(remaining) })}` : ""}`
+    : `${existing.length} uploaded${remaining > 0 ? ` • ${remaining} more allowed` : ""}`;
 
   const borderCls =
     emphasize && !locked
@@ -147,7 +232,7 @@ export default function UploadPhotoCard({
       onDeleted(pendingDeleteId);
       setPendingDeleteId(null);
     } catch (e: unknown) {
-      onDeleteError?.((e as Error)?.message ?? "Could not delete photo");
+      onDeleteError?.((e as Error)?.message ?? copy.deleteFailed);
     } finally {
       setDeleteBusy(false);
     }
@@ -172,7 +257,7 @@ export default function UploadPhotoCard({
             onClick={onSkip}
             className="text-xs text-slate-500 hover:text-slate-700"
           >
-            I can&apos;t provide this
+            {copy.cantProvide}
           </button>
         ) : null}
       </div>
@@ -189,16 +274,14 @@ export default function UploadPhotoCard({
         </ul>
       ) : null}
 
-      <p className={`text-slate-600 ${compact ? "text-xs" : "text-sm"}`}>
-        {existing.length} / {max} max • min {min}
-      </p>
+      <p className={`text-slate-600 ${compact ? "text-xs" : "text-sm"}`}>{minMaxHint}</p>
 
       {qualityWarning ? (
         <p
           className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900"
           role="note"
         >
-          Advisory: {qualityWarning} You can still upload — a clearer photo helps your review.
+          {copy.qualityAdvisoryPrefix} {qualityWarning} {copy.qualityAdvisorySuffix}
         </p>
       ) : null}
 
@@ -210,17 +293,17 @@ export default function UploadPhotoCard({
                 <span className="truncate font-medium text-slate-700">{s.fileName}</span>
                 <span className="shrink-0 text-slate-500">
                   {s.phase === "compressing"
-                    ? "Preparing…"
+                    ? copy.preparing
                     : s.phase === "uploading"
-                      ? "Uploading…"
+                      ? copy.uploading
                       : s.phase === "complete"
-                        ? "Done"
-                        : "Failed"}
+                        ? copy.done
+                        : copy.failed}
                 </span>
               </div>
               {s.phase === "failed" ? (
                 <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-xs text-rose-700">{s.error ?? "Upload failed"}</p>
+                  <p className="text-xs text-rose-700">{s.error ?? copy.failed}</p>
                   {onRetryFile && failedFiles?.some((f) => `${f.name}:${f.size}:${f.lastModified}` === s.id) ? (
                     <button
                       type="button"
@@ -232,7 +315,7 @@ export default function UploadPhotoCard({
                       }}
                       className="rounded-md bg-rose-700 px-2 py-1 text-[11px] font-semibold text-white hover:bg-rose-800"
                     >
-                      Retry
+                      {copy.tryAgain}
                     </button>
                   ) : null}
                 </div>
@@ -246,7 +329,7 @@ export default function UploadPhotoCard({
 
       {partialErrors && partialErrors.length > 0 ? (
         <div className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800" role="alert">
-          <p className="font-medium">Some files could not be uploaded:</p>
+          <p className="font-medium">{copy.partialUploadError}</p>
           <ul className="mt-1 list-disc space-y-0.5 pl-4 text-xs">
             {partialErrors.map((e) => (
               <li key={`${e.file}:${e.error}`}>
@@ -267,7 +350,7 @@ export default function UploadPhotoCard({
               disabled={busy}
               className="mt-2 block rounded-md bg-rose-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-rose-800 disabled:opacity-50"
             >
-              Retry failed upload{failedFiles.length > 1 ? "s" : ""}
+              {copy.retryFailedUploads}
             </button>
           ) : null}
         </div>
@@ -284,6 +367,7 @@ export default function UploadPhotoCard({
           onConfirm={() => void confirmDelete()}
           onCancel={() => setPendingDeleteId(null)}
           busy={deleteBusy}
+          patientCopy={patientCopy}
         />
       ) : null}
 
@@ -308,13 +392,8 @@ export default function UploadPhotoCard({
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="font-medium text-slate-800">
-              {drag ? "Drop to upload" : "Drag photos here"}
-            </p>
-            <p className="mt-0.5 text-xs text-slate-500">
-              {existing.length} uploaded
-              {remaining > 0 ? ` • ${remaining} more allowed` : ""}
-            </p>
+            <p className="font-medium text-slate-800">{drag ? copy.dropHint : copy.dragHint}</p>
+            <p className="mt-0.5 text-xs text-slate-500">{uploadedLine}</p>
           </div>
           {!locked && remaining > 0 ? (
             <div className="grid grid-cols-2 gap-2">
@@ -326,7 +405,7 @@ export default function UploadPhotoCard({
                     : "border border-cyan-200 bg-cyan-50 text-cyan-900 hover:bg-cyan-100"
                 }`}
               >
-                {busy ? "Uploading…" : "Take photo"}
+                {busy ? copy.uploading : copy.takePhoto}
                 <input
                   id={`patient-upload-camera-${category}`}
                   type="file"
@@ -345,7 +424,7 @@ export default function UploadPhotoCard({
                     : "bg-slate-900 text-white hover:bg-slate-800"
                 }`}
               >
-                Choose files
+                {copy.choosePhoto}
                 <input
                   id={`patient-upload-files-${category}`}
                   type="file"
@@ -358,7 +437,7 @@ export default function UploadPhotoCard({
               </label>
             </div>
           ) : (
-            <span className="text-xs text-slate-500">{locked ? "Locked" : "Maximum reached"}</span>
+            <span className="text-xs text-slate-500">{locked ? copy.locked : copy.maxReached}</span>
           )}
         </div>
       </div>

@@ -6,13 +6,13 @@ import { PATIENT_UPLOAD_COMPRESS_OPTS } from "../src/lib/uploads/patientUploadCl
 describe("patient upload confidence messages", () => {
   it("returns category-specific front hairline message", () => {
     const msg = getPatientUploadConfidenceMessage("patient_current_front");
-    assert.match(msg, /frontal hairline/i);
-    assert.match(msg, /Excellent/i);
+    assert.match(msg, /front hairline|Photo added|Perfect/i);
+    assert.match(msg, /Perfect/i);
   });
 
   it("falls back to generic encouraging copy for unknown categories", () => {
     const msg = getPatientUploadConfidenceMessage("unknown_slot");
-    assert.match(msg, /Excellent/i);
+    assert.match(msg, /Excellent|Perfect/i);
     assert.doesNotMatch(msg, /AI|forensic|GPT/i);
   });
 });

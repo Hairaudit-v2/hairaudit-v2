@@ -26,6 +26,7 @@ import {
   uploadPatientPhotoFiles,
   type PerFileUploadState,
 } from "@/lib/uploads/uploadPatientPhotos";
+import { toPatientFacingUploadError } from "@/lib/uploads/patientUploadClient";
 
 type UploadRow = {
   id: string;
@@ -112,6 +113,23 @@ export default function GuidedPatientUploadWizard({
     setToast({ id: `${Date.now()}`, message, variant });
   }, []);
 
+  const patientError = useCallback(
+    (raw: string) => {
+      const mapped = toPatientFacingUploadError(raw);
+      if (mapped === "Please choose a photo from your phone or computer.") {
+        return t("patient.upload.messages.unsupportedFileType" as TranslationKey);
+      }
+      if (mapped === "We had trouble processing that photo. Please try again.") {
+        return t("patient.upload.messages.compressionFailed" as TranslationKey);
+      }
+      if (mapped === "That photo did not upload properly. Please try again.") {
+        return t("patient.upload.messages.uploadFailed" as TranslationKey);
+      }
+      return mapped;
+    },
+    [t]
+  );
+
   const syncViewAfterPhotos = useCallback(
     (nextPhotos: Array<{ type?: string | null }>) => {
       const nextView = resolveGuidedWizardStepAfterUpload(patientReviewPathway, nextPhotos);
@@ -185,8 +203,11 @@ export default function GuidedPatientUploadWizard({
           ...p,
           [category]:
             result.successCount > 0
-              ? `${result.successCount} saved, but ${result.failedFiles.length} failed. Tap retry to try again.`
-              : result.partialErrors[0]?.error ?? "Upload failed. Please try again.",
+              ? formatTemplate(t("patient.upload.messages.partialSuccess" as TranslationKey), {
+                  saved: String(result.successCount),
+                  failed: String(result.failedFiles.length),
+                })
+              : patientError(result.partialErrors[0]?.error ?? "Upload failed"),
         }));
       } else if (isRetry || result.successCount > 0) {
         setFailedFilesByCategory((p) => {
@@ -231,7 +252,7 @@ export default function GuidedPatientUploadWizard({
       if (!res.ok) throw new Error(json?.error ?? "Delete failed");
       deleteUpload(first.id);
     } catch (e: unknown) {
-      showToast((e as Error)?.message ?? "Could not replace photo");
+      showToast(t("patient.upload.messages.replaceFailed" as TranslationKey));
     } finally {
       setReplaceBusy(false);
     }
@@ -269,9 +290,11 @@ export default function GuidedPatientUploadWizard({
             </p>
             <div>
               <div className="flex items-center justify-between text-xs text-slate-600">
-                <span>{t("patient.upload.wizard.progressLabel" as TranslationKey)}</span>
                 <span>
-                  {pathwayProgress.completed} / {pathwayProgress.total}
+                  {formatTemplate(t("patient.upload.wizard.progressLabel" as TranslationKey), {
+                    completed: String(pathwayProgress.completed),
+                    total: String(pathwayProgress.total),
+                  })}
                 </span>
               </div>
               <div
@@ -293,7 +316,7 @@ export default function GuidedPatientUploadWizard({
 
         {isLocked ? (
           <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
-            Case submitted. Photos are locked.
+            {t("patient.upload.wizard.lockedMessage" as TranslationKey)}
           </div>
         ) : null}
       </header>
@@ -354,7 +377,8 @@ export default function GuidedPatientUploadWizard({
             onRetryFile={(file) => void uploadFiles(currentKey, [file], true)}
             onUpload={(files) => void uploadFiles(currentKey, files)}
             onDeleted={deleteUpload}
-            onDeleteError={(msg) => showToast(msg)}
+            onDeleteError={(msg) => showToast(patientError(msg))}
+            patientCopy
           />
         </div>
       ) : null}

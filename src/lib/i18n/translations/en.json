@@ -5151,170 +5151,215 @@
   },
   "patient": {
     "upload": {
-      "formatsHint": "Accepted formats: JPEG, PNG, WebP, and PDF where noted. Max 50 MB per file (large phone photos are compressed automatically).",
+      "formatsHint": "Accepted formats: JPEG, PNG, and WebP. PDF where noted. Max 50 MB per file — large phone photos are resized automatically.",
       "tiers": {
         "required": {
-          "title": "Required evidence",
+          "title": "Photos we need",
           "label": "Required",
           "description": "These photos are needed before you can continue."
         },
         "recommended": {
-          "title": "Recommended evidence",
-          "label": "Recommended",
-          "description": "Extra angles that often sharpen your review."
+          "title": "Extra photos (optional)",
+          "label": "Optional extra",
+          "description": "Helpful extra angles — never required to continue."
         },
         "optional": {
-          "title": "Optional evidence",
+          "title": "Optional photos",
           "label": "Optional",
-          "description": "Helpful context — never required to continue."
+          "description": "Only if you already have them — never required to continue."
         }
       },
       "progress": {
-        "required": "Required evidence complete",
-        "requiredComplete": "All required photos uploaded — you can continue when ready.",
-        "recommended": "Recommended evidence",
-        "optionalAvailable": "{{count}} optional uploads available to strengthen your review",
+        "required": "{{completed}} of {{total}} photos completed",
+        "requiredComplete": "All required photos added — you can continue when ready.",
+        "recommended": "Extra photos (optional)",
+        "optionalAvailable": "{{count}} optional photos you can add if you have them",
         "stillNeeded": "Still needed"
+      },
+      "messages": {
+        "uploadSuccess": "Perfect — photo added successfully.",
+        "compressionFailed": "We had trouble processing that photo. Please try again.",
+        "uploadFailed": "That photo did not upload properly. Please try again.",
+        "unsupportedFileType": "Please choose a photo from your phone or computer.",
+        "partialSuccess": "{{saved}} added, but {{failed}} could not be saved. Tap Try Again.",
+        "replaceFailed": "Could not replace photo. Please try again.",
+        "deleteFailed": "Could not remove photo. Please try again.",
+        "caseLocked": "Your case has been submitted. Photos can no longer be changed."
+      },
+      "card": {
+        "badgeRequired": "Needed",
+        "badgeRecommended": "Optional extra",
+        "badgeOptional": "Optional",
+        "badgeUploading": "Adding photo…",
+        "badgeComplete": "Done",
+        "badgeNeedsRetry": "Try again",
+        "choosePhoto": "Choose Photo",
+        "takePhoto": "Take Photo",
+        "tryAgain": "Try Again",
+        "retryFailedUploads": "Try Again",
+        "dragHint": "Drag photos here",
+        "dropHint": "Drop to add photo",
+        "uploadedCount": "{{count}} added",
+        "moreAllowed": "{{count}} more allowed",
+        "qualityAdvisoryPrefix": "This photo may be a little unclear.",
+        "qualityAdvisorySuffix": "You can still add it — a sharper photo helps us review your case.",
+        "partialUploadError": "Some photos could not be added:",
+        "preparing": "Preparing…",
+        "uploading": "Adding…",
+        "done": "Done",
+        "failed": "Couldn't add",
+        "cantProvide": "I don't have this photo",
+        "locked": "Locked",
+        "maxReached": "Maximum reached",
+        "minMaxHint": "{{current}} / {{max}} max • min {{min}}"
+      },
+      "deleteConfirm": {
+        "title": "Remove this photo?",
+        "body": "You can add a new one anytime before you submit.",
+        "confirm": "Remove Photo",
+        "confirmBusy": "Removing…",
+        "cancel": "Keep photo"
       },
       "wizard": {
         "heading": "Your Independent Review Has Started",
-        "subcopy": "We need 5 quick photos to begin your review. Most patients complete this in under 2 minutes.",
+        "subcopy": "We just need 5 quick photos so we can understand your situation clearly. Most people finish this in under 2 minutes.",
         "stepLabel": "Step {{current}} of {{total}}",
-        "progressLabel": "Required photos",
-        "completionHeadline": "Excellent — we have the photos needed to begin your review.",
-        "completionSubcopy": "You can now continue to the short question step.",
+        "progressLabel": "{{completed}} of {{total}} photos completed",
+        "completionHeadline": "Perfect.",
+        "completionSubcopy": "We now have everything we need to begin reviewing your case. You are almost done — there are just a few quick questions before we prepare your report.",
         "back": "Back",
         "reviewPrevious": "Review previous photo",
-        "replacePhoto": "Replace photo"
+        "replacePhoto": "Replace Photo",
+        "lockedMessage": "Your case has been submitted. Photos can no longer be changed."
       },
       "pathways": {
         "preSurgery": {
-          "packTitle": "Pre-Surgery Planning Photos",
-          "purpose": "These photos help us assess your hair pattern, donor area, and whether surgery is likely to be suitable.",
-          "confidenceMessage": "Clear planning photos help us discuss candidacy, donor strength, and graft range with more confidence.",
-          "continueButton": "Continue to pre-surgery questions",
-          "requiredDescription": "Five views we use to understand your hair pattern, temples, crown, and donor area before surgery.",
-          "recommendedDescription": "Optional detail that often improves graft planning and hairline discussions.",
-          "optionalDescription": "Documents and references that add planning context if you have them.",
+          "packTitle": "Photos Before Your Surgery",
+          "purpose": "These photos help us understand your hair pattern and whether surgery might be a good fit for you.",
+          "confidenceMessage": "Clear photos help us give you useful, easy-to-understand guidance.",
+          "continueButton": "Continue to a few quick questions",
+          "requiredDescription": "Five simple photos so we can see your hairline, sides, top, and back of head.",
+          "recommendedDescription": "Extra photos that often help us give sharper advice — never required.",
+          "optionalDescription": "Documents or references — only if you already have them.",
           "photos": {
             "preop_front": {
-              "title": "Front hairline",
-              "description": "Face the camera straight on so we can see your hairline and frontal density — key for candidacy and hairline planning."
+              "title": "Photo Facing Forward",
+              "description": "Please take a clear photo facing directly forward. This helps us understand your current hair pattern."
             },
             "preop_left": {
-              "title": "Left temple / side",
-              "description": "Your left profile helps us assess temple recession and side coverage before any procedure."
+              "title": "Left Side Photo",
+              "description": "Please take a photo of the left side of your hairline. This helps us understand recession patterns on the side of your hairline."
             },
             "preop_right": {
-              "title": "Right temple / side",
-              "description": "Your right profile balances the side view so we can compare symmetry and recession pattern."
+              "title": "Right Side Photo",
+              "description": "Please take a photo of the right side of your hairline. This helps us compare both sides evenly."
             },
             "preop_top": {
-              "title": "Crown / top",
-              "description": "A view from above shows crown and mid-scalp thinning — important for graft range and area prioritization."
+              "title": "Top of Head Photo",
+              "description": "Please photograph the top of your head clearly. This helps us understand thinning patterns on the crown."
             },
             "preop_donor_rear": {
-              "title": "Donor area (back)",
-              "description": "The back of your head shows donor density and reserve — central to suitability and long-term planning."
+              "title": "Back of Head Photo",
+              "description": "Please take a photo of the back of your head. This helps us understand the strength of your donor area."
             },
             "preop_wet_top": {
-              "title": "Wet hair top view",
-              "description": "Damp hair on top reveals true scalp show-through and helps estimate density more accurately."
+              "title": "Top of Head (Wet Hair)",
+              "description": "Please photograph the top of your head with damp hair. This helps us see how much scalp shows through."
             },
             "preop_hairline_closeup": {
-              "title": "Hairline close-up",
-              "description": "A closer front photo clarifies miniaturization and design options along the hairline."
+              "title": "Close-Up of Hairline",
+              "description": "Please take a closer photo of your front hairline. This helps us see fine detail along the hairline."
             },
             "preop_donor_closeup": {
-              "title": "Donor close-up",
-              "description": "A closer donor photo helps us judge hair calibre and extraction suitability."
+              "title": "Close-Up of Back of Head",
+              "description": "Please take a closer photo of the back of your head. This helps us see hair thickness in that area."
             },
             "preop_clinic_quote": {
-              "title": "Previous clinic quote",
-              "description": "A quote or plan from a clinic helps us compare proposed graft counts with what your photos support."
+              "title": "Clinic Quote or Plan",
+              "description": "If you have a quote or treatment plan from a clinic, you can add it here. This helps us compare what was proposed with what your photos show."
             },
             "preop_styling_reference": {
-              "title": "Current hair length / styling reference",
-              "description": "How you usually wear your hair sets realistic expectations for coverage and styling after surgery."
+              "title": "How You Usually Wear Your Hair",
+              "description": "A photo showing your usual hair length or style helps set realistic expectations after surgery."
             },
             "preop_family_pattern": {
-              "title": "Family hair loss pattern (if relevant)",
-              "description": "Family pattern photos help discuss long-term progression risk alongside a surgical plan."
+              "title": "Family Hair Loss Pattern",
+              "description": "If relevant, a photo showing hair loss patterns in your family helps us discuss long-term outlook."
             }
           }
         },
         "postSurgery": {
-          "packTitle": "Post-Surgery Result Photos",
-          "purpose": "These photos help us review your transplant result, donor condition, density, and whether repair planning may be needed.",
-          "confidenceMessage": "Current result and donor photos help us assess density, placement, and repair options with clearer context.",
-          "continueButton": "Continue to post-surgery questions",
-          "requiredDescription": "Current views of your result, recipient zone, crown, and donor — the core set for an independent audit.",
-          "recommendedDescription": "Surgery-day and healing photos that often clarify graft placement and donor handling.",
-          "optionalDescription": "Clinic documents and milestone photos if you have them — useful but never required.",
+          "packTitle": "Photos After Your Surgery",
+          "purpose": "These photos help us understand how your transplant looks today and how the back of your head is healing.",
+          "confidenceMessage": "Current photos help us review your result and give you clear, practical guidance.",
+          "continueButton": "Continue to a few quick questions",
+          "requiredDescription": "Five simple photos of your result, transplanted area, top, and back of head.",
+          "recommendedDescription": "Photos from surgery day or early healing — helpful but never required.",
+          "optionalDescription": "Clinic documents or milestone photos — only if you already have them.",
           "photos": {
             "preop_front": {
-              "title": "Current front view",
-              "description": "How your hairline and front density look today — the baseline for result and design review."
+              "title": "Front Photo",
+              "description": "Please take a clear photo facing directly forward. This helps us understand your current transplant result."
             },
             "current_recipient_closeup": {
-              "title": "Current recipient area close-up",
-              "description": "A close view of the transplanted zone shows graft direction, gaps, and density where it matters most."
+              "title": "Photo of Transplanted Area",
+              "description": "Please take a close photo of the area where your transplant was performed. This helps us review how evenly the hair was placed."
             },
             "preop_top": {
-              "title": "Current crown / top view",
-              "description": "The top and crown reveal coverage and density across the treated area."
+              "title": "Top of Head Photo",
+              "description": "Please photograph the top of your head clearly. This helps us understand your current hair coverage."
             },
             "preop_donor_rear": {
-              "title": "Current donor area",
-              "description": "The back of your head shows donor condition, scarring, and signs of overharvesting."
+              "title": "Back of Head Photo",
+              "description": "Please take a photo of the back of your head. This helps us review the area where donor hair was taken."
             },
             "preop_donor_closeup": {
-              "title": "Donor close-up",
-              "description": "Fine detail in the donor helps us assess punch marks, density loss, and repair implications."
+              "title": "Close Photo of Donor Area",
+              "description": "Please take a close photo of the back donor area. This helps us review healing and donor appearance."
             },
             "day0_recipient": {
-              "title": "Immediate post-op graft placement",
-              "description": "Surgery-day recipient photos document graft spacing and placement at the source."
+              "title": "Surgery Day — Transplanted Area",
+              "description": "If you have one, a photo from surgery day showing the transplanted area helps us see how hair was placed."
             },
             "day0_donor": {
-              "title": "Immediate post-op donor photo",
-              "description": "Surgery-day donor photos show extraction pattern and acute donor trauma."
+              "title": "Surgery Day — Back of Head",
+              "description": "If you have one, a photo from surgery day showing the back of your head helps us see how it looked right after the procedure."
             },
             "postop_wet_recipient": {
-              "title": "Wet hair recipient view",
-              "description": "Damp hair over the recipient area reveals true density and any thin spots."
+              "title": "Wet Hair Over Transplanted Area",
+              "description": "Please photograph the transplanted area with damp hair. This helps us see coverage more clearly."
             },
             "any_preop": {
-              "title": "Pre-surgery comparison photo",
-              "description": "Before-surgery photos help us compare starting point with your current result."
+              "title": "Photo from Before Surgery",
+              "description": "A before-surgery photo helps us compare where you started with how things look today."
             },
             "postop_day0": {
-              "title": "Healing progression images",
-              "description": "Early healing photos show how grafts and donor settled in the first days."
+              "title": "Early Healing Photos",
+              "description": "Photos from the first few days after surgery help us see how things settled early on."
             },
             "graft_count_board": {
-              "title": "Clinic graft count document",
-              "description": "Graft count records help reconcile claimed numbers with visible evidence."
+              "title": "Clinic Document (Graft Count)",
+              "description": "If your clinic gave you a graft count or similar document, you can add it here for context."
             },
             "preop_clinic_quote": {
-              "title": "Clinic quote or treatment plan",
-              "description": "Your clinic plan adds context for what was promised versus what photos show."
+              "title": "Clinic Quote or Treatment Plan",
+              "description": "Your clinic plan adds helpful context for what was promised versus what your photos show."
             },
             "postop_day1_recipient": {
-              "title": "Day 1 recipient photo",
-              "description": "Day-one views capture early crusting and graft retention on the hairline."
+              "title": "Day 1 — Transplanted Area",
+              "description": "A photo from the day after surgery helps us see early healing on the hairline."
             },
             "postop_week1_recipient": {
-              "title": "Day 7 recipient photo",
-              "description": "One-week photos show early healing trajectory on the recipient area."
+              "title": "Day 7 — Transplanted Area",
+              "description": "A photo from about one week after surgery helps us track early recovery."
             },
             "postop_month3_front": {
-              "title": "Month 3 progress photo",
-              "description": "Three-month front views show early growth and shock-loss recovery."
+              "title": "Month 3 — Front View",
+              "description": "A front photo around three months helps us see early growth and recovery."
             },
             "postop_month6_front": {
-              "title": "Month 6 progress photo",
-              "description": "Six-month photos help judge mid-cycle density and hairline maturation."
+              "title": "Month 6 — Front View",
+              "description": "A front photo around six months helps us see how your result is developing."
             }
           }
         }

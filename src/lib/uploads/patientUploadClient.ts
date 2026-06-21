@@ -77,6 +77,26 @@ export function appendPatientUploadMetadata(fd: FormData, meta: PreparedImageMet
   if (meta.qualityWarning) fd.append("qualityWarning", meta.qualityWarning);
 }
 
+/** Map raw upload errors to calm patient-facing copy (English fallback for non-React callers). */
+export function toPatientFacingUploadError(raw: string): string {
+  const lower = raw.toLowerCase();
+  if (
+    lower.includes("unsupported") ||
+    lower.includes("not allowed") ||
+    lower.includes("valid image") ||
+    lower.includes("jpeg, png")
+  ) {
+    return "Please choose a photo from your phone or computer.";
+  }
+  if (lower.includes("compress") || lower.includes("processing")) {
+    return "We had trouble processing that photo. Please try again.";
+  }
+  if (lower.includes("upload failed") || lower.includes("did not save")) {
+    return "That photo did not upload properly. Please try again.";
+  }
+  return raw;
+}
+
 export function computeRequiredUploadProgress(
   requiredKeys: readonly string[],
   completed: Set<string>

@@ -21,7 +21,8 @@ test.describe("Upload pathway evidence UI", () => {
     await expect(page.getByTestId("upload-required-section")).toHaveCount(0);
     await expect(page.getByTestId("upload-recommended-section")).toHaveCount(0);
     await expect(page.getByTestId("upload-optional-section")).toHaveCount(0);
-    await expect(page.getByText("Current recipient area close-up")).toHaveCount(0);
+    await expect(page.getByText("Photo Facing Forward")).toBeVisible();
+    await expect(page.getByText("Photo of Transplanted Area")).toHaveCount(0);
 
     await expect(page.getByTestId("guided-upload-continue")).toHaveCount(0);
     await expect(page.getByTestId("guided-upload-completion")).toHaveCount(0);
@@ -44,7 +45,8 @@ test.describe("Upload pathway evidence UI", () => {
     await expect(page.getByTestId("upload-required-section")).toHaveCount(0);
     await expect(page.getByTestId("upload-recommended-section")).toHaveCount(0);
     await expect(page.getByTestId("upload-optional-section")).toHaveCount(0);
-    await expect(page.getByText("Current recipient area close-up")).toBeVisible();
+    await expect(page.getByText("Front Photo")).toBeVisible();
+    await expect(page.getByText("Photo Facing Forward")).toHaveCount(0);
 
     await expect(page.getByTestId("guided-upload-continue")).toHaveCount(0);
   });

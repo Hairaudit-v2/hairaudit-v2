@@ -130,6 +130,7 @@ export default function PathwayEvidenceUploadSection({
                   onUpload={(files) => onUpload(key, files)}
                   onDeleted={onDeleted}
                   onDeleteError={onDeleteError}
+                  patientCopy
                 />
               );
             })}

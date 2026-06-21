@@ -80,7 +80,7 @@ function renamed(name: string, ext: string): string {
 // warning surfaced to the uploader and the reviewer.
 export const LOW_RES_MIN_EDGE_PX = 900;
 export const LOW_RES_WARNING =
-  "This image may be too low resolution for reliable audit review.";
+  "This photo may be a little blurry or low resolution.";
 
 /** Client-derived metadata captured at selection time, attached to the upload. */
 export type PreparedImageMeta = {

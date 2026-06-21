@@ -3,52 +3,39 @@
  * Never uses forbidden terminology (AI, forensic, etc.).
  */
 
-const DEFAULT_MESSAGE =
-  "Excellent — this photo gives us a clearer view for your independent review.";
+const DEFAULT_MESSAGE = "Perfect — photo added successfully.";
 
 const BY_CATEGORY: Record<string, string> = {
-  patient_current_front:
-    "Excellent — this gives us a clear view of your frontal hairline.",
-  patient_current_top:
-    "Excellent — this helps us see the top and crown area clearly.",
-  patient_current_donor_rear:
-    "Excellent — this gives us a clear view of the back of your head.",
-  patient_current_left:
-    "Great — this side angle adds helpful context to your review.",
-  patient_current_right:
-    "Great — this side angle adds helpful context to your review.",
-  patient_current_crown:
-    "Great — this crown view helps us understand coverage in that area.",
-  any_preop:
-    "Thank you — before-surgery photos help us compare your progress over time.",
-  any_day0:
-    "Thank you — surgery-day photos help document your starting point.",
-  any_early_postop_day0_3:
-    "Thank you — early healing photos help us follow how things are settling.",
-  preop_front:
-    "Excellent — this gives us a clear view of your frontal hairline.",
-  preop_top:
-    "Excellent — this helps us see the top and crown area clearly.",
-  preop_donor_rear:
-    "Excellent — this gives us a clear view of the back of your head.",
-  preop_left: "Great — this left-side view adds helpful context.",
-  preop_right: "Great — this right-side view adds helpful context.",
-  preop_crown: "Great — this crown view helps us understand coverage.",
-  day0_recipient: "Thank you — this documents your recipient area on surgery day.",
-  day0_donor: "Thank you — this documents your donor area on surgery day.",
-  preop_wet_top: "Thank you — wet-hair views often sharpen density assessment.",
-  preop_hairline_closeup: "Great — hairline detail helps planning discussions.",
-  preop_clinic_quote: "Thank you — clinic documents add useful planning context.",
-  preop_styling_reference: "Thank you — styling reference helps set realistic expectations.",
-  preop_family_pattern: "Thank you — family pattern context supports progression outlook.",
-  current_recipient_closeup: "Excellent — recipient detail helps us review placement and density.",
-  postop_wet_recipient: "Thank you — wet recipient views clarify density and coverage.",
-  preop_donor_closeup: "Great — donor close-up adds important detail for your review.",
-  graft_count_board: "Thank you — graft count records help reconcile documented numbers.",
-  postop_day1_recipient: "Thank you — day-one photos document early healing on the hairline.",
-  postop_week1_recipient: "Thank you — one-week photos help track early recovery.",
-  postop_month3_front: "Thank you — three-month progress adds longitudinal context.",
-  postop_month6_front: "Thank you — six-month photos help judge mid-cycle results.",
+  patient_current_front: "Perfect — this gives us a clear view of your front hairline.",
+  patient_current_top: "Perfect — this helps us see the top of your head clearly.",
+  patient_current_donor_rear: "Perfect — this gives us a clear view of the back of your head.",
+  patient_current_left: "Great — this side photo adds helpful context.",
+  patient_current_right: "Great — this side photo adds helpful context.",
+  patient_current_crown: "Great — this helps us see coverage on the top of your head.",
+  any_preop: "Thank you — a before-surgery photo helps us compare how things have changed.",
+  any_day0: "Thank you — a surgery-day photo helps us see where you started.",
+  any_early_postop_day0_3: "Thank you — early healing photos help us see how things are settling.",
+  preop_front: "Perfect — this gives us a clear view of your front hairline.",
+  preop_top: "Perfect — this helps us see the top of your head clearly.",
+  preop_donor_rear: "Perfect — this gives us a clear view of the back of your head.",
+  preop_left: "Great — this left-side photo adds helpful context.",
+  preop_right: "Great — this right-side photo adds helpful context.",
+  preop_crown: "Great — this helps us see coverage on the top of your head.",
+  day0_recipient: "Thank you — this surgery-day photo of the transplanted area is helpful.",
+  day0_donor: "Thank you — this surgery-day photo of the back of your head is helpful.",
+  preop_wet_top: "Thank you — wet-hair photos often help us see coverage more clearly.",
+  preop_hairline_closeup: "Great — hairline detail helps us give clearer guidance.",
+  preop_clinic_quote: "Thank you — clinic documents add useful context.",
+  preop_styling_reference: "Thank you — this helps us understand how you usually wear your hair.",
+  preop_family_pattern: "Thank you — family pattern context supports long-term outlook.",
+  current_recipient_closeup: "Perfect — this close photo of the transplanted area is very helpful.",
+  postop_wet_recipient: "Thank you — wet-hair photos often help us see coverage more clearly.",
+  preop_donor_closeup: "Great — this close photo of the back adds helpful detail.",
+  graft_count_board: "Thank you — clinic documents add useful context.",
+  postop_day1_recipient: "Thank you — day-one photos help us see early healing.",
+  postop_week1_recipient: "Thank you — one-week photos help us track early recovery.",
+  postop_month3_front: "Thank you — three-month progress adds helpful context.",
+  postop_month6_front: "Thank you — six-month photos help us see how your result is developing.",
 };
 
 export function getPatientUploadConfidenceMessage(category: string): string {

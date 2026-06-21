@@ -5149,170 +5149,215 @@
   },
   "patient": {
     "upload": {
-      "formatsHint": "Formatos aceptados: JPEG, PNG, WebP y PDF cuando se indique. Máx. 50 MB por archivo (las fotos grandes del móvil se comprimen automáticamente).",
+      "formatsHint": "Formatos aceptados: JPEG, PNG y WebP. PDF cuando se indique. Máx. 50 MB por archivo — las fotos grandes del móvil se redimensionan automáticamente.",
       "tiers": {
         "required": {
-          "title": "Evidencia obligatoria",
+          "title": "Fotos que necesitamos",
           "label": "Obligatoria",
           "description": "Estas fotos son necesarias antes de continuar."
         },
         "recommended": {
-          "title": "Evidencia recomendada",
-          "label": "Recomendada",
-          "description": "Ángulos extra que suelen mejorar su revisión."
+          "title": "Fotos extra (opcional)",
+          "label": "Extra opcional",
+          "description": "Ángulos extra útiles — nunca obligatorios para continuar."
         },
         "optional": {
-          "title": "Evidencia opcional",
+          "title": "Fotos opcionales",
           "label": "Opcional",
-          "description": "Contexto útil — nunca obligatorio para continuar."
+          "description": "Solo si ya las tiene — nunca obligatorias para continuar."
         }
       },
       "progress": {
-        "required": "Evidencia obligatoria completa",
-        "requiredComplete": "Todas las fotos obligatorias subidas — puede continuar cuando quiera.",
-        "recommended": "Evidencia recomendada",
-        "optionalAvailable": "{{count}} subidas opcionales disponibles para reforzar su revisión",
+        "required": "{{completed}} de {{total}} fotos completadas",
+        "requiredComplete": "Todas las fotos obligatorias añadidas — puede continuar cuando quiera.",
+        "recommended": "Fotos extra (opcional)",
+        "optionalAvailable": "{{count}} fotos opcionales que puede añadir si las tiene",
         "stillNeeded": "Aún falta"
+      },
+      "messages": {
+        "uploadSuccess": "Perfecto — foto añadida correctamente.",
+        "compressionFailed": "Tuvimos problemas al procesar esa foto. Inténtelo de nuevo.",
+        "uploadFailed": "Esa foto no se subió correctamente. Inténtelo de nuevo.",
+        "unsupportedFileType": "Elija una foto de su teléfono u ordenador.",
+        "partialSuccess": "{{saved}} guardadas, pero {{failed}} no se pudieron guardar. Pulse Intentar de nuevo.",
+        "replaceFailed": "No se pudo reemplazar la foto. Inténtelo de nuevo.",
+        "deleteFailed": "No se pudo eliminar la foto. Inténtelo de nuevo.",
+        "caseLocked": "Su caso ya se ha enviado. Las fotos ya no se pueden cambiar."
+      },
+      "card": {
+        "badgeRequired": "Necesaria",
+        "badgeRecommended": "Extra opcional",
+        "badgeOptional": "Opcional",
+        "badgeUploading": "Añadiendo foto…",
+        "badgeComplete": "Hecho",
+        "badgeNeedsRetry": "Reintentar",
+        "choosePhoto": "Elegir foto",
+        "takePhoto": "Hacer foto",
+        "tryAgain": "Intentar de nuevo",
+        "retryFailedUploads": "Intentar de nuevo",
+        "dragHint": "Arrastre fotos aquí",
+        "dropHint": "Suelte para añadir foto",
+        "uploadedCount": "{{count}} añadidas",
+        "moreAllowed": "{{count}} más permitidas",
+        "qualityAdvisoryPrefix": "Esta foto puede estar un poco borrosa.",
+        "qualityAdvisorySuffix": "Puede añadirla igualmente — una foto más nítida nos ayuda a revisar su caso.",
+        "partialUploadError": "Algunas fotos no se pudieron añadir:",
+        "preparing": "Preparando…",
+        "uploading": "Añadiendo…",
+        "done": "Hecho",
+        "failed": "No se pudo añadir",
+        "cantProvide": "No tengo esta foto",
+        "locked": "Bloqueado",
+        "maxReached": "Máximo alcanzado",
+        "minMaxHint": "{{current}} / {{max}} máx. • mín. {{min}}"
+      },
+      "deleteConfirm": {
+        "title": "¿Eliminar esta foto?",
+        "body": "Puede añadir otra en cualquier momento antes de enviar.",
+        "confirm": "Eliminar foto",
+        "confirmBusy": "Eliminando…",
+        "cancel": "Conservar foto"
       },
       "wizard": {
         "heading": "Su revisión independiente ha comenzado",
-        "subcopy": "Necesitamos 5 fotos rápidas para iniciar su revisión. La mayoría de pacientes completa esto en menos de 2 minutos.",
+        "subcopy": "Solo necesitamos 5 fotos rápidas para entender bien su situación. La mayoría termina en menos de 2 minutos.",
         "stepLabel": "Paso {{current}} de {{total}}",
-        "progressLabel": "Fotos obligatorias",
-        "completionHeadline": "Excelente — tenemos las fotos necesarias para comenzar su revisión.",
-        "completionSubcopy": "Ahora puede continuar al breve paso de preguntas.",
+        "progressLabel": "{{completed}} de {{total}} fotos completadas",
+        "completionHeadline": "Perfecto.",
+        "completionSubcopy": "Ya tenemos todo lo necesario para empezar a revisar su caso. Casi ha terminado — solo quedan unas preguntas rápidas antes de preparar su informe.",
         "back": "Atrás",
         "reviewPrevious": "Revisar foto anterior",
-        "replacePhoto": "Reemplazar foto"
+        "replacePhoto": "Reemplazar foto",
+        "lockedMessage": "Su caso ya se ha enviado. Las fotos ya no se pueden cambiar."
       },
       "pathways": {
         "preSurgery": {
-          "packTitle": "Fotos de planificación preoperatoria",
-          "purpose": "Estas fotos nos ayudan a evaluar su patrón capilar, zona donante y si la cirugía probablemente sea adecuada.",
-          "confidenceMessage": "Fotos claras de planificación nos permiten hablar de candidatura, fuerza donante y rango de injertos con más confianza.",
-          "continueButton": "Continuar a preguntas preoperatorias",
-          "requiredDescription": "Cinco vistas para entender su patrón capilar, sienes, coronilla y donante antes de la cirugía.",
-          "recommendedDescription": "Detalle opcional que suele mejorar la planificación de injertos y la línea frontal.",
-          "optionalDescription": "Documentos y referencias que aportan contexto de planificación si los tiene.",
+          "packTitle": "Fotos antes de su cirugía",
+          "purpose": "Estas fotos nos ayudan a entender su patrón capilar y si la cirugía podría ser adecuada para usted.",
+          "confidenceMessage": "Fotos claras nos ayudan a darle orientación útil y fácil de entender.",
+          "continueButton": "Continuar a unas preguntas rápidas",
+          "requiredDescription": "Cinco fotos sencillas para ver su línea capilar, lados, parte superior y nuca.",
+          "recommendedDescription": "Fotos extra que suelen ayudarnos a dar consejos más precisos — nunca obligatorias.",
+          "optionalDescription": "Documentos o referencias — solo si ya los tiene.",
           "photos": {
             "preop_front": {
-              "title": "Línea frontal",
-              "description": "De frente a la cámara para ver la línea capilar y densidad frontal — clave para candidatura y planificación."
+              "title": "Foto de frente",
+              "description": "Haga una foto clara mirando directamente a la cámara. Esto nos ayuda a entender su patrón capilar actual."
             },
             "preop_left": {
-              "title": "Sien / lateral izquierdo",
-              "description": "El perfil izquierdo ayuda a evaluar recesión temporal y cobertura lateral antes del procedimiento."
+              "title": "Foto del lado izquierdo",
+              "description": "Haga una foto del lado izquierdo de su línea capilar. Esto nos ayuda a ver la recesión en ese lado."
             },
             "preop_right": {
-              "title": "Sien / lateral derecho",
-              "description": "El perfil derecho equilibra la vista lateral para comparar simetría y patrón de recesión."
+              "title": "Foto del lado derecho",
+              "description": "Haga una foto del lado derecho de su línea capilar. Esto nos ayuda a comparar ambos lados."
             },
             "preop_top": {
-              "title": "Coronilla / parte superior",
-              "description": "Vista desde arriba que muestra adelgazamiento en coronilla y mid-scalp — importante para rango de injertos."
+              "title": "Foto de la parte superior",
+              "description": "Fotografíe claramente la parte superior de la cabeza. Esto nos ayuda a ver el adelgazamiento en la coronilla."
             },
             "preop_donor_rear": {
-              "title": "Zona donante (parte posterior)",
-              "description": "La parte posterior muestra densidad y reserva donante — central para idoneidad y planificación a largo plazo."
+              "title": "Foto de la nuca",
+              "description": "Haga una foto de la parte posterior de la cabeza. Esto nos ayuda a entender la fuerza de su zona donante."
             },
             "preop_wet_top": {
-              "title": "Parte superior con cabello húmedo",
-              "description": "El cabello húmedo en la parte superior revela el cuero cabelludo y ayuda a estimar densidad con más precisión."
+              "title": "Parte superior (cabello húmedo)",
+              "description": "Fotografíe la parte superior con el cabello húmedo. Esto nos ayuda a ver cuánto cuero cabelludo se nota."
             },
             "preop_hairline_closeup": {
-              "title": "Primer plano de la línea frontal",
-              "description": "Una foto frontal más cercana aclara miniaturización y opciones de diseño en la línea capilar."
+              "title": "Primer plano de la línea capilar",
+              "description": "Haga una foto más cercana de la línea frontal. Esto nos ayuda a ver el detalle fino."
             },
             "preop_donor_closeup": {
-              "title": "Primer plano del donante",
-              "description": "Un primer plano del donante ayuda a juzgar calibre capilar e idoneidad de extracción."
+              "title": "Primer plano de la nuca",
+              "description": "Haga una foto más cercana de la parte posterior. Esto nos ayuda a ver el grosor del cabello en esa zona."
             },
             "preop_clinic_quote": {
-              "title": "Presupuesto previo de clínica",
-              "description": "Un presupuesto o plan de clínica ayuda a comparar injertos propuestos con lo que muestran sus fotos."
+              "title": "Presupuesto o plan de clínica",
+              "description": "Si tiene un presupuesto o plan de una clínica, puede añadirlo aquí. Nos ayuda a comparar lo propuesto con sus fotos."
             },
             "preop_styling_reference": {
-              "title": "Referencia de longitud / peinado actual",
-              "description": "Cómo lleva el cabello habitualmente marca expectativas realistas de cobertura y peinado tras la cirugía."
+              "title": "Cómo suele llevar el cabello",
+              "description": "Una foto de su longitud o peinado habitual ayuda a marcar expectativas realistas tras la cirugía."
             },
             "preop_family_pattern": {
-              "title": "Patrón familiar de alopecia (si aplica)",
-              "description": "Fotos del patrón familiar ayudan a hablar del riesgo de progresión a largo plazo junto al plan quirúrgico."
+              "title": "Patrón familiar de caída del cabello",
+              "description": "Si aplica, una foto del patrón familiar ayuda a hablar del panorama a largo plazo."
             }
           }
         },
         "postSurgery": {
-          "packTitle": "Fotos del resultado postoperatorio",
-          "purpose": "Estas fotos nos ayudan a revisar su resultado, estado del donante, densidad y si puede hacer falta planificar una reparación.",
-          "confidenceMessage": "Fotos actuales del resultado y donante nos permiten evaluar densidad, colocación y opciones de reparación con más contexto.",
-          "continueButton": "Continuar a preguntas postoperatorias",
-          "requiredDescription": "Vistas actuales del resultado, zona receptora, coronilla y donante — el núcleo de una auditoría independiente.",
-          "recommendedDescription": "Fotos del día de la cirugía y curación que suelen aclarar colocación de injertos y manejo del donante.",
-          "optionalDescription": "Documentos de clínica y fotos por hitos si las tiene — útiles pero nunca obligatorias.",
+          "packTitle": "Fotos después de su cirugía",
+          "purpose": "Estas fotos nos ayudan a entender cómo se ve hoy su trasplante y cómo está curando la nuca.",
+          "confidenceMessage": "Fotos actuales nos ayudan a revisar su resultado y darle orientación clara y práctica.",
+          "continueButton": "Continuar a unas preguntas rápidas",
+          "requiredDescription": "Cinco fotos sencillas de su resultado, zona trasplantada, parte superior y nuca.",
+          "recommendedDescription": "Fotos del día de la cirugía o curación temprana — útiles pero nunca obligatorias.",
+          "optionalDescription": "Documentos de clínica o fotos por hitos — solo si ya las tiene.",
           "photos": {
             "preop_front": {
-              "title": "Vista frontal actual",
-              "description": "Cómo se ve hoy su línea frontal y densidad anterior — base para revisar resultado y diseño."
+              "title": "Foto de frente",
+              "description": "Haga una foto clara mirando directamente a la cámara. Esto nos ayuda a entender su resultado actual."
             },
             "current_recipient_closeup": {
-              "title": "Primer plano de la zona receptora",
-              "description": "Un primer plano de la zona trasplantada muestra dirección de injertos, huecos y densidad donde más importa."
+              "title": "Foto de la zona trasplantada",
+              "description": "Haga una foto de cerca del área donde se realizó el trasplante. Esto nos ayuda a ver si el cabello se colocó de forma uniforme."
             },
             "preop_top": {
-              "title": "Vista actual de coronilla / parte superior",
-              "description": "La parte superior y coronilla revelan cobertura y densidad en el área tratada."
+              "title": "Foto de la parte superior",
+              "description": "Fotografíe claramente la parte superior de la cabeza. Esto nos ayuda a ver su cobertura actual."
             },
             "preop_donor_rear": {
-              "title": "Zona donante actual",
-              "description": "La parte posterior muestra estado del donante, cicatrices y signos de sobre-extracción."
+              "title": "Foto de la nuca",
+              "description": "Haga una foto de la parte posterior de la cabeza. Esto nos ayuda a revisar la zona de donde se tomó el cabello donante."
             },
             "preop_donor_closeup": {
-              "title": "Primer plano del donante",
-              "description": "El detalle fino del donante ayuda a evaluar marcas de punch, pérdida de densidad e implicaciones de reparación."
+              "title": "Primer plano de la zona donante",
+              "description": "Haga una foto de cerca de la nuca. Esto nos ayuda a revisar la curación y el aspecto del donante."
             },
             "day0_recipient": {
-              "title": "Colocación de injertos justo postoperatorio",
-              "description": "Fotos del día de la cirugía en la zona receptora documentan espaciado y colocación en origen."
+              "title": "Día de la cirugía — zona trasplantada",
+              "description": "Si la tiene, una foto del día de la cirugía de la zona trasplantada nos ayuda a ver cómo se colocó el cabello."
             },
             "day0_donor": {
-              "title": "Foto donante inmediata postoperatoria",
-              "description": "Fotos donantes del día de la cirugía muestran patrón de extracción y trauma agudo del donante."
+              "title": "Día de la cirugía — nuca",
+              "description": "Si la tiene, una foto del día de la cirugía de la nuca nos ayuda a ver cómo quedó justo después del procedimiento."
             },
             "postop_wet_recipient": {
-              "title": "Vista receptora con cabello húmedo",
-              "description": "Cabello húmedo sobre la zona receptora revela densidad real y zonas finas."
+              "title": "Cabello húmedo sobre la zona trasplantada",
+              "description": "Fotografíe la zona trasplantada con el cabello húmedo. Esto nos ayuda a ver la cobertura con más claridad."
             },
             "any_preop": {
-              "title": "Foto de comparación preoperatoria",
-              "description": "Fotos antes de la cirugía ayudan a comparar el punto de partida con su resultado actual."
+              "title": "Foto de antes de la cirugía",
+              "description": "Una foto de antes ayuda a comparar el punto de partida con cómo se ve hoy."
             },
             "postop_day0": {
-              "title": "Imágenes de evolución de la curación",
-              "description": "Fotos de curación temprana muestran cómo se asentaron injertos y donante en los primeros días."
+              "title": "Fotos de curación temprana",
+              "description": "Fotos de los primeros días tras la cirugía nos ayudan a ver cómo evolucionó al principio."
             },
             "graft_count_board": {
-              "title": "Documento de conteo de injertos de clínica",
-              "description": "Registros de conteo ayudan a conciliar cifras declaradas con la evidencia visible."
+              "title": "Documento de clínica (conteo de injertos)",
+              "description": "Si su clínica le dio un conteo de injertos u otro documento, puede añadirlo aquí."
             },
             "preop_clinic_quote": {
               "title": "Presupuesto o plan de tratamiento de clínica",
-              "description": "Su plan clínico aporta contexto sobre lo prometido frente a lo que muestran las fotos."
+              "description": "Su plan clínico aporta contexto sobre lo prometido frente a lo que muestran sus fotos."
             },
             "postop_day1_recipient": {
-              "title": "Foto receptora día 1",
-              "description": "Vistas del primer día capturan costras tempranas y retención de injertos en la línea frontal."
+              "title": "Día 1 — zona trasplantada",
+              "description": "Una foto del día después de la cirugía nos ayuda a ver la curación temprana en la línea frontal."
             },
             "postop_week1_recipient": {
-              "title": "Foto receptora día 7",
-              "description": "Fotos de una semana muestran la trayectoria de curación temprana en la zona receptora."
+              "title": "Día 7 — zona trasplantada",
+              "description": "Una foto de unos siete días después nos ayuda a seguir la recuperación temprana."
             },
             "postop_month3_front": {
-              "title": "Foto de progreso mes 3",
-              "description": "Vistas frontales a tres meses muestran crecimiento temprano y recuperación del shock loss."
+              "title": "Mes 3 — vista frontal",
+              "description": "Una foto frontal hacia el tercer mes nos ayuda a ver el crecimiento y la recuperación temprana."
             },
             "postop_month6_front": {
-              "title": "Foto de progreso mes 6",
-              "description": "Fotos a seis meses ayudan a juzgar densidad a mitad de ciclo y maduración de la línea frontal."
+              "title": "Mes 6 — vista frontal",
+              "description": "Una foto frontal hacia el sexto mes nos ayuda a ver cómo evoluciona su resultado."
             }
           }
         }

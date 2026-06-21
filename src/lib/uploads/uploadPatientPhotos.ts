@@ -8,6 +8,7 @@ import {
   formatPatientUploadError,
 } from "@/lib/uploads/patientUploadClient";
 import { getPatientUploadConfidenceMessage } from "@/lib/uploads/patientUploadConfidenceMessages";
+import { toPatientFacingUploadError } from "@/lib/uploads/patientUploadClient";
 import { uploadFormDataWithProgress } from "@/lib/uploads/uploadWithProgress";
 import { MAX_CONCURRENT_UPLOADS } from "@/lib/uploads/uploadLimits";
 import type { SubmitterType } from "@/lib/auditPhotoSchemas";
@@ -116,14 +117,20 @@ export async function uploadPatientPhotoFiles(params: {
 
       if (!ok) {
         const formatted = formatPatientUploadError(json);
-        throw new Error(formatted.message);
+        throw new Error(
+          submitterType === "patient"
+            ? toPatientFacingUploadError(formatted.message)
+            : formatted.message
+        );
       }
 
       if (json.errors?.length) {
         for (const err of json.errors) {
+          const errText = err.error ?? "Upload failed";
           partialErrors.push({
             file: err.file ?? original.name,
-            error: err.error ?? "Upload failed",
+            error:
+              submitterType === "patient" ? toPatientFacingUploadError(errText) : errText,
           });
         }
       }
@@ -137,12 +144,16 @@ export async function uploadPatientPhotoFiles(params: {
       } else if (json.errors?.length) {
         const match =
           json.errors.find((e) => e.file === original.name) ?? json.errors[0];
-        throw new Error(match?.error ?? "Upload failed");
+        const matchErr = match?.error ?? "Upload failed";
+        throw new Error(
+          submitterType === "patient" ? toPatientFacingUploadError(matchErr) : matchErr
+        );
       } else {
         throw new Error("Upload did not save any files");
       }
     } catch (e: unknown) {
-      const msg = (e as Error)?.message ?? "Upload failed";
+      const raw = (e as Error)?.message ?? "Upload failed";
+      const msg = submitterType === "patient" ? toPatientFacingUploadError(raw) : raw;
       state.phase = "failed";
       state.error = msg;
       state.progress = 0;
