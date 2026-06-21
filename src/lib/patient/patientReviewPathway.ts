@@ -32,7 +32,11 @@ export type PatientPathwayDefinition = {
   marketingDescriptionKey: string;
   marketingCtaKey: string;
   analyticsEventSuffix: string;
-  /** Patient-safe focus areas surfaced in reports and progress UI */
+  /** i18n key for report section title in patient-safe summary */
+  reportSectionTitleKey: string;
+  /** i18n keys for report focus bullets (planning vs audit framing) */
+  reportFocusAreaKeys: readonly string[];
+  /** @deprecated Use reportFocusAreaKeys with i18n — kept for non-UI callers */
   reportFocusAreas: readonly string[];
   /** Intelligence engine module ids executed for this pathway */
   intelligenceModules: readonly string[];
@@ -45,12 +49,18 @@ export const PATIENT_PATHWAY_DEFINITIONS: Record<PatientReviewPathway, PatientPa
     marketingDescriptionKey: "marketing.home.pathways.preSurgery.description",
     marketingCtaKey: "marketing.home.pathways.preSurgery.cta",
     analyticsEventSuffix: "pre_surgery",
+    reportSectionTitleKey: "dashboard.patient.safeSummary.pathwayReport.preSurgery.title",
+    reportFocusAreaKeys: [
+      "dashboard.patient.safeSummary.pathwayReport.preSurgery.planning",
+      "dashboard.patient.safeSummary.pathwayReport.preSurgery.suitability",
+      "dashboard.patient.safeSummary.pathwayReport.preSurgery.graftEstimate",
+      "dashboard.patient.safeSummary.pathwayReport.preSurgery.treatmentPath",
+    ],
     reportFocusAreas: [
-      "Treatment planning context",
-      "Candidacy and suitability signals",
-      "Donor reserve assessment",
-      "Graft range estimation",
-      "Progression outlook",
+      "Planning",
+      "Suitability",
+      "Graft estimate",
+      "Treatment path",
     ],
     intelligenceModules: [
       "planning",
@@ -66,12 +76,20 @@ export const PATIENT_PATHWAY_DEFINITIONS: Record<PatientReviewPathway, PatientPa
     marketingDescriptionKey: "marketing.home.pathways.postSurgery.description",
     marketingCtaKey: "marketing.home.pathways.postSurgery.cta",
     analyticsEventSuffix: "post_surgery",
+    reportSectionTitleKey: "dashboard.patient.safeSummary.pathwayReport.postSurgery.title",
+    reportFocusAreaKeys: [
+      "dashboard.patient.safeSummary.pathwayReport.postSurgery.proceduralQuality",
+      "dashboard.patient.safeSummary.pathwayReport.postSurgery.donorCondition",
+      "dashboard.patient.safeSummary.pathwayReport.postSurgery.density",
+      "dashboard.patient.safeSummary.pathwayReport.postSurgery.concerns",
+      "dashboard.patient.safeSummary.pathwayReport.postSurgery.repairGuidance",
+    ],
     reportFocusAreas: [
-      "Donor trauma signals",
-      "Overharvesting assessment",
-      "Density and placement review",
-      "Procedural integrity scoring",
-      "Repair and corrective guidance",
+      "Procedural quality",
+      "Donor condition",
+      "Density",
+      "Areas of concern",
+      "Repair guidance",
     ],
     intelligenceModules: [
       "donor_trauma_detection",

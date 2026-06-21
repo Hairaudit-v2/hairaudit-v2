@@ -331,12 +331,12 @@
       "pathways": {
         "preSurgery": {
           "title": "Pre-Surgery Review",
-          "description": "Planning a transplant? Upload pre-procedure photos for candidacy, donor assessment, graft planning, and progression outlook before you commit.",
+          "description": "Planning a transplant? Your Pre-Surgery Review Report covers planning, suitability, graft estimate, and treatment path before you commit.",
           "cta": "Start Pre-Surgery Review"
         },
         "postSurgery": {
           "title": "Post-Surgery Audit",
-          "description": "Already had surgery? Upload your result photos for donor integrity, density review, procedural scoring, and repair guidance.",
+          "description": "Already had surgery? Your Post-Surgery Audit Report covers procedural quality, donor condition, density, areas of concern, and repair guidance.",
           "cta": "Start Post-Surgery Audit"
         }
       },
@@ -829,8 +829,25 @@
         "observationsHintTranslationUnavailable": "These items come from the report summary and are currently shown from the English source version.",
         "noObservations": "No structured summary observations are available yet for this case.",
         "plainEnglishTitle": "In plain language",
-        "pathwayPreSurgeryLabel": "Pre-surgery review focus",
-        "pathwayPostSurgeryLabel": "Post-surgery audit focus",
+        "pathwayPreSurgeryLabel": "Pre-Surgery Review Report",
+        "pathwayPostSurgeryLabel": "Post-Surgery Audit Report",
+        "pathwayReport": {
+          "preSurgery": {
+            "title": "Pre-Surgery Review Report",
+            "planning": "Planning",
+            "suitability": "Suitability",
+            "graftEstimate": "Graft estimate",
+            "treatmentPath": "Treatment path"
+          },
+          "postSurgery": {
+            "title": "Post-Surgery Audit Report",
+            "proceduralQuality": "Procedural quality",
+            "donorCondition": "Donor condition",
+            "density": "Density",
+            "concerns": "Areas of concern",
+            "repairGuidance": "Repair guidance"
+          }
+        },
         "concernsTitle": "Areas to discuss with your clinician",
         "concernsHint": "These points are based on your uploaded images. They are not a diagnosis — please discuss them with your treating team.",
         "acceptableTitle": "What looks reassuring",
@@ -855,6 +872,82 @@
           "month_7_12": "Months 7-12",
           "month_12_plus": "12+ months",
           "unknown": "General"
+        }
+      },
+      "postSurgeryReport": {
+        "badges": {
+          "complete": "Post-surgery review complete"
+        },
+        "hero": {
+          "title": "Your Post-Surgery Audit is Complete",
+          "subtitle": "We have independently reviewed your transplant result, donor condition, density patterns, procedural integrity, and long-term restoration concerns. This review is designed to help you objectively understand your surgical outcome.",
+          "outcomeLabel": "Primary procedural outcome"
+        },
+        "outcomes": {
+          "strong_outcome": "STRONG PROCEDURAL OUTCOME DETECTED",
+          "moderate_concerns": "MODERATE PROCEDURAL CONCERNS IDENTIFIED",
+          "donor_preservation_concerns": "SIGNIFICANT DONOR PRESERVATION CONCERNS DETECTED",
+          "significant_concerns": "SIGNIFICANT PROCEDURAL CONCERNS IDENTIFIED"
+        },
+        "repairStates": {
+          "no_repair_concerns": "No repair concerns identified",
+          "minor_observation": "Minor concerns requiring observation",
+          "moderate_consultation": "Moderate repair consultation recommended",
+          "significant_planning": "Significant repair planning may be beneficial"
+        },
+        "scorecards": {
+          "title": "Procedural assessment scores",
+          "subtitle": "Key metrics from your independent procedural review.",
+          "metrics": {
+            "donor_preservation": "Donor Preservation Score",
+            "extraction_pattern": "Extraction Pattern Quality",
+            "density_distribution": "Density Distribution Score",
+            "recipient_area": "Recipient Area Assessment",
+            "healing_quality": "Healing Quality Assessment",
+            "repair_probability": "Repair Probability"
+          }
+        },
+        "concerns": {
+          "title": "Potential Concerns Identified",
+          "subtitle": "Objective observations based on your uploaded images. These are not a diagnosis — discuss them with your treating team.",
+          "severity": {
+            "low": "Low concern",
+            "moderate": "Moderate concern",
+            "elevated": "Elevated concern",
+            "significant": "Significant concern"
+          }
+        },
+        "sections": {
+          "title": "Independent review sections",
+          "overall_procedure": "Overall Procedure Assessment",
+          "donor_area": "Donor Area Review",
+          "extraction_pattern": "Extraction Pattern Analysis",
+          "density_distribution": "Density Distribution Review",
+          "recipient_area": "Recipient Area Assessment",
+          "procedural_integrity": "Procedural Integrity Review",
+          "long_term_risk": "Long-Term Risk Assessment",
+          "repair_considerations": "Repair Considerations"
+        },
+        "images": {
+          "title": "Your uploaded images",
+          "noPhoto": "Photo not available",
+          "views": {
+            "front": "Front View",
+            "donor": "Donor View"
+          }
+        },
+        "trust": {
+          "title": "Independent Review Completed",
+          "body": "This assessment was generated using an independent review system designed to evaluate procedural quality objectively and separately from clinic recommendations.",
+          "neutrality": "This report is not influenced by the clinic that performed your surgery."
+        },
+        "nextSteps": {
+          "title": "Recommended Next Steps",
+          "subtitle": "Practical actions based on this independent review."
+        },
+        "repairLabel": "Repair consideration",
+        "meta": {
+          "reportId": "Report ID"
         }
       },
       "deleteDraft": {

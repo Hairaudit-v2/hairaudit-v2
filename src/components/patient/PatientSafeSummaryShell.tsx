@@ -12,6 +12,8 @@ import type {
   PatientSafeReportSummary,
   PatientSafeSummaryObservation,
 } from "@/lib/reports/patientSafeSummary";
+import { getPathwayDefinition } from "@/lib/patient/patientReviewPathway";
+import type { TranslationKey } from "@/lib/i18n/translationKeys";
 
 function concernBadgeClass(band?: PatientSafeSummaryObservation["concernBand"]) {
   switch (band) {
@@ -150,18 +152,18 @@ export default function PatientSafeSummaryShell({
             <p className="mt-2 text-sm leading-relaxed text-slate-700">{summary.plainEnglishSummary}</p>
           </div>
 
-          {summary.pathwayFocusAreas && summary.pathwayFocusAreas.length > 0 ? (
+          {summary.patientReviewPathway ? (
             <div className="rounded-xl border border-slate-200 bg-white p-4">
               <h3 className="text-sm font-semibold text-slate-900">
-                {summary.patientReviewPathway === "pre_surgery"
-                  ? t("dashboard.patient.safeSummary.pathwayPreSurgeryLabel")
-                  : t("dashboard.patient.safeSummary.pathwayPostSurgeryLabel")}
+                {t(
+                  getPathwayDefinition(summary.patientReviewPathway).reportSectionTitleKey as TranslationKey
+                )}
               </h3>
               <ul className="mt-2 space-y-1 text-sm text-slate-700">
-                {summary.pathwayFocusAreas.map((area) => (
-                  <li key={area} className="flex gap-2">
+                {getPathwayDefinition(summary.patientReviewPathway).reportFocusAreaKeys.map((key) => (
+                  <li key={key} className="flex gap-2">
                     <span aria-hidden>•</span>
-                    <span>{area}</span>
+                    <span>{t(key as TranslationKey)}</span>
                   </li>
                 ))}
               </ul>

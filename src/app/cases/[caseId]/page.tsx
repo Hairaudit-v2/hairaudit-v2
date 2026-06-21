@@ -102,7 +102,10 @@ import {
   buildPatientSafeReportSummary,
   hasClinicAnswersInSummary,
 } from "@/lib/reports/patientSafeSummary";
+import { resolvePostSurgeryAuditReport } from "@/lib/reports/postSurgeryAuditReport";
+import PostSurgeryAuditReportShell from "@/components/patient/PostSurgeryAuditReportShell";
 import { resolvePatientSafeSummaryNarrativePresentation } from "@/lib/reports/patientSafeSummaryNarrativeTranslation";
+import { resolvePatientReviewPathwayFromCase } from "@/lib/patient/patientReviewPathway";
 import { resolvePublicSeoLocale } from "@/lib/seo/localeMetadata";
 
 function scoreChipClass(score: number | null | undefined) {
@@ -865,6 +868,15 @@ export default async function Page({
   const patientReportSummary = buildPatientSafeReportSummary(latestSummary, {
     patientReviewPathway: c.patient_review_pathway,
   });
+  const patientReviewPathway = resolvePatientReviewPathwayFromCase(c);
+  const postSurgeryAuditReport =
+    patientReviewPathway === "post_surgery" && latestSummary
+      ? resolvePostSurgeryAuditReport(latestSummary as Record<string, unknown>, {
+          caseId: c.id,
+          reportVersion: latestReport?.version,
+          patientReviewPathway,
+        })
+      : null;
   const patientSafeSummaryNarrative = await resolvePatientSafeSummaryNarrativePresentation({
     db: admin,
     caseId: c.id,
@@ -1073,7 +1085,16 @@ export default async function Page({
             />
           )}
 
-          {patientShowReportContent && latestReport && (
+          {patientShowReportContent && latestReport && postSurgeryAuditReport ? (
+            <PostSurgeryAuditReportShell
+              report={postSurgeryAuditReport}
+              statusLabel={statusDisplayLabel}
+              translatedNarrativeActive={patientSafeSummaryNarrative.translatedNarrativeActive}
+              requestedLocale={seoLocale}
+              fallbackReason={patientSafeSummaryNarrative.fallbackReason}
+            />
+          ) : null}
+          {patientShowReportContent && latestReport && !postSurgeryAuditReport ? (
             <PatientSafeSummaryShell
               statusLabel={statusDisplayLabel}
               observations={patientSafeSummaryNarrative.observations}
@@ -1082,7 +1103,7 @@ export default async function Page({
               requestedLocale={seoLocale}
               fallbackReason={patientSafeSummaryNarrative.fallbackReason}
             />
-          )}
+          ) : null}
           {patientShowReportContent && patientIntelligenceTranslation?.hasObservations && (
             <PatientIntelligenceObservations translation={patientIntelligenceTranslation} />
           )}

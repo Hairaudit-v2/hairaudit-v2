@@ -124,8 +124,8 @@ export const INTELLIGENCE_MODULES: readonly IntelligenceModule[] = [
 
 /** Overall patient experience engine readiness (rollup). */
 export const PATIENT_EXPERIENCE_ENGINE = {
-  name: "Patient Experience Engine",
-  completionPercent: 96,
+  name: "Patient Upload Experience",
+  completionPercent: 98,
   description:
     "End-to-end patient surfaces — pathway routing, intake, uploads, processing UX, and report delivery — measured against production readiness.",
 } as const;
@@ -143,17 +143,17 @@ export const PATIENT_PATHWAY_INFRASTRUCTURE: readonly PatientUxFeature[] = [
   {
     id: "post-surgery-audit-infrastructure",
     name: "Post-Surgery Audit Infrastructure",
-    completionPercent: 95,
+    completionPercent: 97,
     description:
-      "Post-procedure upload gates, recovery intake, donor trauma and overharvesting intelligence, and result-audit report focus.",
+      "Post-procedure upload gates, recovery intake, and Post-Surgery Audit Report focus: procedural quality, donor condition, density, concerns, and repair guidance.",
     focus: "Pathway B — reviewing completed transplant evidence.",
   },
   {
     id: "pre-surgery-review-infrastructure",
     name: "Pre-Surgery Review Infrastructure",
-    completionPercent: 90,
+    completionPercent: 94,
     description:
-      "Pre-operative photo requirements, planning intake, suitability and graft estimation intelligence, and pre-surgery report focus.",
+      "Pre-operative photo requirements, planning intake, and Pre-Surgery Review Report focus: planning, suitability, graft estimate, and treatment path.",
     focus: "Pathway A — planning before surgery.",
   },
 ];

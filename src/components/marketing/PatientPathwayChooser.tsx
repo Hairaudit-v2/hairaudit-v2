@@ -83,12 +83,12 @@ export default function PatientPathwayChooser({ layout = "cards", className }: P
               </div>
             </div>
             <ul className="mt-4 space-y-1.5 text-sm text-muted-foreground">
-              {def.reportFocusAreas.map((area) => (
-                <li key={area} className="flex gap-2">
+              {def.reportFocusAreaKeys.map((key) => (
+                <li key={key} className="flex gap-2">
                   <span aria-hidden className="text-amber-300/80">
                     •
                   </span>
-                  <span>{area}</span>
+                  <span>{t(key as never)}</span>
                 </li>
               ))}
             </ul>

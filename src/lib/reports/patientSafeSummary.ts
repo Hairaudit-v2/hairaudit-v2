@@ -60,7 +60,11 @@ export const PATIENT_SAFE_SUMMARY_NARRATIVE_MODE = "english_generated" as const;
 function extractObservationText(entry: unknown): string {
   if (typeof entry === "string") return entry.trim();
   if (entry && typeof entry === "object" && "title" in (entry as Record<string, unknown>)) {
-    return String((entry as Record<string, unknown>).title ?? "").trim();
+    const record = entry as Record<string, unknown>;
+    return String(record.title ?? record.flag ?? "").trim();
+  }
+  if (entry && typeof entry === "object" && "flag" in (entry as Record<string, unknown>)) {
+    return String((entry as Record<string, unknown>).flag ?? "").trim();
   }
   return "";
 }

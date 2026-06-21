@@ -3,6 +3,16 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { buildReportViewModel, normalizeAuditMode, type AuditMode, type AuditReportContent } from "@/lib/pdf/reportBuilder";
 import { verifyRenderToken } from "@/lib/reports/internalRenderToken";
 import { renderEliteReportHtml } from "@/lib/reports/EliteReportHtml";
+import { renderPostSurgeryAuditReportHtml } from "@/lib/reports/PostSurgeryAuditReportHtml";
+import {
+  resolvePostSurgeryAuditReport,
+  shouldUsePostSurgeryReportTemplate,
+} from "@/lib/reports/postSurgeryAuditReport";
+import {
+  buildPostSurgeryReportHtmlLabelsEn,
+  POST_SURGERY_OUTCOME_LABELS_EN,
+  POST_SURGERY_REPAIR_LABELS_EN,
+} from "@/lib/reports/postSurgeryReportLabels";
 import rubric from "@/lib/audit/rubrics/hairaudit_clinical_v1.json";
 import { buildElitePrintPhotosByCategorySignedUrl } from "@/lib/pdf/elitePrintPhotoSignedUrlPipeline";
 import {
@@ -124,7 +134,7 @@ export async function GET(req: Request) {
   // Load case row
   const { data: c, error: caseErr } = await supabase
     .from("cases")
-    .select("id, title, status, created_at, user_id, patient_id, doctor_id, clinic_id")
+    .select("id, title, status, created_at, user_id, patient_id, doctor_id, clinic_id, patient_review_pathway")
     .eq("id", caseId)
     .maybeSingle();
 
@@ -551,14 +561,40 @@ export async function GET(req: Request) {
     debugFooter,
   };
 
-  const html = renderEliteReportHtml(eliteVm);
+  const html = (() => {
+    if (shouldUsePostSurgeryReportTemplate(c.patient_review_pathway, mode)) {
+      const postReport = resolvePostSurgeryAuditReport(summary as Record<string, unknown>, {
+        caseId,
+        reportVersion: content.version,
+        patientReviewPathway: c.patient_review_pathway,
+        photosByCategory,
+      });
+      if (postReport) {
+        const outcomeLabel =
+          POST_SURGERY_OUTCOME_LABELS_EN[postReport.proceduralOutcomeId] ??
+          postReport.proceduralOutcomeId;
+        const repairLabel =
+          POST_SURGERY_REPAIR_LABELS_EN[postReport.repairConsiderationId] ??
+          postReport.repairConsiderationId;
+        return renderPostSurgeryAuditReportHtml({
+          report: postReport,
+          caseId,
+          generatedAtDisplay: content.generatedAt,
+          labels: buildPostSurgeryReportHtmlLabelsEn(outcomeLabel, repairLabel),
+        });
+      }
+    }
+    return renderEliteReportHtml(eliteVm);
+  })();
   const htmlUtf8Bytes = Buffer.byteLength(html, "utf8");
 
   return new NextResponse(html, {
     headers: {
       "Content-Type": "text/html; charset=utf-8",
       "Cache-Control": "no-store",
-      "X-Report-Template": "elite",
+      "X-Report-Template": shouldUsePostSurgeryReportTemplate(c.patient_review_pathway, mode)
+        ? "post-surgery-audit"
+        : "elite",
       "X-Audit-Mode": mode,
       "X-Pdf-Print-Html-Bytes": String(htmlUtf8Bytes),
       "X-Pdf-Print-Image-Count": String(printPhotoStats.imageCount),

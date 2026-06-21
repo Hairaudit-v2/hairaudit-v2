@@ -29,6 +29,8 @@ import { persistHairAuditIntelligenceSnapshot } from "@/lib/hairaudit-intelligen
 import { isHairAuditIntelligenceSnapshotPersistenceEnabled } from "@/lib/hairaudit-intelligence/shadow/hairAuditIntelligenceEnv.server";
 import type { LegacyUploadRow } from "@/lib/auditos/reports/adaptLegacyReportModel";
 import { getCaseFilesBucketNameForReadOnlyUse } from "@/lib/hairaudit/uploadStorage";
+import { generatePostSurgeryAuditReport } from "@/lib/reports/postSurgeryAuditReport";
+import { normalizePatientReviewPathway } from "@/lib/patient/patientReviewPathway";
 
 /** Must match `REASONS` in `src/app/api/auditor/rerun/route.ts`. */
 const AUDITOR_RERUN_REASON_CORRECTED_PATIENT_PHOTOS = "corrected_patient_photos";
@@ -1297,6 +1299,23 @@ export const runAudit = inngest.createFunction(
         },
       });
 
+      const patientReviewPathway = normalizePatientReviewPathway(
+        (c as { patient_review_pathway?: string | null }).patient_review_pathway
+      );
+      const summaryForInsert =
+        patientReviewPathway === "post_surgery"
+          ? {
+              ...summary,
+              post_surgery_audit_report: generatePostSurgeryAuditReport({
+                summary,
+                intelligenceBundle: hairAuditIntelligenceBundle,
+                caseId,
+                reportVersion: nextVersion,
+                patientReviewPathway,
+              }),
+            }
+          : summary;
+
       const finalAiScore = Number(overall?.performance_score ?? overall?.benchmark_score ?? 0);
       const { eligibility: auditorReviewEligibility, status: auditorReviewStatus, reason: auditorReviewReason } = computeAuditorReviewEligibility(finalAiScore);
       const { provisional_status: provisionalStatus, counts_for_awards: countsForAwards } = computeProvisionalFromScore(finalAiScore);
@@ -1314,7 +1333,7 @@ export const runAudit = inngest.createFunction(
           case_id: caseId,
           version: nextVersion,
           pdf_path: pdfPath,
-          summary,
+          summary: summaryForInsert,
           status: "processing",
           error: null,
           auditor_review_eligibility: auditorReviewEligibility,
@@ -1336,7 +1355,7 @@ export const runAudit = inngest.createFunction(
         nextVersion,
         insertedReportId: insertedReport.id,
         insertedReportCreatedAt: insertedReport.created_at ?? null,
-        summary,
+        summary: summaryForInsert,
         legacyEvidenceManifest: preparedVision.manifest,
         uploads,
         auditorReviewEligibility,

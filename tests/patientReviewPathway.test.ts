@@ -3,6 +3,7 @@ import assert from "node:assert";
 import { buildAuditCaseInsertData } from "../src/lib/cases/createCase";
 import {
   computePathwayUploadProgress,
+  getPathwayDefinition,
   getPathwayEvidencePack,
   getPathwayPhotoKeys,
   getPathwayUploadTier,
@@ -157,6 +158,34 @@ describe("patientReviewPathway", () => {
     }
   });
 
+  it("defines pathway report focus areas for pre and post surgery", () => {
+    const pre = getPathwayDefinition("pre_surgery");
+    const post = getPathwayDefinition("post_surgery");
+    assert.deepStrictEqual(pre.reportFocusAreas, [
+      "Planning",
+      "Suitability",
+      "Graft estimate",
+      "Treatment path",
+    ]);
+    assert.deepStrictEqual(post.reportFocusAreas, [
+      "Procedural quality",
+      "Donor condition",
+      "Density",
+      "Areas of concern",
+      "Repair guidance",
+    ]);
+    assert.strictEqual(pre.reportFocusAreaKeys.length, 4);
+    assert.strictEqual(post.reportFocusAreaKeys.length, 5);
+  });
+
+  it("defines distinct intelligence module sets", () => {
+    const pre = getPathwayDefinition("pre_surgery").intelligenceModules;
+    const post = getPathwayDefinition("post_surgery").intelligenceModules;
+    assert.notDeepStrictEqual(pre, post);
+    assert.ok(pre.includes("graft_estimation"));
+    assert.ok(post.includes("repair_intelligence"));
+  });
+
   it("filters intake sections by pathway", () => {
     assert.strictEqual(
       isIntakeSectionVisibleForPathway("results", "post_surgery", { minimal: false }),
@@ -184,6 +213,11 @@ describe("patientReviewPathway", () => {
   it("adds pathway focus areas to patient-safe summary", () => {
     const report = buildPatientSafeReportSummary({}, { patientReviewPathway: "pre_surgery" });
     assert.strictEqual(report.patientReviewPathway, "pre_surgery");
-    assert.ok(report.pathwayFocusAreas?.length);
+    assert.deepStrictEqual(report.pathwayFocusAreas, [
+      "Planning",
+      "Suitability",
+      "Graft estimate",
+      "Treatment path",
+    ]);
   });
 });

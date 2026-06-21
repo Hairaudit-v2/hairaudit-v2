@@ -331,12 +331,12 @@
       "pathways": {
         "preSurgery": {
           "title": "Revisión preoperatoria",
-          "description": "¿Planifica un trasplante? Suba fotos previas para evaluar candidatura, zona donante, planificación de injertos y perspectiva de progresión antes de decidir.",
+          "description": "¿Planifica un trasplante? Su informe de revisión preoperatoria cubre planificación, idoneidad, estimación de injertos y ruta de tratamiento antes de decidir.",
           "cta": "Iniciar revisión preoperatoria"
         },
         "postSurgery": {
           "title": "Auditoría postoperatoria",
-          "description": "¿Ya se operó? Suba fotos de su resultado para revisar integridad del donante, densidad, puntuación del procedimiento y orientación correctiva.",
+          "description": "¿Ya se operó? Su informe de auditoría postoperatoria cubre calidad del procedimiento, estado del donante, densidad, áreas de preocupación y orientación de reparación.",
           "cta": "Iniciar auditoría postoperatoria"
         }
       },
@@ -829,8 +829,25 @@
         "observationsHintTranslationUnavailable": "Estos elementos provienen del resumen del informe y actualmente se muestran desde la versión fuente en inglés.",
         "noObservations": "Aún no hay observaciones estructuradas disponibles para este caso.",
         "plainEnglishTitle": "En lenguaje claro",
-        "pathwayPreSurgeryLabel": "Enfoque de revisión preoperatoria",
-        "pathwayPostSurgeryLabel": "Enfoque de auditoría postoperatoria",
+        "pathwayPreSurgeryLabel": "Informe de revisión preoperatoria",
+        "pathwayPostSurgeryLabel": "Informe de auditoría postoperatoria",
+        "pathwayReport": {
+          "preSurgery": {
+            "title": "Informe de revisión preoperatoria",
+            "planning": "Planificación",
+            "suitability": "Idoneidad",
+            "graftEstimate": "Estimación de injertos",
+            "treatmentPath": "Ruta de tratamiento"
+          },
+          "postSurgery": {
+            "title": "Informe de auditoría postoperatoria",
+            "proceduralQuality": "Calidad del procedimiento",
+            "donorCondition": "Estado del donante",
+            "density": "Densidad",
+            "concerns": "Áreas de preocupación",
+            "repairGuidance": "Orientación de reparación"
+          }
+        },
         "concernsTitle": "Áreas para comentar con su clínico",
         "concernsHint": "Estos puntos se basan en sus imágenes. No son un diagnóstico — coméntelos con su equipo tratante.",
         "acceptableTitle": "Lo que parece tranquilizador",
@@ -855,6 +872,82 @@
           "month_7_12": "Meses 7-12",
           "month_12_plus": "12+ meses",
           "unknown": "General"
+        }
+      },
+      "postSurgeryReport": {
+        "badges": {
+          "complete": "Revisión postoperatoria completada"
+        },
+        "hero": {
+          "title": "Su auditoría postoperatoria está completa",
+          "subtitle": "Hemos revisado de forma independiente el resultado del trasplante, la condición del donante, los patrones de densidad, la integridad del procedimiento y las preocupaciones de restauración a largo plazo. Esta revisión está diseñada para ayudarle a comprender objetivamente el resultado de su cirugía.",
+          "outcomeLabel": "Resultado procedural principal"
+        },
+        "outcomes": {
+          "strong_outcome": "RESULTADO PROCEDURAL FUERTE DETECTADO",
+          "moderate_concerns": "PREOCUPACIONES PROCEDURALES MODERADAS IDENTIFICADAS",
+          "donor_preservation_concerns": "PREOCUPACIONES SIGNIFICATIVAS DE PRESERVACIÓN DEL DONANTE DETECTADAS",
+          "significant_concerns": "PREOCUPACIONES PROCEDURALES SIGNIFICATIVAS IDENTIFICADAS"
+        },
+        "repairStates": {
+          "no_repair_concerns": "No se identificaron preocupaciones de reparación",
+          "minor_observation": "Preocupaciones menores que requieren observación",
+          "moderate_consultation": "Consulta de reparación moderada recomendada",
+          "significant_planning": "La planificación de reparación significativa puede ser beneficiosa"
+        },
+        "scorecards": {
+          "title": "Puntuaciones de evaluación procedural",
+          "subtitle": "Métricas clave de su revisión procedural independiente.",
+          "metrics": {
+            "donor_preservation": "Puntuación de preservación del donante",
+            "extraction_pattern": "Calidad del patrón de extracción",
+            "density_distribution": "Puntuación de distribución de densidad",
+            "recipient_area": "Evaluación del área receptora",
+            "healing_quality": "Evaluación de la calidad de cicatrización",
+            "repair_probability": "Probabilidad de reparación"
+          }
+        },
+        "concerns": {
+          "title": "Posibles preocupaciones identificadas",
+          "subtitle": "Observaciones objetivas basadas en sus imágenes subidas. No son un diagnóstico — discútalas con su equipo de tratamiento.",
+          "severity": {
+            "low": "Preocupación baja",
+            "moderate": "Preocupación moderada",
+            "elevated": "Preocupación elevada",
+            "significant": "Preocupación significativa"
+          }
+        },
+        "sections": {
+          "title": "Secciones de revisión independiente",
+          "overall_procedure": "Evaluación general del procedimiento",
+          "donor_area": "Revisión del área donante",
+          "extraction_pattern": "Análisis del patrón de extracción",
+          "density_distribution": "Revisión de distribución de densidad",
+          "recipient_area": "Evaluación del área receptora",
+          "procedural_integrity": "Revisión de integridad procedural",
+          "long_term_risk": "Evaluación de riesgo a largo plazo",
+          "repair_considerations": "Consideraciones de reparación"
+        },
+        "images": {
+          "title": "Sus imágenes subidas",
+          "noPhoto": "Foto no disponible",
+          "views": {
+            "front": "Vista frontal",
+            "donor": "Vista del donante"
+          }
+        },
+        "trust": {
+          "title": "Revisión independiente completada",
+          "body": "Esta evaluación se generó mediante un sistema de revisión independiente diseñado para evaluar la calidad procedural de forma objetiva y separada de las recomendaciones de la clínica.",
+          "neutrality": "Este informe no está influenciado por la clínica que realizó su cirugía."
+        },
+        "nextSteps": {
+          "title": "Próximos pasos recomendados",
+          "subtitle": "Acciones prácticas basadas en esta revisión independiente."
+        },
+        "repairLabel": "Consideración de reparación",
+        "meta": {
+          "reportId": "ID del informe"
         }
       },
       "deleteDraft": {
