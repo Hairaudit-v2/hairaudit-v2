@@ -118,9 +118,19 @@ export default function StartFreeAuditButton({
     }
   }, [busy, eventName, pathway, router, solveCaptcha]);
 
+  const pathwayTestId =
+    pathway === "pre_surgery" ? "start-pre-surgery-review" : "start-post-surgery-audit";
+
   return (
     <>
-      <button type="button" onClick={start} disabled={busy} className={className} aria-busy={busy}>
+      <button
+        type="button"
+        onClick={start}
+        disabled={busy}
+        className={className}
+        aria-busy={busy}
+        data-testid={pathwayTestId}
+      >
         {busy ? "Starting…" : children}
       </button>
       {error && (

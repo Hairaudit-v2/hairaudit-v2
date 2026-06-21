@@ -138,7 +138,7 @@ export default function PathwayEvidenceUploadSection({
 
         if (group.tier === "required") {
           return (
-            <section key={group.tier} className="space-y-3">
+            <section key={group.tier} data-testid="upload-required-section" className="space-y-3">
               <header>
                 <h2 className="text-lg font-semibold text-slate-900">
                   {t(group.titleKey as TranslationKey)}
@@ -152,9 +152,17 @@ export default function PathwayEvidenceUploadSection({
           );
         }
 
+        const tierTestId =
+          group.tier === "recommended"
+            ? "upload-recommended-section"
+            : group.tier === "optional"
+              ? "upload-optional-section"
+              : undefined;
+
         return (
           <details
             key={group.tier}
+            data-testid={tierTestId}
             className="rounded-xl border border-slate-200 bg-white group"
             open={tierDefaultOpen(group.tier)}
           >

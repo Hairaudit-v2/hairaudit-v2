@@ -314,7 +314,7 @@ export default function PhotoUploader({
   };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 p-4">
+    <div data-testid="upload-evidence-pack" className="mx-auto max-w-3xl space-y-6 p-4">
       <header>
         <h1 className="text-2xl font-semibold">
           {submitterType === "doctor" ? "Doctor" : "Patient"} Photo Uploads

@@ -96,7 +96,7 @@ export default function PostSurgeryAuditReportShell({
     `dashboard.patient.postSurgeryReport.repairStates.${report.repairConsiderationId}` as TranslationKey;
 
   return (
-    <section className="mt-6 space-y-5">
+    <section data-testid="post-surgery-report-shell" className="mt-6 space-y-5">
       <div
         className={`overflow-hidden rounded-2xl border p-6 shadow-lg sm:p-8 ${outcomeHeroClass(
           report.proceduralOutcomeId

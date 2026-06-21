@@ -18,6 +18,7 @@ export default function DownloadReport({
     <div>
       <a
         href={href}
+        data-testid="report-pdf-link"
         className="inline-flex items-center justify-center rounded-lg border border-cyan-300/30 bg-cyan-300/15 px-3 py-2 text-sm font-medium text-cyan-100 hover:bg-cyan-300/25"
       >
         {resolvedLabel}

@@ -28,7 +28,10 @@ export default function PatientPathwayChooser({ layout = "cards", className }: P
 
   if (layout === "hero") {
     return (
-      <div className={cn("flex flex-col gap-3 sm:flex-row sm:flex-wrap", className)}>
+      <div
+        data-testid="pathway-chooser"
+        className={cn("flex flex-col gap-3 sm:flex-row sm:flex-wrap", className)}
+      >
         {PATIENT_REVIEW_PATHWAYS.map((pathway) => {
           const def = PATIENT_PATHWAY_DEFINITIONS[pathway];
           const isPrimary = pathway === "post_surgery";
@@ -59,7 +62,7 @@ export default function PatientPathwayChooser({ layout = "cards", className }: P
   }
 
   return (
-    <div className={cn("grid gap-4 md:grid-cols-2", className)}>
+    <div data-testid="pathway-chooser" className={cn("grid gap-4 md:grid-cols-2", className)}>
       {PATIENT_REVIEW_PATHWAYS.map((pathway) => {
         const def = PATIENT_PATHWAY_DEFINITIONS[pathway];
         const Icon = PATHWAY_ICONS[pathway];

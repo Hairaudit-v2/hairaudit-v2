@@ -14,6 +14,10 @@
  * Requires (non-production):
  *   NEXT_PUBLIC_SUPABASE_URL (or SUPABASE_URL), SUPABASE_SERVICE_ROLE_KEY
  *
+ * Windows TLS / antivirus SSL inspection:
+ *   If you see UNABLE_TO_VERIFY_LEAF_SIGNATURE, run:
+ *   PowerShell: $env:DEMO_SEED_INSECURE_TLS='true'; npm run seed:demo-qa
+ *
  * Production guard: blocked unless DEMO_SEED_ENABLED=true
  *
  * Idempotent: re-run updates cases keyed by external_case_id (demo-qa:presurgery:01 …).
@@ -35,6 +39,12 @@ import { buildDemoQaReportSummary, buildDemoQaUploadTypes } from "../src/lib/dem
 import { DEMO_QA_ALL_SCENARIOS } from "../src/lib/demo/qaCaseSeed/scenarios";
 import type { DemoQaScenario } from "../src/lib/demo/qaCaseSeed/types";
 import { tryCreateSupabaseAdminClient } from "../src/lib/supabase/admin";
+import {
+  applyDemoSeedInsecureTlsIfRequested,
+  assertDemoSeedSupabaseReachable,
+  createDemoSeedSupabaseClient,
+  formatDemoSeedTlsHelp,
+} from "./lib/demoQaSupabase";
 import { applyPatientPhotoCategoryFields } from "../src/lib/uploads/patientPhotoCategoryIntegrity";
 import { getDefaultImageBuffer } from "../tests/audit-harness/helpers/imageBuffer";
 import { createDemoQaPdfBuffer } from "./lib/demoQaPdf";
@@ -66,23 +76,57 @@ function parseArgs(): { cleanup: boolean; dryRun: boolean } {
   };
 }
 
+let demoUserIdByEmailCache: Map<string, string> | null = null;
+
+async function loadDemoUserIdCache(supabase: SupabaseClient): Promise<Map<string, string>> {
+  if (demoUserIdByEmailCache) return demoUserIdByEmailCache;
+
+  const map = new Map<string, string>();
+  let page = 1;
+  const perPage = 200;
+
+  while (true) {
+    const { data, error } = await supabase.auth.admin.listUsers({ page, perPage });
+    if (error) throw new Error(`Failed to list users: ${error.message}`);
+    for (const user of data.users) {
+      if (user.email) map.set(user.email.toLowerCase(), user.id);
+    }
+    if (data.users.length < perPage) break;
+    page += 1;
+  }
+
+  demoUserIdByEmailCache = map;
+  return map;
+}
+
+async function resolveDemoUserIdByEmail(supabase: SupabaseClient, email: string): Promise<string | null> {
+  const map = await loadDemoUserIdCache(supabase);
+  return map.get(email.toLowerCase()) ?? null;
+}
+
+async function upsertDemoProfile(
+  supabase: SupabaseClient,
+  userId: string,
+  scenario: DemoQaScenario
+): Promise<void> {
+  await supabase.from("profiles").upsert({
+    id: userId,
+    role: "patient",
+    display_name: demoQaDisplayName(scenario.pathway, scenario.index, scenario.title),
+  });
+}
+
 async function ensureDemoUser(
   supabase: SupabaseClient,
   scenario: DemoQaScenario
 ): Promise<{ userId: string; email: string; created: boolean }> {
   const email = demoQaUserEmail(scenario.pathway, scenario.index);
+  const externalCaseId = demoQaExternalCaseId(scenario.pathway, scenario.index);
 
-  const { data: listData, error: listErr } = await supabase.auth.admin.listUsers({ perPage: 1000 });
-  if (listErr) throw new Error(`Failed to list users: ${listErr.message}`);
-
-  const existing = listData.users.find((u) => u.email?.toLowerCase() === email.toLowerCase());
-  if (existing?.id) {
-    await supabase.from("profiles").upsert({
-      id: existing.id,
-      role: "patient",
-      display_name: demoQaDisplayName(scenario.pathway, scenario.index, scenario.title),
-    });
-    return { userId: existing.id, email, created: false };
+  const existingCase = await findCaseByExternalId(supabase, externalCaseId);
+  if (existingCase?.user_id) {
+    await upsertDemoProfile(supabase, existingCase.user_id, scenario);
+    return { userId: existingCase.user_id, email, created: false };
   }
 
   const { data, error } = await supabase.auth.admin.createUser({
@@ -97,17 +141,26 @@ async function ensureDemoUser(
     },
   });
 
-  if (error || !data.user?.id) {
-    throw new Error(`Failed to create demo user ${email}: ${error?.message ?? "unknown"}`);
+  if (!error && data.user?.id) {
+    await upsertDemoProfile(supabase, data.user.id, scenario);
+    return { userId: data.user.id, email, created: true };
   }
 
-  await supabase.from("profiles").upsert({
-    id: data.user.id,
-    role: "patient",
-    display_name: demoQaDisplayName(scenario.pathway, scenario.index, scenario.title),
-  });
+  const duplicate =
+    error?.message?.toLowerCase().includes("already") ||
+    error?.message?.toLowerCase().includes("registered") ||
+    error?.status === 422;
 
-  return { userId: data.user.id, email, created: true };
+  if (duplicate) {
+    const userId = await resolveDemoUserIdByEmail(supabase, email);
+    if (!userId) {
+      throw new Error(`Demo user ${email} exists but could not be resolved.`);
+    }
+    await upsertDemoProfile(supabase, userId, scenario);
+    return { userId, email, created: false };
+  }
+
+  throw new Error(`Failed to create demo user ${email}: ${error?.message ?? "unknown"}`);
 }
 
 async function findCaseByExternalId(supabase: SupabaseClient, externalCaseId: string) {
@@ -242,17 +295,15 @@ async function cleanupDemoQaCases(supabase: SupabaseClient): Promise<number> {
 
   if (error) throw new Error(`Cleanup list failed: ${error.message}`);
   const rows = cases ?? [];
+  const userIds = new Set(rows.map((row) => String(row.user_id ?? "")).filter(Boolean));
+
   for (const row of rows) {
     await deleteCaseArtifacts(supabase, row.id as string);
     await supabase.from("cases").delete().eq("id", row.id);
   }
 
-  const emails = new Set(DEMO_QA_ALL_SCENARIOS.map((s) => demoQaUserEmail(s.pathway, s.index).toLowerCase()));
-  const { data: users } = await supabase.auth.admin.listUsers({ perPage: 1000 });
-  for (const u of users?.users ?? []) {
-    if (u.email && emails.has(u.email.toLowerCase())) {
-      await supabase.auth.admin.deleteUser(u.id);
-    }
+  for (const userId of userIds) {
+    await supabase.auth.admin.deleteUser(userId);
   }
 
   return rows.length;
@@ -260,6 +311,7 @@ async function cleanupDemoQaCases(supabase: SupabaseClient): Promise<number> {
 
 async function main() {
   loadEnvLocal();
+  applyDemoSeedInsecureTlsIfRequested();
   assertDemoSeedAllowed();
 
   const { cleanup, dryRun } = parseArgs();
@@ -275,9 +327,25 @@ async function main() {
     return;
   }
 
-  const supabase = tryCreateSupabaseAdminClient();
+  const supabase = createDemoSeedSupabaseClient();
   if (!supabase) {
     console.error("Missing Supabase env (URL + SUPABASE_SERVICE_ROLE_KEY).");
+    process.exit(1);
+  }
+
+  try {
+    await assertDemoSeedSupabaseReachable(supabase);
+  } catch (err) {
+    const message = String((err as Error).message ?? err);
+    if (
+      message.includes("TLS certificate verification failed") ||
+      message.toLowerCase().includes("fetch failed") ||
+      message.includes("unable to verify the first certificate")
+    ) {
+      console.error(message.includes("Fix options") ? message : formatDemoSeedTlsHelp());
+    } else {
+      console.error(message);
+    }
     process.exit(1);
   }
 
@@ -291,7 +359,7 @@ async function main() {
   const results: Array<{ scenario: string; caseId: string; email: string; action: string }> = [];
 
   for (const scenario of DEMO_QA_ALL_SCENARIOS) {
-    const result = await seedScenario(supabase, scenario, imageBuffer, false);
+    const result = await seedScenario(supabase, scenario, imageBuffer);
     results.push({
       scenario: scenario.id,
       caseId: result.caseId,
@@ -313,6 +381,15 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error("Demo QA seed failed:", err);
+  const message = String((err as Error).message ?? err);
+  if (
+    message.toLowerCase().includes("fetch failed") ||
+    message.includes("unable to verify the first certificate") ||
+    message.includes("UNABLE_TO_VERIFY")
+  ) {
+    console.error(formatDemoSeedTlsHelp());
+  } else {
+    console.error("Demo QA seed failed:", message);
+  }
   process.exit(1);
 });

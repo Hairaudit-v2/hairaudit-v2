@@ -132,6 +132,8 @@ export default function PatientProcessingWaitingExperience({
   if (reportReady) {
     return (
       <div
+        data-testid="patient-processing-timeline"
+        data-processing-state="ready"
         className={
           compact
             ? "relative overflow-hidden rounded-xl border border-emerald-300/25 bg-gradient-to-br from-emerald-950/70 via-slate-900/80 to-slate-950/80 p-4"
@@ -171,6 +173,8 @@ export default function PatientProcessingWaitingExperience({
 
   return (
     <div
+      data-testid="patient-processing-timeline"
+      data-processing-state="waiting"
       className={
         compact
           ? "relative overflow-hidden rounded-xl border border-cyan-300/20 bg-gradient-to-br from-slate-950/80 via-slate-900/70 to-slate-950/80 p-4"

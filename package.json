@@ -20,6 +20,7 @@
     "seed:patients": "tsx scripts/seedPatientAudits.ts",
     "seed:demo-qa": "tsx scripts/seedDemoQaCases.ts",
     "test:demo-qa-seed": "tsx --test tests/demoQaCaseSeed.test.ts",
+    "test:e2e:hairaudit": "playwright test --config=playwright.config.ts tests/e2e/hairaudit",
     "test:certification": "tsx scripts/testCertification.ts",
     "test:auditor-overrides": "tsx --test tests/auditorOverrides.test.ts",
     "test:i18n": "tsx --test tests/i18n/i18n.test.ts",
