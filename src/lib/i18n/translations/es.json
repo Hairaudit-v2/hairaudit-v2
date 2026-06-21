@@ -5174,6 +5174,17 @@
         "optionalAvailable": "{{count}} subidas opcionales disponibles para reforzar su revisión",
         "stillNeeded": "Aún falta"
       },
+      "wizard": {
+        "heading": "Su revisión independiente ha comenzado",
+        "subcopy": "Necesitamos 5 fotos rápidas para iniciar su revisión. La mayoría de pacientes completa esto en menos de 2 minutos.",
+        "stepLabel": "Paso {{current}} de {{total}}",
+        "progressLabel": "Fotos obligatorias",
+        "completionHeadline": "Excelente — tenemos las fotos necesarias para comenzar su revisión.",
+        "completionSubcopy": "Ahora puede continuar al breve paso de preguntas.",
+        "back": "Atrás",
+        "reviewPrevious": "Revisar foto anterior",
+        "replacePhoto": "Reemplazar foto"
+      },
       "pathways": {
         "preSurgery": {
           "packTitle": "Fotos de planificación preoperatoria",

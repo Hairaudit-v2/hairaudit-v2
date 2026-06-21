@@ -5176,6 +5176,17 @@
         "optionalAvailable": "{{count}} optional uploads available to strengthen your review",
         "stillNeeded": "Still needed"
       },
+      "wizard": {
+        "heading": "Your Independent Review Has Started",
+        "subcopy": "We need 5 quick photos to begin your review. Most patients complete this in under 2 minutes.",
+        "stepLabel": "Step {{current}} of {{total}}",
+        "progressLabel": "Required photos",
+        "completionHeadline": "Excellent — we have the photos needed to begin your review.",
+        "completionSubcopy": "You can now continue to the short question step.",
+        "back": "Back",
+        "reviewPrevious": "Review previous photo",
+        "replacePhoto": "Replace photo"
+      },
       "pathways": {
         "preSurgery": {
           "packTitle": "Pre-Surgery Planning Photos",
