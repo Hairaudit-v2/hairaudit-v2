@@ -33,6 +33,11 @@ const CertifiedClinicsSection = dynamic(
   { ssr: true }
 );
 
+const PlatformProgressTeaser = dynamic(
+  () => import("@/components/home/PlatformProgressTeaser").then((m) => m.default),
+  { ssr: true }
+);
+
 const auditSteps = [
   {
     title: "Upload your photos",
@@ -291,6 +296,8 @@ export default function HairAuditNetworkHomePage() {
       </Section>
 
       <CertifiedClinicsSection />
+
+      <PlatformProgressTeaser />
 
       <NetworkEcosystemMapSection
         eyebrow="Network context"

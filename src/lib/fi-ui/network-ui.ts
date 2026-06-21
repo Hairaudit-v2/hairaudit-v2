@@ -16,6 +16,7 @@ export { NetworkHero, type NetworkHeroProps } from "../../../packages/fi-network
 export { NetworkFeatureGrid as FeatureGrid, type NetworkFeatureGridProps } from "../../../packages/fi-network-ui/FeatureGrid";
 export { NetworkFeatureCard as FeatureCard, type NetworkFeatureCardProps } from "../../../packages/fi-network-ui/FeatureCard";
 export { NetworkMetricCard as MetricCard, type NetworkMetricCardProps } from "../../../packages/fi-network-ui/MetricCard";
+export { NetworkTimeline as Timeline, type NetworkTimelineProps, type NetworkTimelineItem } from "../../../packages/fi-network-ui/Timeline";
 export { NetworkPlatformNav as PlatformNav, type NetworkPlatformNavProps } from "../../../packages/fi-network-ui/PlatformNav";
 export {
   NetworkEcosystemFooter as EcosystemFooter,
