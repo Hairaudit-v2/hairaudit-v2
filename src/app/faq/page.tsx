@@ -1,6 +1,7 @@
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import FaqConversionFooter from "@/components/marketing/FaqConversionFooter";
+import PublicTrustArchitectureBlock from "@/components/marketing/PublicTrustArchitectureBlock";
 import { createPageMetadata } from "@/lib/seo/pageMetadata";
 import FaqPageSchema from "@/components/seo/FaqPageSchema";
 import BreadcrumbListSchema from "@/components/seo/BreadcrumbListSchema";
@@ -85,6 +86,7 @@ export default function FAQPage() {
               Process, privacy, reports, and pathways—framed for patients seeking an independent review and for
               clinics or professionals interested in transparency and standards.
             </p>
+            <PublicTrustArchitectureBlock className="mt-2" />
             <p className="rounded-xl border border-amber-400/20 bg-amber-400/5 px-4 py-3 text-xs leading-relaxed text-amber-50/95">
               HairAudit is not for medical emergencies. If you have severe pain, fever, spreading infection, or other
               emergency signs, seek local urgent care or emergency services.

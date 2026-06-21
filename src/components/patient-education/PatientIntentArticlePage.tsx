@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PUBLIC_CTAS } from "@/lib/marketing/publicMarketingCopy";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import ReviewProcessReassurance from "@/components/seo/ReviewProcessReassurance";
@@ -155,7 +156,7 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
                     data-cta-destination="/request-review"
                     data-patient-guide={articleSlug}
                   >
-                    Request a hair transplant audit
+                    Start Free HairAudit
                   </Link>
                 </li>
                 <li className="sm:after:content-['·'] sm:after:px-2 sm:after:text-slate-600 sm:last:after:content-none">
@@ -228,7 +229,7 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
               </h2>
               <p className="mt-3 text-slate-300 leading-relaxed">
                 {article.ctaSupporting ??
-                  "If you want a structured, evidence-based read of your photos and timeline—independent of clinic marketing—submit your case for review. You can also view a sample report or read the FAQ first."}
+                  "If you want a structured, evidence-based read of your photos and timeline—independent of clinic marketing—start your free HairAudit. You can also view a sample report or read the FAQ first."}
               </p>
               <div className="mt-6 flex flex-col sm:flex-row flex-wrap gap-3">
                 <Link
@@ -238,16 +239,16 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
                   data-cta-destination="/request-review"
                   data-patient-guide={articleSlug}
                 >
-                  Request a hair transplant audit
+                  {PUBLIC_CTAS.startFreeHairAudit}
                 </Link>
                 <Link
-                  href="/sample-report"
+                  href="/demo-report"
                   className="inline-flex items-center justify-center px-6 py-3 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
                   data-cta="patient-guide-cta-sample-report"
-                  data-cta-destination="/sample-report"
+                  data-cta-destination="/demo-report"
                   data-patient-guide={articleSlug}
                 >
-                  Sample hair transplant audit report
+                  {PUBLIC_CTAS.viewSampleReport}
                 </Link>
                 <Link
                   href="/faq"

@@ -2,7 +2,10 @@ import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import ScrollReveal from "@/components/ui/ScrollReveal";
+import TrackedLink from "@/components/analytics/TrackedLink";
+import PublicTrustArchitectureBlock from "@/components/marketing/PublicTrustArchitectureBlock";
 import { createPageMetadata } from "@/lib/seo/pageMetadata";
+import { PUBLIC_CTAS } from "@/lib/marketing/publicMarketingCopy";
 
 export const metadata = createPageMetadata({
   title: "About HairAudit | Independent Hair Transplant Audits | HairAudit",
@@ -30,6 +33,7 @@ export default function AboutPage() {
               HairAudit was created to bring transparency, accountability, and clinical clarity to hair
               restoration review.
             </p>
+            <PublicTrustArchitectureBlock className="mt-6" />
           </ScrollReveal>
 
           <div className="mt-8 space-y-6">
@@ -56,22 +60,24 @@ export default function AboutPage() {
               <section className="rounded-2xl border border-white/10 bg-white/5 p-6">
                 <h2 className="text-xl font-semibold text-white">Current platform status</h2>
                 <p className="mt-3 text-slate-300 text-sm sm:text-base leading-relaxed">
-                  Patient review requests are available now. Clinics and doctors can create a free
-                  profile and begin with internal audits or build a verified professional presence.
+                  Patient independent analysis is available now. Clinics and doctors can create a professional profile
+                  and begin with internal audits or build verified participation over time.
                 </p>
                 <div className="mt-5 flex flex-col sm:flex-row gap-3">
-                  <Link
+                  <TrackedLink
                     href="/request-review"
+                    eventName="cta_start_free_hairaudit_about"
                     className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors"
                   >
-                    Request Review
-                  </Link>
-                  <Link
-                    href="/signup"
+                    {PUBLIC_CTAS.startFreeHairAudit}
+                  </TrackedLink>
+                  <TrackedLink
+                    href="/professionals/apply"
+                    eventName="cta_create_professional_profile_about"
                     className="inline-flex items-center justify-center px-6 py-3 rounded-xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
                   >
-                    Create Clinic or Doctor Profile
-                  </Link>
+                    {PUBLIC_CTAS.createProfessionalProfile}
+                  </TrackedLink>
                 </div>
               </section>
             </ScrollReveal>

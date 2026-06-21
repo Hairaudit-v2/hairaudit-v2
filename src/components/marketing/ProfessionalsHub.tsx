@@ -1,8 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import TrackedLink from "@/components/analytics/TrackedLink";
 import ProfessionalsShell from "@/components/professionals/ProfessionalsShell";
+import PublicTrustArchitectureBlock from "@/components/marketing/PublicTrustArchitectureBlock";
 import { useI18n } from "@/components/i18n/I18nProvider";
+import { PUBLIC_CTAS } from "@/lib/marketing/publicMarketingCopy";
 import type { TranslationKey } from "@/lib/i18n/translationKeys";
 
 const CARDS: { href: string; titleKey: TranslationKey; descKey: TranslationKey }[] = [
@@ -52,6 +55,16 @@ export default function ProfessionalsHub() {
       title={t("marketing.professionals.pageTitle")}
       intro={t("marketing.professionals.pageIntro")}
     >
+      <PublicTrustArchitectureBlock className="mb-8" />
+      <div className="mb-8">
+        <TrackedLink
+          href="/professionals/apply"
+          eventName="cta_create_professional_profile_hub"
+          className="inline-flex items-center justify-center rounded-2xl bg-amber-400 px-6 py-3.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300"
+        >
+          {PUBLIC_CTAS.createProfessionalProfile}
+        </TrackedLink>
+      </div>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {CARDS.map((card) => (
           <div key={card.href}>

@@ -127,7 +127,7 @@ export default function HairTransplantProblemsHubPage() {
                 data-cta="patient-guides-hub-hero-request-review"
                 data-cta-destination="/request-review"
               >
-                Request a hair transplant audit
+                Start Free HairAudit
               </Link>
               <Link
                 href="/sample-report"
@@ -135,7 +135,7 @@ export default function HairTransplantProblemsHubPage() {
                 data-cta="patient-guides-hub-hero-sample-report"
                 data-cta-destination="/sample-report"
               >
-                Sample hair transplant audit report
+                View Sample Report
               </Link>
               <Link
                 href="/methodology"
@@ -262,16 +262,16 @@ export default function HairTransplantProblemsHubPage() {
               className="mt-8 rounded-2xl border border-amber-300/25 bg-gradient-to-br from-amber-500/10 to-transparent p-6 sm:p-8"
               data-analytics-region="patient-guides-hub-footer-assessment"
             >
-              <h2 className="text-xl font-semibold text-white">Ready for structured, independent assessment?</h2>
+              <h2 className="text-xl font-semibold text-white">Ready for structured, independent analysis?</h2>
               <p className="mt-3 text-slate-300 leading-relaxed">
-                If something still feels off after reading, submit photos and timeline for a medical review that does not depend on your clinic’s narrative. Preview a{" "}
+                If something still feels off after reading, upload photos and timeline for an independent HairAudit that does not depend on your clinic’s narrative. Preview a{" "}
                 <Link
-                  href="/sample-report"
+                  href="/demo-report"
                   className="text-amber-400 hover:text-amber-300 font-medium underline underline-offset-2"
                   data-cta="patient-guides-hub-footer-inline-sample-report"
-                  data-cta-destination="/sample-report"
+                  data-cta-destination="/demo-report"
                 >
-                  sample HairAudit report
+                  Clinical Intelligence Report preview
                 </Link>{" "}
                 or read the{" "}
                 <Link
@@ -294,15 +294,15 @@ export default function HairTransplantProblemsHubPage() {
                   data-cta="patient-guides-hub-footer-request-review"
                   data-cta-destination="/request-review"
                 >
-                  Request an independent review
+                  Start Free HairAudit
                 </Link>
                 <Link
-                  href="/sample-report"
+                  href="/demo-report"
                   className="inline-flex items-center justify-center px-6 py-3 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
                   data-cta="patient-guides-hub-footer-sample-report"
-                  data-cta-destination="/sample-report"
+                  data-cta-destination="/demo-report"
                 >
-                  View a sample report
+                  View Sample Report
                 </Link>
                 <Link
                   href="/faq"

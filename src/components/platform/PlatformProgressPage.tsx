@@ -13,6 +13,7 @@ import {
   PLATFORM_MISSION,
   type ModuleStatus,
 } from "@/content/platformProgress";
+import { PUBLIC_CTAS } from "@/lib/marketing/publicMarketingCopy";
 import { fiHairauditPrimaryButtonClass } from "@/lib/fi-ui/hairauditPrimaryButton";
 import { cn } from "@/lib/utils";
 import {
@@ -67,7 +68,7 @@ export default function PlatformProgressPage() {
         actions={
           <>
             <Link href="/request-review" className={fiHairauditPrimaryButtonClass("lg")}>
-              Start Free Audit
+              {PUBLIC_CTAS.startFreeHairAudit}
             </Link>
             <Link
               href="/professionals"
@@ -364,7 +365,7 @@ export default function PlatformProgressPage() {
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link href="/request-review" className={fiHairauditPrimaryButtonClass("lg")}>
-              Start Free Audit
+              {PUBLIC_CTAS.startFreeHairAudit}
             </Link>
             <Link
               href="/"

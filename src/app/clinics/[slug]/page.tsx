@@ -451,7 +451,7 @@ export default async function PublicClinicProfilePage({
                 href="/request-review"
                 className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-cyan-500 text-slate-950 font-semibold text-sm hover:bg-cyan-400 transition-colors"
               >
-                Request Review
+                Start Free HairAudit
               </Link>
               <Link
                 href="/signup?role=clinic"

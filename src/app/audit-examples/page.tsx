@@ -98,10 +98,9 @@ export default function AuditExamplesPage() {
 
           <ScrollReveal delay={0.15}>
             <section className="mt-8 rounded-2xl border border-white/10 bg-white/5 p-6">
-              <h2 className="text-xl font-semibold text-white">Ready to submit your case?</h2>
+              <h2 className="text-xl font-semibold text-white">Ready to begin your HairAudit?</h2>
               <p className="mt-3 text-slate-300">
-                Submit photos and case details for independent review with clear, plain-language
-                reporting.
+                Upload photos and case details for independent analysis with clear, plain-language reporting.
               </p>
               <div className="mt-5">
                 <div className="flex flex-col sm:flex-row gap-4">
@@ -109,7 +108,7 @@ export default function AuditExamplesPage() {
                     href="/request-review"
                     className="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors"
                   >
-                    Request Review
+                    Start Free HairAudit
                   </Link>
                   <Link
                     href="/rate-my-hair-transplant"

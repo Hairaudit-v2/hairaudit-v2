@@ -150,7 +150,7 @@ export default async function ClinicDirectoryPage({
                 href="/request-review"
                 className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl text-slate-400 text-sm font-medium hover:text-slate-200 transition-colors"
               >
-                Request a hair transplant audit
+                Start Free HairAudit
               </Link>
               <Link
                 href="/how-it-works"

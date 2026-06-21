@@ -16,7 +16,9 @@ import {
 import TrackedLink from "@/components/analytics/TrackedLink";
 import PatientPhotoChecklist from "@/components/marketing/PatientPhotoChecklist";
 import PatientPathwayChooser from "@/components/marketing/PatientPathwayChooser";
+import PublicTrustArchitectureBlock from "@/components/marketing/PublicTrustArchitectureBlock";
 import { fiHairauditPrimaryButtonClass } from "@/lib/fi-ui/hairauditPrimaryButton";
+import { PUBLIC_CTAS } from "@/lib/marketing/publicMarketingCopy";
 import { cn } from "@/lib/utils";
 import {
   Badge,
@@ -91,7 +93,7 @@ export default function HairAuditNetworkHomePage() {
         platform="hairaudit"
         eyebrow="Independent hair transplant review"
         title="Understand your hair transplant with an independent review."
-        subtitle="Choose the pathway that matches your stage: planning before surgery, or reviewing results after your procedure."
+        subtitle="Choose the pathway that matches your stage: planning before surgery, or independent analysis after your procedure."
         networkLabel="HairAudit · Independent review platform"
         actions={<PatientPathwayChooser layout="hero" />}
         aside={
@@ -212,6 +214,7 @@ export default function HairAuditNetworkHomePage() {
               </article>
             ))}
           </FeatureGrid>
+          <PublicTrustArchitectureBlock surface="fi" className="mt-8" />
           <p className="mt-8 max-w-3xl text-xs leading-relaxed text-muted-foreground">
             HairAudit is not for medical emergencies. If you have severe pain, fever, spreading redness, or other urgent
             symptoms, seek local urgent care or emergency services.
@@ -222,7 +225,7 @@ export default function HairAuditNetworkHomePage() {
       <NetworkCTASection
         align="center"
         eyebrow="Sample report"
-        title="See the structure before you submit."
+        title="See the structure before you begin."
         description="Preview how HairAudit turns photos and case details into scorecards, confidence notes, findings, and next-step guidance."
         actions={
           <>
@@ -231,14 +234,14 @@ export default function HairAuditNetworkHomePage() {
               eventName="cta_start_free_audit_home_sample"
               className={cn(networkButtonVariants({ variant: "primary", size: "lg" }))}
             >
-              Start Free Audit
+              {PUBLIC_CTAS.startFreeHairAudit}
             </TrackedLink>
             <Link
               href="/demo-report"
               className={cn(networkButtonVariants({ variant: "secondary", size: "lg" }))}
               prefetch
             >
-              View Sample Report
+              {PUBLIC_CTAS.viewSampleReport}
             </Link>
           </>
         }
@@ -303,7 +306,7 @@ export default function HairAuditNetworkHomePage() {
             eventName="cta_start_free_audit_home_footer"
             className={fiHairauditPrimaryButtonClass("lg")}
           >
-            Start Free Audit
+            {PUBLIC_CTAS.startFreeHairAudit}
           </TrackedLink>
         }
       />

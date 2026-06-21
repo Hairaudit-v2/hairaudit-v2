@@ -90,7 +90,7 @@ export const whenIsHairTransplantGrowthDelayNormalVsConcerningArticle: PatientIn
         },
         {
           type: "p",
-          text: "[Request a hair transplant audit](/request-review), read the [hair transplant audit FAQ](/faq), or preview a [sample report](/sample-report).",
+          text: "[Start Free HairAudit](/request-review), read the [hair transplant audit FAQ](/faq), or preview a [Clinical Intelligence Report](/demo-report).",
         },
       ],
     },

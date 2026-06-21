@@ -9,6 +9,7 @@ import { Menu, X } from "lucide-react";
 import StartFreeAuditButton from "@/components/audit/StartFreeAuditButton";
 import LanguageSwitcher from "@/components/i18n/LanguageSwitcher";
 import { FI_HOME } from "@/config/platform-links";
+import { PUBLIC_CTAS, PUBLIC_ECOSYSTEM_FOOTER } from "@/lib/marketing/publicMarketingCopy";
 import { cn } from "@/lib/utils";
 
 export type HairAuditPublicHeaderProps = {
@@ -110,7 +111,7 @@ export default function HairAuditPublicHeader({
                 isLight ? "border-slate-200 text-slate-500" : "border-white/10 text-slate-400"
               )}
             >
-              Powered by the Follicle Intelligence Network
+              {PUBLIC_ECOSYSTEM_FOOTER}
             </a>
           ) : null}
         </div>
@@ -149,7 +150,7 @@ export default function HairAuditPublicHeader({
             eventName="cta_start_free_audit_header"
             className="inline-flex items-center justify-center rounded-full bg-amber-400 px-3 py-2 text-center text-xs font-semibold leading-tight text-slate-950 shadow-lg shadow-amber-500/15 transition hover:bg-amber-300 disabled:opacity-70 disabled:cursor-wait sm:px-4 sm:py-2.5 sm:text-sm"
           >
-            Start Free Audit
+            {PUBLIC_CTAS.startFreeHairAudit}
           </StartFreeAuditButton>
           {!isMinimal ? (
             <button
@@ -236,13 +237,13 @@ export default function HairAuditPublicHeader({
                 eventName="cta_start_free_audit_mobile_menu"
                 className="block w-full rounded-xl bg-amber-400 px-4 py-3 text-center text-sm font-semibold text-slate-950 disabled:opacity-70 disabled:cursor-wait"
               >
-                Start Free Audit
+                {PUBLIC_CTAS.startFreeHairAudit}
               </StartFreeAuditButton>
               <Link
                 href="/demo-report"
                 className="block rounded-xl border border-current/15 px-4 py-3 text-center text-sm font-semibold"
               >
-                View Sample Report
+                {PUBLIC_CTAS.viewSampleReport}
               </Link>
               <a
                 href={FI_HOME}
@@ -250,7 +251,7 @@ export default function HairAuditPublicHeader({
                 rel="noopener noreferrer"
                 className="block text-center text-xs font-medium uppercase tracking-[0.16em] text-slate-400"
               >
-                Powered by the FI Network
+                {PUBLIC_ECOSYSTEM_FOOTER}
               </a>
             </div>
           </div>

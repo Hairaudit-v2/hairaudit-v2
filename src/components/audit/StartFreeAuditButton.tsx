@@ -50,7 +50,7 @@ function loadHcaptchaScript(): Promise<void> {
 }
 
 /**
- * Premium, zero-friction "Start Free Audit" action.
+ * Premium, zero-friction "Start Free HairAudit" action.
  *
  * Creates an anonymous audit session server-side (no signup) via
  * `POST /api/audit/start`, then routes straight to the photo-upload step.

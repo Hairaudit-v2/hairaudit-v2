@@ -6,6 +6,7 @@ import TrackedLink from "@/components/analytics/TrackedLink";
 import StartFreeAuditButton from "@/components/audit/StartFreeAuditButton";
 import { FI_HOME } from "@/config/platform-links";
 import { PLATFORM_ECOSYSTEM } from "@/lib/constants/platform";
+import { PUBLIC_CTAS, PUBLIC_ECOSYSTEM_FOOTER, PUBLIC_INDEPENDENCE_MESSAGE } from "@/lib/marketing/publicMarketingCopy";
 import { cn } from "@/lib/utils";
 
 export type HairAuditPublicFooterProps = {
@@ -14,8 +15,8 @@ export type HairAuditPublicFooterProps = {
 
 const patientLinks = [
   { href: "/how-it-works", label: "How It Works", tracked: false },
-  { href: "/request-review", label: "Start Free Audit", tracked: true },
-  { href: "/demo-report", label: "View Sample Report", tracked: false },
+  { href: "/request-review", label: PUBLIC_CTAS.startFreeHairAudit, tracked: true },
+  { href: "/demo-report", label: PUBLIC_CTAS.viewSampleReport, tracked: false },
   { href: "/hair-transplant-problems", label: "Patient Guides", tracked: false },
   { href: "/faq", label: "FAQ", tracked: false },
 ] as const;
@@ -62,7 +63,7 @@ export default function HairAuditPublicFooter({ theme = "default" }: HairAuditPu
                 eventName="cta_start_free_audit_footer"
                 className="inline-flex min-w-0 max-w-full shrink-0 items-center justify-center break-words rounded-full bg-amber-400 px-5 py-3 text-center text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:opacity-70 disabled:cursor-wait"
               >
-                Start Free Audit
+                {PUBLIC_CTAS.startFreeHairAudit}
               </StartFreeAuditButton>
               <Link
                 href="/demo-report"
@@ -73,7 +74,7 @@ export default function HairAuditPublicFooter({ theme = "default" }: HairAuditPu
                     : "border-white/15 text-slate-100 hover:bg-white/10"
                 )}
               >
-                View Sample Report
+                {PUBLIC_CTAS.viewSampleReport}
               </Link>
             </div>
           </div>
@@ -153,7 +154,7 @@ export default function HairAuditPublicFooter({ theme = "default" }: HairAuditPu
           )}
         >
           <p className="min-w-0 max-w-prose break-words">
-            HairAudit is independent. It does not sell procedures or clinic referrals.
+            {PUBLIC_INDEPENDENCE_MESSAGE}
           </p>
           <a
             href={FI_HOME}
@@ -161,7 +162,7 @@ export default function HairAuditPublicFooter({ theme = "default" }: HairAuditPu
             rel="noopener noreferrer"
             className="min-w-0 shrink font-semibold uppercase tracking-[0.16em] break-words sm:text-right"
           >
-            Powered by the Follicle Intelligence Network
+            {PUBLIC_ECOSYSTEM_FOOTER}
           </a>
         </div>
       </div>

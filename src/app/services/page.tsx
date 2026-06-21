@@ -74,7 +74,7 @@ const serviceBlocks = [
     whyItMatters:
       "Helps you understand whether the outcome aligns with expected surgical standards and what next step — if any — may be justified. Independence means no provider-side bias.",
     href: "/request-review",
-    cta: "Request Review",
+    cta: "Start Free HairAudit",
   },
   {
     id: "corrective",
@@ -98,7 +98,7 @@ const serviceBlocks = [
     whyItMatters:
       "Helps you gauge whether the result is on track, what may be affecting it, and whether further intervention or reassurance is appropriate. Distinguishes genuine concerns from evidence gaps.",
     href: "/request-review",
-    cta: "Request Review",
+    cta: "Start Free HairAudit",
   },
   {
     id: "clinic",
@@ -449,14 +449,14 @@ export default function ServicesPage() {
                   eventName="cta_request_review_services"
                   className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition-colors shadow-lg shadow-amber-500/20"
                 >
-                  Request Review
+                  Start Free HairAudit
                 </TrackedLink>
                 <TrackedLink
                   href="/signup"
                   eventName="cta_professional_apply_services"
                   className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl border border-slate-600 text-slate-200 font-medium hover:border-slate-500 hover:bg-white/5 transition-colors"
                 >
-                  Create Clinic or Doctor Profile
+                  Create Professional Profile
                 </TrackedLink>
               </div>
             </ScrollReveal>

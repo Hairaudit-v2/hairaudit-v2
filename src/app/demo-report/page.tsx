@@ -3,9 +3,9 @@ import { createPageMetadata } from "@/lib/seo/pageMetadata";
 import DemoReportPageContent from "./DemoReportPageContent";
 
 export const metadata = createPageMetadata({
-  title: "Interactive Sample Hair Transplant Audit Report | HairAudit",
+  title: "Clinical Intelligence Report Preview | HairAudit",
   description:
-    "Explore the structure of a HairAudit forensic audit report: domains, evidence, and confidence—sample content only, no patient data. For the marketing walkthrough, see the sample report page; to submit your case, request a review.",
+    "Preview how HairAudit evaluates donor quality, progression risk, recipient viability, and planning concerns. Sample content only—start your free HairAudit when ready.",
   pathname: "/demo-report",
 });
 
@@ -15,7 +15,7 @@ export default function DemoReportPage() {
       <BreadcrumbListSchema
         items={[
           { name: "Home", pathname: "/" },
-          { name: "Interactive audit demo", pathname: "/demo-report" },
+          { name: "Clinical Intelligence Report Preview", pathname: "/demo-report" },
         ]}
       />
       <DemoReportPageContent />

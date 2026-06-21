@@ -3,6 +3,8 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import TrackedLink from "@/components/analytics/TrackedLink";
 import ProfessionalPathwayRibbon from "@/components/marketing/ProfessionalPathwayRibbon";
+import PublicTrustArchitectureBlock from "@/components/marketing/PublicTrustArchitectureBlock";
+import { PUBLIC_CTAS } from "@/lib/marketing/publicMarketingCopy";
 import { StepIcons } from "@/components/ui/StepIcons";
 import { createPageMetadata } from "@/lib/seo/pageMetadata";
 import {
@@ -106,29 +108,26 @@ export default function ForClinicsPage() {
         {/* A. Hero — no ScrollReveal so LCP (H1/CTA) paints immediately */}
         <section className="relative px-4 sm:px-6 pt-16 sm:pt-20 pb-20 sm:pb-28 lg:pt-24 lg:pb-32">
           <div className="max-w-3xl mx-auto text-center">
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-[1.08]">
-              Transparency, quality assurance, and verified trust
+            <p className="inline-flex rounded-full border border-amber-300/25 bg-amber-300/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-amber-200">
+              Clinic quality assurance
+            </p>
+            <h1 className="mt-6 text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-[1.08]">
+              Clinic accountability and quality assurance infrastructure
             </h1>
             <p className="mt-6 text-xl text-slate-300 max-w-xl mx-auto leading-relaxed">
-              HairAudit is a global transparency and quality framework for hair restoration clinics.
+              HairAudit gives clinics structured internal audits, transparency participation, and certification-ready
+              benchmarking—without turning quality assurance into a directory listing.
             </p>
-            <p className="mt-4 text-slate-400 max-w-lg mx-auto">
-              Clinics can create a free profile and begin with private internal audits before making selected cases public.
-            </p>
+            <div className="mt-8 max-w-2xl mx-auto">
+              <PublicTrustArchitectureBlock />
+            </div>
             <div className="mt-12 flex flex-col sm:flex-row gap-4 justify-center items-center">
               <TrackedLink
                 href="/signup?role=clinic"
                 eventName="cta_create_clinic_profile_for_clinics"
                 className="inline-flex items-center justify-center px-10 py-4 rounded-2xl bg-amber-500 text-slate-900 font-semibold text-lg hover:bg-amber-400 transition-colors border border-amber-400/50 shadow-lg shadow-amber-500/20"
               >
-                Create Clinic Profile
-              </TrackedLink>
-              <TrackedLink
-                href="/signup?role=clinic"
-                eventName="cta_start_internal_audits_for_clinics"
-                className="inline-flex items-center justify-center px-8 py-4 rounded-2xl border-2 border-slate-500 text-slate-200 font-medium hover:border-amber-500/50 hover:text-amber-400 transition-colors"
-              >
-                Start with Internal Audits
+                {PUBLIC_CTAS.createClinicProfile}
               </TrackedLink>
             </div>
           </div>
@@ -277,10 +276,10 @@ export default function ForClinicsPage() {
         <section className="relative px-4 sm:px-6 py-24 sm:py-28 border-t border-white/10">
           <div className="max-w-2xl mx-auto text-center">
             <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
-              Get started free
+              Create your clinic profile
             </h2>
             <p className="mt-5 text-xl text-slate-300">
-              Create your clinic profile and start with internal audits. Build certification and public proof over time.
+              Begin with internal audits, build certification recognition, and demonstrate accountability over time.
             </p>
             <div className="mt-10">
               <TrackedLink
@@ -288,7 +287,7 @@ export default function ForClinicsPage() {
                 eventName="cta_join_clinics_final"
                 className="inline-flex items-center justify-center px-10 py-4 rounded-2xl bg-amber-500 text-slate-900 font-semibold text-lg hover:bg-amber-400 transition-colors border border-amber-400/50 shadow-lg shadow-amber-500/20"
               >
-                Create Clinic Profile
+                {PUBLIC_CTAS.createClinicProfile}
               </TrackedLink>
             </div>
           </div>

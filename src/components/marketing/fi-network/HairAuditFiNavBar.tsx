@@ -37,7 +37,7 @@ export default function HairAuditFiNavBar() {
         eventName="cta_request_review_fi_nav"
         className={fiHairauditPrimaryButtonClass("sm")}
       >
-        Request review
+        Start Free HairAudit
       </TrackedLink>
     </div>
   );
