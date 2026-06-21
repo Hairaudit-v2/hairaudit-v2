@@ -5,6 +5,7 @@ import {
   parseExplicitPatientReviewPathway,
   PATHWAY_CHOOSER_HREF,
 } from "../src/lib/patient/patientReviewPathway";
+import { buildPatientResumeReviewViewModel } from "../src/lib/patient/patientResumeReview";
 
 describe("patient entry architecture — explicit pathway parsing", () => {
   it("parseExplicitPatientReviewPathway returns null for missing or invalid values", () => {
@@ -28,5 +29,12 @@ describe("patient entry architecture — explicit pathway parsing", () => {
       MISSING_PATIENT_REVIEW_PATHWAY_ERROR,
       "Please choose a review type before starting."
     );
+  });
+
+  it("resume dashboard with no cases does not imply a default case id", () => {
+    const model = buildPatientResumeReviewViewModel({ contexts: [] });
+    assert.strictEqual(model.step, "no_open_case");
+    assert.strictEqual(model.primaryCase, null);
+    assert.strictEqual(model.primaryCtaHref, "");
   });
 });

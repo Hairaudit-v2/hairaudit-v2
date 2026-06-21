@@ -33,14 +33,24 @@ export default function PatientDashboardCaseHistorySection({
   pdfByCase,
   reportIdByCase,
   notificationEmail,
+  compact = false,
+  primaryCaseId = null,
 }: {
   cases: PatientCaseRow[] | null | undefined;
   pdfByCase: Record<string, string>;
   reportIdByCase: Record<string, string>;
   notificationEmail?: string | null;
+  /** When true, de-emphasize duplicate CTAs — resume panel drives the primary action. */
+  compact?: boolean;
+  /** Hide the primary resume case from the history list (shown in resume panel). */
+  primaryCaseId?: string | null;
 }) {
   const { t } = useI18n();
-  const list = cases ?? [];
+  const list = (cases ?? []).filter((c) => !primaryCaseId || c.id !== primaryCaseId);
+
+  if (compact && list.length === 0) {
+    return null;
+  }
 
   return (
     <section className="relative mt-10 overflow-hidden rounded-2xl border border-slate-900 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4 sm:p-6">
@@ -49,10 +59,16 @@ export default function PatientDashboardCaseHistorySection({
 
       <div className="relative flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-white">{t("dashboard.patient.caseHistory.title")}</h2>
-          <p className="mt-1 text-sm leading-relaxed text-slate-200/70">{t("dashboard.patient.caseHistory.subtitle")}</p>
+          <h2 className="text-lg font-semibold text-white">
+            {compact ? "Other reviews" : t("dashboard.patient.caseHistory.title")}
+          </h2>
+          {!compact ? (
+            <p className="mt-1 text-sm leading-relaxed text-slate-200/70">
+              {t("dashboard.patient.caseHistory.subtitle")}
+            </p>
+          ) : null}
         </div>
-        <PatientNewCasePathwayButtons variant="premium" layout="stack" />
+        {!compact ? <PatientNewCasePathwayButtons variant="premium" layout="stack" /> : null}
       </div>
 
       {list.length === 0 ? (
