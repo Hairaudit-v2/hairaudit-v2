@@ -11,6 +11,7 @@ type TrackedLinkProps = {
   className?: string;
   children: ReactNode;
   prefetch?: boolean;
+  "data-testid"?: string;
 };
 
 export default function TrackedLink({
@@ -19,12 +20,14 @@ export default function TrackedLink({
   className,
   children,
   prefetch,
+  "data-testid": dataTestId,
 }: TrackedLinkProps) {
   return (
     <Link
       href={href}
       prefetch={prefetch}
       className={className}
+      data-testid={dataTestId}
       onClick={() => {
         if (eventName) {
           trackCta(eventName, { href });

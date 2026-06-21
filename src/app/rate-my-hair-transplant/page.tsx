@@ -237,6 +237,7 @@ export default function RateMyHairTransplantPage() {
               variant: "primary",
               eventName: "cta_start_post_surgery_audit_rate_my",
               useStartFreeAuditButton: true,
+              pathway: "post_surgery",
             },
             {
               href: "/demo-report",

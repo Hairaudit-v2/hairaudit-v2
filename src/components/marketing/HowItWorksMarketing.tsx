@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import StartFreeAuditButton from "@/components/audit/StartFreeAuditButton";
 import TrackedLink from "@/components/analytics/TrackedLink";
 import PublicMarketingCtaPanel from "@/components/marketing/PublicMarketingCtaPanel";
 import PublicMarketingHero from "@/components/marketing/PublicMarketingHero";
@@ -46,12 +45,14 @@ export default function HowItWorksMarketing() {
         centered
       >
         <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <StartFreeAuditButton
+          <TrackedLink
+            href="/request-review#choose-pathway"
             eventName="cta_start_free_audit_how_it_works_hero"
             className={fiHairauditPrimaryButtonClass("lg")}
+            data-testid="choose-review-pathway-how-it-works"
           >
-            {PUBLIC_CTAS.startFreeHairAudit}
-          </StartFreeAuditButton>
+            {PUBLIC_CTAS.startReview}
+          </TrackedLink>
           <TrackedLink
             href="/demo-report"
             eventName="cta_view_sample_report_how_it_works_hero"
@@ -122,11 +123,10 @@ export default function HowItWorksMarketing() {
         description={t("marketing.howItWorks.closingSubtitle")}
         actions={[
           {
-            href: "/request-review",
-            label: PUBLIC_CTAS.startFreeHairAudit,
+            href: "/request-review#choose-pathway",
+            label: PUBLIC_CTAS.startReview,
             variant: "primary",
-            eventName: "cta_start_free_audit_how_it_works_footer",
-            useStartFreeAuditButton: true,
+            eventName: "cta_choose_review_pathway_how_it_works_footer",
           },
           {
             href: "/demo-report",

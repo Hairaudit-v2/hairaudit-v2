@@ -11,6 +11,7 @@ import {
   isPathwayRequiredUploadComplete,
   isPathwayRelevantPhotoKey,
   normalizePatientReviewPathway,
+  parseExplicitPatientReviewPathway,
   PATHWAY_MINIMAL_REQUIRED_FIELD_IDS,
   recommendedPhotoKeys,
   requiredPhotoKeys,
@@ -22,7 +23,13 @@ import { runPathwayHairAuditIntelligenceBundle } from "../src/lib/hairaudit-inte
 import { buildPatientSafeReportSummary } from "../src/lib/reports/patientSafeSummary";
 
 describe("patientReviewPathway", () => {
-  it("normalizes unknown values to post_surgery", () => {
+  it("parseExplicitPatientReviewPathway returns null for unknown values", () => {
+    assert.strictEqual(parseExplicitPatientReviewPathway(undefined), null);
+    assert.strictEqual(parseExplicitPatientReviewPathway("invalid"), null);
+    assert.strictEqual(parseExplicitPatientReviewPathway("pre_surgery"), "pre_surgery");
+  });
+
+  it("normalizes unknown values to post_surgery for legacy resolution", () => {
     assert.strictEqual(normalizePatientReviewPathway(undefined), "post_surgery");
     assert.strictEqual(normalizePatientReviewPathway("invalid"), "post_surgery");
     assert.strictEqual(normalizePatientReviewPathway("pre_surgery"), "pre_surgery");

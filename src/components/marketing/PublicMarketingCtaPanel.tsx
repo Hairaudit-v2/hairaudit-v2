@@ -5,6 +5,8 @@ import StartFreeAuditButton from "@/components/audit/StartFreeAuditButton";
 import TrackedLink from "@/components/analytics/TrackedLink";
 import { fiHairauditPrimaryButtonClass } from "@/lib/fi-ui/hairauditPrimaryButton";
 import { PUBLIC_CTAS } from "@/lib/marketing/publicMarketingCopy";
+import type { PatientReviewPathway } from "@/lib/patient/patientReviewPathway";
+import { PATHWAY_CHOOSER_HREF } from "@/lib/patient/patientReviewPathway";
 import { cn } from "@/lib/utils";
 import { Section, networkButtonVariants } from "@/packages/ui";
 
@@ -13,7 +15,9 @@ export type PublicMarketingCtaAction = {
   label: string;
   variant?: "primary" | "secondary";
   eventName?: string;
+  /** When true, starts audit via API — requires `pathway` unless linking to chooser. */
   useStartFreeAuditButton?: boolean;
+  pathway?: PatientReviewPathway;
 };
 
 type PublicMarketingCtaPanelProps = {
@@ -25,11 +29,10 @@ type PublicMarketingCtaPanelProps = {
 
 const defaultActions: PublicMarketingCtaAction[] = [
   {
-    href: "/request-review",
-    label: PUBLIC_CTAS.startFreeHairAudit,
+    href: PATHWAY_CHOOSER_HREF,
+    label: PUBLIC_CTAS.startReview,
     variant: "primary",
-    eventName: "cta_start_free_audit_marketing_panel",
-    useStartFreeAuditButton: true,
+    eventName: "cta_choose_review_pathway_marketing_panel",
   },
   {
     href: "/demo-report",
@@ -64,7 +67,8 @@ export default function PublicMarketingCtaPanel({
             if (action.useStartFreeAuditButton) {
               return (
                 <StartFreeAuditButton
-                  key={action.href}
+                  key={`${action.href}-${action.pathway ?? "chooser"}`}
+                  pathway={action.pathway}
                   eventName={action.eventName ?? "cta_start_free_audit_marketing_panel"}
                   className={className}
                 >

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import CreateCaseButton from "@/app/dashboard/create-case-button";
+import PatientNewCasePathwayButtons from "@/components/patient/PatientNewCasePathwayButtons";
 import { useI18n } from "./I18nProvider";
 
 type NextCase = { id: string } | null;
@@ -44,7 +44,7 @@ export default function PatientDashboardI18nIntro({
                 {t("dashboard.patient.completeQuestions")}
               </Link>
             ) : (
-              <CreateCaseButton variant="premium" />
+              <PatientNewCasePathwayButtons variant="premium" />
             )}
 
             <a
@@ -62,7 +62,7 @@ export default function PatientDashboardI18nIntro({
       </section>
 
       <section className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <CreateCaseButton variant="card" label={t("dashboard.shared.startNewAudit")} />
+        <PatientNewCasePathwayButtons variant="card" layout="stack" className="col-span-1 sm:col-span-2" />
         <Link
           href={nextCase?.id ? `/cases/${nextCase.id}/patient/photos` : "/dashboard/patient"}
           className="rounded-xl border border-slate-200 bg-white px-4 py-4 text-center text-sm font-semibold leading-snug text-slate-900 hover:border-amber-300 hover:shadow-sm"

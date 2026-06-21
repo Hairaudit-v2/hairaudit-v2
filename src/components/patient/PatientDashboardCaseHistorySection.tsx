@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import CreateCaseButton from "@/app/dashboard/create-case-button";
+import PatientNewCasePathwayButtons from "@/components/patient/PatientNewCasePathwayButtons";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import PatientNextActionPanel from "@/components/patient/PatientNextActionPanel";
 import DeleteDraftCaseButton from "@/app/dashboard/patient/DeleteDraftCaseButton";
@@ -52,14 +52,14 @@ export default function PatientDashboardCaseHistorySection({
           <h2 className="text-lg font-semibold text-white">{t("dashboard.patient.caseHistory.title")}</h2>
           <p className="mt-1 text-sm leading-relaxed text-slate-200/70">{t("dashboard.patient.caseHistory.subtitle")}</p>
         </div>
-        <CreateCaseButton variant="premium" />
+        <PatientNewCasePathwayButtons variant="premium" layout="stack" />
       </div>
 
       {list.length === 0 ? (
         <div className="relative mt-5 rounded-2xl border border-white/10 bg-white/5 p-8 text-center shadow-[0_0_0_1px_rgba(255,255,255,0.03)] backdrop-blur">
           <p className="mb-4 text-slate-200/80">{t("dashboard.patient.caseHistory.empty")}</p>
           <div className="inline-flex">
-            <CreateCaseButton variant="premium" />
+            <PatientNewCasePathwayButtons variant="premium" layout="stack" />
           </div>
         </div>
       ) : (

@@ -153,11 +153,10 @@ export default function MethodologyPage() {
           description="Start your free HairAudit when ready, or preview a sample Clinical Intelligence Report first."
           actions={[
             {
-              href: "/request-review",
-              label: PUBLIC_CTAS.startFreeHairAudit,
+              href: "/request-review#choose-pathway",
+              label: PUBLIC_CTAS.startReview,
               variant: "primary",
-              eventName: "cta_start_free_audit_methodology",
-              useStartFreeAuditButton: true,
+              eventName: "cta_choose_review_pathway_methodology",
             },
             {
               href: "/demo-report",

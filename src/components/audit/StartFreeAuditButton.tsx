@@ -2,18 +2,22 @@
 
 import { useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import TrackedLink from "@/components/analytics/TrackedLink";
 import { trackCta } from "@/lib/analytics/trackCta";
 import { stashPendingAuthCtaContext } from "@/lib/analytics/authAttribution";
 import {
   DEFAULT_PATIENT_REVIEW_PATHWAY,
+  PATHWAY_CHOOSER_HREF,
   type PatientReviewPathway,
 } from "@/lib/patient/patientReviewPathway";
 
 type StartFreeAuditButtonProps = {
   className?: string;
   eventName?: string;
-  /** HA-DUAL-PATHWAY-1 — stored on case as patient_review_pathway */
+  /** HA-DUAL-PATHWAY-1 — stored on case as patient_review_pathway. Omit to route to pathway chooser. */
   pathway?: PatientReviewPathway;
+  /** Test-only escape hatch — never use on public CTAs. */
+  allowDefaultPostSurgeryForLegacyTestOnly?: boolean;
   children: React.ReactNode;
 };
 
@@ -50,18 +54,16 @@ function loadHcaptchaScript(): Promise<void> {
 }
 
 /**
- * Premium, zero-friction "Start Free HairAudit" action.
+ * Starts a patient audit when `pathway` is explicit, or routes to the pathway chooser when missing.
  *
- * Creates an anonymous audit session server-side (no signup) via
- * `POST /api/audit/start`, then routes straight to the photo-upload step.
- * If hCaptcha is configured (NEXT_PUBLIC_HCAPTCHA_SITEKEY), an invisible
- * challenge is solved before the request. No browser-native dialogs — errors
- * render inline.
+ * Never silently defaults to post-surgery on public surfaces unless
+ * `allowDefaultPostSurgeryForLegacyTestOnly` is set (tests/internal only).
  */
 export default function StartFreeAuditButton({
   className,
   eventName,
-  pathway = DEFAULT_PATIENT_REVIEW_PATHWAY,
+  pathway,
+  allowDefaultPostSurgeryForLegacyTestOnly = false,
   children,
 }: StartFreeAuditButtonProps) {
   const router = useRouter();
@@ -69,6 +71,10 @@ export default function StartFreeAuditButton({
   const [error, setError] = useState<string | null>(null);
   const captchaContainerRef = useRef<HTMLDivElement | null>(null);
   const widgetIdRef = useRef<string | null>(null);
+
+  const effectivePathway =
+    pathway ??
+    (allowDefaultPostSurgeryForLegacyTestOnly ? DEFAULT_PATIENT_REVIEW_PATHWAY : undefined);
 
   const solveCaptcha = useCallback(async (): Promise<string | null> => {
     if (!HCAPTCHA_SITEKEY) return null;
@@ -87,13 +93,12 @@ export default function StartFreeAuditButton({
       const { response } = await api.execute(widgetIdRef.current, { async: true });
       return response ?? null;
     } catch {
-      // If the challenge can't run, proceed without a token; the server decides.
       return null;
     }
   }, []);
 
   const start = useCallback(async () => {
-    if (busy) return;
+    if (!effectivePathway || busy) return;
     setError(null);
     setBusy(true);
     if (eventName) {
@@ -105,7 +110,7 @@ export default function StartFreeAuditButton({
       const res = await fetch("/api/audit/start", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ captchaToken, pathway }),
+        body: JSON.stringify({ captchaToken, pathway: effectivePathway }),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok || !json?.ok) {
@@ -116,10 +121,23 @@ export default function StartFreeAuditButton({
       setError((e as Error)?.message ?? "Could not start your audit. Please try again.");
       setBusy(false);
     }
-  }, [busy, eventName, pathway, router, solveCaptcha]);
+  }, [busy, effectivePathway, eventName, router, solveCaptcha]);
+
+  if (!effectivePathway) {
+    return (
+      <TrackedLink
+        href={PATHWAY_CHOOSER_HREF}
+        eventName={eventName ?? "cta_choose_review_pathway"}
+        className={className}
+        data-testid="choose-review-pathway"
+      >
+        {children}
+      </TrackedLink>
+    );
+  }
 
   const pathwayTestId =
-    pathway === "pre_surgery" ? "start-pre-surgery-review" : "start-post-surgery-audit";
+    effectivePathway === "pre_surgery" ? "start-pre-surgery-review" : "start-post-surgery-audit";
 
   return (
     <>

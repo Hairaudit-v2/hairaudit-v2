@@ -97,11 +97,10 @@ export default function BenchmarkVisionPage() {
           description="Patients can begin independent analysis now. Clinics and professionals can build transparency records through documented participation."
           actions={[
             {
-              href: "/request-review",
-              label: PUBLIC_CTAS.startFreeHairAudit,
+              href: "/request-review#choose-pathway",
+              label: PUBLIC_CTAS.startReview,
               variant: "primary",
-              eventName: "cta_start_free_audit_benchmark_vision",
-              useStartFreeAuditButton: true,
+              eventName: "cta_choose_review_pathway_benchmark_vision",
             },
             {
               href: "/for-clinics",

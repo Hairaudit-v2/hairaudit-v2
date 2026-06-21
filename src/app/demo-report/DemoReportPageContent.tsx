@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import StartFreeAuditButton from "@/components/audit/StartFreeAuditButton";
+import TrackedLink from "@/components/analytics/TrackedLink";
 import HairAuditFiMarketingShell from "@/components/marketing/fi-network/HairAuditFiMarketingShell";
 import PublicTrustArchitectureBlock from "@/components/marketing/PublicTrustArchitectureBlock";
 import DemoReportCtaLinks from "./DemoReportCtaLinks";
 import { fiHairauditPrimaryButtonClass } from "@/lib/fi-ui/hairauditPrimaryButton";
 import { PUBLIC_CTAS } from "@/lib/marketing/publicMarketingCopy";
+import { PATHWAY_CHOOSER_HREF } from "@/lib/patient/patientReviewPathway";
 import { cn } from "@/lib/utils";
 import { Badge, Section, networkButtonVariants } from "@/packages/ui";
 
@@ -25,12 +27,14 @@ export default function DemoReportPageContent() {
             </p>
             <PublicTrustArchitectureBlock surface="fi" />
             <div className="flex flex-col flex-wrap gap-3 sm:flex-row">
-              <StartFreeAuditButton
+              <TrackedLink
+                href={PATHWAY_CHOOSER_HREF}
                 eventName="cta_start_free_audit_demo_hero"
                 className={fiHairauditPrimaryButtonClass("lg")}
+                data-testid="choose-review-pathway-demo-hero"
               >
-                {PUBLIC_CTAS.startFreeHairAudit}
-              </StartFreeAuditButton>
+                {PUBLIC_CTAS.chooseYourReview}
+              </TrackedLink>
               <StartFreeAuditButton
                 pathway="pre_surgery"
                 eventName="cta_start_pre_surgery_demo_hero"
@@ -87,12 +91,14 @@ export default function DemoReportPageContent() {
               and where confidence is limited.
             </p>
             <div className="mt-8 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-start">
-              <StartFreeAuditButton
+              <TrackedLink
+                href={PATHWAY_CHOOSER_HREF}
                 eventName="cta_start_free_audit_demo_page"
                 className={fiHairauditPrimaryButtonClass("md")}
+                data-testid="choose-review-pathway-demo-footer"
               >
-                {PUBLIC_CTAS.startFreeHairAudit}
-              </StartFreeAuditButton>
+                {PUBLIC_CTAS.chooseYourReview}
+              </TrackedLink>
               <StartFreeAuditButton
                 pathway="pre_surgery"
                 eventName="cta_start_pre_surgery_demo_footer"

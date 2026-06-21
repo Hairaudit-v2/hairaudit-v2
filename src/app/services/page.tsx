@@ -193,11 +193,10 @@ export default function ServicesPage() {
           }
           actions={[
             {
-              href: "/request-review",
-              label: PUBLIC_CTAS.startFreeHairAudit,
+              href: "/request-review#choose-pathway",
+              label: PUBLIC_CTAS.startReview,
               variant: "primary",
-              eventName: "cta_request_review_services",
-              useStartFreeAuditButton: true,
+              eventName: "cta_choose_review_pathway_services",
             },
             {
               href: "/signup?role=clinic",

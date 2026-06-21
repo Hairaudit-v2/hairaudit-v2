@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight, Cpu, Layers, Sparkles } from "lucide-react";
+import { ArrowUpRight, Cpu, Layers, ShieldCheck, Sparkles } from "lucide-react";
 
 import IntelligenceModuleCard from "@/components/platform/IntelligenceModuleCard";
 import ProgressStatusBadge from "@/components/platform/ProgressStatusBadge";
@@ -7,6 +7,8 @@ import {
   ENGINEERING_CHANGELOG,
   INTELLIGENCE_MODULES,
   PATIENT_EXPERIENCE_ENGINE,
+  PATIENT_QA_ENGINE,
+  PATIENT_QA_ROLLUPS,
   PLATFORM_CAPABILITY_ROLLUPS,
   PATIENT_PATHWAY_INFRASTRUCTURE,
   PATIENT_UX_FEATURES,
@@ -303,6 +305,77 @@ export default function PlatformProgressPage() {
                   <div
                     className="h-full rounded-full bg-gradient-to-r from-emerald-300/80 to-sky-300/80"
                     style={{ width: `${feature.completionPercent}%` }}
+                  />
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </Section>
+
+      <Section id="patient-qa" className="border-t border-border/30" aria-labelledby="patient-qa-heading">
+        <div className="space-y-10">
+          <div className="max-w-3xl space-y-3">
+            <Badge tone="neutral">
+              <span className="inline-flex items-center gap-2">
+                <ShieldCheck className="h-3.5 w-3.5" aria-hidden />
+                Quality assurance
+              </span>
+            </Badge>
+            <h2 id="patient-qa-heading" className="font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+              Patient journey QA coverage
+            </h2>
+            <p className="text-base leading-relaxed text-muted-foreground">
+              Browser-level verification of the dual-pathway patient experience — reports, pathway routing, uploads,
+              waiting screens, PDF delivery, and mobile layouts.
+            </p>
+          </div>
+
+          <div className="rounded-3xl border border-sky-300/20 bg-sky-300/[0.06] p-6 shadow-fi-panel sm:p-8">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="max-w-2xl space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-200/90">QA rollup</p>
+                <h3 className="font-display text-2xl font-semibold text-foreground sm:text-3xl">
+                  {PATIENT_QA_ENGINE.name}
+                </h3>
+                <p className="text-sm leading-relaxed text-muted-foreground sm:text-base">
+                  {PATIENT_QA_ENGINE.description}
+                </p>
+              </div>
+              <span className="font-display text-4xl font-semibold tabular-nums text-foreground sm:text-5xl">
+                {PATIENT_QA_ENGINE.completionPercent}%
+              </span>
+            </div>
+            <div className="mt-5 h-2 overflow-hidden rounded-full bg-white/10">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-sky-300/90 to-emerald-300/90"
+                style={{ width: `${PATIENT_QA_ENGINE.completionPercent}%` }}
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            {PATIENT_QA_ROLLUPS.map((metric) => (
+              <article
+                key={metric.id}
+                className="rounded-2xl border border-sky-300/15 bg-sky-300/[0.04] p-5 shadow-fi-panel sm:p-6"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h3 className="font-display text-lg font-semibold text-foreground">{metric.name}</h3>
+                    <p className="mt-1 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                      {metric.focus}
+                    </p>
+                  </div>
+                  <span className="font-display text-2xl font-semibold tabular-nums text-foreground">
+                    {metric.completionPercent}%
+                  </span>
+                </div>
+                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{metric.description}</p>
+                <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-sky-300/80 to-emerald-300/80"
+                    style={{ width: `${metric.completionPercent}%` }}
                   />
                 </div>
               </article>

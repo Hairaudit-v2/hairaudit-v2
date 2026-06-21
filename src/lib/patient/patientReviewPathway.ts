@@ -17,8 +17,19 @@ export type PatientReviewPathway = (typeof PATIENT_REVIEW_PATHWAYS)[number];
 
 export const DEFAULT_PATIENT_REVIEW_PATHWAY: PatientReviewPathway = "post_surgery";
 
+/** Public entry point for explicit pathway selection before case creation. */
+export const PATHWAY_CHOOSER_HREF = "/request-review#choose-pathway";
+
+export const MISSING_PATIENT_REVIEW_PATHWAY_ERROR =
+  "Please choose a review type before starting.";
+
 export function isPatientReviewPathway(value: unknown): value is PatientReviewPathway {
   return value === "pre_surgery" || value === "post_surgery";
+}
+
+/** Returns a pathway only when the caller supplied a valid explicit value. */
+export function parseExplicitPatientReviewPathway(value: unknown): PatientReviewPathway | null {
+  return isPatientReviewPathway(value) ? value : null;
 }
 
 /** Normalize API / cookie / query values; legacy cases default to post_surgery. */

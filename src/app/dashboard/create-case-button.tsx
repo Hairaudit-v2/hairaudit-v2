@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useI18n } from "@/components/i18n/I18nProvider";
+import { PUBLIC_CTAS } from "@/lib/marketing/publicMarketingCopy";
+import type { PatientReviewPathway } from "@/lib/patient/patientReviewPathway";
 
 function isValidCaseId(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
@@ -14,6 +16,7 @@ export default function CreateCaseButton({
   className = "",
   label,
   dashboardHref = "/dashboard/patient",
+  pathway,
 }: {
   variant?: "default" | "premium" | "card";
   className?: string;
@@ -21,6 +24,8 @@ export default function CreateCaseButton({
   label?: string;
   /** Dashboard link for recovery message (e.g. /dashboard/patient, /dashboard/doctor). */
   dashboardHref?: string;
+  /** HA-ARCHITECTURE-FIX-1 — required for patient case creation. */
+  pathway?: PatientReviewPathway;
 }) {
   const { t } = useI18n();
   const router = useRouter();
@@ -47,7 +52,11 @@ export default function CreateCaseButton({
     setCreateError(null);
 
     try {
-      const res = await fetch("/api/cases/create", { method: "POST" });
+      const res = await fetch("/api/cases/create", {
+        method: "POST",
+        headers: pathway ? { "content-type": "application/json" } : undefined,
+        body: pathway ? JSON.stringify({ pathway }) : undefined,
+      });
       const json = await res.json().catch(() => ({}));
 
       if (!res.ok) {
@@ -63,9 +72,9 @@ export default function CreateCaseButton({
       }
 
       if (process.env.NODE_ENV === "development") {
-        console.info("[CreateCaseButton] redirect target id", { caseId });
+        console.info("[CreateCaseButton] redirect target id", { caseId, pathway });
       }
-      router.push(`/cases/${caseId}`);
+      router.push(pathway ? `/cases/${caseId}/patient/photos` : `/cases/${caseId}`);
       router.refresh();
     } finally {
       setBusy(false);
@@ -105,6 +114,13 @@ export default function CreateCaseButton({
       onClick={runCreate}
       disabled={busy}
       className={`${styles} ${className}`}
+      data-testid={
+        pathway === "pre_surgery"
+          ? "dashboard-new-pre-surgery-review"
+          : pathway === "post_surgery"
+            ? "dashboard-new-post-surgery-audit"
+            : "dashboard-create-case"
+      }
     >
       {variant !== "card" && (
         <span className={variant === "premium" ? "text-base leading-none" : "text-lg leading-none"}>+</span>

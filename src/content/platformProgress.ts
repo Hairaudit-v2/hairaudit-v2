@@ -194,6 +194,50 @@ export const PATIENT_PATHWAY_INFRASTRUCTURE: readonly PatientUxFeature[] = [
   },
 ];
 
+/** HA-QA-E2E-2 browser QA rollups — edit completionPercent as coverage expands. */
+export const PATIENT_QA_ROLLUPS: readonly PatientUxFeature[] = [
+  {
+    id: "dual-pathway-qa-coverage",
+    name: "Dual Pathway QA Coverage",
+    completionPercent: 95,
+    description:
+      "Playwright E2E coverage across pre-surgery and post-surgery report shells, pathway chooser, evidence upload packs, and cross-pathway leakage guards on 20 seeded demo cases.",
+    focus: "HA-QA-E2E-2 — browser walkthrough QA.",
+  },
+  {
+    id: "patient-journey-reliability",
+    name: "Patient Journey Reliability",
+    completionPercent: 96,
+    description:
+      "End-to-end patient funnel verification — login, case access, processing timeline polling, ready-state handoff, and mobile layout smoke tests.",
+    focus: "Full journey reliability, not unit tests alone.",
+  },
+  {
+    id: "report-delivery-qa",
+    name: "Report Delivery QA",
+    completionPercent: 96,
+    description:
+      "PDF download smoke tests, print-route template headers, pathway-specific report rendering, and delivery-phase gating before report shells surface.",
+    focus: "Report delivery and template integrity.",
+  },
+  {
+    id: "production-readiness",
+    name: "Production Readiness",
+    completionPercent: 92,
+    description:
+      "Production guardrails, graceful skip when seed data is unavailable, demo QA seed idempotency, and staging-safe E2E configuration.",
+    focus: "Safe CI and local QA without production risk.",
+  },
+];
+
+/** Overall patient QA readiness (rollup). */
+export const PATIENT_QA_ENGINE = {
+  name: "Patient Journey QA",
+  completionPercent: 95,
+  description:
+    "Browser-level quality assurance for the dual-pathway patient experience — measured against E2E coverage, journey reliability, report delivery, and production readiness.",
+} as const;
+
 /** Patient experience improvements — edit completionPercent as UX work lands. */
 export const PATIENT_UX_FEATURES: readonly PatientUxFeature[] = [
   {
@@ -228,6 +272,13 @@ export const PATIENT_UX_FEATURES: readonly PatientUxFeature[] = [
 
 /** Public engineering changelog — newest first. */
 export const ENGINEERING_CHANGELOG: readonly EngineeringChangelogEntry[] = [
+  {
+    date: "2026-06-22",
+    title: "HA-QA-E2E-2 deployed",
+    description:
+      "HairAudit now includes browser-level QA for the full dual-pathway patient journey, covering pre-surgery and post-surgery reports, pathway selection, evidence upload packs, waiting timeline, PDF routes, and mobile layouts.",
+    area: "Infrastructure",
+  },
   {
     date: "2026-06-21",
     title: "HA-REPORT-4A deployed",

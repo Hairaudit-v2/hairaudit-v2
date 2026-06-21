@@ -12,6 +12,9 @@ export const PUBLIC_ECOSYSTEM_FOOTER = "Powered by the Follicle Intelligence Net
 
 export const PUBLIC_CTAS = {
   startFreeHairAudit: "Start Free HairAudit",
+  startReview: "Start Review",
+  chooseYourReview: "Choose Your Review",
+  chooseYourReviewType: "Choose your review type",
   startPreSurgeryReview: "Start Pre-Surgery Review",
   startPostSurgeryAudit: "Start Post-Surgery Audit",
   viewSampleReport: "View Sample Report",

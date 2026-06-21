@@ -1,5 +1,4 @@
 import Link from "next/link";
-import StartFreeAuditButton from "@/components/audit/StartFreeAuditButton";
 import HairAuditFiMarketingShell from "@/components/marketing/fi-network/HairAuditFiMarketingShell";
 import PatientPathwayChooser from "@/components/marketing/PatientPathwayChooser";
 import PatientPhotoChecklist from "@/components/marketing/PatientPhotoChecklist";
@@ -11,7 +10,6 @@ import BreadcrumbListSchema from "@/components/seo/BreadcrumbListSchema";
 import TrackedLink from "@/components/analytics/TrackedLink";
 import { GeoContextLine } from "@/components/patient-education/GeoContentBlocks";
 import { createPageMetadata } from "@/lib/seo/pageMetadata";
-import { fiHairauditPrimaryButtonClass } from "@/lib/fi-ui/hairauditPrimaryButton";
 import {
   PUBLIC_AUDIT_FLOW_STEPS,
   PUBLIC_CTAS,
@@ -70,14 +68,13 @@ export default function RequestReviewPage() {
               </p>
             </div>
             <PublicTrustArchitectureBlock surface="fi" />
-            <PatientPathwayChooser className="mt-2" />
+            <div id="choose-pathway" className="scroll-mt-28 space-y-4">
+              <h2 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+                {PUBLIC_CTAS.chooseYourReviewType}
+              </h2>
+              <PatientPathwayChooser className="mt-2" />
+            </div>
             <div className="flex flex-col flex-wrap gap-3 sm:flex-row">
-              <StartFreeAuditButton
-                eventName="cta_start_free_audit_request_review_primary"
-                className={fiHairauditPrimaryButtonClass("lg")}
-              >
-                {PUBLIC_CTAS.startFreeHairAudit}
-              </StartFreeAuditButton>
               <TrackedLink
                 href="/demo-report"
                 eventName="cta_view_sample_report_request_review_primary"
@@ -142,12 +139,7 @@ export default function RequestReviewPage() {
         style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
       >
         <div className="mx-auto max-w-4xl">
-          <StartFreeAuditButton
-            eventName="cta_start_free_audit_request_review_sticky_mobile"
-            className={cn(fiHairauditPrimaryButtonClass("md"), "w-full justify-center")}
-          >
-            {PUBLIC_CTAS.startFreeHairAudit}
-          </StartFreeAuditButton>
+          <PatientPathwayChooser layout="hero" className="justify-center" />
         </div>
       </div>
     </HairAuditFiMarketingShell>

@@ -3,9 +3,9 @@
 import Link from "next/link";
 
 import TrackedLink from "@/components/analytics/TrackedLink";
-import StartFreeAuditButton from "@/components/audit/StartFreeAuditButton";
 import { FI_HOME } from "@/config/platform-links";
 import { PLATFORM_ECOSYSTEM } from "@/lib/constants/platform";
+import { PATHWAY_CHOOSER_HREF } from "@/lib/patient/patientReviewPathway";
 import { PUBLIC_CTAS, PUBLIC_ECOSYSTEM_FOOTER, PUBLIC_INDEPENDENCE_MESSAGE } from "@/lib/marketing/publicMarketingCopy";
 import { cn } from "@/lib/utils";
 
@@ -15,7 +15,7 @@ export type HairAuditPublicFooterProps = {
 
 const patientLinks = [
   { href: "/how-it-works", label: "How It Works", tracked: false },
-  { href: "/request-review", label: PUBLIC_CTAS.startFreeHairAudit, tracked: true },
+  { href: PATHWAY_CHOOSER_HREF, label: PUBLIC_CTAS.chooseYourReview, tracked: true },
   { href: "/demo-report", label: PUBLIC_CTAS.viewSampleReport, tracked: false },
   { href: "/hair-transplant-problems", label: "Patient Guides", tracked: false },
   { href: "/faq", label: "FAQ", tracked: false },
@@ -59,12 +59,14 @@ export default function HairAuditPublicFooter({ theme = "default" }: HairAuditPu
               </p>
             </div>
             <div className="flex min-w-0 flex-col flex-wrap gap-3 sm:flex-row">
-              <StartFreeAuditButton
+              <TrackedLink
+                href={PATHWAY_CHOOSER_HREF}
                 eventName="cta_start_free_audit_footer"
-                className="inline-flex min-w-0 max-w-full shrink-0 items-center justify-center break-words rounded-full bg-amber-400 px-5 py-3 text-center text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:opacity-70 disabled:cursor-wait"
+                className="inline-flex min-w-0 max-w-full shrink-0 items-center justify-center break-words rounded-full bg-amber-400 px-5 py-3 text-center text-sm font-semibold text-slate-950 transition hover:bg-amber-300"
+                data-testid="choose-review-pathway-footer"
               >
-                {PUBLIC_CTAS.startFreeHairAudit}
-              </StartFreeAuditButton>
+                {PUBLIC_CTAS.chooseYourReview}
+              </TrackedLink>
               <Link
                 href="/demo-report"
                 className={cn(

@@ -3,7 +3,15 @@ import { cookies } from "next/headers";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createAuditCase } from "@/lib/cases/createCase";
-import { normalizePatientReviewPathway } from "@/lib/patient/patientReviewPathway";
+import {
+  MISSING_PATIENT_REVIEW_PATHWAY_ERROR,
+  normalizePatientReviewPathway,
+  parseExplicitPatientReviewPathway,
+} from "@/lib/patient/patientReviewPathway";
+import {
+  effectiveAuditCaseCreationRole,
+  resolveCaseCreationRole,
+} from "@/lib/cases/createCase";
 
 /**
  * Shared implementation for `POST /api/cases/create` and legacy `POST /cases/create`.
@@ -52,10 +60,28 @@ export async function handlePostCreateAuditCaseRoute(req?: Request): Promise<Nex
     devRoleCookieValue = cookieStore.get("dev_role")?.value ?? null;
   }
 
-  let patientReviewPathway = undefined;
+  let patientReviewPathway: ReturnType<typeof normalizePatientReviewPathway> | undefined;
   if (req) {
     const body = await req.json().catch(() => ({} as Record<string, unknown>));
-    patientReviewPathway = normalizePatientReviewPathway(body?.pathway ?? body?.audit_type);
+    const explicitPathway = parseExplicitPatientReviewPathway(body?.pathway ?? body?.audit_type);
+
+    const rawRole = await resolveCaseCreationRole({
+      admin: supabaseAdmin,
+      userId,
+      userMetadata: user.user_metadata as Record<string, unknown> | undefined,
+      devRoleCookieValue,
+      nodeEnv: process.env.NODE_ENV,
+    });
+    const effectiveRole = effectiveAuditCaseCreationRole(rawRole);
+
+    if (effectiveRole === "patient" && !explicitPathway) {
+      return NextResponse.json(
+        { ok: false, error: MISSING_PATIENT_REVIEW_PATHWAY_ERROR },
+        { status: 400 }
+      );
+    }
+
+    patientReviewPathway = explicitPathway ?? undefined;
   }
 
   const result = await createAuditCase({

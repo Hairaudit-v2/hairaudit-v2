@@ -4,7 +4,10 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createAuditCase } from "@/lib/cases/createCase";
 import { verifyHcaptchaToken } from "@/lib/security/hcaptcha";
 import { rateLimit, clientKeyFromHeaders } from "@/lib/security/rateLimit";
-import { normalizePatientReviewPathway } from "@/lib/patient/patientReviewPathway";
+import {
+  MISSING_PATIENT_REVIEW_PATHWAY_ERROR,
+  parseExplicitPatientReviewPathway,
+} from "@/lib/patient/patientReviewPathway";
 
 /**
  * POST /api/audit/start
@@ -43,7 +46,13 @@ export async function POST(req: Request): Promise<NextResponse> {
   // 2) hCaptcha (no-op unless configured)
   const body = await req.json().catch(() => ({}) as Record<string, unknown>);
   const captchaToken = typeof body?.captchaToken === "string" ? body.captchaToken : null;
-  const pathway = normalizePatientReviewPathway(body?.pathway ?? body?.audit_type);
+  const pathway = parseExplicitPatientReviewPathway(body?.pathway ?? body?.audit_type);
+  if (!pathway) {
+    return NextResponse.json(
+      { ok: false, error: MISSING_PATIENT_REVIEW_PATHWAY_ERROR },
+      { status: 400 }
+    );
+  }
   const captcha = await verifyHcaptchaToken(captchaToken, clientKey);
   if (!captcha.ok) {
     return NextResponse.json(
@@ -52,7 +61,8 @@ export async function POST(req: Request): Promise<NextResponse> {
     );
   }
 
-  // 3) Create anonymous session (server-side; sets auth cookies on the response)
+  // 3) Resolve auth session — reuse an existing login when present; otherwise create
+  //    an anonymous session for friction-free entry (no signup).
   let supabaseAuth;
   try {
     supabaseAuth = await createSupabaseAuthServerClient();
@@ -61,20 +71,37 @@ export async function POST(req: Request): Promise<NextResponse> {
     return NextResponse.json({ ok: false, error: "Auth unavailable" }, { status: 500 });
   }
 
-  const { data: anon, error: anonError } = await supabaseAuth.auth.signInAnonymously();
-  if (anonError || !anon?.user) {
-    console.error(LOG_PREFIX, "signInAnonymously failed", {
-      error: anonError?.message,
-      code: anonError?.code,
+  const {
+    data: { user: existingUser },
+    error: existingUserError,
+  } = await supabaseAuth.auth.getUser();
+
+  if (existingUserError) {
+    console.error(LOG_PREFIX, "getUser failed", {
+      error: existingUserError.message,
+      code: existingUserError.code,
     });
-    const msg =
-      anonError?.code === "anonymous_provider_disabled" || /anonymous/i.test(anonError?.message ?? "")
-        ? "Anonymous sign-in is not enabled. Please contact support."
-        : "Could not start your audit. Please try again.";
-    return NextResponse.json({ ok: false, error: msg }, { status: 500 });
+    return NextResponse.json({ ok: false, error: "Invalid session" }, { status: 401 });
   }
 
-  const userId = anon.user.id;
+  let sessionUser = existingUser;
+  if (!sessionUser) {
+    const { data: anon, error: anonError } = await supabaseAuth.auth.signInAnonymously();
+    if (anonError || !anon?.user) {
+      console.error(LOG_PREFIX, "signInAnonymously failed", {
+        error: anonError?.message,
+        code: anonError?.code,
+      });
+      const msg =
+        anonError?.code === "anonymous_provider_disabled" || /anonymous/i.test(anonError?.message ?? "")
+          ? "Anonymous sign-in is not enabled. Please contact support."
+          : "Could not start your audit. Please try again.";
+      return NextResponse.json({ ok: false, error: msg }, { status: 500 });
+    }
+    sessionUser = anon.user;
+  }
+
+  const userId = sessionUser.id;
 
   // 4) Create the draft patient audit case (reuses canonical creation logic)
   let supabaseAdmin;
@@ -88,7 +115,7 @@ export async function POST(req: Request): Promise<NextResponse> {
   const result = await createAuditCase({
     admin: supabaseAdmin,
     userId,
-    userMetadata: anon.user.user_metadata as Record<string, unknown> | undefined,
+    userMetadata: sessionUser.user_metadata as Record<string, unknown> | undefined,
     devRoleCookieValue: null,
     nodeEnv: process.env.NODE_ENV,
     patientReviewPathway: pathway,
@@ -99,7 +126,12 @@ export async function POST(req: Request): Promise<NextResponse> {
     return NextResponse.json({ ok: false, error: result.error }, { status: result.status });
   }
 
-  console.info(LOG_PREFIX, "anonymous audit started", { userId, caseId: result.caseId, pathway });
+  console.info(LOG_PREFIX, "audit started", {
+    userId,
+    caseId: result.caseId,
+    pathway,
+    reusedSession: Boolean(existingUser),
+  });
   return NextResponse.json({
     ok: true,
     caseId: result.caseId,
