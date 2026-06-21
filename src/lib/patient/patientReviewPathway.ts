@@ -297,8 +297,12 @@ export const PATHWAY_MINIMAL_SECTION_IDS: Record<PatientReviewPathway, readonly 
   post_surgery: ["clinic_procedure"],
 };
 
-const uploadDefByKey = new Map(PATIENT_UPLOAD_CATEGORY_DEFS.map((d) => [d.key, d]));
-const auditBucketByKey = new Map(PATIENT_AUDIT_PHOTO_BUCKET_DEFS.map((d) => [d.key, d]));
+const uploadDefByKey = new Map<string, PatientUploadCategoryDef>(
+  PATIENT_UPLOAD_CATEGORY_DEFS.map((d) => [d.key, d])
+);
+const auditBucketByKey = new Map<string, (typeof PATIENT_AUDIT_PHOTO_BUCKET_DEFS)[number]>(
+  PATIENT_AUDIT_PHOTO_BUCKET_DEFS.map((d) => [d.key, d])
+);
 
 export function getPathwayEvidencePack(pathway: PatientReviewPathway): PathwayEvidencePack {
   return PATHWAY_EVIDENCE_PACKS[pathway];

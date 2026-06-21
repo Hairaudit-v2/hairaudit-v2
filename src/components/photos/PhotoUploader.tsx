@@ -517,7 +517,7 @@ export default function PhotoUploader({
                 existing={uploadsByCategory[def.key] ?? []}
                 locked={isLocked}
                 emphasize={evidenceUi?.highlightKeys.has(def.key) ?? false}
-                showCantProvide={def.required === false && submitterType === "patient"}
+                showCantProvide={false}
                 errorMessage={categoryErrors[def.key]}
                 successMessage={categorySuccess[def.key]}
                 qualityWarning={qualityWarnings[def.key]}
