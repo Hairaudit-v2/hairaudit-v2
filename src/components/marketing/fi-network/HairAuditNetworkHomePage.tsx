@@ -15,6 +15,7 @@ import {
 
 import TrackedLink from "@/components/analytics/TrackedLink";
 import PatientPhotoChecklist from "@/components/marketing/PatientPhotoChecklist";
+import PatientPathwayChooser from "@/components/marketing/PatientPathwayChooser";
 import { fiHairauditPrimaryButtonClass } from "@/lib/fi-ui/hairauditPrimaryButton";
 import { cn } from "@/lib/utils";
 import {
@@ -89,27 +90,10 @@ export default function HairAuditNetworkHomePage() {
       <NetworkHero
         platform="hairaudit"
         eyebrow="Independent hair transplant review"
-        title="Understand your hair transplant result with an independent audit."
-        subtitle="Upload your photos and timeline for a structured HairAudit review of donor area, growth, density, hairline design, implantation, and photo quality."
+        title="Understand your hair transplant with an independent review."
+        subtitle="Choose the pathway that matches your stage: planning before surgery, or reviewing results after your procedure."
         networkLabel="HairAudit · Independent review platform"
-        actions={
-          <>
-            <TrackedLink
-              href="/request-review"
-              eventName="cta_start_free_audit_home_hero"
-              className={fiHairauditPrimaryButtonClass("lg")}
-            >
-              Start Free Audit
-            </TrackedLink>
-            <Link
-              href="/demo-report"
-              className={cn(networkButtonVariants({ variant: "secondary", size: "lg" }))}
-              prefetch
-            >
-              View Sample Report
-            </Link>
-          </>
-        }
+        actions={<PatientPathwayChooser layout="hero" />}
         aside={
           <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 shadow-fi-panel backdrop-blur">
             <div className="flex items-center gap-3">
@@ -151,15 +135,16 @@ export default function HairAuditNetworkHomePage() {
       <Section className="border-t border-border/30">
         <div className="space-y-8">
           <div className="max-w-3xl space-y-3">
-            <Badge tone="accent">Patient pathway</Badge>
+            <Badge tone="accent">Two patient pathways</Badge>
             <h2 className="font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-              A clearer path from uncertainty to evidence.
+              Pre-surgery planning or post-surgery review — pick your path.
             </h2>
             <p className="text-base leading-relaxed text-muted-foreground">
-              HairAudit keeps the patient flow simple: upload photos, add context, and receive a structured audit
-              that explains what can and cannot be concluded from the evidence.
+              HairAudit routes your case through the right upload checklist, intake questions, review modules, and
+              report format for where you are in your hair restoration journey.
             </p>
           </div>
+          <PatientPathwayChooser />
           <FeatureGrid columnsClassName="md:grid-cols-3">
             {auditSteps.map(({ title, body, icon: Icon }, index) => (
               <article

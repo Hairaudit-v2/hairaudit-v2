@@ -7,6 +7,7 @@ import BreadcrumbListSchema from "@/components/seo/BreadcrumbListSchema";
 import { createPageMetadata } from "@/lib/seo/pageMetadata";
 import TrackedLink from "@/components/analytics/TrackedLink";
 import StartFreeAuditButton from "@/components/audit/StartFreeAuditButton";
+import PatientPathwayChooser from "@/components/marketing/PatientPathwayChooser";
 import { GeoContextLine } from "@/components/patient-education/GeoContentBlocks";
 import PatientPhotoChecklist from "@/components/marketing/PatientPhotoChecklist";
 import PatientTrustPointsBlock from "@/components/marketing/PatientTrustPointsBlock";
@@ -60,15 +61,15 @@ export default function RequestReviewPage() {
         <div className="max-w-4xl mx-auto space-y-10 sm:space-y-12">
           <header className="space-y-4">
             <p className="inline-flex rounded-full border border-amber-300/25 bg-amber-300/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-amber-200">
-              Free patient audit — start here
+              Free patient review — choose your pathway
             </p>
             <div>
               <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
-                This is where your free HairAudit starts
+                Start your independent HairAudit review
               </h1>
               <p className="mt-3 text-lg text-slate-200 max-w-2xl leading-relaxed">
-                Upload your surgery photos and basic timeline for an independent, evidence-led review of donor area,
-                growth, density, hairline design, and implantation quality.
+                Choose pre-surgery planning review or post-surgery result review. Each pathway uses tailored
+                uploads, questions, and report sections for your stage.
               </p>
             </div>
             <p className="text-sm font-medium text-emerald-200/95">
@@ -78,6 +79,8 @@ export default function RequestReviewPage() {
               Independent review · Secure upload · Private photo handling
             </p>
           </header>
+
+          <PatientPathwayChooser className="mt-2" />
 
           <div className="rounded-2xl border border-amber-300/25 bg-amber-300/10 p-6 sm:p-7">
             <p className="text-sm text-amber-50/95 leading-relaxed max-w-2xl">

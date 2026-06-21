@@ -200,14 +200,14 @@ export default async function Page({
 
   // Minimal columns needed for ownership and draft display; safe if newer columns are missing.
   const CASE_SELECT_MINIMAL =
-    "id, title, status, created_at, user_id, submitted_at, patient_id, doctor_id, clinic_id, audit_type, submission_channel, visibility_scope";
+    "id, title, status, created_at, user_id, submitted_at, patient_id, doctor_id, clinic_id, audit_type, patient_review_pathway, submission_channel, visibility_scope";
 
-  let c: { id: string; title?: string; status?: string; created_at?: string; user_id?: string; submitted_at?: string | null; patient_id?: string | null; doctor_id?: string | null; clinic_id?: string | null; audit_type?: "patient" | "doctor" | "clinic" | null; submission_channel?: string | null; visibility_scope?: string | null; batch_id?: string | null; case_label?: string | null; intake_status?: string | null; rerun_count?: number | null; last_rerun_at?: string | null; last_rerun_by?: string | null; evidence_score_patient?: string | null; confidence_label_patient?: string | null; evidence_score_doctor?: string | null; confidence_label_doctor?: string | null; evidence_details?: Record<string, unknown> | null } | null;
+  let c: { id: string; title?: string; status?: string; created_at?: string; user_id?: string; submitted_at?: string | null; patient_id?: string | null; doctor_id?: string | null; clinic_id?: string | null; audit_type?: "patient" | "doctor" | "clinic" | null; patient_review_pathway?: "pre_surgery" | "post_surgery" | string | null; submission_channel?: string | null; visibility_scope?: string | null; batch_id?: string | null; case_label?: string | null; intake_status?: string | null; rerun_count?: number | null; last_rerun_at?: string | null; last_rerun_by?: string | null; evidence_score_patient?: string | null; confidence_label_patient?: string | null; evidence_score_doctor?: string | null; confidence_label_doctor?: string | null; evidence_details?: Record<string, unknown> | null } | null;
   let caseRes: any;
   try {
     caseRes = await db
       .from("cases")
-      .select("id, title, status, created_at, user_id, submitted_at, patient_id, doctor_id, clinic_id, audit_type, submission_channel, visibility_scope, batch_id, case_label, intake_status, rerun_count, last_rerun_at, last_rerun_by, evidence_score_patient, confidence_label_patient, evidence_score_doctor, confidence_label_doctor, evidence_details")
+      .select("id, title, status, created_at, user_id, submitted_at, patient_id, doctor_id, clinic_id, audit_type, patient_review_pathway, submission_channel, visibility_scope, batch_id, case_label, intake_status, rerun_count, last_rerun_at, last_rerun_by, evidence_score_patient, confidence_label_patient, evidence_score_doctor, confidence_label_doctor, evidence_details")
       .eq("id", caseId)
       .maybeSingle();
   } catch (e) {
@@ -862,7 +862,9 @@ export default async function Page({
     Array.isArray(graftIntegrityEstimate?.limitations) ? (graftIntegrityEstimate.limitations as string[]) : [];
   const giiNotes = typeof graftIntegrityEstimate?.auditor_notes === "string" ? (graftIntegrityEstimate.auditor_notes as string) : null;
   const summaryObservations = buildPatientSafeSummaryObservations(latestSummary);
-  const patientReportSummary = buildPatientSafeReportSummary(latestSummary);
+  const patientReportSummary = buildPatientSafeReportSummary(latestSummary, {
+    patientReviewPathway: c.patient_review_pathway,
+  });
   const patientSafeSummaryNarrative = await resolvePatientSafeSummaryNarrativePresentation({
     db: admin,
     caseId: c.id,

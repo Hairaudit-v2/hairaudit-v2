@@ -23,6 +23,12 @@ import {
   resolvePatientIntakePrompt,
 } from "@/lib/patientIntake/intakeDisplayI18n";
 import { caseSubmitSurfaceOpen } from "@/lib/patient/caseSubmitStatus";
+import type { PatientReviewPathway } from "@/lib/patient/patientReviewPathway";
+import {
+  DEFAULT_PATIENT_REVIEW_PATHWAY,
+  isIntakeSectionVisibleForPathway,
+  PATHWAY_MINIMAL_REQUIRED_FIELD_IDS,
+} from "@/lib/patient/patientReviewPathway";
 
 function isNonEmptyObject(v: unknown): v is Record<string, unknown> {
   return !!v && typeof v === "object" && !Array.isArray(v) && Object.keys(v as Record<string, unknown>).length > 0;
@@ -45,8 +51,6 @@ function localizedSectionDescription(t: TranslateFn, section: { id: string; desc
  * Minimum-required sections for the friction-free first audit. The full
  * questionnaire is deferred to the post-report patient dashboard.
  */
-const MINIMAL_SECTION_IDS = new Set(["clinic_procedure"]);
-const MINIMAL_REQUIRED_FIELDS = ["clinic_name", "clinic_country", "clinic_city", "procedure_date", "procedure_type"] as const;
 
 export default function PatientAuditFormClient({
   caseId,
@@ -54,6 +58,7 @@ export default function PatientAuditFormClient({
   submittedAt,
   minimal = false,
   nextHref,
+  patientReviewPathway = DEFAULT_PATIENT_REVIEW_PATHWAY,
 }: {
   caseId: string;
   caseStatus: string;
@@ -62,6 +67,7 @@ export default function PatientAuditFormClient({
   minimal?: boolean;
   /** Destination after the questions step (defaults to the photo-upload page). */
   nextHref?: string;
+  patientReviewPathway?: PatientReviewPathway;
 }) {
   const glassCard =
     "rounded-2xl border border-slate-300 bg-white shadow-sm";
@@ -80,9 +86,16 @@ export default function PatientAuditFormClient({
   const visibleSections = useMemo(
     () =>
       minimal
-        ? PATIENT_AUDIT_SECTIONS.filter((s) => MINIMAL_SECTION_IDS.has(s.id))
-        : PATIENT_AUDIT_SECTIONS.filter((s) => !s.advanced || showAdvanced),
-    [showAdvanced, minimal]
+        ? PATIENT_AUDIT_SECTIONS.filter((s) =>
+            isIntakeSectionVisibleForPathway(s.id, patientReviewPathway, { minimal: true })
+          )
+        : PATIENT_AUDIT_SECTIONS.filter(
+            (s) =>
+              isIntakeSectionVisibleForPathway(s.id, patientReviewPathway, {
+                includeAdvanced: showAdvanced,
+              }) && (!s.advanced || showAdvanced)
+          ),
+    [showAdvanced, minimal, patientReviewPathway]
   );
   const STEPS = useMemo(
     () => [
@@ -159,9 +172,8 @@ export default function PatientAuditFormClient({
     const payload = toNestedForApi(formData) as Record<string, unknown>;
 
     if (minimal) {
-      // Minimum-required first audit: validate only the core fields; the full
-      // questionnaire is completed later in the patient dashboard.
-      const missing = MINIMAL_REQUIRED_FIELDS.filter((id) => {
+      const minimalRequiredFields = PATHWAY_MINIMAL_REQUIRED_FIELD_IDS[patientReviewPathway];
+      const missing = minimalRequiredFields.filter((id) => {
         const v = formData[id];
         return v === undefined || v === null || (typeof v === "string" && v.trim() === "");
       });

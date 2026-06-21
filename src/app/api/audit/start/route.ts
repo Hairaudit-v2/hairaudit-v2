@@ -4,6 +4,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createAuditCase } from "@/lib/cases/createCase";
 import { verifyHcaptchaToken } from "@/lib/security/hcaptcha";
 import { rateLimit, clientKeyFromHeaders } from "@/lib/security/rateLimit";
+import { normalizePatientReviewPathway } from "@/lib/patient/patientReviewPathway";
 
 /**
  * POST /api/audit/start
@@ -42,6 +43,7 @@ export async function POST(req: Request): Promise<NextResponse> {
   // 2) hCaptcha (no-op unless configured)
   const body = await req.json().catch(() => ({}) as Record<string, unknown>);
   const captchaToken = typeof body?.captchaToken === "string" ? body.captchaToken : null;
+  const pathway = normalizePatientReviewPathway(body?.pathway ?? body?.audit_type);
   const captcha = await verifyHcaptchaToken(captchaToken, clientKey);
   if (!captcha.ok) {
     return NextResponse.json(
@@ -89,6 +91,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     userMetadata: anon.user.user_metadata as Record<string, unknown> | undefined,
     devRoleCookieValue: null,
     nodeEnv: process.env.NODE_ENV,
+    patientReviewPathway: pathway,
   });
 
   if (!result.ok) {
@@ -96,10 +99,11 @@ export async function POST(req: Request): Promise<NextResponse> {
     return NextResponse.json({ ok: false, error: result.error }, { status: result.status });
   }
 
-  console.info(LOG_PREFIX, "anonymous audit started", { userId, caseId: result.caseId });
+  console.info(LOG_PREFIX, "anonymous audit started", { userId, caseId: result.caseId, pathway });
   return NextResponse.json({
     ok: true,
     caseId: result.caseId,
+    pathway,
     next: `/cases/${result.caseId}/patient/photos`,
   });
 }

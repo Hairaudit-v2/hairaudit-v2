@@ -8,9 +8,16 @@ import {
   type LegacyUploadForIntelligence,
   type ReportSummaryForIntelligence,
 } from "@/lib/hairaudit-intelligence";
+import {
+  annotateIntelligenceBundleForPathway,
+  runPathwayHairAuditIntelligenceBundle,
+} from "@/lib/hairaudit-intelligence/pathwayIntelligence";
 import type { ClassifierEnrichmentSource, HairAuditIntelligenceBundle } from "@/lib/hairaudit-intelligence/types";
 import type { ClassifierByUploadIdMap } from "./classifierEnrichment.server";
 import { resolveClassifierByUploadIdForIntelligence } from "./classifierEnrichment.server";
+import { mapUploadsToIntelligenceImages, mapReportSummaryToFindings } from "@/lib/hairaudit-intelligence";
+import { hasClassifierEnrichment } from "@/lib/hairaudit-intelligence/shared";
+import { normalizePatientReviewPathway, type PatientReviewPathway } from "@/lib/patient/patientReviewPathway";
 
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
@@ -57,15 +64,24 @@ export function buildHairAuditIntelligenceBundleFromLegacySummary(args: {
   metadata?: Record<string, unknown>;
   classifierByUploadId?: ClassifierByUploadIdMap;
   classifierSource?: ClassifierEnrichmentSource;
+  patientReviewPathway?: PatientReviewPathway | unknown;
 }): HairAuditIntelligenceBundle {
-  return runHairAuditIntelligenceFromLegacyArtifacts({
+  const pathway = normalizePatientReviewPathway(args.patientReviewPathway ?? args.metadata?.patientReviewPathway);
+  const images = mapUploadsToIntelligenceImages(args.uploads ?? [], args.classifierByUploadId);
+  const classifierEnriched = hasClassifierEnrichment(args.classifierByUploadId);
+  const input = {
     caseId: args.caseId,
-    uploads: args.uploads ?? [],
-    reportSummary: legacySummaryToIntelligenceReportSummary(args.summary),
-    metadata: args.metadata,
-    classifierByUploadId: args.classifierByUploadId,
-    classifierSource: args.classifierSource,
-  });
+    images,
+    reportFindings: mapReportSummaryToFindings(legacySummaryToIntelligenceReportSummary(args.summary)),
+    metadata: {
+      ...args.metadata,
+      classifierEnriched,
+      classifierSource: args.classifierSource ?? "none",
+      patientReviewPathway: pathway,
+    },
+  };
+  const bundle = runPathwayHairAuditIntelligenceBundle(input, pathway);
+  return annotateIntelligenceBundleForPathway(bundle, pathway);
 }
 
 /** Async resolver: FI persisted jobs + upload metadata → classifier map. Fail-safe. */

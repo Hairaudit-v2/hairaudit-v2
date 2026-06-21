@@ -328,6 +328,18 @@
       "privacyBody": "Todas las subidas se almacenan de forma segura con controles estrictos de privacidad. Sus datos no se comparten sin su consentimiento.",
       "finalCtaTitle": "Aclare la situación de su trasplante capilar",
       "finalCtaSubtitle": "Entienda sus resultados. Identifique riesgos. Tome decisiones informadas.",
+      "pathways": {
+        "preSurgery": {
+          "title": "Revisión preoperatoria",
+          "description": "¿Planifica un trasplante? Suba fotos previas para evaluar candidatura, zona donante, planificación de injertos y perspectiva de progresión antes de decidir.",
+          "cta": "Iniciar revisión preoperatoria"
+        },
+        "postSurgery": {
+          "title": "Auditoría postoperatoria",
+          "description": "¿Ya se operó? Suba fotos de su resultado para revisar integridad del donante, densidad, puntuación del procedimiento y orientación correctiva.",
+          "cta": "Iniciar auditoría postoperatoria"
+        }
+      },
       "certifiedTitle": "Certificados de certificación",
       "certifiedSubtitle": "Certificados de reconocimiento de ejemplo por nivel. Haga clic para ver el certificado imprimible.",
       "certifiedCtaPlatinum": "Ver certificado Platinum de ejemplo",
@@ -817,6 +829,8 @@
         "observationsHintTranslationUnavailable": "Estos elementos provienen del resumen del informe y actualmente se muestran desde la versión fuente en inglés.",
         "noObservations": "Aún no hay observaciones estructuradas disponibles para este caso.",
         "plainEnglishTitle": "En lenguaje claro",
+        "pathwayPreSurgeryLabel": "Enfoque de revisión preoperatoria",
+        "pathwayPostSurgeryLabel": "Enfoque de auditoría postoperatoria",
         "concernsTitle": "Áreas para comentar con su clínico",
         "concernsHint": "Estos puntos se basan en sus imágenes. No son un diagnóstico — coméntelos con su equipo tratante.",
         "acceptableTitle": "Lo que parece tranquilizador",

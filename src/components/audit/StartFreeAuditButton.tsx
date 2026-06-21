@@ -4,10 +4,16 @@ import { useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { trackCta } from "@/lib/analytics/trackCta";
 import { stashPendingAuthCtaContext } from "@/lib/analytics/authAttribution";
+import {
+  DEFAULT_PATIENT_REVIEW_PATHWAY,
+  type PatientReviewPathway,
+} from "@/lib/patient/patientReviewPathway";
 
 type StartFreeAuditButtonProps = {
   className?: string;
   eventName?: string;
+  /** HA-DUAL-PATHWAY-1 — stored on case as patient_review_pathway */
+  pathway?: PatientReviewPathway;
   children: React.ReactNode;
 };
 
@@ -52,7 +58,12 @@ function loadHcaptchaScript(): Promise<void> {
  * challenge is solved before the request. No browser-native dialogs — errors
  * render inline.
  */
-export default function StartFreeAuditButton({ className, eventName, children }: StartFreeAuditButtonProps) {
+export default function StartFreeAuditButton({
+  className,
+  eventName,
+  pathway = DEFAULT_PATIENT_REVIEW_PATHWAY,
+  children,
+}: StartFreeAuditButtonProps) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -94,7 +105,7 @@ export default function StartFreeAuditButton({ className, eventName, children }:
       const res = await fetch("/api/audit/start", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ captchaToken }),
+        body: JSON.stringify({ captchaToken, pathway }),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok || !json?.ok) {
@@ -105,7 +116,7 @@ export default function StartFreeAuditButton({ className, eventName, children }:
       setError((e as Error)?.message ?? "Could not start your audit. Please try again.");
       setBusy(false);
     }
-  }, [busy, eventName, router, solveCaptcha]);
+  }, [busy, eventName, pathway, router, solveCaptcha]);
 
   return (
     <>

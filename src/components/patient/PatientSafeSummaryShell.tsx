@@ -150,6 +150,24 @@ export default function PatientSafeSummaryShell({
             <p className="mt-2 text-sm leading-relaxed text-slate-700">{summary.plainEnglishSummary}</p>
           </div>
 
+          {summary.pathwayFocusAreas && summary.pathwayFocusAreas.length > 0 ? (
+            <div className="rounded-xl border border-slate-200 bg-white p-4">
+              <h3 className="text-sm font-semibold text-slate-900">
+                {summary.patientReviewPathway === "pre_surgery"
+                  ? t("dashboard.patient.safeSummary.pathwayPreSurgeryLabel")
+                  : t("dashboard.patient.safeSummary.pathwayPostSurgeryLabel")}
+              </h3>
+              <ul className="mt-2 space-y-1 text-sm text-slate-700">
+                {summary.pathwayFocusAreas.map((area) => (
+                  <li key={area} className="flex gap-2">
+                    <span aria-hidden>•</span>
+                    <span>{area}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
           {summary.acceptableHighlights.length > 0 ? (
             <div className="rounded-xl border border-emerald-200/80 bg-emerald-50/60 p-4">
               <h3 className="text-sm font-semibold text-emerald-950">

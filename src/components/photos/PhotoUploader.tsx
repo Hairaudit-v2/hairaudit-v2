@@ -26,6 +26,10 @@ import type { PatientPhotoUploadGuidancePanel } from "@/lib/patientPhoto/patient
 import { evaluateEvidence, type CasePhotoInput } from "@/lib/evidence/evidenceEvaluator";
 import { getUploadHighlightKeys } from "@/lib/evidence/evidenceUploadUiHints";
 import { caseSubmitSurfaceOpen } from "@/lib/patient/caseSubmitStatus";
+import {
+  DEFAULT_PATIENT_REVIEW_PATHWAY,
+  type PatientReviewPathway,
+} from "@/lib/patient/patientReviewPathway";
 import PatientUploadRequirementsBanner from "@/components/patient/PatientUploadRequirementsBanner";
 import {
   PATIENT_UPLOAD_SAVE_LATER_MESSAGE,
@@ -62,6 +66,7 @@ export default function PhotoUploader({
   nextLabel = "Continue",
   hideFooter,
   patientPhotoStageGuidance,
+  patientReviewPathway = DEFAULT_PATIENT_REVIEW_PATHWAY,
 }: {
   caseId: string;
   submitterType: SubmitterType;
@@ -74,6 +79,8 @@ export default function PhotoUploader({
   hideFooter?: boolean;
   /** Intake-driven guidance + optional extended-group order (flagged server-side). */
   patientPhotoStageGuidance?: PatientPhotoUploadGuidancePanel | null;
+  /** HA-DUAL-PATHWAY-1 — filters required upload keys for patient cases */
+  patientReviewPathway?: PatientReviewPathway;
 }) {
   const [uploads, setUploads] = useState(initialUploads);
   const [busyCats, setBusyCats] = useState<Record<string, boolean>>({});
@@ -113,7 +120,10 @@ export default function PhotoUploader({
   const completed = getCompletedCategories(submitterType, photosForScoring);
   const score = computeEvidenceScore(submitterType, photosForScoring);
   const confidence = computeConfidenceLabel(score);
-  const requiredKeys = getRequiredKeys(submitterType);
+  const requiredKeys =
+    submitterType === "patient"
+      ? getRequiredKeys("patient", patientReviewPathway)
+      : getRequiredKeys(submitterType);
   const missingRequired = requiredKeys.filter((k) => !completed.has(k));
   const canProceed = missingRequired.length === 0;
   const requiredProgress =

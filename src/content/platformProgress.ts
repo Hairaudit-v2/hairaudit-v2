@@ -125,6 +125,14 @@ export const INTELLIGENCE_MODULES: readonly IntelligenceModule[] = [
 /** Patient experience improvements — edit completionPercent as UX work lands. */
 export const PATIENT_UX_FEATURES: readonly PatientUxFeature[] = [
   {
+    id: "dual-pathway-intake",
+    name: "Dual patient pathway architecture",
+    completionPercent: 82,
+    description:
+      "Separate pre-surgery planning and post-surgery audit paths with tailored uploads, intake, intelligence modules, and report focus.",
+    focus: "Route patients to the right review experience from the homepage.",
+  },
+  {
     id: "photo-intake",
     name: "Guided photo intake",
     completionPercent: 94,
@@ -163,6 +171,13 @@ export const PATIENT_UX_FEATURES: readonly PatientUxFeature[] = [
 
 /** Public engineering changelog — newest first. */
 export const ENGINEERING_CHANGELOG: readonly EngineeringChangelogEntry[] = [
+  {
+    date: "2026-06-21",
+    title: "Dual patient pathway architecture (HA-DUAL-PATHWAY-1)",
+    description:
+      "Homepage and intake now split pre-surgery review and post-surgery audit paths with pathway-specific uploads, questions, intelligence execution, and report focus areas.",
+    area: "Patient Experience",
+  },
   {
     date: "2026-06-18",
     title: "Donor Intelligence Engine — live in production audits",

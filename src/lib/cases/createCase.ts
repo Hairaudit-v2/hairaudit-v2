@@ -7,6 +7,11 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { emitHairAuditEvent } from "@/lib/integrations";
+import {
+  DEFAULT_PATIENT_REVIEW_PATHWAY,
+  normalizePatientReviewPathway,
+  type PatientReviewPathway,
+} from "@/lib/patient/patientReviewPathway";
 
 const LOG_PREFIX = "[cases/createCase]";
 
@@ -50,17 +55,31 @@ export function effectiveAuditCaseCreationRole(rawRole: string): CaseCreationRes
   return "patient";
 }
 
-export function buildAuditCaseInsertData(userId: string, role: CaseCreationResolvedRole): Record<string, unknown> {
+export function buildAuditCaseInsertData(
+  userId: string,
+  role: CaseCreationResolvedRole,
+  patientReviewPathway: PatientReviewPathway = DEFAULT_PATIENT_REVIEW_PATHWAY
+): Record<string, unknown> {
   const insertData: Record<string, unknown> = {
     user_id: userId,
-    title: role === "doctor" ? "Doctor audit" : role === "clinic" ? "Clinic audit" : "Patient Audit",
+    title:
+      role === "doctor"
+        ? "Doctor audit"
+        : role === "clinic"
+          ? "Clinic audit"
+          : patientReviewPathway === "pre_surgery"
+            ? "Pre-Surgery Review"
+            : "Patient Audit",
     status: "draft",
     audit_type: role === "doctor" ? "doctor" : role === "clinic" ? "clinic" : "patient",
     submission_channel:
       role === "doctor" ? "doctor_submitted" : role === "clinic" ? "clinic_submitted" : "patient_submitted",
     visibility_scope: role === "patient" ? "public" : "internal",
   };
-  if (role === "patient") insertData.patient_id = userId;
+  if (role === "patient") {
+    insertData.patient_id = userId;
+    insertData.patient_review_pathway = patientReviewPathway;
+  }
   if (role === "doctor") insertData.doctor_id = userId;
   if (role === "clinic") insertData.clinic_id = userId;
   return insertData;
@@ -89,6 +108,8 @@ export async function createAuditCase(args: {
   userMetadata: Record<string, unknown> | undefined;
   devRoleCookieValue: string | null;
   nodeEnv?: string;
+  /** HA-DUAL-PATHWAY-1 — only applied for patient role inserts */
+  patientReviewPathway?: PatientReviewPathway | unknown;
 }): Promise<CreateAuditCaseResult> {
   const nodeEnv = args.nodeEnv ?? process.env.NODE_ENV;
   const rawRole = await resolveCaseCreationRole({
@@ -106,12 +127,14 @@ export async function createAuditCase(args: {
   }
 
   const role: CaseCreationResolvedRole = eff;
-  const insertData = buildAuditCaseInsertData(args.userId, role);
+  const patientReviewPathway = normalizePatientReviewPathway(args.patientReviewPathway);
+  const insertData = buildAuditCaseInsertData(args.userId, role, patientReviewPathway);
 
   console.info(LOG_PREFIX, "insert payload summary", {
     userId: args.userId,
     role,
     audit_type: insertData.audit_type,
+    patient_review_pathway: insertData.patient_review_pathway ?? null,
     has_user_id: true,
   });
 

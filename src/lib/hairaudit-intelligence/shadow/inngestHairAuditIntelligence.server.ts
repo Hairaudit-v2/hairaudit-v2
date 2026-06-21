@@ -116,6 +116,7 @@ export async function attachHairAuditIntelligenceToReportSummarySafeWithClassifi
   summary: Record<string, unknown>;
   caseId: string;
   uploads?: LegacyUploadForIntelligence[];
+  patientReviewPathway?: unknown;
   logger?: Logger;
   uploadMetadataWriter?: ClassifierMetadataWriteBackAdapter;
   fiPersistence?: FiImageIntelligencePersistenceAdapter;
@@ -144,6 +145,7 @@ export async function attachHairAuditIntelligenceToReportSummarySafeWithClassifi
       metadata: { shadowMode: true, advisoryOnly: true },
       classifierByUploadId: resolved.classifierByUploadId,
       classifierSource: resolved.classifierSource,
+      patientReviewPathway: args.patientReviewPathway,
     });
     const summary = mergeHairAuditIntelligenceIntoSummaryMetadata(args.summary, bundle);
 

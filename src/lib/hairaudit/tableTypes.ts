@@ -24,6 +24,8 @@ export type CaseRow = {
   submitted_at?: string | null;
   created_at?: string | null;
   audit_type?: "patient" | "doctor" | "clinic" | string | null;
+  /** HA-DUAL-PATHWAY-1: pre_surgery | post_surgery patient public review pathway */
+  patient_review_pathway?: "pre_surgery" | "post_surgery" | string | null;
   audit_mode?: "internal" | "public" | string | null;
   visibility_scope?: "public" | "internal" | string | null;
   submission_channel?:

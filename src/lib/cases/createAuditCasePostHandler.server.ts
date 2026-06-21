@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createAuditCase } from "@/lib/cases/createCase";
+import { normalizePatientReviewPathway } from "@/lib/patient/patientReviewPathway";
 
 /**
  * Shared implementation for `POST /api/cases/create` and legacy `POST /cases/create`.
@@ -10,7 +11,7 @@ import { createAuditCase } from "@/lib/cases/createCase";
  */
 const LOG_PREFIX = "[cases/create]";
 
-export async function handlePostCreateAuditCaseRoute(): Promise<NextResponse> {
+export async function handlePostCreateAuditCaseRoute(req?: Request): Promise<NextResponse> {
   let supabaseAuth;
   try {
     supabaseAuth = await createSupabaseAuthServerClient();
@@ -51,12 +52,19 @@ export async function handlePostCreateAuditCaseRoute(): Promise<NextResponse> {
     devRoleCookieValue = cookieStore.get("dev_role")?.value ?? null;
   }
 
+  let patientReviewPathway = undefined;
+  if (req) {
+    const body = await req.json().catch(() => ({} as Record<string, unknown>));
+    patientReviewPathway = normalizePatientReviewPathway(body?.pathway ?? body?.audit_type);
+  }
+
   const result = await createAuditCase({
     admin: supabaseAdmin,
     userId,
     userMetadata: user.user_metadata as Record<string, unknown> | undefined,
     devRoleCookieValue,
     nodeEnv: process.env.NODE_ENV,
+    patientReviewPathway,
   });
 
   if (!result.ok) {

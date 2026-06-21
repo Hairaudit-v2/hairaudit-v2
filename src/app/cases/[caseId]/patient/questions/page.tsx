@@ -6,6 +6,7 @@ import CaseNotFoundRecovery from "@/components/case/CaseNotFoundRecovery";
 import { getTranslation } from "@/lib/i18n/getTranslation";
 import type { TranslationKey } from "@/lib/i18n/translationKeys";
 import { resolvePublicSeoLocale } from "@/lib/seo/localeMetadata";
+import { resolvePatientReviewPathwayFromCase } from "@/lib/patient/patientReviewPathway";
 
 export default async function Page({
   params,
@@ -21,7 +22,7 @@ export default async function Page({
 
   const { data: c } = await supabase
     .from("cases")
-    .select("id, status, submitted_at, user_id, patient_id")
+    .select("id, status, submitted_at, user_id, patient_id, patient_review_pathway")
     .eq("id", caseId)
     .maybeSingle();
 
@@ -38,6 +39,8 @@ export default async function Page({
 
   const seoLocale = await resolvePublicSeoLocale();
   const tr = (key: TranslationKey) => getTranslation(key, seoLocale);
+
+  const patientReviewPathway = resolvePatientReviewPathwayFromCase(c);
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
@@ -68,6 +71,7 @@ export default async function Page({
           caseStatus={c.status ?? "draft"}
           submittedAt={c.submitted_at}
           minimal
+          patientReviewPathway={patientReviewPathway}
           nextHref={`/cases/${caseId}/patient/contact`}
         />
       </div>

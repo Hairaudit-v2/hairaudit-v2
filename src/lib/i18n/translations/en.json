@@ -328,6 +328,18 @@
       "privacyBody": "All uploads are securely stored and handled with strict privacy controls. Your data is never shared without your consent.",
       "finalCtaTitle": "Get Clarity on Your Hair Transplant",
       "finalCtaSubtitle": "Understand your results. Identify risks. Make informed decisions.",
+      "pathways": {
+        "preSurgery": {
+          "title": "Pre-Surgery Review",
+          "description": "Planning a transplant? Upload pre-procedure photos for candidacy, donor assessment, graft planning, and progression outlook before you commit.",
+          "cta": "Start Pre-Surgery Review"
+        },
+        "postSurgery": {
+          "title": "Post-Surgery Audit",
+          "description": "Already had surgery? Upload your result photos for donor integrity, density review, procedural scoring, and repair guidance.",
+          "cta": "Start Post-Surgery Audit"
+        }
+      },
       "certifiedTitle": "Certification certificates",
       "certifiedSubtitle": "Sample recognition certificates across tiers. Click to view the printable certificate.",
       "certifiedCtaPlatinum": "View sample Platinum certificate",
@@ -817,6 +829,8 @@
         "observationsHintTranslationUnavailable": "These items come from the report summary and are currently shown from the English source version.",
         "noObservations": "No structured summary observations are available yet for this case.",
         "plainEnglishTitle": "In plain language",
+        "pathwayPreSurgeryLabel": "Pre-surgery review focus",
+        "pathwayPostSurgeryLabel": "Post-surgery audit focus",
         "concernsTitle": "Areas to discuss with your clinician",
         "concernsHint": "These points are based on your uploaded images. They are not a diagnosis — please discuss them with your treating team.",
         "acceptableTitle": "What looks reassuring",

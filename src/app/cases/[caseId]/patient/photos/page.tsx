@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import PhotoUploader from "@/components/photos/PhotoUploader";
 import { loadPatientPhotoStageGuidanceForCase } from "@/lib/patientPhoto/loadPatientPhotoStageGuidanceForCase";
+import { resolvePatientReviewPathwayFromCase } from "@/lib/patient/patientReviewPathway";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 
 type PageProps = { params: Promise<{ caseId: string }> };
@@ -18,7 +19,7 @@ export default async function Page({ params }: PageProps) {
 
   const { data: c } = await supabase
     .from("cases")
-    .select("id, status, submitted_at, user_id, patient_id")
+    .select("id, status, submitted_at, user_id, patient_id, patient_review_pathway")
     .eq("id", caseId)
     .maybeSingle();
 
@@ -36,6 +37,7 @@ export default async function Page({ params }: PageProps) {
   );
 
   const patientPhotoStageGuidance = await loadPatientPhotoStageGuidanceForCase(supabase, caseId);
+  const patientReviewPathway = resolvePatientReviewPathwayFromCase(c);
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6">
@@ -55,6 +57,7 @@ export default async function Page({ params }: PageProps) {
         nextHref={`/cases/${caseId}/patient/questions`}
         nextLabel="Continue to questions"
         patientPhotoStageGuidance={patientPhotoStageGuidance}
+        patientReviewPathway={patientReviewPathway}
       />
     </div>
   );

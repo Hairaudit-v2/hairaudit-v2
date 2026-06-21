@@ -7,6 +7,11 @@ import {
   type PatientConcernBand,
 } from "./patientConcernBands";
 import { buildPatientWhatHappensNext } from "./patientWhatHappensNext";
+import {
+  getPathwayDefinition,
+  normalizePatientReviewPathway,
+  type PatientReviewPathway,
+} from "@/lib/patient/patientReviewPathway";
 
 export type PatientSafeSummaryObservationStage =
   | "preop"
@@ -40,6 +45,9 @@ export type PatientSafeReportSummary = {
   clinicalDisclaimer: string;
   /** Backward-compatible flat list for translation pipeline */
   observations: PatientSafeSummaryObservation[];
+  /** HA-DUAL-PATHWAY-1 — pathway-specific review focus areas */
+  patientReviewPathway?: PatientReviewPathway;
+  pathwayFocusAreas?: readonly string[];
 };
 
 /**
@@ -135,8 +143,19 @@ function buildPlainEnglishSummary(band: PatientConcernBand, concernCount: number
 }
 
 export function buildPatientSafeReportSummary(
-  summary: Record<string, unknown> | null | undefined
+  summary: Record<string, unknown> | null | undefined,
+  opts?: { patientReviewPathway?: PatientReviewPathway | unknown }
 ): PatientSafeReportSummary {
+  const patientReviewPathway = normalizePatientReviewPathway(
+    opts?.patientReviewPathway ??
+      (summary as Record<string, unknown> | null | undefined)?.patient_review_pathway ??
+      (
+        (summary as Record<string, unknown> | null | undefined)?.metadata as
+          | Record<string, unknown>
+          | undefined
+      )?.patientReviewPathway
+  );
+  const pathwayFocusAreas = getPathwayDefinition(patientReviewPathway).reportFocusAreas;
   const keyFindings = Array.isArray(summary?.key_findings) ? summary.key_findings : [];
   const redFlags = Array.isArray(summary?.red_flags) ? summary.red_flags : [];
 
@@ -183,6 +202,8 @@ export function buildPatientSafeReportSummary(
     whatHappensNext: buildPatientWhatHappensNext(overallBand),
     clinicalDisclaimer: PATIENT_CLINICAL_SAFETY_DISCLAIMER,
     observations: structured,
+    patientReviewPathway,
+    pathwayFocusAreas,
   };
 }
 

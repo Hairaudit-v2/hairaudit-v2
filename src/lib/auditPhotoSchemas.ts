@@ -5,6 +5,10 @@
 import { z } from "zod";
 import { buildPatientUploadToAuditKeyMap } from "./patientPhotoCategoryConfig";
 import { PATIENT_PHOTO_SCHEMA as PATIENT_SCHEMA, DOCTOR_PHOTO_SCHEMA as DOCTOR_SCHEMA } from "./photoSchemas";
+import {
+  PATHWAY_REQUIRED_AUDIT_KEYS,
+  type PatientReviewPathway,
+} from "@/lib/patient/patientReviewPathway";
 
 export type SubmitterType = "doctor" | "patient" | "clinic";
 
@@ -305,7 +309,13 @@ export function computeEvidenceDetails(
 }
 
 /** Get required keys for a submitter (clinic uses same as doctor) */
-export function getRequiredKeys(st: SubmitterType): readonly string[] {
+export function getRequiredKeys(
+  st: SubmitterType,
+  patientReviewPathway?: PatientReviewPathway
+): readonly string[] {
+  if (st === "patient" && patientReviewPathway) {
+    return PATHWAY_REQUIRED_AUDIT_KEYS[patientReviewPathway];
+  }
   return submitterUsesDoctorSchema(st) ? DOCTOR_REQUIRED_KEYS : PATIENT_REQUIRED_KEYS;
 }
 

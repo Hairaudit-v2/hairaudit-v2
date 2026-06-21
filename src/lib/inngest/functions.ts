@@ -590,7 +590,7 @@ export const runAudit = inngest.createFunction(
 
     // 1) Load case
     const c = await step.run("load-case", async () => {
-      const baseSelect = "id, user_id, patient_id, status, submitted_at, doctor_id, clinic_id, evidence_score_doctor, evidence_score_patient";
+      const baseSelect = "id, user_id, patient_id, status, submitted_at, doctor_id, clinic_id, patient_review_pathway, evidence_score_doctor, evidence_score_patient";
       const res = await supabase
         .from("cases")
         .select(baseSelect)
@@ -1283,6 +1283,7 @@ export const runAudit = inngest.createFunction(
         summary: summaryBase,
         caseId,
         uploads,
+        patientReviewPathway: (c as { patient_review_pathway?: string | null }).patient_review_pathway,
         logger,
         uploadMetadataWriter: {
           async updateUploadMetadata(uploadId, metadata) {
