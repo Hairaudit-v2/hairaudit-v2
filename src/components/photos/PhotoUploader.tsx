@@ -493,7 +493,7 @@ export default function PhotoUploader({
               const failed = failedFilesByCategory[cat];
               if (failed?.length) void uploadFiles(cat, failed, true);
             }}
-            onRetryFile={(cat, file) => void uploadFiles(cat, file, true)}
+            onRetryFile={(cat, file) => void uploadFiles(cat, [file], true)}
             onDeleteError={(msg) => showToast(msg)}
             onSkipOptional={(key) => toggleSkipped(key)}
           />
