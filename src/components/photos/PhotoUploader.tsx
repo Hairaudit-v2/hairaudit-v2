@@ -16,7 +16,6 @@ import {
   PATIENT_UPLOADER_REASSURANCE,
   PATIENT_UPLOADER_TIPS,
 } from "@/lib/photoSchemas";
-import UploadedThumb from "@/components/uploads/UploadedThumb";
 import ExtendedPatientPhotoUploadGroups from "@/components/patient/ExtendedPatientPhotoUploadGroups";
 import PatientImageEvidenceNudgeCallout from "@/components/patient/PatientImageEvidenceNudgeCallout";
 import EvidenceUploadGuidancePanel from "@/components/patient/EvidenceUploadGuidancePanel";
@@ -29,12 +28,15 @@ import { getUploadHighlightKeys } from "@/lib/evidence/evidenceUploadUiHints";
 import { caseSubmitSurfaceOpen } from "@/lib/patient/caseSubmitStatus";
 import PatientUploadRequirementsBanner from "@/components/patient/PatientUploadRequirementsBanner";
 import {
-  appendPatientUploadMetadata,
-  formatPatientUploadError,
   PATIENT_UPLOAD_SAVE_LATER_MESSAGE,
-  preparePatientUploadFile,
   computeRequiredUploadProgress,
 } from "@/lib/uploads/patientUploadClient";
+import UploadPhotoCard, { type PhotoSlotStatus } from "@/components/patient/upload/UploadPhotoCard";
+import UploadErrorToast, { type UploadToast } from "@/components/patient/upload/UploadErrorToast";
+import {
+  uploadPatientPhotoFiles,
+  type PerFileUploadState,
+} from "@/lib/uploads/uploadPatientPhotos";
 
 type UploadRow = {
   id: string;
@@ -43,22 +45,6 @@ type UploadRow = {
   metadata: unknown;
   created_at: string;
 };
-
-function acceptsFile(file: File, accept: string): boolean {
-  if (!accept || accept === "*/*") return true;
-  const mime = file.type?.toLowerCase() ?? "";
-  const dotExt = `.${(file.name.split(".").pop() ?? "").toLowerCase()}`;
-  const tokens = accept
-    .split(",")
-    .map((t) => t.trim().toLowerCase())
-    .filter(Boolean);
-  return tokens.some((token) => {
-    if (token === "*/*") return true;
-    if (token.endsWith("/*")) return mime.startsWith(token.slice(0, -1));
-    if (token.startsWith(".")) return dotExt === token;
-    return mime === token;
-  });
-}
 
 function categoryFromType(type: string, prefix: string): string | null {
   if (!type?.startsWith(`${prefix}:`)) return null;
@@ -95,6 +81,13 @@ export default function PhotoUploader({
   const [categorySuccess, setCategorySuccess] = useState<Record<string, string>>({});
   const [qualityWarnings, setQualityWarnings] = useState<Record<string, string>>({});
   const [failedFilesByCategory, setFailedFilesByCategory] = useState<Record<string, File[]>>({});
+  const [partialErrorsByCategory, setPartialErrorsByCategory] = useState<
+    Record<string, Array<{ file: string; error: string }>>
+  >({});
+  const [fileUploadStatesByCategory, setFileUploadStatesByCategory] = useState<
+    Record<string, PerFileUploadState[]>
+  >({});
+  const [toast, setToast] = useState<UploadToast | null>(null);
   const [skippedOptional, setSkippedOptional] = useState<Set<string>>(new Set());
 
   const prefix = submitterType === "doctor" ? "doctor_photo" : "patient_photo";
@@ -155,6 +148,24 @@ export default function PhotoUploader({
     }
   }, [uploads, submitterType]);
 
+  function showToast(message: string, variant: UploadToast["variant"] = "error") {
+    setToast({ id: `${Date.now()}`, message, variant });
+  }
+
+  function resolveSlotStatus(
+    def: { required: boolean; min: number },
+    category: string,
+    emphasize?: boolean
+  ): PhotoSlotStatus {
+    const existing = uploadsByCategory[category] ?? [];
+    if (busyCats[category]) return "uploading";
+    if ((failedFilesByCategory[category]?.length ?? 0) > 0) return "needs_retry";
+    if (existing.length >= def.min) return "complete";
+    if (def.required) return "required";
+    if (emphasize) return "recommended";
+    return "optional";
+  }
+
   async function uploadFiles(category: string, files: File[], isRetry = false) {
     if (isLocked || !files.length) return;
 
@@ -169,78 +180,52 @@ export default function PhotoUploader({
       delete next[category];
       return next;
     });
-
-    const errors: string[] = [];
-    const retryQueue: File[] = [];
-    let successCount = 0;
+    setPartialErrorsByCategory((p) => {
+      const next = { ...p };
+      delete next[category];
+      return next;
+    });
+    setFileUploadStatesByCategory((p) => ({ ...p, [category]: [] }));
 
     try {
-      for (let i = 0; i < files.length; i++) {
-        const original = files[i];
+      const result = await uploadPatientPhotoFiles({
+        caseId,
+        category,
+        files,
+        submitterType,
+        onFileStateChange: (states) => {
+          setFileUploadStatesByCategory((p) => ({ ...p, [category]: states }));
+        },
+      });
 
-        try {
-          const { file, meta } = await preparePatientUploadFile(original);
-          if (meta.qualityWarning) {
-            setQualityWarnings((p) => ({ ...p, [category]: meta.qualityWarning! }));
-          }
-
-          const fd = new FormData();
-          fd.append("caseId", caseId);
-          fd.append("submitterType", submitterType);
-          fd.append("category", category);
-          fd.append("files[]", file);
-          appendPatientUploadMetadata(fd, meta);
-
-          const res = await fetch("/api/uploads/audit-photos", {
-            method: "POST",
-            body: fd,
-          });
-
-          const json = await res.json().catch(() => ({}));
-          if (!res.ok) {
-            const formatted = formatPatientUploadError(json);
-            throw new Error(formatted.message);
-          }
-
-          if (json.saved?.length) {
-            setUploads((prev) => [...json.saved, ...prev]);
-          }
-          successCount++;
-        } catch (e: unknown) {
-          const msg = (e as Error)?.message ?? "Upload failed";
-          errors.push(`${original.name}: ${msg}`);
-          retryQueue.push(original);
+      if (result.saved.length > 0) {
+        setUploads((prev) => [...result.saved, ...prev]);
+        if (result.qualityWarning) {
+          setQualityWarnings((p) => ({ ...p, [category]: result.qualityWarning! }));
         }
       }
 
-      if (successCount > 0) {
-        setCategorySuccess((p) => ({
-          ...p,
-          [category]:
-            successCount === 1
-              ? "Photo saved successfully."
-              : `${successCount} photos saved successfully.`,
-        }));
-        setFailedFilesByCategory((p) => {
-          const next = { ...p };
-          if (retryQueue.length === 0) delete next[category];
-          else next[category] = retryQueue;
-          return next;
-        });
+      if (result.confidenceMessage) {
+        setCategorySuccess((p) => ({ ...p, [category]: result.confidenceMessage! }));
+        if (submitterType === "patient") {
+          showToast(result.confidenceMessage, "success");
+        }
       }
 
-      if (errors.length > 0) {
+      if (result.partialErrors.length > 0) {
+        setPartialErrorsByCategory((p) => ({ ...p, [category]: result.partialErrors }));
+      }
+
+      if (result.failedFiles.length > 0) {
+        setFailedFilesByCategory((p) => ({ ...p, [category]: result.failedFiles }));
         setCategoryErrors((p) => ({
           ...p,
           [category]:
-            successCount > 0
-              ? `${successCount} saved, but ${errors.length} failed. Tap retry to try again.`
-              : errors[0] ?? "Upload failed. Please try again.",
+            result.successCount > 0
+              ? `${result.successCount} saved, but ${result.failedFiles.length} failed. Tap retry to try again.`
+              : result.partialErrors[0]?.error ?? "Upload failed. Please try again.",
         }));
-        if (retryQueue.length > 0) {
-          setFailedFilesByCategory((p) => ({ ...p, [category]: retryQueue }));
-        }
-      } else if (isRetry) {
+      } else if (isRetry || result.successCount > 0) {
         setFailedFilesByCategory((p) => {
           const next = { ...p };
           delete next[category];
@@ -249,24 +234,17 @@ export default function PhotoUploader({
       }
     } finally {
       setBusyCats((p) => ({ ...p, [category]: false }));
+      setFileUploadStatesByCategory((p) => {
+        const next = { ...p };
+        delete next[category];
+        return next;
+      });
     }
   }
 
-  async function deleteUpload(uploadId: string) {
+  function deleteUpload(uploadId: string) {
     if (isLocked) return;
-    if (!confirm("Delete this photo?")) return;
-
-    try {
-      const res = await fetch(
-        `/api/uploads/delete?uploadId=${encodeURIComponent(uploadId)}`,
-        { method: "DELETE" }
-      );
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json?.error ?? "Delete failed");
-      setUploads((prev) => prev.filter((u) => u.id !== uploadId));
-    } catch (e: unknown) {
-      alert((e as Error)?.message ?? "Could not delete");
-    }
+    setUploads((prev) => prev.filter((u) => u.id !== uploadId));
   }
 
   function patientImageQualityLabel(score: string): string {
@@ -411,33 +389,36 @@ export default function PhotoUploader({
           if (hidden) return null;
 
           return (
-            <PhotoCategoryCard
+            <UploadPhotoCard
               key={def.key}
               caseId={caseId}
               category={def.key}
               title={def.title}
               help={def.help}
               quickTips={def.quickTips}
-              required={def.required}
+              slotStatus={resolveSlotStatus(def, def.key, evidenceUi?.highlightKeys.has(def.key))}
               min={def.min}
               max={def.max}
               accept={def.accept ?? "image/*"}
               existing={uploadsByCategory[def.key] ?? []}
-              busy={!!busyCats[def.key]}
               locked={isLocked}
               emphasize={evidenceUi?.highlightKeys.has(def.key) ?? false}
               showCantProvide={def.required === false && submitterType === "patient"}
               errorMessage={categoryErrors[def.key]}
               successMessage={categorySuccess[def.key]}
               qualityWarning={qualityWarnings[def.key]}
+              partialErrors={partialErrorsByCategory[def.key]}
+              fileUploadStates={fileUploadStatesByCategory[def.key]}
               failedFiles={failedFilesByCategory[def.key]}
               onRetry={() => {
                 const failed = failedFilesByCategory[def.key];
                 if (failed?.length) void uploadFiles(def.key, failed, true);
               }}
+              onRetryFile={(file) => void uploadFiles(def.key, [file], true)}
               onSkip={() => toggleSkipped(def.key)}
               onUpload={(files) => uploadFiles(def.key, files)}
               onDeleted={deleteUpload}
+              onDeleteError={(msg) => showToast(msg)}
             />
           );
         })}
@@ -455,6 +436,19 @@ export default function PhotoUploader({
           skin="audit"
           extendedGroupOrderHint={patientPhotoStageGuidance?.extendedGroupOrderHint}
           highlightCategoryKeys={submitterType === "patient" ? evidenceUi?.highlightKeys : undefined}
+          categoryErrors={categoryErrors}
+          categorySuccess={categorySuccess}
+          qualityWarnings={qualityWarnings}
+          partialErrorsByCategory={partialErrorsByCategory}
+          fileUploadStatesByCategory={fileUploadStatesByCategory}
+          failedFilesByCategory={failedFilesByCategory}
+          onRetryCategory={(cat) => {
+            const failed = failedFilesByCategory[cat];
+            if (failed?.length) void uploadFiles(cat, failed, true);
+          }}
+          onRetryFile={(cat, file) => void uploadFiles(cat, [file], true)}
+          onDeleteError={(msg) => showToast(msg)}
+          caseId={caseId}
         />
       )}
 
@@ -532,225 +526,7 @@ export default function PhotoUploader({
         )}
       </footer>
       )}
+      <UploadErrorToast toast={toast} onDismiss={() => setToast(null)} />
     </div>
-  );
-}
-
-function PhotoCategoryCard({
-  caseId,
-  category,
-  title,
-  help,
-  quickTips,
-  required,
-  min,
-  max,
-  accept,
-  existing,
-  busy,
-  locked,
-  emphasize,
-  showCantProvide,
-  errorMessage,
-  successMessage,
-  qualityWarning,
-  failedFiles,
-  onRetry,
-  onSkip,
-  onUpload,
-  onDeleted,
-}: {
-  caseId: string;
-  category: string;
-  title: string;
-  help?: string;
-  quickTips?: readonly string[];
-  required: boolean;
-  min: number;
-  max: number;
-  accept: string;
-  existing: UploadRow[];
-  busy: boolean;
-  locked: boolean;
-  emphasize?: boolean;
-  showCantProvide: boolean;
-  errorMessage?: string;
-  successMessage?: string;
-  qualityWarning?: string;
-  failedFiles?: File[];
-  onRetry?: () => void;
-  onSkip: () => void;
-  onUpload: (files: File[]) => void;
-  onDeleted: (id: string) => void;
-}) {
-  const [drag, setDrag] = useState(false);
-  const remaining = Math.max(0, max - existing.length);
-  const disabled = locked || busy || remaining <= 0;
-  const borderCls =
-    emphasize && !locked
-      ? "border-amber-400 ring-2 ring-amber-400/70 bg-amber-50/25"
-      : errorMessage
-        ? "border-rose-300 bg-rose-50/30"
-        : successMessage
-          ? "border-emerald-300 bg-emerald-50/20"
-          : "border-slate-200";
-
-  const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files ?? []);
-    onUpload(files.slice(0, remaining));
-    e.target.value = "";
-  };
-
-  return (
-    <section
-      className={`rounded-xl border p-4 space-y-3 ${borderCls} ${locked ? "opacity-60" : ""}`}
-    >
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="font-semibold">
-          {title}{" "}
-          {required && <span className="text-xs text-amber-700">(required)</span>}
-        </h2>
-        {showCantProvide && (
-          <button
-            type="button"
-            onClick={onSkip}
-            className="text-xs text-slate-500 hover:text-slate-700"
-          >
-            I can&apos;t provide this
-          </button>
-        )}
-      </div>
-
-      {help && (
-        <p className="text-sm text-slate-600">{help}</p>
-      )}
-
-      {quickTips && quickTips.length > 0 && (
-        <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
-          {quickTips.map((t) => (
-            <li key={t} className="flex items-center gap-1">
-              <span className="text-amber-500">•</span> {t}
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <p className="text-sm text-slate-600">
-        {existing.length} / {max} max • min {min}
-        {existing.length >= min ? (
-          <span className="ml-2 text-emerald-600 font-medium">✓ Complete</span>
-        ) : null}
-      </p>
-
-      {qualityWarning ? (
-        <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900" role="note">
-          Advisory: {qualityWarning} You can still upload — a clearer photo helps your audit.
-        </p>
-      ) : null}
-
-      {errorMessage ? (
-        <div className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800" role="alert">
-          {errorMessage}
-          {failedFiles && failedFiles.length > 0 && onRetry ? (
-            <button
-              type="button"
-              onClick={onRetry}
-              disabled={busy}
-              className="mt-2 block rounded-md bg-rose-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-rose-800 disabled:opacity-50"
-            >
-              Retry failed upload{failedFiles.length > 1 ? "s" : ""}
-            </button>
-          ) : null}
-        </div>
-      ) : null}
-
-      {successMessage ? (
-        <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800" role="status">
-          {successMessage}
-        </p>
-      ) : null}
-
-      <div
-        className={`border-2 border-dashed rounded-lg p-4 text-sm ${
-          drag ? "border-slate-600 bg-slate-50" : "border-slate-300"
-        }`}
-        onDragOver={(e) => {
-          if (!locked) {
-            e.preventDefault();
-            setDrag(true);
-          }
-        }}
-        onDragLeave={() => setDrag(false)}
-        onDrop={(e) => {
-          if (locked) return;
-          e.preventDefault();
-          setDrag(false);
-          const files = Array.from(e.dataTransfer.files).filter((f) => acceptsFile(f, accept));
-          onUpload(files.slice(0, remaining));
-        }}
-      >
-        <div className="flex justify-between items-center">
-          <span>{existing.length} uploaded</span>
-          {!locked && remaining > 0 ? (
-            <div className="grid grid-cols-2 gap-2">
-              <label
-                htmlFor={`audit-photo-camera-${category}`}
-                className={`cursor-pointer rounded-md px-3 py-2 text-center text-xs font-semibold ${
-                  disabled
-                    ? "bg-gray-200 text-gray-500"
-                    : "border border-cyan-200 bg-cyan-50 text-cyan-900 hover:bg-cyan-100"
-                }`}
-              >
-                {busy ? "Uploading…" : "Take photo"}
-                <input
-                  id={`audit-photo-camera-${category}`}
-                  type="file"
-                  className="hidden"
-                  accept={accept}
-                  capture="environment"
-                  disabled={disabled}
-                  onChange={handleInput}
-                />
-              </label>
-              <label
-                htmlFor={`audit-photo-${category}`}
-                className={`cursor-pointer rounded-md px-3 py-2 text-center text-xs font-semibold ${
-                  disabled
-                    ? "bg-gray-200 text-gray-500"
-                    : "bg-slate-900 text-white hover:bg-slate-800"
-                }`}
-              >
-                Choose
-                <input
-                  id={`audit-photo-${category}`}
-                  type="file"
-                  className="hidden"
-                  accept={accept}
-                  multiple
-                  disabled={disabled}
-                  onChange={handleInput}
-                />
-              </label>
-            </div>
-          ) : (
-            <span className="text-xs text-slate-500">{locked ? "Locked" : "Maximum reached"}</span>
-          )}
-        </div>
-      </div>
-
-      {existing.length > 0 && (
-        <div className="grid grid-cols-3 gap-2">
-          {existing.slice(0, 6).map((u) => (
-            <UploadedThumb
-              key={u.id}
-              upload={u}
-              caseId={caseId}
-              locked={locked}
-              onDeleted={() => onDeleted(u.id)}
-            />
-          ))}
-        </div>
-      )}
-    </section>
   );
 }

@@ -6,7 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 
-import TrackedLink from "@/components/analytics/TrackedLink";
+import StartFreeAuditButton from "@/components/audit/StartFreeAuditButton";
 import LanguageSwitcher from "@/components/i18n/LanguageSwitcher";
 import { FI_HOME } from "@/config/platform-links";
 import { cn } from "@/lib/utils";
@@ -145,13 +145,12 @@ export default function HairAuditPublicHeader({
           >
             Sign in
           </Link>
-          <TrackedLink
-            href="/request-review"
+          <StartFreeAuditButton
             eventName="cta_start_free_audit_header"
-            className="inline-flex items-center justify-center rounded-full bg-amber-400 px-3 py-2 text-center text-xs font-semibold leading-tight text-slate-950 shadow-lg shadow-amber-500/15 transition hover:bg-amber-300 sm:px-4 sm:py-2.5 sm:text-sm"
+            className="inline-flex items-center justify-center rounded-full bg-amber-400 px-3 py-2 text-center text-xs font-semibold leading-tight text-slate-950 shadow-lg shadow-amber-500/15 transition hover:bg-amber-300 disabled:opacity-70 disabled:cursor-wait sm:px-4 sm:py-2.5 sm:text-sm"
           >
             Start Free Audit
-          </TrackedLink>
+          </StartFreeAuditButton>
           {!isMinimal ? (
             <button
               type="button"
@@ -233,13 +232,12 @@ export default function HairAuditPublicHeader({
               <div className="sm:hidden">
                 <LanguageSwitcher variant={isLight ? "light" : "default"} />
               </div>
-              <TrackedLink
-                href="/request-review"
+              <StartFreeAuditButton
                 eventName="cta_start_free_audit_mobile_menu"
-                className="block rounded-xl bg-amber-400 px-4 py-3 text-center text-sm font-semibold text-slate-950"
+                className="block w-full rounded-xl bg-amber-400 px-4 py-3 text-center text-sm font-semibold text-slate-950 disabled:opacity-70 disabled:cursor-wait"
               >
                 Start Free Audit
-              </TrackedLink>
+              </StartFreeAuditButton>
               <Link
                 href="/demo-report"
                 className="block rounded-xl border border-current/15 px-4 py-3 text-center text-sm font-semibold"

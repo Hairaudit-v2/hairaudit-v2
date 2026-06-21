@@ -63,7 +63,13 @@ export default async function Page({
       </section>
 
       <div className="mt-6">
-        <PatientAuditFormClient caseId={caseId} caseStatus={c.status ?? "draft"} submittedAt={c.submitted_at} />
+        <PatientAuditFormClient
+          caseId={caseId}
+          caseStatus={c.status ?? "draft"}
+          submittedAt={c.submitted_at}
+          minimal
+          nextHref={`/cases/${caseId}/patient/contact`}
+        />
       </div>
     </div>
   );

@@ -40,11 +40,8 @@ export default async function Page({ params }: PageProps) {
   return (
     <div className="max-w-4xl mx-auto px-4 py-6">
       <div className="mb-4">
-        <Link
-          href={`/cases/${caseId}/patient/questions`}
-          className="text-sm font-medium text-slate-600 hover:text-slate-900"
-        >
-          ← Back to questions
+        <Link href="/" className="text-sm font-medium text-slate-600 hover:text-slate-900">
+          ← Home
         </Link>
       </div>
 
@@ -54,9 +51,9 @@ export default async function Page({ params }: PageProps) {
         initialUploads={patientUploads}
         caseStatus={c.status ?? "draft"}
         submittedAt={c.submitted_at}
-        backHref={`/cases/${caseId}/patient/questions`}
-        nextHref={`/cases/${caseId}`}
-        nextLabel="3. Submit for audit"
+        backHref="/"
+        nextHref={`/cases/${caseId}/patient/questions`}
+        nextLabel="Continue to questions"
         patientPhotoStageGuidance={patientPhotoStageGuidance}
       />
     </div>

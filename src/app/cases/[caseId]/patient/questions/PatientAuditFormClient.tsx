@@ -41,14 +41,27 @@ function localizedSectionDescription(t: TranslateFn, section: { id: string; desc
   return tr === key ? section.description : tr;
 }
 
+/**
+ * Minimum-required sections for the friction-free first audit. The full
+ * questionnaire is deferred to the post-report patient dashboard.
+ */
+const MINIMAL_SECTION_IDS = new Set(["clinic_procedure"]);
+const MINIMAL_REQUIRED_FIELDS = ["clinic_name", "clinic_country", "clinic_city", "procedure_date", "procedure_type"] as const;
+
 export default function PatientAuditFormClient({
   caseId,
   caseStatus,
   submittedAt,
+  minimal = false,
+  nextHref,
 }: {
   caseId: string;
   caseStatus: string;
   submittedAt?: string | null;
+  /** Render only the minimum-required questions (friction-free first audit). */
+  minimal?: boolean;
+  /** Destination after the questions step (defaults to the photo-upload page). */
+  nextHref?: string;
 }) {
   const glassCard =
     "rounded-2xl border border-slate-300 bg-white shadow-sm";
@@ -65,8 +78,11 @@ export default function PatientAuditFormClient({
   const { t, locale } = useI18n();
 
   const visibleSections = useMemo(
-    () => PATIENT_AUDIT_SECTIONS.filter((s) => !s.advanced || showAdvanced),
-    [showAdvanced]
+    () =>
+      minimal
+        ? PATIENT_AUDIT_SECTIONS.filter((s) => MINIMAL_SECTION_IDS.has(s.id))
+        : PATIENT_AUDIT_SECTIONS.filter((s) => !s.advanced || showAdvanced),
+    [showAdvanced, minimal]
   );
   const STEPS = useMemo(
     () => [
@@ -137,16 +153,32 @@ export default function PatientAuditFormClient({
     return () => clearTimeout(t);
   }, [formData, locked, save]);
 
+  const target = nextHref ?? `/cases/${caseId}/patient/photos`;
+
   const goToPhotos = async () => {
     const payload = toNestedForApi(formData) as Record<string, unknown>;
-    const normalized = normalizePatientV2ForValidation(payload);
-    if (normalized.pain_level === undefined || normalized.pain_level === null) {
-      (payload as Record<string, unknown>).pain_level = 1;
-    }
-    const err = validatePatientAuditV2(normalized);
-    if (err) {
-      setMessage({ type: "err", text: err });
-      return;
+
+    if (minimal) {
+      // Minimum-required first audit: validate only the core fields; the full
+      // questionnaire is completed later in the patient dashboard.
+      const missing = MINIMAL_REQUIRED_FIELDS.filter((id) => {
+        const v = formData[id];
+        return v === undefined || v === null || (typeof v === "string" && v.trim() === "");
+      });
+      if (missing.length > 0) {
+        setMessage({ type: "err", text: t("dashboard.patient.forms.intake.minimalMissingRequired") });
+        return;
+      }
+    } else {
+      const normalized = normalizePatientV2ForValidation(payload);
+      if (normalized.pain_level === undefined || normalized.pain_level === null) {
+        (payload as Record<string, unknown>).pain_level = 1;
+      }
+      const err = validatePatientAuditV2(normalized);
+      if (err) {
+        setMessage({ type: "err", text: err });
+        return;
+      }
     }
     setMessage(null);
     setSaving(true);
@@ -158,7 +190,7 @@ export default function PatientAuditFormClient({
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json?.error ?? t("forms.shared.saveFailedGeneric"));
-      router.push(`/cases/${caseId}/patient/photos`);
+      router.push(target);
     } catch (e: unknown) {
       setMessage({ type: "err", text: (e as Error)?.message ?? t("forms.shared.saveFailedGeneric") });
     } finally {
@@ -206,6 +238,7 @@ export default function PatientAuditFormClient({
     <div className="max-w-4xl space-y-6">
       <header>
         <p className="text-sm text-slate-900">{t("dashboard.patient.forms.intake.introLine")}</p>
+        {!minimal && (
         <div className={`mt-3 p-4 ${glassCard}`}>
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -234,6 +267,7 @@ export default function PatientAuditFormClient({
             </button>
           </div>
         </div>
+        )}
         {locked && (
           <div className="mt-3 rounded-2xl border border-amber-300/30 bg-amber-50 p-4 text-sm text-amber-900">
             {t("dashboard.patient.forms.intake.lockedBanner")}
@@ -329,16 +363,26 @@ export default function PatientAuditFormClient({
       {isReviewStep && (
         <section className={`p-6 ${glassCard}`}>
           <h2 className="text-lg font-semibold text-slate-900 mb-2">
-            {t("dashboard.patient.forms.intake.photosSectionTitle")}
+            {minimal
+              ? t("dashboard.patient.forms.intake.minimalContinueTitle")
+              : t("dashboard.patient.forms.intake.photosSectionTitle")}
           </h2>
-          <p className="text-sm text-slate-800 mb-4">{t("dashboard.patient.forms.intake.photosSectionBody")}</p>
+          <p className="text-sm text-slate-800 mb-4">
+            {minimal
+              ? t("dashboard.patient.forms.intake.minimalContinueBody")
+              : t("dashboard.patient.forms.intake.photosSectionBody")}
+          </p>
           <button
             type="button"
             onClick={goToPhotos}
             disabled={saving || locked}
             className="rounded-xl px-5 py-3 text-sm font-semibold text-slate-950 bg-gradient-to-r from-cyan-300 to-emerald-300 hover:from-cyan-200 hover:to-emerald-200 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
           >
-            {saving ? t("forms.shared.saving") : t("dashboard.patient.forms.intake.addPhotosCta")}
+            {saving
+              ? t("forms.shared.saving")
+              : minimal
+                ? t("dashboard.patient.forms.intake.minimalContinueCta")
+                : t("dashboard.patient.forms.intake.addPhotosCta")}
           </button>
         </section>
       )}

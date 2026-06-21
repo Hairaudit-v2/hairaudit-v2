@@ -1,6 +1,7 @@
 import { inngest } from "@/lib/inngest/client";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { notifyPatientReportReady } from "@/lib/email";
+import { notifyPatientReportReady, notifyPatientVerifyEmail } from "@/lib/email";
+import { getCanonicalAppUrl } from "@/lib/auth/redirects";
 import { getCaseFilesBucketNameForReadOnlyUse } from "@/lib/hairaudit/uploadStorage";
 import { Buffer } from "buffer";
 
@@ -197,11 +198,37 @@ export const caseSubmitted = inngest.createFunction(
 
       const meta = user?.user?.user_metadata as Record<string, unknown> | undefined;
       const firstName = meta?.first_name ?? meta?.name;
+      const firstNameStr = firstName != null ? String(firstName).trim() || null : null;
+
       await notifyPatientReportReady({
         to: email.trim(),
         caseId,
-        firstName: firstName != null ? String(firstName).trim() || null : null,
+        firstName: firstNameStr,
       });
+
+      // Friction-free first audit: the account was auto-created with an
+      // unconfirmed email at the contact step. Now that the report exists,
+      // send the verification (magic) link. Non-blocking: viewing the report
+      // never depended on it.
+      if (!user?.user?.email_confirmed_at) {
+        try {
+          const redirectTo = `${getCanonicalAppUrl()}/auth/callback?next=${encodeURIComponent(`/cases/${caseId}`)}`;
+          const { data: linkData, error: linkErr } = await supabase.auth.admin.generateLink({
+            type: "magiclink",
+            email: email.trim(),
+            options: { redirectTo },
+          });
+          const actionLink = linkData?.properties?.action_link;
+          if (!linkErr && actionLink) {
+            await notifyPatientVerifyEmail({ to: email.trim(), actionLink, firstName: firstNameStr });
+          } else if (linkErr) {
+            console.error("[caseSubmitted] generateLink failed", { caseId, error: linkErr.message });
+          }
+        } catch (e) {
+          console.error("[caseSubmitted] verification email failed (non-fatal)", { caseId, error: e });
+        }
+      }
+
       return { sent: true };
     });
 

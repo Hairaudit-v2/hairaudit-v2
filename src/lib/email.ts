@@ -189,6 +189,62 @@ export async function notifyPatientReportReady({
   });
 }
 
+export type NotifyPatientVerifyEmailParams = {
+  to: string;
+  /** Supabase action link (magic link) that verifies the email and signs the patient in. */
+  actionLink: string;
+  firstName?: string | null;
+};
+
+/**
+ * Send the account verification email for the friction-free first audit. Sent
+ * AFTER report generation so value is delivered before any friction. Clicking
+ * the link confirms the patient's email and signs them in.
+ */
+export async function notifyPatientVerifyEmail({
+  to,
+  actionLink,
+  firstName,
+}: NotifyPatientVerifyEmailParams): Promise<boolean> {
+  const greeting = firstName && String(firstName).trim() ? `Hi ${escapeHtml(String(firstName).trim())},` : "Hi,";
+  const safeLink = actionLink;
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Verify your HairAudit account</title></head>
+<body style="margin:0; padding:0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 16px; line-height: 1.5; color: #1a1a1a; background-color: #f5f5f5;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f5f5f5;">
+    <tr><td style="padding: 24px 16px;">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width: 560px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+        <tr><td style="padding: 32px 24px;">
+          <p style="margin: 0 0 24px 0; font-size: 15px; color: #4b5563;">${greeting}</p>
+          <h1 style="margin: 0 0 16px 0; font-size: 22px; font-weight: 700; color: #111827; line-height: 1.3;">Confirm your email to secure your account</h1>
+          <p style="margin: 0 0 20px 0; font-size: 15px; color: #374151;">Your HairAudit account was created automatically with this email. Confirm it to keep secure access to your report and audit history.</p>
+          <table role="presentation" cellspacing="0" cellpadding="0" style="margin: 0 0 24px 0;">
+            <tr><td style="border-radius: 6px; background-color: #059669;">
+              <a href="${safeLink}" target="_blank" rel="noopener noreferrer" style="display: inline-block; padding: 14px 28px; font-size: 16px; font-weight: 600; color: #ffffff; text-decoration: none;">Confirm my email</a>
+            </td></tr>
+          </table>
+          <p style="margin: 0 0 8px 0; font-size: 13px; color: #9ca3af;">If the button doesn’t work, copy and paste this link into your browser:</p>
+          <p style="margin: 0 0 24px 0; font-size: 13px; color: #059669; word-break: break-all;"><a href="${safeLink}" style="color: #059669;">${safeLink}</a></p>
+          <p style="margin: 0; font-size: 13px; color: #6b7280;">— HairAudit</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+  const text =
+    `${greeting}\n\n` +
+    `Confirm your email to secure your HairAudit account.\n\n` +
+    `Confirm: ${safeLink}\n\n` +
+    `— HairAudit`;
+
+  return sendEmail({ to, subject: "Confirm your HairAudit account", html, text });
+}
+
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, "&amp;")

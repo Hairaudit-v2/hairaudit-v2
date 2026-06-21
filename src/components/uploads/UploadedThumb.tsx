@@ -16,13 +16,18 @@ export default function UploadedThumb({
   locked,
   onDeleted,
   onPreview,
+  deleteMode = "native",
+  onDeleteRequest,
 }: {
   upload: ThumbUpload;
   caseId?: string;
   locked?: boolean;
-  onDeleted: () => void;
+  onDeleted?: () => void;
   /** When provided, clicking the image opens a larger preview instead of nothing. */
   onPreview?: () => void;
+  /** `parent` delegates delete confirmation to the parent (no native confirm/alert). */
+  deleteMode?: "native" | "parent";
+  onDeleteRequest?: () => void;
 }) {
   const [url, setUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -52,6 +57,10 @@ export default function UploadedThumb({
 
   async function del() {
     if (locked) return;
+    if (deleteMode === "parent") {
+      onDeleteRequest?.();
+      return;
+    }
     if (!confirm("Delete this photo?")) return;
 
     setBusy(true);
@@ -61,7 +70,7 @@ export default function UploadedThumb({
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json?.error ?? "Delete failed");
-      onDeleted();
+      onDeleted?.();
     } catch (e) {
       alert((e as Error)?.message ?? "Delete failed");
     } finally {

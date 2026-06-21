@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import UploadedThumb from "@/components/uploads/UploadedThumb";
+import React from "react";
+import UploadPhotoCard, { type PhotoSlotStatus } from "@/components/patient/upload/UploadPhotoCard";
 import { isExtendedPatientUploadsEnabled } from "@/lib/features/enableExtendedPatientUploads";
 import type { PatientUploadCategoryKey } from "@/lib/patientPhotoCategoryConfig";
 import {
@@ -10,6 +10,7 @@ import {
   type PatientExtendedUploadGroupId,
 } from "@/lib/patientExtendedUploadUi";
 import { orderExtendedUploadGroupsByHint } from "@/lib/patientPhoto/patientPhotoUploadGuidance";
+import type { PerFileUploadState } from "@/lib/uploads/uploadPatientPhotos";
 
 type UploadRow = {
   id: string;
@@ -21,9 +22,18 @@ type UploadRow = {
 
 type Skin = "audit" | "legacy";
 
-function acceptsImage(file: File, accept: string): boolean {
-  if (!accept || accept === "*/*" || accept === "image/*") return file.type.startsWith("image/");
-  return file.type.startsWith("image/");
+function resolveOptionalSlotStatus(
+  minFiles: number,
+  existingCount: number,
+  busy: boolean,
+  failedCount: number,
+  emphasize: boolean
+): PhotoSlotStatus {
+  if (busy) return "uploading";
+  if (failedCount > 0) return "needs_retry";
+  if (existingCount >= minFiles && existingCount > 0) return "complete";
+  if (emphasize) return "recommended";
+  return "optional";
 }
 
 export default function ExtendedPatientPhotoUploadGroups({
@@ -36,12 +46,17 @@ export default function ExtendedPatientPhotoUploadGroups({
   skin = "audit",
   extendedGroupOrderHint,
   highlightCategoryKeys,
+  caseId,
+  categoryErrors,
+  categorySuccess,
+  qualityWarnings,
+  partialErrorsByCategory,
+  fileUploadStatesByCategory,
+  failedFilesByCategory,
+  onRetryCategory,
+  onRetryFile,
+  onDeleteError,
 }: {
-  /**
-   * Optional override when env is off: pass `true` to force extended UI (e.g. stories).
-   * When `NEXT_PUBLIC_ENABLE_EXTENDED_PATIENT_UPLOADS` is true, extended UI always shows;
-   * passing `false` does not disable (env wins).
-   */
   enabled?: boolean;
   locked: boolean;
   busyCats: Record<string, boolean>;
@@ -49,10 +64,18 @@ export default function ExtendedPatientPhotoUploadGroups({
   onUpload: (category: PatientUploadCategoryKey, files: File[]) => void;
   onDeleted: (uploadId: string) => void;
   skin?: Skin;
-  /** Intake-driven accordion order (additive); default order when omitted. */
   extendedGroupOrderHint?: readonly PatientExtendedUploadGroupId[] | null;
-  /** Optional: emphasize optional category cards that would help close evidence gaps (advisory). */
   highlightCategoryKeys?: ReadonlySet<string>;
+  caseId?: string;
+  categoryErrors?: Record<string, string>;
+  categorySuccess?: Record<string, string>;
+  qualityWarnings?: Record<string, string>;
+  partialErrorsByCategory?: Record<string, Array<{ file: string; error: string }>>;
+  fileUploadStatesByCategory?: Record<string, PerFileUploadState[]>;
+  failedFilesByCategory?: Record<string, File[]>;
+  onRetryCategory?: (category: string) => void;
+  onRetryFile?: (category: string, file: File) => void;
+  onDeleteError?: (message: string) => void;
 }) {
   const envEnabled = isExtendedPatientUploadsEnabled();
   const enabled = envEnabled || enabledProp === true;
@@ -74,9 +97,13 @@ export default function ExtendedPatientPhotoUploadGroups({
       : "cursor-pointer list-none px-4 py-3 font-medium text-gray-800 hover:bg-gray-100/80 [&::-webkit-details-marker]:hidden";
 
   return (
-    <section className={`mt-8 space-y-4 ${skin === "audit" ? "border-t border-slate-200 pt-8" : "border-t border-gray-200 pt-8"}`}>
+    <section
+      className={`mt-8 space-y-4 ${skin === "audit" ? "border-t border-slate-200 pt-8" : "border-t border-gray-200 pt-8"}`}
+    >
       <div className={`rounded-lg p-4 ${shell}`}>
-        <p className={`text-xs font-semibold uppercase tracking-wide ${skin === "audit" ? "text-slate-500" : "text-gray-500"}`}>
+        <p
+          className={`text-xs font-semibold uppercase tracking-wide ${skin === "audit" ? "text-slate-500" : "text-gray-500"}`}
+        >
           {PATIENT_EXTENDED_UPLOAD_MICROCOPY.eyebrow}
         </p>
         <p className={`mt-1 text-sm ${skin === "audit" ? "text-slate-700" : "text-gray-700"}`}>
@@ -90,7 +117,9 @@ export default function ExtendedPatientPhotoUploadGroups({
             <span className="flex items-center justify-between gap-2">
               <span>
                 {group.title}{" "}
-                <span className={`text-xs font-normal ${skin === "audit" ? "text-slate-500" : "text-gray-500"}`}>
+                <span
+                  className={`text-xs font-normal ${skin === "audit" ? "text-slate-500" : "text-gray-500"}`}
+                >
                   (optional)
                 </span>
               </span>
@@ -98,7 +127,9 @@ export default function ExtendedPatientPhotoUploadGroups({
                 ▸
               </span>
             </span>
-            <span className={`mt-1 block text-xs font-normal ${skin === "audit" ? "text-slate-600" : "text-gray-600"}`}>
+            <span
+              className={`mt-1 block text-xs font-normal ${skin === "audit" ? "text-slate-600" : "text-gray-600"}`}
+            >
               {group.groupDescription}
             </span>
           </summary>
@@ -106,148 +137,54 @@ export default function ExtendedPatientPhotoUploadGroups({
           <div className="space-y-4 border-t border-slate-200/80 px-3 py-4">
             {group.categories.map((cat) => {
               const k = cat.key as PatientUploadCategoryKey;
+              const existing = uploadsByCategory[cat.key] ?? [];
+              const emphasize = highlightCategoryKeys?.has(cat.key) ?? false;
+              const busy = !!busyCats[cat.key];
+              const failedCount = failedFilesByCategory?.[cat.key]?.length ?? 0;
+
               return (
-              <OptionalCategoryCard
-                key={cat.key}
-                skin={skin}
-                categoryKey={k}
-                title={cat.label}
-                description={cat.description}
-                tips={cat.tips}
-                accept={cat.accept}
-                maxFiles={cat.maxFiles}
-                minFiles={cat.minFiles}
-                existing={uploadsByCategory[cat.key] ?? []}
-                busy={!!busyCats[cat.key]}
-                locked={locked}
-                emphasize={highlightCategoryKeys?.has(cat.key) ?? false}
-                onUpload={(files) => onUpload(k, files)}
-                onDeleted={onDeleted}
-              />
-            );
+                <UploadPhotoCard
+                  key={cat.key}
+                  caseId={caseId ?? ""}
+                  category={cat.key}
+                  title={cat.label}
+                  help={cat.description}
+                  quickTips={cat.tips}
+                  slotStatus={resolveOptionalSlotStatus(
+                    cat.minFiles,
+                    existing.length,
+                    busy,
+                    failedCount,
+                    emphasize
+                  )}
+                  min={cat.minFiles}
+                  max={cat.maxFiles}
+                  accept={cat.accept}
+                  existing={existing}
+                  locked={locked}
+                  emphasize={emphasize}
+                  errorMessage={categoryErrors?.[cat.key]}
+                  successMessage={categorySuccess?.[cat.key]}
+                  qualityWarning={qualityWarnings?.[cat.key]}
+                  partialErrors={partialErrorsByCategory?.[cat.key]}
+                  fileUploadStates={fileUploadStatesByCategory?.[cat.key]}
+                  failedFiles={failedFilesByCategory?.[cat.key]}
+                  onRetry={
+                    onRetryCategory ? () => onRetryCategory(cat.key) : undefined
+                  }
+                  onRetryFile={
+                    onRetryFile ? (file) => onRetryFile(cat.key, file) : undefined
+                  }
+                  onUpload={(files) => onUpload(k, files)}
+                  onDeleted={onDeleted}
+                  onDeleteError={onDeleteError}
+                  compact
+                />
+              );
             })}
           </div>
         </details>
       ))}
-    </section>
-  );
-}
-
-function OptionalCategoryCard({
-  skin,
-  categoryKey,
-  title,
-  description,
-  tips,
-  accept,
-  maxFiles,
-  minFiles,
-  existing,
-  busy,
-  locked,
-  emphasize,
-  onUpload,
-  onDeleted,
-}: {
-  skin: Skin;
-  categoryKey: PatientUploadCategoryKey;
-  title: string;
-  description: string;
-  tips: readonly string[];
-  accept: string;
-  maxFiles: number;
-  minFiles: number;
-  existing: UploadRow[];
-  busy: boolean;
-  locked: boolean;
-  emphasize?: boolean;
-  onUpload: (files: File[]) => void;
-  onDeleted: (id: string) => void;
-}) {
-  const [drag, setDrag] = useState(false);
-  const border = skin === "audit" ? "border-slate-100" : "border-gray-100";
-  const muted = skin === "audit" ? "text-slate-600" : "text-gray-600";
-
-  const emphasisRing =
-    emphasize && !locked
-      ? skin === "audit"
-        ? "ring-2 ring-amber-400/90 border-amber-300/80 bg-amber-50/30 shadow-sm"
-        : "ring-2 ring-amber-400/90 border-amber-300/80 bg-amber-50/40 shadow-sm"
-      : "";
-
-  return (
-    <section
-      className={`rounded-lg border ${border} bg-white/60 p-3 space-y-2 ${locked ? "opacity-60" : ""} ${emphasisRing}`}
-    >
-      <h3 className={`text-sm font-semibold ${skin === "audit" ? "text-slate-800" : "text-gray-900"}`}>
-        {title}{" "}
-        <span className={`text-xs font-normal ${muted}`}>(optional)</span>
-      </h3>
-      <p className={`text-xs ${muted}`}>{description}</p>
-      <ul className={`list-disc pl-4 text-xs ${muted}`}>
-        {tips.map((t) => (
-          <li key={t}>{t}</li>
-        ))}
-      </ul>
-      <p className={`text-xs ${muted}`}>
-        {existing.length} uploaded
-        {minFiles > 0 ? ` • min ${minFiles}` : null} • up to {maxFiles} files
-      </p>
-      <div
-        className={`border border-dashed rounded-lg p-3 text-xs ${
-          drag ? (skin === "audit" ? "border-slate-500 bg-slate-50" : "border-gray-700 bg-gray-50") : border
-        }`}
-        onDragOver={(e) => {
-          if (locked) return;
-          e.preventDefault();
-          setDrag(true);
-        }}
-        onDragLeave={() => setDrag(false)}
-        onDrop={(e) => {
-          if (locked) return;
-          e.preventDefault();
-          setDrag(false);
-          const files = Array.from(e.dataTransfer.files).filter((f) => acceptsImage(f, accept));
-          const room = maxFiles - existing.length;
-          onUpload(files.slice(0, Math.max(0, room)));
-        }}
-      >
-        <div className="flex justify-between items-center gap-2">
-          <label
-            htmlFor={`ext-patient-photo-${categoryKey}`}
-            className={`px-2 py-1.5 rounded-md text-xs font-medium ${
-              locked || busy
-                ? "bg-gray-200 text-gray-500"
-                : skin === "audit"
-                  ? "bg-slate-700 text-white hover:bg-slate-600 cursor-pointer"
-                  : "bg-gray-900 text-white hover:bg-gray-800 cursor-pointer"
-            }`}
-          >
-            {locked ? "Locked" : busy ? "Uploading…" : "Choose files"}
-            <input
-              id={`ext-patient-photo-${categoryKey}`}
-              type="file"
-              className="hidden"
-              accept={accept}
-              multiple
-              disabled={locked || busy}
-              onChange={(e) => {
-                const files = Array.from(e.target.files ?? []).filter((f) => acceptsImage(f, accept));
-                const room = maxFiles - existing.length;
-                onUpload(files.slice(0, Math.max(0, room)));
-                e.target.value = "";
-              }}
-            />
-          </label>
-        </div>
-      </div>
-      {existing.length > 0 && (
-        <div className="grid grid-cols-3 gap-2">
-          {existing.slice(0, 6).map((u) => (
-            <UploadedThumb key={u.id} upload={u} locked={locked} onDeleted={() => onDeleted(u.id)} />
-          ))}
-        </div>
-      )}
     </section>
   );
 }

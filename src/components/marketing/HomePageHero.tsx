@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import TrackedLink from "@/components/analytics/TrackedLink";
+import StartFreeAuditButton from "@/components/audit/StartFreeAuditButton";
 import { useI18n } from "@/components/i18n/I18nProvider";
 
 /**
@@ -20,13 +20,12 @@ export default function HomePageHero() {
         <p className="mt-4 text-slate-400 max-w-lg mx-auto">{t("marketing.home.heroSupporting")}</p>
 
         <div className="mt-12 flex flex-col sm:flex-row gap-4 justify-center items-center">
-          <TrackedLink
-            href="/request-review"
+          <StartFreeAuditButton
             eventName="cta_start_audit_hero"
-            className="inline-flex items-center justify-center px-10 py-4 rounded-2xl bg-amber-500 text-slate-900 font-semibold text-lg hover:bg-amber-400 transition-colors border border-amber-400/50 shadow-lg shadow-amber-500/20"
+            className="inline-flex items-center justify-center px-10 py-4 rounded-2xl bg-amber-500 text-slate-900 font-semibold text-lg hover:bg-amber-400 transition-colors border border-amber-400/50 shadow-lg shadow-amber-500/20 disabled:opacity-70 disabled:cursor-wait"
           >
             {t("marketing.home.ctaStartAudit")}
-          </TrackedLink>
+          </StartFreeAuditButton>
           <Link
             href="/demo-report"
             className="inline-flex items-center justify-center px-8 py-4 rounded-2xl border-2 border-slate-500 text-slate-200 font-medium hover:border-amber-500/50 hover:text-amber-400 transition-colors"

@@ -952,6 +952,10 @@
           "photosSectionTitle": "2. Add your photos",
           "photosSectionBody": "Pre-procedure, surgery, and post-procedure images go in the next step.",
           "addPhotosCta": "Add your photos →",
+          "minimalMissingRequired": "Please answer the required questions to continue.",
+          "minimalContinueTitle": "Almost done",
+          "minimalContinueBody": "Next, tell us where to send your report.",
+          "minimalContinueCta": "Continue →",
           "saveFailedStatus": "Save failed ({{status}})"
         },
         "reviewSummary": {

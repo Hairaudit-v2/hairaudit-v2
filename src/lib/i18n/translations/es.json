@@ -950,6 +950,10 @@
           "photosSectionTitle": "2. Añada sus fotos",
           "photosSectionBody": "Las imágenes preoperatorias, intraoperatorias y postoperatorias se añaden en el siguiente paso.",
           "addPhotosCta": "Añadir fotos →",
+          "minimalMissingRequired": "Responda las preguntas obligatorias para continuar.",
+          "minimalContinueTitle": "Casi listo",
+          "minimalContinueBody": "A continuación, indíquenos a dónde enviar su informe.",
+          "minimalContinueCta": "Continuar →",
           "saveFailedStatus": "Error al guardar ({{status}})"
         },
         "reviewSummary": {

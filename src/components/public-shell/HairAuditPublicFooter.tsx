@@ -3,6 +3,7 @@
 import Link from "next/link";
 
 import TrackedLink from "@/components/analytics/TrackedLink";
+import StartFreeAuditButton from "@/components/audit/StartFreeAuditButton";
 import { FI_HOME } from "@/config/platform-links";
 import { PLATFORM_ECOSYSTEM } from "@/lib/constants/platform";
 import { cn } from "@/lib/utils";
@@ -57,13 +58,12 @@ export default function HairAuditPublicFooter({ theme = "default" }: HairAuditPu
               </p>
             </div>
             <div className="flex min-w-0 flex-col flex-wrap gap-3 sm:flex-row">
-              <TrackedLink
-                href="/request-review"
+              <StartFreeAuditButton
                 eventName="cta_start_free_audit_footer"
-                className="inline-flex min-w-0 max-w-full shrink-0 items-center justify-center break-words rounded-full bg-amber-400 px-5 py-3 text-center text-sm font-semibold text-slate-950 transition hover:bg-amber-300"
+                className="inline-flex min-w-0 max-w-full shrink-0 items-center justify-center break-words rounded-full bg-amber-400 px-5 py-3 text-center text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:opacity-70 disabled:cursor-wait"
               >
                 Start Free Audit
-              </TrackedLink>
+              </StartFreeAuditButton>
               <Link
                 href="/demo-report"
                 className={cn(

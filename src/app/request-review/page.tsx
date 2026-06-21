@@ -6,6 +6,7 @@ import MedicalProcedureFaqSchema from "@/components/seo/MedicalProcedureFaqSchem
 import BreadcrumbListSchema from "@/components/seo/BreadcrumbListSchema";
 import { createPageMetadata } from "@/lib/seo/pageMetadata";
 import TrackedLink from "@/components/analytics/TrackedLink";
+import StartFreeAuditButton from "@/components/audit/StartFreeAuditButton";
 import { GeoContextLine } from "@/components/patient-education/GeoContentBlocks";
 import PatientPhotoChecklist from "@/components/marketing/PatientPhotoChecklist";
 import PatientTrustPointsBlock from "@/components/marketing/PatientTrustPointsBlock";
@@ -32,8 +33,6 @@ const requestFaqs = [
     answer: "Yes. HairAudit is independent and does not sell surgery, clinic referrals, or promotional placements.",
   },
 ];
-
-const SIGNUP_AUDIT = "/signup?from=request-review";
 
 export default function RequestReviewPage() {
   return (
@@ -86,13 +85,12 @@ export default function RequestReviewPage() {
               discussing with your clinician. HairAudit does not sell surgery, clinic referrals, or remote diagnoses.
             </p>
             <div className="mt-6 flex flex-col sm:flex-row flex-wrap gap-3">
-              <TrackedLink
-                href={SIGNUP_AUDIT}
+              <StartFreeAuditButton
                 eventName="cta_start_free_audit_request_review_primary"
-                className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl bg-amber-400 text-slate-950 font-semibold hover:bg-amber-300 transition-colors shadow-lg shadow-amber-500/20"
+                className="inline-flex items-center justify-center px-6 py-3.5 rounded-2xl bg-amber-400 text-slate-950 font-semibold hover:bg-amber-300 transition-colors shadow-lg shadow-amber-500/20 disabled:opacity-70 disabled:cursor-wait"
               >
                 Start Free Audit
-              </TrackedLink>
+              </StartFreeAuditButton>
               <TrackedLink
                 href="/demo-report"
                 eventName="cta_view_sample_report_request_review_primary"
@@ -110,10 +108,10 @@ export default function RequestReviewPage() {
           <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
             <h2 className="text-base font-semibold text-white">What happens next</h2>
             <ol className="mt-4 space-y-2.5 text-sm text-slate-300 leading-relaxed">
-              <li>1. Create your account and start the secure upload.</li>
-              <li>2. Add surgery details and submit when you are ready.</li>
-              <li>3. HairAudit reviews the evidence through a structured process.</li>
-              <li>4. You receive clear, confidence-aware guidance for your next conversation.</li>
+              <li>1. Start the secure upload straight away — no account needed.</li>
+              <li>2. Add a few key surgery details.</li>
+              <li>3. Tell us where to send your report, and we create your account automatically.</li>
+              <li>4. HairAudit reviews the evidence and you receive clear, confidence-aware guidance.</li>
             </ol>
           </div>
 
@@ -200,13 +198,12 @@ export default function RequestReviewPage() {
         style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
       >
         <div className="mx-auto max-w-4xl">
-          <TrackedLink
-            href={SIGNUP_AUDIT}
+          <StartFreeAuditButton
             eventName="cta_start_free_audit_request_review_sticky_mobile"
-            className="flex w-full items-center justify-center rounded-xl bg-amber-400 py-3.5 text-sm font-semibold text-slate-950 hover:bg-amber-300 transition-colors"
+            className="flex w-full items-center justify-center rounded-xl bg-amber-400 py-3.5 text-sm font-semibold text-slate-950 hover:bg-amber-300 transition-colors disabled:opacity-70 disabled:cursor-wait"
           >
             Start Free Audit
-          </TrackedLink>
+          </StartFreeAuditButton>
         </div>
       </div>
 

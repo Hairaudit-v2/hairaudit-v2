@@ -6,15 +6,20 @@ import {
   PATIENT_PHOTO_CATEGORIES,
   PatientPhotoCategory,
 } from "@/lib/photoCategories";
-import UploadedThumb from "@/components/uploads/UploadedThumb";
 import ExtendedPatientPhotoUploadGroups from "@/components/patient/ExtendedPatientPhotoUploadGroups";
 import PatientImageEvidenceNudgeCallout from "@/components/patient/PatientImageEvidenceNudgeCallout";
 import { computePatientImageEvidenceQualityFromCaseUploads } from "@/lib/audit/patientImageEvidenceConfidence";
 import { buildPatientImageEvidenceUploadNudges } from "@/lib/audit/patientImageEvidenceUploadNudges";
 import { isPatientImageEvidenceNudgesEnabled } from "@/lib/features/enablePatientImageEvidenceNudges";
 import type { PatientPhotoUploadGuidancePanel } from "@/lib/patientPhoto/patientPhotoUploadGuidance";
+import { caseSubmitSurfaceOpen } from "@/lib/patient/caseSubmitStatus";
+import UploadPhotoCard, { type PhotoSlotStatus } from "@/components/patient/upload/UploadPhotoCard";
+import UploadErrorToast, { type UploadToast } from "@/components/patient/upload/UploadErrorToast";
+import {
+  uploadPatientPhotoFiles,
+  type PerFileUploadState,
+} from "@/lib/uploads/uploadPatientPhotos";
 
-/** Visual grouping only — same keys and submit rules as flat `PATIENT_PHOTO_CATEGORIES`. */
 const PATIENT_PHOTO_SECTIONS: {
   heading: string;
   sub: string;
@@ -22,32 +27,28 @@ const PATIENT_PHOTO_SECTIONS: {
 }[] = [
   {
     heading: "Before Surgery — Main angles (Required)",
-    sub: "Photos taken before your transplant: front, top, and back of head. Use the same three angles you will repeat over time (for example after surgery).",
+    sub: "Photos taken before your transplant: front, top, and back of head.",
     keys: ["preop_front", "preop_top", "preop_donor_rear"],
   },
   {
     heading: "Before Surgery Photos (Optional)",
-    sub: "These are photos taken before your hair transplant (left, right, and crown). They are still required for the Basic Audit checklist.",
+    sub: "Left, right, and crown angles help strengthen your review.",
     keys: ["preop_left", "preop_right", "preop_crown"],
   },
   {
     heading: "After Surgery / Progress Photos (Optional)",
-    sub: "Surgery-day slots are required where marked; other items in this section are optional add-ons (during procedure, first few days). Later-month photos are in the optional sections below.",
+    sub: "Surgery-day and early healing photos when you have them.",
     keys: ["day0_recipient", "day0_donor", "intraop", "postop_day0"],
   },
 ];
 
-/* ---------------- Types ---------------- */
-
 type UploadRow = {
   id: string;
-  type: string; // "patient_photo:preop_front"
+  type: string;
   storage_path: string;
-  metadata: any;
+  metadata: unknown;
   created_at: string;
 };
-
-/* ---------------- Helpers ---------------- */
 
 function categoryFromType(type: string): PatientPhotoCategory | null {
   const prefix = "patient_photo:";
@@ -55,7 +56,19 @@ function categoryFromType(type: string): PatientPhotoCategory | null {
   return type.slice(prefix.length) as PatientPhotoCategory;
 }
 
-/* ---------------- Main ---------------- */
+function resolveSlotStatus(
+  required: boolean,
+  minFiles: number,
+  existingCount: number,
+  busy: boolean,
+  failedCount: number
+): PhotoSlotStatus {
+  if (busy) return "uploading";
+  if (failedCount > 0) return "needs_retry";
+  if (existingCount >= minFiles && existingCount > 0) return "complete";
+  if (required) return "required";
+  return "optional";
+}
 
 export default function PatientPhotoUpload({
   caseId,
@@ -72,8 +85,19 @@ export default function PatientPhotoUpload({
 }) {
   const [uploads, setUploads] = useState(initialUploads);
   const [busyCats, setBusyCats] = useState<Record<string, boolean>>({});
+  const [categoryErrors, setCategoryErrors] = useState<Record<string, string>>({});
+  const [categorySuccess, setCategorySuccess] = useState<Record<string, string>>({});
+  const [qualityWarnings, setQualityWarnings] = useState<Record<string, string>>({});
+  const [failedFilesByCategory, setFailedFilesByCategory] = useState<Record<string, File[]>>({});
+  const [partialErrorsByCategory, setPartialErrorsByCategory] = useState<
+    Record<string, Array<{ file: string; error: string }>>
+  >({});
+  const [fileUploadStatesByCategory, setFileUploadStatesByCategory] = useState<
+    Record<string, PerFileUploadState[]>
+  >({});
+  const [toast, setToast] = useState<UploadToast | null>(null);
 
-  const isLocked = caseStatus === "submitted" || !!submittedAt;
+  const isLocked = !caseSubmitSurfaceOpen({ status: caseStatus, submitted_at: submittedAt });
 
   const uploadsByCategory = useMemo(() => {
     const map: Record<string, UploadRow[]> = {};
@@ -86,9 +110,9 @@ export default function PatientPhotoUpload({
   }, [uploads]);
 
   const requiredOk = useMemo(() => {
-    return PATIENT_PHOTO_CATEGORIES
-      .filter((c) => c.required)
-      .every((c) => (uploadsByCategory[c.key]?.length ?? 0) > 0);
+    return PATIENT_PHOTO_CATEGORIES.filter((c) => c.required).every(
+      (c) => (uploadsByCategory[c.key]?.length ?? 0) > 0
+    );
   }, [uploadsByCategory]);
 
   const evidenceNudges = useMemo(() => {
@@ -105,77 +129,112 @@ export default function PatientPhotoUpload({
     return m;
   }, []);
 
-  async function uploadFiles(category: PatientPhotoCategory, files: File[]) {
+  function showToast(message: string, variant: UploadToast["variant"] = "error") {
+    setToast({ id: `${Date.now()}`, message, variant });
+  }
+
+  async function uploadFiles(category: PatientPhotoCategory, files: File[], isRetry = false) {
     if (isLocked || !files.length) return;
 
     setBusyCats((p) => ({ ...p, [category]: true }));
-    try {
-      const fd = new FormData();
-      fd.append("caseId", caseId);
-      fd.append("category", category);
-      files.forEach((f) => fd.append("files[]", f));
+    setCategoryErrors((p) => {
+      const next = { ...p };
+      delete next[category];
+      return next;
+    });
+    setCategorySuccess((p) => {
+      const next = { ...p };
+      delete next[category];
+      return next;
+    });
+    setPartialErrorsByCategory((p) => {
+      const next = { ...p };
+      delete next[category];
+      return next;
+    });
 
-      const res = await fetch("/api/uploads/patient-photos", {
-        method: "POST",
-        body: fd,
+    try {
+      const result = await uploadPatientPhotoFiles({
+        caseId,
+        category,
+        files,
+        submitterType: "patient",
+        onFileStateChange: (states) => {
+          setFileUploadStatesByCategory((p) => ({ ...p, [category]: states }));
+        },
       });
 
-      const json = await res.json();
-      if (!res.ok) throw new Error(json?.error ?? "Upload failed");
-
-      if (json.saved?.length) {
-        setUploads((prev) => [...json.saved, ...prev]);
+      if (result.saved.length > 0) {
+        setUploads((prev) => [...result.saved, ...prev]);
+        if (result.qualityWarning) {
+          setQualityWarnings((p) => ({ ...p, [category]: result.qualityWarning! }));
+        }
       }
-    } catch (e: any) {
-      alert(e?.message ?? "Upload failed");
+
+      if (result.confidenceMessage) {
+        setCategorySuccess((p) => ({ ...p, [category]: result.confidenceMessage! }));
+        showToast(result.confidenceMessage, "success");
+      }
+
+      if (result.partialErrors.length > 0) {
+        setPartialErrorsByCategory((p) => ({ ...p, [category]: result.partialErrors }));
+      }
+
+      if (result.failedFiles.length > 0) {
+        setFailedFilesByCategory((p) => ({ ...p, [category]: result.failedFiles }));
+        setCategoryErrors((p) => ({
+          ...p,
+          [category]:
+            result.successCount > 0
+              ? `${result.successCount} saved, but ${result.failedFiles.length} failed. Tap retry to try again.`
+              : result.partialErrors[0]?.error ?? "Upload failed. Please try again.",
+        }));
+      } else if (isRetry || result.successCount > 0) {
+        setFailedFilesByCategory((p) => {
+          const next = { ...p };
+          delete next[category];
+          return next;
+        });
+      }
     } finally {
       setBusyCats((p) => ({ ...p, [category]: false }));
+      setFileUploadStatesByCategory((p) => {
+        const next = { ...p };
+        delete next[category];
+        return next;
+      });
     }
   }
 
-  async function deleteUpload(uploadId: string) {
-    if (isLocked) return;
-    if (!confirm("Delete this photo?")) return;
-
-    try {
-      const res = await fetch(
-        `/api/uploads/delete?uploadId=${encodeURIComponent(uploadId)}`,
-        { method: "DELETE" }
-      );
-      const json = await res.json();
-      if (!res.ok) throw new Error(json?.error ?? "Delete failed");
-      setUploads((prev) => prev.filter((u) => u.id !== uploadId));
-    } catch (e: any) {
-      alert(e?.message ?? "Could not delete photo");
-    }
+  function deleteUpload(uploadId: string) {
+    setUploads((prev) => prev.filter((u) => u.id !== uploadId));
   }
 
   return (
-    <div className="mx-auto max-w-3xl p-4 space-y-6">
+    <div className="mx-auto max-w-3xl space-y-6 p-4">
       <header className="space-y-2">
         <h1 className="text-2xl font-semibold">Upload Patient Photos</h1>
-        <p className="text-sm text-gray-800">
-          Use the sections below: two <strong>Before Surgery</strong> groups (main angles, then left, right, and crown), then{" "}
-          <strong>After Surgery / Progress</strong> (surgery day and early healing).
+        <p className="text-sm text-slate-700">
+          Upload clear photos in good lighting. Your progress saves automatically — you can return
+          anytime before submitting.
         </p>
-        <p className="text-sm text-gray-600">Use bright indoor light. Hold the phone steady. No filters.</p>
 
-        {isLocked && (
+        {isLocked ? (
           <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm">
-            <b>Case submitted.</b> Photos are locked to preserve audit integrity.
+            <b>Case submitted.</b> Photos are locked to preserve review integrity.
           </div>
-        )}
+        ) : null}
       </header>
 
       {evidenceNudges.length > 0 ? <PatientImageEvidenceNudgeCallout nudges={evidenceNudges} /> : null}
 
       {patientPhotoStageGuidance ? (
         <div
-          className="rounded-lg border border-sky-200 bg-sky-50/90 p-4 text-sm text-gray-900"
+          className="rounded-lg border border-sky-200 bg-sky-50/90 p-4 text-sm text-slate-900"
           role="note"
         >
           <p className="font-semibold">{patientPhotoStageGuidance.title}</p>
-          <p className="mt-1 leading-relaxed text-gray-700">{patientPhotoStageGuidance.body}</p>
+          <p className="mt-1 leading-relaxed text-slate-700">{patientPhotoStageGuidance.body}</p>
         </div>
       ) : null}
 
@@ -183,32 +242,52 @@ export default function PatientPhotoUpload({
         {PATIENT_PHOTO_SECTIONS.map((section, sIdx) => (
           <div
             key={section.heading}
-            className={`space-y-4 ${sIdx > 0 ? "pt-6 border-t border-gray-200" : ""}`}
+            className={`space-y-4 ${sIdx > 0 ? "border-t border-slate-200 pt-6" : ""}`}
           >
             <div className="space-y-1">
-              <h2 className="text-lg font-semibold text-gray-900">{section.heading}</h2>
-              <p className="text-sm text-gray-600">{section.sub}</p>
+              <h2 className="text-lg font-semibold text-slate-900">{section.heading}</h2>
+              <p className="text-sm text-slate-600">{section.sub}</p>
             </div>
             <div className="space-y-4">
               {section.keys.map((key) => {
                 const cat = categoryByKey.get(key);
                 if (!cat) return null;
+                const existing = uploadsByCategory[cat.key] ?? [];
+                const failedCount = failedFilesByCategory[cat.key]?.length ?? 0;
                 return (
-                  <PhotoCategoryCard
+                  <UploadPhotoCard
                     key={cat.key}
                     caseId={caseId}
                     category={cat.key}
                     title={cat.title}
-                    required={cat.required}
                     help={cat.help}
-                    tips={cat.tips}
-                    existing={uploadsByCategory[cat.key] ?? []}
-                    maxFiles={cat.maxFiles}
+                    quickTips={cat.tips}
+                    slotStatus={resolveSlotStatus(
+                      cat.required,
+                      1,
+                      existing.length,
+                      !!busyCats[cat.key],
+                      failedCount
+                    )}
+                    min={1}
+                    max={cat.maxFiles}
                     accept={cat.accept}
-                    busy={!!busyCats[cat.key]}
+                    existing={existing}
                     locked={isLocked}
+                    errorMessage={categoryErrors[cat.key]}
+                    successMessage={categorySuccess[cat.key]}
+                    qualityWarning={qualityWarnings[cat.key]}
+                    partialErrors={partialErrorsByCategory[cat.key]}
+                    fileUploadStates={fileUploadStatesByCategory[cat.key]}
+                    failedFiles={failedFilesByCategory[cat.key]}
+                    onRetry={() => {
+                      const failed = failedFilesByCategory[cat.key];
+                      if (failed?.length) void uploadFiles(cat.key, failed, true);
+                    }}
+                    onRetryFile={(file) => void uploadFiles(cat.key, [file], true)}
                     onUpload={(files) => uploadFiles(cat.key, files)}
                     onDeleted={deleteUpload}
+                    onDeleteError={(msg) => showToast(msg)}
                   />
                 );
               })}
@@ -224,140 +303,52 @@ export default function PatientPhotoUpload({
         onUpload={uploadFiles}
         onDeleted={deleteUpload}
         skin="legacy"
+        caseId={caseId}
         extendedGroupOrderHint={patientPhotoStageGuidance?.extendedGroupOrderHint}
+        categoryErrors={categoryErrors}
+        categorySuccess={categorySuccess}
+        qualityWarnings={qualityWarnings}
+        partialErrorsByCategory={partialErrorsByCategory}
+        fileUploadStatesByCategory={fileUploadStatesByCategory}
+        failedFilesByCategory={failedFilesByCategory}
+        onRetryCategory={(cat) => {
+          const failed = failedFilesByCategory[cat];
+          if (failed?.length) void uploadFiles(cat as PatientPhotoCategory, failed, true);
+        }}
+        onRetryFile={(cat, file) => void uploadFiles(cat as PatientPhotoCategory, [file], true)}
+        onDeleteError={(msg) => showToast(msg)}
       />
 
-      <footer className="flex items-center justify-between pt-3 border-t text-sm">
+      <footer className="flex items-center justify-between border-t pt-3 text-sm">
         <span>
           {isLocked
             ? "Case submitted — photos locked"
             : requiredOk
-            ? "Required photos complete ✅"
-            : "Upload required categories to continue"}
+              ? "Required photos complete"
+              : "Upload required photos to continue"}
         </span>
 
         <div className="flex items-center gap-3">
           <Link
             href={`/cases/${caseId}/patient/questions`}
-            className="text-gray-600 hover:text-gray-900"
+            className="text-slate-600 hover:text-slate-900"
           >
-            ← Back to questions
+            Continue to questions
           </Link>
           <Link
             href={`/cases/${caseId}`}
             className={`rounded-md px-4 py-2 font-medium ${
               requiredOk && !isLocked
                 ? "bg-amber-500 text-slate-900 hover:bg-amber-400"
-                : "bg-gray-200 text-gray-500 pointer-events-none"
+                : "cursor-not-allowed bg-gray-200 text-gray-500 pointer-events-none"
             }`}
           >
-            3. Submit for audit
+            Submit for review
           </Link>
         </div>
       </footer>
+
+      <UploadErrorToast toast={toast} onDismiss={() => setToast(null)} />
     </div>
-  );
-}
-
-/* ---------------- Category Card ---------------- */
-
-function PhotoCategoryCard(props: {
-  caseId: string;
-  category: string;
-  title: string;
-  required: boolean;
-  help: string;
-  tips: readonly string[];
-  existing: UploadRow[];
-  maxFiles: number;
-  accept: string;
-  busy: boolean;
-  locked: boolean;
-  onUpload: (files: File[]) => void;
-  onDeleted: (uploadId: string) => void;
-}) {
-  const [drag, setDrag] = useState(false);
-
-  return (
-    <section className={`rounded-xl border p-4 space-y-3 ${props.locked ? "opacity-60" : ""}`}>
-      <h2 className="font-semibold">
-        {props.title}
-        {props.required ? (
-          <span className="ml-2 text-xs font-normal text-amber-800">(Required)</span>
-        ) : (
-          <span className="ml-2 text-xs font-normal text-gray-500">(Optional)</span>
-        )}
-      </h2>
-
-      <p className="text-sm text-gray-600">{props.help}</p>
-
-      <ul className="list-disc pl-5 text-sm text-gray-600">
-        {props.tips.map((t) => (
-          <li key={t}>{t}</li>
-        ))}
-      </ul>
-
-      <div
-        className={`border-2 border-dashed rounded-lg p-4 text-sm ${
-          drag ? "border-black bg-gray-50" : "border-gray-300"
-        }`}
-        onDragOver={(e) => {
-          if (props.locked) return;
-          e.preventDefault();
-          setDrag(true);
-        }}
-        onDragLeave={() => setDrag(false)}
-        onDrop={(e) => {
-          if (props.locked) return;
-          e.preventDefault();
-          setDrag(false);
-          const files = Array.from(e.dataTransfer.files).filter((f) =>
-            f.type.startsWith("image/")
-          );
-          props.onUpload(files.slice(0, props.maxFiles));
-        }}
-      >
-        <div className="flex justify-between items-center">
-          <span>{props.existing.length} uploaded</span>
-
-          <label
-            htmlFor={`patient-photo-upload-${props.category}`}
-            className={`px-3 py-2 rounded-md ${
-              props.locked || props.busy
-                ? "bg-gray-200 text-gray-500"
-                : "bg-black text-white cursor-pointer"
-            }`}
-          >
-            {props.locked ? "Locked" : props.busy ? "Uploading…" : "Choose files"}
-            <input
-              id={`patient-photo-upload-${props.category}`}
-              name="patientPhotos"
-              type="file"
-              className="hidden"
-              accept={props.accept}
-              multiple
-              disabled={props.locked || props.busy}
-              onChange={(e) =>
-                props.onUpload(Array.from(e.target.files ?? []))
-              }
-            />
-          </label>
-        </div>
-      </div>
-
-      {props.existing.length > 0 && (
-        <div className="grid grid-cols-3 gap-2">
-          {props.existing.slice(0, 6).map((u) => (
-            <UploadedThumb
-              key={u.id}
-              upload={u}
-              caseId={props.caseId}
-              locked={props.locked}
-              onDeleted={() => props.onDeleted(u.id)}
-            />
-          ))}
-        </div>
-      )}
-    </section>
   );
 }
