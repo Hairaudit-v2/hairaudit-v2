@@ -22,6 +22,16 @@ export function logAuthEnvHealthOnce() {
   const missing = required.filter((name) => !process.env[name]);
   if (missing.length > 0) {
     console.error("[auth/env] missing required auth env vars", { missing });
+    if (missing.includes("NEXT_PUBLIC_SUPABASE_URL") || missing.includes("NEXT_PUBLIC_SUPABASE_ANON_KEY")) {
+      console.error(
+        "[auth/env] patient login, signup, and anonymous audit start will fail until public Supabase env vars are set in Vercel."
+      );
+    }
+    if (missing.includes("SUPABASE_SERVICE_ROLE_KEY")) {
+      console.error(
+        "[auth/env] server flows (audit/start, uploads, report PDF, profile sync) will fail until SUPABASE_SERVICE_ROLE_KEY is set."
+      );
+    }
   }
 
   if (!process.env.NEXT_PUBLIC_APP_URL) {

@@ -16,7 +16,7 @@ import {
   PATIENT_ALTERNATE_OUTCOME_SUBMIT_HINT,
 } from "@/lib/patientPhoto/patientPhotoReadinessPolicy";
 import { isPatientPhotoStageAwareSubmitEnabled } from "@/lib/features/enablePatientPhotoStageAwareSubmit";
-import { normalizePatientReviewPathway } from "@/lib/patient/patientReviewPathway";
+import { normalizePatientReviewPathway, buildPatientRequiredPhotosSubmitError } from "@/lib/patient/patientReviewPathway";
 import { filterPatientPhotosForAuditUse } from "@/lib/uploads/patientPhotoAuditMeta";
 
 function buildPhotosForPatientScoring(
@@ -111,11 +111,13 @@ export async function POST(req: Request) {
       if (!photoGate.allowed) {
         const altLine =
           isPatientPhotoStageAwareSubmitEnabled() && photoGate.stageAwareEvaluated
-            ? ` Or ${PATIENT_ALTERNATE_OUTCOME_SUBMIT_HINT}`
-            : "";
+            ? PATIENT_ALTERNATE_OUTCOME_SUBMIT_HINT
+            : null;
         return NextResponse.json(
           {
-            error: `Upload required patient photos first (Current Front, Top, Donor rear).${altLine} Go to Step 2: Add your photos.`,
+            error: buildPatientRequiredPhotosSubmitError(patientReviewPathway, {
+              stageAwareHint: altLine,
+            }),
           },
           { status: 400 }
         );

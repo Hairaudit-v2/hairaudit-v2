@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { buildPatientLoginHref } from "@/lib/auth/patientLogin";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import CaseNotFoundRecovery from "@/components/case/CaseNotFoundRecovery";
 
@@ -13,7 +14,7 @@ export default async function Page({ params }: { params: Promise<{ caseId: strin
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  if (!user) redirect(buildPatientLoginHref(`/cases/${caseId}/patient/photos`));
 
   const { data: c } = await supabase
     .from("cases")

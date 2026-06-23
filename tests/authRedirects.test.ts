@@ -58,12 +58,15 @@ test("dashboardPathForRole: maps auditor to /dashboard/auditor", () => {
   assert.equal(dashboardPathForRole("auditor"), "/dashboard/auditor");
 });
 
-test("dashboardPathForRole: fallback to /dashboard for patient and unknown", () => {
-  assert.equal(dashboardPathForRole("patient"), "/dashboard");
-  assert.equal(dashboardPathForRole(""), "/dashboard");
-  assert.equal(dashboardPathForRole(null), "/dashboard");
-  assert.equal(dashboardPathForRole(undefined), "/dashboard");
-  assert.equal(dashboardPathForRole("unknown"), "/dashboard");
+test("dashboardPathForRole: maps patient to /dashboard/patient", () => {
+  assert.equal(dashboardPathForRole("patient"), "/dashboard/patient");
+});
+
+test("dashboardPathForRole: fallback to /dashboard/patient for unknown", () => {
+  assert.equal(dashboardPathForRole(""), "/dashboard/patient");
+  assert.equal(dashboardPathForRole(null), "/dashboard/patient");
+  assert.equal(dashboardPathForRole(undefined), "/dashboard/patient");
+  assert.equal(dashboardPathForRole("unknown"), "/dashboard/patient");
 });
 
 // --- getCanonicalAppUrl ---

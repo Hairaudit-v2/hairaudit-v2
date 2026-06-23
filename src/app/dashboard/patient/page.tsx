@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { buildPatientLoginHref } from "@/lib/auth/patientLogin";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import GraftIntegrityCard, { type GraftIntegrityEstimateRow } from "./GraftIntegrityCard";
@@ -38,7 +39,7 @@ export default async function PatientDashboardPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  if (!user) redirect(buildPatientLoginHref("/dashboard/patient"));
 
   const admin = createSupabaseAdminClient();
   const cases = await fetchPatientCasesForPostOpGuide(admin, user.id);

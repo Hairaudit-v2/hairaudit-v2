@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import PhotoUploader from "@/components/photos/PhotoUploader";
+import { buildPatientLoginHref } from "@/lib/auth/patientLogin";
 import { loadPatientPhotoStageGuidanceForCase } from "@/lib/patientPhoto/loadPatientPhotoStageGuidanceForCase";
 import { resolvePatientReviewPathwayFromCase } from "@/lib/patient/patientReviewPathway";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
@@ -15,7 +16,7 @@ export default async function Page({ params }: PageProps) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect("/login");
+  if (!user) redirect(buildPatientLoginHref(`/cases/${caseId}/patient/photos`));
 
   const { data: c } = await supabase
     .from("cases")

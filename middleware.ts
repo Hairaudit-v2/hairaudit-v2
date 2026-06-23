@@ -32,9 +32,18 @@ export function middleware(request: NextRequest) {
     }
   }
 
+  const requestHeaders = new Headers(request.headers);
+  const pathWithSearch = `${pathname}${request.nextUrl.search}`;
+  requestHeaders.set("x-pathname", pathWithSearch);
+
+  const forward = () =>
+    NextResponse.next({
+      request: { headers: requestHeaders },
+    });
+
   // ✅ Allow Playwright report rendering (NO AUTH)
   if (pathname.match(/^\/reports\/[^/]+\/html$/)) {
-    return NextResponse.next();
+    return forward();
   }
 
   // ✅ Allow public routes
@@ -45,11 +54,10 @@ export function middleware(request: NextRequest) {
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api")
   ) {
-    return NextResponse.next();
+    return forward();
   }
 
-  // ❗ Everything else can stay protected
-  return NextResponse.next();
+  return forward();
 }
 
 export const config = {

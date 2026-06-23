@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import PatientAuditFormClient from "./PatientAuditFormClient";
+import { buildPatientLoginHref } from "@/lib/auth/patientLogin";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import CaseNotFoundRecovery from "@/components/case/CaseNotFoundRecovery";
 import { getTranslation } from "@/lib/i18n/getTranslation";
@@ -18,7 +19,7 @@ export default async function Page({
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  if (!user) redirect(buildPatientLoginHref(`/cases/${caseId}/patient/questions`));
 
   const { data: c } = await supabase
     .from("cases")

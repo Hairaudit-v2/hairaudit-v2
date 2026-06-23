@@ -84,4 +84,16 @@ test.describe("Patient entry architecture", () => {
     const pending = await auditStart;
     expect(pending).toBeNull();
   });
+
+  test("legacy /free-audit forwards to pathway chooser", async ({ page }) => {
+    await page.goto("/free-audit");
+    await page.waitForURL(/\/request-review/);
+    await expect(page.locator("#choose-pathway")).toBeVisible();
+  });
+
+  test("legacy /patient/login forwards to patient login", async ({ page }) => {
+    await page.goto("/patient/login");
+    await page.waitForURL(/\/login/);
+    expect(new URL(page.url()).searchParams.get("from")).toBe("patient");
+  });
 });

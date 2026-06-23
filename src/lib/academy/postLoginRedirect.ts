@@ -1,4 +1,5 @@
 import type { UserRole } from "@/lib/roles";
+import { parseRole } from "@/lib/roles";
 import { dashboardPathForRole } from "@/lib/auth/redirects";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -29,9 +30,17 @@ export async function browserPathAfterLoginSession(supabase: SupabaseClient): Pr
     data: { session },
   } = await supabase.auth.getSession();
   const uid = session?.user?.id;
-  if (!uid) return "/dashboard";
-  const { data: au } = await supabase.from("academy_users").select("user_id").eq("user_id", uid).maybeSingle();
-  return au ? "/academy/dashboard" : "/dashboard";
+  if (!uid) return "/dashboard/patient";
+  const [{ data: au }, { data: profile }] = await Promise.all([
+    supabase.from("academy_users").select("user_id").eq("user_id", uid).maybeSingle(),
+    supabase.from("profiles").select("role").eq("id", uid).maybeSingle(),
+  ]);
+  if (au) return "/academy/dashboard";
+  const metadataRole = parseRole(
+    (session.user?.user_metadata as Record<string, unknown> | undefined)?.role
+  );
+  const role = profile?.role ? parseRole(profile.role) : metadataRole;
+  return dashboardPathForRole(role);
 }
 
 /**

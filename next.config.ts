@@ -31,6 +31,21 @@ const nextConfig: NextConfig = {
         destination: "/demo-report",
         permanent: true,
       },
+      {
+        source: "/patient/dashboard",
+        destination: "/dashboard/patient",
+        permanent: true,
+      },
+      {
+        source: "/patient",
+        destination: "/dashboard/patient",
+        permanent: true,
+      },
+      {
+        source: "/patient/login",
+        destination: "/login?from=patient",
+        permanent: false,
+      },
     ];
   },
   serverExternalPackages: [

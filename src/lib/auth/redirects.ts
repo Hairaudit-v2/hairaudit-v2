@@ -43,7 +43,8 @@ export function dashboardPathForRole(role: string | null | undefined): string {
   if (role === "clinic") return "/dashboard/clinic";
   if (role === "doctor") return "/dashboard/doctor";
   if (role === "auditor") return "/dashboard/auditor";
-  return "/dashboard";
+  if (role === "patient") return "/dashboard/patient";
+  return "/dashboard/patient";
 }
 
 /**

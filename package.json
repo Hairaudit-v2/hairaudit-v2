@@ -10,6 +10,7 @@
     "lint": "eslint",
     "test:pdf-logic": "tsx --test tests/pdfReadiness.test.ts",
     "test:auth-redirects": "tsx --test tests/authRedirects.test.ts",
+    "test:patient-journey": "tsx --test tests/patientJourneyAccess.test.ts tests/patientEntryArchitecture.test.ts tests/guidedPatientUploadWizard.test.ts tests/patientReviewPathway.test.ts",
     "test:integration": "tsx --test tests/integration/auditorAwardVisibility.test.ts",
     "test:audits": "tsx tests/audit-harness/runner.ts",
     "test:audits:patient": "tsx tests/audit-harness/runner.ts --type=patient",

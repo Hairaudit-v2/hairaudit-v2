@@ -479,6 +479,16 @@ export function isPathwayRequiredUploadComplete(
   return getMissingPathwayRequiredUploadKeys(pathway, photos).length === 0;
 }
 
+/** Patient-safe submit gate message when required pathway photos are incomplete. */
+export function buildPatientRequiredPhotosSubmitError(
+  pathway: PatientReviewPathway,
+  opts?: { stageAwareHint?: string | null }
+): string {
+  const total = requiredPhotoKeys[pathway].length;
+  const altLine = opts?.stageAwareHint ? ` Or ${opts.stageAwareHint}` : "";
+  return `Upload all ${total} required photos for your review before submitting.${altLine} Return to the photo upload step to finish.`;
+}
+
 export type PathwayUploadProgress = {
   completed: number;
   total: number;

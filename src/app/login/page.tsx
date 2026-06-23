@@ -6,9 +6,9 @@ import Image from "next/image";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import SiteHeader from "@/components/SiteHeader";
 import { useI18n } from "@/components/i18n/I18nProvider";
-import { getCanonicalAppUrl } from "@/lib/auth/redirects";
+import { getCanonicalAppUrl, buildAuthRedirectUrl, sanitizeNextPath } from "@/lib/auth/redirects";
 import { trackAuthFunnel } from "@/lib/analytics/authFunnel";
-import { browserPathAfterLoginSession } from "@/lib/academy/postLoginRedirect";
+import { resolvePostLoginRedirectPath } from "@/lib/auth/patientLogin";
 
 export default function LoginPage() {
   const { t } = useI18n();
@@ -20,16 +20,21 @@ export default function LoginPage() {
   const [sendingReset, setSendingReset] = useState(false);
 
   const appUrl = getCanonicalAppUrl();
-  const oauthRedirectTo = `${appUrl}/auth/callback`;
-  // Magic-link emails may return an auth `code` (not only hash tokens). Always route
-  // through /auth/callback so the server exchanges the code for a session.
-  const magicLinkRedirectTo = `${appUrl}/auth/callback`;
+  const [loginNextPath, setLoginNextPath] = useState<string | null>(null);
+
+  const authCallbackUrl = loginNextPath
+    ? buildAuthRedirectUrl("/auth/callback", { next: loginNextPath })
+    : `${appUrl}/auth/callback`;
+  const oauthRedirectTo = authCallbackUrl;
+  const magicLinkRedirectTo = authCallbackUrl;
   const funnelPageTracked = useRef(false);
   const [signupHref, setSignupHref] = useState("/signup");
 
   useEffect(() => {
     const s = window.location.search;
     setSignupHref(s ? `/signup${s}` : "/signup");
+    const params = new URLSearchParams(s.startsWith("?") ? s.slice(1) : s);
+    setLoginNextPath(sanitizeNextPath(params.get("next")));
   }, []);
 
   useEffect(() => {
@@ -60,14 +65,14 @@ export default function LoginPage() {
     let mounted = true;
     supabase.auth.getSession().then(async ({ data }) => {
       if (!mounted || !data.session) return;
-      const href = await browserPathAfterLoginSession(supabase);
+      const href = await resolvePostLoginRedirectPath(supabase, loginNextPath);
       if (!mounted) return;
       window.location.href = href;
     });
     return () => {
       mounted = false;
     };
-  }, [supabase]);
+  }, [supabase, loginNextPath]);
 
   async function signInWithProvider(provider: "google") {
     setMsg(null);
@@ -104,7 +109,7 @@ export default function LoginPage() {
     } else {
       const path = window.location.pathname;
       const search = window.location.search;
-      const href = await browserPathAfterLoginSession(supabase);
+      const href = await resolvePostLoginRedirectPath(supabase, loginNextPath);
       trackAuthFunnel(
         "auth_session_success",
         { auth_method: "password", auth_surface: "login" },
