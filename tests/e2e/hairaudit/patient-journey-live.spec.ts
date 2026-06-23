@@ -12,6 +12,8 @@ import {
 import { DEMO_QA_SEED_USER_PASSWORD } from "../helpers/demoQaCatalog";
 
 test.describe("Live Supabase patient journey", () => {
+  test.describe.configure({ mode: "serial" });
+
   test.beforeEach(() => {
     const reason = liveJourneyBlockedReason();
     if (reason) test.skip(true, reason);
@@ -143,6 +145,6 @@ test.describe("Live Supabase patient journey", () => {
 
     await page.goto(`/cases/${entry.caseId}`);
     await expect(page.getByTestId("pre-surgery-report-shell")).toBeVisible();
-    await expect(page.getByTestId("report-pdf-link")).toBeVisible();
+    await expect(page.getByTestId("report-pdf-link").first()).toBeVisible();
   });
 });

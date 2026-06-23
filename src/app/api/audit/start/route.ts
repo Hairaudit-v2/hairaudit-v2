@@ -27,6 +27,14 @@ import {
 
 const LOG_PREFIX = "[audit/start]";
 
+function isMissingAuthSession(error: { message?: string; name?: string } | null): boolean {
+  if (!error) return false;
+  return (
+    error.name === "AuthSessionMissingError" ||
+    /auth session missing/i.test(error.message ?? "")
+  );
+}
+
 // Allow a small burst of new anonymous audits per IP per window.
 const START_LIMIT = 5;
 const START_WINDOW_MS = 60 * 60 * 1000; // 1 hour
@@ -76,7 +84,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     error: existingUserError,
   } = await supabaseAuth.auth.getUser();
 
-  if (existingUserError) {
+  if (existingUserError && !isMissingAuthSession(existingUserError)) {
     console.error(LOG_PREFIX, "getUser failed", {
       error: existingUserError.message,
       code: existingUserError.code,
@@ -84,7 +92,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     return NextResponse.json({ ok: false, error: "Invalid session" }, { status: 401 });
   }
 
-  let sessionUser = existingUser;
+  let sessionUser = existingUserError ? null : existingUser;
   if (!sessionUser) {
     const { data: anon, error: anonError } = await supabaseAuth.auth.signInAnonymously();
     if (anonError || !anon?.user) {
