@@ -124,24 +124,36 @@ CREATE POLICY reports_select_via_case ON public.reports
   USING (public.hairaudit_user_can_access_case(case_id));
 
 -- ---------------------------------------------------------------------------
--- AUDIT_PHOTOS — auditor read (participant policies already exist)
+-- AUDIT_PHOTOS — auditor read (participant policies already exist; table optional)
 -- ---------------------------------------------------------------------------
 
-DROP POLICY IF EXISTS audit_photos_select_auditor ON public.audit_photos;
-CREATE POLICY audit_photos_select_auditor ON public.audit_photos
-  FOR SELECT
-  TO authenticated
-  USING (public.hairaudit_current_user_is_auditor());
+DO $$
+BEGIN
+  IF to_regclass('public.audit_photos') IS NOT NULL THEN
+    DROP POLICY IF EXISTS audit_photos_select_auditor ON public.audit_photos;
+    CREATE POLICY audit_photos_select_auditor ON public.audit_photos
+      FOR SELECT
+      TO authenticated
+      USING (public.hairaudit_current_user_is_auditor());
+  END IF;
+END $$;
 
 -- ---------------------------------------------------------------------------
--- Intelligence / shadow snapshots — service role only (defense in depth)
+-- Intelligence / shadow snapshots — service role only (when tables exist)
 -- ---------------------------------------------------------------------------
 
-ALTER TABLE public.hairaudit_intelligence_snapshots ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.hairaudit_auditos_shadow_snapshots ENABLE ROW LEVEL SECURITY;
+DO $$
+BEGIN
+  IF to_regclass('public.hairaudit_intelligence_snapshots') IS NOT NULL THEN
+    ALTER TABLE public.hairaudit_intelligence_snapshots ENABLE ROW LEVEL SECURITY;
+    REVOKE ALL ON TABLE public.hairaudit_intelligence_snapshots FROM anon, authenticated;
+  END IF;
 
-REVOKE ALL ON TABLE public.hairaudit_intelligence_snapshots FROM anon, authenticated;
-REVOKE ALL ON TABLE public.hairaudit_auditos_shadow_snapshots FROM anon, authenticated;
+  IF to_regclass('public.hairaudit_auditos_shadow_snapshots') IS NOT NULL THEN
+    ALTER TABLE public.hairaudit_auditos_shadow_snapshots ENABLE ROW LEVEL SECURITY;
+    REVOKE ALL ON TABLE public.hairaudit_auditos_shadow_snapshots FROM anon, authenticated;
+  END IF;
+END $$;
 
 -- ---------------------------------------------------------------------------
 -- STORAGE (case-files bucket) — authenticated read for own case namespace only

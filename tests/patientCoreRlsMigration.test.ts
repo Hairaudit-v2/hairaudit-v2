@@ -29,9 +29,10 @@ describe("patient core RLS migration", () => {
     assert.doesNotMatch(sql, /FOR INSERT[\s\S]*ON public\.reports/);
   });
 
-  it("restricts intelligence snapshots from anon/authenticated", () => {
+  it("restricts intelligence snapshots from anon/authenticated when tables exist", () => {
+    assert.match(sql, /to_regclass\('public\.hairaudit_intelligence_snapshots'\)/);
     assert.match(sql, /REVOKE ALL ON TABLE public\.hairaudit_intelligence_snapshots FROM anon, authenticated/);
-    assert.match(sql, /REVOKE ALL ON TABLE public\.hairaudit_auditos_shadow_snapshots FROM anon, authenticated/);
+    assert.match(sql, /to_regclass\('public\.hairaudit_auditos_shadow_snapshots'\)/);
   });
 
   it("adds case-files storage SELECT for participants only", () => {
