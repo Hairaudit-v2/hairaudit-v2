@@ -1,7 +1,10 @@
-import { test, expect, loginAsPatient, skipIfE2eBlocked } from "../fixtures/hairaudit.fixture";
+import { test, expect, loginAsPatient, skipIfE2eBlocked, skipIfDemoCatalogMissing } from "../fixtures/hairaudit.fixture";
 
 test.describe("Mobile report layout smoke tests", () => {
-  test.beforeEach(() => skipIfE2eBlocked());
+  test.beforeEach(() => {
+    skipIfE2eBlocked();
+    skipIfDemoCatalogMissing();
+  });
 
   test("pre-surgery report has no horizontal overflow and stacked scorecards", async ({
     page,

@@ -1,4 +1,7 @@
 import { defineConfig, devices } from "playwright/test";
+import { loadProjectEnvLocal } from "./tests/e2e/helpers/env";
+
+loadProjectEnvLocal();
 
 const baseURL = process.env.E2E_BASE_URL ?? "http://localhost:3000";
 const skipWebServer = process.env.E2E_SKIP_WEB_SERVER === "true";

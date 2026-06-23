@@ -29,8 +29,24 @@ Scope: dual-pathway patient funnel (pre-surgery / post-surgery), auth, uploads, 
 
 ### Supabase Storage
 
-- [ ] `audit_photos` bucket exists and server upload routes succeed
+- [ ] `case-files` bucket exists and server upload routes succeed
 - [ ] Patient PDF bucket/path used by report download is reachable after authz
+- [ ] Migration `20260623120000_patient_core_table_rls.sql` applied on staging before production
+- [ ] After RLS: patient can read own `cases` / `uploads` / `reports`; cannot read other patients
+- [ ] Intelligence snapshot tables remain service-role only
+
+### RLS apply / rollback
+
+Staging apply: `supabase db push` (or run migration SQL in dashboard).
+
+Rollback (emergency):
+
+```sql
+ALTER TABLE public.cases DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.uploads DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.reports DISABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS case_files_select_participant ON storage.objects;
+```
 
 ---
 
@@ -126,6 +142,8 @@ pnpm exec tsx --test tests/authRedirects.test.ts
 pnpm exec tsx --test tests/patientEntryArchitecture.test.ts
 pnpm exec tsx --test tests/guidedPatientUploadWizard.test.ts
 pnpm exec tsx --test tests/patientReviewPathway.test.ts
+pnpm run test:patient-rls
+pnpm run test:e2e:live-journey
 pnpm test:e2e:hairaudit
 ```
 

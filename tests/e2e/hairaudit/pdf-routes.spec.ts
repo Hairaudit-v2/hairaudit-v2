@@ -1,9 +1,12 @@
-import { test, expect, loginAsPatient, skipIfE2eBlocked } from "../fixtures/hairaudit.fixture";
+import { test, expect, loginAsPatient, skipIfE2eBlocked, skipIfDemoCatalogMissing } from "../fixtures/hairaudit.fixture";
 import { buildPrintReportUrl } from "../helpers/renderToken";
 import { resolveE2eBaseUrl } from "../helpers/env";
 
 test.describe("PDF and print route smoke tests", () => {
-  test.beforeEach(() => skipIfE2eBlocked());
+  test.beforeEach(() => {
+    skipIfE2eBlocked();
+    skipIfDemoCatalogMissing();
+  });
 
   test("pre-surgery PDF download returns 200", async ({ page, catalog, demoPassword }) => {
     const entry = catalog.preSurgery[0];

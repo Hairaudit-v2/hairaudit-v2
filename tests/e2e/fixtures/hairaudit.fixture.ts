@@ -31,3 +31,9 @@ export function skipIfE2eBlocked(): void {
     test.skip(true, skipReason);
   }
 }
+
+export function skipIfDemoCatalogMissing(): void {
+  if (process.env.E2E_HAS_DEMO_CATALOG !== "true") {
+    test.skip(true, process.env.E2E_DEMO_CATALOG_SKIP_REASON ?? "Demo QA catalog not loaded.");
+  }
+}

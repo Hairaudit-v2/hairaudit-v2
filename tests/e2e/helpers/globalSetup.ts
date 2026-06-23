@@ -1,27 +1,9 @@
-import * as fs from "fs";
 import * as path from "path";
 import { loadDemoQaCatalog } from "./demoQaCatalog";
-import { e2eTargetBlockedReason, hasSupabaseAdminEnv } from "./env";
-
-function loadEnvLocal() {
-  const root = path.resolve(__dirname, "../../..");
-  const envPath = path.join(root, ".env.local");
-  if (!fs.existsSync(envPath)) return;
-  const content = fs.readFileSync(envPath, "utf8");
-  for (const line of content.split("\n")) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-    const eq = trimmed.indexOf("=");
-    if (eq === -1) continue;
-    const key = trimmed.slice(0, eq).trim();
-    const raw = trimmed.slice(eq + 1).trim();
-    const val = raw.startsWith('"') && raw.endsWith('"') ? raw.slice(1, -1).replace(/\\"/g, '"') : raw;
-    if (!process.env[key]) process.env[key] = val;
-  }
-}
+import { e2eTargetBlockedReason, hasSupabaseAdminEnv, loadProjectEnvLocal } from "./env";
 
 export default async function globalSetup(): Promise<void> {
-  loadEnvLocal();
+  loadProjectEnvLocal();
   const blocked = e2eTargetBlockedReason();
   if (blocked) {
     process.env.E2E_SKIP_ALL = "true";
@@ -36,12 +18,12 @@ export default async function globalSetup(): Promise<void> {
   }
 
   const catalog = await loadDemoQaCatalog();
-  if (!catalog || catalog.all.length < 20) {
-    process.env.E2E_SKIP_ALL = "true";
-    process.env.E2E_SKIP_REASON =
-      "Demo QA seed data not found. Run `npm run seed:demo-qa` against this Supabase project first.";
-    return;
+  if (catalog && catalog.all.length >= 20) {
+    process.env.E2E_DEMO_CATALOG_JSON = JSON.stringify(catalog);
+    process.env.E2E_HAS_DEMO_CATALOG = "true";
+  } else {
+    process.env.E2E_HAS_DEMO_CATALOG = "false";
+    process.env.E2E_DEMO_CATALOG_SKIP_REASON =
+      "Demo QA seed data not found. Run `pnpm run seed:demo-qa` for report/PDF specs. Live journey specs still run.";
   }
-
-  process.env.E2E_DEMO_CATALOG_JSON = JSON.stringify(catalog);
 }

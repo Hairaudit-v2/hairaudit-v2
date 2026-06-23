@@ -1,9 +1,12 @@
-import { test, expect, loginAsPatient, skipIfE2eBlocked } from "../fixtures/hairaudit.fixture";
+import { test, expect, loginAsPatient, skipIfE2eBlocked, skipIfDemoCatalogMissing } from "../fixtures/hairaudit.fixture";
 import { ensureProcessingCaseForUser } from "../helpers/demoQaCatalog";
 import { tryCreateSupabaseAdminClient } from "../../../src/lib/supabase/admin";
 
 test.describe("Waiting timeline (submitted, no PDF)", () => {
-  test.beforeEach(() => skipIfE2eBlocked());
+  test.beforeEach(() => {
+    skipIfE2eBlocked();
+    skipIfDemoCatalogMissing();
+  });
 
   test("shows live processing timeline, polls status, then ready state", async ({
     page,

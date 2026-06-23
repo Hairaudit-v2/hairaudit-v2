@@ -1,7 +1,10 @@
-import { test, expect, loginAsPatient, skipIfE2eBlocked } from "../fixtures/hairaudit.fixture";
+import { test, expect, loginAsPatient, skipIfE2eBlocked, skipIfDemoCatalogMissing } from "../fixtures/hairaudit.fixture";
 
 test.describe("Pre-surgery report rendering (demo QA seed)", () => {
-  test.beforeEach(() => skipIfE2eBlocked());
+  test.beforeEach(() => {
+    skipIfE2eBlocked();
+    skipIfDemoCatalogMissing();
+  });
 
   for (let index = 1; index <= 10; index += 1) {
     test(`demo case ${String(index).padStart(2, "0")} renders pre-surgery planning report`, async ({
