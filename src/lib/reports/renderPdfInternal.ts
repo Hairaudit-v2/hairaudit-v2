@@ -185,7 +185,7 @@ export async function renderAndUploadPdfForCase(args: {
       (caseRow as { patient_review_pathway?: string | null } | null)?.patient_review_pathway ?? null,
     caseId,
     reportVersion: Number(reportRow.version ?? version),
-  }) as Record<string, unknown>;
+  }) as Record<string, any>;
 
   assertPdfReady({
     caseStatus: (caseRow as { status?: string | null } | null)?.status ?? null,
