@@ -51,6 +51,26 @@ CREATE TRIGGER trg_hairaudit_case_clinical_history_updated_at
   EXECUTE FUNCTION public.touch_hairaudit_case_clinical_history_updated_at();
 
 -- Auditor/operator access helper (includes email fallback used elsewhere in HairAudit).
+-- Depends on hairaudit_current_user_is_auditor (defined in patient_core_table_rls migration).
+-- Re-declared here so this migration can run on DBs where 20260623120000 was not applied yet.
+CREATE OR REPLACE FUNCTION public.hairaudit_current_user_is_auditor()
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.profiles p
+    WHERE p.id = auth.uid()
+      AND p.role = 'auditor'
+  );
+$$;
+
+COMMENT ON FUNCTION public.hairaudit_current_user_is_auditor() IS
+  'True when the authenticated user has profiles.role = auditor.';
+
 CREATE OR REPLACE FUNCTION public.hairaudit_clinical_history_operator_access(p_case_id UUID)
 RETURNS BOOLEAN
 LANGUAGE sql
