@@ -1676,10 +1676,26 @@ export const runPdfRebuild = inngest.createFunction(
 
     const result = await step.run("rebuild-pdf", async () => {
       const { renderAndUploadPdfForCase } = await loadPdfRenderModule();
-      return await renderAndUploadPdfForCase({
+      const { persistReportPdfPath } = await import("@/lib/reports/rebuildReportPdf");
+      const { data: reportRow } = await supabase
+        .from("reports")
+        .select("id")
+        .eq("case_id", caseId)
+        .eq("version", version)
+        .maybeSingle();
+      const renderResult = await renderAndUploadPdfForCase({
         caseId,
         version,
       });
+      if (reportRow?.id) {
+        await persistReportPdfPath({
+          reportId: String(reportRow.id),
+          caseId,
+          version,
+          pdfPath: renderResult.pdfPath,
+        });
+      }
+      return renderResult;
     });
 
     logger.info("PDF rebuild complete", { caseId, version });

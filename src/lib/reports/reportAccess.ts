@@ -82,7 +82,9 @@ export async function loadAuthorizedReportPdfDownloadContext(args: {
   }
 
   const caseId = resolveReportCaseId(report as ReportRowForAccess);
-  const pdfPath = String(report.pdf_path ?? "").trim();
+  const version = Number((report as ReportRowForAccess).version ?? 0);
+  const storedPath = String(report.pdf_path ?? "").trim();
+  const pdfPath = storedPath || (version > 0 ? `${caseId}/v${version}.pdf` : "");
   if (!pdfPath) {
     return { ok: false, status: 404, error: "Report file not ready" };
   }

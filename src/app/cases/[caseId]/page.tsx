@@ -7,6 +7,7 @@ import DownloadReport from "./download-report";
 import GraftIntegrityCard from "@/app/dashboard/patient/GraftIntegrityCard";
 import GraftIntegrityReviewPanel from "@/app/dashboard/auditor/GraftIntegrityReviewPanel";
 import AuditorRerunPanel from "./AuditorRerunPanel";
+import RebuildPdfPanel from "./RebuildPdfPanel";
 import ImageLimitedRegeneratePanel from "./ImageLimitedRegeneratePanel";
 import DoctorAnswersSummary from "@/components/reports/DoctorAnswersSummary";
 import PatientAnswersSummary from "@/components/reports/PatientAnswersSummary";
@@ -1510,6 +1511,12 @@ export default async function Page({
               <p className="mt-1 text-xs text-amber-100/80">{IMAGE_LIMITED_AUDIT_PATIENT_NOTICE}</p>
             </div>
           ) : null}
+          <RebuildPdfPanel
+            caseId={c.id}
+            reportId={forensicReports[0]?.id}
+            latestReportVersion={forensicReports[0]?.version}
+            hasPdfPath={Boolean(forensicReports[0]?.pdf_path)}
+          />
           <AuditorRerunPanel caseId={c.id} latestReportVersion={forensicReports[0]?.version} />
           <ImageLimitedRegeneratePanel
             caseId={c.id}

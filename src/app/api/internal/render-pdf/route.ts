@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { renderAndUploadPdfForCase } from "@/lib/reports/renderPdfInternal";
+import { persistReportPdfPath } from "@/lib/reports/rebuildReportPdf";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { authorizeInternalApiRequest } from "@/lib/security/internalApiAuth";
 
 export const runtime = "nodejs";
@@ -25,6 +27,24 @@ export async function POST(req: Request) {
       version: body.version,
       baseUrl: new URL(req.url).origin,
     });
+    const version = Number(body.version ?? 0);
+    if (version > 0) {
+      const supabase = createSupabaseAdminClient();
+      const { data: reportRow } = await supabase
+        .from("reports")
+        .select("id")
+        .eq("case_id", caseId)
+        .eq("version", version)
+        .maybeSingle();
+      if (reportRow?.id) {
+        await persistReportPdfPath({
+          reportId: String(reportRow.id),
+          caseId,
+          version,
+          pdfPath: result.pdfPath,
+        });
+      }
+    }
     return NextResponse.json(result);
   } catch (e: unknown) {
     const msg = (e as Error)?.message ?? "Render failed";

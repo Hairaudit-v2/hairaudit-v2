@@ -4,8 +4,8 @@
  */
 import { NextResponse } from "next/server";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
-import { fetchReportPdfFromStorage } from "@/lib/reports/fetchReportPdfFromStorage";
 import { loadAuthorizedReportPdfDownloadContext } from "@/lib/reports/reportAccess";
+import { fetchReportPdfWithRecovery } from "@/lib/reports/reportPdfDownloadRecovery";
 
 function safeDownloadFilename(reportId: string) {
   const id = String(reportId ?? "").replace(/[^a-zA-Z0-9-]/g, "");
@@ -39,10 +39,9 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: authz.error }, { status: authz.status });
     }
 
-    const file = await fetchReportPdfFromStorage(authz.storage, authz.bucket, authz.pdfPath);
-    if ("error" in file) {
-      console.error("[api/reports/download] storage fetch failed", { reportId, pdfPath: authz.pdfPath });
-      return NextResponse.json({ error: "Could not load report file" }, { status: 500 });
+    const file = await fetchReportPdfWithRecovery(authz);
+    if (!file.ok) {
+      return NextResponse.json({ error: file.error }, { status: file.status });
     }
 
     const filename = safeDownloadFilename(authz.report.id);
