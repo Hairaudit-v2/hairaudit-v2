@@ -13,6 +13,8 @@ import {
   normalizePatientReviewPathway,
   type PatientReviewPathway,
 } from "@/lib/patient/patientReviewPathway";
+import { buildPatientSafeClinicalHistoryLines } from "@/lib/hairaudit/clinical-history/clinicalHistoryUtils";
+import type { ClinicalHistorySnapshot } from "@/lib/hairaudit/clinical-history/clinicalHistoryTypes";
 
 export type PatientSafeSummaryObservationStage =
   | "preop"
@@ -51,6 +53,8 @@ export type PatientSafeReportSummary = {
   pathwayFocusAreas?: readonly string[];
   /** Present when audit ran under auditor image-limited override */
   imageLimitedNotice?: string;
+  /** Operator-entered clinical context mapped for patient-safe display */
+  knownClinicalContext?: string[];
 };
 
 /**
@@ -151,7 +155,10 @@ function buildPlainEnglishSummary(band: PatientConcernBand, concernCount: number
 
 export function buildPatientSafeReportSummary(
   summary: Record<string, unknown> | null | undefined,
-  opts?: { patientReviewPathway?: PatientReviewPathway | unknown }
+  opts?: {
+    patientReviewPathway?: PatientReviewPathway | unknown;
+    clinicalHistory?: ClinicalHistorySnapshot | null;
+  }
 ): PatientSafeReportSummary {
   const patientReviewPathway = normalizePatientReviewPathway(
     opts?.patientReviewPathway ??
@@ -201,6 +208,7 @@ export function buildPatientSafeReportSummary(
   }
 
   const display = getConcernBandDisplay(overallBand);
+  const knownClinicalContext = buildPatientSafeClinicalHistoryLines(opts?.clinicalHistory ?? null);
 
   return {
     overallConcernBand: overallBand,
@@ -216,6 +224,7 @@ export function buildPatientSafeReportSummary(
     patientReviewPathway,
     pathwayFocusAreas,
     imageLimitedNotice,
+    knownClinicalContext: knownClinicalContext.length ? knownClinicalContext : undefined,
   };
 }
 

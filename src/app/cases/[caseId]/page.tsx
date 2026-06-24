@@ -1276,7 +1276,12 @@ export default async function Page({
       )}
 
       {isAuditor && (
-        <CaseClinicalHistoryPanel caseId={c.id} initialSnapshot={clinicalHistorySnapshot} />
+        <CaseClinicalHistoryPanel
+          caseId={c.id}
+          initialSnapshot={clinicalHistorySnapshot}
+          hasPatientImages={hasPatientImagesForImageLimited}
+          photosMissing={missingPatientPhotoLabelsForOverride.length > 0}
+        />
       )}
 
       {isAuditor && (

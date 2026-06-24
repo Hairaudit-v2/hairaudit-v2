@@ -4,6 +4,7 @@ import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { requireAuditor } from "@/lib/auth/permissions";
 import { queueAuditorRerunFromAdmin } from "@/lib/auditor/queueAuditorRerun";
+import { AUDITOR_RERUN_REASON_DOCUMENT_ASSISTED_IMAGE_LIMITED } from "@/lib/patient/patientPhotoImageLimitedOverride";
 import { logClinicalHistoryEvent } from "@/lib/hairaudit/clinical-history/clinicalHistoryAudit";
 import {
   buildClinicalHistorySnapshot,
@@ -82,6 +83,48 @@ export async function saveCaseClinicalHistoryAndRegenerateAction(
       snapshot: saveResult.snapshot,
       created: saveResult.created,
       warning: `Clinical history saved but regeneration failed: ${rerun.error}`,
+    };
+  }
+
+  return {
+    ok: true,
+    snapshot: saveResult.snapshot,
+    created: saveResult.created,
+    rerunLogId: rerun.rerunLogId,
+  };
+}
+
+export async function saveCaseClinicalHistoryAndRegenerateImageLimitedAction(
+  caseId: string,
+  payload: unknown
+): Promise<SaveClinicalHistoryResult & { rerunLogId?: string; warning?: string }> {
+  const saveResult = await saveCaseClinicalHistoryAction(caseId, payload);
+  if (!saveResult.ok) return saveResult;
+
+  const auth = await requireAuditorActor();
+  if (!auth.ok) return { ok: false, error: auth.error };
+
+  await logClinicalHistoryEvent(auth.admin, {
+    caseId,
+    actorId: auth.userId,
+    eventType: "clinical_history_used_for_image_limited_regeneration",
+    metadata: { action: "regenerate_ai_audit", reason: AUDITOR_RERUN_REASON_DOCUMENT_ASSISTED_IMAGE_LIMITED },
+  });
+
+  const rerun = await queueAuditorRerunFromAdmin(auth.admin, {
+    caseId,
+    actingUserId: auth.userId,
+    action: "regenerate_ai_audit",
+    reason: AUDITOR_RERUN_REASON_DOCUMENT_ASSISTED_IMAGE_LIMITED,
+    notes: "Image-limited regeneration triggered after Clinical Intelligence Editor save",
+  });
+
+  if (!rerun.ok) {
+    return {
+      ok: true,
+      snapshot: saveResult.snapshot,
+      created: saveResult.created,
+      warning: `Clinical history saved but image-limited regeneration failed: ${rerun.error}`,
     };
   }
 

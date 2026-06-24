@@ -124,18 +124,33 @@ export function formatClinicalHistoryForPrompt(snapshot: ClinicalHistorySnapshot
 
   field("Prior surgery count", snapshot.priorSurgeryCount);
   field("Prior procedure type", snapshot.priorProcedureType);
-  field("Prior surgery date", snapshot.priorSurgeryDate);
+  if (snapshot.priorSurgeryDate) {
+    field("Prior surgery date", snapshot.priorSurgeryDate);
+  } else if (snapshot.priorSurgeryTimingNote) {
+    lines.push(`- Prior surgery timing (approximate): ${snapshot.priorSurgeryTimingNote}`);
+  }
   field("Prior clinic", snapshot.priorClinicName);
   field("Prior surgeon", snapshot.priorSurgeonName);
   field("Prior graft count", snapshot.priorGraftCount);
   field("Estimated hair count", snapshot.estimatedHairCount);
   field("Average hairs per graft", snapshot.averageHairsPerGraft);
+  field("Single-hair grafts", snapshot.singleHairGrafts);
+  field("Double-hair grafts", snapshot.doubleHairGrafts);
+  field("Triple-hair grafts", snapshot.tripleHairGrafts);
+  field("Quadruple-hair grafts", snapshot.quadrupleHairGrafts);
+  field("Punch size (mm)", snapshot.punchSizeMm);
+  field("Extraction method", snapshot.extractionMethod);
+  field("Implantation method", snapshot.implantationMethod);
+  field("Transection rate (%)", snapshot.transectionRatePercent);
+  field("Survival estimate (%)", snapshot.survivalEstimatePercent);
   field("Donor grafts removed", snapshot.donorGraftsRemoved);
   if (snapshot.recipientZones.length) {
     lines.push(`- Recipient zones: ${snapshot.recipientZones.join(", ")}`);
   }
   field("Donor depletion level", snapshot.donorDepletionLevel);
+  field("Donor reserve assessment", snapshot.donorReserveAssessment);
   field("Visible scarring level", snapshot.visibleScarringLevel);
+  field("Surgical technique notes", snapshot.surgicalTechniqueNotes);
 
   const activeMeds = MEDICATION_HISTORY_KEYS.filter((k) => {
     const v = snapshot.medicationHistory?.[k];
@@ -153,9 +168,18 @@ export function formatClinicalHistoryForPrompt(snapshot: ClinicalHistorySnapshot
     lines.push(`- Clinician summary (internal): ${snapshot.clinicianSummary}`);
   }
 
-  if (snapshot.priorGraftCount != null || snapshot.averageHairsPerGraft != null) {
+  if (
+    snapshot.priorGraftCount != null ||
+    snapshot.averageHairsPerGraft != null ||
+    snapshot.punchSizeMm != null
+  ) {
     lines.push(
-      "- DONOR MANAGEMENT: When prior graft count and/or hairs/graft ratio are provided, incorporate them explicitly in donor-management reasoning."
+      "- DONOR MANAGEMENT: When prior graft count, hairs/graft ratio, and/or punch size are provided, treat them as high-priority and incorporate explicitly in donor-management reasoning. Do NOT invent missing metrics."
+    );
+  }
+  if (snapshot.priorSurgeryTimingNote && !snapshot.priorSurgeryDate) {
+    lines.push(
+      "- DATE PHRASING: Prior surgery date is approximate only — phrase timing as approximate in narrative."
     );
   }
 
