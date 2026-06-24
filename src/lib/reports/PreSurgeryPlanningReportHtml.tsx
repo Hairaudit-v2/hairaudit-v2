@@ -9,6 +9,12 @@ import {
   renderClinicalEvidenceGalleryHtml,
   type ClinicalEvidenceGalleryLabels,
 } from "./clinicalEvidenceGallery";
+import {
+  buildReviewInputsProcessed,
+  buildReviewInputsProcessedLabelsEn,
+  renderReviewInputsProcessedHtml,
+  REVIEW_INPUTS_PROCESSED_CSS,
+} from "./reviewInputsProcessed";
 
 export type PreSurgeryReportHtmlLabels = {
   heroTitle: string;
@@ -111,6 +117,15 @@ export function renderPreSurgeryPlanningReportHtml(vm: PreSurgeryReportHtmlVm): 
     labels: clinicalEvidenceLabels,
     mode: "pdf",
   });
+
+  const reviewInputsHtml = renderReviewInputsProcessedHtml(
+    buildReviewInputsProcessed({
+      pathway: "pre_surgery",
+      preReport: report,
+      photosByCategory,
+      labels: buildReviewInputsProcessedLabelsEn(),
+    })
+  );
 
   const preservationHtml = report.longTermPreservation
     ? renderLongTermHairPreservationHtml(report.longTermPreservation)
@@ -223,6 +238,7 @@ export function renderPreSurgeryPlanningReportHtml(vm: PreSurgeryReportHtmlVm): 
     .imageMeta { padding: 10px 12px; }
     .imageView { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
     ${CLINICAL_EVIDENCE_GALLERY_CSS}
+    ${REVIEW_INPUTS_PROCESSED_CSS}
     ${LONG_TERM_PRESERVATION_CSS}
     .trustBox { background: #f0f9ff; border-color: #bae6fd; }
     .nextSteps { background: #ecfdf5; border-color: #a7f3d0; }
@@ -259,6 +275,8 @@ export function renderPreSurgeryPlanningReportHtml(vm: PreSurgeryReportHtmlVm): 
       <p class="sectionLead">${esc(labels.scorecardsSubtitle)}</p>
       <div class="scoreGrid">${scorecardsHtml}</div>
     </div>
+
+    ${reviewInputsHtml}
 
     <div class="section">
       <div class="sectionHead"><h2>${esc(labels.sectionsTitle)}</h2></div>

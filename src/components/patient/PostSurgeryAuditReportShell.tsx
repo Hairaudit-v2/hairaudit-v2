@@ -15,6 +15,7 @@ import {
 } from "@/lib/reports/patientSafeSummaryDisclosure";
 import ClinicalEvidenceReviewGallery from "@/components/reports/ClinicalEvidenceReviewGallery";
 import LongTermHairPreservationSection from "@/components/patient/LongTermHairPreservationSection";
+import ReviewInputsProcessedSection from "@/components/patient/ReviewInputsProcessedSection";
 
 const SECTION_ORDER: PostSurgeryReviewSectionId[] = [
   "overall_procedure",
@@ -172,6 +173,8 @@ export default function PostSurgeryAuditReportShell({
           })}
         </div>
       </div>
+
+      <ReviewInputsProcessedSection pathway="post_surgery" postReport={report} uploads={uploads} />
 
       {report.concernFlags.length > 0 ? (
         <div className="rounded-2xl border border-amber-200/90 bg-amber-50/60 p-5 shadow-sm sm:p-6">

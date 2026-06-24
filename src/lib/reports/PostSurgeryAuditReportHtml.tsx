@@ -9,6 +9,12 @@ import {
   renderClinicalEvidenceGalleryHtml,
   type ClinicalEvidenceGalleryLabels,
 } from "./clinicalEvidenceGallery";
+import {
+  buildReviewInputsProcessed,
+  buildReviewInputsProcessedLabelsEn,
+  renderReviewInputsProcessedHtml,
+  REVIEW_INPUTS_PROCESSED_CSS,
+} from "./reviewInputsProcessed";
 
 export type PostSurgeryReportHtmlLabels = {
   heroTitle: string;
@@ -172,6 +178,15 @@ export function renderPostSurgeryAuditReportHtml(vm: PostSurgeryReportHtmlVm): s
     ? renderLongTermHairPreservationHtml(report.longTermPreservation)
     : "";
 
+  const reviewInputsHtml = renderReviewInputsProcessedHtml(
+    buildReviewInputsProcessed({
+      pathway: "post_surgery",
+      postReport: report,
+      photosByCategory,
+      labels: buildReviewInputsProcessedLabelsEn(),
+    })
+  );
+
   const repairSteps = report.repairPlanningGuidance ?? [];
   const repairPlanningHtml =
     repairSteps.length > 0
@@ -316,6 +331,7 @@ export function renderPostSurgeryAuditReportHtml(vm: PostSurgeryReportHtmlVm): s
     .imageMeta { padding: 10px 12px; }
     .imageView { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
     ${CLINICAL_EVIDENCE_GALLERY_CSS}
+    ${REVIEW_INPUTS_PROCESSED_CSS}
     .trustBox { background: #f0f9ff; border-color: #bae6fd; }
     .nextSteps { background: #ecfdf5; border-color: #a7f3d0; }
     .nextList { margin: 12px 0 0; padding: 0; list-style: none; }
@@ -355,6 +371,8 @@ export function renderPostSurgeryAuditReportHtml(vm: PostSurgeryReportHtmlVm): s
       <p class="sectionLead">${esc(labels.scorecardsSubtitle)}</p>
       <div class="scoreGrid">${scorecardsHtml}</div>
     </div>
+
+    ${reviewInputsHtml}
 
     ${concernsHtml}
 

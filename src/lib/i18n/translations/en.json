@@ -938,6 +938,34 @@
             "explanation": "Ongoing monitoring may allow earlier intervention before significant visible progression occurs."
           },
           "safety": "Before beginning any medication, supplement, or regenerative treatment, these options should always be discussed with your GP, prescribing doctor, or qualified treating clinician. HairAudit provides educational guidance only and does not prescribe treatment."
+        },
+        "reviewInputs": {
+          "title": "What We Reviewed",
+          "subtitle": "HairAudit independently processes multiple forms of clinical information when generating your assessment. The following data sources contributed to this report.",
+          "summary": "This report was generated using multiple layers of procedural review, image analysis, clinical context, and long-term restoration modelling.",
+          "summarySecondary": "HairAudit independently reviews each submitted case using structured clinical assessment protocols.",
+          "items": {
+            "clinical_images": "{{count}} clinical images reviewed",
+            "procedure_data": "Procedural information provided by patient",
+            "clinical_notes": "Clinical notes and context supplied by patient",
+            "support_documentation": "Support documentation uploaded",
+            "graft_count_data": "Graft count information reviewed",
+            "donor_analysis": "Donor preservation analysis completed",
+            "recipient_assessment": "Recipient zone placement reviewed",
+            "hairline_design": "Hairline design reviewed",
+            "extraction_pattern": "Extraction pattern consistency reviewed",
+            "density_review": "Density distribution patterns assessed",
+            "healing_patterns": "Healing patterns assessed",
+            "repair_probability": "Long-term repair probability analysed",
+            "procedural_consistency": "Procedural consistency reviewed",
+            "future_risk": "Future hair loss progression factors reviewed",
+            "sustainability": "Hair restoration sustainability modelling completed",
+            "hair_loss_pattern": "Hair loss pattern progression reviewed",
+            "donor_reserve": "Donor reserve suitability assessed",
+            "surgical_candidacy": "Surgical candidacy factors analysed",
+            "future_planning": "Future planning considerations modelled",
+            "medical_treatment_context": "Medical treatment context reviewed"
+          }
         }
       },
       "preSurgeryReport": {

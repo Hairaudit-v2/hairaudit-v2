@@ -14,6 +14,7 @@ import {
 } from "@/lib/reports/patientSafeSummaryDisclosure";
 import ClinicalEvidenceReviewGallery from "@/components/reports/ClinicalEvidenceReviewGallery";
 import LongTermHairPreservationSection from "@/components/patient/LongTermHairPreservationSection";
+import ReviewInputsProcessedSection from "@/components/patient/ReviewInputsProcessedSection";
 
 const SECTION_ORDER: PreSurgeryReviewSectionId[] = [
   "overall_planning",
@@ -157,6 +158,8 @@ export default function PreSurgeryPlanningReportShell({
           })}
         </div>
       </div>
+
+      <ReviewInputsProcessedSection pathway="pre_surgery" preReport={report} uploads={uploads} />
 
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
         <h3 className="text-lg font-semibold text-slate-900">
