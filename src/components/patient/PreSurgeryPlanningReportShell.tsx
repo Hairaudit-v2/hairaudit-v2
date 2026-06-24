@@ -15,6 +15,9 @@ import {
 import ClinicalEvidenceReviewGallery from "@/components/reports/ClinicalEvidenceReviewGallery";
 import LongTermHairPreservationSection from "@/components/patient/LongTermHairPreservationSection";
 import ReviewInputsProcessedSection from "@/components/patient/ReviewInputsProcessedSection";
+import AssessmentConfidenceSection from "@/components/patient/AssessmentConfidenceSection";
+import AssessmentImprovementRecommendationsSection from "@/components/patient/AssessmentImprovementRecommendationsSection";
+import type { ClinicalHistorySnapshot } from "@/lib/hairaudit/clinical-history/clinicalHistoryTypes";
 
 const SECTION_ORDER: PreSurgeryReviewSectionId[] = [
   "overall_planning",
@@ -58,6 +61,9 @@ export default function PreSurgeryPlanningReportShell({
   fallbackReason,
   uploads = [],
   caseId,
+  clinicalHistory,
+  imageLimitedAssessment,
+  documentAssistedAssessment,
 }: {
   report: PreSurgeryPlanningReport;
   statusLabel: string;
@@ -71,6 +77,9 @@ export default function PreSurgeryPlanningReportShell({
     metadata?: Record<string, unknown> | null;
   }>;
   caseId?: string;
+  clinicalHistory?: ClinicalHistorySnapshot | null;
+  imageLimitedAssessment?: boolean;
+  documentAssistedAssessment?: boolean;
 }) {
   const { t } = useI18n();
   const disclosureState = resolvePatientSafeSummaryDisclosureState({
@@ -160,6 +169,24 @@ export default function PreSurgeryPlanningReportShell({
       </div>
 
       <ReviewInputsProcessedSection pathway="pre_surgery" preReport={report} uploads={uploads} />
+
+      <AssessmentConfidenceSection
+        pathway="pre_surgery"
+        preReport={report}
+        uploads={uploads}
+        clinicalHistory={clinicalHistory}
+        imageLimitedAssessment={imageLimitedAssessment}
+        documentAssistedAssessment={documentAssistedAssessment}
+      />
+
+      <AssessmentImprovementRecommendationsSection
+        pathway="pre_surgery"
+        preReport={report}
+        uploads={uploads}
+        clinicalHistory={clinicalHistory}
+        imageLimitedAssessment={imageLimitedAssessment}
+        documentAssistedAssessment={documentAssistedAssessment}
+      />
 
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
         <h3 className="text-lg font-semibold text-slate-900">

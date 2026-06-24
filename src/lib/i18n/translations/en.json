@@ -966,6 +966,48 @@
             "future_planning": "Future planning considerations modelled",
             "medical_treatment_context": "Medical treatment context reviewed"
           }
+        },
+        "assessmentConfidence": {
+          "title": "Assessment Confidence",
+          "helper": "This score reflects the completeness and usefulness of the submitted evidence. It does not represent a diagnosis, treatment recommendation, or guarantee of surgical outcome.",
+          "band": {
+            "high": "High",
+            "moderate": "Moderate",
+            "limited": "Limited"
+          },
+          "strengthsTitle": "Evidence strengths",
+          "limitationsTitle": "Evidence limitations",
+          "summary": {
+            "high": {
+              "pre_surgery": "This pre-surgery planning assessment had strong evidence coverage, including multiple planning views and relevant case information.",
+              "post_surgery": "This post-surgery assessment had strong evidence coverage, including multiple submitted images, procedural details, and key donor or recipient views."
+            },
+            "moderate": {
+              "pre_surgery": "This pre-surgery planning assessment had useful evidence coverage, but some planning views or supporting details were limited.",
+              "post_surgery": "This post-surgery assessment had useful evidence coverage, but some views or supporting details were limited."
+            },
+            "limited": {
+              "pre_surgery": "This pre-surgery planning assessment was completed with limited evidence coverage, so suitability and planning observations should be interpreted cautiously.",
+              "post_surgery": "This post-surgery assessment was completed with limited evidence coverage, so some image-based observations should be interpreted cautiously."
+            }
+          }
+        },
+        "assessmentImprovement": {
+          "title": "How To Improve Assessment Accuracy",
+          "subtitle": "Additional information may help improve the depth and completeness of future HairAudit assessments.",
+          "footer": "Improved evidence may allow more detailed procedural analysis and more accurate long-term planning observations.",
+          "highCoverageMessage": "Your submitted evidence provided strong assessment coverage and allowed a comprehensive procedural review.",
+          "items": {
+            "additionalPhotos": "Upload additional photos from multiple scalp angles.",
+            "donorPhotos": "Include donor area photographs showing the back and sides of the scalp.",
+            "crownPhotos": "Provide top-down or crown photographs to allow better density and progression assessment.",
+            "recipientCloseup": "Provide close-up recipient area photographs to improve placement and density review accuracy.",
+            "graftCount": "Provide approximate graft count information if known.",
+            "procedureType": "Share your procedure type (such as FUE, DHI, FUT, or repair surgery) if known.",
+            "procedureTiming": "Include information about how long ago your procedure was performed.",
+            "patientNotes": "Include additional background information about your concerns or surgery history.",
+            "supportingDocuments": "Upload supporting documents such as clinic procedure summaries if available."
+          }
         }
       },
       "preSurgeryReport": {

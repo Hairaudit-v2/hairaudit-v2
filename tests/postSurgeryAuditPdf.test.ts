@@ -83,7 +83,12 @@ const clinicalHistory: ClinicalHistorySnapshot = {
 
 function renderHtmlForReport(
   report: ReturnType<typeof generatePostSurgeryAuditReport>,
-  photosByCategory?: Record<string, { signedUrl: string | null; label: string }[]>
+  photosByCategory?: Record<string, { signedUrl: string | null; label: string }[]>,
+  extra?: {
+    clinicalHistory?: typeof clinicalHistory;
+    imageLimitedAssessment?: boolean;
+    documentAssistedAssessment?: boolean;
+  }
 ): string {
   return renderPostSurgeryAuditReportHtml({
     report,
@@ -92,6 +97,9 @@ function renderHtmlForReport(
     labels: buildPostSurgeryReportHtmlLabelsEn("Moderate concerns", "Minor observation"),
     photosByCategory,
     clinicalEvidenceLabels: buildPostSurgeryClinicalEvidenceGalleryLabelsEn(),
+    clinicalHistory: extra?.clinicalHistory,
+    imageLimitedAssessment: extra?.imageLimitedAssessment,
+    documentAssistedAssessment: extra?.documentAssistedAssessment,
   });
 }
 
@@ -223,5 +231,21 @@ describe("HA-FIX-8I post-surgery audit PDF quality", () => {
     assert.ok(integrity);
     assert.ok(!integrity!.finding.toLowerCase().includes("rule-based placeholder"));
     assert.ok(!integrity!.finding.toLowerCase().includes("await extraction"));
+  });
+
+  it("assessment confidence section appears after What We Reviewed and includes helper disclaimer", () => {
+    const report = generatePostSurgeryAuditReport({
+      summary: sampleForensicSummary,
+      caseId: CASE_ID,
+      patientReviewPathway: "post_surgery",
+      clinicalHistory,
+    });
+    const html = renderHtmlForReport(report, undefined, { clinicalHistory });
+    const reviewIdx = html.indexOf("What We Reviewed");
+    const confidenceIdx = html.indexOf("Assessment Confidence");
+    assert.ok(reviewIdx >= 0);
+    assert.ok(confidenceIdx > reviewIdx);
+    assert.match(html, /does not represent a diagnosis, treatment recommendation, or guarantee of surgical outcome/);
+    assert.match(html, /assessmentConfidenceSection/);
   });
 });

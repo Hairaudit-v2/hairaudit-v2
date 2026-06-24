@@ -16,6 +16,9 @@ import {
 import ClinicalEvidenceReviewGallery from "@/components/reports/ClinicalEvidenceReviewGallery";
 import LongTermHairPreservationSection from "@/components/patient/LongTermHairPreservationSection";
 import ReviewInputsProcessedSection from "@/components/patient/ReviewInputsProcessedSection";
+import AssessmentConfidenceSection from "@/components/patient/AssessmentConfidenceSection";
+import AssessmentImprovementRecommendationsSection from "@/components/patient/AssessmentImprovementRecommendationsSection";
+import type { ClinicalHistorySnapshot } from "@/lib/hairaudit/clinical-history/clinicalHistoryTypes";
 
 const SECTION_ORDER: PostSurgeryReviewSectionId[] = [
   "overall_procedure",
@@ -71,6 +74,9 @@ export default function PostSurgeryAuditReportShell({
   fallbackReason,
   uploads = [],
   caseId,
+  clinicalHistory,
+  imageLimitedAssessment,
+  documentAssistedAssessment,
 }: {
   report: PostSurgeryAuditReport;
   statusLabel: string;
@@ -84,6 +90,9 @@ export default function PostSurgeryAuditReportShell({
     metadata?: Record<string, unknown> | null;
   }>;
   caseId?: string;
+  clinicalHistory?: ClinicalHistorySnapshot | null;
+  imageLimitedAssessment?: boolean;
+  documentAssistedAssessment?: boolean;
 }) {
   const { t } = useI18n();
   const disclosureState = resolvePatientSafeSummaryDisclosureState({
@@ -175,6 +184,24 @@ export default function PostSurgeryAuditReportShell({
       </div>
 
       <ReviewInputsProcessedSection pathway="post_surgery" postReport={report} uploads={uploads} />
+
+      <AssessmentConfidenceSection
+        pathway="post_surgery"
+        postReport={report}
+        uploads={uploads}
+        clinicalHistory={clinicalHistory}
+        imageLimitedAssessment={imageLimitedAssessment}
+        documentAssistedAssessment={documentAssistedAssessment}
+      />
+
+      <AssessmentImprovementRecommendationsSection
+        pathway="post_surgery"
+        postReport={report}
+        uploads={uploads}
+        clinicalHistory={clinicalHistory}
+        imageLimitedAssessment={imageLimitedAssessment}
+        documentAssistedAssessment={documentAssistedAssessment}
+      />
 
       {report.concernFlags.length > 0 ? (
         <div className="rounded-2xl border border-amber-200/90 bg-amber-50/60 p-5 shadow-sm sm:p-6">

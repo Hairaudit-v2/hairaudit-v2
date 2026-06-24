@@ -15,6 +15,19 @@ import {
   renderReviewInputsProcessedHtml,
   REVIEW_INPUTS_PROCESSED_CSS,
 } from "./reviewInputsProcessed";
+import {
+  buildAssessmentConfidence,
+  buildAssessmentConfidenceLabelsEn,
+  renderAssessmentConfidenceHtml,
+  ASSESSMENT_CONFIDENCE_CSS,
+} from "./assessmentConfidence";
+import {
+  buildAssessmentImprovementLabelsEn,
+  buildAssessmentImprovementRecommendations,
+  renderAssessmentImprovementHtml,
+  ASSESSMENT_IMPROVEMENT_CSS,
+} from "./assessmentImprovementRecommendations";
+import type { ClinicalHistorySnapshot } from "@/lib/hairaudit/clinical-history/clinicalHistoryTypes";
 
 export type PreSurgeryReportHtmlLabels = {
   heroTitle: string;
@@ -48,6 +61,9 @@ export type PreSurgeryReportHtmlVm = {
   generatedAtDisplay: string;
   photosByCategory?: Record<string, { signedUrl: string | null; label: string }[]>;
   clinicalEvidenceLabels: ClinicalEvidenceGalleryLabels;
+  clinicalHistory?: ClinicalHistorySnapshot | null;
+  imageLimitedAssessment?: boolean;
+  documentAssistedAssessment?: boolean;
 };
 
 function esc(s: string) {
@@ -79,7 +95,17 @@ const SCORECARD_ORDER = [
 ] as const;
 
 export function renderPreSurgeryPlanningReportHtml(vm: PreSurgeryReportHtmlVm): string {
-  const { report, caseId, labels, generatedAtDisplay, photosByCategory, clinicalEvidenceLabels } = vm;
+  const {
+    report,
+    caseId,
+    labels,
+    generatedAtDisplay,
+    photosByCategory,
+    clinicalEvidenceLabels,
+    clinicalHistory,
+    imageLimitedAssessment,
+    documentAssistedAssessment,
+  } = vm;
   const sectionById = new Map(report.sections.map((s) => [s.id, s]));
   const scorecardById = new Map(report.scorecards.map((s) => [s.id, s]));
 
@@ -126,6 +152,37 @@ export function renderPreSurgeryPlanningReportHtml(vm: PreSurgeryReportHtmlVm): 
       labels: buildReviewInputsProcessedLabelsEn(),
     })
   );
+
+  const assessmentConfidenceLabels = buildAssessmentConfidenceLabelsEn();
+  const assessmentConfidenceResult = buildAssessmentConfidence({
+    pathway: "pre_surgery",
+    preReport: report,
+    photosByCategory,
+    clinicalHistory,
+    imageLimitedAssessment,
+    documentAssistedAssessment,
+    labels: assessmentConfidenceLabels,
+  });
+  const assessmentConfidenceHtml = renderAssessmentConfidenceHtml(
+    assessmentConfidenceResult,
+    assessmentConfidenceLabels
+  );
+
+  const assessmentImprovementLabels = buildAssessmentImprovementLabelsEn();
+  const assessmentImprovementHtml = renderAssessmentImprovementHtml({
+    band: assessmentConfidenceResult.band,
+    recommendations: buildAssessmentImprovementRecommendations({
+      pathway: "pre_surgery",
+      preReport: report,
+      photosByCategory,
+      clinicalHistory,
+      imageLimitedAssessment,
+      documentAssistedAssessment,
+      confidence: assessmentConfidenceResult,
+      labels: assessmentImprovementLabels,
+    }),
+    labels: assessmentImprovementLabels,
+  });
 
   const preservationHtml = report.longTermPreservation
     ? renderLongTermHairPreservationHtml(report.longTermPreservation)
@@ -239,6 +296,8 @@ export function renderPreSurgeryPlanningReportHtml(vm: PreSurgeryReportHtmlVm): 
     .imageView { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
     ${CLINICAL_EVIDENCE_GALLERY_CSS}
     ${REVIEW_INPUTS_PROCESSED_CSS}
+    ${ASSESSMENT_CONFIDENCE_CSS}
+    ${ASSESSMENT_IMPROVEMENT_CSS}
     ${LONG_TERM_PRESERVATION_CSS}
     .trustBox { background: #f0f9ff; border-color: #bae6fd; }
     .nextSteps { background: #ecfdf5; border-color: #a7f3d0; }
@@ -277,6 +336,10 @@ export function renderPreSurgeryPlanningReportHtml(vm: PreSurgeryReportHtmlVm): 
     </div>
 
     ${reviewInputsHtml}
+
+    ${assessmentConfidenceHtml}
+
+    ${assessmentImprovementHtml}
 
     <div class="section">
       <div class="sectionHead"><h2>${esc(labels.sectionsTitle)}</h2></div>

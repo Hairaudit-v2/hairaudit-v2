@@ -1344,6 +1344,11 @@ export default async function Page({
                 metadata?: Record<string, unknown> | null;
               }>}
               caseId={c.id}
+              clinicalHistory={clinicalHistorySnapshot}
+              imageLimitedAssessment={imageLimitedForensicNotice}
+              documentAssistedAssessment={Boolean(
+                (forensic as { documentAssistedAssessment?: boolean } | null)?.documentAssistedAssessment
+              )}
             />
           ) : null}
           {patientShowReportContent && latestReport && preSurgeryPlanningReport ? (
@@ -1360,6 +1365,11 @@ export default async function Page({
                 metadata?: Record<string, unknown> | null;
               }>}
               caseId={c.id}
+              clinicalHistory={clinicalHistorySnapshot}
+              imageLimitedAssessment={imageLimitedForensicNotice}
+              documentAssistedAssessment={Boolean(
+                (forensic as { documentAssistedAssessment?: boolean } | null)?.documentAssistedAssessment
+              )}
             />
           ) : null}
           {patientShowReportContent &&

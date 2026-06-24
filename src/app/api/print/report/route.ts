@@ -578,10 +578,13 @@ export async function GET(req: Request) {
     debugFooter,
   };
 
-  let postSurgeryClinicalHistorySnapshot = null;
-  if (shouldUsePostSurgeryReportTemplate(c.patient_review_pathway, mode)) {
+  let clinicalHistorySnapshot = null;
+  if (
+    shouldUsePostSurgeryReportTemplate(c.patient_review_pathway, mode) ||
+    shouldUsePreSurgeryReportTemplate(c.patient_review_pathway, mode)
+  ) {
     const clinicalHistoryRow = await loadCaseClinicalHistory(caseId, supabase as any);
-    postSurgeryClinicalHistorySnapshot = clinicalHistoryRow
+    clinicalHistorySnapshot = clinicalHistoryRow
       ? buildClinicalHistorySnapshot(clinicalHistoryRow)
       : null;
   }
@@ -593,7 +596,7 @@ export async function GET(req: Request) {
         reportVersion: content.version,
         patientReviewPathway: c.patient_review_pathway,
         photosByCategory,
-        clinicalHistory: postSurgeryClinicalHistorySnapshot,
+        clinicalHistory: clinicalHistorySnapshot,
       });
       if (postReport) {
         const outcomeLabel =
@@ -602,6 +605,9 @@ export async function GET(req: Request) {
         const repairLabel =
           POST_SURGERY_REPAIR_LABELS_EN[postReport.repairConsiderationId] ??
           postReport.repairConsiderationId;
+        const forensic = (summary as Record<string, unknown>)?.forensic_audit as
+          | { imageLimitedAssessment?: boolean; documentAssistedAssessment?: boolean }
+          | undefined;
         return renderPostSurgeryAuditReportHtml({
           report: postReport,
           caseId,
@@ -609,6 +615,9 @@ export async function GET(req: Request) {
           labels: buildPostSurgeryReportHtmlLabelsEn(outcomeLabel, repairLabel),
           photosByCategory,
           clinicalEvidenceLabels: buildPostSurgeryClinicalEvidenceGalleryLabelsEn(),
+          clinicalHistory: clinicalHistorySnapshot,
+          imageLimitedAssessment: Boolean(forensic?.imageLimitedAssessment),
+          documentAssistedAssessment: Boolean(forensic?.documentAssistedAssessment),
         });
       }
     }
@@ -623,6 +632,9 @@ export async function GET(req: Request) {
         const outcomeLabel =
           PRE_SURGERY_OUTCOME_LABELS_EN[preReport.planningOutcomeId] ??
           preReport.planningOutcomeId;
+        const forensic = (summary as Record<string, unknown>)?.forensic_audit as
+          | { imageLimitedAssessment?: boolean; documentAssistedAssessment?: boolean }
+          | undefined;
         return renderPreSurgeryPlanningReportHtml({
           report: preReport,
           caseId,
@@ -630,6 +642,9 @@ export async function GET(req: Request) {
           labels: buildPreSurgeryReportHtmlLabelsEn(outcomeLabel),
           photosByCategory,
           clinicalEvidenceLabels: buildPreSurgeryClinicalEvidenceGalleryLabelsEn(),
+          clinicalHistory: clinicalHistorySnapshot,
+          imageLimitedAssessment: Boolean(forensic?.imageLimitedAssessment),
+          documentAssistedAssessment: Boolean(forensic?.documentAssistedAssessment),
         });
       }
     }
