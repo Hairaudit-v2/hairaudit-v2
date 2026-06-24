@@ -1,4 +1,5 @@
 import type { PreSurgeryReportHtmlLabels } from "./PreSurgeryPlanningReportHtml";
+import type { ClinicalEvidenceGalleryLabels } from "./clinicalEvidenceGallery";
 
 /** Default English labels for pre-surgery PDF when i18n server context is unavailable. */
 export function buildPreSurgeryReportHtmlLabelsEn(planningOutcome: string): PreSurgeryReportHtmlLabels {
@@ -29,7 +30,7 @@ export function buildPreSurgeryReportHtmlLabelsEn(planningOutcome: string): PreS
       medical_treatment: "Medical Treatment Considerations",
     },
     sectionsTitle: "Independent planning sections",
-    imagesTitle: "Your uploaded images",
+    imagesTitle: "Clinical Evidence Reviewed",
     imageViews: {
       front: "Front Hairline View",
       crown: "Crown / Top View",
@@ -49,6 +50,22 @@ export function buildPreSurgeryReportHtmlLabelsEn(planningOutcome: string): PreS
       "This report is based on uploaded images and questionnaire answers only. It is an independent planning review, not a final diagnosis or surgical plan. Image quality may limit interpretation.",
     footerLine:
       "HairAudit — Independent pre-surgery planning review. Discuss all treatment decisions with a qualified medical professional.",
+  };
+}
+
+export function buildPreSurgeryClinicalEvidenceGalleryLabelsEn(): ClinicalEvidenceGalleryLabels {
+  return {
+    title: "Clinical Evidence Reviewed",
+    subtitle:
+      "The following submitted images were processed and reviewed as part of your independent procedural assessment. This assessment incorporates all uploaded visual evidence used during procedural analysis.",
+    evidenceProcessedPrefix: "Evidence Processed",
+    evidenceProcessedSuffix: "clinical images reviewed during analysis.",
+    evidenceIncorporated: "This independent assessment incorporates all submitted visual evidence.",
+    additionalReviewed: "+{count} additional images were reviewed as part of this assessment.",
+    pdfOmissionNotice:
+      "Additional images were processed during analysis but omitted from PDF for layout optimisation.",
+    fallbackImageLabel: "Additional Clinical Image",
+    noPhoto: "Photo not available in this export",
   };
 }
 

@@ -1,4 +1,10 @@
 import type { PreSurgeryPlanningReport } from "./preSurgeryPlanningReport";
+import {
+  buildClinicalEvidenceImagesFromPhotosByCategory,
+  CLINICAL_EVIDENCE_GALLERY_CSS,
+  renderClinicalEvidenceGalleryHtml,
+  type ClinicalEvidenceGalleryLabels,
+} from "./clinicalEvidenceGallery";
 
 export type PreSurgeryReportHtmlLabels = {
   heroTitle: string;
@@ -30,6 +36,8 @@ export type PreSurgeryReportHtmlVm = {
   caseId: string;
   labels: PreSurgeryReportHtmlLabels;
   generatedAtDisplay: string;
+  photosByCategory?: Record<string, { signedUrl: string | null; label: string }[]>;
+  clinicalEvidenceLabels: ClinicalEvidenceGalleryLabels;
 };
 
 function esc(s: string) {
@@ -61,7 +69,7 @@ const SCORECARD_ORDER = [
 ] as const;
 
 export function renderPreSurgeryPlanningReportHtml(vm: PreSurgeryReportHtmlVm): string {
-  const { report, caseId, labels, generatedAtDisplay } = vm;
+  const { report, caseId, labels, generatedAtDisplay, photosByCategory, clinicalEvidenceLabels } = vm;
   const sectionById = new Map(report.sections.map((s) => [s.id, s]));
   const scorecardById = new Map(report.scorecards.map((s) => [s.id, s]));
 
@@ -94,22 +102,11 @@ export function renderPreSurgeryPlanningReportHtml(vm: PreSurgeryReportHtmlVm): 
     })
     .join("");
 
-  const imagesHtml = report.imageAssessments
-    .map((img) => {
-      const viewLabel = labels.imageViews[img.viewKey] ?? img.viewKey;
-      const imgTag = img.imageUrl
-        ? `<img src="${esc(img.imageUrl)}" alt="${esc(img.imageLabel ?? viewLabel)}" class="patientPhoto" />`
-        : `<div class="photoPlaceholder">${esc(labels.noPhoto)}</div>`;
-      return `
-        <div class="imageCard">
-          ${imgTag}
-          <div class="imageMeta">
-            <div class="imageView">${esc(viewLabel)}</div>
-            <p>${esc(img.assessment)}</p>
-          </div>
-        </div>`;
-    })
-    .join("");
+  const clinicalEvidenceHtml = renderClinicalEvidenceGalleryHtml({
+    images: buildClinicalEvidenceImagesFromPhotosByCategory(photosByCategory),
+    labels: clinicalEvidenceLabels,
+    mode: "pdf",
+  });
 
   const nextStepsHtml = report.recommendedNextSteps
     .map((step) => `<li><span class="check">✓</span> ${esc(step)}</li>`)
@@ -208,15 +205,16 @@ export function renderPreSurgeryPlanningReportHtml(vm: PreSurgeryReportHtmlVm): 
     }
     .sectionBody h3 { margin: 0; font-size: 12px; font-weight: 800; }
     .sectionBody p { margin: 6px 0 0; color: #334155; }
-    .imageGrid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 12px; }
+    .imageGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 12px; }
     .imageCard { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: #f8fafc; }
-    .patientPhoto { width: 100%; height: 160px; object-fit: cover; display: block; }
+    .patientPhoto { width: 100%; height: 140px; object-fit: cover; display: block; }
     .photoPlaceholder {
-      height: 160px; display: flex; align-items: center; justify-content: center;
+      height: 140px; display: flex; align-items: center; justify-content: center;
       background: #e8eef7; color: var(--muted); font-size: 11px;
     }
     .imageMeta { padding: 10px 12px; }
     .imageView { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+    ${CLINICAL_EVIDENCE_GALLERY_CSS}
     .trustBox { background: #f0f9ff; border-color: #bae6fd; }
     .nextSteps { background: #ecfdf5; border-color: #a7f3d0; }
     .nextList { margin: 12px 0 0; padding: 0; list-style: none; }
@@ -259,10 +257,7 @@ export function renderPreSurgeryPlanningReportHtml(vm: PreSurgeryReportHtmlVm): 
       ${sectionsHtml}
     </div>
 
-    <div class="section">
-      <div class="sectionHead"><h2>${esc(labels.imagesTitle)}</h2></div>
-      <div class="imageGrid">${imagesHtml}</div>
-    </div>
+    ${clinicalEvidenceHtml}
 
     <div class="section trustBox">
       <div class="sectionHead"><h2>${esc(labels.trustTitle)}</h2></div>

@@ -11,6 +11,7 @@ import { shouldUsePostSurgeryReportTemplate } from "../src/lib/reports/postSurge
 import { renderPreSurgeryPlanningReportHtml } from "../src/lib/reports/PreSurgeryPlanningReportHtml";
 import {
   buildPreSurgeryReportHtmlLabelsEn,
+  buildPreSurgeryClinicalEvidenceGalleryLabelsEn,
   PRE_SURGERY_OUTCOME_LABELS_EN,
 } from "../src/lib/reports/preSurgeryReportLabels";
 
@@ -193,6 +194,10 @@ describe("preSurgeryPlanningReport", () => {
       caseId,
       generatedAtDisplay: "2026-06-21",
       labels: buildPreSurgeryReportHtmlLabelsEn(outcomeLabel),
+      photosByCategory: {
+        "Pre-op - preop front": [{ signedUrl: "https://example.com/front.jpg", label: "preop_front" }],
+      },
+      clinicalEvidenceLabels: buildPreSurgeryClinicalEvidenceGalleryLabelsEn(),
     });
 
     assert.match(html, /Independent Review Completed/);

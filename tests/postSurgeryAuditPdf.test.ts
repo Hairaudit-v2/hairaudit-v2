@@ -5,7 +5,7 @@
 
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { buildPostSurgeryReportHtmlLabelsEn } from "../src/lib/reports/postSurgeryReportLabels";
+import { buildPostSurgeryReportHtmlLabelsEn, buildPostSurgeryClinicalEvidenceGalleryLabelsEn } from "../src/lib/reports/postSurgeryReportLabels";
 import { renderPostSurgeryAuditReportHtml } from "../src/lib/reports/PostSurgeryAuditReportHtml";
 import {
   generatePostSurgeryAuditReport,
@@ -82,13 +82,16 @@ const clinicalHistory: ClinicalHistorySnapshot = {
 };
 
 function renderHtmlForReport(
-  report: ReturnType<typeof generatePostSurgeryAuditReport>
+  report: ReturnType<typeof generatePostSurgeryAuditReport>,
+  photosByCategory?: Record<string, { signedUrl: string | null; label: string }[]>
 ): string {
   return renderPostSurgeryAuditReportHtml({
     report,
     caseId: CASE_ID,
     generatedAtDisplay: "2026-06-24",
     labels: buildPostSurgeryReportHtmlLabelsEn("Moderate concerns", "Minor observation"),
+    photosByCategory,
+    clinicalEvidenceLabels: buildPostSurgeryClinicalEvidenceGalleryLabelsEn(),
   });
 }
 
@@ -165,29 +168,25 @@ describe("HA-FIX-8I post-surgery audit PDF quality", () => {
     assert.ok(report.repairPlanningGuidance.length >= 3);
   });
 
-  it("image fallback only appears when image truly unavailable", () => {
+  it("clinical evidence gallery renders all provided photos with completeness statement", () => {
     const report = generatePostSurgeryAuditReport({
       summary: sampleForensicSummary,
       caseId: CASE_ID,
       patientReviewPathway: "post_surgery",
     });
-    const withoutPhotos = renderHtmlForReport(report);
-    assert.match(withoutPhotos, /could not be embedded in this PDF export/);
-    assert.ok(!withoutPhotos.includes("Photo not available in this export"));
-
     const photosByCategory = {
-      "Current - current front": [{ signedUrl: "https://example.com/front.jpg", label: "Front" }],
-      "Current - current donor rear": [{ signedUrl: "https://example.com/donor.jpg", label: "Donor" }],
+      "Pre-op - preop front": [{ signedUrl: "https://example.com/front.jpg", label: "preop_front" }],
+      "Pre-op - preop left": [{ signedUrl: "https://example.com/left.jpg", label: "preop_left" }],
+      "Pre-op - preop donor rear": [{ signedUrl: "https://example.com/donor.jpg", label: "preop_donor_rear" }],
     };
-    const withPhotos = renderHtmlForReport({
-      ...report,
-      imageAssessments: mergePostSurgeryImageAssessmentsWithPhotos(
-        report.imageAssessments,
-        photosByCategory
-      ),
-    });
-    assert.match(withPhotos, /https:\/\/example\.com\/front\.jpg/);
-    assert.ok(!withPhotos.includes("could not be embedded in this PDF export"));
+    const html = renderHtmlForReport(report, photosByCategory);
+    assert.match(html, /Clinical Evidence Reviewed/);
+    assert.match(html, /https:\/\/example\.com\/front\.jpg/);
+    assert.match(html, /https:\/\/example\.com\/left\.jpg/);
+    assert.match(html, /https:\/\/example\.com\/donor\.jpg/);
+    assert.match(html, /3 clinical images reviewed during analysis/);
+    assert.match(html, /incorporates all submitted visual evidence/i);
+    assert.ok(!html.includes("could not be embedded in this PDF export"));
   });
 
   it("mergePostSurgeryImageAssessmentsWithPhotos resolves pipeline category keys", () => {

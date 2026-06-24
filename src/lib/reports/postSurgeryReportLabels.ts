@@ -1,4 +1,5 @@
 import type { PostSurgeryReportHtmlLabels } from "./PostSurgeryAuditReportHtml";
+import type { ClinicalEvidenceGalleryLabels } from "./clinicalEvidenceGallery";
 
 /** Default English labels for post-surgery PDF when i18n server context is unavailable. */
 export function buildPostSurgeryReportHtmlLabelsEn(
@@ -41,7 +42,7 @@ export function buildPostSurgeryReportHtmlLabelsEn(
       elevated: "Elevated concern",
       significant: "Significant concern",
     },
-    imagesTitle: "Your uploaded images",
+    imagesTitle: "Clinical Evidence Reviewed",
     imageViews: {
       front: "Front View",
       donor: "Donor View",
@@ -70,6 +71,22 @@ export function buildPostSurgeryReportHtmlLabelsEn(
     privacyStatement:
       "This report is based on uploaded images and questionnaire answers only. It is not a medical diagnosis. Image quality may limit interpretation.",
     footerLine: "HairAudit — Independent procedural review. Your treating clinician remains responsible for diagnosis and treatment.",
+  };
+}
+
+export function buildPostSurgeryClinicalEvidenceGalleryLabelsEn(): ClinicalEvidenceGalleryLabels {
+  return {
+    title: "Clinical Evidence Reviewed",
+    subtitle:
+      "The following submitted images were processed and reviewed as part of your independent procedural assessment. This assessment incorporates all uploaded visual evidence used during procedural analysis.",
+    evidenceProcessedPrefix: "Evidence Processed",
+    evidenceProcessedSuffix: "clinical images reviewed during analysis.",
+    evidenceIncorporated: "This independent assessment incorporates all submitted visual evidence.",
+    additionalReviewed: "+{count} additional images were reviewed as part of this assessment.",
+    pdfOmissionNotice:
+      "Additional images were processed during analysis but omitted from PDF for layout optimisation.",
+    fallbackImageLabel: "Additional Clinical Image",
+    noPhoto: "Image was reviewed but could not be embedded in this PDF export.",
   };
 }
 

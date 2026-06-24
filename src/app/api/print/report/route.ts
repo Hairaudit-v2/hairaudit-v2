@@ -16,11 +16,13 @@ import {
 } from "@/lib/reports/preSurgeryPlanningReport";
 import {
   buildPostSurgeryReportHtmlLabelsEn,
+  buildPostSurgeryClinicalEvidenceGalleryLabelsEn,
   POST_SURGERY_OUTCOME_LABELS_EN,
   POST_SURGERY_REPAIR_LABELS_EN,
 } from "@/lib/reports/postSurgeryReportLabels";
 import {
   buildPreSurgeryReportHtmlLabelsEn,
+  buildPreSurgeryClinicalEvidenceGalleryLabelsEn,
   PRE_SURGERY_OUTCOME_LABELS_EN,
 } from "@/lib/reports/preSurgeryReportLabels";
 import rubric from "@/lib/audit/rubrics/hairaudit_clinical_v1.json";
@@ -605,6 +607,8 @@ export async function GET(req: Request) {
           caseId,
           generatedAtDisplay: content.generatedAt,
           labels: buildPostSurgeryReportHtmlLabelsEn(outcomeLabel, repairLabel),
+          photosByCategory,
+          clinicalEvidenceLabels: buildPostSurgeryClinicalEvidenceGalleryLabelsEn(),
         });
       }
     }
@@ -624,6 +628,8 @@ export async function GET(req: Request) {
           caseId,
           generatedAtDisplay: content.generatedAt,
           labels: buildPreSurgeryReportHtmlLabelsEn(outcomeLabel),
+          photosByCategory,
+          clinicalEvidenceLabels: buildPreSurgeryClinicalEvidenceGalleryLabelsEn(),
         });
       }
     }

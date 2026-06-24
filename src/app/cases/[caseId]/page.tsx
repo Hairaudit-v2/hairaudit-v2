@@ -1337,6 +1337,13 @@ export default async function Page({
               translatedNarrativeActive={patientSafeSummaryNarrative.translatedNarrativeActive}
               requestedLocale={seoLocale}
               fallbackReason={patientSafeSummaryNarrative.fallbackReason}
+              uploads={(uploads ?? []) as Array<{
+                id: string;
+                type: string;
+                storage_path: string;
+                metadata?: Record<string, unknown> | null;
+              }>}
+              caseId={c.id}
             />
           ) : null}
           {patientShowReportContent && latestReport && preSurgeryPlanningReport ? (
@@ -1346,6 +1353,13 @@ export default async function Page({
               translatedNarrativeActive={patientSafeSummaryNarrative.translatedNarrativeActive}
               requestedLocale={seoLocale}
               fallbackReason={patientSafeSummaryNarrative.fallbackReason}
+              uploads={(uploads ?? []) as Array<{
+                id: string;
+                type: string;
+                storage_path: string;
+                metadata?: Record<string, unknown> | null;
+              }>}
+              caseId={c.id}
             />
           ) : null}
           {patientShowReportContent &&

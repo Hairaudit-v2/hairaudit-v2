@@ -914,7 +914,8 @@
           "medical_treatment": "Medical Treatment Considerations"
         },
         "images": {
-          "title": "Your uploaded images",
+          "title": "Clinical Evidence Reviewed",
+          "subtitle": "The following submitted images were processed and reviewed as part of your independent procedural assessment. This assessment incorporates all uploaded visual evidence used during procedural analysis.",
           "noPhoto": "Photo not available",
           "views": {
             "front": "Front Hairline View",
@@ -991,7 +992,8 @@
           "repair_considerations": "Repair Considerations"
         },
         "images": {
-          "title": "Your uploaded images",
+          "title": "Clinical Evidence Reviewed",
+          "subtitle": "The following submitted images were processed and reviewed as part of your independent procedural assessment. This assessment incorporates all uploaded visual evidence used during procedural analysis.",
           "noPhoto": "Photo not available",
           "views": {
             "front": "Front View",

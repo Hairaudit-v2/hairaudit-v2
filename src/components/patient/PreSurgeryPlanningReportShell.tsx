@@ -12,6 +12,7 @@ import {
   resolvePatientSafeSummaryDisclosureState,
   type PatientSafeSummaryFallbackReason,
 } from "@/lib/reports/patientSafeSummaryDisclosure";
+import ClinicalEvidenceReviewGallery from "@/components/reports/ClinicalEvidenceReviewGallery";
 
 const SECTION_ORDER: PreSurgeryReviewSectionId[] = [
   "overall_planning",
@@ -53,12 +54,21 @@ export default function PreSurgeryPlanningReportShell({
   translatedNarrativeActive = false,
   requestedLocale = "en",
   fallbackReason,
+  uploads = [],
+  caseId,
 }: {
   report: PreSurgeryPlanningReport;
   statusLabel: string;
   translatedNarrativeActive?: boolean;
   requestedLocale?: SupportedLocale;
   fallbackReason?: PatientSafeSummaryFallbackReason;
+  uploads?: Array<{
+    id: string;
+    type: string;
+    storage_path: string;
+    metadata?: Record<string, unknown> | null;
+  }>;
+  caseId?: string;
 }) {
   const { t } = useI18n();
   const disclosureState = resolvePatientSafeSummaryDisclosureState({
@@ -177,42 +187,15 @@ export default function PreSurgeryPlanningReportShell({
         </div>
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-        <h3 className="text-lg font-semibold text-slate-900">
-          {t("dashboard.patient.preSurgeryReport.images.title")}
-        </h3>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {report.imageAssessments.map((img) => (
-            <div
-              key={img.viewKey}
-              className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50"
-            >
-              {img.imageUrl ? (
-                <div className="aspect-[4/3] bg-slate-200">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={img.imageUrl}
-                    alt={img.imageLabel ?? img.viewKey}
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-              ) : (
-                <div className="flex aspect-[4/3] items-center justify-center bg-slate-100 text-sm text-slate-500">
-                  {t("dashboard.patient.preSurgeryReport.images.noPhoto")}
-                </div>
-              )}
-              <div className="p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  {t(
-                    `dashboard.patient.preSurgeryReport.images.views.${img.viewKey}` as TranslationKey
-                  )}
-                </p>
-                <p className="mt-2 text-sm leading-relaxed text-slate-700">{img.assessment}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      {caseId ? (
+        <ClinicalEvidenceReviewGallery
+          uploads={uploads}
+          caseId={caseId}
+          titleKey="dashboard.patient.preSurgeryReport.images.title"
+          subtitleKey="dashboard.patient.preSurgeryReport.images.subtitle"
+          noPhotoKey="dashboard.patient.preSurgeryReport.images.noPhoto"
+        />
+      ) : null}
 
       <div className="rounded-2xl border border-sky-200/80 bg-sky-50/50 p-5 shadow-sm sm:p-6">
         <h3 className="text-lg font-semibold text-sky-950">
