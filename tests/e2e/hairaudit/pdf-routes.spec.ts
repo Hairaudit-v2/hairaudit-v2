@@ -35,8 +35,8 @@ test.describe("PDF and print route smoke tests", () => {
     const baseURL = resolveE2eBaseUrl();
 
     for (const [label, entry, expectedTemplate] of [
-      ["pre-surgery", catalog.preSurgery[0], "pre-surgery-planning"],
-      ["post-surgery", catalog.postSurgery[0], "post-surgery-audit"],
+      ["pre-surgery", catalog.preSurgery[0], "elite"],
+      ["post-surgery", catalog.postSurgery[0], "elite"],
     ] as const) {
       test.skip(!entry?.caseId, `Missing ${label} demo case`);
 

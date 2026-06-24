@@ -42,6 +42,7 @@ import { enrichKeyMetricsAfterNormalize } from "@/lib/evidence/evidenceMissingCo
 import { getCaseFilesBucketNameForReadOnlyUse } from "@/lib/hairaudit/uploadStorage";
 import { requireReportRenderTokenSecret } from "@/lib/security/secrets";
 import { resolvePdfReviewRisks } from "@/lib/reports/patientPdfReviewAreas";
+import { resolvePdfReportTemplateHeader } from "@/lib/pdf/normalizeReportTemplateForPdf";
 
 function clamp100(n: number) {
   return Math.max(0, Math.min(100, n));
@@ -617,11 +618,22 @@ export async function GET(req: Request) {
   })();
   const htmlUtf8Bytes = Buffer.byteLength(html, "utf8");
 
+  const clinicalTemplate = resolvePatientReportTemplateName(c.patient_review_pathway, mode);
+  const reportId =
+    String(url.searchParams.get("reportId") ?? "").trim() ||
+    String((latestReport as { id?: string } | null)?.id ?? "").trim() ||
+    null;
+  const pdfTemplate = resolvePdfReportTemplateHeader({
+    inputTemplate: clinicalTemplate,
+    caseId,
+    reportId,
+  });
+
   return new NextResponse(html, {
     headers: {
       "Content-Type": "text/html; charset=utf-8",
       "Cache-Control": "no-store",
-      "X-Report-Template": resolvePatientReportTemplateName(c.patient_review_pathway, mode),
+      "X-Report-Template": pdfTemplate,
       "X-Audit-Mode": mode,
       "X-Pdf-Print-Html-Bytes": String(htmlUtf8Bytes),
       "X-Pdf-Print-Image-Count": String(printPhotoStats.imageCount),

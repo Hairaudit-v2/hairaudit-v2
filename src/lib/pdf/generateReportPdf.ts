@@ -6,6 +6,7 @@ import {
   parsePrintStatsFromPreflightHeaders,
   shouldLogPdfBenchmark,
 } from "@/lib/pdf/pdfGenerationMetrics";
+import { validatePdfPreflightTemplateHeader } from "@/lib/pdf/normalizeReportTemplateForPdf";
 
 export async function generateReportPdfFromUrl(url: string): Promise<Buffer> {
   const startedAt = Date.now();
@@ -89,12 +90,7 @@ export async function generateReportPdfFromUrl(url: string): Promise<Buffer> {
     contentType: preflight.headers.get("content-type"),
   });
 
-  const templateHeader = preflight.headers.get("x-report-template");
-  if (templateHeader !== "elite" && templateHeader !== "demo") {
-    throw new Error(
-      `PDF preflight refused: expected X-Report-Template=elite or demo but got '${templateHeader ?? "null"}'.`
-    );
-  }
+  validatePdfPreflightTemplateHeader(preflight.headers.get("x-report-template"));
 
   const printStats = parsePrintStatsFromPreflightHeaders(preflight.headers);
 

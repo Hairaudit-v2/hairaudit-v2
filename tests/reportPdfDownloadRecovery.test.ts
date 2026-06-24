@@ -182,4 +182,9 @@ describe("image-limited notice in regenerated PDF/HTML builder input", () => {
     assert.match(page, /RebuildPdfPanel/);
     assert.match(panel, /Rebuild PDF/);
   });
+
+  it("print route normalizes clinical template to elite for PDF preflight", () => {
+    const route = readFileSync(join(process.cwd(), "src/app/api/print/report/route.ts"), "utf8");
+    assert.match(route, /resolvePdfReportTemplateHeader/);
+  });
 });
