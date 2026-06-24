@@ -12,7 +12,6 @@ import { computeDomainScoresV1, computeDoctorAiContextV1 } from "@/lib/benchmark
 import { normalizeIntakeFormData, toNestedForApi } from "@/lib/intake/normalizeIntakeFormData";
 import { normalizedPatientAnswersFromReportRow } from "@/lib/patient/answersFromReportRow";
 import {
-  evaluatePatientPhotoSubmitGate,
   PATIENT_ALTERNATE_OUTCOME_SUBMIT_HINT,
 } from "@/lib/patientPhoto/patientPhotoReadinessPolicy";
 import { isPatientPhotoStageAwareSubmitEnabled } from "@/lib/features/enablePatientPhotoStageAwareSubmit";
@@ -33,10 +32,12 @@ import {
   loadCaseClinicalHistory,
 } from "@/lib/hairaudit/clinical-history/clinicalHistory.server";
 import { logClinicalHistoryEvent } from "@/lib/hairaudit/clinical-history/clinicalHistoryAudit";
+import { getMissingRequiredPatientPhotoLabels } from "@/lib/patient/patientPhotoImageLimitedOverride";
+import { evaluateRunAuditPatientPhotoGate } from "@/lib/patient/runAuditPhotoGate";
 import {
-  evaluateImageLimitedPhotoOverride,
-  getMissingRequiredPatientPhotoLabels,
-} from "@/lib/patient/patientPhotoImageLimitedOverride";
+  buildRunAuditInvokePayload,
+  resolveRunAuditEventData,
+} from "@/lib/inngest/runAuditEventData";
 import { getCaseFilesBucketNameForReadOnlyUse } from "@/lib/hairaudit/uploadStorage";
 import { generatePostSurgeryAuditReport } from "@/lib/reports/postSurgeryAuditReport";
 import { generatePreSurgeryPlanningReport } from "@/lib/reports/preSurgeryPlanningReport";
@@ -535,8 +536,11 @@ export const runAudit = inngest.createFunction(
     id: "run-audit",
     retries: 3,
     onFailure: async ({ error, event: failureEvent, step }) => {
-      const originalEvent = (failureEvent as { data?: { event?: { data?: unknown } } }).data?.event;
-      const { caseId, userId } = (originalEvent?.data ?? {}) as { caseId?: string; userId?: string };
+      const resolved = resolveRunAuditEventData(
+        (failureEvent as { data?: { event?: { data?: unknown } } }).data?.event?.data ??
+          (failureEvent as { data?: unknown }).data
+      );
+      const { caseId, userId } = resolved;
       if (!caseId || !userId) {
         console.error("[runAudit onFailure] Missing caseId/userId in event", failureEvent);
         return;
@@ -589,15 +593,18 @@ export const runAudit = inngest.createFunction(
   },
   [{ event: "case/submitted" }, { event: "case/audit-only-requested" }],
   async ({ event, step, logger }) => {
-    const data = event.data as {
-      caseId: string;
-      userId: string;
-      /** Set when `runAudit` is invoked from `auditor/rerun` (not on normal submit). */
-      auditorRerunReason?: string | null;
-    };
-    const caseId = data.caseId;
-    const userId = data.userId ?? "";
-    const auditorRerunReason = data.auditorRerunReason ?? null;
+    const {
+      caseId,
+      userId,
+      auditorRerunReason,
+      triggeredRole,
+      rerunSource,
+      allowImageLimitedOverride,
+    } = resolveRunAuditEventData(event.data);
+
+    if (!caseId) {
+      throw new Error("runAudit: missing caseId in event payload");
+    }
 
     const supabase = supabaseAdmin();
 
@@ -702,12 +709,6 @@ export const runAudit = inngest.createFunction(
     });
 
     const patientAnswersForPhotoGate = normalizedPatientAnswersFromReportRow(reportRowForPhotoGate);
-    const photoSubmitGate = evaluatePatientPhotoSubmitGate({
-      uploadRows: uploads,
-      patientAnswers: patientAnswersForPhotoGate,
-      stageAwareSubmitEnabled: isPatientPhotoStageAwareSubmitEnabled(),
-    });
-
     const clinicalHistoryRowForGate = await step.run("load-clinical-history-for-photo-gate", async () => {
       return await loadCaseClinicalHistory(caseId, supabase);
     });
@@ -715,16 +716,41 @@ export const runAudit = inngest.createFunction(
       ? buildClinicalHistorySnapshot(clinicalHistoryRowForGate)
       : null;
 
-    const imageLimitedOverride = evaluateImageLimitedPhotoOverride({
-      auditorRerunReason,
-      photoGateAllowed: photoSubmitGate.allowed,
+    const photoGateResult = evaluateRunAuditPatientPhotoGate({
+      caseId,
       uploadRows: uploads,
+      patientAnswers: patientAnswersForPhotoGate ?? {},
       clinicalHistory: clinicalHistoryForGate,
+      stageAwareSubmitEnabled: isPatientPhotoStageAwareSubmitEnabled(),
+      patientReviewPathway: (c as { patient_review_pathway?: string | null }).patient_review_pathway
+        ? normalizePatientReviewPathway(
+            (c as { patient_review_pathway?: string | null }).patient_review_pathway
+          )
+        : null,
+      patientPhotosForAuditCount: patientPhotosForAudit.length,
+      auditorRerunReason,
+      triggeredRole,
+      rerunSource,
+      allowImageLimitedOverride,
     });
 
-    const relaxedAuditorPatientPhotoGate =
-      auditorRerunReason === AUDITOR_RERUN_REASON_CORRECTED_PATIENT_PHOTOS &&
-      patientPhotosForAudit.length > 0;
+    const { photoSubmitGate, imageLimitedOverride, relaxedAuditorPatientPhotoGate, logFields } =
+      photoGateResult;
+
+    logger.info("runAudit: patient photo submit gate evaluation", logFields);
+
+    logger.info("image_limited_override_gate", {
+      caseId,
+      rerunReason: auditorRerunReason,
+      triggeredRole,
+      allowImageLimitedOverride,
+      normalPhotoGatePassed: logFields.normalPhotoGatePassed,
+      overrideAllowed: logFields.overrideAllowed,
+      hasPatientImage: logFields.hasPatientImages,
+      hasMeaningfulClinicalHistory: logFields.hasMeaningfulClinicalHistory,
+      missingRequiredPhotoLabels: logFields.missingRequiredPhotoLabels,
+    });
+
     if (relaxedAuditorPatientPhotoGate && !photoSubmitGate.allowed) {
       logger.warn("runAudit: strict patient photo submit gate bypassed (auditor corrected patient photos)", {
         caseId,
@@ -736,10 +762,7 @@ export const runAudit = inngest.createFunction(
 
     if (imageLimitedOverride.allowed) {
       logger.warn("runAudit: patient photo submit gate bypassed (document-assisted image-limited override)", {
-        caseId,
-        missingRequiredPhotoLabels: imageLimitedOverride.missingRequiredPhotoLabels,
-        hasPatientImages: imageLimitedOverride.hasPatientImages,
-        hasClinicalHistory: imageLimitedOverride.hasClinicalHistory,
+        ...logFields,
         auditorRerunReason,
       });
       await step.run("log-image-limited-photo-override", async () => {
@@ -752,12 +775,14 @@ export const runAudit = inngest.createFunction(
             missing_photo_labels: imageLimitedOverride.missingRequiredPhotoLabels,
             clinical_history_present: imageLimitedOverride.hasClinicalHistory,
             patient_images_present: imageLimitedOverride.hasPatientImages,
+            triggered_role: triggeredRole,
+            rerun_source: rerunSource,
           },
         });
       });
     }
 
-    if (!photoSubmitGate.allowed && !relaxedAuditorPatientPhotoGate && !imageLimitedOverride.allowed) {
+    if (!photoGateResult.allowed) {
       // Mark case “needs_more_info” or revert to draft
       await step.run("mark-missing", async () => {
         await supabase
@@ -1718,6 +1743,8 @@ export const auditorRerun = inngest.createFunction(
       notes: string | null;
       triggeredBy: string;
       triggeredRole: string;
+      rerunSource?: string | null;
+      allowImageLimitedOverride?: boolean;
       rerunLogId: string | null;
       sourceReportVersion: number | null;
     };
@@ -1750,9 +1777,31 @@ export const auditorRerun = inngest.createFunction(
     try {
       switch (action) {
         case "regenerate_ai_audit": {
+          const rerunReason = data.reason;
+          const triggeredRole = data.triggeredRole;
+          const isImageLimitedRerun =
+            rerunReason === AUDITOR_RERUN_REASON_DOCUMENT_ASSISTED_IMAGE_LIMITED;
+          const runAuditPayload = buildRunAuditInvokePayload({
+            caseId,
+            userId: triggeredBy,
+            reason: rerunReason,
+            triggeredRole,
+            rerunSource: data.rerunSource ?? "auditor",
+            allowImageLimitedOverride:
+              data.allowImageLimitedOverride === true || isImageLimitedRerun,
+          });
+          logger.info("auditorRerun: invoking runAudit", {
+            caseId,
+            action,
+            reason: rerunReason,
+            triggeredRole,
+            isImageLimitedRerun,
+            allowImageLimitedOverride: runAuditPayload.allowImageLimitedOverride,
+            rerunSource: runAuditPayload.rerunSource,
+          });
           const result = await step.invoke("invoke-audit", {
             function: runAudit,
-            data: { caseId, userId: triggeredBy, auditorRerunReason: data.reason },
+            data: runAuditPayload,
           });
           const ver = (result as any)?.version;
           const sourceReportVersion = data.sourceReportVersion != null ? Number(data.sourceReportVersion) : null;
@@ -1890,9 +1939,30 @@ export const auditorRerun = inngest.createFunction(
             function: runGraftIntegrityEstimate,
             data: { caseId, userId: triggeredBy, alwaysInsertIfApproved: true },
           });
+          const rerunReason = data.reason;
+          const triggeredRole = data.triggeredRole;
+          const isImageLimitedRerun =
+            rerunReason === AUDITOR_RERUN_REASON_DOCUMENT_ASSISTED_IMAGE_LIMITED;
+          const runAuditPayload = buildRunAuditInvokePayload({
+            caseId,
+            userId: triggeredBy,
+            reason: rerunReason,
+            triggeredRole,
+            rerunSource: data.rerunSource ?? "auditor",
+            allowImageLimitedOverride:
+              data.allowImageLimitedOverride === true || isImageLimitedRerun,
+          });
+          logger.info("auditorRerun: invoking runAudit (full_reaudit)", {
+            caseId,
+            action,
+            reason: rerunReason,
+            triggeredRole,
+            isImageLimitedRerun,
+            allowImageLimitedOverride: runAuditPayload.allowImageLimitedOverride,
+          });
           const auditResult = await step.invoke("invoke-audit-full", {
             function: runAudit,
-            data: { caseId, userId: triggeredBy, auditorRerunReason: data.reason },
+            data: runAuditPayload,
           });
           const ver = (auditResult as any)?.version;
           const sourceReportVersionFull = data.sourceReportVersion != null ? Number(data.sourceReportVersion) : null;

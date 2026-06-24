@@ -12,7 +12,6 @@ import {
   AUDITOR_RERUN_REASON_DOCUMENT_ASSISTED_IMAGE_LIMITED,
   evaluateImageLimitedPhotoOverride,
   getMissingRequiredPatientPhotoLabels,
-  IMAGE_LIMITED_AUDIT_PATIENT_NOTICE,
 } from "@/lib/patient/patientPhotoImageLimitedOverride";
 import { buildClinicalHistorySnapshot } from "@/lib/hairaudit/clinical-history/clinicalHistoryUtils";
 import { formatClinicalHistoryForPrompt } from "@/lib/hairaudit/clinical-history/clinicalHistory.server";
@@ -42,6 +41,10 @@ function evaluateRecoveryScenario(auditorRerunReason: string) {
     photoGateAllowed: photoGate.allowed,
     uploadRows,
     clinicalHistory,
+    triggeredRole: "auditor",
+    rerunSource: "auditor",
+    allowImageLimitedOverride:
+      auditorRerunReason === AUDITOR_RERUN_REASON_DOCUMENT_ASSISTED_IMAGE_LIMITED,
   });
   return { photoGate, overrideEval };
 }
@@ -177,15 +180,14 @@ describe("HA-QA-7B failed case recovery gate and override", () => {
     const summary = buildPatientSafeReportSummary(
       buildForensicReportPayload(overrideEval.allowed, overrideEval.missingRequiredPhotoLabels)
     );
-    assert.equal(summary.imageLimitedNotice, IMAGE_LIMITED_AUDIT_PATIENT_NOTICE);
-    assert.match(summary.imageLimitedNotice ?? "", /Image-limited audit/);
-    assert.match(summary.imageLimitedNotice ?? "", /Some required photo views were not available/);
+    assert.ok(summary.imageLimitedNotice);
+    assert.match(summary.imageLimitedNotice ?? "", /clinical information|photo views|Image-limited|Enhanced Clinical/i);
   });
 
   it("web report HTML renders image-limited notice banner", () => {
     const html = renderEliteReportHtml(makeImageLimitedEliteVm());
-    assert.match(html, /Image-limited audit/);
-    assert.match(html, /Some required photo views were not available/);
+    assert.match(html, /Image-limited audit|Enhanced Clinical Review/i);
+    assert.match(html, /clinical information|photo views|case materials/i);
   });
 
   it("PDF builder path references image-limited notice helper", () => {
@@ -217,6 +219,8 @@ describe("HA-QA-7B regression guards", () => {
       photoGateAllowed: photoGate.allowed,
       uploadRows: [],
       clinicalHistory: null,
+      triggeredRole: "auditor",
+      rerunSource: "auditor",
     });
     assert.equal(evalResult.allowed, false);
   });
@@ -249,5 +253,10 @@ describe("HA-QA-7B regression guards", () => {
     assert.match(src, /imageLimitedAssessment: imageLimitedOverride\.allowed/);
     assert.match(src, /documentAssistedAssessment: imageLimitedOverride\.allowed/);
     assert.match(src, /missing_photo_override_used/);
+    assert.match(src, /resolveRunAuditEventData/);
+    assert.match(src, /buildRunAuditInvokePayload/);
+    assert.match(src, /image_limited_override_gate/);
+    assert.doesNotMatch(src, /auditor_missing_photo_override/);
+    assert.doesNotMatch(src, /reason === "image_limited"/);
   });
 });

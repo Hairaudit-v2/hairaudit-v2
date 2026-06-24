@@ -44,6 +44,22 @@ export type ImageLimitedPhotoOverrideEval = {
   hasClinicalHistory: boolean;
 };
 
+export function isAuditorImageLimitedOverrideActor(args: {
+  triggeredRole?: string | null;
+  rerunSource?: string | null;
+}): boolean {
+  const role = String(args.triggeredRole ?? "").trim().toLowerCase();
+  const source = String(args.rerunSource ?? "").trim().toLowerCase();
+  return (
+    role === "auditor" ||
+    role === "admin" ||
+    role === "operator" ||
+    source === "auditor" ||
+    source === "admin" ||
+    source === "internal"
+  );
+}
+
 /**
  * True when an auditor rerun may bypass the strict patient photo submit gate.
  * Requires explicit override reason plus at least one patient image or meaningful clinical history.
@@ -53,13 +69,26 @@ export function evaluateImageLimitedPhotoOverride(args: {
   photoGateAllowed: boolean;
   uploadRows: PatientPhotoUploadRow[];
   clinicalHistory: ClinicalHistorySnapshot | null;
+  triggeredRole?: string | null;
+  rerunSource?: string | null;
+  allowImageLimitedOverride?: boolean;
 }): ImageLimitedPhotoOverrideEval {
   const missingRequiredPhotoLabels = getMissingRequiredPatientPhotoLabels(args.uploadRows);
   const hasPatientImages = hasActivePatientPhotosForImageLimitedOverride(args.uploadRows);
   const hasClinicalHistory = hasMeaningfulClinicalHistory(args.clinicalHistory);
 
+  const reasonMatches =
+    args.auditorRerunReason === AUDITOR_RERUN_REASON_DOCUMENT_ASSISTED_IMAGE_LIMITED;
+  const actorAuthorized =
+    args.allowImageLimitedOverride === true ||
+    isAuditorImageLimitedOverrideActor({
+      triggeredRole: args.triggeredRole,
+      rerunSource: args.rerunSource,
+    });
+
   const allowed =
-    args.auditorRerunReason === AUDITOR_RERUN_REASON_DOCUMENT_ASSISTED_IMAGE_LIMITED &&
+    reasonMatches &&
+    actorAuthorized &&
     !args.photoGateAllowed &&
     (hasPatientImages || hasClinicalHistory);
 

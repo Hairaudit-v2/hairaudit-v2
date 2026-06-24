@@ -211,6 +211,8 @@ export async function queueAuditorRerunFromAdmin(
       notes,
       triggeredBy: actingUserId,
       triggeredRole: "auditor",
+      rerunSource: "auditor",
+      allowImageLimitedOverride: reason === AUDITOR_RERUN_REASON_DOCUMENT_ASSISTED_IMAGE_LIMITED,
       rerunLogId,
       sourceReportVersion: sourceVersion,
     },
