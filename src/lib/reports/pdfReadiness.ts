@@ -14,6 +14,34 @@ export type PdfReadinessResult = {
   reason?: string;
 };
 
+/** Statuses that mean the audit engine is still running — PDF must not render yet. */
+const ACTIVE_AUDIT_PIPELINE_STATUSES = new Set([
+  "evidence_preparing",
+  "evidence_ready",
+  "audit_running",
+]);
+
+/** Resolve the storage object key the pipeline uses for a report version. */
+export function resolveReportPdfStoragePath(args: {
+  caseId: string;
+  version: number;
+  pdfPath?: string | null;
+}): string {
+  const fromRow = String(args.pdfPath ?? "").trim();
+  if (fromRow) return fromRow;
+  const caseId = String(args.caseId ?? "").trim();
+  const version = Math.max(1, Math.floor(Number(args.version) || 1));
+  return `${caseId}/v${version}.pdf`;
+}
+
+export function isImageLimitedAuditSummary(summary: unknown): boolean {
+  const forensic = ((summary ?? null) as Record<string, unknown> | null)?.forensic_audit ??
+    ((summary ?? null) as Record<string, unknown> | null)?.forensic;
+  if (!forensic || typeof forensic !== "object") return false;
+  const f = forensic as { imageLimitedAssessment?: boolean; documentAssistedAssessment?: boolean };
+  return Boolean(f.imageLimitedAssessment || f.documentAssistedAssessment);
+}
+
 export function toNumberRecord(x: unknown): Record<string, number> {
   if (!x || typeof x !== "object") return {};
   const out: Record<string, number> = {};
@@ -86,26 +114,59 @@ export function isAuditSummaryReady(summary: unknown): boolean {
   if (model === "error" || aiFailureSignals.some((line) => /ai audit failed:/i.test(line))) {
     return false;
   }
+  if (
+    isImageLimitedAuditSummary(s) &&
+    Number.isFinite(overall) &&
+    narrative.length > 0
+  ) {
+    return true;
+  }
   return Number.isFinite(overall) && Object.keys(sections).length > 0 && narrative.length > 0;
 }
 
 export function evaluatePdfReadiness(input: PdfReadinessInput): PdfReadinessResult {
   const caseStatus = String(input.caseStatus ?? "").toLowerCase();
   const reportStatus = String(input.reportStatus ?? "").toLowerCase();
-  if (caseStatus === "processing") {
-    return { ready: false, reason: "case status is processing" };
-  }
-  if (reportStatus === "processing") {
-    return { ready: false, reason: "report status is processing" };
-  }
   if (caseStatus === "audit_failed" || caseStatus === "failed") {
     return { ready: false, reason: "audit failed for this case" };
   }
   if (reportStatus === "audit_failed" || reportStatus === "failed") {
     return { ready: false, reason: "report is marked as audit failed" };
   }
+  if (
+    ACTIVE_AUDIT_PIPELINE_STATUSES.has(caseStatus) ||
+    ACTIVE_AUDIT_PIPELINE_STATUSES.has(reportStatus)
+  ) {
+    return { ready: false, reason: "audit still running" };
+  }
   if (!isAuditSummaryReady(input.summary)) {
+    if (caseStatus === "processing") {
+      return { ready: false, reason: "case status is processing" };
+    }
+    if (reportStatus === "processing") {
+      return { ready: false, reason: "report status is processing" };
+    }
     return { ready: false, reason: "audit summary is incomplete" };
+  }
+  return { ready: true };
+}
+
+/** True when a stored PDF object at `pdfPath` is present (injectable for tests). */
+export function evaluateStoredPdfReadiness(args: {
+  expectedPdfPath: string;
+  storedPdfPath?: string | null;
+  fileExists: boolean;
+}): PdfReadinessResult {
+  const expected = String(args.expectedPdfPath ?? "").trim();
+  const stored = String(args.storedPdfPath ?? "").trim();
+  if (!expected) {
+    return { ready: false, reason: "pdf path missing" };
+  }
+  if (!args.fileExists) {
+    return { ready: false, reason: "pdf file not found in storage" };
+  }
+  if (stored && stored !== expected) {
+    return { ready: false, reason: "pdf path mismatch" };
   }
   return { ready: true };
 }

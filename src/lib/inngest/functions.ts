@@ -15,7 +15,8 @@ import {
   PATIENT_ALTERNATE_OUTCOME_SUBMIT_HINT,
 } from "@/lib/patientPhoto/patientPhotoReadinessPolicy";
 import { isPatientPhotoStageAwareSubmitEnabled } from "@/lib/features/enablePatientPhotoStageAwareSubmit";
-import { shouldGeneratePdf } from "@/lib/reports/pdfReadiness";
+import { shouldGeneratePdf, resolveReportPdfStoragePath } from "@/lib/reports/pdfReadiness";
+import { fetchReportPdfFromStorage } from "@/lib/reports/fetchReportPdfFromStorage";
 import type { PreparedImageManifestItem } from "@/lib/evidence/evidenceManifest";
 import { computeAuditorReviewEligibility, computeProvisionalFromScore, computeAwardContributionWeight } from "@/lib/auditor/eligibility";
 import { refreshTransparencyMetricsForCase } from "@/lib/transparency/refreshOrchestration";
@@ -1189,7 +1190,7 @@ export const runAudit = inngest.createFunction(
     const confLabelForReport = confForReport < 0.55 ? "low" : confForReport < 0.8 ? "medium" : "high";
 
     // 10) Insert report row (with AI audit + answers)
-    await step.run("insert-report-row", async () => {
+    const insertResult = await step.run("insert-report-row", async () => {
       const doctorAnswersBase =
         existingSummary.doctor_answers && typeof existingSummary.doctor_answers === "object"
           ? ({ ...(existingSummary.doctor_answers as Record<string, unknown>) } as Record<string, unknown>)
@@ -1499,6 +1500,8 @@ export const runAudit = inngest.createFunction(
           });
         }
       }
+
+      return { reportId: String(insertedReport.id), version: nextVersion };
     });
 
     // 11) Mark audit completion phase before PDF phase.
@@ -1507,48 +1510,75 @@ export const runAudit = inngest.createFunction(
       await setCasePipelineStatus(supabase, caseId, "audit_complete");
     });
 
-    // 12) PDF phase with readiness-aware retry/skip.
+    // 12) PDF phase — explicit render after audit insert; skip when file already exists.
     await step.run("mark-pdf-pending-phase", async () => {
       await setReportPipelineStatus(supabase, caseId, nextVersion, "pdf_pending", { error: null });
       await setCasePipelineStatus(supabase, caseId, "pdf_pending");
     });
 
+    const insertedReportId = String((insertResult as { reportId?: string })?.reportId ?? "").trim();
+    const pdfBucket = caseFilesBucket();
+
     let finalPdfPath: string | null = null;
     const maxPdfAttempts = 3;
     for (let attempt = 1; attempt <= maxPdfAttempts; attempt += 1) {
-      const readiness = await step.run(`pdf-readiness-check-${attempt}`, async () => {
+      const phaseState = await step.run(`pdf-readiness-check-${attempt}`, async () => {
         const [{ data: caseRow }, { data: reportRow }] = await Promise.all([
           supabase.from("cases").select("status").eq("id", caseId).maybeSingle(),
           supabase
             .from("reports")
-            .select("status, summary")
+            .select("status, summary, pdf_path")
             .eq("case_id", caseId)
             .eq("version", nextVersion)
             .maybeSingle(),
         ]);
-        const state = shouldGeneratePdf({
+        const expectedPdfPath = resolveReportPdfStoragePath({
+          caseId,
+          version: nextVersion,
+          pdfPath: (reportRow as { pdf_path?: string | null } | null)?.pdf_path ?? pdfPath,
+        });
+        const readiness = shouldGeneratePdf({
           caseStatus: (caseRow as { status?: string | null } | null)?.status ?? null,
           reportStatus: (reportRow as { status?: string | null } | null)?.status ?? null,
           summary: (reportRow as { summary?: unknown } | null)?.summary ?? null,
         });
+        const stored = await fetchReportPdfFromStorage(supabase.storage, pdfBucket, expectedPdfPath);
+        const fileReady = "blob" in stored;
         logger.info("PDF readiness check", {
           caseId,
           attempt,
+          reportId: insertedReportId || null,
           caseStatus: (caseRow as { status?: string | null } | null)?.status ?? null,
           reportStatus: (reportRow as { status?: string | null } | null)?.status ?? null,
-          ready: state.ready,
-          reason: state.reason ?? null,
+          expectedPdfPath,
+          fileReady,
+          ready: readiness.ready,
+          reason: readiness.reason ?? null,
         });
-        return state;
+        return { readiness, expectedPdfPath, fileReady };
       });
 
-      if (!readiness.ready) {
-        const msg = `AUDIT_NOT_READY: ${String(readiness.reason ?? "preconditions not met")}`;
+      if (phaseState.fileReady) {
+        finalPdfPath = phaseState.expectedPdfPath;
+        logger.info("PDF already present in storage; skipping render", {
+          caseId,
+          attempt,
+          pdfPath: finalPdfPath,
+        });
+        break;
+      }
+
+      if (!phaseState.readiness.ready) {
+        const msg = `AUDIT_NOT_READY: ${String(phaseState.readiness.reason ?? "preconditions not met")}`;
         await step.run(`pdf-readiness-pending-${attempt}`, async () => {
           await setReportPipelineStatus(supabase, caseId, nextVersion, "pdf_pending", { error: msg });
         });
         if (attempt < maxPdfAttempts) {
-          logger.warn("PDF step skipped this attempt due to readiness", { caseId, attempt, reason: readiness.reason });
+          logger.warn("PDF render deferred this attempt due to readiness", {
+            caseId,
+            attempt,
+            reason: phaseState.readiness.reason,
+          });
           await step.sleep(`wait-for-pdf-readiness-${attempt}`, "20s");
           continue;
         }
@@ -1557,15 +1587,25 @@ export const runAudit = inngest.createFunction(
       }
 
       try {
-        const result = await step.run(`build-and-upload-pdf-${attempt}`, async () => {
+        const result = await step.run(`render-pdf-${attempt}`, async () => {
           const { renderAndUploadPdfForCase } = await loadPdfRenderModule();
-          return await renderAndUploadPdfForCase({
+          const { persistReportPdfPath } = await import("@/lib/reports/rebuildReportPdf");
+          const renderResult = await renderAndUploadPdfForCase({
             caseId,
             auditMode: pdfAuditMode,
             version: nextVersion,
           });
+          if (insertedReportId) {
+            await persistReportPdfPath({
+              reportId: insertedReportId,
+              caseId,
+              version: nextVersion,
+              pdfPath: renderResult.pdfPath,
+            });
+          }
+          return renderResult;
         });
-        finalPdfPath = String(result.pdfPath ?? pdfPath);
+        finalPdfPath = String(result.pdfPath ?? phaseState.expectedPdfPath ?? pdfPath);
         break;
       } catch (e: any) {
         const code = String(e?.code ?? "");

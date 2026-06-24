@@ -8,6 +8,7 @@ import AuditorWorkloadStatusCards from "@/components/auditor/AuditorWorkloadStat
 import AuditorFailedRecoveryCard from "@/components/auditor/AuditorFailedRecoveryCard";
 import AuditorWaitingOnPatientCard from "@/components/auditor/AuditorWaitingOnPatientCard";
 import AuditorOperationsAnalytics from "@/components/auditor/AuditorOperationsAnalytics";
+import LiveClinicAuditBuildProgressPanel from "@/components/dashboard/LiveClinicAuditBuildProgressPanel";
 import {
   computeWorkloadStatus,
   deriveAuditorQueueCase,
@@ -381,6 +382,8 @@ export default function AuditorDashboardClient(props: {
       </section>
 
       <AuditorOperationsAnalytics />
+
+      <LiveClinicAuditBuildProgressPanel />
 
       {modal.kind === "request_info" && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 p-4">

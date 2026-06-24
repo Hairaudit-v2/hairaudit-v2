@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowUpRight, Cpu, Layers, ShieldCheck, Sparkles } from "lucide-react";
 
 import IntelligenceModuleCard from "@/components/platform/IntelligenceModuleCard";
+import LiveClinicAuditBuildProgressPanel from "@/components/dashboard/LiveClinicAuditBuildProgressPanel";
 import ProgressStatusBadge from "@/components/platform/ProgressStatusBadge";
 import {
   ENGINEERING_CHANGELOG,
@@ -142,6 +143,10 @@ export default function PlatformProgressPage() {
             </ul>
           </div>
         </div>
+      </Section>
+
+      <Section id="live-build-progress" className="border-t border-border/30" aria-labelledby="live-build-progress-heading">
+        <LiveClinicAuditBuildProgressPanel variant="platform" />
       </Section>
 
       <Section id="intelligence" className="border-t border-border/30" aria-labelledby="intelligence-heading">
