@@ -1270,7 +1270,7 @@ export default async function Page({
 
       {isAuditor && (
         <div className="mt-6">
-          <AuditorPatientImageManager caseId={c.id} />
+          <AuditorPatientImageManager caseId={c.id} patientReviewPathway={patientReviewPathway} />
         </div>
       )}
 
@@ -1666,7 +1666,11 @@ export default async function Page({
       {upErr && <p className="mt-6 text-sm text-rose-300">{upErr.message}</p>}
       {!patientHidesForensicWorkspace ? (
       <div className="mt-6">
-        <UploadThumbnailGallery caseId={c.id} uploads={(uploads ?? []) as any} />
+        <UploadThumbnailGallery
+          caseId={c.id}
+          uploads={(uploads ?? []) as any}
+          displayMode={isAuditor ? "auditor" : "default"}
+        />
       </div>
       ) : null}
     </div>

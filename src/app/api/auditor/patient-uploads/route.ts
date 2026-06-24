@@ -17,6 +17,7 @@ import {
   syncPatientPhotoMetadataCategoryToType,
 } from "@/lib/uploads/patientPhotoCategoryIntegrity";
 import { getCaseFilesBucketNameForReadOnlyUse } from "@/lib/hairaudit/uploadStorage";
+import { resolvePatientReviewPathwayFromCase } from "@/lib/patient/patientReviewPathway";
 
 export const runtime = "nodejs";
 
@@ -61,7 +62,7 @@ export async function GET(req: Request) {
 
     const { data: c, error: caseErr } = await admin
       .from("cases")
-      .select("id, user_id, patient_id, doctor_id, clinic_id")
+      .select("id, user_id, patient_id, doctor_id, clinic_id, patient_review_pathway")
       .eq("id", caseId)
       .maybeSingle();
     if (caseErr || !c) return NextResponse.json({ ok: false, error: "Case not found" }, { status: 404 });
@@ -116,7 +117,14 @@ export async function GET(req: Request) {
       corrections = [];
     }
 
-    return NextResponse.json({ ok: true, byCategory, uploads: signed, corrections, categoryIntegritySummary });
+    return NextResponse.json({
+      ok: true,
+      byCategory,
+      uploads: signed,
+      corrections,
+      categoryIntegritySummary,
+      patientReviewPathway: resolvePatientReviewPathwayFromCase(c),
+    });
   } catch (e: unknown) {
     return NextResponse.json(
       { ok: false, error: e instanceof Error ? e.message : "Server error" },
@@ -150,7 +158,7 @@ export async function PATCH(req: Request) {
 
     const { data: c, error: caseErr } = await admin
       .from("cases")
-      .select("id, user_id, patient_id, doctor_id, clinic_id")
+      .select("id, user_id, patient_id, doctor_id, clinic_id, patient_review_pathway")
       .eq("id", caseId)
       .maybeSingle();
     if (caseErr || !c) return NextResponse.json({ ok: false, error: "Case not found" }, { status: 404 });
