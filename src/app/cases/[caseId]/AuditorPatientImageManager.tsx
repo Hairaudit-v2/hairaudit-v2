@@ -38,9 +38,12 @@ function qualityWarningFromUpload(u: UploadRow): string | null {
 export default function AuditorPatientImageManager({
   caseId,
   patientReviewPathway: pathwayProp,
+  workflowLayout = false,
 }: {
   caseId: string;
   patientReviewPathway?: PatientReviewPathway;
+  /** HA-UX-8B — prominent image review workspace section */
+  workflowLayout?: boolean;
 }) {
   const [uploads, setUploads] = useState<UploadRow[]>([]);
   const [pathway, setPathway] = useState<PatientReviewPathway>(
@@ -189,20 +192,26 @@ export default function AuditorPatientImageManager({
 
   const pathwayLabel = pathway === "pre_surgery" ? "Pre-surgery planning" : "Post-surgery audit";
 
+  const sectionClass = workflowLayout
+    ? "rounded-2xl border-2 border-cyan-400/20 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-6 shadow-lg shadow-cyan-950/10"
+    : "rounded-2xl border border-slate-700 bg-slate-900 p-5";
+
   return (
-    <section className="rounded-2xl border border-slate-700 bg-slate-900 p-5">
+    <section className={sectionClass}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-base font-semibold text-white">
-            Patient photo sorting
-            <span className="ml-2 rounded-md border border-slate-600 bg-slate-800 px-2 py-0.5 font-mono text-xs font-normal text-slate-300">
-              {uploads.length} upload{uploads.length === 1 ? "" : "s"}
-            </span>
+          <h2 className={`font-semibold text-white ${workflowLayout ? "text-lg" : "text-base"}`}>
+            {workflowLayout ? "IMAGE REVIEW WORKSPACE" : "Patient photo sorting"}
+            {!workflowLayout ? (
+              <span className="ml-2 rounded-md border border-slate-600 bg-slate-800 px-2 py-0.5 font-mono text-xs font-normal text-slate-300">
+                {uploads.length} upload{uploads.length === 1 ? "" : "s"}
+              </span>
+            ) : null}
           </h2>
           <p className="mt-1 text-xs text-slate-400">
-            {pathwayLabel} workflow — reassign categories (metadata only; originals unchanged). Use quick
-            actions or bulk mode for faster sorting. After corrections, rerun with reason &quot;Corrected
-            patient photos&quot;.
+            {workflowLayout
+              ? "Sort required views, fix categories, and use bulk assign before running the audit."
+              : `${pathwayLabel} workflow — reassign categories (metadata only; originals unchanged). Use quick actions or bulk mode for faster sorting. After corrections, rerun with reason "Corrected patient photos".`}
           </p>
         </div>
         <button

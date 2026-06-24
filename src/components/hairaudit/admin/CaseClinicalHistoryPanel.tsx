@@ -318,11 +318,14 @@ export default function CaseClinicalHistoryPanel({
   initialSnapshot,
   hasPatientImages = false,
   photosMissing = false,
+  workflowLayout = false,
 }: {
   caseId: string;
   initialSnapshot: ClinicalHistorySnapshot | null;
   hasPatientImages?: boolean;
   photosMissing?: boolean;
+  /** HA-UX-8B — always expanded, workflow-first layout on auditor case page */
+  workflowLayout?: boolean;
 }) {
   const hasData = useMemo(() => hasMeaningfulClinicalHistory(initialSnapshot), [initialSnapshot]);
   const [form, setForm] = useState<FormState>(() => snapshotToForm(initialSnapshot));
@@ -530,26 +533,40 @@ export default function CaseClinicalHistoryPanel({
     "w-full rounded-xl border border-white/10 bg-slate-900/60 text-white px-4 py-2.5 text-sm placeholder-slate-500 focus:border-emerald-400/40 focus:outline-none";
   const labelClass = "block text-xs font-medium text-slate-300 mb-1";
 
-  return (
-    <details
-      className="mt-6 rounded-2xl border border-slate-700 bg-slate-900 p-5 group"
-      open={hasData}
-    >
-      <summary className="cursor-pointer list-none font-semibold text-white flex items-center justify-between gap-2">
-        <span>Clinical Intelligence Editor</span>
-        {hasData ? (
-          <span className="text-xs font-normal text-emerald-300">Data on file</span>
-        ) : (
-          <span className="text-xs font-normal text-slate-400">Collapsed — no data yet</span>
-        )}
-      </summary>
+  const shellClass = workflowLayout
+    ? "rounded-2xl border-2 border-emerald-400/20 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-6 shadow-lg shadow-emerald-950/10"
+    : "mt-6 rounded-2xl border border-slate-700 bg-slate-900 p-5 group";
 
-      <p className="mt-2 text-sm text-slate-300">
-        Quickly add known surgical details from reports, PDFs, or auditor review. These details improve
-        AI reasoning and donor-management recommendations.
-      </p>
+  const headerBlock = (
+    <>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold text-white">
+            {workflowLayout ? "CLINICAL INTELLIGENCE" : "Clinical Intelligence Editor"}
+          </h2>
+          <p className="mt-1 text-sm text-slate-300">
+            {workflowLayout
+              ? "Add known surgical details from prior procedures, reports, PDFs, or clinical notes to improve audit reasoning."
+              : "Quickly add known surgical details from reports, PDFs, or auditor review. These details improve AI reasoning and donor-management recommendations."}
+          </p>
+        </div>
+        {!workflowLayout ? (
+          hasData ? (
+            <span className="text-xs font-normal text-emerald-300">Data on file</span>
+          ) : (
+            <span className="text-xs font-normal text-slate-400">Collapsed — no data yet</span>
+          )
+        ) : hasData ? (
+          <span className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2.5 py-0.5 text-xs text-emerald-200">
+            Data on file
+          </span>
+        ) : null}
+      </div>
+    </>
+  );
 
-      <div className="mt-4 space-y-3">
+  const formBody = (
+    <div className="mt-4 space-y-3">
         <div className="rounded-xl border border-cyan-400/20 bg-cyan-950/20 p-4">
           <label className={labelClass}>Quick extract / paste notes</label>
           <textarea
@@ -575,7 +592,115 @@ export default function CaseClinicalHistoryPanel({
           ) : null}
         </div>
 
-        <CollapsibleSection title="Prior Surgery" defaultOpen>
+        {workflowLayout ? (
+          <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3">Key fields</p>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <NumberField
+                label="Total grafts"
+                value={form.priorGraftCount}
+                onChange={(v) => {
+                  markOverride("priorGraftCount");
+                  updateField("priorGraftCount", v);
+                }}
+                placeholder="3200"
+                calculated={
+                  !overrides.priorGraftCount &&
+                  Boolean(
+                    form.singleHairGrafts ||
+                      form.doubleHairGrafts ||
+                      form.tripleHairGrafts ||
+                      form.quadrupleHairGrafts
+                  )
+                }
+              />
+              <NumberField
+                label="Estimated hairs"
+                value={form.estimatedHairCount}
+                onChange={(v) => {
+                  markOverride("estimatedHairCount");
+                  updateField("estimatedHairCount", v);
+                }}
+                placeholder="7200"
+                calculated={
+                  !overrides.estimatedHairCount &&
+                  Boolean(
+                    form.singleHairGrafts ||
+                      form.doubleHairGrafts ||
+                      form.tripleHairGrafts ||
+                      form.quadrupleHairGrafts
+                  )
+                }
+              />
+              <NumberField
+                label="Ratio (hairs/graft)"
+                value={form.averageHairsPerGraft}
+                onChange={(v) => {
+                  markOverride("averageHairsPerGraft");
+                  updateField("averageHairsPerGraft", v);
+                }}
+                placeholder="2.25"
+                step="0.01"
+                min={1}
+                max={4.5}
+                calculated={!overrides.averageHairsPerGraft}
+              />
+              <div>
+                <p className={labelClass}>Punch size</p>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {PUNCH_CHIPS.map((v) => (
+                    <Chip
+                      key={v}
+                      active={form.punchSizeMm === v}
+                      onClick={() => updateField("punchSizeMm", v)}
+                    >
+                      {v} mm
+                    </Chip>
+                  ))}
+                </div>
+              </div>
+              <div className="sm:col-span-2 lg:col-span-3">
+                <p className={labelClass}>Procedure type</p>
+                <div className="flex flex-wrap gap-2">
+                  {PRIOR_PROCEDURE_TYPES.map((v) => (
+                    <Chip
+                      key={v}
+                      active={form.priorProcedureType.toLowerCase() === v}
+                      onClick={() => updateField("priorProcedureType", v)}
+                    >
+                      {PROCEDURE_LABELS[v]}
+                    </Chip>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className={labelClass}>Previous surgery date</label>
+                <input
+                  type="date"
+                  className={inputClass}
+                  value={form.priorSurgeryDate}
+                  onChange={(e) => {
+                    updateField("priorSurgeryDate", e.target.value);
+                    if (e.target.value) updateField("priorSurgeryTimingNote", "");
+                  }}
+                />
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {DATE_QUICK_OPTIONS.map((opt) => (
+                    <Chip
+                      key={opt.label}
+                      active={form.priorSurgeryTimingNote === opt.timingNote && !form.priorSurgeryDate}
+                      onClick={() => setDateQuick(opt.timingNote, opt.clearDate)}
+                    >
+                      {opt.label}
+                    </Chip>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        <CollapsibleSection title="Prior Surgery" defaultOpen={workflowLayout ? false : true}>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <NumberField
               label="Previous surgery count"
@@ -899,7 +1024,10 @@ export default function CaseClinicalHistoryPanel({
           </div>
         </CollapsibleSection>
       </div>
+  );
 
+  const actionsBlock = (
+    <>
       {error ? <p className="mt-3 text-sm text-rose-300">{error}</p> : null}
       {success ? <p className="mt-3 text-sm text-emerald-300">{success}</p> : null}
 
@@ -910,7 +1038,7 @@ export default function CaseClinicalHistoryPanel({
           onClick={() => handleSave("save")}
           className="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-950 bg-slate-200 hover:bg-white disabled:opacity-50"
         >
-          {saving ? "Saving…" : "Save"}
+          {saving ? "Saving…" : workflowLayout ? "SAVE" : "Save"}
         </button>
         <button
           type="button"
@@ -918,7 +1046,7 @@ export default function CaseClinicalHistoryPanel({
           onClick={() => handleSave("regenerate")}
           className="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-950 bg-amber-300 hover:bg-amber-200 disabled:opacity-50"
         >
-          {saving ? "Saving…" : "Save + Regenerate Audit"}
+          {saving ? "Saving…" : workflowLayout ? "SAVE + REGENERATE" : "Save + Regenerate Audit"}
         </button>
         <button
           type="button"
@@ -933,7 +1061,11 @@ export default function CaseClinicalHistoryPanel({
           onClick={() => handleSave("image_limited")}
           className="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-950 bg-orange-300 hover:bg-orange-200 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {saving ? "Saving…" : "Save + Regenerate Image-Limited Audit"}
+          {saving
+            ? "Saving…"
+            : workflowLayout
+              ? "SAVE + IMAGE LIMITED AUDIT"
+              : "Save + Regenerate Image-Limited Audit"}
         </button>
       </div>
       {photosMissing && !canImageLimitedRegenerate ? (
@@ -941,6 +1073,24 @@ export default function CaseClinicalHistoryPanel({
           Image-limited regeneration requires at least one patient image or meaningful clinical history.
         </p>
       ) : null}
+    </>
+  );
+
+  if (workflowLayout) {
+    return (
+      <section className={shellClass}>
+        {headerBlock}
+        {formBody}
+        {actionsBlock}
+      </section>
+    );
+  }
+
+  return (
+    <details className={shellClass} open={hasData}>
+      <summary className="cursor-pointer list-none">{headerBlock}</summary>
+      {formBody}
+      {actionsBlock}
     </details>
   );
 }

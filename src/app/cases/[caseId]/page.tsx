@@ -103,6 +103,9 @@ import { extractHairAuditIntelligenceFromSummary } from "@/lib/hairaudit-intelli
 import { translateIntelligenceForPatient } from "@/lib/hairaudit-intelligence/patient/patientIntelligenceTranslation";
 import PatientIntelligenceObservations from "@/components/patient/PatientIntelligenceObservations";
 import { loadBulkBatchContext } from "@/lib/hair-audit/bulkUpload/loadBulkBatchContext";
+import AuditorCasePageWorkflow from "./AuditorCasePageWorkflow";
+import { deriveAuditorQueueCase } from "@/lib/auditor/auditorQueueTriage";
+import { buildRequiredPhotoChecklist } from "@/lib/auditor/auditorImageSortingUx";
 
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { tryCreateSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -1031,6 +1034,116 @@ export default async function Page({
   const bulkBatchContext =
     c.batch_id && role !== "patient" ? await loadBulkBatchContext(admin ?? db, c.batch_id) : null;
 
+  const patientPhotoUploadsForAuditor = (uploads ?? []).filter((u) => {
+    const type = String((u as { type?: string }).type ?? "");
+    if (!type.startsWith("patient_photo:")) return false;
+    return !isPatientUploadAuditExcluded(u as { type?: string | null; metadata?: unknown });
+  });
+  const auditorPhotoChecklist = buildRequiredPhotoChecklist(patientReviewPathway, patientPhotoUploadsForAuditor);
+  const auditorImagesSortedLabel = `${auditorPhotoChecklist.filter((item) => item.satisfied).length}/${auditorPhotoChecklist.length}`;
+  const auditorPatientName =
+    normalizedPatient?.patient_name
+      ? String(normalizedPatient.patient_name)
+      : normalizedPatient?.full_name
+        ? String(normalizedPatient.full_name)
+        : (c.title ?? "Unknown patient");
+  const auditorPathwayLabel =
+    patientReviewPathway === "pre_surgery" ? "Pre Surgery" : "Post Surgery";
+  const auditorAuditStage = c.intake_status ? String(c.intake_status).replace(/_/g, " ") : null;
+  const auditorImageUploadCount = patientPhotoUploadsForAuditor.length;
+  const auditorPdfDocumentCount = (uploads ?? []).filter((u) => {
+    const t = String((u as { type?: string }).type ?? "").toLowerCase();
+    return t.includes("pdf") || t.includes("document");
+  }).length;
+  const auditorPriorityScore = isAuditor
+    ? deriveAuditorQueueCase(
+        {
+          id: c.id,
+          title: c.title ?? null,
+          status: c.status ?? null,
+          created_at: c.created_at ?? new Date().toISOString(),
+          submitted_at: c.submitted_at ?? null,
+          audit_type: c.audit_type ?? "patient",
+          patient_review_pathway: c.patient_review_pathway,
+          imageUploadCount: auditorImageUploadCount,
+          pdfDocumentCount: auditorPdfDocumentCount,
+          uploadTypes: (uploads ?? []) as Array<{ type?: string | null }>,
+          hasClinicalHistory: hasClinicalHistoryForImageLimited,
+          patientName: auditorPatientName,
+          patientEmail: null,
+          report: latestReport
+            ? {
+                status: latestReport.status ?? null,
+                pdf_path: latestReport.pdf_path ?? null,
+                auditor_review_status: latestReport.auditor_review_status ?? null,
+                summary: (latestReport.summary as Record<string, unknown> | null) ?? null,
+              }
+            : null,
+          evidence: null,
+        },
+        Date.now()
+      ).priorityScore
+    : null;
+  const auditorReadyToRun =
+    missingRequiredPhotoCategories.length === 0 ||
+    hasClinicalHistoryForImageLimited ||
+    status === "draft";
+  const auditorClinicalDataPresent = hasClinicalHistoryForImageLimited;
+
+  const auditorDoctorAnswersBlock =
+    latestDoctorAnswers && Object.keys(latestDoctorAnswers).filter((k) => k !== "field_provenance").length > 0
+      ? (
+          <DoctorAnswersSummary
+            answers={latestDoctorAnswers}
+            baselineAnswers={previousDoctorAnswers}
+            title="Doctor Submission Summary"
+          />
+        )
+      : null;
+  const auditorClinicAnswersBlock =
+    latestClinicAnswers && Object.keys(latestClinicAnswers).length > 0
+      ? (
+          <DoctorAnswersSummary
+            answers={latestClinicAnswers}
+            baselineAnswers={previousClinicAnswers}
+            title="Clinic Submission Summary"
+          />
+        )
+      : null;
+  const auditorScoringBlock =
+    latestStructuredAnswers &&
+    typeof (latestStructuredAnswers as { scoring?: unknown }).scoring === "object"
+      ? (
+          <DoctorScoringNarrativeCard
+            scoring={(latestStructuredAnswers as { scoring: object }).scoring as never}
+            scoringVersion={(latestStructuredAnswers as { scoring_version?: unknown }).scoring_version as never}
+            generatedAt={(latestStructuredAnswers as { scoring_generated_at?: unknown }).scoring_generated_at as never}
+            aiContext={(latestStructuredAnswers as { ai_context?: unknown }).ai_context as never}
+          />
+        )
+      : null;
+  const auditorPatientAnswersBlock =
+    reportPatientAnswers && Object.keys(reportPatientAnswers).length > 0
+      ? <PatientAnswersSummary answers={reportPatientAnswers} />
+      : null;
+  const auditorManualAuditBanner =
+    c.status === "audit_failed"
+      ? (
+          <div className="rounded-2xl border border-rose-300/20 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-5">
+            <h2 className="font-semibold text-white mb-2">Manual audit required</h2>
+            <p className="text-sm text-slate-200/70 mb-3">
+              The automated audit failed. Complete a manual audit to finalize this case.
+            </p>
+            <Link
+              href={`/cases/${c.id}/audit`}
+              className="inline-flex items-center rounded-xl px-5 py-3 text-sm font-semibold text-slate-950 bg-gradient-to-r from-rose-300 to-amber-200 hover:from-rose-200 hover:to-amber-100 transition-colors"
+            >
+              Complete manual audit →
+            </Link>
+          </div>
+        )
+      : null;
+
   return (
     <div className="mx-auto mt-4 max-w-[1200px] rounded-3xl border border-slate-800 bg-slate-950 px-4 pb-10 pt-4 shadow-2xl sm:px-6">
       <div className="flex flex-wrap items-center gap-3">
@@ -1080,6 +1193,83 @@ export default async function Page({
         )}
       </div>
 
+      {isAuditor ? (
+        <AuditorCasePageWorkflow
+          caseId={c.id}
+          caseRow={c as Record<string, unknown>}
+          statusLabel={statusDisplayLabel}
+          statusPillClass={statusPill}
+          patientName={auditorPatientName}
+          clinicLabel={clinicLabel}
+          auditType={auditType}
+          auditSource={auditSource}
+          submittedAt={c.submitted_at ?? null}
+          auditStage={auditorAuditStage}
+          language={seoLocale}
+          priorityScore={auditorPriorityScore}
+          pathwayLabel={auditorPathwayLabel}
+          patientReviewPathway={patientReviewPathway}
+          clinicalHistorySnapshot={clinicalHistorySnapshot}
+          hasPatientImagesForImageLimited={hasPatientImagesForImageLimited}
+          missingPatientPhotoLabels={missingPatientPhotoLabelsForOverride}
+          hasClinicalHistoryForImageLimited={hasClinicalHistoryForImageLimited}
+          imagesSortedLabel={auditorImagesSortedLabel}
+          hasReportPdf={hasReportPdf}
+          readyToRun={auditorReadyToRun}
+          clinicalDataPresent={auditorClinicalDataPresent}
+          isAuditFailed={status === "audit_failed"}
+          imageLimitedForensicNotice={imageLimitedForensicNotice}
+          forensicReports={forensicReports}
+          latestReport={latestReport}
+          latestReportDisplayScore={latestReportDisplayScore}
+          repErr={repErr}
+          showAuditorReview={Boolean(showAuditorReview)}
+          auditorReviewEligibility={auditorReviewEligibility}
+          domains={domains}
+          benchmark={benchmark}
+          overallScores={overallScores}
+          provisionalStatus={provisionalStatus}
+          countsForAwards={countsForAwards}
+          hairAuditIntelligenceBundle={hairAuditIntelligenceBundle}
+          auditOsShadowDebug={auditOsShadowDebug}
+          auditOsReviewPanel={auditOsReviewPanel}
+          uploads={uploads ?? []}
+          graftIntegrityEstimate={graftIntegrityEstimate}
+          procedureDate={normalizedPatient?.procedure_date ? String(normalizedPatient.procedure_date) : null}
+          monthsSinceSurgery={monthsSinceSurgery}
+          confidenceLabel={String(confidenceLabel)}
+          summaryObservations={summaryObservations}
+          giiNotes={giiNotes}
+          giiLimitations={giiLimitations}
+          priorityEvidence={priorityEvidence}
+          changedFieldsOnly={changedFieldsOnly}
+          completenessScoreNum={completenessScoreNum}
+          evidenceScoreNum={evidenceScoreNum}
+          confidenceEstimateNum={confidenceEstimateNum}
+          technicalDataSufficiency={technicalDataSufficiency}
+          manualAuditReadinessScore={manualAuditReadinessScore}
+          missingCriticalEvidenceFlags={missingCriticalEvidenceFlags}
+          evidenceCoverageDashboardPct={evidenceCoverageDashboardPct}
+          patientImageEvidenceQuality={patientImageEvidenceQuality}
+          surgeryUploadDetails={surgeryUploadDetails}
+          surgerySlotReviews={surgerySlotReviews}
+          surgeryEvidenceEvents={surgeryEvidenceEvents}
+          surgeryPhotoExportHistory={surgeryPhotoExportHistory}
+          surgeryAuditIntakeView={surgeryAuditIntakeView}
+          surgeryEvidenceReportPdfPath={surgeryEvidenceReportPdfPath}
+          evidenceReportRequestedByLabel={evidenceReportRequestedByLabel}
+          canExportSurgeryPhotoPack={canExportSurgeryPhotoPack}
+          bulkBatchContext={bulkBatchContext}
+          caseLabel={c.case_label ?? null}
+          showAuditor={isAuditor}
+          doctorAnswersBlock={auditorDoctorAnswersBlock}
+          clinicAnswersBlock={auditorClinicAnswersBlock}
+          scoringBlock={auditorScoringBlock}
+          patientAnswersBlock={auditorPatientAnswersBlock}
+          manualAuditBanner={auditorManualAuditBanner}
+        />
+      ) : (
+        <>
       <section className="relative mt-6 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-6">
         <div className="pointer-events-none absolute -top-20 -right-20 h-64 w-64 rounded-full bg-cyan-400/10 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-violet-400/10 blur-3xl" />
@@ -1685,6 +1875,8 @@ export default async function Page({
         />
       </div>
       ) : null}
+        </>
+      )}
     </div>
   );
 }

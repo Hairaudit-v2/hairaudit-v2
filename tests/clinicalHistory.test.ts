@@ -278,12 +278,12 @@ describe("CaseClinicalHistoryPanel wiring", () => {
       join(process.cwd(), "src/components/hairaudit/admin/CaseClinicalHistoryPanel.tsx"),
       "utf8"
     );
-    assert.match(panel, /Clinical Intelligence Editor/);
+    assert.match(panel, /Clinical Intelligence Editor|CLINICAL INTELLIGENCE/);
     assert.match(panel, /saveCaseClinicalHistoryAction/);
     assert.match(panel, /saveCaseClinicalHistoryAndRegenerateAction/);
     assert.match(panel, /saveCaseClinicalHistoryAndRegenerateImageLimitedAction/);
     assert.match(panel, /Quick extract \/ paste notes/);
-    assert.match(panel, /Save \+ Regenerate Image-Limited Audit/);
+    assert.match(panel, /Save \+ Regenerate Image-Limited Audit|SAVE \+ IMAGE LIMITED AUDIT/);
     assert.match(panel, /Average hairs\/graft/);
     assert.match(panel, /Total grafts/);
   });
