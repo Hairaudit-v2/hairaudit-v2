@@ -1,5 +1,5 @@
 /**
- * HA-UX-7B — Auditor case queue triage: badges, priority scoring, and queue partitioning.
+ * HA-UX-7B / HA-UX-7C — Auditor case queue triage: badges, priority scoring, and queue partitioning.
  */
 
 import { isCaseMarkedSuccessfullySubmitted } from "@/lib/patient/caseSubmitStatus";
@@ -61,7 +61,15 @@ export type AuditorQueueCaseInput = {
     status?: string | null;
   } | null;
   lastRerunReason?: string | null;
+  waitingOnTranslation?: boolean;
 };
+
+export type AuditorFailureType =
+  | "PDF_GENERATION"
+  | "AI_FAILED"
+  | "IMAGE_PROCESSING"
+  | "CLASSIFIER"
+  | "GENERAL";
 
 export type AuditorQueueDerived = {
   badge: AuditorQueueBadge;
@@ -76,15 +84,21 @@ export type AuditorQueueDerived = {
   isAiProcessing: boolean;
   isAbandoned: boolean;
   needsAction: boolean;
+  needsManualInput: boolean;
   inFailedRecovery: boolean;
+  inActiveWorkQueue: boolean;
+  waitingOnPatient: boolean;
   imageLimitedRegenerationNeeded: boolean;
   photoProgress: RequiredPhotoProgress;
   auditTypeLabel: string;
   caseNumberLabel: string;
   failureSummary: string | null;
+  failureType: AuditorFailureType | null;
+  failureReason: string | null;
   auditStatusLabel: "Pending" | "Failed" | "Completed" | "Processing";
   lastActionAt: string;
   actionSortRank: number;
+  activeQueueSortRank: number;
 };
 
 const MS_24H = 1000 * 60 * 60 * 24;
@@ -176,6 +190,41 @@ function isAbandonedCase(input: AuditorQueueCaseInput): boolean {
   return false;
 }
 
+function isNeedsManualInputCase(input: AuditorQueueCaseInput, completed: boolean): boolean {
+  if (completed) return false;
+  const reviewStatus = String(input.report?.auditor_review_status ?? "");
+  return reviewStatus === "available" || reviewStatus === "in_review";
+}
+
+function deriveFailureDetails(input: AuditorQueueCaseInput, failed: boolean): {
+  failureType: AuditorFailureType | null;
+  failureReason: string | null;
+} {
+  if (!failed) return { failureType: null, failureReason: null };
+
+  const caseStatus = String(input.status ?? "");
+  const reportStatus = String(input.report?.status ?? "");
+  const evidenceStatus = String(input.evidence?.status ?? "");
+
+  if (caseStatus === "pdf_pending" && reportStatus === "failed") {
+    return { failureType: "PDF_GENERATION", failureReason: "PDF generation failed" };
+  }
+  if (reportStatus === "failed" && !input.report?.pdf_path) {
+    return { failureType: "PDF_GENERATION", failureReason: "Storage object missing" };
+  }
+  if (evidenceStatus === "failed") {
+    return { failureType: "IMAGE_PROCESSING", failureReason: "Image processing failed" };
+  }
+  if (FAILED_CASE_STATUSES.has(caseStatus) || FAILED_REPORT_STATUSES.has(reportStatus)) {
+    const forensic = getForensicSummary(input.report?.summary ?? null);
+    if (forensic?.classifierError || forensic?.classifier_failed) {
+      return { failureType: "CLASSIFIER", failureReason: "Classifier failure" };
+    }
+    return { failureType: "AI_FAILED", failureReason: "AI audit failed" };
+  }
+  return { failureType: "GENERAL", failureReason: "Processing failed" };
+}
+
 function isInactiveCase(input: AuditorQueueCaseInput, abandoned: boolean): boolean {
   if (input.archived_at) return false;
   if (input.imageUploadCount === 0) return true;
@@ -216,6 +265,8 @@ export function deriveAuditorQueueCase(
   const readyToAudit = isReadyToAuditCase(input, photoProgress, completed, failed, aiProcessing);
   const abandoned = isAbandonedCase(input);
   const inactive = isInactiveCase(input, abandoned);
+  const needsManualInput = isNeedsManualInputCase(input, completed);
+  const waitingOnTranslation = Boolean(input.waitingOnTranslation);
 
   const submittedMs = new Date(input.submitted_at ?? input.created_at).getTime();
   const isNewCase = Number.isFinite(submittedMs) && nowMs - submittedMs <= MS_24H && !completed;
@@ -235,27 +286,41 @@ export function deriveAuditorQueueCase(
   else if (abandoned || inactive) badge = "ABANDONED";
   else badge = "AI_PROCESSING";
 
-  let priorityScore = 0;
-  if (photoProgress.isComplete) priorityScore += 50;
-  if (failed) priorityScore += 40;
-  if (input.hasClinicalHistory) priorityScore += 30;
-  if (input.pdfDocumentCount > 0) priorityScore += 20;
-  if (isPremiumCase(input.report?.summary ?? null)) priorityScore += 10;
-  if (input.imageUploadCount === 0) priorityScore -= 50;
-  if (isNewCase) priorityScore += 15;
-  if (readyToAudit) priorityScore += 25;
-
   const imageLimitedRegenerationNeeded =
     imageLimited && (failed || missingImages) && !completed;
+
+  let priorityScore = 0;
+  if (failed) priorityScore += 100;
+  if (readyToAudit) priorityScore += 80;
+  if (imageLimitedRegenerationNeeded) priorityScore += 60;
+  if (input.hasClinicalHistory) priorityScore += 50;
+  if (input.pdfDocumentCount > 0) priorityScore += 40;
+  if (photoProgress.isComplete) priorityScore += 30;
+  if (isPremiumCase(input.report?.summary ?? null)) priorityScore += 20;
+  if (input.imageUploadCount === 0) priorityScore -= 100;
+  if (abandoned) priorityScore -= 100;
+
+  const waitingOnPatient =
+    !completed &&
+    !inactive &&
+    !failed &&
+    (missingImages ||
+      (!photoProgress.isComplete && input.imageUploadCount > 0 && !readyToAudit) ||
+      waitingOnTranslation);
+
+  const inActiveWorkQueue =
+    !completed &&
+    !inactive &&
+    !waitingOnPatient &&
+    (failed || readyToAudit || imageLimited || needsManualInput || imageLimitedRegenerationNeeded);
 
   const needsAction =
     !completed &&
     !inactive &&
     (failed ||
       readyToAudit ||
-      isNewCase ||
       imageLimitedRegenerationNeeded ||
-      missingImages ||
+      needsManualInput ||
       aiProcessing);
 
   const inFailedRecovery = failed;
@@ -263,18 +328,26 @@ export function deriveAuditorQueueCase(
   let actionSortRank = 99;
   if (failed) actionSortRank = 1;
   else if (readyToAudit) actionSortRank = 2;
-  else if (isNewCase) actionSortRank = 3;
-  else if (missingImages) actionSortRank = 4;
+  else if (imageLimitedRegenerationNeeded || imageLimited) actionSortRank = 3;
+  else if (needsManualInput) actionSortRank = 4;
   else if (aiProcessing) actionSortRank = 5;
 
+  let activeQueueSortRank = 99;
+  if (failed) activeQueueSortRank = 1;
+  else if (readyToAudit) activeQueueSortRank = 2;
+  else if (imageLimited || imageLimitedRegenerationNeeded) activeQueueSortRank = 3;
+  else if (needsManualInput) activeQueueSortRank = 4;
+
+  const { failureType, failureReason } = deriveFailureDetails(input, failed);
   const missingLabels = photoProgress.missingLabels;
   const evidenceMissing = input.evidence?.missing_categories ?? [];
   const failureSummary = failed
-    ? missingLabels.length
-      ? `Missing ${missingLabels.slice(0, 2).join(" + ")}${missingLabels.length > 2 ? "…" : ""}`
-      : evidenceMissing.length
-        ? `Missing ${evidenceMissing.slice(0, 2).join(", ")}`
-        : "Processing failed"
+    ? failureReason ??
+      (missingLabels.length
+        ? `Missing ${missingLabels.slice(0, 2).join(" + ")}${missingLabels.length > 2 ? "…" : ""}`
+        : evidenceMissing.length
+          ? `Missing ${evidenceMissing.slice(0, 2).join(", ")}`
+          : "Processing failed")
     : null;
 
   let auditStatusLabel: AuditorQueueDerived["auditStatusLabel"] = "Pending";
@@ -300,16 +373,89 @@ export function deriveAuditorQueueCase(
     isAiProcessing: aiProcessing,
     isAbandoned: abandoned,
     needsAction,
+    needsManualInput,
     inFailedRecovery,
+    inActiveWorkQueue,
+    waitingOnPatient,
     imageLimitedRegenerationNeeded,
     photoProgress,
     auditTypeLabel: deriveAuditTypeLabel(input),
     caseNumberLabel: deriveCaseNumberLabel(input.id),
     failureSummary,
+    failureType,
+    failureReason,
     auditStatusLabel,
     lastActionAt,
     actionSortRank,
+    activeQueueSortRank,
   };
+}
+
+export type AuditorWorkloadStatus = {
+  readyToAudit: number;
+  failedCases: number;
+  waitingOnPatient: number;
+};
+
+export function computeWorkloadStatus(
+  rows: Array<{ derived: AuditorQueueDerived; input: AuditorQueueCaseInput }>
+): AuditorWorkloadStatus {
+  const active = rows.filter((r) => !r.input.archived_at && !r.derived.isInactive && r.derived.badge !== "COMPLETED");
+  return {
+    readyToAudit: active.filter((r) => r.derived.isReadyToAudit).length,
+    failedCases: active.filter((r) => r.derived.isFailed).length,
+    waitingOnPatient: active.filter((r) => r.derived.waitingOnPatient).length,
+  };
+}
+
+export function selectNextCaseToProcess<T extends { derived: AuditorQueueDerived; input: AuditorQueueCaseInput }>(
+  rows: T[]
+): T | null {
+  const candidates = rows.filter(
+    (r) =>
+      !r.input.archived_at &&
+      !r.derived.isInactive &&
+      r.derived.badge !== "COMPLETED" &&
+      (r.derived.inActiveWorkQueue || r.derived.inFailedRecovery || r.derived.isReadyToAudit || r.derived.isFailed)
+  );
+  if (candidates.length === 0) return null;
+  return [...candidates].sort((a, b) => {
+    if (b.derived.priorityScore !== a.derived.priorityScore) {
+      return b.derived.priorityScore - a.derived.priorityScore;
+    }
+    return (
+      new Date(b.input.submitted_at ?? b.input.created_at).getTime() -
+      new Date(a.input.submitted_at ?? a.input.created_at).getTime()
+    );
+  })[0];
+}
+
+export function sortActiveWorkQueue<T extends { derived: AuditorQueueDerived; input: AuditorQueueCaseInput }>(
+  rows: T[]
+): T[] {
+  return [...rows].sort((a, b) => {
+    if (a.derived.activeQueueSortRank !== b.derived.activeQueueSortRank) {
+      return a.derived.activeQueueSortRank - b.derived.activeQueueSortRank;
+    }
+    if (b.derived.priorityScore !== a.derived.priorityScore) {
+      return b.derived.priorityScore - a.derived.priorityScore;
+    }
+    return (
+      new Date(b.input.submitted_at ?? b.input.created_at).getTime() -
+      new Date(a.input.submitted_at ?? a.input.created_at).getTime()
+    );
+  });
+}
+
+export function sortSearchResults<T extends { derived: AuditorQueueDerived; input: AuditorQueueCaseInput }>(
+  rows: T[]
+): T[] {
+  return [...rows].sort((a, b) => {
+    const aActive = a.derived.inActiveWorkQueue || a.derived.inFailedRecovery ? 0 : 1;
+    const bActive = b.derived.inActiveWorkQueue || b.derived.inFailedRecovery ? 0 : 1;
+    if (aActive !== bActive) return aActive - bActive;
+    return b.derived.priorityScore - a.derived.priorityScore;
+  });
 }
 
 export type AuditorQueueSummaryCounts = {
@@ -359,6 +505,21 @@ export function matchesQueueFilter(
       return input.imageUploadCount === 0 || derived.isInactive;
     default:
       return true;
+  }
+}
+
+export function failureTypeLabel(type: AuditorFailureType): string {
+  switch (type) {
+    case "PDF_GENERATION":
+      return "PDF Generation";
+    case "AI_FAILED":
+      return "AI Failed";
+    case "IMAGE_PROCESSING":
+      return "Image Processing";
+    case "CLASSIFIER":
+      return "Classifier Failure";
+    default:
+      return "Processing Failed";
   }
 }
 

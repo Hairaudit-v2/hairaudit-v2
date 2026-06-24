@@ -14,6 +14,7 @@ export type AuditorCaseQueueCardProps = {
   derived: AuditorQueueDerived;
   clinicName: string | null;
   compact?: boolean;
+  variant?: "default" | "active";
   busy?: boolean;
   onOpenCase: (caseId: string) => void;
   onRegenerateAudit: (caseId: string) => void;
@@ -44,6 +45,7 @@ export default function AuditorCaseQueueCard({
   derived,
   clinicName,
   compact = false,
+  variant = "default",
   busy = false,
   onOpenCase,
   onRegenerateAudit,
@@ -56,25 +58,37 @@ export default function AuditorCaseQueueCard({
   const caseLabel = input.title ?? input.id.slice(0, 8);
   const { photoProgress } = derived;
   const showImageLimitedOverride = derived.isImageLimited || derived.imageLimitedRegenerationNeeded;
+  const isActiveVariant = variant === "active";
 
   return (
     <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm hover:border-slate-300 transition-colors">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <h3 className="text-base font-semibold text-slate-900 truncate">{displayName}</h3>
+          <h3 className="text-base font-semibold text-slate-900 truncate">
+            {isActiveVariant ? derived.auditTypeLabel : displayName}
+          </h3>
           <p className="text-sm text-slate-500 mt-0.5">
             Case {derived.caseNumberLabel}
-            {clinicName ? ` · ${clinicName}` : ""}
+            {!isActiveVariant && clinicName ? ` · ${clinicName}` : ""}
           </p>
-          <p className="text-sm text-slate-600 mt-1">{derived.auditTypeLabel}</p>
+          {isActiveVariant ? (
+            <p className="text-sm font-medium uppercase tracking-wide text-slate-600 mt-1">{derived.auditTypeLabel}</p>
+          ) : (
+            <p className="text-sm text-slate-600 mt-1">{derived.auditTypeLabel}</p>
+          )}
         </div>
         <div className="flex flex-col items-end gap-1">
+          {isActiveVariant && (
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Status</p>
+          )}
           <StatusBadge badge={derived.badge} />
-          <span className="text-xs font-medium text-slate-500">Priority {derived.priorityScore}</span>
+          {!isActiveVariant && (
+            <span className="text-xs font-medium text-slate-500">Priority {derived.priorityScore}</span>
+          )}
         </div>
       </div>
 
-      {!compact && (
+      {!compact && !isActiveVariant && (
         <dl className="mt-3 grid gap-1.5 text-sm text-slate-700 sm:grid-cols-2">
           <div>
             <dt className="text-xs uppercase tracking-wide text-slate-400">Images</dt>
@@ -106,9 +120,18 @@ export default function AuditorCaseQueueCard({
       )}
 
       <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-600">
-        <span>{input.imageUploadCount} Images</span>
-        {input.pdfDocumentCount > 0 && <span>{input.pdfDocumentCount} PDF Document{input.pdfDocumentCount === 1 ? "" : "s"}</span>}
-        {input.hasClinicalHistory && <span>Clinical History Added</span>}
+        <span>{input.imageUploadCount} image{input.imageUploadCount === 1 ? "" : "s"} uploaded</span>
+        {input.pdfDocumentCount > 0 && (
+          <span>
+            PDF documents: {input.pdfDocumentCount}
+          </span>
+        )}
+        <span>Clinical history: {input.hasClinicalHistory ? "Present" : "Missing"}</span>
+        {isActiveVariant && (
+          <span>
+            Required photos: {photoProgress.completedCount}/{photoProgress.totalRequired} complete
+          </span>
+        )}
       </div>
 
       {derived.failureSummary && (
@@ -117,9 +140,11 @@ export default function AuditorCaseQueueCard({
         </p>
       )}
 
-      <p className="mt-2 text-xs text-slate-500">
-        Submitted: {formatSubmittedDate(input.submitted_at ?? input.created_at)}
-      </p>
+      {!isActiveVariant && (
+        <p className="mt-2 text-xs text-slate-500">
+          Submitted: {formatSubmittedDate(input.submitted_at ?? input.created_at)}
+        </p>
+      )}
 
       <div className="mt-4 flex flex-wrap gap-2">
         <button
@@ -130,7 +155,7 @@ export default function AuditorCaseQueueCard({
         >
           Open Case
         </button>
-        {!derived.isInactive && derived.badge !== "COMPLETED" && (
+        {!isActiveVariant && !derived.isInactive && derived.badge !== "COMPLETED" && (
           <>
             <button
               type="button"

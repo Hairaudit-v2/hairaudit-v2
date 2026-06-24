@@ -29,3 +29,10 @@ export async function getRecentOperationalAudits(range: DashboardRange): Promise
 }
 
 export type { DashboardRange };
+export type {
+  AuditKpi,
+  AuditPriorityBreakdown,
+  AuditStatusBreakdown,
+  AuditVolumePoint,
+  RecentOperationalAudits,
+} from "./types";
