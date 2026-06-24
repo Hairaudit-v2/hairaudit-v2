@@ -13,7 +13,11 @@ import {
   type PatientSafeReportSummary,
 } from "./patientSafeSummary";
 import {
-  buildPostOperativeGuidanceSteps,
+  buildLongTermHairPreservationContent,
+  isLongTermHairPreservationContent,
+  type LongTermHairPreservationContent,
+} from "./longTermHairPreservation";
+import {
   buildPostSurgeryRecommendedNextSteps,
   buildRepairPlanningGuidance,
   enrichSectionFinding,
@@ -101,8 +105,8 @@ export type PostSurgeryAuditReport = {
   concernFlags: PostSurgeryConcernFlag[];
   imageAssessments: PostSurgeryImageAssessment[];
   recommendedNextSteps: string[];
-  /** Post-operative guidance for patient PDF */
-  postOperativeGuidance: string[];
+  /** Long-term hair preservation educational guidance for patient PDF */
+  longTermPreservation: LongTermHairPreservationContent;
   /** Repair / refinement planning guidance for patient PDF */
   repairPlanningGuidance: string[];
   /** Embedded patient-safe summary for backward-compatible surfaces */
@@ -855,7 +859,7 @@ export function generatePostSurgeryAuditReport(
     repairConsiderationId,
     bundle
   );
-  const postOperativeGuidance = buildPostOperativeGuidanceSteps();
+  const longTermPreservation = buildLongTermHairPreservationContent("post_surgery");
   const repairPlanningGuidance = buildRepairPlanningGuidance(bundle, repairConsiderationId);
 
   const version = input.reportVersion ?? 1;
@@ -873,7 +877,7 @@ export function generatePostSurgeryAuditReport(
     concernFlags,
     imageAssessments,
     recommendedNextSteps,
-    postOperativeGuidance,
+    longTermPreservation,
     repairPlanningGuidance,
     patientSafeSummary,
   };
@@ -917,10 +921,9 @@ export function resolvePostSurgeryAuditReport(
         stored.imageAssessments,
         opts.photosByCategory
       ),
-      postOperativeGuidance:
-        stored.postOperativeGuidance?.length
-          ? stored.postOperativeGuidance
-          : buildPostOperativeGuidanceSteps(),
+      longTermPreservation: isLongTermHairPreservationContent(stored.longTermPreservation)
+        ? stored.longTermPreservation
+        : buildLongTermHairPreservationContent("post_surgery"),
       repairPlanningGuidance:
         stored.repairPlanningGuidance?.length
           ? stored.repairPlanningGuidance

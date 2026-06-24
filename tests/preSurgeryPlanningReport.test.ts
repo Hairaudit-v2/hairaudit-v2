@@ -203,6 +203,9 @@ describe("preSurgeryPlanningReport", () => {
     assert.match(html, /Independent Review Completed/);
     assert.match(html, /not a clinic sales recommendation/i);
     assert.match(html, /Recommended Next Steps/);
+    assert.match(html, /Long-Term Hair Preservation Strategy/);
+    assert.match(html, /Planning future long-term preservation/);
+    assert.match(html, /does not prescribe treatment/i);
     assert.match(html, /Independent Pre-Surgery Planning Report/);
     for (const step of report.recommendedNextSteps.slice(0, 2)) {
       assert.match(html, new RegExp(step.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));

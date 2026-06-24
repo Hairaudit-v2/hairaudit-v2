@@ -875,6 +875,71 @@
           "unknown": "General"
         }
       },
+      "report": {
+        "longTermPreservation": {
+          "title": "Long-Term Hair Preservation Strategy",
+          "pathwayContext": {
+            "pre_surgery": "Planning future long-term preservation",
+            "post_surgery": "Protecting your post-transplant result"
+          },
+          "intro": {
+            "paragraph1": "Hair transplantation restores areas affected by hair loss, but it does not prevent the continued progression of future thinning in surrounding native hair.",
+            "paragraph2": "Protecting existing hair remains one of the most important parts of long-term planning and may reduce the need for future surgery."
+          },
+          "medical": {
+            "title": "Medical Hair Loss Prevention Options",
+            "intro": "Some patients experiencing androgenetic hair loss may benefit from medical therapies designed to reduce ongoing follicular miniaturisation and preserve surrounding native hair.",
+            "examplesLead": "Examples that may be discussed with a qualified doctor include:",
+            "examples": {
+              "0": "Finasteride",
+              "1": "Dutasteride"
+            },
+            "explanation": "These medications may reduce the effects of DHT-related hair loss progression and help stabilise existing hair density over time."
+          },
+          "natural": {
+            "title": "Natural Hair Preservation Support",
+            "intro": "Some patients explore natural support therapies as part of a broader long-term hair preservation strategy.",
+            "examplesLead": "Examples may include:",
+            "examples": {
+              "0": "Saw Palmetto",
+              "1": "Nutritional optimisation",
+              "2": "Iron deficiency correction where clinically indicated",
+              "3": "Vitamin and mineral support",
+              "4": "Scalp inflammation management"
+            },
+            "explanation": "Supporting scalp health and correcting nutritional deficiencies may contribute to maintaining healthier long-term hair quality in some patients."
+          },
+          "regenerative": {
+            "title": "Regenerative Hair Support Options",
+            "intro": {
+              "pre_surgery": "Some patients explore supportive regenerative therapies as part of long-term maintenance planning before or alongside surgical treatment.",
+              "post_surgery": "Some patients choose supportive regenerative therapies following transplantation as part of long-term maintenance planning."
+            },
+            "examplesLead": "Examples include:",
+            "examples": {
+              "0": "PRP (Platelet Rich Plasma)",
+              "1": "Exosome therapy",
+              "2": "Microneedling",
+              "3": "Low-level laser therapy"
+            },
+            "explanation": "These therapies are sometimes explored to support scalp health and improve the environment surrounding existing native hair follicles."
+          },
+          "monitoring": {
+            "title": "Monitoring Future Hair Loss Progression",
+            "intro": "Even when transplanted grafts remain permanent, surrounding non-transplanted native hair may continue progressive thinning over time.",
+            "examplesLead": "Patients should continue monitoring:",
+            "examples": {
+              "0": "Crown density changes",
+              "1": "Mid-scalp thinning progression",
+              "2": "Temporal recession progression",
+              "3": "Overall hair calibre reduction",
+              "4": "Progressive donor reserve depletion if future surgery is considered"
+            },
+            "explanation": "Ongoing monitoring may allow earlier intervention before significant visible progression occurs."
+          },
+          "safety": "Before beginning any medication, supplement, or regenerative treatment, these options should always be discussed with your GP, prescribing doctor, or qualified treating clinician. HairAudit provides educational guidance only and does not prescribe treatment."
+        }
+      },
       "preSurgeryReport": {
         "badges": {
           "complete": "Pre-surgery review complete"

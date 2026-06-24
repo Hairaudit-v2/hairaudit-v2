@@ -1,5 +1,9 @@
 import type { PreSurgeryPlanningReport } from "./preSurgeryPlanningReport";
 import {
+  LONG_TERM_PRESERVATION_CSS,
+  renderLongTermHairPreservationHtml,
+} from "./longTermHairPreservation";
+import {
   buildClinicalEvidenceImagesFromPhotosByCategory,
   CLINICAL_EVIDENCE_GALLERY_CSS,
   renderClinicalEvidenceGalleryHtml,
@@ -108,6 +112,10 @@ export function renderPreSurgeryPlanningReportHtml(vm: PreSurgeryReportHtmlVm): 
     mode: "pdf",
   });
 
+  const preservationHtml = report.longTermPreservation
+    ? renderLongTermHairPreservationHtml(report.longTermPreservation)
+    : "";
+
   const nextStepsHtml = report.recommendedNextSteps
     .map((step) => `<li><span class="check">✓</span> ${esc(step)}</li>`)
     .join("");
@@ -215,6 +223,7 @@ export function renderPreSurgeryPlanningReportHtml(vm: PreSurgeryReportHtmlVm): 
     .imageMeta { padding: 10px 12px; }
     .imageView { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
     ${CLINICAL_EVIDENCE_GALLERY_CSS}
+    ${LONG_TERM_PRESERVATION_CSS}
     .trustBox { background: #f0f9ff; border-color: #bae6fd; }
     .nextSteps { background: #ecfdf5; border-color: #a7f3d0; }
     .nextList { margin: 12px 0 0; padding: 0; list-style: none; }
@@ -259,7 +268,9 @@ export function renderPreSurgeryPlanningReportHtml(vm: PreSurgeryReportHtmlVm): 
 
     ${clinicalEvidenceHtml}
 
-    <div class="section trustBox">
+    ${preservationHtml}
+
+    <div class="section trustBox certificationSection">
       <div class="sectionHead"><h2>${esc(labels.trustTitle)}</h2></div>
       <p>${esc(labels.trustBody)}</p>
       <p style="margin-top:8px;">${esc(labels.trustNeutrality)}</p>

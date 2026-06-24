@@ -1,5 +1,9 @@
 import type { PostSurgeryAuditReport } from "./postSurgeryAuditReport";
 import {
+  LONG_TERM_PRESERVATION_CSS,
+  renderLongTermHairPreservationHtml,
+} from "./longTermHairPreservation";
+import {
   buildClinicalEvidenceImagesFromPhotosByCategory,
   CLINICAL_EVIDENCE_GALLERY_CSS,
   renderClinicalEvidenceGalleryHtml,
@@ -25,8 +29,6 @@ export type PostSurgeryReportHtmlLabels = {
   photoEmbedFailed: string;
   imageLimitedTitle: string;
   knownClinicalContextTitle: string;
-  postOperativeTitle: string;
-  postOperativeSubtitle: string;
   repairPlanningTitle: string;
   repairPlanningSubtitle: string;
   trustTitle: string;
@@ -166,16 +168,9 @@ export function renderPostSurgeryAuditReportHtml(vm: PostSurgeryReportHtmlVm): s
     </div>`
       : "";
 
-  const postOpSteps = report.postOperativeGuidance ?? [];
-  const postOperativeHtml =
-    postOpSteps.length > 0
-      ? `
-    <div class="section postOpSection">
-      <div class="sectionHead"><h2>${esc(labels.postOperativeTitle)}</h2></div>
-      <p class="sectionLead">${esc(labels.postOperativeSubtitle)}</p>
-      <ul class="nextList">${postOpSteps.map((step) => `<li><span class="check">✓</span> ${esc(step)}</li>`).join("")}</ul>
-    </div>`
-      : "";
+  const preservationHtml = report.longTermPreservation
+    ? renderLongTermHairPreservationHtml(report.longTermPreservation)
+    : "";
 
   const repairSteps = report.repairPlanningGuidance ?? [];
   const repairPlanningHtml =
@@ -288,6 +283,7 @@ export function renderPostSurgeryAuditReportHtml(vm: PostSurgeryReportHtmlVm): s
     .contextList { margin: 10px 0 0; padding-left: 18px; color: #334155; }
     .contextList li { margin-bottom: 6px; }
     .postOpSection { background: #f0f9ff; border-color: #bae6fd; }
+    ${LONG_TERM_PRESERVATION_CSS}
     .repairPlanningSection { background: #faf5ff; border-color: #e9d5ff; }
     .concernList { list-style: none; margin: 12px 0 0; padding: 0; }
     .concernItem {
@@ -370,11 +366,11 @@ export function renderPostSurgeryAuditReportHtml(vm: PostSurgeryReportHtmlVm): s
 
     ${clinicalEvidenceHtml}
 
-    ${postOperativeHtml}
+    ${preservationHtml}
 
     ${repairPlanningHtml}
 
-    <div class="section trustBox">
+    <div class="section trustBox certificationSection">
       <div class="sectionHead"><h2>${esc(labels.trustTitle)}</h2></div>
       <p>${esc(labels.trustBody)}</p>
       <p style="margin-top:8px;">${esc(labels.trustNeutrality)}</p>

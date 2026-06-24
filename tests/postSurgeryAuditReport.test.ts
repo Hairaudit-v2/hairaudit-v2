@@ -54,7 +54,7 @@ describe("postSurgeryAuditReport", () => {
     assert.equal(report.sections.length, 8);
     assert.ok(report.scorecards.some((c) => c.id === "donor_preservation" && c.displayValue === "68%"));
     assert.ok(report.recommendedNextSteps.length >= 1);
-    assert.ok(report.postOperativeGuidance.length >= 6);
+    assert.ok(report.longTermPreservation.subsections.length === 4);
     assert.ok(report.repairPlanningGuidance.length >= 3);
     assert.equal(report.patientSafeSummary.patientReviewPathway, "post_surgery");
   });

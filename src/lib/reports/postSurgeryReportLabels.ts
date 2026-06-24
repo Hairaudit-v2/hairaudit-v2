@@ -51,9 +51,6 @@ export function buildPostSurgeryReportHtmlLabelsEn(
     photoEmbedFailed: "Image was reviewed but could not be embedded in this PDF export.",
     imageLimitedTitle: "Enhanced image-limited review",
     knownClinicalContextTitle: "Known Clinical Context Provided",
-    postOperativeTitle: "Post-Operative Guidance & Next Steps",
-    postOperativeSubtitle:
-      "General information to support your recovery and follow-up — not a diagnosis or treatment plan.",
     repairPlanningTitle: "Repair / Refinement Considerations",
     repairPlanningSubtitle:
       "Factors to discuss with a qualified clinician if you are considering further refinement or repair.",

@@ -64,19 +64,6 @@ export function sanitizePatientReportText(text: string): string {
   return out;
 }
 
-export function buildPostOperativeGuidanceSteps(): string[] {
-  return [
-    "Continue follow-up with your treating clinician and share this report at your next appointment.",
-    "Avoid judging final density too early if you are still within the expected growth timeline for your procedure.",
-    "Document progress with monthly photos in consistent lighting and angles to track changes over time.",
-    "Discuss donor reserve and long-term planning with your clinician before considering any further extraction.",
-    "Review medication and support therapy options with your clinician if ongoing thinning is a concern.",
-    "Avoid rushing into repair surgery until an appropriate maturation window has passed, unless an urgent clinical concern is present.",
-    "Seek prompt in-person review if you notice increasing pain, inflammation, spreading redness, discharge, abnormal shedding, or signs of infection.",
-    "If considering repair or refinement, plan a dedicated consultation only after adequate growth and maturation, unless urgent clinical concern applies.",
-  ];
-}
-
 export function buildRepairPlanningGuidance(
   bundle: HairAuditIntelligenceBundle | null | undefined,
   repairId: PostSurgeryRepairConsiderationId

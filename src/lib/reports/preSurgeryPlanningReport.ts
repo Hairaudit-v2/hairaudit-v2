@@ -14,6 +14,11 @@ import {
   type PatientReviewPathway,
 } from "@/lib/patient/patientReviewPathway";
 import {
+  buildLongTermHairPreservationContent,
+  isLongTermHairPreservationContent,
+  type LongTermHairPreservationContent,
+} from "./longTermHairPreservation";
+import {
   buildPatientSafeReportSummary,
   type PatientSafeReportSummary,
 } from "./patientSafeSummary";
@@ -78,6 +83,7 @@ export type PreSurgeryPlanningReport = {
   recommendedNextSteps: string[];
   graftEstimateRange?: { min: number; max: number } | null;
   graftEstimateCaveat: string;
+  longTermPreservation: LongTermHairPreservationContent;
   patientSafeSummary: PatientSafeReportSummary;
 };
 
@@ -642,6 +648,7 @@ export function generatePreSurgeryPlanningReport(
     recommendedNextSteps,
     graftEstimateRange: graftRange,
     graftEstimateCaveat: GRAFT_ESTIMATE_CAVEAT,
+    longTermPreservation: buildLongTermHairPreservationContent("pre_surgery"),
     patientSafeSummary,
   };
 }
@@ -674,7 +681,12 @@ export function resolvePreSurgeryPlanningReport(
 
   const stored = summary?.pre_surgery_planning_report;
   if (isPreSurgeryPlanningReport(stored)) {
-    return stored;
+    return {
+      ...stored,
+      longTermPreservation: isLongTermHairPreservationContent(stored.longTermPreservation)
+        ? stored.longTermPreservation
+        : buildLongTermHairPreservationContent("pre_surgery"),
+    };
   }
 
   if (!summary) return null;

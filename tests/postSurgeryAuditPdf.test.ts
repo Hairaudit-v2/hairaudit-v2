@@ -144,16 +144,18 @@ describe("HA-FIX-8I post-surgery audit PDF quality", () => {
     assert.ok(lines.some((l) => l.includes("3,120")));
   });
 
-  it("post-operative guidance appears in post-surgery reports", () => {
+  it("long-term preservation guidance appears in post-surgery reports", () => {
     const report = generatePostSurgeryAuditReport({
       summary: sampleForensicSummary,
       caseId: CASE_ID,
       patientReviewPathway: "post_surgery",
     });
     const html = renderHtmlForReport(report);
-    assert.match(html, /Post-Operative Guidance &amp; Next Steps/);
-    assert.match(html, /Continue follow-up with your treating clinician/);
-    assert.ok(report.postOperativeGuidance.length >= 6);
+    assert.match(html, /Long-Term Hair Preservation Strategy/);
+    assert.match(html, /Protecting your post-transplant result/);
+    assert.match(html, /Medical Hair Loss Prevention Options/);
+    assert.match(html, /does not prescribe treatment/i);
+    assert.equal(report.longTermPreservation.subsections.length, 4);
   });
 
   it("repair guidance appears in post-surgery reports", () => {

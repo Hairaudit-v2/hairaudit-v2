@@ -13,6 +13,7 @@ import {
   type PatientSafeSummaryFallbackReason,
 } from "@/lib/reports/patientSafeSummaryDisclosure";
 import ClinicalEvidenceReviewGallery from "@/components/reports/ClinicalEvidenceReviewGallery";
+import LongTermHairPreservationSection from "@/components/patient/LongTermHairPreservationSection";
 
 const SECTION_ORDER: PreSurgeryReviewSectionId[] = [
   "overall_planning",
@@ -196,6 +197,8 @@ export default function PreSurgeryPlanningReportShell({
           noPhotoKey="dashboard.patient.preSurgeryReport.images.noPhoto"
         />
       ) : null}
+
+      <LongTermHairPreservationSection pathway="pre_surgery" />
 
       <div className="rounded-2xl border border-sky-200/80 bg-sky-50/50 p-5 shadow-sm sm:p-6">
         <h3 className="text-lg font-semibold text-sky-950">
