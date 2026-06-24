@@ -72,7 +72,10 @@ export function resolveAssessmentImprovementTexts(
   return itemIds.map((id) => labels.items[id]);
 }
 
-export type BuildAssessmentImprovementParams = BuildAssessmentConfidenceParams & {
+export type BuildAssessmentImprovementParams = Omit<
+  BuildAssessmentConfidenceParams,
+  "labels"
+> & {
   confidence: AssessmentConfidenceResult;
   labels?: AssessmentImprovementLabels;
 };

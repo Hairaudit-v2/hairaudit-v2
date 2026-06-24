@@ -366,8 +366,10 @@ export type AssessmentEvidenceSnapshot = {
   documentAssisted: boolean;
 };
 
+export type BuildAssessmentEvidenceParams = Omit<BuildAssessmentConfidenceParams, "labels">;
+
 export function resolveAssessmentEvidenceSnapshot(
-  params: BuildAssessmentConfidenceParams
+  params: BuildAssessmentEvidenceParams
 ): AssessmentEvidenceSnapshot {
   const pathway = params.pathway;
   const viewGroups =
