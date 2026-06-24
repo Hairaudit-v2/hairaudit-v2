@@ -49,6 +49,41 @@ function normalizeMetric(value: unknown): string {
   return text;
 }
 
+function nestedRecordValue(root: unknown, path: readonly string[]): unknown {
+  let cur: unknown = root;
+  for (const key of path) {
+    if (!cur || typeof cur !== "object") return undefined;
+    cur = (cur as Record<string, unknown>)[key];
+  }
+  return cur;
+}
+
+function sectionScoresSource(
+  summary: Record<string, unknown>,
+  forensic: Record<string, unknown> | null
+): unknown {
+  return (
+    nestedRecordValue(summary, ["computed", "component_scores", "sections"]) ??
+    summary.section_scores ??
+    forensic?.section_scores ??
+    null
+  );
+}
+
+function domainScoresSource(summary: Record<string, unknown>): unknown {
+  return (
+    nestedRecordValue(summary, ["computed", "component_scores", "domains"]) ??
+    summary.area_scores ??
+    null
+  );
+}
+
+function keyMetricsRecord(summary: Record<string, unknown>): Record<string, unknown> | null {
+  const keyMetrics = summary.key_metrics;
+  if (!keyMetrics || typeof keyMetrics !== "object" || Array.isArray(keyMetrics)) return null;
+  return keyMetrics as Record<string, unknown>;
+}
+
 async function downloadImagesForCase(args: {
   supabase: ReturnType<typeof createSupabaseAdminClient>;
   bucket: string;
@@ -185,7 +220,7 @@ export async function renderAndUploadPdfForCase(args: {
       (caseRow as { patient_review_pathway?: string | null } | null)?.patient_review_pathway ?? null,
     caseId,
     reportVersion: Number(reportRow.version ?? version),
-  }) as Record<string, any>;
+  });
 
   assertPdfReady({
     caseStatus: (caseRow as { status?: string | null } | null)?.status ?? null,
@@ -193,7 +228,11 @@ export async function renderAndUploadPdfForCase(args: {
     summary,
   });
 
-  const forensic = (summary?.forensic_audit ?? summary?.forensic ?? null) as any;
+  const forensicRaw = summary.forensic_audit ?? summary.forensic;
+  const forensic =
+    forensicRaw && typeof forensicRaw === "object" && !Array.isArray(forensicRaw)
+      ? (forensicRaw as Record<string, unknown>)
+      : null;
 
   // Load graft integrity for PDF (only approved appears in patient PDF; addGraftIntegrityIndex handles filtering)
   let giiRow: any = null;
@@ -231,21 +270,12 @@ export async function renderAndUploadPdfForCase(args: {
       : undefined;
 
   const overallFromForensic = toNum(forensic?.overall_score);
-  const overallFromSummary = toNum(summary?.overall_score ?? summary?.score);
+  const overallFromSummary = toNum(summary.overall_score ?? summary.score);
   const overall = overallFromForensic ?? overallFromSummary ?? null;
 
-  const sectionScores = toNumberRecord(
-    summary?.computed?.component_scores?.sections ??
-      summary?.section_scores ??
-      forensic?.section_scores ??
-      null
-  );
+  const sectionScores = toNumberRecord(sectionScoresSource(summary, forensic));
 
-  const domains = toNumberRecord(
-    summary?.computed?.component_scores?.domains ??
-      summary?.area_scores ??
-      null
-  );
+  const domains = toNumberRecord(domainScoresSource(summary));
   const derivedDomains =
     Object.keys(domains).length > 0
       ? domains
@@ -259,11 +289,15 @@ export async function renderAndUploadPdfForCase(args: {
 
   // Confidence (0–1). Use forensic if present; otherwise derive a safe floor.
   // Prefer explicit counts if stored; otherwise fall back to downloaded images length.
-  const photoCountStored = Number((summary?.uploadCount ?? summary?.upload_count) ?? 0) || 0;
-  const missingCategories = Array.isArray(forensic?.data_quality?.missing_photos)
-    ? forensic.data_quality.missing_photos
-    : Array.isArray(forensic?.data_quality?.missing_inputs)
-      ? forensic.data_quality.missing_inputs
+  const photoCountStored = Number((summary.uploadCount ?? summary.upload_count) ?? 0) || 0;
+  const dataQuality =
+    forensic?.data_quality && typeof forensic.data_quality === "object" && !Array.isArray(forensic.data_quality)
+      ? (forensic.data_quality as Record<string, unknown>)
+      : null;
+  const missingCategories = Array.isArray(dataQuality?.missing_photos)
+    ? dataQuality.missing_photos
+    : Array.isArray(dataQuality?.missing_inputs)
+      ? dataQuality.missing_inputs
       : [];
   const missingPenalty = clamp((missingCategories.length || 0) / 6, 0, 1) * 0.25;
   const images = await downloadImagesForCase({ supabase, bucket, caseId });
@@ -285,24 +319,26 @@ export async function renderAndUploadPdfForCase(args: {
   const conf = clamp(toNum(forensic?.confidence) ?? derivedConfidence, 0.45, 0.95);
   const confLabel = conf < 0.55 ? "low" : conf < 0.8 ? "medium" : "high";
 
-  const findings =
-    Array.isArray(summary?.findings) ? summary.findings :
-    Array.isArray(summary?.highlights) ? summary.highlights :
-    [];
+  const findings = Array.isArray(summary.findings)
+    ? summary.findings
+    : Array.isArray(summary.highlights)
+      ? summary.highlights
+      : [];
 
+  const keyMetrics = keyMetricsRecord(summary);
   const keyMetricsRaw = enrichKeyMetricsAfterNormalize(
     {
-      donorQuality: normalizeMetric(summary?.donor_quality ?? summary?.key_metrics?.donor_quality),
-      graftSurvival: normalizeMetric(summary?.graft_survival_estimate ?? summary?.key_metrics?.graft_survival_estimate),
-      transectionRisk: normalizeMetric(summary?.key_metrics?.transection_risk),
-      implantationDensity: normalizeMetric(summary?.key_metrics?.implantation_density),
-      hairlineNaturalness: normalizeMetric(summary?.key_metrics?.hairline_naturalness),
-      donorScarVisibility: normalizeMetric(summary?.key_metrics?.donor_scar_visibility),
+      donorQuality: normalizeMetric(summary.donor_quality ?? keyMetrics?.donor_quality),
+      graftSurvival: normalizeMetric(summary.graft_survival_estimate ?? keyMetrics?.graft_survival_estimate),
+      transectionRisk: normalizeMetric(keyMetrics?.transection_risk),
+      implantationDensity: normalizeMetric(keyMetrics?.implantation_density),
+      hairlineNaturalness: normalizeMetric(keyMetrics?.hairline_naturalness),
+      donorScarVisibility: normalizeMetric(keyMetrics?.donor_scar_visibility),
     },
     pdfKitEvidenceEvaluation
   );
 
-  const summaryEvCovPdf = Number((summary as { evidenceCoverageScore?: unknown })?.evidenceCoverageScore);
+  const summaryEvCovPdf = Number(summary.evidenceCoverageScore);
   const evidenceCoverageScorePdf =
     Number.isFinite(summaryEvCovPdf) && summaryEvCovPdf >= 0
       ? Math.round(Math.max(0, Math.min(100, summaryEvCovPdf)))
@@ -319,16 +355,16 @@ export async function renderAndUploadPdfForCase(args: {
     evidenceCoverageScore: evidenceCoverageScorePdf,
     donorQuality: keyMetricsRaw.donorQuality,
     graftSurvival: keyMetricsRaw.graftSurvival,
-    notes: typeof summary?.notes === "string" ? summary.notes : undefined,
+    notes: typeof summary.notes === "string" ? summary.notes : undefined,
     findings,
-    model: String(forensic?.model ?? summary?.model ?? ""),
+    model: String(forensic?.model ?? summary.model ?? ""),
     uploadCount: photoCount || images.length,
     confidencePanel: {
       photoCount: photoCount || images.length,
       missingCategories,
       confidenceScore: conf,
       confidenceLabel: String(forensic?.confidence_label ?? confLabel),
-      limitations: Array.isArray(forensic?.data_quality?.limitations) ? forensic.data_quality.limitations : [],
+      limitations: Array.isArray(dataQuality?.limitations) ? dataQuality.limitations : [],
     },
     radar: Object.keys(sectionScores).length
       ? { section_scores: sectionScores, overall_score: Number(overall ?? 0), confidence: conf }
@@ -338,27 +374,34 @@ export async function renderAndUploadPdfForCase(args: {
       sections: Object.keys(sectionScores).length ? sectionScores : undefined,
     },
     forensic: forensic
-      ? {
-          summary: typeof forensic?.summary === "string" ? forensic.summary : undefined,
-          key_findings: Array.isArray(forensic?.key_findings) ? forensic.key_findings : undefined,
-          red_flags: Array.isArray(forensic?.red_flags) ? forensic.red_flags : undefined,
-          non_medical_disclaimer: typeof forensic?.non_medical_disclaimer === "string" ? forensic.non_medical_disclaimer : undefined,
-          imageLimitedAssessment: Boolean((forensic as { imageLimitedAssessment?: boolean }).imageLimitedAssessment),
-          documentAssistedAssessment: Boolean((forensic as { documentAssistedAssessment?: boolean }).documentAssistedAssessment),
-          missingRequiredPhotoLabels: Array.isArray((forensic as { missingRequiredPhotoLabels?: unknown }).missingRequiredPhotoLabels)
+      ? ({
+          summary: typeof forensic.summary === "string" ? forensic.summary : undefined,
+          key_findings: Array.isArray(forensic.key_findings) ? forensic.key_findings : undefined,
+          red_flags: Array.isArray(forensic.red_flags) ? forensic.red_flags : undefined,
+          non_medical_disclaimer:
+            typeof forensic.non_medical_disclaimer === "string" ? forensic.non_medical_disclaimer : undefined,
+          imageLimitedAssessment: Boolean(
+            (forensic as { imageLimitedAssessment?: boolean }).imageLimitedAssessment
+          ),
+          documentAssistedAssessment: Boolean(
+            (forensic as { documentAssistedAssessment?: boolean }).documentAssistedAssessment
+          ),
+          missingRequiredPhotoLabels: Array.isArray(
+            (forensic as { missingRequiredPhotoLabels?: unknown }).missingRequiredPhotoLabels
+          )
             ? ((forensic as { missingRequiredPhotoLabels: string[] }).missingRequiredPhotoLabels as string[])
             : undefined,
           auditorOverrideReason:
             typeof (forensic as { auditorOverrideReason?: unknown }).auditorOverrideReason === "string"
               ? (forensic as { auditorOverrideReason: string }).auditorOverrideReason
               : undefined,
-          domain_scores_v1: forensic?.domain_scores_v1,
-          benchmark: forensic?.benchmark,
-          completeness_index_v1: forensic?.completeness_index_v1,
-          confidence_model_v1: forensic?.confidence_model_v1,
-          overall_scores_v1: forensic?.overall_scores_v1,
-          tiers_v1: forensic?.tiers_v1,
-        }
+          domain_scores_v1: forensic.domain_scores_v1,
+          benchmark: forensic.benchmark,
+          completeness_index_v1: forensic.completeness_index_v1,
+          confidence_model_v1: forensic.confidence_model_v1,
+          overall_scores_v1: forensic.overall_scores_v1,
+          tiers_v1: forensic.tiers_v1,
+        } as AuditReportContent["forensic"])
       : undefined,
     graftIntegrity: graftIntegrity ?? undefined,
     images,

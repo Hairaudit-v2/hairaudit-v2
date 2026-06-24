@@ -43,6 +43,10 @@ import { getCaseFilesBucketNameForReadOnlyUse } from "@/lib/hairaudit/uploadStor
 import { requireReportRenderTokenSecret } from "@/lib/security/secrets";
 import { resolvePdfReviewRisks } from "@/lib/reports/patientPdfReviewAreas";
 import { resolvePdfReportTemplateHeader } from "@/lib/pdf/normalizeReportTemplateForPdf";
+import {
+  buildClinicalHistorySnapshot,
+  loadCaseClinicalHistory,
+} from "@/lib/hairaudit/clinical-history/clinicalHistory.server";
 
 function clamp100(n: number) {
   return Math.max(0, Math.min(100, n));
@@ -572,6 +576,14 @@ export async function GET(req: Request) {
     debugFooter,
   };
 
+  let postSurgeryClinicalHistorySnapshot = null;
+  if (shouldUsePostSurgeryReportTemplate(c.patient_review_pathway, mode)) {
+    const clinicalHistoryRow = await loadCaseClinicalHistory(caseId, supabase as any);
+    postSurgeryClinicalHistorySnapshot = clinicalHistoryRow
+      ? buildClinicalHistorySnapshot(clinicalHistoryRow)
+      : null;
+  }
+
   const html = (() => {
     if (shouldUsePostSurgeryReportTemplate(c.patient_review_pathway, mode)) {
       const postReport = resolvePostSurgeryAuditReport(summary as Record<string, unknown>, {
@@ -579,6 +591,7 @@ export async function GET(req: Request) {
         reportVersion: content.version,
         patientReviewPathway: c.patient_review_pathway,
         photosByCategory,
+        clinicalHistory: postSurgeryClinicalHistorySnapshot,
       });
       if (postReport) {
         const outcomeLabel =

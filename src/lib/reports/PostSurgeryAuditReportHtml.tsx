@@ -16,6 +16,13 @@ export type PostSurgeryReportHtmlLabels = {
   imagesTitle: string;
   imageViews: Record<string, string>;
   noPhoto: string;
+  photoEmbedFailed: string;
+  imageLimitedTitle: string;
+  knownClinicalContextTitle: string;
+  postOperativeTitle: string;
+  postOperativeSubtitle: string;
+  repairPlanningTitle: string;
+  repairPlanningSubtitle: string;
   trustTitle: string;
   trustBody: string;
   trustNeutrality: string;
@@ -126,7 +133,7 @@ export function renderPostSurgeryAuditReportHtml(vm: PostSurgeryReportHtmlVm): s
       const viewLabel = labels.imageViews[img.viewKey] ?? img.viewKey;
       const imgTag = img.imageUrl
         ? `<img src="${esc(img.imageUrl)}" alt="${esc(img.imageLabel ?? viewLabel)}" class="patientPhoto" />`
-        : `<div class="photoPlaceholder">${esc(labels.noPhoto)}</div>`;
+        : `<div class="photoPlaceholder">${esc(labels.photoEmbedFailed)}</div>`;
       return `
         <div class="imageCard">
           ${imgTag}
@@ -141,6 +148,48 @@ export function renderPostSurgeryAuditReportHtml(vm: PostSurgeryReportHtmlVm): s
   const nextStepsHtml = report.recommendedNextSteps
     .map((step) => `<li><span class="check">✓</span> ${esc(step)}</li>`)
     .join("");
+
+  const imageLimitedHtml = report.patientSafeSummary.imageLimitedNotice
+    ? `
+    <div class="section imageLimitedSection">
+      <div class="sectionHead"><h2>${esc(labels.imageLimitedTitle)}</h2></div>
+      <p class="sectionLead">${esc(report.patientSafeSummary.imageLimitedNotice)}</p>
+    </div>`
+    : "";
+
+  const clinicalContextLines = report.patientSafeSummary.knownClinicalContext ?? [];
+  const clinicalContextHtml =
+    clinicalContextLines.length > 0
+      ? `
+    <div class="section clinicalContextSection">
+      <div class="sectionHead"><h2>${esc(labels.knownClinicalContextTitle)}</h2></div>
+      <ul class="contextList">
+        ${clinicalContextLines.map((line) => `<li>${esc(line)}</li>`).join("")}
+      </ul>
+    </div>`
+      : "";
+
+  const postOpSteps = report.postOperativeGuidance ?? [];
+  const postOperativeHtml =
+    postOpSteps.length > 0
+      ? `
+    <div class="section postOpSection">
+      <div class="sectionHead"><h2>${esc(labels.postOperativeTitle)}</h2></div>
+      <p class="sectionLead">${esc(labels.postOperativeSubtitle)}</p>
+      <ul class="nextList">${postOpSteps.map((step) => `<li><span class="check">✓</span> ${esc(step)}</li>`).join("")}</ul>
+    </div>`
+      : "";
+
+  const repairSteps = report.repairPlanningGuidance ?? [];
+  const repairPlanningHtml =
+    repairSteps.length > 0
+      ? `
+    <div class="section repairPlanningSection">
+      <div class="sectionHead"><h2>${esc(labels.repairPlanningTitle)}</h2></div>
+      <p class="sectionLead">${esc(labels.repairPlanningSubtitle)}</p>
+      <ul class="nextList">${repairSteps.map((step) => `<li><span class="check">•</span> ${esc(step)}</li>`).join("")}</ul>
+    </div>`
+      : "";
 
   return `<!doctype html>
 <html>
@@ -236,6 +285,13 @@ export function renderPostSurgeryAuditReportHtml(vm: PostSurgeryReportHtmlVm): s
     .sectionBody h3 { margin: 0; font-size: 12px; font-weight: 800; }
     .sectionBody p { margin: 6px 0 0; color: #334155; }
     .concernSection { border-color: #f0d7a0; background: #fffbeb; }
+    .imageLimitedSection { border-color: #f59e0b; background: #fffbeb; border-width: 2px; }
+    .imageLimitedSection .sectionHead h2 { color: #92400e; }
+    .clinicalContextSection { background: #f8fafc; }
+    .contextList { margin: 10px 0 0; padding-left: 18px; color: #334155; }
+    .contextList li { margin-bottom: 6px; }
+    .postOpSection { background: #f0f9ff; border-color: #bae6fd; }
+    .repairPlanningSection { background: #faf5ff; border-color: #e9d5ff; }
     .concernList { list-style: none; margin: 12px 0 0; padding: 0; }
     .concernItem {
       border: 1px solid #f0d7a0;
@@ -296,6 +352,10 @@ export function renderPostSurgeryAuditReportHtml(vm: PostSurgeryReportHtmlVm): s
       </div>
     </header>
 
+    ${imageLimitedHtml}
+
+    ${clinicalContextHtml}
+
     <div class="section">
       <div class="sectionHead"><h2>${esc(labels.scorecardsTitle)}</h2></div>
       <p class="sectionLead">${esc(labels.scorecardsSubtitle)}</p>
@@ -314,6 +374,10 @@ export function renderPostSurgeryAuditReportHtml(vm: PostSurgeryReportHtmlVm): s
       <div class="sectionHead"><h2>${esc(labels.imagesTitle)}</h2></div>
       <div class="imageGrid">${imagesHtml}</div>
     </div>
+
+    ${postOperativeHtml}
+
+    ${repairPlanningHtml}
 
     <div class="section trustBox">
       <div class="sectionHead"><h2>${esc(labels.trustTitle)}</h2></div>

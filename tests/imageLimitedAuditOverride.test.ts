@@ -19,7 +19,7 @@ import { buildClinicalHistorySnapshot } from "@/lib/hairaudit/clinical-history/c
 import type { CaseClinicalHistoryRow } from "@/lib/hairaudit/clinical-history/clinicalHistoryTypes";
 import { AUDITOR_RERUN_REASONS } from "@/lib/auditor/queueAuditorRerun";
 import { buildPatientSafeReportSummary } from "@/lib/reports/patientSafeSummary";
-import { PATIENT_IMAGE_LIMITED_TRUST_NOTICE } from "@/lib/patient/patientTrustStatusTranslator";
+import { POST_SURGERY_IMAGE_LIMITED_NOTICE } from "../src/lib/reports/postSurgeryPatientText";
 import {
   FAILED_CASE_RECOVERY_CLINICAL_HISTORY_ROW,
   FAILED_CASE_RECOVERY_PATIENT_ANSWERS,
@@ -401,8 +401,7 @@ describe("image-limited report surfaces", () => {
       red_flags: [],
       forensic_audit: { imageLimitedAssessment: true },
     });
-    const expected = `${PATIENT_IMAGE_LIMITED_TRUST_NOTICE.title}. ${PATIENT_IMAGE_LIMITED_TRUST_NOTICE.subcopy}`;
-    assert.equal(summary.imageLimitedNotice, expected);
+    assert.equal(summary.imageLimitedNotice, POST_SURGERY_IMAGE_LIMITED_NOTICE);
   });
 
   it("patient-safe summary omits notice for normal audits", () => {

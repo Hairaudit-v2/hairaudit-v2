@@ -144,6 +144,7 @@ export function attachPatientSafeSummaryToReport(
         caseId: opts.caseId,
         reportVersion: opts.reportVersion,
         patientReviewPathway: pathway,
+        clinicalHistory: opts?.clinicalHistory ?? null,
       });
     }
   } else if (pathway === "pre_surgery") {

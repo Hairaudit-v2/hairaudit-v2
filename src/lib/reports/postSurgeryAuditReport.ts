@@ -13,10 +13,18 @@ import {
   type PatientSafeReportSummary,
 } from "./patientSafeSummary";
 import {
+  buildPostOperativeGuidanceSteps,
+  buildPostSurgeryRecommendedNextSteps,
+  buildRepairPlanningGuidance,
+  enrichSectionFinding,
+  sanitizePatientReportText,
+} from "./postSurgeryPatientText";
+import {
   mapSeverityToConcernBand,
   normalizeForensicSeverity,
   type PatientConcernBand,
 } from "./patientConcernBands";
+import type { ClinicalHistorySnapshot } from "@/lib/hairaudit/clinical-history/clinicalHistoryTypes";
 
 export const POST_SURGERY_AUDIT_REPORT_VERSION = 1 as const;
 
@@ -93,6 +101,10 @@ export type PostSurgeryAuditReport = {
   concernFlags: PostSurgeryConcernFlag[];
   imageAssessments: PostSurgeryImageAssessment[];
   recommendedNextSteps: string[];
+  /** Post-operative guidance for patient PDF */
+  postOperativeGuidance: string[];
+  /** Repair / refinement planning guidance for patient PDF */
+  repairPlanningGuidance: string[];
   /** Embedded patient-safe summary for backward-compatible surfaces */
   patientSafeSummary: PatientSafeReportSummary;
 };
@@ -104,6 +116,7 @@ export type GeneratePostSurgeryAuditReportInput = {
   reportVersion?: number;
   patientReviewPathway?: PatientReviewPathway | unknown;
   photosByCategory?: Record<string, { signedUrl: string | null; label: string }[]>;
+  clinicalHistory?: ClinicalHistorySnapshot | null;
 };
 
 function isRecord(v: unknown): v is Record<string, unknown> {
@@ -251,7 +264,7 @@ function buildConcernFlags(
 
   for (const item of patientSummary.concernItems.slice(0, 4)) {
     flags.push({
-      text: item.text,
+      text: sanitizePatientReportText(item.text),
       severity: mapConcernSeverity(item.concernBand ?? "needs_review", item.isRedFlag),
     });
   }
@@ -259,16 +272,17 @@ function buildConcernFlags(
   for (const entry of patientSummary.attentionItems.slice(0, 2)) {
     if (flags.length >= 5) break;
     flags.push({
-      text: entry.text,
+      text: sanitizePatientReportText(entry.text),
       severity: mapConcernSeverity(entry.concernBand ?? "minor", entry.isRedFlag),
     });
   }
 
   for (const entry of patientSummary.observations.filter((o) => o.isRedFlag).slice(0, 2)) {
     if (flags.length >= 5) break;
-    if (flags.some((f) => f.text === entry.text)) continue;
+    const text = sanitizePatientReportText(entry.text);
+    if (flags.some((f) => f.text === text)) continue;
     flags.push({
-      text: entry.text,
+      text,
       severity: mapConcernSeverity(entry.concernBand ?? "needs_review", true),
     });
   }
@@ -282,7 +296,7 @@ function buildConcernFlags(
       bundle?.donorIntelligence?.severity === "critical")
   ) {
     flags.push({
-      text: donorNote,
+      text: sanitizePatientReportText(donorNote),
       severity: mapConcernSeverity(
         mapSeverityToConcernBand(
           normalizeForensicSeverity(bundle.donorIntelligence.severity === "critical" ? "critical" : "high")
@@ -298,7 +312,7 @@ function buildConcernFlags(
     bundle?.repairSurgery?.fields?.repairComplexityBand !== "low"
   ) {
     flags.push({
-      text: repairNote,
+      text: sanitizePatientReportText(repairNote),
       severity:
         bundle?.repairSurgery?.fields?.repairComplexityBand === "high" ? "significant" : "moderate",
     });
@@ -312,20 +326,39 @@ function buildRecommendedNextSteps(
   repairId: PostSurgeryRepairConsiderationId,
   bundle: HairAuditIntelligenceBundle | null | undefined
 ): string[] {
-  const steps = [...patientSummary.whatHappensNext.steps];
+  const steps = buildPostSurgeryRecommendedNextSteps(repairId);
+
+  for (const step of patientSummary.whatHappensNext.steps) {
+    const cleaned = sanitizePatientReportText(step);
+    if (cleaned && !steps.includes(cleaned)) steps.push(cleaned);
+  }
 
   if (repairId === "moderate_consultation") {
     steps.push("Repair-focused consultation may be beneficial to discuss long-term planning options.");
   }
   if (repairId === "significant_planning") {
-    steps.push("Significant repair planning may be beneficial — discuss donor preservation before any further procedures.");
+    steps.push(
+      "Significant repair planning may be beneficial — discuss donor preservation before any further procedures."
+    );
   }
-  if (bundle?.donorIntelligence?.suggestedNextStep) {
-    steps.push(bundle.donorIntelligence.suggestedNextStep);
+  const donorStep = bundle?.donorIntelligence?.suggestedNextStep;
+  if (donorStep) {
+    const cleaned = sanitizePatientReportText(donorStep);
+    if (cleaned) steps.push(cleaned);
   }
 
-  const unique = [...new Set(steps.map((s) => s.trim()).filter(Boolean))];
-  return unique.slice(0, 6);
+  return [...new Set(steps.map((s) => s.trim()).filter(Boolean))].slice(0, 8);
+}
+
+function canonicalPhotoLookupKey(canonical: string): string {
+  const group =
+    canonical.startsWith("preop_") ? "Pre-op" :
+    canonical.startsWith("current_") || canonical.startsWith("patient_current_") ? "Current" :
+    canonical.startsWith("postop_") ? "Post-op" :
+    canonical.includes("donor") && canonical.includes("day0") ? "Day-of Donor" :
+    "Other";
+  const normalized = canonical.replace(/^patient_/, "").replaceAll("_", " ");
+  return `${group} - ${normalized}`;
 }
 
 function pickPhoto(
@@ -333,7 +366,16 @@ function pickPhoto(
   categoryKeys: string[]
 ): { url: string | null; label: string | null; key: string | null } {
   if (!photosByCategory) return { url: null, label: null, key: null };
-  for (const key of categoryKeys) {
+
+  const lookupKeys = new Set<string>();
+  for (const canonical of categoryKeys) {
+    lookupKeys.add(canonical);
+    lookupKeys.add(canonicalPhotoLookupKey(canonical));
+    lookupKeys.add(canonical.replace(/^patient_/, ""));
+    lookupKeys.add(canonical.replaceAll("_", " "));
+  }
+
+  for (const key of lookupKeys) {
     const items = photosByCategory[key];
     if (!items?.length) continue;
     const withUrl = items.find((p) => p.signedUrl);
@@ -341,7 +383,49 @@ function pickPhoto(
       return { url: withUrl.signedUrl, label: withUrl.label, key };
     }
   }
+
+  for (const [categoryKey, items] of Object.entries(photosByCategory)) {
+    const normalizedCat = categoryKey.toLowerCase().replace(/-/g, " ");
+    for (const canonical of categoryKeys) {
+      const needle = canonical.replace(/^patient_/, "").replaceAll("_", " ").toLowerCase();
+      if (!normalizedCat.includes(needle)) continue;
+      const withUrl = items.find((p) => p.signedUrl);
+      if (withUrl?.signedUrl) {
+        return { url: withUrl.signedUrl, label: withUrl.label, key: categoryKey };
+      }
+    }
+  }
+
   return { url: null, label: null, key: null };
+}
+
+export function mergePostSurgeryImageAssessmentsWithPhotos(
+  assessments: PostSurgeryImageAssessment[],
+  photosByCategory?: Record<string, { signedUrl: string | null; label: string }[]>
+): PostSurgeryImageAssessment[] {
+  if (!photosByCategory || !Object.keys(photosByCategory).length) return assessments;
+
+  const frontKeys = ["patient_current_front", "preop_front", "current_front", "followup_front"];
+  const donorKeys = [
+    "patient_current_donor_rear",
+    "preop_donor_rear",
+    "current_donor_rear",
+    "followup_donor",
+    "postop_healed_donor",
+  ];
+
+  return assessments.map((img) => {
+    if (img.imageUrl) return img;
+    const keys = img.viewKey === "front" ? frontKeys : donorKeys;
+    const photo = pickPhoto(photosByCategory, keys);
+    if (!photo.url) return img;
+    return {
+      ...img,
+      imageUrl: photo.url,
+      imageLabel: photo.label ?? img.imageLabel,
+      photoCategoryKey: photo.key ?? img.photoCategoryKey,
+    };
+  });
 }
 
 function buildImageAssessments(
@@ -381,12 +465,14 @@ function buildImageAssessments(
     bundle?.donorIntelligence?.patientSafeSummary?.trim() ||
     "Donor views were reviewed for extraction pattern consistency and signs of uneven harvesting.";
 
-  const frontAssessment =
+  const frontAssessment = sanitizePatientReportText(
     (isRecord(frontObs) ? String(frontObs.observation ?? frontObs.summary ?? "").trim() : "") ||
-    defaultFront;
-  const donorAssessment =
+      defaultFront
+  );
+  const donorAssessment = sanitizePatientReportText(
     (isRecord(donorObs) ? String(donorObs.observation ?? donorObs.summary ?? "").trim() : "") ||
-    defaultDonor;
+      defaultDonor
+  );
 
   return [
     {
@@ -421,83 +507,220 @@ function buildReviewSections(
     ...(Array.isArray(forensic?.red_flags) ? forensic.red_flags : []),
   ];
 
-  const summaryText = typeof forensic?.summary === "string" ? forensic.summary.trim() : "";
-  const overallDefault =
+  const summaryText =
+    typeof forensic?.summary === "string" ? sanitizePatientReportText(forensic.summary.trim()) : "";
+  const overallDefault = enrichSectionFinding(
     summaryText ||
-    patientSummary.plainEnglishSummary ||
-    "Independent review indicates generally acceptable procedural quality with areas that may benefit from continued observation.";
-
-  const donorDefault =
-    bundle?.donorIntelligence?.patientSafeSummary?.trim() ||
-    (donorScore != null && donorScore < 60
-      ? "Donor region shows moderate extraction irregularity with uneven extraction distribution visible in reviewed donor zones."
-      : "Donor preservation appears generally acceptable with routine long-term monitoring recommended.");
-
-  const extractionDefault =
-    extractionScore != null && extractionScore < 60
-      ? "Extraction patterns appear inconsistent in isolated donor regions, suggesting reduced extraction uniformity."
-      : "Extraction spacing and punch distribution appear generally consistent across reviewed donor areas.";
-
-  const densityDefault =
-    bundle?.proceduralIntelligence?.patientSafeSummary?.trim() ||
-    (densityScore != null && densityScore < 60
-      ? "Recipient density distribution shows moderate variation in frontal density concentration."
-      : "Recipient density distribution appears generally consistent with moderate variation in frontal density concentration.");
-
-  const recipientDefault = buildSectionFinding(
-    recipientScore != null && recipientScore < 60
-      ? "Recipient area demonstrates acceptable placement symmetry with mild density inconsistency in frontal zones."
-      : "Recipient area demonstrates acceptable placement symmetry with density patterns within expected ranges.",
-    ["recipient", "hairline", "placement", "frontal"],
-    findings
+      patientSummary.plainEnglishSummary ||
+      "Independent review indicates generally acceptable procedural quality with areas that may benefit from continued observation.",
+    {
+      sectionTitle: "Overall procedure assessment",
+      reviewed: "Your submitted images, clinical context, and procedural documentation were reviewed for overall execution quality.",
+      observed: "The overall procedural pattern appears generally within expected ranges for a post-operative review.",
+      meaning: "This suggests routine follow-up with your treating clinician remains appropriate while growth continues.",
+      nextCheck: "Continue scheduled follow-up and compare progress photos over the coming months.",
+    }
   );
 
-  const integrityDefault =
-    bundle?.proceduralIntelligence?.clinicianNotes?.trim() ||
-    "Overall procedural execution appears acceptable with evidence suggesting conservative donor preservation should remain a priority.";
+  const donorDefault = enrichSectionFinding(
+    bundle?.donorIntelligence?.patientSafeSummary?.trim() ||
+      (donorScore != null && donorScore < 60
+        ? "Donor region shows moderate extraction irregularity with uneven extraction distribution visible in reviewed donor zones."
+        : "Donor preservation appears generally acceptable with routine long-term monitoring recommended."),
+    {
+      sectionTitle: "Donor area review",
+      reviewed: "Donor rear and lateral views were reviewed for extraction spacing, scarring, and signs of over-harvesting.",
+      observed:
+        donorScore != null && donorScore < 60
+          ? "Some uneven extraction distribution may be visible in reviewed donor zones."
+          : "Donor appearance appears generally consistent with conservative extraction in available views.",
+      meaning:
+        donorScore != null && donorScore < 60
+          ? "This may indicate donor reserve should be monitored carefully before any further extraction."
+          : "Long-term donor sustainability appears acceptable based on available imagery.",
+      nextCheck: "Ask your clinician to assess donor reserve formally if further surgery is being considered.",
+    }
+  );
 
-  const longTermDefault =
+  const extractionDefault = enrichSectionFinding(
+    extractionScore != null && extractionScore < 60
+      ? "Extraction patterns appear inconsistent in isolated donor regions, suggesting reduced extraction uniformity."
+      : "Extraction spacing and punch distribution appear generally consistent across reviewed donor areas.",
+    {
+      sectionTitle: "Extraction pattern analysis",
+      reviewed: "Extraction pattern uniformity, punch spacing, and visible scarring were assessed in donor imagery.",
+      observed:
+        extractionScore != null && extractionScore < 60
+          ? "Isolated regions show inconsistent extraction spacing or visible clustering."
+          : "Extraction spacing appears generally even across the reviewed donor areas.",
+      meaning:
+        extractionScore != null && extractionScore < 60
+          ? "Irregular extraction may affect future donor flexibility and should be discussed with your clinician."
+          : "Consistent extraction patterns support better long-term donor management.",
+      nextCheck: "Request donor mapping if repair or further extraction is planned.",
+    }
+  );
+
+  const densityDefault = enrichSectionFinding(
+    bundle?.proceduralIntelligence?.patientSafeSummary?.trim() ||
+      (densityScore != null && densityScore < 60
+        ? "Recipient density distribution shows moderate variation in frontal density concentration."
+        : "Recipient density distribution appears generally consistent with moderate variation in frontal density concentration."),
+    {
+      sectionTitle: "Density distribution review",
+      reviewed: "Frontal and recipient-zone imagery was reviewed for density distribution relative to stated graft counts.",
+      observed:
+        densityScore != null && densityScore < 60
+          ? "Density appears variable across frontal zones in available views."
+          : "Density distribution appears generally even for the growth stage visible in submitted photos.",
+      meaning:
+        "Final density assessment often requires adequate maturation time — early views may not reflect final outcome.",
+      nextCheck: "Continue interval photos and revisit density expectations at your follow-up appointments.",
+    }
+  );
+
+  const recipientDefault = enrichSectionFinding(
+    buildSectionFinding(
+      recipientScore != null && recipientScore < 60
+        ? "Recipient area demonstrates acceptable placement symmetry with mild density inconsistency in frontal zones."
+        : "Recipient area demonstrates acceptable placement symmetry with density patterns within expected ranges.",
+      ["recipient", "hairline", "hairline", "placement", "frontal"],
+      findings
+    ),
+    {
+      sectionTitle: "Recipient area assessment",
+      reviewed: "Recipient-zone and hairline views were reviewed for placement symmetry, direction, and natural appearance.",
+      observed:
+        recipientScore != null && recipientScore < 60
+          ? "Mild density or symmetry variation may be visible in frontal zones."
+          : "Placement symmetry and hairline contour appear generally acceptable in available views.",
+      meaning: "Recipient appearance should be interpreted in context of your growth timeline and stated graft plan.",
+      nextCheck: "Discuss hairline design and density goals with your clinician at follow-up.",
+    }
+  );
+
+  const integrityDefault = enrichSectionFinding(
+    bundle?.proceduralIntelligence?.patientSafeSummary?.trim() ||
+      "Overall procedural execution appears acceptable with evidence suggesting conservative donor preservation should remain a priority.",
+    {
+      sectionTitle: "Procedural integrity review",
+      reviewed: "Available documentation and imagery were reviewed for procedural consistency and handling quality.",
+      observed: "Procedural handling appears generally consistent with acceptable standards in submitted materials.",
+      meaning: "Some fine procedural details cannot always be confirmed from photos alone.",
+      nextCheck: "Discuss any specific procedural questions with your treating team using this report as reference.",
+    }
+  );
+
+  const longTermDefault = enrichSectionFinding(
     bundle?.donorIntelligence?.fields?.donorReserveRisk === "elevated"
       ? "Current donor preservation patterns may reduce future extraction flexibility if additional surgery is required."
-      : "Long-term donor sustainability appears acceptable based on available imagery — continued monitoring is recommended.";
-
-  const repairDefault = (() => {
-    switch (repairId) {
-      case "no_repair_concerns":
-        return "Current findings suggest no immediate repair concerns, though long-term donor preservation should be monitored.";
-      case "minor_observation":
-        return "Minor concerns were identified that warrant observation rather than immediate repair planning.";
-      case "moderate_consultation":
-        return "Moderate repair consultation may be beneficial to discuss density refinement and donor reserve.";
-      case "significant_planning":
-        return "Significant repair planning may be beneficial given donor and density patterns observed in this review.";
-      default:
-        return "Repair considerations should be discussed with a qualified clinician if future procedures are planned.";
+      : "Long-term donor sustainability appears acceptable based on available imagery — continued monitoring is recommended.",
+    {
+      sectionTitle: "Long-term risk assessment",
+      reviewed: "Donor reserve, scarring, and procedural patterns were considered for long-term restoration planning.",
+      observed:
+        bundle?.donorIntelligence?.fields?.donorReserveRisk === "elevated"
+          ? "Patterns suggest donor reserve may be more limited for future procedures."
+          : "No major long-term donor concerns were identified from available materials.",
+      meaning: "Future restoration options depend heavily on preserved donor capacity and realistic density goals.",
+      nextCheck: "Review long-term planning with your clinician before committing to further surgery.",
     }
-  })();
+  );
+
+  const repairDefault = enrichSectionFinding(
+    (() => {
+      switch (repairId) {
+        case "no_repair_concerns":
+          return "Current findings suggest no immediate repair concerns, though long-term donor preservation should be monitored.";
+        case "minor_observation":
+          return "Minor concerns were identified that warrant observation rather than immediate repair planning.";
+        case "moderate_consultation":
+          return "Moderate repair consultation may be beneficial to discuss density refinement and donor reserve.";
+        case "significant_planning":
+          return "Significant repair planning may be beneficial given donor and density patterns observed in this review.";
+        default:
+          return "Repair considerations should be discussed with a qualified clinician if future procedures are planned.";
+      }
+    })(),
+    {
+      sectionTitle: "Repair considerations",
+      reviewed: "Findings were reviewed for implications on future refinement or repair planning.",
+      observed:
+        repairId === "no_repair_concerns" || repairId === "minor_observation"
+          ? "No immediate repair indicators were identified from available materials."
+          : "Some patterns may benefit from structured repair or refinement planning.",
+      meaning: "Repair decisions should balance aesthetic goals with donor preservation and realistic expectations.",
+      nextCheck: "Seek a repair consultation with donor mapping if refinement is being considered.",
+    }
+  );
 
   return [
     { id: "overall_procedure", finding: overallDefault },
     {
       id: "donor_area",
-      finding: buildSectionFinding(donorDefault, ["donor", "extraction", "harvest"], findings),
+      finding: enrichSectionFinding(
+        buildSectionFinding(donorDefault, ["donor", "extraction", "harvest"], findings),
+        {
+          sectionTitle: "Donor area review",
+          reviewed: "Donor rear and lateral views were reviewed for extraction spacing, scarring, and signs of over-harvesting.",
+          observed: donorDefault,
+          meaning: "Donor health is central to any future restoration planning.",
+          nextCheck: "Monitor donor appearance over time and discuss reserve with your clinician.",
+        }
+      ),
     },
     {
       id: "extraction_pattern",
-      finding: buildSectionFinding(extractionDefault, ["extraction", "punch", "spacing"], findings),
+      finding: enrichSectionFinding(
+        buildSectionFinding(extractionDefault, ["extraction", "punch", "spacing"], findings),
+        {
+          sectionTitle: "Extraction pattern analysis",
+          reviewed: "Extraction pattern uniformity and punch distribution were assessed.",
+          observed: extractionDefault,
+          meaning: "Even extraction supports better long-term outcomes.",
+          nextCheck: "Confirm punch size and extraction method details with your clinic if unclear.",
+        }
+      ),
     },
     {
       id: "density_distribution",
-      finding: buildSectionFinding(densityDefault, ["density", "spacing", "graft"], findings),
+      finding: enrichSectionFinding(
+        buildSectionFinding(densityDefault, ["density", "spacing", "graft"], findings),
+        {
+          sectionTitle: "Density distribution review",
+          reviewed: "Recipient density distribution was assessed relative to available views.",
+          observed: densityDefault,
+          meaning: "Density should be interpreted within your growth timeline.",
+          nextCheck: "Reassess density expectations after adequate maturation.",
+        }
+      ),
     },
     { id: "recipient_area", finding: recipientDefault },
     {
       id: "procedural_integrity",
-      finding: buildSectionFinding(integrityDefault, ["procedural", "integrity", "execution"], findings),
+      finding: enrichSectionFinding(
+        buildSectionFinding(integrityDefault, ["procedural", "integrity", "execution"], findings),
+        {
+          sectionTitle: "Procedural integrity review",
+          reviewed: "Procedural handling and execution consistency were reviewed.",
+          observed: integrityDefault,
+          meaning: "Photo-based review has inherent limits for fine procedural detail.",
+          nextCheck: "Raise specific procedural questions with your treating team.",
+        }
+      ),
     },
     {
       id: "long_term_risk",
-      finding: buildSectionFinding(longTermDefault, ["long-term", "future", "reserve", "sustainability"], findings),
+      finding: enrichSectionFinding(
+        buildSectionFinding(longTermDefault, ["long-term", "future", "reserve", "sustainability"], findings),
+        {
+          sectionTitle: "Long-term risk assessment",
+          reviewed: "Long-term donor and restoration risks were considered.",
+          observed: longTermDefault,
+          meaning: "Early planning protects future options.",
+          nextCheck: "Discuss long-term goals and donor reserve at follow-up.",
+        }
+      ),
     },
     { id: "repair_considerations", finding: repairDefault },
   ];
@@ -527,9 +750,10 @@ export function generatePostSurgeryAuditReport(
           key_findings: forensic.key_findings,
           red_flags: forensic.red_flags,
           patient_review_pathway: pathway,
+          forensic_audit: forensic,
         }
       : input.summary,
-    { patientReviewPathway: pathway }
+    { patientReviewPathway: pathway, clinicalHistory: input.clinicalHistory ?? null }
   );
 
   const bundle =
@@ -631,6 +855,8 @@ export function generatePostSurgeryAuditReport(
     repairConsiderationId,
     bundle
   );
+  const postOperativeGuidance = buildPostOperativeGuidanceSteps();
+  const repairPlanningGuidance = buildRepairPlanningGuidance(bundle, repairConsiderationId);
 
   const version = input.reportVersion ?? 1;
   const reportId = `${input.caseId}-v${version}`;
@@ -647,6 +873,8 @@ export function generatePostSurgeryAuditReport(
     concernFlags,
     imageAssessments,
     recommendedNextSteps,
+    postOperativeGuidance,
+    repairPlanningGuidance,
     patientSafeSummary,
   };
 }
@@ -671,6 +899,7 @@ export function resolvePostSurgeryAuditReport(
     reportVersion?: number;
     patientReviewPathway?: PatientReviewPathway | unknown;
     photosByCategory?: Record<string, { signedUrl: string | null; label: string }[]>;
+    clinicalHistory?: ClinicalHistorySnapshot | null;
   }
 ): PostSurgeryAuditReport | null {
   const pathway = normalizePatientReviewPathway(
@@ -682,7 +911,25 @@ export function resolvePostSurgeryAuditReport(
 
   const stored = summary?.post_surgery_audit_report;
   if (isPostSurgeryAuditReport(stored)) {
-    return stored;
+    const merged = {
+      ...stored,
+      imageAssessments: mergePostSurgeryImageAssessmentsWithPhotos(
+        stored.imageAssessments,
+        opts.photosByCategory
+      ),
+      postOperativeGuidance:
+        stored.postOperativeGuidance?.length
+          ? stored.postOperativeGuidance
+          : buildPostOperativeGuidanceSteps(),
+      repairPlanningGuidance:
+        stored.repairPlanningGuidance?.length
+          ? stored.repairPlanningGuidance
+          : buildRepairPlanningGuidance(
+              null,
+              stored.repairConsiderationId ?? "no_repair_concerns"
+            ),
+    };
+    return merged;
   }
 
   if (!summary) return null;
@@ -693,6 +940,7 @@ export function resolvePostSurgeryAuditReport(
     reportVersion: opts.reportVersion,
     patientReviewPathway: pathway,
     photosByCategory: opts.photosByCategory,
+    clinicalHistory: opts.clinicalHistory ?? null,
   });
 }
 

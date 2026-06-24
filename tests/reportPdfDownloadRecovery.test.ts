@@ -13,7 +13,7 @@ import {
 } from "@/lib/reports/reportPdfDownloadRecovery";
 import { PdfRebuildNotReadyError } from "@/lib/reports/rebuildReportPdf";
 import { renderEliteReportHtml, type EliteReportViewModel } from "@/lib/reports/EliteReportHtml";
-import { PATIENT_IMAGE_LIMITED_TRUST_NOTICE } from "@/lib/patient/patientTrustStatusTranslator";
+import { POST_SURGERY_IMAGE_LIMITED_NOTICE } from "@/lib/reports/postSurgeryPatientText";
 import type { AuditMode, ReportViewModel } from "@/lib/pdf/reportBuilder";
 
 const CASE = "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11";
@@ -201,8 +201,7 @@ describe("image-limited notice in regenerated PDF/HTML builder input", () => {
       photosByCategory: {},
     } satisfies EliteReportViewModel);
     assert.match(html, /Image-limited audit/);
-    const expectedNotice = `${PATIENT_IMAGE_LIMITED_TRUST_NOTICE.title}. ${PATIENT_IMAGE_LIMITED_TRUST_NOTICE.subcopy}`;
-    assert.match(html, new RegExp(expectedNotice.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+    assert.match(html, new RegExp(POST_SURGERY_IMAGE_LIMITED_NOTICE.slice(0, 40).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   });
 
   it("RebuildPdfPanel is wired on auditor case page", () => {

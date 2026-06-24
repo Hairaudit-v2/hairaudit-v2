@@ -136,16 +136,47 @@ export function buildPatientSafeClinicalHistoryLines(
 
   const lines: string[] = [];
 
+  const graftParts: string[] = [];
   if (snapshot.priorGraftCount != null) {
-    lines.push(`Known prior graft count: approximately ${snapshot.priorGraftCount.toLocaleString()} grafts.`);
+    graftParts.push(`approximately ${snapshot.priorGraftCount.toLocaleString()} grafts`);
+  }
+  if (snapshot.estimatedHairCount != null) {
+    graftParts.push(`${snapshot.estimatedHairCount.toLocaleString()} hairs`);
   }
   if (snapshot.averageHairsPerGraft != null) {
-    lines.push(
-      `Known average hairs per graft: approximately ${snapshot.averageHairsPerGraft.toFixed(2)}.`
-    );
+    graftParts.push(`an average ratio of ${snapshot.averageHairsPerGraft.toFixed(2)} hairs per graft`);
+  }
+  if (graftParts.length) {
+    lines.push(`Known graft data supplied for this review: ${graftParts.join(", ")}.`);
+  }
+
+  if (snapshot.priorProcedureType) {
+    const proc = snapshot.priorProcedureType.replace(/_/g, " ").toUpperCase();
+    lines.push(`Prior procedure type recorded: ${proc}.`);
+  }
+  if (snapshot.priorSurgeryDate || snapshot.priorSurgeryTimingNote) {
+    const timing = [snapshot.priorSurgeryDate, snapshot.priorSurgeryTimingNote]
+      .filter(Boolean)
+      .join(" — ");
+    lines.push(`Prior surgery timing: ${timing}.`);
   }
   if (snapshot.punchSizeMm != null) {
     lines.push(`Known punch size from prior procedure: ${snapshot.punchSizeMm.toFixed(2)} mm.`);
+  }
+  if (snapshot.donorDepletionLevel && snapshot.donorDepletionLevel !== "unknown") {
+    const level = snapshot.donorDepletionLevel.replace(/_/g, " ");
+    lines.push(`Donor depletion assessment noted: ${level}.`);
+  }
+  if (snapshot.donorReserveAssessment?.trim()) {
+    lines.push(`Donor reserve note: ${snapshot.donorReserveAssessment.trim()}`);
+  }
+  if (snapshot.visibleScarringLevel && snapshot.visibleScarringLevel !== "unknown") {
+    lines.push(
+      `Visible scarring level recorded: ${snapshot.visibleScarringLevel.replace(/_/g, " ")}.`
+    );
+  }
+  if (snapshot.supportingDocumentNotes?.trim()) {
+    lines.push(snapshot.supportingDocumentNotes.trim());
   }
 
   const activeMeds = MEDICATION_HISTORY_KEYS.filter((k) => {
