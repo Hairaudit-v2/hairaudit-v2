@@ -217,8 +217,8 @@
         "description": "Vea cómo HairAudit evalúa la calidad del donante, el riesgo de progresión, la viabilidad del receptor y las preocupaciones de planificación. Contenido de muestra—inicie su HairAudit gratuito cuando esté listo."
       },
       "postOpHairProtectionGuide": {
-        "title": "Guía de protección capilar posoperatoria | Educación para pacientes | HairAudit",
-        "description": "Resumen de la Guía de protección capilar posoperatoria de Hair Longevity Institute para pacientes de trasplante—se desbloquea tras enviar su caso gratuito en HairAudit. Plataforma de auditoría independiente; la guía es solo educativa."
+        "title": "Guía de restauración capilar a largo plazo | Educación para pacientes | HairAudit",
+        "description": "La guía de restauración capilar a largo plazo de HairAudit ayuda a proteger injertos, comprender los plazos de crecimiento, controlar la evolución y enriquecer futuras revisiones—se desbloquea tras enviar su caso gratuito."
       }
     },
     "shared": {
@@ -364,11 +364,11 @@
         "feature4Title": "Sepa qué vigilar",
         "feature4Desc": "Señales en el tiempo: estabilidad, posibles regresiones y documentación que apoye un seguimiento informado con su equipo médico.",
         "guideTeaserEyebrow": "Educación para pacientes",
-        "guideTeaserTitle": "Guía de protección capilar posoperatoria",
-        "guideTeaserLead": "Un PDF educativo práctico de Hair Longevity Institute: orientación estructurada tras la cirugía y estrategias a largo plazo para proteger el cabello en pacientes de trasplante.",
-        "guideTeaserBullet1": "Encuadre de protección del cabello nativo y del área donante tras la cirugía",
-        "guideTeaserBullet2": "Qué observar mes a mes mientras cicatrizan y crece el pelo",
-        "guideTeaserBullet3": "Lenguaje más claro para hablar con su médico",
+        "guideTeaserTitle": "Guía de restauración capilar a largo plazo",
+        "guideTeaserLead": "Una guía educativa completa de Hair Longevity Institute: protección en la curación inicial, plazos de crecimiento, preservación del cabello nativo y seguimiento a largo plazo para pacientes de trasplante capilar.",
+        "guideTeaserBullet1": "Los primeros 14 días críticos y expectativas realistas del crecimiento",
+        "guideTeaserBullet2": "Protección del cabello nativo y comprensión de la progresión continua",
+        "guideTeaserBullet3": "Fotografía de seguimiento y enriquecimiento de futuras revisiones de HairAudit",
         "guideTeaserBullet4": "Se desbloquea automáticamente tras enviar su caso gratuito en HairAudit",
         "guideTeaserCta": "Ver detalles de la guía",
         "guideTeaserFootnote": "Hair Longevity Institute proporciona la guía educativa. HairAudit sigue siendo la plataforma de auditoría independiente. El contenido educativo no influye en los hallazgos de la auditoría, la puntuación ni los resultados de la revisión."
@@ -377,42 +377,39 @@
     "postOpHairProtectionGuide": {
       "hero": {
         "eyebrow": "Hair Longevity Institute · Educación para pacientes",
-        "title": "Guía de protección capilar posoperatoria",
-        "subtitleLocked": "Envíe su caso gratuito de trasplante capilar en HairAudit para desbloquear este PDF. La guía se abre en cuanto su caso elegible esté enviado—su auditoría sigue siendo independiente.",
-        "subtitleUnlocked": "Su guía está desbloqueada. Descargue el PDF abajo. HairAudit sigue siendo su plataforma de auditoría independiente; este recurso es solo educativo.",
+        "title": "Guía de restauración capilar a largo plazo",
+        "subtitleLocked": "Envíe su caso gratuito de trasplante capilar en HairAudit para acceder a esta guía. Se abre en cuanto su caso elegible esté enviado—su revisión independiente sigue su curso por separado.",
+        "subtitleUnlocked": "Su guía está lista. Descargue el PDF abajo o lea la guía completa en esta página. HairAudit sigue siendo su plataforma de revisión independiente; este recurso es solo educativo.",
         "badgeLocked": "Bloqueada hasta un envío elegible",
         "badgeUnlocked": "Desbloqueada"
       },
       "whatItIs": {
         "title": "Qué es esta guía",
-        "body": "Un PDF educativo para pacientes, redactado por Hair Longevity Institute (HLI). Complementa—sin sustituir—su revisión forense HairAudit con orientación estructurada tras la cirugía y hábitos duraderos que apoyan el cabello nativo y el cuidado del donante."
+        "body": "Una guía educativa a largo plazo para pacientes, redactada por Hair Longevity Institute (HLI). Le ayuda a proteger los injertos recién implantados, comprender los plazos normales de crecimiento, controlar su evolución durante meses y años, y seguir enriqueciendo su caso de HairAudit a medida que avanza su trayectoria."
       },
       "covers": {
         "title": "Qué incluye la guía",
-        "bullet1": "Orientación posquirúrgica: qué es normal mientras cicatriza y crece el pelo",
-        "bullet2": "Proteger el cabello nativo y la reserva donante en decisiones cotidianas",
-        "bullet3": "Señales de seguimiento a largo plazo para detectar cambios a tiempo",
-        "bullet4": "Cómo plantear tratamientos y seguimiento con su equipo médico",
-        "bullet5": "Lenguaje claro, separado de la puntuación o conclusiones de la auditoría"
+        "bullet1": "Los primeros 14 días críticos tras la cirugía y protección en la curación inicial",
+        "bullet2": "Plazos normales de crecimiento capilar y expectativas realistas",
+        "bullet3": "Protección del cabello nativo y comprensión de la progresión continua",
+        "bullet4": "Fotografía de seguimiento, control de la evolución y enriquecimiento de futuras revisiones de HairAudit",
+        "bullet5": "Solo con fines educativos—separado de la puntuación o las conclusiones de la auditoría"
       },
       "whyMatters": {
-        "title": "Por qué importa después de la cirugía",
-        "body": "La recuperación del trasplante se extiende meses. Una guía estructurada ayuda a distinguir la variación normal de cicatrización de patrones que merecen documentarse o comentarse—con su médico y junto a su revisión de evidencia HairAudit."
+        "title": "Por qué importa para su trayectoria a largo plazo",
+        "body": "La restauración capilar se desarrolla durante meses y años, no solo en la primera fase de recuperación. Esta guía le ayuda a proteger su resultado, detectar cambios significativos a tiempo y construir un registro sólido a largo plazo para futuras conversaciones con su profesional tratante y HairAudit."
       },
-      "preview": {
-        "title": "Dentro de la guía",
-        "teaser1": "Puntos de control alineados con el tiempo tras el procedimiento",
-        "teaser2": "Hábitos de protección del donante y del pelo nativo, explicados con claridad",
-        "teaser3": "Qué vigilar y cuándo plantear dudas",
-        "teaser4": "Solo educación—sin influir en el resultado de su auditoría HairAudit",
-        "lockedHint": "Los títulos completos y el detalle se desbloquean con el PDF tras el envío."
+      "fullGuide": {
+        "titleUnlocked": "Su guía completa",
+        "titleLocked": "Dentro de la guía",
+        "lockedHint": "Las nueve secciones se desbloquean con su PDF tras el envío."
       },
       "access": {
         "lockedTitle": "Cómo obtener acceso",
         "lockedBody": "Cree o continúe su caso de paciente en HairAudit y envíelo cuando esté listo. Cuando su caso de trasplante gratuito se envíe correctamente, la guía se desbloquea aquí y en su panel de paciente.",
         "lockedCta": "Enviar mi caso gratuito",
         "unlockedTitle": "Descargue su guía",
-        "unlockedBody": "Su caso elegible consta en el sistema. Guarde el PDF para leerlo sin conexión y compártalo solo si lo desea.",
+        "unlockedBody": "Su caso elegible consta en el sistema. Guarde el PDF para leerlo sin conexión y vuelva aquí cuando quiera repasar la guía completa en línea.",
         "downloadCta": "Descargar guía (PDF)",
         "secondaryDashboard": "Panel de paciente",
         "secondaryProgress": "Ver caso y progreso de la auditoría"
@@ -693,6 +690,174 @@
       "downloadLinkFailed": "No se pudo generar el enlace de descarga",
       "noUrlReturned": "No se devolvió ninguna URL",
       "openReportFailed": "No se pudo abrir el informe"
+    }
+  },
+  "patientEducation": {
+    "longTermHairRestorationGuide": {
+      "documentTitle": "Guía de restauración capilar a largo plazo | HairAudit",
+      "coverTitle": "Guía de restauración capilar a largo plazo",
+      "coverSubtitle": "Proteja, controle y comprenda su proceso de restauración capilar con el tiempo.",
+      "coverAttribution": "Hair Longevity Institute · Educación para pacientes",
+      "footerDisclaimer": "Esta guía tiene fines educativos generales para pacientes. No sustituye el consejo de su profesional tratante. Si tiene síntomas urgentes o que empeoran, contacte con su equipo médico con prontitud.",
+      "footerIndependence": "Hair Longevity Institute proporciona la guía educativa. HairAudit sigue siendo la plataforma de auditoría independiente. El contenido educativo no influye en los hallazgos de la auditoría, la puntuación ni los resultados de la revisión.",
+      "educationalDisclaimer": "HairAudit ofrece orientación educativa únicamente y no prescribe tratamientos.",
+      "sections": {
+        "firstFourteenDays": {
+          "title": "Los primeros 14 días después de la cirugía",
+          "purpose": "Proteger los injertos recién implantados durante la fase crítica de curación inicial.",
+          "items": {
+            "avoidTouching": "Evite tocar los injertos innecesariamente.",
+            "elevatedSleep": "Duerma con la cabeza elevada cuando se lo indique su clínica tratante.",
+            "avoidSweating": "Evite sudar en exceso durante la curación inicial.",
+            "avoidExercise": "Evite el ejercicio intenso durante la recuperación temprana.",
+            "avoidScratching": "Evite rascarse o manipular las costras antes de tiempo.",
+            "washingProtocols": "Siga exactamente los protocolos de lavado indicados por su clínica.",
+            "avoidTrauma": "Evite traumatismos directos o presión sobre la zona trasplantada.",
+            "followMedication": "Siga todas las instrucciones de medicación facilitadas por su profesional tratante."
+          },
+          "closing": "Las dos primeras semanas después de la cirugía son clave para proteger los injertos recién implantados mientras el cuero cabelludo comienza a cicatrizar."
+        },
+        "growthTimeline": {
+          "title": "Comprender el proceso normal de crecimiento capilar",
+          "purpose": "Reducir la ansiedad del paciente y crear expectativas realistas.",
+          "periods": {
+            "weeks1to2": {
+              "label": "Semanas 1–2",
+              "description": "Enrojecimiento, sensibilidad y costras son habituales."
+            },
+            "weeks2to6": {
+              "label": "Semanas 2–6",
+              "description": "Puede aparecer una caída temporal cuando los folículos trasplantados entran en fase de reposo."
+            },
+            "months2to4": {
+              "label": "Meses 2–4",
+              "description": "A menudo hay poco crecimiento visible durante esta fase."
+            },
+            "months4to8": {
+              "label": "Meses 4–8",
+              "description": "Suele empezar a hacerse visible el crecimiento inicial."
+            },
+            "months8to12": {
+              "label": "Meses 8–12",
+              "description": "La densidad suele seguir mejorando de forma progresiva."
+            },
+            "months12to18": {
+              "label": "Meses 12–18",
+              "description": "La maduración final puede continuar durante un periodo prolongado."
+            }
+          },
+          "closing": "La restauración capilar es un proceso biológico gradual, y las variaciones iniciales no indican necesariamente un mal resultado."
+        },
+        "warningSigns": {
+          "title": "Cuándo contactar con su profesional tratante",
+          "purpose": "Ayudar a identificar signos de recuperación anómalos que requieren revisión pronta.",
+          "items": {
+            "increasingPain": "Dolor que aumenta en lugar de mejorar gradualmente",
+            "spreadingRedness": "Enrojecimiento que se extiende alrededor de la zona tratada",
+            "persistentSwelling": "Hinchazón persistente que empeora con el tiempo",
+            "abnormalDischarge": "Secreción anormal o filtración de líquido",
+            "persistentBleeding": "Sangrado persistente después de la fase inicial de recuperación",
+            "fever": "Fiebre o sensación general de malestar",
+            "donorInflammation": "Inflamación inusual en la zona donante",
+            "worseningTenderness": "Sensibilidad del cuero cabelludo que empeora de forma progresiva e inesperada"
+          },
+          "closing": "Si observa síntomas inusuales o que empeoran, contacte con su profesional tratante con prontitud para una revisión médica directa."
+        },
+        "protectingNativeHair": {
+          "title": "Proteger el cabello nativo existente",
+          "purpose": "Informar de que el trasplante capilar no detiene la progresión de la pérdida capilar en el cabello circundante.",
+          "paragraphs": {
+            "p1": "El trasplante capilar restaura el cabello que ya se había perdido.",
+            "p2": "No detiene la progresión futura que puede afectar al cabello nativo circundante.",
+            "p3": "Algunos pacientes comentan con su médico estrategias de preservación a largo plazo. Algunos ejemplos pueden incluir:"
+          },
+          "examples": {
+            "finasteride": "Finasterida",
+            "dutasteride": "Dutasterida",
+            "sawPalmetto": "Saw palmetto",
+            "nutritionalOptimisation": "Optimización nutricional",
+            "scalpHealth": "Cuidado de la salud del cuero cabelludo"
+          },
+          "safetyStatement": "Toda medicación, suplemento o estrategia de tratamiento debe comentarse con su médico de cabecera o con un profesional clínico cualificado antes de comenzar."
+        },
+        "continuedProgression": {
+          "title": "La progresión de la pérdida capilar no siempre se detiene después de la cirugía",
+          "purpose": "Ayudar a comprender que el cabello nativo circundante puede seguir cambiando con el tiempo.",
+          "paragraphs": {
+            "p1": "Incluso después del trasplante, el cabello nativo circundante puede seguir cambiando con el tiempo.",
+            "p2": "Algunos pacientes experimentan afinamiento continuado en la coronilla.",
+            "p3": "Puede desarrollarse gradualmente un desequilibrio de densidad si el cabello circundante sigue miniaturizándose.",
+            "p4": "La planificación a largo plazo puede reducir la necesidad de procedimientos correctivos futuros."
+          },
+          "closing": "El trasplante capilar trata la pérdida capilar visible, pero no detiene de forma permanente la progresión subyacente de la alopecia genética."
+        },
+        "supportiveTherapies": {
+          "title": "Terapias capilares complementarias de apoyo",
+          "purpose": "Informar sobre terapias que algunos pacientes exploran después de la cirugía.",
+          "intro": "Algunos pacientes exploran terapias regenerativas de apoyo como parte de una planificación más amplia de mantenimiento capilar a largo plazo.",
+          "examples": {
+            "prp": "PRP (plasma rico en plaquetas)",
+            "exosome": "Terapia con exosomas",
+            "microneedling": "Microneedling (microagujas)",
+            "lowLevelLaser": "Terapia láser de baja intensidad"
+          }
+        },
+        "trackProgress": {
+          "title": "Continúe controlando su evolución",
+          "purpose": "Fomentar la recopilación de evidencia a lo largo del tiempo.",
+          "photoScheduleLabel": "Tome fotos de seguimiento en:",
+          "photoMonths": {
+            "month1": "1 mes",
+            "month3": "3 meses",
+            "month6": "6 meses",
+            "month9": "9 meses",
+            "month12": "12 meses"
+          },
+          "consistencyLabel": "Use de forma consistente:",
+          "consistency": {
+            "lighting": "iluminación",
+            "cameraDistance": "distancia de la cámara",
+            "hairLength": "longitud del cabello cuando sea posible",
+            "dryHair": "cabello seco",
+            "angles": "ángulos consistentes"
+          },
+          "anglesLabel": "Ángulos recomendados:",
+          "angles": {
+            "front": "frontal",
+            "leftSide": "lateral izquierdo",
+            "rightSide": "lateral derecho",
+            "topCrown": "coronilla desde arriba",
+            "donorArea": "zona donante"
+          },
+          "closing": "Una fotografía de seguimiento consistente ayuda a controlar los cambios a largo plazo con mayor precisión."
+        },
+        "enrichAssessments": {
+          "title": "Ayude a mejorar futuras revisiones de HairAudit",
+          "purpose": "Fomentar la ampliación del caso para un análisis futuro más profundo.",
+          "intro": "Las evaluaciones de HairAudit pueden volverse más completas a medida que se dispone de más información. Las futuras subidas pueden incluir:",
+          "uploadTypes": {
+            "progressPhotos": "Fotos de seguimiento",
+            "donorImages": "Imágenes adicionales de la zona donante",
+            "procedureDocs": "Documentación del procedimiento",
+            "medicationHistory": "Historial de medicación actualizado",
+            "secondProcedure": "Historial de un segundo procedimiento",
+            "regenerativeHistory": "Historial de tratamientos con PRP o exosomas",
+            "clinicalConcerns": "Preocupaciones clínicas adicionales"
+          },
+          "closing": "Cuanta más información haya disponible, más profundo puede ser el análisis futuro de HairAudit."
+        },
+        "longTermRecord": {
+          "title": "Su proceso de restauración capilar continúa",
+          "purpose": "Mostrar HairAudit como un registro longitudinal que puede evolucionar con su trayectoria.",
+          "paragraphs": {
+            "p1": "La restauración capilar rara vez termina con un solo procedimiento.",
+            "p2": "Las características del cabello pueden seguir cambiando durante meses y años.",
+            "p3": "Los tratamientos futuros, los patrones de progresión y las decisiones de mantenimiento a largo plazo contribuyen a los resultados finales.",
+            "p4": "HairAudit permite que su caso evolucione a medida que dispone de nueva información con el tiempo."
+          },
+          "closingStatement": "Su caso de HairAudit puede seguir enriqueciéndose a medida que añade información, imágenes y actualizaciones de progreso a largo plazo. Cuanto más completo sea su registro a largo plazo, más profundo puede ser el análisis futuro."
+        }
+      }
     }
   },
   "dashboard": {
@@ -1037,19 +1202,19 @@
       },
       "hliGuide": {
         "eyebrow": "Recompensa educativa para pacientes",
-        "titleLocked": "Desbloquee su guía gratuita para pacientes",
-        "titleUnlocked": "Su guía está desbloqueada",
-        "bodyLocked": "Envíe su caso gratuito para acceder a la Guía de protección capilar posoperatoria de Hair Longevity Institute.",
-        "bodyUnlocked": "Su caso ha sido enviado. Ya puede descargar la Guía de protección capilar posoperatoria de Hair Longevity Institute.",
+        "titleLocked": "Su guía de restauración a largo plazo",
+        "titleUnlocked": "Su guía está lista",
+        "bodyLocked": "Envíe su caso gratuito para acceder a la Guía de restauración capilar a largo plazo de Hair Longevity Institute.",
+        "bodyUnlocked": "Su caso ha sido enviado. Descargue la Guía de restauración capilar a largo plazo o léala en línea desde su panel.",
         "successLine": "La guía se desbloquea tras su envío.",
         "lockedLabel": "Envíe el caso para desbloquear",
         "lockedCta": "Enviar mi caso gratuito",
         "unlockedCta": "Descargar guía (PDF)",
         "guideOverviewLink": "Resumen de la guía",
-        "bullet1": "Protección del cabello nativo",
-        "bullet2": "Preservación del donante",
-        "bullet3": "Opciones de tratamiento explicadas",
-        "bullet4": "Qué vigilar con el tiempo",
+        "bullet1": "Curación inicial y protección de injertos",
+        "bullet2": "Plazos de crecimiento y expectativas realistas",
+        "bullet3": "Preservación del cabello nativo y progresión continua",
+        "bullet4": "Seguimiento de la evolución y enriquecimiento del caso",
         "hliAttribution": "Guía redactada por Hair Longevity Institute (HLI) con fines educativos para pacientes.",
         "boundaryNote": "HairAudit gestiona su auditoría y revisión independientes. HLI aporta solo la guía; no modifica los hallazgos de la auditoría."
       },

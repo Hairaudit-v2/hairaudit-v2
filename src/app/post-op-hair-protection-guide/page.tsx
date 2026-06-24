@@ -2,13 +2,15 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
-import { POST_OPERATIVE_HAIR_PROTECTION_GUIDE_PUBLIC_PATH } from "@/lib/constants/patientGuide";
+import PatientLongTermGuideSections from "@/components/patient/PatientLongTermGuideSections";
+import { buildPatientLongTermGuidePdfHref, PATIENT_LONG_TERM_GUIDE_PRINT_PATH } from "@/lib/constants/patientGuide";
 import {
   canUnlockPostOpGuide,
   firstCaseOpenForSubmit,
   patientHasUnlockedPostOpGuide,
 } from "@/lib/patient/caseSubmitStatus";
 import { fetchPatientCasesForPostOpGuide } from "@/lib/patient/fetchPatientCasesForPostOpGuide";
+import { buildPatientLongTermGuideContent } from "@/lib/reports/patientLongTermGuide";
 import { getTranslation } from "@/lib/i18n/getTranslation";
 import type { TranslationKey } from "@/lib/i18n/translationKeys";
 import { createLocalizedPageMetadata, resolvePublicSeoLocale } from "@/lib/seo/localeMetadata";
@@ -55,9 +57,9 @@ export default async function PostOpHairProtectionGuidePage() {
     progressHref = latestEligible ? `/cases/${latestEligible.id}` : "/dashboard/patient";
   }
 
-  const guidePdf = POST_OPERATIVE_HAIR_PROTECTION_GUIDE_PUBLIC_PATH;
+  const guidePdf = buildPatientLongTermGuidePdfHref(locale);
   const coverBullets = ["bullet1", "bullet2", "bullet3", "bullet4", "bullet5"] as const;
-  const previewTeasers = ["teaser1", "teaser2", "teaser3", "teaser4"] as const;
+  const guideContent = buildPatientLongTermGuideContent(locale);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#0a0a0f] text-slate-100">
@@ -69,7 +71,6 @@ export default async function PostOpHairProtectionGuidePage() {
 
       <main className="relative flex-1 px-4 sm:px-6 py-14 sm:py-20">
         <div className="max-w-3xl mx-auto">
-          {/* Hero */}
           <header className="text-center sm:text-left">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-400/90">
               {t("marketing.postOpHairProtectionGuide.hero.eyebrow")}
@@ -89,7 +90,6 @@ export default async function PostOpHairProtectionGuidePage() {
             </p>
           </header>
 
-          {/* What this guide is */}
           <section className="mt-14" aria-labelledby="po-guide-what">
             <h2 id="po-guide-what" className="text-lg font-semibold text-white">
               {t("marketing.postOpHairProtectionGuide.whatItIs.title")}
@@ -99,7 +99,6 @@ export default async function PostOpHairProtectionGuidePage() {
             </p>
           </section>
 
-          {/* What the guide covers */}
           <section className="mt-12" aria-labelledby="po-guide-covers">
             <h2 id="po-guide-covers" className="text-lg font-semibold text-white">
               {t("marketing.postOpHairProtectionGuide.covers.title")}
@@ -116,7 +115,6 @@ export default async function PostOpHairProtectionGuidePage() {
             </ul>
           </section>
 
-          {/* Why this matters */}
           <section className="mt-12" aria-labelledby="po-guide-why">
             <h2 id="po-guide-why" className="text-lg font-semibold text-white">
               {t("marketing.postOpHairProtectionGuide.whyMatters.title")}
@@ -126,33 +124,24 @@ export default async function PostOpHairProtectionGuidePage() {
             </p>
           </section>
 
-          {/* Preview / teaser */}
-          <section className="mt-12" aria-labelledby="po-guide-preview">
-            <h2 id="po-guide-preview" className="text-lg font-semibold text-white">
-              {t("marketing.postOpHairProtectionGuide.preview.title")}
+          <section className="mt-12" aria-labelledby="po-guide-content">
+            <h2 id="po-guide-content" className="text-lg font-semibold text-white">
+              {unlocked
+                ? t("marketing.postOpHairProtectionGuide.fullGuide.titleUnlocked")
+                : t("marketing.postOpHairProtectionGuide.fullGuide.titleLocked")}
             </h2>
-            <div
-              className={`relative mt-4 rounded-2xl border border-white/10 bg-slate-900/40 p-5 ${unlocked ? "" : "overflow-hidden"}`}
-            >
-              <ul className={`space-y-2 text-sm text-slate-300 ${unlocked ? "" : "opacity-50 blur-[0.5px]"}`}>
-                {previewTeasers.map((k) => (
-                  <li key={k} className="flex gap-2">
-                    <span className="text-amber-400/80" aria-hidden>
-                      ·
-                    </span>
-                    {t(`marketing.postOpHairProtectionGuide.preview.${k}` as TranslationKey)}
-                  </li>
-                ))}
-              </ul>
-              {!unlocked ? (
-                <p className="mt-4 text-xs text-slate-500 border-t border-white/10 pt-4">
-                  {t("marketing.postOpHairProtectionGuide.preview.lockedHint")}
-                </p>
-              ) : null}
+            {!unlocked ? (
+              <p className="mt-3 text-sm text-slate-500">
+                {t("marketing.postOpHairProtectionGuide.fullGuide.lockedHint")}
+              </p>
+            ) : null}
+            <div className={`relative mt-5 ${unlocked ? "" : "overflow-hidden"}`}>
+              <div className={unlocked ? "" : "opacity-40 blur-[1px] select-none pointer-events-none"}>
+                <PatientLongTermGuideSections content={guideContent} />
+              </div>
             </div>
           </section>
 
-          {/* Access CTA */}
           <section
             className="mt-14 rounded-2xl border border-amber-500/25 bg-gradient-to-br from-amber-500/[0.08] to-slate-900/60 p-6 sm:p-8"
             aria-labelledby="po-guide-access"
@@ -204,7 +193,6 @@ export default async function PostOpHairProtectionGuidePage() {
             </div>
           </section>
 
-          {/* Independence disclaimer */}
           <p className="mt-12 text-xs text-slate-500 leading-relaxed border-t border-white/10 pt-8">
             {t("marketing.postOpHairProtectionGuide.disclaimer")}
           </p>

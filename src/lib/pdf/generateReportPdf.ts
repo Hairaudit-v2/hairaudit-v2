@@ -20,15 +20,16 @@ export async function generateReportPdfFromUrl(url: string): Promise<Buffer> {
   }
   const path = parsed ? parsed.pathname : url;
   const isDemoReport = String(path).includes("/api/print/demo-report");
+  const isPatientGuide = String(path).includes("/api/print/patient-long-term-guide");
   const isEliteReport = String(path).includes("/api/print/report");
 
   let caseId: string | null = null;
   let reportId: string | null = null;
   let template: "elite" | "demo" = "demo";
 
-  if (!isDemoReport && !isEliteReport) {
+  if (!isDemoReport && !isEliteReport && !isPatientGuide) {
     throw new Error(
-      `PDF render refused: non-print URL. Expected '/api/print/report' or '/api/print/demo-report', got '${String(path)}'`
+      `PDF render refused: non-print URL. Expected '/api/print/report', '/api/print/demo-report', or '/api/print/patient-long-term-guide', got '${String(path)}'`
     );
   }
   if (parsed && isEliteReport) {
@@ -42,7 +43,7 @@ export async function generateReportPdfFromUrl(url: string): Promise<Buffer> {
       );
     }
     template = "elite";
-  } else if (isDemoReport) {
+  } else if (isDemoReport || isPatientGuide) {
     template = "demo";
   }
 

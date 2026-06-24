@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { trackCta } from "@/lib/analytics/trackCta";
 import { useI18n } from "@/components/i18n/I18nProvider";
-import { POST_OPERATIVE_HAIR_PROTECTION_GUIDE_PUBLIC_PATH } from "@/lib/constants/patientGuide";
+import { buildPatientLongTermGuidePdfHref } from "@/lib/constants/patientGuide";
 import type { TranslationKey } from "@/lib/i18n/translationKeys";
 
 const BULLET_KEYS = [
@@ -21,8 +21,8 @@ export default function PatientDashboardHliGuideCard({
   /** Case overview (submit) or start-audit entry when no open case exists */
   submitCtaHref: string;
 }) {
-  const { t } = useI18n();
-  const guideHref = POST_OPERATIVE_HAIR_PROTECTION_GUIDE_PUBLIC_PATH;
+  const { t, locale } = useI18n();
+  const guideHref = buildPatientLongTermGuidePdfHref(locale);
 
   return (
     <section

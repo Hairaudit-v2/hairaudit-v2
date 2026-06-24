@@ -217,8 +217,8 @@
         "description": "Proof of HairAudit report output: scorecard by domain, donor and recipient analysis, technique and design notes, confidence limits, and plain-language next steps—marketing walkthrough of example content; submit your own case via Request a review."
       },
       "postOpHairProtectionGuide": {
-        "title": "Post-Operative Hair Protection Guide | Patient Education | HairAudit",
-        "description": "Overview of the Hair Longevity Institute Post-Operative Hair Protection Guide for hair transplant patients—unlocked after you submit your free case on HairAudit. Independent audit platform; educational guide only."
+        "title": "Long-Term Hair Restoration Guide | Patient Education | HairAudit",
+        "description": "HairAudit's long-term hair restoration guide helps patients protect grafts, understand growth timelines, monitor progress, and enrich future reviews—unlocked after you submit your free case."
       }
     },
     "shared": {
@@ -364,11 +364,11 @@
         "feature4Title": "Know what to monitor",
         "feature4Desc": "Time-based cues for stability, regression signals, and documentation that supports informed follow-up with your medical team.",
         "guideTeaserEyebrow": "Patient education",
-        "guideTeaserTitle": "Post-Operative Hair Protection Guide",
-        "guideTeaserLead": "A practical educational PDF from Hair Longevity Institute—structured post-surgical orientation and long-term hair protection strategies for transplant patients.",
-        "guideTeaserBullet1": "Native hair and donor-area protection framing after surgery",
-        "guideTeaserBullet2": "What to watch month by month as healing and growth evolve",
-        "guideTeaserBullet3": "Clearer language for discussions with your clinician",
+        "guideTeaserTitle": "Long-Term Hair Restoration Guide",
+        "guideTeaserLead": "A comprehensive educational guide from Hair Longevity Institute—early healing protection, growth timelines, native hair preservation, and long-term progress monitoring for transplant patients.",
+        "guideTeaserBullet1": "Critical first 14 days and normal growth timeline expectations",
+        "guideTeaserBullet2": "Protecting native hair and understanding ongoing progression",
+        "guideTeaserBullet3": "Progress photography and enriching future HairAudit reviews",
         "guideTeaserBullet4": "Unlocked automatically after you submit your free HairAudit case",
         "guideTeaserCta": "View guide details",
         "guideTeaserFootnote": "Hair Longevity Institute provides the educational guide. HairAudit remains the independent audit platform. Educational content does not influence audit findings, scoring, or review outcomes."
@@ -377,42 +377,39 @@
     "postOpHairProtectionGuide": {
       "hero": {
         "eyebrow": "Hair Longevity Institute · Patient education",
-        "title": "Post-Operative Hair Protection Guide",
-        "subtitleLocked": "Submit your free hair transplant case on HairAudit to access this PDF. The guide opens as soon as your eligible case is submitted—your review still runs independently.",
-        "subtitleUnlocked": "Your guide is ready. Download the PDF below. HairAudit remains your independent review platform; this resource is educational only.",
+        "title": "Long-Term Hair Restoration Guide",
+        "subtitleLocked": "Submit your free hair transplant case on HairAudit to access this guide. It opens as soon as your eligible case is submitted—your independent review still runs separately.",
+        "subtitleUnlocked": "Your guide is ready. Download the PDF below or read the full guide on this page. HairAudit remains your independent review platform; this resource is educational only.",
         "badgeLocked": "Locked until eligible submission",
         "badgeUnlocked": "Unlocked"
       },
       "whatItIs": {
         "title": "What this guide is",
-        "body": "A practical, patient-facing educational PDF authored by Hair Longevity Institute (HLI). It complements—not replaces—your HairAudit review by offering structured orientation after surgery and durable habits that support native hair and donor stewardship."
+        "body": "A long-term patient education guide authored by Hair Longevity Institute (HLI). It helps you protect newly implanted grafts, understand normal growth timelines, monitor progress over months and years, and keep enriching your HairAudit case as your journey continues."
       },
       "covers": {
         "title": "What the guide covers",
-        "bullet1": "Post-surgical orientation: what is normal to expect as you heal and grow in",
-        "bullet2": "Protecting native hair and donor reserve in everyday decisions",
-        "bullet3": "Long-term monitoring cues so changes are noticed early",
-        "bullet4": "How to think about treatments and follow-up with your medical team",
-        "bullet5": "Plain-language framing that stays separate from audit scoring or conclusions"
+        "bullet1": "Critical first 14 days after surgery and early healing protection",
+        "bullet2": "Normal hair growth timeline and realistic expectations",
+        "bullet3": "Protecting native hair and understanding ongoing progression",
+        "bullet4": "Progress photography, monitoring, and enriching future HairAudit reviews",
+        "bullet5": "Educational framing only—separate from audit scoring or conclusions"
       },
       "whyMatters": {
-        "title": "Why this matters after surgery",
-        "body": "Hair transplant recovery unfolds over months. A structured guide helps you separate routine healing variation from patterns worth documenting or discussing—with your clinician, and alongside your HairAudit evidence review."
+        "title": "Why this matters for your long-term journey",
+        "body": "Hair restoration unfolds over months and years—not just the first recovery phase. This guide helps you protect your result, notice meaningful change early, and build a stronger long-term record for future discussions with your clinician and HairAudit."
       },
-      "preview": {
-        "title": "Inside the guide",
-        "teaser1": "Timeline-friendly checkpoints after your procedure",
-        "teaser2": "Donor and native-hair protection habits explained clearly",
-        "teaser3": "What to monitor and when to escalate questions",
-        "teaser4": "Education only—no influence on your HairAudit audit outcome",
-        "lockedHint": "Full section titles and detail unlock with your PDF after submission."
+      "fullGuide": {
+        "titleUnlocked": "Your complete guide",
+        "titleLocked": "Inside the guide",
+        "lockedHint": "All nine sections unlock with your PDF after submission."
       },
       "access": {
         "lockedTitle": "How to get access",
         "lockedBody": "Create or continue your patient case on HairAudit and submit it when you are ready. Once your free transplant case is successfully submitted, the guide unlocks here and on your patient dashboard.",
         "lockedCta": "Submit your free case",
         "unlockedTitle": "Download your guide",
-        "unlockedBody": "Your eligible case is on file. Save the PDF for offline reading and share only as you choose.",
+        "unlockedBody": "Your eligible case is on file. Save the PDF for offline reading and return here anytime to review the full guide online.",
         "downloadCta": "Download guide (PDF)",
         "secondaryDashboard": "Patient dashboard",
         "secondaryProgress": "View case & audit progress"
@@ -693,6 +690,174 @@
       "downloadLinkFailed": "Failed to generate download link",
       "noUrlReturned": "No URL returned",
       "openReportFailed": "Could not open report"
+    }
+  },
+  "patientEducation": {
+    "longTermHairRestorationGuide": {
+      "documentTitle": "HairAudit Long-Term Hair Restoration Guide",
+      "coverTitle": "Long-Term Hair Restoration Guide",
+      "coverSubtitle": "Protect, monitor, and understand your hair restoration journey over time.",
+      "coverAttribution": "Hair Longevity Institute · Patient education",
+      "footerDisclaimer": "This guide is for general patient education only. It does not replace advice from your treating clinician. If you have urgent or worsening symptoms, contact your medical team promptly.",
+      "footerIndependence": "Hair Longevity Institute provides the educational guide. HairAudit remains the independent audit platform. Educational content does not influence audit findings, scoring, or review outcomes.",
+      "educationalDisclaimer": "HairAudit provides educational guidance only and does not prescribe treatment.",
+      "sections": {
+        "firstFourteenDays": {
+          "title": "The First 14 Days After Surgery",
+          "purpose": "Protect newly implanted grafts during the critical early healing phase.",
+          "items": {
+            "avoidTouching": "Avoid touching grafts unnecessarily.",
+            "elevatedSleep": "Sleep with your head elevated where advised by your treating clinic.",
+            "avoidSweating": "Avoid excessive sweating during early healing.",
+            "avoidExercise": "Avoid strenuous exercise during early recovery.",
+            "avoidScratching": "Avoid scratching or disturbing scabs prematurely.",
+            "washingProtocols": "Follow washing protocols exactly as instructed by your clinic.",
+            "avoidTrauma": "Avoid direct trauma or pressure against the transplanted area.",
+            "followMedication": "Follow all medication instructions supplied by your treating clinician."
+          },
+          "closing": "The first two weeks after surgery are critical for protecting newly implanted grafts while the scalp begins healing."
+        },
+        "growthTimeline": {
+          "title": "Understanding The Hair Growth Timeline",
+          "purpose": "Reduce patient anxiety and create realistic expectations.",
+          "periods": {
+            "weeks1to2": {
+              "label": "Weeks 1–2",
+              "description": "Redness, tenderness, and scabbing are common."
+            },
+            "weeks2to6": {
+              "label": "Weeks 2–6",
+              "description": "Temporary shedding may occur as transplanted follicles enter a resting phase."
+            },
+            "months2to4": {
+              "label": "Months 2–4",
+              "description": "Minimal visible growth often occurs during this phase."
+            },
+            "months4to8": {
+              "label": "Months 4–8",
+              "description": "Early growth commonly begins becoming visible."
+            },
+            "months8to12": {
+              "label": "Months 8–12",
+              "description": "Density usually continues improving progressively."
+            },
+            "months12to18": {
+              "label": "Months 12–18",
+              "description": "Final maturation may continue over an extended period."
+            }
+          },
+          "closing": "Hair restoration is a gradual biological process, and early fluctuations do not necessarily indicate a poor result."
+        },
+        "warningSigns": {
+          "title": "When To Contact Your Treating Clinician",
+          "purpose": "Help patients identify abnormal recovery signs requiring prompt review.",
+          "items": {
+            "increasingPain": "Increasing pain rather than gradual improvement",
+            "spreadingRedness": "Spreading redness around the treated area",
+            "persistentSwelling": "Persistent swelling worsening over time",
+            "abnormalDischarge": "Abnormal discharge or fluid leakage",
+            "persistentBleeding": "Persistent bleeding after the early recovery phase",
+            "fever": "Fever or feeling systemically unwell",
+            "donorInflammation": "Unusual donor inflammation",
+            "worseningTenderness": "Unexpected scalp tenderness worsening progressively"
+          },
+          "closing": "If you notice unusual or worsening symptoms, contact your treating clinician promptly for direct medical review."
+        },
+        "protectingNativeHair": {
+          "title": "Protecting Existing Native Hair",
+          "purpose": "Educate patients that transplanted hair does not stop surrounding hair loss progression.",
+          "paragraphs": {
+            "p1": "Hair transplantation restores hair that has already been lost.",
+            "p2": "It does not stop future progression affecting surrounding native hair.",
+            "p3": "Some patients discuss long-term preservation strategies with their doctor. Examples may include:"
+          },
+          "examples": {
+            "finasteride": "Finasteride",
+            "dutasteride": "Dutasteride",
+            "sawPalmetto": "Saw Palmetto",
+            "nutritionalOptimisation": "Nutritional optimisation",
+            "scalpHealth": "Scalp health management"
+          },
+          "safetyStatement": "All medications, supplements, and treatment strategies should be discussed with your GP or qualified treating clinician before beginning treatment."
+        },
+        "continuedProgression": {
+          "title": "Hair Loss Progression Does Not Always Stop After Surgery",
+          "purpose": "Help patients understand that surrounding native hair may continue changing over time.",
+          "paragraphs": {
+            "p1": "Even after transplantation, surrounding native hair may continue changing over time.",
+            "p2": "Some patients experience continued crown thinning.",
+            "p3": "Density imbalance may gradually develop if surrounding hair continues miniaturising.",
+            "p4": "Long-term planning may reduce the need for future corrective procedures."
+          },
+          "closing": "Hair transplantation treats visible hair loss but does not permanently stop the underlying progression of genetic hair loss."
+        },
+        "supportiveTherapies": {
+          "title": "Additional Supportive Hair Therapies",
+          "purpose": "Educate patients on therapies commonly explored after surgery.",
+          "intro": "Some patients explore supportive regenerative therapies as part of broader long-term hair maintenance planning.",
+          "examples": {
+            "prp": "PRP (Platelet Rich Plasma)",
+            "exosome": "Exosome therapy",
+            "microneedling": "Microneedling",
+            "lowLevelLaser": "Low-level laser therapy"
+          }
+        },
+        "trackProgress": {
+          "title": "Continue Monitoring Your Progress",
+          "purpose": "Encourage longitudinal evidence collection.",
+          "photoScheduleLabel": "Take progress photos at:",
+          "photoMonths": {
+            "month1": "1 month",
+            "month3": "3 months",
+            "month6": "6 months",
+            "month9": "9 months",
+            "month12": "12 months"
+          },
+          "consistencyLabel": "Use consistent:",
+          "consistency": {
+            "lighting": "lighting",
+            "cameraDistance": "camera distance",
+            "hairLength": "hair length where possible",
+            "dryHair": "dry hair",
+            "angles": "consistent angles"
+          },
+          "anglesLabel": "Recommended angles:",
+          "angles": {
+            "front": "front",
+            "leftSide": "left side",
+            "rightSide": "right side",
+            "topCrown": "top-down crown",
+            "donorArea": "donor area"
+          },
+          "closing": "Consistent progress photography helps monitor long-term change more accurately over time."
+        },
+        "enrichAssessments": {
+          "title": "Help Improve Future HairAudit Reviews",
+          "purpose": "Create a case enrichment loop for deeper future analysis.",
+          "intro": "HairAudit assessments become increasingly comprehensive as more information becomes available. Future uploads may include:",
+          "uploadTypes": {
+            "progressPhotos": "Progress photos",
+            "donorImages": "Additional donor images",
+            "procedureDocs": "Procedure documentation",
+            "medicationHistory": "Updated medication history",
+            "secondProcedure": "Second procedure history",
+            "regenerativeHistory": "PRP or exosome treatment history",
+            "clinicalConcerns": "Additional clinical concerns"
+          },
+          "closing": "The more information available, the deeper future HairAudit analysis becomes."
+        },
+        "longTermRecord": {
+          "title": "Your Hair Restoration Journey Continues",
+          "purpose": "Position HairAudit as a longitudinal record that can evolve with your journey.",
+          "paragraphs": {
+            "p1": "Hair restoration rarely ends with a single procedure.",
+            "p2": "Hair characteristics may continue changing over months and years.",
+            "p3": "Future treatments, progression patterns, and long-term maintenance decisions all contribute to long-term outcomes.",
+            "p4": "HairAudit allows your case to evolve as new information becomes available over time."
+          },
+          "closingStatement": "Your HairAudit case can continue improving as additional information, images, and long-term progress updates are added over time. The more complete your long-term record becomes, the deeper future analysis may become."
+        }
+      }
     }
   },
   "dashboard": {
@@ -1201,19 +1366,19 @@
       },
       "hliGuide": {
         "eyebrow": "Patient education reward",
-        "titleLocked": "Your complimentary patient guide",
+        "titleLocked": "Your long-term restoration guide",
         "titleUnlocked": "Your guide is ready",
-        "bodyLocked": "Submit your free case to access the Post-Operative Hair Protection Guide from Hair Longevity Institute.",
-        "bodyUnlocked": "Your case has been submitted. You can now download the Post-Operative Hair Protection Guide from Hair Longevity Institute.",
+        "bodyLocked": "Submit your free case to access the Long-Term Hair Restoration Guide from Hair Longevity Institute.",
+        "bodyUnlocked": "Your case has been submitted. Download the Long-Term Hair Restoration Guide or read it online from your dashboard.",
         "successLine": "The guide becomes available after your submission.",
         "lockedLabel": "Submit case to access guide",
         "lockedCta": "Submit your free case",
         "unlockedCta": "Download guide (PDF)",
         "guideOverviewLink": "Guide overview",
-        "bullet1": "Native hair protection",
-        "bullet2": "Donor preservation",
-        "bullet3": "Treatment options explained",
-        "bullet4": "What to monitor over time",
+        "bullet1": "Early healing and graft protection",
+        "bullet2": "Growth timeline and realistic expectations",
+        "bullet3": "Native hair preservation and progression",
+        "bullet4": "Progress monitoring and case enrichment",
         "hliAttribution": "Guide authored by Hair Longevity Institute (HLI) for patient education.",
         "boundaryNote": "HairAudit runs your independent audit and review. HLI provides the guide only; it does not change audit findings."
       },

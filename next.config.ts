@@ -24,6 +24,14 @@ const tailwindcssPath = getTailwindPath();
 const fiUiEntry = path.join(process.cwd(), "src", "lib", "fi-ui", "network-ui.ts");
 
 const nextConfig: NextConfig = {
+  async rewrites() {
+    return [
+      {
+        source: "/post-operative-hair-protection-guide.pdf",
+        destination: "/api/reports/patient-long-term-guide",
+      },
+    ];
+  },
   async redirects() {
     return [
       {
@@ -64,6 +72,10 @@ const nextConfig: NextConfig = {
       "./node_modules/.pnpm/@sparticuz+chromium@*/node_modules/@sparticuz/chromium/bin/**",
     ],
     "/api/reports/demo-pdf": [
+      "./node_modules/@sparticuz/chromium/bin/**",
+      "./node_modules/.pnpm/@sparticuz+chromium@*/node_modules/@sparticuz/chromium/bin/**",
+    ],
+    "/api/reports/patient-long-term-guide": [
       "./node_modules/@sparticuz/chromium/bin/**",
       "./node_modules/.pnpm/@sparticuz+chromium@*/node_modules/@sparticuz/chromium/bin/**",
     ],
