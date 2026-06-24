@@ -70,11 +70,18 @@ export async function fetchReportPdfWithRecovery(
   } catch (e) {
     const code = (e as { code?: string })?.code;
     const msg = String((e as Error)?.message ?? e);
+    const missingFields = (e as { missingFields?: string[] })?.missingFields;
     console.error("[reports/pdf-recovery] rebuild failed", {
       reportId: ctx.report.id,
       version,
       code: code ?? null,
-      reason: code === "AUDIT_NOT_READY" || /AUDIT_NOT_READY/i.test(msg) ? "audit_not_ready" : "rebuild_error",
+      missingFields: missingFields ?? null,
+      reason:
+        code === "PDF_REBUILD_NOT_READY"
+          ? "rebuild_preflight_blocked"
+          : code === "AUDIT_NOT_READY" || /AUDIT_NOT_READY/i.test(msg)
+            ? "audit_not_ready"
+            : "rebuild_error",
     });
     return { ok: false, status: 422, error: REPORT_PDF_MISSING_REGEN_ERROR };
   }

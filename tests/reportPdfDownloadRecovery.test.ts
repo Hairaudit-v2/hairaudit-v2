@@ -11,6 +11,7 @@ import {
   fetchReportPdfWithRecovery,
   REPORT_PDF_MISSING_REGEN_ERROR,
 } from "@/lib/reports/reportPdfDownloadRecovery";
+import { PdfRebuildNotReadyError } from "@/lib/reports/rebuildReportPdf";
 import { renderEliteReportHtml, type EliteReportViewModel } from "@/lib/reports/EliteReportHtml";
 import { PATIENT_IMAGE_LIMITED_TRUST_NOTICE } from "@/lib/patient/patientTrustStatusTranslator";
 import type { AuditMode, ReportViewModel } from "@/lib/pdf/reportBuilder";
@@ -74,6 +75,33 @@ describe("fetchReportPdfWithRecovery", () => {
       rebuildPdf: async () => {
         throw Object.assign(new Error("AUDIT_NOT_READY: audit summary is incomplete"), {
           code: "AUDIT_NOT_READY",
+        });
+      },
+    });
+    assert.equal(result.ok, false);
+    if (result.ok) return;
+    assert.equal(result.error, REPORT_PDF_MISSING_REGEN_ERROR);
+    assert.equal(result.status, 422);
+  });
+
+  it("returns trust-safe generic error when rebuild preflight blocks (patient download)", async () => {
+    const result = await fetchReportPdfWithRecovery(makeAuthCtx(`${CASE}/v2.pdf`), {
+      fetchFromStorage: async () => ({ error: "Object not found" }),
+      rebuildPdf: async () => {
+        throw new PdfRebuildNotReadyError("PDF rebuild blocked — missing: forensic_audit", {
+          reportId: REPORT,
+          caseId: CASE,
+          reportVersion: 2,
+          hasReportRow: true,
+          hasForensicAudit: false,
+          hasReportSummary: true,
+          hasPatientSafeSummary: false,
+          hasScores: false,
+          hasNarrative: false,
+          hasSections: false,
+          hasPdfPath: false,
+          resolvedPdfPath: `${CASE}/v2.pdf`,
+          missingFields: ["forensic_audit", "scores", "narrative", "sections", "patientSafeSummary"],
         });
       },
     });
@@ -182,6 +210,13 @@ describe("image-limited notice in regenerated PDF/HTML builder input", () => {
     const panel = readFileSync(join(process.cwd(), "src/app/cases/[caseId]/RebuildPdfPanel.tsx"), "utf8");
     assert.match(page, /RebuildPdfPanel/);
     assert.match(panel, /Rebuild PDF/);
+    assert.match(panel, /missingFields/);
+  });
+
+  it("auditor rebuild route returns missingFields diagnostics", () => {
+    const route = readFileSync(join(process.cwd(), "src/app/api/auditor/rebuild-pdf/route.ts"), "utf8");
+    assert.match(route, /evaluateReportPdfRebuildPreflight/);
+    assert.match(route, /missingFields/);
   });
 
   it("print route normalizes clinical template to elite for PDF preflight", () => {

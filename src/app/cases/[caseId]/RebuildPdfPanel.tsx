@@ -28,7 +28,13 @@ export default function RebuildPdfPanel({
         body: JSON.stringify({ caseId, reportId: reportId ?? undefined }),
       });
       const json = await res.json();
-      if (!json.ok) throw new Error(json.error ?? "Rebuild failed");
+      if (!json.ok) {
+        const detail =
+          Array.isArray(json.missingFields) && json.missingFields.length
+            ? `${json.message ?? json.error ?? "Rebuild failed"} (${json.missingFields.join(", ")})`
+            : (json.message ?? json.error ?? "Rebuild failed");
+        throw new Error(detail);
+      }
       setSuccess(
         `PDF rebuilt and saved${latestReportVersion != null ? ` (v${latestReportVersion})` : ""}. Download should work now.`
       );

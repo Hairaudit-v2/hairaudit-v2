@@ -23,6 +23,14 @@ import { effectivePatientPhotoCategoryKey } from "@/lib/uploads/patientPhotoAudi
 import { evaluateEvidence, type EvidenceEvaluationResult } from "@/lib/evidence/evidenceEvaluator";
 import { enrichKeyMetricsAfterNormalize } from "@/lib/evidence/evidenceMissingCopy";
 import { resolveCaseFilesBucketForReportRender } from "@/lib/hairaudit/uploadStorage";
+import {
+  attachPatientSafeSummaryToReport,
+  mergeForensicIntoSummaryShape,
+} from "@/lib/reports/reportPdfRebuildPreflight";
+import {
+  buildClinicalHistorySnapshot,
+  loadCaseClinicalHistory,
+} from "@/lib/hairaudit/clinical-history/clinicalHistory.server";
 
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
@@ -119,6 +127,7 @@ export async function renderAndUploadPdfForCase(args: {
   auditMode?: string;
   version?: number;
   baseUrl?: string;
+  reportId?: string;
 }) {
   const caseId = String(args.caseId ?? "").trim();
   if (!caseId) throw new Error("Missing caseId");
@@ -146,25 +155,38 @@ export async function renderAndUploadPdfForCase(args: {
     version = Number(data?.version ?? 0) + 1;
   }
 
-  // Load the report summary for this version (deterministic: no fallback)
-  const { data: reportRow } = await supabase
+  const reportSelect = supabase
     .from("reports")
     .select("id, summary, created_at, version, status, pdf_path")
-    .eq("case_id", caseId)
-    .eq("version", version)
-    .maybeSingle();
+    .eq("case_id", caseId);
+
+  const { data: reportRow } = args.reportId
+    ? await reportSelect.eq("id", args.reportId).maybeSingle()
+    : await reportSelect.eq("version", version).maybeSingle();
 
   if (!reportRow) {
     throw Object.assign(new Error(`AUDIT_NOT_READY: report row not found for v${version}`), {
       code: "AUDIT_NOT_READY" as const,
     });
   }
+
   const { data: caseRow } = await supabase
     .from("cases")
-    .select("status")
+    .select("status, patient_review_pathway")
     .eq("id", caseId)
     .maybeSingle();
-  const summary = (reportRow.summary ?? {}) as any;
+
+  const clinicalRow = await loadCaseClinicalHistory(caseId, supabase);
+  const clinicalHistory = clinicalRow ? buildClinicalHistorySnapshot(clinicalRow) : null;
+  const rawSummary = ((reportRow.summary ?? {}) as Record<string, unknown>) ?? {};
+  const summary = attachPatientSafeSummaryToReport(mergeForensicIntoSummaryShape(rawSummary), {
+    clinicalHistory,
+    patientReviewPathway:
+      (caseRow as { patient_review_pathway?: string | null } | null)?.patient_review_pathway ?? null,
+    caseId,
+    reportVersion: Number(reportRow.version ?? version),
+  }) as Record<string, unknown>;
+
   assertPdfReady({
     caseStatus: (caseRow as { status?: string | null } | null)?.status ?? null,
     reportStatus: (reportRow as { status?: string | null }).status ?? null,

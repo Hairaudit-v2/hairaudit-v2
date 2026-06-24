@@ -2,8 +2,11 @@ import { NextResponse } from "next/server";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { isAuditor } from "@/lib/auth/isAuditor";
-import { rebuildReportPdfForReport } from "@/lib/reports/rebuildReportPdf";
-import { REPORT_PDF_MISSING_REGEN_ERROR } from "@/lib/reports/reportPdfDownloadRecovery";
+import { rebuildReportPdfForReport, PdfRebuildNotReadyError } from "@/lib/reports/rebuildReportPdf";
+import {
+  evaluateReportPdfRebuildPreflight,
+  formatPdfRebuildFailureMessage,
+} from "@/lib/reports/reportPdfRebuildPreflight";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -27,46 +30,61 @@ export async function POST(req: Request) {
     const reportId = String(body?.reportId ?? "").trim();
     if (!caseId) return NextResponse.json({ ok: false, error: "Missing caseId" }, { status: 400 });
 
-    let reportQuery = admin
-      .from("reports")
-      .select("id, case_id, version, status, summary")
-      .eq("case_id", caseId);
-    if (reportId) {
-      reportQuery = reportQuery.eq("id", reportId);
-    } else {
-      reportQuery = reportQuery.order("version", { ascending: false }).limit(1);
-    }
-    const { data: report, error: reportErr } = await reportQuery.maybeSingle();
-    if (reportErr) {
-      return NextResponse.json({ ok: false, error: reportErr.message }, { status: 500 });
-    }
-    if (!report) {
-      return NextResponse.json({ ok: false, error: "Report not found" }, { status: 404 });
-    }
+    const preflight = await evaluateReportPdfRebuildPreflight({
+      caseId,
+      reportId: reportId || undefined,
+      supabase: admin,
+    });
 
-    const version = Number((report as { version?: number }).version ?? 0);
-    if (version < 1) {
-      return NextResponse.json({ ok: false, error: REPORT_PDF_MISSING_REGEN_ERROR }, { status: 422 });
-    }
-
-    const summary = (report as { summary?: unknown }).summary;
-    if (!summary || typeof summary !== "object") {
-      return NextResponse.json({ ok: false, error: REPORT_PDF_MISSING_REGEN_ERROR }, { status: 422 });
+    if (!preflight.ready || !preflight.reportId || preflight.reportVersion < 1) {
+      const message = formatPdfRebuildFailureMessage(preflight.diagnostics);
+      return NextResponse.json(
+        {
+          ok: false,
+          message,
+          missingFields: preflight.diagnostics.missingFields,
+          diagnostics: preflight.diagnostics,
+        },
+        { status: 422 }
+      );
     }
 
     const result = await rebuildReportPdfForReport({
-      reportId: String((report as { id: string }).id),
+      reportId: preflight.reportId,
       caseId,
-      version,
+      version: preflight.reportVersion,
       baseUrl: new URL(req.url).origin,
     });
 
-    return NextResponse.json({ ok: true, pdfPath: result.pdfPath, reportId: (report as { id: string }).id });
+    return NextResponse.json({
+      ok: true,
+      pdfPath: result.pdfPath,
+      reportId: preflight.reportId,
+    });
   } catch (e: unknown) {
+    if (e instanceof PdfRebuildNotReadyError) {
+      return NextResponse.json(
+        {
+          ok: false,
+          message: e.message,
+          missingFields: e.missingFields,
+          diagnostics: e.diagnostics,
+        },
+        { status: 422 }
+      );
+    }
+
     const code = (e as { code?: string })?.code;
     const msg = String((e as Error)?.message ?? e);
     if (code === "AUDIT_NOT_READY" || /AUDIT_NOT_READY/i.test(msg)) {
-      return NextResponse.json({ ok: false, error: REPORT_PDF_MISSING_REGEN_ERROR }, { status: 422 });
+      return NextResponse.json(
+        {
+          ok: false,
+          message: msg,
+          missingFields: ["auditSummaryIncomplete"],
+        },
+        { status: 422 }
+      );
     }
     console.error("[api/auditor/rebuild-pdf] unexpected error", { message: msg });
     return NextResponse.json(
