@@ -12,6 +12,8 @@ import {
   formatPatientImageEvidenceConfidenceForPrompt,
   type PatientImageEvidenceConfidenceResult,
 } from "@/lib/audit/patientImageEvidenceConfidence";
+import { formatClinicalHistoryForPrompt } from "@/lib/hairaudit/clinical-history/clinicalHistory.server";
+import type { ClinicalHistorySnapshot } from "@/lib/hairaudit/clinical-history/clinicalHistoryTypes";
 
 export interface PatientBaseline {
   patient_age: number;
@@ -134,6 +136,8 @@ export type AIAuditInput = {
    * Omitted when AI extended evidence flag is off.
    */
   patientImageEvidenceConfidence?: PatientImageEvidenceConfidenceResult | null;
+  /** Operator-entered structured clinical history (prior surgery, graft counts, medications). */
+  clinicalHistory?: ClinicalHistorySnapshot | null;
 };
 
 export type AIAuditResult = {
@@ -874,6 +878,15 @@ export async function runAIAudit(input: AIAuditInput): Promise<AIAuditResult> {
       ? `\n## Patient image evidence sufficiency (reference only)\n${formatPatientImageEvidenceConfidenceForPrompt(input.patientImageEvidenceConfidence)}\n`
       : "";
 
+  const clinicalHistoryBlock = formatClinicalHistoryForPrompt(input.clinicalHistory ?? null);
+  const clinicalHistoryAddon =
+    input.clinicalHistory && clinicalHistoryBlock.includes("SOURCE:")
+      ? `\n## Structured clinical history (clinician-entered — high priority)\n${clinicalHistoryBlock}\n` +
+        `- If required patient photos are missing or limited, clearly state that image-based assessment is limited.\n` +
+        `- Do NOT invent graft counts, hair counts, or ratios not provided above.\n` +
+        `- Treat this as structured operator data, NOT patient self-diagnosis.\n`
+      : "";
+
   const systemPrompt = `You are an expert hair transplant auditor producing a forensic audit for HairAudit + Follicle Intelligence.
 
 ## Safety + legal guardrails (STRICT)
@@ -998,7 +1011,7 @@ Safety:
         `Auto-detected missing photos: ${autoMissingPhotos.length ? autoMissingPhotos.join(", ") : "(none)"}\n\n` +
         `## Patient baseline\n${baselineBlock}\n\n` +
         `## Enhanced patient answers (structured)\n${enhancedPatientBlock}\n\n` +
-        `## Patient answers\n${patientBlock}\n\n${patientImageEvidenceGroupsAddon}${patientImageEvidenceConfidenceAddon}` +
+        `## Patient answers\n${patientBlock}\n\n${patientImageEvidenceGroupsAddon}${patientImageEvidenceConfidenceAddon}${clinicalHistoryAddon}` +
         `## Doctor answers\n${doctorBlock}\n\n## Clinic answers\n${clinicBlock}\n\n` +
         `Return a forensic audit that strictly conforms to the provided JSON Schema (no extra keys).`,
     },

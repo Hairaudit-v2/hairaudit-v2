@@ -73,6 +73,12 @@ import AuditorPatientImageManager from "./AuditorPatientImageManager";
 import { evaluateEvidence } from "@/lib/evidence/evidenceEvaluator";
 import { isPatientUploadAuditExcluded } from "@/lib/uploads/patientPhotoAuditMeta";
 import BulkBatchInheritedMetadataPanel from "@/components/hair-audit/BulkBatchInheritedMetadataPanel";
+import CaseClinicalHistoryPanel from "@/components/hairaudit/admin/CaseClinicalHistoryPanel";
+import {
+  buildClinicalHistorySnapshot,
+  loadCaseClinicalHistory,
+} from "@/lib/hairaudit/clinical-history/clinicalHistory.server";
+import type { ClinicalHistorySnapshot } from "@/lib/hairaudit/clinical-history/clinicalHistoryTypes";
 import AuditOsShadowDebugPanel, {
   type AuditOsShadowDebugPanelPayload,
 } from "@/components/auditor/AuditOsShadowDebugPanel";
@@ -440,6 +446,16 @@ export default async function Page({
 
   /** Forensic AI audit reports only — excludes Stage 7B surgery evidence review PDFs. */
   const forensicReports = filterForensicAuditReports(reports ?? []);
+
+  let clinicalHistorySnapshot: ClinicalHistorySnapshot | null = null;
+  if (role === "auditor") {
+    try {
+      const clinicalRow = await loadCaseClinicalHistory(c.id, db);
+      clinicalHistorySnapshot = clinicalRow ? buildClinicalHistorySnapshot(clinicalRow) : null;
+    } catch {
+      /* hairaudit_case_clinical_history may not exist in older environments */
+    }
+  }
 
   // Case-scoped access flags (auditor sees all)
   const isAuditor = role === "auditor";
@@ -1243,6 +1259,10 @@ export default async function Page({
         <div className="mt-6">
           <AuditorPatientImageManager caseId={c.id} />
         </div>
+      )}
+
+      {isAuditor && (
+        <CaseClinicalHistoryPanel caseId={c.id} initialSnapshot={clinicalHistorySnapshot} />
       )}
 
       {isAuditor && (

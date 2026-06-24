@@ -28,6 +28,10 @@ import { attachHairAuditIntelligenceToReportSummarySafeWithClassifier } from "@/
 import { persistHairAuditIntelligenceSnapshot } from "@/lib/hairaudit-intelligence/shadow/persistHairAuditIntelligenceSnapshot.server";
 import { isHairAuditIntelligenceSnapshotPersistenceEnabled } from "@/lib/hairaudit-intelligence/shadow/hairAuditIntelligenceEnv.server";
 import type { LegacyUploadRow } from "@/lib/auditos/reports/adaptLegacyReportModel";
+import {
+  buildClinicalHistorySnapshot,
+  loadCaseClinicalHistory,
+} from "@/lib/hairaudit/clinical-history/clinicalHistory.server";
 import { getCaseFilesBucketNameForReadOnlyUse } from "@/lib/hairaudit/uploadStorage";
 import { generatePostSurgeryAuditReport } from "@/lib/reports/postSurgeryAuditReport";
 import { generatePreSurgeryPlanningReport } from "@/lib/reports/preSurgeryPlanningReport";
@@ -833,6 +837,11 @@ export const runAudit = inngest.createFunction(
           ? ((patientAnswers as Record<string, unknown>).enhanced_patient_answers as Record<string, unknown> | null | undefined)
           : null;
 
+      const clinicalHistoryRow = await loadCaseClinicalHistory(caseId, supabase);
+      const clinicalHistory = clinicalHistoryRow
+        ? buildClinicalHistorySnapshot(clinicalHistoryRow)
+        : null;
+
       // Baseline may be provided either as a top-level baseline object or inside enhanced answers.
       const baseline =
         patientAnswers && typeof patientAnswers === "object"
@@ -880,6 +889,7 @@ export const runAudit = inngest.createFunction(
         failedImageKeys: (preparedVision.manifest.errors ?? []).map((e) => String(e).split(":")[0] ?? String(e)),
         requestedImageCount: imageIngestionStats.selected_count,
         auditMode: aiAuditMode,
+        clinicalHistory,
         ...(aiExtendedEvidence ? { patientImageEvidenceGroups, patientImageEvidenceConfidence } : {}),
       });
     });
