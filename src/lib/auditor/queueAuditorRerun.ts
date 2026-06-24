@@ -5,6 +5,15 @@
 
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { inngest } from "@/lib/inngest/client";
+import {
+  AUDITOR_RERUN_REASON_DOCUMENT_ASSISTED_IMAGE_LIMITED,
+  evaluateImageLimitedPhotoOverride,
+  imageLimitedRerunSupportError,
+} from "@/lib/patient/patientPhotoImageLimitedOverride";
+import { buildClinicalHistorySnapshot, loadCaseClinicalHistory } from "@/lib/hairaudit/clinical-history/clinicalHistory.server";
+import { evaluatePatientPhotoSubmitGate } from "@/lib/patientPhoto/patientPhotoReadinessPolicy";
+import { isPatientPhotoStageAwareSubmitEnabled } from "@/lib/features/enablePatientPhotoStageAwareSubmit";
+import { normalizedPatientAnswersFromReportRow } from "@/lib/patient/answersFromReportRow";
 
 /** Must match `ACTION_TYPES` in `src/app/api/auditor/rerun/route.ts`. */
 export const AUDITOR_RERUN_ACTION_TYPES = [
@@ -28,6 +37,7 @@ export const AUDITOR_RERUN_REASONS = [
   "auditor_review_request",
   "data_inconsistency",
   "corrected_patient_photos",
+  "document_assisted_image_limited",
 ] as const;
 
 export type AuditorRerunAction = (typeof AUDITOR_RERUN_ACTION_TYPES)[number];
@@ -87,6 +97,48 @@ export async function queueAuditorRerunFromAdmin(
   }
 
   const normalizedAction = normalizeAuditorRerunAction(action);
+
+  if (reason === AUDITOR_RERUN_REASON_DOCUMENT_ASSISTED_IMAGE_LIMITED) {
+    const [{ data: uploadRows }, { data: reportRow }] = await Promise.all([
+      admin.from("uploads").select("type, metadata").eq("case_id", caseId),
+      admin
+        .from("reports")
+        .select("summary, patient_audit_version, patient_audit_v2")
+        .eq("case_id", caseId)
+        .order("version", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
+
+    const uploads = uploadRows ?? [];
+    const patientAnswers = normalizedPatientAnswersFromReportRow(
+      reportRow as Parameters<typeof normalizedPatientAnswersFromReportRow>[0]
+    );
+    const photoGate = evaluatePatientPhotoSubmitGate({
+      uploadRows: uploads,
+      patientAnswers,
+      stageAwareSubmitEnabled: isPatientPhotoStageAwareSubmitEnabled(),
+    });
+    const clinicalRow = await loadCaseClinicalHistory(caseId, admin);
+    const clinicalHistory = clinicalRow ? buildClinicalHistorySnapshot(clinicalRow) : null;
+    const overrideEval = evaluateImageLimitedPhotoOverride({
+      auditorRerunReason: reason,
+      photoGateAllowed: photoGate.allowed,
+      uploadRows: uploads,
+      clinicalHistory,
+    });
+
+    if (!overrideEval.hasPatientImages && !overrideEval.hasClinicalHistory) {
+      return { ok: false, error: imageLimitedRerunSupportError(), httpStatus: 400 };
+    }
+    if (photoGate.allowed) {
+      return {
+        ok: false,
+        error: "Image-limited regeneration is only for cases missing required patient photos.",
+        httpStatus: 400,
+      };
+    }
+  }
 
   const { data: latestReport } = await admin
     .from("reports")

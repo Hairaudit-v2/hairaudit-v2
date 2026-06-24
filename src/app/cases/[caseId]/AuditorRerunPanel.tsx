@@ -22,6 +22,7 @@ const REASON_LABELS: Record<string, string> = {
   auditor_review_request: "Auditor review request",
   data_inconsistency: "Data inconsistency found",
   corrected_patient_photos: "Corrected patient photos (categories / exclusions)",
+  document_assisted_image_limited: "Document-assisted / image-limited override",
 };
 
 const REASONS = Object.keys(REASON_LABELS) as string[];
@@ -207,7 +208,12 @@ export default function AuditorRerunPanel({ caseId, latestReportVersion }: { cas
           <ul className="space-y-2">
             {items.map((i) => (
               <li key={i.id} className="flex flex-wrap items-center gap-2 text-sm">
-                <span className="font-medium text-white">{ACTION_LABELS[i.action_type] ?? i.action_type}</span>
+                <span className="font-medium text-white">
+                  {ACTION_LABELS[i.action_type] ?? i.action_type}
+                  {i.reason === "document_assisted_image_limited" ? (
+                    <span className="text-amber-200 font-normal"> (Image-limited override)</span>
+                  ) : null}
+                </span>
                 <span className="text-slate-400">({REASON_LABELS[i.reason] ?? i.reason})</span>
                 <span className={`rounded px-2 py-0.5 text-xs ${
                   i.status === "complete" ? "bg-emerald-300/20 text-emerald-200" :

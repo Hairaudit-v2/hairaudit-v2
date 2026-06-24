@@ -6,6 +6,7 @@ import {
   PATIENT_CLINICAL_SAFETY_DISCLAIMER,
   type PatientConcernBand,
 } from "./patientConcernBands";
+import { IMAGE_LIMITED_AUDIT_PATIENT_NOTICE } from "@/lib/patient/patientPhotoImageLimitedOverride";
 import { buildPatientWhatHappensNext } from "./patientWhatHappensNext";
 import {
   getPathwayDefinition,
@@ -48,6 +49,8 @@ export type PatientSafeReportSummary = {
   /** HA-DUAL-PATHWAY-1 — pathway-specific review focus areas */
   patientReviewPathway?: PatientReviewPathway;
   pathwayFocusAreas?: readonly string[];
+  /** Present when audit ran under auditor image-limited override */
+  imageLimitedNotice?: string;
 };
 
 /**
@@ -160,6 +163,10 @@ export function buildPatientSafeReportSummary(
       )?.patientReviewPathway
   );
   const pathwayFocusAreas = getPathwayDefinition(patientReviewPathway).reportFocusAreas;
+  const forensicBlock = (summary?.forensic_audit ?? summary?.forensic) as
+    | { imageLimitedAssessment?: boolean }
+    | undefined;
+  const imageLimitedNotice = forensicBlock?.imageLimitedAssessment ? IMAGE_LIMITED_AUDIT_PATIENT_NOTICE : undefined;
   const keyFindings = Array.isArray(summary?.key_findings) ? summary.key_findings : [];
   const redFlags = Array.isArray(summary?.red_flags) ? summary.red_flags : [];
 
@@ -208,6 +215,7 @@ export function buildPatientSafeReportSummary(
     observations: structured,
     patientReviewPathway,
     pathwayFocusAreas,
+    imageLimitedNotice,
   };
 }
 

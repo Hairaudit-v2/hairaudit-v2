@@ -7,6 +7,7 @@ import DownloadReport from "./download-report";
 import GraftIntegrityCard from "@/app/dashboard/patient/GraftIntegrityCard";
 import GraftIntegrityReviewPanel from "@/app/dashboard/auditor/GraftIntegrityReviewPanel";
 import AuditorRerunPanel from "./AuditorRerunPanel";
+import ImageLimitedRegeneratePanel from "./ImageLimitedRegeneratePanel";
 import DoctorAnswersSummary from "@/components/reports/DoctorAnswersSummary";
 import PatientAnswersSummary from "@/components/reports/PatientAnswersSummary";
 import EvidenceSummary from "@/components/reports/EvidenceSummary";
@@ -79,6 +80,12 @@ import {
   loadCaseClinicalHistory,
 } from "@/lib/hairaudit/clinical-history/clinicalHistory.server";
 import type { ClinicalHistorySnapshot } from "@/lib/hairaudit/clinical-history/clinicalHistoryTypes";
+import { hasMeaningfulClinicalHistory } from "@/lib/hairaudit/clinical-history/clinicalHistoryUtils";
+import {
+  getMissingRequiredPatientPhotoLabels,
+  hasActivePatientPhotosForImageLimitedOverride,
+  IMAGE_LIMITED_AUDIT_PATIENT_NOTICE,
+} from "@/lib/patient/patientPhotoImageLimitedOverride";
 import AuditOsShadowDebugPanel, {
   type AuditOsShadowDebugPanelPayload,
 } from "@/components/auditor/AuditOsShadowDebugPanel";
@@ -999,6 +1006,12 @@ export default async function Page({
         ? missingPatientRequired
         : missingDoctorRequired;
 
+  const uploadRowsForImageLimited = (uploads ?? []) as { type?: string; metadata?: unknown }[];
+  const missingPatientPhotoLabelsForOverride = getMissingRequiredPatientPhotoLabels(uploadRowsForImageLimited);
+  const hasPatientImagesForImageLimited = hasActivePatientPhotosForImageLimitedOverride(uploadRowsForImageLimited);
+  const hasClinicalHistoryForImageLimited = hasMeaningfulClinicalHistory(clinicalHistorySnapshot);
+  const imageLimitedForensicNotice = Boolean(forensic?.imageLimitedAssessment);
+
   let caseEvidenceEvaluation: ReturnType<typeof evaluateEvidence> | null = null;
   try {
     caseEvidenceEvaluation = evaluateEvidence((uploads ?? []) as Parameters<typeof evaluateEvidence>[0]);
@@ -1491,7 +1504,19 @@ export default async function Page({
 
       {isAuditor && forensicReports.length > 0 && (
         <div className="mt-6">
+          {imageLimitedForensicNotice ? (
+            <div className="mb-4 rounded-xl border border-amber-300/40 bg-amber-950/40 px-4 py-3">
+              <p className="text-sm font-medium text-amber-100">Image-limited audit report</p>
+              <p className="mt-1 text-xs text-amber-100/80">{IMAGE_LIMITED_AUDIT_PATIENT_NOTICE}</p>
+            </div>
+          ) : null}
           <AuditorRerunPanel caseId={c.id} latestReportVersion={forensicReports[0]?.version} />
+          <ImageLimitedRegeneratePanel
+            caseId={c.id}
+            missingRequiredPhotoLabels={missingPatientPhotoLabelsForOverride}
+            hasPatientImages={hasPatientImagesForImageLimited}
+            hasClinicalHistory={hasClinicalHistoryForImageLimited}
+          />
           <AuditOsShadowDebugPanel debug={auditOsShadowDebug} />
           {auditOsReviewPanel ? <AuditOsReviewPanel {...auditOsReviewPanel} /> : null}
         </div>

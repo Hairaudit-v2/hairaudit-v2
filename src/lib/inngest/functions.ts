@@ -32,6 +32,11 @@ import {
   buildClinicalHistorySnapshot,
   loadCaseClinicalHistory,
 } from "@/lib/hairaudit/clinical-history/clinicalHistory.server";
+import { logClinicalHistoryEvent } from "@/lib/hairaudit/clinical-history/clinicalHistoryAudit";
+import {
+  evaluateImageLimitedPhotoOverride,
+  getMissingRequiredPatientPhotoLabels,
+} from "@/lib/patient/patientPhotoImageLimitedOverride";
 import { getCaseFilesBucketNameForReadOnlyUse } from "@/lib/hairaudit/uploadStorage";
 import { generatePostSurgeryAuditReport } from "@/lib/reports/postSurgeryAuditReport";
 import { generatePreSurgeryPlanningReport } from "@/lib/reports/preSurgeryPlanningReport";
@@ -39,6 +44,7 @@ import { normalizePatientReviewPathway } from "@/lib/patient/patientReviewPathwa
 
 /** Must match `REASONS` in `src/app/api/auditor/rerun/route.ts`. */
 const AUDITOR_RERUN_REASON_CORRECTED_PATIENT_PHOTOS = "corrected_patient_photos";
+const AUDITOR_RERUN_REASON_DOCUMENT_ASSISTED_IMAGE_LIMITED = "document_assisted_image_limited";
 
 function supabaseAdmin() {
   return createSupabaseAdminClient();
@@ -702,6 +708,20 @@ export const runAudit = inngest.createFunction(
       stageAwareSubmitEnabled: isPatientPhotoStageAwareSubmitEnabled(),
     });
 
+    const clinicalHistoryRowForGate = await step.run("load-clinical-history-for-photo-gate", async () => {
+      return await loadCaseClinicalHistory(caseId, supabase);
+    });
+    const clinicalHistoryForGate = clinicalHistoryRowForGate
+      ? buildClinicalHistorySnapshot(clinicalHistoryRowForGate)
+      : null;
+
+    const imageLimitedOverride = evaluateImageLimitedPhotoOverride({
+      auditorRerunReason,
+      photoGateAllowed: photoSubmitGate.allowed,
+      uploadRows: uploads,
+      clinicalHistory: clinicalHistoryForGate,
+    });
+
     const relaxedAuditorPatientPhotoGate =
       auditorRerunReason === AUDITOR_RERUN_REASON_CORRECTED_PATIENT_PHOTOS &&
       patientPhotosForAudit.length > 0;
@@ -714,7 +734,30 @@ export const runAudit = inngest.createFunction(
       });
     }
 
-    if (!photoSubmitGate.allowed && !relaxedAuditorPatientPhotoGate) {
+    if (imageLimitedOverride.allowed) {
+      logger.warn("runAudit: patient photo submit gate bypassed (document-assisted image-limited override)", {
+        caseId,
+        missingRequiredPhotoLabels: imageLimitedOverride.missingRequiredPhotoLabels,
+        hasPatientImages: imageLimitedOverride.hasPatientImages,
+        hasClinicalHistory: imageLimitedOverride.hasClinicalHistory,
+        auditorRerunReason,
+      });
+      await step.run("log-image-limited-photo-override", async () => {
+        await logClinicalHistoryEvent(supabase, {
+          caseId,
+          actorId: userId,
+          eventType: "missing_photo_override_used",
+          metadata: {
+            reason: AUDITOR_RERUN_REASON_DOCUMENT_ASSISTED_IMAGE_LIMITED,
+            missing_photo_labels: imageLimitedOverride.missingRequiredPhotoLabels,
+            clinical_history_present: imageLimitedOverride.hasClinicalHistory,
+            patient_images_present: imageLimitedOverride.hasPatientImages,
+          },
+        });
+      });
+    }
+
+    if (!photoSubmitGate.allowed && !relaxedAuditorPatientPhotoGate && !imageLimitedOverride.allowed) {
       // Mark case “needs_more_info” or revert to draft
       await step.run("mark-missing", async () => {
         await supabase
@@ -890,6 +933,12 @@ export const runAudit = inngest.createFunction(
         requestedImageCount: imageIngestionStats.selected_count,
         auditMode: aiAuditMode,
         clinicalHistory,
+        imageLimitedAssessment: imageLimitedOverride.allowed,
+        documentAssistedAssessment: imageLimitedOverride.allowed,
+        missingRequiredPhotoLabels: imageLimitedOverride.allowed
+          ? imageLimitedOverride.missingRequiredPhotoLabels
+          : getMissingRequiredPatientPhotoLabels(uploads),
+        auditorOverrideReason: imageLimitedOverride.allowed ? (auditorRerunReason ?? undefined) : undefined,
         ...(aiExtendedEvidence ? { patientImageEvidenceGroups, patientImageEvidenceConfidence } : {}),
       });
     });
@@ -958,6 +1007,12 @@ export const runAudit = inngest.createFunction(
               summary: aiResult.summary,
               non_medical_disclaimer: aiResult.non_medical_disclaimer,
               model: aiResult.model,
+              imageLimitedAssessment: imageLimitedOverride.allowed,
+              documentAssistedAssessment: imageLimitedOverride.allowed,
+              missingRequiredPhotoLabels: imageLimitedOverride.allowed
+                ? imageLimitedOverride.missingRequiredPhotoLabels
+                : [],
+              auditorOverrideReason: imageLimitedOverride.allowed ? (auditorRerunReason ?? undefined) : undefined,
             },
           },
           status: "failed",
@@ -1273,6 +1328,12 @@ export const runAudit = inngest.createFunction(
           summary: aiResult.summary,
           non_medical_disclaimer: aiResult.non_medical_disclaimer,
           model: aiResult.model,
+          imageLimitedAssessment: imageLimitedOverride.allowed,
+          documentAssistedAssessment: imageLimitedOverride.allowed,
+          missingRequiredPhotoLabels: imageLimitedOverride.allowed
+            ? imageLimitedOverride.missingRequiredPhotoLabels
+            : [],
+          auditorOverrideReason: imageLimitedOverride.allowed ? (auditorRerunReason ?? undefined) : undefined,
           domain_scores_v1: {
             version: 1,
             domains: (v1 as any)?.domains ?? [],

@@ -3,7 +3,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 export type ClinicalHistoryAuditEventType =
   | "clinical_history_created"
   | "clinical_history_updated"
-  | "clinical_history_used_for_regeneration";
+  | "clinical_history_used_for_regeneration"
+  | "missing_photo_override_used"
+  | "clinical_history_used_for_image_limited_regeneration";
 
 const CLINICAL_HISTORY_FIELD_KEYS = [
   "prior_surgery_count",

@@ -8,6 +8,7 @@ import { HA_HOME } from "@/config/platform-links";
 import { auditorPatientPhotoCategoryLabel } from "@/lib/auditor/auditorPatientPhotoCategories";
 import { effectivePatientPhotoCategoryKey } from "@/lib/uploads/patientPhotoAuditMeta";
 import { pdfEnvConfig } from "@/lib/pdf/pdfEnvConfig";
+import { IMAGE_LIMITED_AUDIT_PATIENT_NOTICE } from "@/lib/patient/patientPhotoImageLimitedOverride";
 
 // Brand colours (from globals.css)
 const SLATE_900 = "#0f172a";
@@ -166,6 +167,10 @@ export type AuditReportContent = {
       evidence: Array<{ source_type: string; source_key: string; observation: string; confidence: number }>;
     }>;
     non_medical_disclaimer?: string;
+    imageLimitedAssessment?: boolean;
+    documentAssistedAssessment?: boolean;
+    missingRequiredPhotoLabels?: string[];
+    auditorOverrideReason?: string;
     domain_scores_v1?: {
       version?: number;
       domains?: Array<{
@@ -785,12 +790,25 @@ function addConfidencePanel(doc: PDFKit.PDFDocument, content: AuditReportContent
 /**
  * Add audit summary section.
  */
+function addImageLimitedNoticeIfNeeded(doc: PDFKit.PDFDocument, content: AuditReportContent) {
+  const forensic = content.forensic as { imageLimitedAssessment?: boolean } | undefined;
+  if (!forensic?.imageLimitedAssessment) return;
+
+  doc.fillColor("#92400e").font("Helvetica-Bold").fontSize(10);
+  doc.text("Image-limited audit", MARGIN, doc.y, { width: CONTENT_WIDTH });
+  doc.moveDown(0.15);
+  doc.fillColor(SLATE_600).font("Helvetica").fontSize(10);
+  doc.text(IMAGE_LIMITED_AUDIT_PATIENT_NOTICE, { width: CONTENT_WIDTH });
+  doc.moveDown(0.8);
+}
+
 function addAuditSummary(
   doc: PDFKit.PDFDocument,
   content: AuditReportContent,
   radarPng?: { buffer: Buffer; width: number; height: number } | null
 ) {
   addSectionHeading(doc, content.isManual ? "Audit Summary" : "AI Audit Summary");
+  addImageLimitedNoticeIfNeeded(doc, content);
   doc.fillColor(SLATE_600);
   doc.fontSize(BODY_SIZE).font("Helvetica");
 

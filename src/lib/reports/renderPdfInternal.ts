@@ -321,6 +321,15 @@ export async function renderAndUploadPdfForCase(args: {
           key_findings: Array.isArray(forensic?.key_findings) ? forensic.key_findings : undefined,
           red_flags: Array.isArray(forensic?.red_flags) ? forensic.red_flags : undefined,
           non_medical_disclaimer: typeof forensic?.non_medical_disclaimer === "string" ? forensic.non_medical_disclaimer : undefined,
+          imageLimitedAssessment: Boolean((forensic as { imageLimitedAssessment?: boolean }).imageLimitedAssessment),
+          documentAssistedAssessment: Boolean((forensic as { documentAssistedAssessment?: boolean }).documentAssistedAssessment),
+          missingRequiredPhotoLabels: Array.isArray((forensic as { missingRequiredPhotoLabels?: unknown }).missingRequiredPhotoLabels)
+            ? ((forensic as { missingRequiredPhotoLabels: string[] }).missingRequiredPhotoLabels as string[])
+            : undefined,
+          auditorOverrideReason:
+            typeof (forensic as { auditorOverrideReason?: unknown }).auditorOverrideReason === "string"
+              ? (forensic as { auditorOverrideReason: string }).auditorOverrideReason
+              : undefined,
           domain_scores_v1: forensic?.domain_scores_v1,
           benchmark: forensic?.benchmark,
           completeness_index_v1: forensic?.completeness_index_v1,

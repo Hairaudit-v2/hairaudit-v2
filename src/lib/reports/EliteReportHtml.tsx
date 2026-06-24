@@ -16,6 +16,7 @@ import { PATIENT_CLINICAL_SAFETY_DISCLAIMER } from "@/lib/reports/patientConcern
 import { buildPatientLongTermHairEducation } from "@/lib/reports/patientLongTermHairEducation";
 import { buildPatientWhatToMonitorOverTime } from "@/lib/reports/patientWhatToMonitorOverTime";
 import { buildPatientSafeReportSummary } from "@/lib/reports/patientSafeSummary";
+import { IMAGE_LIMITED_AUDIT_PATIENT_NOTICE } from "@/lib/patient/patientPhotoImageLimitedOverride";
 import { getPatientDomainAssessment } from "@/lib/reports/patientDomainAssessment";
 
 type AreaScoreItem = {
@@ -174,8 +175,20 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
         red_flags: Array.isArray((forensic as { red_flags?: unknown[] } | undefined)?.red_flags)
           ? (forensic as { red_flags: unknown[] }).red_flags
           : [],
+        forensic_audit: forensic,
       })
     : null;
+  const imageLimitedAssessment = Boolean(
+    (forensic as { imageLimitedAssessment?: boolean } | undefined)?.imageLimitedAssessment
+  );
+  const imageLimitedNoticeBanner =
+    imageLimitedAssessment
+      ? `
+      <div class="listCard" style="margin-bottom:12px;border-color:#f59e0b55;background:#fffbeb;">
+        <div class="listTitle"><span class="iconWatch">●</span> Image-limited audit</div>
+        <p class="miniText">${esc(patientReportSummary?.imageLimitedNotice ?? IMAGE_LIMITED_AUDIT_PATIENT_NOTICE)}</p>
+      </div>`
+      : "";
   const narrativeText = String(forensic?.summary ?? "").trim();
   const confidenceNumeric =
     typeof viewModelExt.confidencePanel?.confidenceScore === "number"
@@ -1627,7 +1640,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
         </div>
       </div>
       <div class="sectionDivider"></div>
-      <div class="p1Zone patientP1Zone">${patientClinicalOverview}</div>
+      <div class="p1Zone patientP1Zone">${imageLimitedNoticeBanner}${patientClinicalOverview}</div>
       ${
         limitationNotes.length > 0
           ? `<div class="limitPanel"><b>Photo limitations:</b> ${esc(limitationNotes.slice(0, 3).join(" | "))}</div>`
@@ -1651,6 +1664,7 @@ export function renderEliteReportHtml(vm: EliteReportViewModel): string {
       <div class="sectionDivider"></div>
 
       <div class="p1Zone">
+        ${imageLimitedNoticeBanner}
         <div class="heroDashboard">
           <div class="execLayout">
           <div class="scoreBadge">

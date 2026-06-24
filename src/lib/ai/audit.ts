@@ -14,6 +14,7 @@ import {
 } from "@/lib/audit/patientImageEvidenceConfidence";
 import { formatClinicalHistoryForPrompt } from "@/lib/hairaudit/clinical-history/clinicalHistory.server";
 import type { ClinicalHistorySnapshot } from "@/lib/hairaudit/clinical-history/clinicalHistoryTypes";
+import { IMAGE_LIMITED_AUDIT_PATIENT_NOTICE } from "@/lib/patient/patientPhotoImageLimitedOverride";
 
 export interface PatientBaseline {
   patient_age: number;
@@ -138,6 +139,11 @@ export type AIAuditInput = {
   patientImageEvidenceConfidence?: PatientImageEvidenceConfidenceResult | null;
   /** Operator-entered structured clinical history (prior surgery, graft counts, medications). */
   clinicalHistory?: ClinicalHistorySnapshot | null;
+  /** Auditor-approved image-limited pathway (missing required patient photos). */
+  imageLimitedAssessment?: boolean;
+  documentAssistedAssessment?: boolean;
+  missingRequiredPhotoLabels?: string[];
+  auditorOverrideReason?: string;
 };
 
 export type AIAuditResult = {
@@ -887,6 +893,21 @@ export async function runAIAudit(input: AIAuditInput): Promise<AIAuditResult> {
         `- Treat this as structured operator data, NOT patient self-diagnosis.\n`
       : "";
 
+  const imageLimitedAssessment = Boolean(input.imageLimitedAssessment);
+  const missingPhotoLabels = (input.missingRequiredPhotoLabels ?? []).filter(Boolean);
+  const imageLimitedAddon = imageLimitedAssessment
+    ? `\n## IMAGE-LIMITED AUDIT PATHWAY (auditor-approved — STRICT)\n` +
+      `This audit was generated under an auditor-approved image-limited pathway.\n` +
+      `- Clearly state that visual assessment is limited due to missing required photos: ${missingPhotoLabels.length ? missingPhotoLabels.join(", ") : "(required views not submitted)"}.\n` +
+      `- Do NOT infer density, donor quality, crown condition, hairline design, or scarring from missing views.\n` +
+      `- Use clinician-entered structured clinical history as high-priority context when present.\n` +
+      `- If graft counts/ratios are present in structured clinical history, use them for donor-management reasoning only (not as invented visual findings).\n` +
+      `- If a finding depends on a missing view, state it could not be assessed from submitted images.\n` +
+      `- Avoid language that suggests a full visual audit was completed.\n` +
+      `- Lower confidence appropriately; add data_quality.limitations describing missing views.\n` +
+      `- Include this patient-safe notice concept in summary (do not omit the limitation): ${IMAGE_LIMITED_AUDIT_PATIENT_NOTICE}\n`
+    : "";
+
   const systemPrompt = `You are an expert hair transplant auditor producing a forensic audit for HairAudit + Follicle Intelligence.
 
 ## Safety + legal guardrails (STRICT)
@@ -906,6 +927,7 @@ This is a patient audit. Doctor and clinic documentation are NOT provided and ar
 - Do NOT list doctor_answers, clinic_answers, doctor photos, or clinic requirements as missing, limiters, or in data_quality.limitations.
 - In limitations, NEVER mention: "clinic answers", "doctor answers", "missing clinic", "missing doctor", "no clinic", "no doctor", or any doctor/clinic documentation.
 - Score and assess based solely on available patient evidence.` : ""}
+${imageLimitedAddon}
 
 ## Forensic inference objectives (answers-driven; MUST APPLY WHEN POSSIBLE)
 Using patient-provided answers (and any structured enhanced inputs), you must infer and discuss (without diagnosing):
@@ -1008,7 +1030,12 @@ Safety:
       text:
         `## Inputs\n` +
         `Auto-detected missing inputs: ${autoMissingInputs.length ? autoMissingInputs.join(", ") : "(none)"}\n` +
-        `Auto-detected missing photos: ${autoMissingPhotos.length ? autoMissingPhotos.join(", ") : "(none)"}\n\n` +
+        `Auto-detected missing photos: ${autoMissingPhotos.length ? autoMissingPhotos.join(", ") : "(none)"}\n` +
+        (imageLimitedAssessment
+          ? `Image-limited assessment: YES (auditor override: ${input.auditorOverrideReason ?? "document_assisted_image_limited"})\n` +
+            `Missing required photo views: ${missingPhotoLabels.length ? missingPhotoLabels.join(", ") : "(see gate)"}\n` +
+            `Document-assisted assessment: ${input.documentAssistedAssessment ? "YES" : "NO"}\n\n`
+          : "\n") +
         `## Patient baseline\n${baselineBlock}\n\n` +
         `## Enhanced patient answers (structured)\n${enhancedPatientBlock}\n\n` +
         `## Patient answers\n${patientBlock}\n\n${patientImageEvidenceGroupsAddon}${patientImageEvidenceConfidenceAddon}${clinicalHistoryAddon}` +
