@@ -26,6 +26,7 @@ import {
   type PatientSafeSummaryTranslationQueueItem,
 } from "@/lib/reports/patientSafeSummaryTranslationQueue";
 import { hasClinicAnswersInSummary } from "@/lib/reports/patientSafeSummary";
+import { countUploadStats } from "@/lib/auditor/auditorQueueTriage";
 
 export const revalidate = 60;
 
@@ -37,6 +38,7 @@ type CaseDashboardRow = {
   updated_at?: string | null;
   submitted_at?: string | null;
   audit_type?: "patient" | "doctor" | "clinic" | null;
+  patient_review_pathway?: string | null;
   submission_channel?: string | null;
   visibility_scope?: string | null;
   patient_id?: string | null;
@@ -129,7 +131,7 @@ export default async function AuditorDashboardPage({
   const primaryCasesRes = await admin
     .from("cases")
     .select(
-      "id, title, status, created_at, updated_at, submitted_at, audit_type, patient_id, doctor_id, clinic_id, assigned_auditor_id, auditor_last_edited_at, archived_at, archived_by, archived_reason, deleted_at"
+      "id, title, status, created_at, updated_at, submitted_at, audit_type, patient_review_pathway, patient_id, doctor_id, clinic_id, assigned_auditor_id, auditor_last_edited_at, archived_at, archived_by, archived_reason, deleted_at"
       + ", submission_channel, visibility_scope"
     )
     .is("deleted_at", null)
@@ -259,8 +261,8 @@ export default async function AuditorDashboardPage({
       ? admin.from("clinic_profiles").select("linked_user_id, clinic_name").in("linked_user_id", clinicUserIds)
       : Promise.resolve({ data: [] as Array<{ linked_user_id: string; clinic_name: string }> }),
     patientUserIds.length
-      ? admin.from("profiles").select("id, display_name").in("id", patientUserIds)
-      : Promise.resolve({ data: [] as Array<{ id: string; display_name: string | null }> }),
+      ? admin.from("profiles").select("id, display_name, email").in("id", patientUserIds)
+      : Promise.resolve({ data: [] as Array<{ id: string; display_name: string | null; email: string | null }> }),
     assignedAuditorIds.length
       ? admin.from("profiles").select("id, display_name").in("id", assignedAuditorIds)
       : Promise.resolve({ data: [] as Array<{ id: string; display_name: string | null }> }),
@@ -271,8 +273,12 @@ export default async function AuditorDashboardPage({
     if (row?.linked_user_id) clinicNameByUserId.set(String(row.linked_user_id), String(row.clinic_name ?? ""));
   }
   const patientNameByUserId = new Map<string, string>();
-  for (const row of (patientProfiles ?? []) as Array<{ id: string; display_name: string | null }>) {
-    if (row?.id) patientNameByUserId.set(String(row.id), String(row.display_name ?? ""));
+  const patientEmailByUserId = new Map<string, string>();
+  for (const row of (patientProfiles ?? []) as Array<{ id: string; display_name: string | null; email: string | null }>) {
+    if (row?.id) {
+      patientNameByUserId.set(String(row.id), String(row.display_name ?? ""));
+      patientEmailByUserId.set(String(row.id), String(row.email ?? ""));
+    }
   }
   const assignedAuditorNameById = new Map<string, string>();
   for (const row of (auditorProfiles ?? []) as Array<{ id: string; display_name: string | null }>) {
@@ -281,10 +287,48 @@ export default async function AuditorDashboardPage({
 
   const clinicNameByCaseId: Record<string, string> = {};
   const patientNameByCaseId: Record<string, string> = {};
+  const patientEmailByCaseId: Record<string, string> = {};
   for (const c of cases) {
     const cid = String(c.id);
     if (c.clinic_id) clinicNameByCaseId[cid] = clinicNameByUserId.get(String(c.clinic_id)) ?? "";
-    if (c.patient_id) patientNameByCaseId[cid] = patientNameByUserId.get(String(c.patient_id)) ?? "";
+    if (c.patient_id) {
+      patientNameByCaseId[cid] = patientNameByUserId.get(String(c.patient_id)) ?? "";
+      patientEmailByCaseId[cid] = patientEmailByUserId.get(String(c.patient_id)) ?? "";
+    }
+  }
+
+  const uploadStatsByCaseId: Record<
+    string,
+    { imageUploadCount: number; pdfDocumentCount: number; uploadTypes: Array<{ type?: string | null }> }
+  > = {};
+  try {
+    const { data: uploadRows } = await admin
+      .from("uploads")
+      .select("case_id, type")
+      .in("case_id", caseIds.length ? caseIds : ["00000000-0000-0000-0000-000000000000"]);
+    const statsMap = countUploadStats((uploadRows ?? []) as Array<{ case_id: string; type?: string | null }>);
+    for (const cid of caseIds) {
+      const stats = statsMap.get(cid);
+      uploadStatsByCaseId[cid] = stats ?? { imageUploadCount: 0, pdfDocumentCount: 0, uploadTypes: [] };
+    }
+  } catch {
+    for (const cid of caseIds) {
+      uploadStatsByCaseId[cid] = { imageUploadCount: 0, pdfDocumentCount: 0, uploadTypes: [] };
+    }
+  }
+
+  const hasClinicalHistoryByCaseId: Record<string, boolean> = {};
+  try {
+    const { data: clinicalRows } = await admin
+      .from("hairaudit_case_clinical_history")
+      .select("case_id")
+      .in("case_id", caseIds.length ? caseIds : ["00000000-0000-0000-0000-000000000000"]);
+    for (const cid of caseIds) hasClinicalHistoryByCaseId[cid] = false;
+    for (const row of (clinicalRows ?? []) as Array<{ case_id: string }>) {
+      if (row?.case_id) hasClinicalHistoryByCaseId[String(row.case_id)] = true;
+    }
+  } catch {
+    for (const cid of caseIds) hasClinicalHistoryByCaseId[cid] = false;
   }
   const casesForClient = cases.map((c) => ({
     ...c,
@@ -447,11 +491,12 @@ export default async function AuditorDashboardPage({
         cases={casesForClient}
         reportByCase={Object.fromEntries(reportByCase.entries())}
         evidenceByCase={Object.fromEntries(evidenceByCase.entries())}
-        giiByCase={Object.fromEntries(giiLatestByCase.entries())}
         assignedAuditorNameById={Object.fromEntries(assignedAuditorNameById.entries())}
         clinicNameByCaseId={clinicNameByCaseId}
         patientNameByCaseId={patientNameByCaseId}
-        hasClinicAnswersByCaseId={hasClinicAnswersByCaseId}
+        patientEmailByCaseId={patientEmailByCaseId}
+        hasClinicalHistoryByCaseId={hasClinicalHistoryByCaseId}
+        uploadStatsByCaseId={uploadStatsByCaseId}
       />
     </div>
   );

@@ -1,12 +1,17 @@
 "use client";
 
-import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-
-type AuditType = "patient" | "doctor" | "clinic";
-type AuditSource = "patient" | "doctor" | "clinic" | "internal";
-type SectionStatus = "requires_action" | "ready" | "in_progress" | "completed";
+import AuditorCaseQueueCard from "@/components/auditor/AuditorCaseQueueCard";
+import {
+  AUDITOR_QUEUE_FILTER_STORAGE_KEY,
+  computeQueueSummaryCounts,
+  deriveAuditorQueueCase,
+  matchesQueueFilter,
+  type AuditorQueueCaseInput,
+  type AuditorQueueFilter,
+} from "@/lib/auditor/auditorQueueTriage";
+import { AUDITOR_RERUN_REASON_DOCUMENT_ASSISTED_IMAGE_LIMITED } from "@/lib/patient/patientPhotoImageLimitedOverride";
 
 type CaseRow = {
   id: string;
@@ -15,7 +20,8 @@ type CaseRow = {
   created_at: string;
   updated_at?: string | null;
   submitted_at?: string | null;
-  audit_type: AuditType | null;
+  audit_type: "patient" | "doctor" | "clinic" | null;
+  patient_review_pathway?: string | null;
   submission_channel?: string | null;
   visibility_scope?: string | null;
   patient_id?: string | null;
@@ -42,40 +48,10 @@ type EvidenceRow = {
   status?: string | null;
 };
 
-type GiiRow = {
-  case_id: string;
-  confidence: number;
-  confidence_label: "low" | "medium" | "high";
-  evidence_sufficiency_score?: number | null;
-  auditor_status: "pending" | "approved" | "rejected" | "needs_more_evidence";
-  audited_by?: string | null;
-  audited_at?: string | null;
-  created_at?: string | null;
-};
-
-type CaseFlags = {
-  missingEvidence: boolean;
-  lowAiConfidence: boolean;
-  auditorInputRequired: boolean;
-  staleCase: boolean;
-};
-
-type DashboardCase = {
-  base: CaseRow;
-  report: ReportRow | null;
-  evidence: EvidenceRow | null;
-  gii: GiiRow | null;
-  clinicName: string | null;
-  patientName: string | null;
-  assignedAuditorName: string | null;
-  /** From latest report summary.clinic_answers (see hasClinicAnswersInSummary in patientSafeSummary). */
-  hasClinicAnswers: boolean;
-  flags: CaseFlags;
-  section: SectionStatus;
-  source: AuditSource;
-  tags: string[];
-  submissionDate: string;
-  lastEdited: string;
+type UploadStats = {
+  imageUploadCount: number;
+  pdfDocumentCount: number;
+  uploadTypes: Array<{ type?: string | null }>;
 };
 
 type ActionModalState =
@@ -84,383 +60,171 @@ type ActionModalState =
   | { kind: "archive"; caseId: string; caseLabel: string }
   | { kind: "request_info"; caseId: string; caseLabel: string };
 
-function toIsoOrEmpty(v: string | null | undefined) {
-  if (!v) return "";
-  const d = new Date(v);
-  return Number.isNaN(d.getTime()) ? "" : d.toISOString();
-}
+const FILTER_OPTIONS: Array<{ id: AuditorQueueFilter; label: string }> = [
+  { id: "all", label: "All" },
+  { id: "needs_action", label: "Needs Action" },
+  { id: "ready_to_audit", label: "Ready To Audit" },
+  { id: "failed", label: "Failed" },
+  { id: "missing_images", label: "Missing Images" },
+  { id: "image_limited", label: "Image Limited" },
+  { id: "completed", label: "Completed" },
+  { id: "no_uploads", label: "No Uploads" },
+];
 
-function formatDate(v: string | null | undefined) {
-  if (!v) return "—";
-  const d = new Date(v);
-  if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleString();
-}
+const SUMMARY_CARD_DEFS = [
+  { key: "newCases" as const, label: "New Cases", hint: "Submitted in last 24 hours", tone: "border-blue-200 bg-blue-50" },
+  { key: "readyToAudit" as const, label: "Ready To Audit", hint: "Required images complete", tone: "border-emerald-200 bg-emerald-50" },
+  { key: "incompleteSubmissions" as const, label: "Incomplete Submissions", hint: "Missing required images", tone: "border-orange-200 bg-orange-50" },
+  { key: "failedProcessing" as const, label: "Failed Processing", hint: "AI / PDF / report failures", tone: "border-red-200 bg-red-50" },
+  { key: "imageLimitedCases" as const, label: "Image Limited Cases", hint: "Document-assisted override", tone: "border-violet-200 bg-violet-50" },
+  { key: "completedToday" as const, label: "Completed Today", hint: "Reports in last 24 hours", tone: "border-emerald-300 bg-emerald-100/60" },
+];
 
-function pct(v: number | null | undefined) {
-  if (typeof v !== "number" || Number.isNaN(v)) return "—";
-  return `${Math.round(v * 100)}%`;
-}
-
-function getSummaryNeedsMoreEvidence(summary: Record<string, unknown> | null | undefined) {
-  const auditorReview = (summary?.auditor_review ?? null) as Record<string, unknown> | null;
-  return Boolean(auditorReview?.needs_more_evidence);
-}
-
-function getNestedRecord(base: Record<string, unknown> | null | undefined, key: string) {
-  const val = base?.[key];
-  return val && typeof val === "object" && !Array.isArray(val) ? (val as Record<string, unknown>) : null;
-}
-
-function getAuditSource(caseRow: CaseRow): AuditSource {
-  const channel = String(caseRow.submission_channel ?? "");
-  if (String(caseRow.visibility_scope ?? "") === "internal" || channel === "imported") return "internal";
-  if (channel === "doctor_submitted") return "doctor";
-  if (channel === "clinic_submitted") return "clinic";
-  if (channel === "patient_submitted") return "patient";
-  return getDefaultAuditType(caseRow);
-}
-
-function getCaseTags(input: { caseRow: CaseRow; report: ReportRow | null; flags: CaseFlags; section: SectionStatus }): string[] {
-  const tags: string[] = [];
-  const summary = input.report?.summary ?? null;
-  const doctorAnswers = getNestedRecord(summary, "doctor_answers");
-  const clinicAnswers = getNestedRecord(summary, "clinic_answers");
-  const answers = doctorAnswers ?? clinicAnswers;
-  const depth = String(answers?.audit_type ?? "");
-  if (depth === "advanced_audit" || depth === "forensic_review") tags.push("Advanced / Forensic Audits");
-  if (String(answers?.outcome_audit_stage ?? "").includes("follow")) tags.push("Follow-Up Audits");
-  if (input.flags.auditorInputRequired) tags.push("Needs Manual Input");
-  if (getSummaryNeedsMoreEvidence(summary)) tags.push("Awaiting More Info");
-  if (input.section === "ready") tags.push("Ready to Review");
-  if (input.section === "completed") tags.push("Completed");
-  if (input.caseRow.archived_at) tags.push("Archived");
-  return tags;
-}
-
-function getDefaultAuditType(c: CaseRow): AuditType {
-  if (c.audit_type === "doctor" || c.audit_type === "clinic" || c.audit_type === "patient") return c.audit_type;
-  if (c.clinic_id) return "clinic";
-  if (c.doctor_id) return "doctor";
-  return "patient";
-}
-
-function deriveFlags(input: {
-  caseRow: CaseRow;
-  report: ReportRow | null;
-  evidence: EvidenceRow | null;
-  gii: GiiRow | null;
-  nowMs: number;
-}) {
-  const missingEvidence = !input.evidence || (input.evidence.missing_categories?.length ?? 0) > 0;
-  const lowAiConfidence = !!input.gii && Number(input.gii.confidence) < 0.65;
-  const needsMoreEvidence = getSummaryNeedsMoreEvidence(input.report?.summary);
-  const giiNeedsInput = input.gii?.auditor_status === "pending" || input.gii?.auditor_status === "needs_more_evidence";
-  const manualFailed = String(input.caseRow.status ?? "") === "audit_failed";
-  const auditorInputRequired = manualFailed || needsMoreEvidence || giiNeedsInput;
-
-  const lastActivity = new Date(
-    input.caseRow.auditor_last_edited_at ?? input.caseRow.updated_at ?? input.caseRow.submitted_at ?? input.caseRow.created_at
-  ).getTime();
-  const staleCase = Number.isFinite(lastActivity) ? input.nowMs - lastActivity > 1000 * 60 * 60 * 24 * 7 : false;
-
-  return { missingEvidence, lowAiConfidence, auditorInputRequired, staleCase };
-}
-
-function flagLabels(flags: CaseFlags) {
-  const out: string[] = [];
-  if (flags.missingEvidence) out.push("⚠ Missing Evidence");
-  if (flags.lowAiConfidence) out.push("⚠ Low AI Confidence");
-  if (flags.auditorInputRequired) out.push("⚠ Auditor Input Required");
-  if (flags.staleCase) out.push("⚠ Stale Case");
-  return out;
-}
-
-function classifySection(input: {
-  caseRow: CaseRow;
-  report: ReportRow | null;
-  evidence: EvidenceRow | null;
-  gii: GiiRow | null;
-  flags: CaseFlags;
-}) {
-  const reportStatus = String(input.report?.status ?? "");
-  const reportReview = String(input.report?.auditor_review_status ?? "");
-  const isCompleted =
-    String(input.caseRow.status ?? "") === "complete" ||
-    reportReview === "completed" ||
-    input.gii?.auditor_status === "approved";
-  if (isCompleted) return "completed" as const;
-
-  const inProgress =
-    !!input.caseRow.assigned_auditor_id &&
-    (!!input.caseRow.auditor_last_edited_at || reportReview === "in_review");
-
-  const evidenceComplete = !!input.evidence && (input.evidence.missing_categories?.length ?? 0) === 0;
-  const aiFinished = reportStatus === "complete" || !!input.gii;
-  const intakeComplete = ["submitted", "processing", "complete", "audit_failed"].includes(String(input.caseRow.status ?? ""));
-  const readyForReview = intakeComplete && evidenceComplete && aiFinished;
-
-  if (input.flags.missingEvidence || input.flags.lowAiConfidence || input.flags.auditorInputRequired || input.flags.staleCase) {
-    return "requires_action" as const;
-  }
-  if (readyForReview) return "ready" as const;
-  if (inProgress) return "in_progress" as const;
-  return "ready" as const;
-}
-
-function CaseRowView({
-  row,
-  onOpenAudit,
-  onRequestInfo,
-  onMarkNeedsManualReview,
-  onSuppressPublicVisibility,
-  onArchive,
-  onDelete,
-}: {
-  row: DashboardCase;
-  onOpenAudit: (caseId: string) => void;
-  onRequestInfo: (caseId: string, label: string) => void;
-  onMarkNeedsManualReview: (caseId: string) => void;
-  onSuppressPublicVisibility: (caseId: string) => void;
-  onArchive: (caseId: string, label: string) => void;
-  onDelete: (caseId: string, label: string) => void;
-}) {
-  const labels = flagLabels(row.flags);
-  const evidenceMissing = row.evidence?.missing_categories?.length ?? 0;
-  const evidenceScore = row.evidence?.quality_score ?? row.gii?.evidence_sufficiency_score ?? null;
-  const caseLabel = row.base.title ?? row.base.id.slice(0, 8);
-
-  return (
-    <tr className="border-b border-slate-200 align-top">
-      <td className="px-3 py-3 font-mono text-xs text-slate-700">{row.base.id.slice(0, 8)}…</td>
-      <td className="px-3 py-3 text-sm text-slate-800 capitalize">
-        <div>{getDefaultAuditType(row.base)}</div>
-        <div className="text-xs text-slate-500 capitalize">Source: {row.source}</div>
-      </td>
-      <td className="px-3 py-3 text-sm text-slate-700 whitespace-nowrap" title="Structured clinic answers on latest report summary">
-        {row.hasClinicAnswers ? "Clinic: ✓" : "Clinic: —"}
-      </td>
-      <td className="px-3 py-3 text-sm text-slate-700">{formatDate(row.submissionDate)}</td>
-      <td className="px-3 py-3 text-sm">
-        <div className="inline-flex rounded-md bg-slate-100 px-2 py-0.5 text-slate-700">{row.section.replaceAll("_", " ")}</div>
-        {row.section === "in_progress" && (
-          <div className="mt-1 text-xs text-slate-500">Last edited: {formatDate(row.lastEdited)}</div>
-        )}
-        {labels.length > 0 && (
-          <div className="mt-1 space-y-1">
-            {labels.slice(0, 2).map((x) => (
-              <div key={x} className="text-xs text-amber-700">
-                {x}
-              </div>
-            ))}
-          </div>
-        )}
-      </td>
-      <td className="px-3 py-3 text-sm text-slate-700">{pct(row.gii?.confidence)}</td>
-      <td
-        className="px-3 py-3 text-sm text-slate-700"
-        title={evidenceMissing > 0 && Array.isArray(row.evidence?.missing_categories) ? `Missing: ${(row.evidence.missing_categories as string[]).join(", ")}` : undefined}
-      >
-        {typeof evidenceScore === "number" ? Math.round(evidenceScore) : "—"}
-        {evidenceMissing > 0 ? ` (${evidenceMissing} missing)` : ""}
-      </td>
-      <td className="px-3 py-3 text-sm text-slate-700">{row.assignedAuditorName ?? "Unassigned"}</td>
-      <td className="px-3 py-3 text-sm text-slate-700">
-        <div className="flex flex-wrap gap-1">
-          {row.tags.length ? row.tags.slice(0, 3).map((tag) => (
-            <span key={tag} className="rounded-md border border-slate-300 px-1.5 py-0.5 text-[10px] text-slate-700">
-              {tag}
-            </span>
-          )) : <span className="text-slate-400">—</span>}
-        </div>
-      </td>
-      <td className="px-3 py-3">
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => onOpenAudit(row.base.id)}
-            className="rounded-md border border-slate-300 px-2 py-1 text-xs font-medium text-slate-800 hover:bg-slate-50"
-          >
-            Open Audit
-          </button>
-          <button
-            type="button"
-            onClick={() => onRequestInfo(row.base.id, caseLabel)}
-            className="rounded-md border border-amber-300 px-2 py-1 text-xs font-medium text-amber-800 hover:bg-amber-50"
-          >
-            Request More Information
-          </button>
-          <button
-            type="button"
-            onClick={() => onMarkNeedsManualReview(row.base.id)}
-            className="rounded-md border border-violet-300 px-2 py-1 text-xs font-medium text-violet-800 hover:bg-violet-50"
-          >
-            Mark Needs Manual Review
-          </button>
-          <button
-            type="button"
-            onClick={() => onSuppressPublicVisibility(row.base.id)}
-            className="rounded-md border border-slate-300 px-2 py-1 text-xs font-medium text-slate-800 hover:bg-slate-50"
-          >
-            Suppress Public Visibility
-          </button>
-          <button
-            type="button"
-            onClick={() => onArchive(row.base.id, caseLabel)}
-            className="rounded-md border border-slate-300 px-2 py-1 text-xs font-medium text-slate-800 hover:bg-slate-50"
-          >
-            Archive
-          </button>
-          <button
-            type="button"
-            onClick={() => onDelete(row.base.id, caseLabel)}
-            className="rounded-md border border-rose-300 px-2 py-1 text-xs font-medium text-rose-800 hover:bg-rose-50"
-          >
-            Delete
-          </button>
-        </div>
-      </td>
-    </tr>
-  );
+function readPersistedFilter(): AuditorQueueFilter {
+  if (typeof window === "undefined") return "needs_action";
+  const stored = window.localStorage.getItem(AUDITOR_QUEUE_FILTER_STORAGE_KEY);
+  if (stored && FILTER_OPTIONS.some((f) => f.id === stored)) return stored as AuditorQueueFilter;
+  return "needs_action";
 }
 
 export default function AuditorDashboardClient(props: {
   cases: CaseRow[];
   reportByCase: Record<string, ReportRow>;
   evidenceByCase: Record<string, EvidenceRow>;
-  giiByCase: Record<string, GiiRow>;
   assignedAuditorNameById: Record<string, string>;
   clinicNameByCaseId: Record<string, string>;
   patientNameByCaseId: Record<string, string>;
-  hasClinicAnswersByCaseId: Record<string, boolean>;
+  patientEmailByCaseId: Record<string, string>;
+  hasClinicalHistoryByCaseId: Record<string, boolean>;
+  uploadStatsByCaseId: Record<string, UploadStats>;
 }) {
   const router = useRouter();
-  const [auditTypeTab, setAuditTypeTab] = useState<"all" | AuditType>("all");
-  const [sourceFilter, setSourceFilter] = useState<"" | AuditSource>("");
-  const [tagFilter, setTagFilter] = useState<string>("");
+  const [queueFilter, setQueueFilter] = useState<AuditorQueueFilter>("needs_action");
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | SectionStatus>("all");
-  const [auditTypeFilter, setAuditTypeFilter] = useState<"" | AuditType>("");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
-  const [assignedFilter, setAssignedFilter] = useState("");
-  const [clinicDataFilter, setClinicDataFilter] = useState<"" | "with" | "without">("");
-  const [archiveSearch, setArchiveSearch] = useState("");
+  const [showInactive, setShowInactive] = useState(false);
   const [modal, setModal] = useState<ActionModalState>({ kind: "none" });
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [actionBusyCaseId, setActionBusyCaseId] = useState<string | null>(null);
 
-  const allRows = useMemo(() => {
+  useEffect(() => {
+    setQueueFilter(readPersistedFilter());
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(AUDITOR_QUEUE_FILTER_STORAGE_KEY, queueFilter);
+    }
+  }, [queueFilter]);
+
+  const queueRows = useMemo(() => {
     const nowMs = Date.now();
-    const list: DashboardCase[] = props.cases.map((base) => {
-      const report = props.reportByCase[base.id] ?? null;
-      const evidence = props.evidenceByCase[base.id] ?? null;
-      const gii = props.giiByCase[base.id] ?? null;
-      const flags = deriveFlags({ caseRow: base, report, evidence, gii, nowMs });
-      const section = classifySection({ caseRow: base, report, evidence, gii, flags });
-      const source = getAuditSource(base);
-      const tags = getCaseTags({ caseRow: base, report, flags, section });
-      const submissionDate = base.submitted_at ?? base.created_at;
-      const lastEdited = base.auditor_last_edited_at ?? base.updated_at ?? report?.created_at ?? base.created_at;
-      return {
-        base,
-        report,
-        evidence,
-        gii,
-        clinicName: props.clinicNameByCaseId[base.id] ?? null,
-        patientName: props.patientNameByCaseId[base.id] ?? null,
-        assignedAuditorName: base.assigned_auditor_id ? props.assignedAuditorNameById[base.assigned_auditor_id] ?? null : null,
-        hasClinicAnswers: props.hasClinicAnswersByCaseId[base.id] ?? false,
-        flags,
-        section,
-        source,
-        tags,
-        submissionDate,
-        lastEdited,
-      };
-    });
-    return list.sort((a, b) => new Date(b.submissionDate).getTime() - new Date(a.submissionDate).getTime());
+    return props.cases
+      .filter((c) => !c.archived_at)
+      .map((base) => {
+        const uploadStats = props.uploadStatsByCaseId[base.id] ?? {
+          imageUploadCount: 0,
+          pdfDocumentCount: 0,
+          uploadTypes: [],
+        };
+        const input: AuditorQueueCaseInput = {
+          id: base.id,
+          title: base.title,
+          status: base.status,
+          created_at: base.created_at,
+          updated_at: base.updated_at ?? base.auditor_last_edited_at ?? null,
+          submitted_at: base.submitted_at ?? null,
+          audit_type: base.audit_type,
+          patient_review_pathway: base.patient_review_pathway,
+          archived_at: base.archived_at ?? null,
+          imageUploadCount: uploadStats.imageUploadCount,
+          pdfDocumentCount: uploadStats.pdfDocumentCount,
+          uploadTypes: uploadStats.uploadTypes,
+          hasClinicalHistory: props.hasClinicalHistoryByCaseId[base.id] ?? false,
+          patientName: props.patientNameByCaseId[base.id] ?? null,
+          patientEmail: props.patientEmailByCaseId[base.id] ?? null,
+          report: props.reportByCase[base.id] ?? null,
+          evidence: props.evidenceByCase[base.id] ?? null,
+        };
+        const derived = deriveAuditorQueueCase(input, nowMs);
+        return {
+          input,
+          derived,
+          clinicName: props.clinicNameByCaseId[base.id] ?? null,
+        };
+      });
   }, [props]);
 
-  const filteredRows = useMemo(() => {
-    return allRows.filter((row) => {
-      const caseType = getDefaultAuditType(row.base);
-      const inTab = auditTypeTab === "all" || caseType === auditTypeTab;
-      if (!inTab) return false;
+  const summaryCounts = useMemo(() => computeQueueSummaryCounts(queueRows), [queueRows]);
 
-      if (statusFilter !== "all" && row.section !== statusFilter) return false;
-      if (auditTypeFilter && caseType !== auditTypeFilter) return false;
-      if (sourceFilter && row.source !== sourceFilter) return false;
-      if (tagFilter && !row.tags.includes(tagFilter)) return false;
-      if (clinicDataFilter === "with" && !row.hasClinicAnswers) return false;
-      if (clinicDataFilter === "without" && row.hasClinicAnswers) return false;
-
-      const text = search.trim().toLowerCase();
-      if (text) {
-        const match =
-          row.base.id.toLowerCase().includes(text) ||
-          String(row.clinicName ?? "").toLowerCase().includes(text) ||
-          String(row.patientName ?? "").toLowerCase().includes(text);
-        if (!match) return false;
-      }
-
-      if (assignedFilter) {
-        if (assignedFilter === "__unassigned__") {
-          if (row.base.assigned_auditor_id) return false;
-        } else if (row.base.assigned_auditor_id !== assignedFilter) {
-          return false;
-        }
-      }
-
-      const fromIso = toIsoOrEmpty(dateFrom);
-      const toIso = toIsoOrEmpty(dateTo);
-      const submissionMs = new Date(row.submissionDate).getTime();
-      if (fromIso && submissionMs < new Date(fromIso).getTime()) return false;
-      if (toIso && submissionMs > new Date(toIso).getTime() + 1000 * 60 * 60 * 24) return false;
-
-      return true;
+  const searchFilteredRows = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return queueRows.filter((row) => {
+      if (!q) return true;
+      const { input, derived } = row;
+      if (derived.isInactive && queueFilter !== "no_uploads" && !showInactive) return false;
+      return (
+        input.id.toLowerCase().includes(q) ||
+        String(input.patientName ?? "").toLowerCase().includes(q) ||
+        String(input.patientEmail ?? "").toLowerCase().includes(q) ||
+        derived.caseNumberLabel.toLowerCase().includes(q) ||
+        String(input.title ?? "").toLowerCase().includes(q)
+      );
     });
-  }, [allRows, auditTypeTab, statusFilter, auditTypeFilter, sourceFilter, tagFilter, clinicDataFilter, search, dateFrom, dateTo, assignedFilter]);
+  }, [queueRows, search, queueFilter, showInactive]);
 
-  const activeRows = filteredRows.filter((r) => !r.base.archived_at);
-  const archiveRows = filteredRows.filter((r) => !!r.base.archived_at);
+  const filteredRows = useMemo(() => {
+    return searchFilteredRows
+      .filter((row) => matchesQueueFilter(queueFilter, row))
+      .sort((a, b) => {
+        if (b.derived.priorityScore !== a.derived.priorityScore) {
+          return b.derived.priorityScore - a.derived.priorityScore;
+        }
+        return new Date(b.input.submitted_at ?? b.input.created_at).getTime() -
+          new Date(a.input.submitted_at ?? a.input.created_at).getTime();
+      });
+  }, [searchFilteredRows, queueFilter]);
 
-  const requiresAction = activeRows.filter((r) => r.section === "requires_action");
-  const ready = activeRows.filter((r) => r.section === "ready");
-  const inProgress = activeRows.filter((r) => r.section === "in_progress");
-  const completed = activeRows.filter((r) => r.section === "completed");
-  const sourceCounts = useMemo(
-    () => ({
-      patient: activeRows.filter((r) => r.source === "patient").length,
-      doctor: activeRows.filter((r) => r.source === "doctor").length,
-      clinic: activeRows.filter((r) => r.source === "clinic").length,
-      internal: activeRows.filter((r) => r.source === "internal").length,
-    }),
-    [activeRows]
-  );
+  const actionRequiredRows = useMemo(() => {
+    return searchFilteredRows
+      .filter((row) => row.derived.needsAction && !row.derived.isInactive)
+      .filter((row) => matchesQueueFilter(queueFilter, row) || queueFilter === "needs_action")
+      .sort((a, b) => {
+        if (a.derived.actionSortRank !== b.derived.actionSortRank) {
+          return a.derived.actionSortRank - b.derived.actionSortRank;
+        }
+        return b.derived.priorityScore - a.derived.priorityScore;
+      });
+  }, [searchFilteredRows, queueFilter]);
 
-  const archiveSearchRows = archiveRows.filter((r) => {
-    const q = archiveSearch.trim().toLowerCase();
-    if (!q) return true;
-    return (
-      r.base.id.toLowerCase().includes(q) ||
-      String(r.clinicName ?? "").toLowerCase().includes(q) ||
-      String(r.patientName ?? "").toLowerCase().includes(q)
-    );
-  });
+  const failedRecoveryRows = useMemo(() => {
+    return searchFilteredRows
+      .filter((row) => row.derived.inFailedRecovery && !row.derived.isInactive)
+      .sort((a, b) => b.derived.priorityScore - a.derived.priorityScore);
+  }, [searchFilteredRows]);
 
-  const assignedOptions = useMemo(() => {
-    const ids = Array.from(new Set(props.cases.map((x) => x.assigned_auditor_id).filter(Boolean))) as string[];
-    return ids.map((id) => ({ id, name: props.assignedAuditorNameById[id] ?? id.slice(0, 8) }));
-  }, [props.cases, props.assignedAuditorNameById]);
+  const inactiveRows = useMemo(() => {
+    return searchFilteredRows
+      .filter((row) => row.derived.isInactive)
+      .sort((a, b) => new Date(b.input.created_at).getTime() - new Date(a.input.created_at).getTime());
+  }, [searchFilteredRows]);
+
+  const completedRows = useMemo(() => {
+    return filteredRows.filter((row) => row.derived.badge === "COMPLETED");
+  }, [filteredRows]);
+
+  const mainQueueRows = useMemo(() => {
+    if (queueFilter === "completed") return completedRows;
+    if (queueFilter === "needs_action") return [];
+    return filteredRows.filter((row) => !row.derived.isInactive && row.derived.badge !== "COMPLETED" && !row.derived.needsAction);
+  }, [queueFilter, filteredRows, completedRows]);
 
   async function lifecycle(
     action:
       | "mark_in_progress"
       | "request_more_information"
       | "mark_needs_manual_review"
-      | "escalate_second_reviewer"
       | "suppress_public_visibility"
       | "archive"
       | "delete",
@@ -489,234 +253,238 @@ export default function AuditorDashboardClient(props: {
     }
   }
 
-  async function onOpenAudit(caseId: string) {
+  async function queueRerun(
+    caseId: string,
+    action: "regenerate_ai_audit" | "full_reaudit",
+    reason: "failed_previous_run" | "auditor_review_request" | "document_assisted_image_limited"
+  ) {
+    setActionBusyCaseId(caseId);
+    setError(null);
+    try {
+      const res = await fetch("/api/auditor/rerun", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ caseId, action, reason, notes: null }),
+      });
+      const json = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+      if (!res.ok || !json.ok) throw new Error(json.error ?? "Rerun failed");
+      router.refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Rerun failed");
+    } finally {
+      setActionBusyCaseId(null);
+    }
+  }
+
+  async function onOpenCase(caseId: string) {
     const ok = await lifecycle("mark_in_progress", caseId);
     if (ok) router.push(`/cases/${caseId}`);
   }
 
+  const cardHandlers = {
+    onOpenCase,
+    onRegenerateAudit: (caseId: string) => void queueRerun(caseId, "regenerate_ai_audit", "auditor_review_request"),
+    onRequestMissingImages: (caseId: string, label: string) => {
+      setReason("");
+      setModal({ kind: "request_info", caseId, caseLabel: label });
+    },
+    onMarkForReview: (caseId: string) => {
+      void lifecycle("mark_needs_manual_review", caseId, "Marked for manual review from command center.");
+    },
+    onRetryFailedAudit: (caseId: string) => void queueRerun(caseId, "full_reaudit", "failed_previous_run"),
+    onImageLimitedOverride: (caseId: string) =>
+      void queueRerun(caseId, "full_reaudit", AUDITOR_RERUN_REASON_DOCUMENT_ASSISTED_IMAGE_LIMITED),
+  };
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-12">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Auditor Dashboard</h1>
-        <p className="text-slate-600 text-sm mt-1">Prioritized queues for manual review and case lifecycle actions.</p>
+        <h1 className="text-2xl font-bold text-slate-900">Auditor Case Queue</h1>
+        <p className="text-slate-600 text-sm mt-1">
+          Triage-first command center — action cases surface first, inactive submissions stay collapsed.
+        </p>
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white p-4 mb-4">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 mb-6">
+        {SUMMARY_CARD_DEFS.map((card) => (
+          <div key={card.key} className={`rounded-xl border p-3 ${card.tone}`}>
+            <p className="text-xs font-medium uppercase tracking-wide text-slate-600">{card.label}</p>
+            <p className="mt-1 text-2xl font-bold text-slate-900">{summaryCounts[card.key]}</p>
+            <p className="mt-0.5 text-[11px] text-slate-500">{card.hint}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="rounded-xl border border-slate-200 bg-white p-4 mb-4 space-y-4">
         <div className="flex flex-wrap gap-2">
-          {(["all", "patient", "doctor", "clinic"] as const).map((type) => (
+          {FILTER_OPTIONS.map((filter) => (
             <button
-              key={type}
+              key={filter.id}
               type="button"
-              onClick={() => setAuditTypeTab(type)}
-              className={`rounded-full border px-3 py-1 text-sm font-medium capitalize ${
-                auditTypeTab === type ? "border-slate-900 bg-slate-900 text-white" : "border-slate-300 text-slate-700 hover:bg-slate-50"
+              onClick={() => setQueueFilter(filter.id)}
+              className={`rounded-full border px-3 py-1 text-sm font-medium ${
+                queueFilter === filter.id
+                  ? "border-slate-900 bg-slate-900 text-white"
+                  : "border-slate-300 text-slate-700 hover:bg-slate-50"
               }`}
             >
-              {type}
+              {filter.label}
             </button>
           ))}
         </div>
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search by patient name, email, or case id"
+          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+        />
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white p-4 mb-6">
-        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search case ID / clinic name / patient name"
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
-          />
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as "all" | SectionStatus)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">
-            <option value="all">Status: All</option>
-            <option value="requires_action">Requires Action</option>
-            <option value="ready">Ready</option>
-            <option value="in_progress">In Progress</option>
-            <option value="completed">Completed</option>
-          </select>
-          <select value={auditTypeFilter} onChange={(e) => setAuditTypeFilter(e.target.value as "" | AuditType)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">
-            <option value="">Audit Type: All</option>
-            <option value="patient">Patient</option>
-            <option value="doctor">Doctor</option>
-            <option value="clinic">Clinic</option>
-          </select>
-          <select value={sourceFilter} onChange={(e) => setSourceFilter(e.target.value as "" | AuditSource)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">
-            <option value="">Submission Source: All</option>
-            <option value="patient">Patient Submissions</option>
-            <option value="doctor">Doctor Submissions</option>
-            <option value="clinic">Clinic Submissions</option>
-            <option value="internal">Internal</option>
-          </select>
-          <select value={tagFilter} onChange={(e) => setTagFilter(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">
-            <option value="">Queue Badge: All</option>
-            <option value="Follow-Up Audits">Follow-Up Audits</option>
-            <option value="Advanced / Forensic Audits">Advanced / Forensic Audits</option>
-            <option value="Needs Manual Input">Needs Manual Input</option>
-            <option value="Awaiting More Info">Awaiting More Info</option>
-            <option value="Ready to Review">Ready to Review</option>
-            <option value="Completed">Completed</option>
-            <option value="Archived">Archived</option>
-          </select>
-          <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-          <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-          <select value={assignedFilter} onChange={(e) => setAssignedFilter(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">
-            <option value="">Assigned Auditor: All</option>
-            <option value="__unassigned__">Unassigned</option>
-            {assignedOptions.map((o) => (
-              <option key={o.id} value={o.id}>
-                {o.name}
-              </option>
-            ))}
-          </select>
-          <select
-            value={clinicDataFilter}
-            onChange={(e) => setClinicDataFilter(e.target.value as "" | "with" | "without")}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
-          >
-            <option value="">Clinic data: All</option>
-            <option value="with">With clinic data</option>
-            <option value="without">Without clinic data</option>
-          </select>
-        </div>
-      </div>
+      {error && (
+        <div className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
+      )}
 
-      {error && <div className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>}
-      <div className="mb-4 flex flex-wrap gap-2">
-        <span className="rounded-full border border-slate-300 bg-white px-3 py-1 text-xs text-slate-700">Patient Submissions: {sourceCounts.patient}</span>
-        <span className="rounded-full border border-slate-300 bg-white px-3 py-1 text-xs text-slate-700">Doctor Submissions: {sourceCounts.doctor}</span>
-        <span className="rounded-full border border-slate-300 bg-white px-3 py-1 text-xs text-slate-700">Clinic Submissions: {sourceCounts.clinic}</span>
-        <span className="rounded-full border border-slate-300 bg-white px-3 py-1 text-xs text-slate-700">Internal: {sourceCounts.internal}</span>
-        <span className="rounded-full border border-slate-300 bg-white px-3 py-1 text-xs text-slate-700">Needs Manual Input: {requiresAction.length}</span>
-        <span className="rounded-full border border-slate-300 bg-white px-3 py-1 text-xs text-slate-700">Ready to Review: {ready.length}</span>
-        <span className="rounded-full border border-slate-300 bg-white px-3 py-1 text-xs text-slate-700">Completed: {completed.length}</span>
-        <span className="rounded-full border border-slate-300 bg-white px-3 py-1 text-xs text-slate-700">Archived: {archiveRows.length}</span>
-      </div>
-
-      {[
-        { title: "Requires Auditor Action", rows: requiresAction },
-        { title: "Ready for Review", rows: ready },
-        { title: "In Progress", rows: inProgress },
-        { title: "Completed Audits", rows: completed },
-      ].map((section) => (
-        <section key={section.title} className="mb-8 rounded-xl border border-slate-200 bg-white overflow-hidden">
-          <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
-            <h2 className="text-base font-semibold text-slate-900">{section.title}</h2>
-            <p className="text-xs text-slate-500 mt-1">{section.rows.length} case(s)</p>
-          </div>
-          {section.rows.length === 0 ? (
-            <div className="px-4 py-6 text-sm text-slate-500">No cases in this section.</div>
+      {queueFilter !== "completed" && queueFilter !== "no_uploads" && (
+        <section className="mb-8">
+          <header className="mb-4">
+            <h2 className="text-lg font-semibold text-slate-900">Action Required</h2>
+            <p className="text-sm text-slate-500 mt-0.5">
+              Failed, ready, new, incomplete, and processing cases — sorted by urgency.
+            </p>
+          </header>
+          {actionRequiredRows.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-sm text-slate-500 text-center">
+              No cases need immediate action.
+            </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[1040px]">
-                <thead>
-                  <tr className="border-b border-slate-200 bg-white text-left text-xs uppercase tracking-wide text-slate-500">
-                    <th className="px-3 py-2">Case ID</th>
-                    <th className="px-3 py-2">Audit Type</th>
-                    <th className="px-3 py-2">Clinic</th>
-                    <th className="px-3 py-2">Submission Date</th>
-                    <th className="px-3 py-2">Status</th>
-                    <th className="px-3 py-2">Confidence Score</th>
-                    <th className="px-3 py-2">Evidence Completeness</th>
-                    <th className="px-3 py-2">Assigned Auditor</th>
-                    <th className="px-3 py-2">Queue Tags</th>
-                    <th className="px-3 py-2">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {section.rows.map((row) => (
-                    <CaseRowView
-                      key={row.base.id}
-                      row={row}
-                      onOpenAudit={onOpenAudit}
-                      onMarkNeedsManualReview={(caseId) => {
-                        void lifecycle("mark_needs_manual_review", caseId, "Marked for manual review by auditor.");
-                      }}
-                      onSuppressPublicVisibility={(caseId) => {
-                        void lifecycle("suppress_public_visibility", caseId, "Suppressed public visibility by auditor.");
-                      }}
-                      onRequestInfo={(caseId, label) => {
-                        setReason("");
-                        setModal({ kind: "request_info", caseId, caseLabel: label });
-                      }}
-                      onArchive={(caseId, label) => {
-                        setReason("");
-                        setModal({ kind: "archive", caseId, caseLabel: label });
-                      }}
-                      onDelete={(caseId, label) => {
-                        setReason("");
-                        setModal({ kind: "delete", caseId, caseLabel: label });
-                      }}
-                    />
-                  ))}
-                </tbody>
-              </table>
+            <div className="grid gap-4 md:grid-cols-2">
+              {actionRequiredRows.map((row) => (
+                <AuditorCaseQueueCard
+                  key={row.input.id}
+                  input={row.input}
+                  derived={row.derived}
+                  clinicName={row.clinicName}
+                  busy={busy || actionBusyCaseId === row.input.id}
+                  {...cardHandlers}
+                />
+              ))}
             </div>
           )}
         </section>
-      ))}
+      )}
 
-      <section className="mb-8 rounded-xl border border-slate-200 bg-white overflow-hidden">
-        <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
-          <h2 className="text-base font-semibold text-slate-900">Archive</h2>
-          <p className="text-xs text-slate-500 mt-1">Archived cases are removed from the main queues but remain searchable here.</p>
-        </div>
-        <div className="p-4 border-b border-slate-200">
-          <input
-            value={archiveSearch}
-            onChange={(e) => setArchiveSearch(e.target.value)}
-            placeholder="Search archive by case ID / clinic name / patient name"
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-          />
-        </div>
-        {archiveSearchRows.length === 0 ? (
-          <div className="px-4 py-6 text-sm text-slate-500">No archived cases found.</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[1040px]">
-              <thead>
-                <tr className="border-b border-slate-200 bg-white text-left text-xs uppercase tracking-wide text-slate-500">
-                  <th className="px-3 py-2">Case ID</th>
-                  <th className="px-3 py-2">Audit Type</th>
-                  <th className="px-3 py-2">Clinic</th>
-                  <th className="px-3 py-2">Submission Date</th>
-                  <th className="px-3 py-2">Status</th>
-                  <th className="px-3 py-2">Confidence Score</th>
-                  <th className="px-3 py-2">Evidence Completeness</th>
-                  <th className="px-3 py-2">Assigned Auditor</th>
-                  <th className="px-3 py-2">Queue Tags</th>
-                  <th className="px-3 py-2">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {archiveSearchRows.map((row) => (
-                  <tr key={row.base.id} className="border-b border-slate-200 align-top">
-                    <td className="px-3 py-3 font-mono text-xs text-slate-700">{row.base.id.slice(0, 8)}…</td>
-                    <td className="px-3 py-3 text-sm text-slate-800 capitalize">{getDefaultAuditType(row.base)}</td>
-                    <td className="px-3 py-3 text-sm text-slate-700 whitespace-nowrap" title="Structured clinic answers on latest report summary">
-                      {row.hasClinicAnswers ? "Clinic: ✓" : "Clinic: —"}
-                    </td>
-                    <td className="px-3 py-3 text-sm text-slate-700">{formatDate(row.submissionDate)}</td>
-                    <td className="px-3 py-3 text-sm text-slate-700">Archived</td>
-                    <td className="px-3 py-3 text-sm text-slate-700">{pct(row.gii?.confidence)}</td>
-                    <td className="px-3 py-3 text-sm text-slate-700">{typeof row.evidence?.quality_score === "number" ? Math.round(row.evidence.quality_score) : "—"}</td>
-                    <td className="px-3 py-3 text-sm text-slate-700">{row.assignedAuditorName ?? "Unassigned"}</td>
-                    <td className="px-3 py-3 text-sm text-slate-700">
-                      <div className="flex flex-wrap gap-1">
-                        {row.tags.length ? row.tags.slice(0, 3).map((tag) => (
-                          <span key={tag} className="rounded-md border border-slate-300 px-1.5 py-0.5 text-[10px] text-slate-700">
-                            {tag}
-                          </span>
-                        )) : <span className="text-slate-400">—</span>}
-                      </div>
-                    </td>
-                    <td className="px-3 py-3">
-                      <Link href={`/cases/${row.base.id}`} className="rounded-md border border-slate-300 px-2 py-1 text-xs font-medium text-slate-800 hover:bg-slate-50">
-                        Open Audit
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {failedRecoveryRows.length > 0 && queueFilter !== "completed" && (
+        <section className="mb-8 rounded-xl border border-red-200 bg-red-50/40 p-4">
+          <header className="mb-4">
+            <h2 className="text-lg font-semibold text-red-900">Failed Case Recovery</h2>
+            <p className="text-sm text-red-700/80 mt-0.5">
+              PDF, AI, missing-image, and classifier failures requiring intervention.
+            </p>
+          </header>
+          <div className="grid gap-4 md:grid-cols-2">
+            {failedRecoveryRows.map((row) => (
+              <AuditorCaseQueueCard
+                key={`failed-${row.input.id}`}
+                input={row.input}
+                derived={row.derived}
+                clinicName={row.clinicName}
+                busy={busy || actionBusyCaseId === row.input.id}
+                {...cardHandlers}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {(queueFilter === "completed" || queueFilter === "no_uploads") && (
+        <section className="mb-8">
+          <header className="mb-4">
+            <h2 className="text-lg font-semibold text-slate-900">
+              {queueFilter === "completed" ? "Completed Audits" : "No Upload Cases"}
+            </h2>
+            <p className="text-sm text-slate-500 mt-0.5">{filteredRows.length} case(s)</p>
+          </header>
+          {filteredRows.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-sm text-slate-500 text-center">
+              No cases match this filter.
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2">
+              {filteredRows.map((row) => (
+                <AuditorCaseQueueCard
+                  key={row.input.id}
+                  input={row.input}
+                  derived={row.derived}
+                  clinicName={row.clinicName}
+                  busy={busy || actionBusyCaseId === row.input.id}
+                  {...cardHandlers}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
+      {queueFilter !== "needs_action" && queueFilter !== "completed" && queueFilter !== "no_uploads" && (
+        <section className="mb-8">
+          <header className="mb-4">
+            <h2 className="text-lg font-semibold text-slate-900">
+              {queueFilter === "all" ? "All Active Cases" : "Filtered Queue"}
+            </h2>
+            <p className="text-sm text-slate-500 mt-0.5">{mainQueueRows.length} additional case(s)</p>
+          </header>
+          {mainQueueRows.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-sm text-slate-500 text-center">
+              No cases match this filter.
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2">
+              {mainQueueRows.map((row) => (
+                <AuditorCaseQueueCard
+                  key={row.input.id}
+                  input={row.input}
+                  derived={row.derived}
+                  clinicName={row.clinicName}
+                  busy={busy || actionBusyCaseId === row.input.id}
+                  {...cardHandlers}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
+      <section className="mb-8">
+        <button
+          type="button"
+          onClick={() => setShowInactive((v) => !v)}
+          className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-left hover:bg-slate-100"
+        >
+          <div>
+            <h2 className="text-base font-semibold text-slate-800">Show inactive cases</h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Zero uploads, abandoned registration, or never submitted ({inactiveRows.length})
+            </p>
+          </div>
+          <span className="text-sm text-slate-600">{showInactive ? "▲ Hide" : "▼ Show"}</span>
+        </button>
+        {showInactive && (
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            {inactiveRows.length === 0 ? (
+              <p className="text-sm text-slate-500 col-span-full text-center py-4">No inactive cases.</p>
+            ) : (
+              inactiveRows.map((row) => (
+                <AuditorCaseQueueCard
+                  key={`inactive-${row.input.id}`}
+                  input={row.input}
+                  derived={row.derived}
+                  clinicName={row.clinicName}
+                  compact
+                  busy={busy || actionBusyCaseId === row.input.id}
+                  {...cardHandlers}
+                />
+              ))
+            )}
           </div>
         )}
       </section>
@@ -725,7 +493,7 @@ export default function AuditorDashboardClient(props: {
         <div className="fixed inset-0 z-50 bg-slate-900/40 p-4">
           <div className="mx-auto mt-24 max-w-lg rounded-xl border border-slate-200 bg-white p-4 shadow-lg">
             <h3 className="text-base font-semibold text-slate-900">
-              {modal.kind === "delete" ? "Confirm Safe Delete" : modal.kind === "archive" ? "Archive Case" : "Request More Information"}
+              {modal.kind === "delete" ? "Confirm Safe Delete" : modal.kind === "archive" ? "Archive Case" : "Request Missing Images"}
             </h3>
             <p className="mt-2 text-sm text-slate-600">Case: {modal.caseLabel}</p>
             <textarea
