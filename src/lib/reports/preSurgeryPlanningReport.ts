@@ -19,6 +19,12 @@ import {
   type LongTermHairPreservationContent,
 } from "./longTermHairPreservation";
 import {
+  buildFutureHairLossProgressionRisk,
+  isFutureHairLossRiskResult,
+  type FutureHairLossRiskResult,
+} from "./futureHairLossProgressionRisk";
+import type { ClinicalHistorySnapshot } from "@/lib/hairaudit/clinical-history/clinicalHistoryTypes";
+import {
   buildPatientSafeReportSummary,
   type PatientSafeReportSummary,
 } from "./patientSafeSummary";
@@ -84,6 +90,7 @@ export type PreSurgeryPlanningReport = {
   graftEstimateRange?: { min: number; max: number } | null;
   graftEstimateCaveat: string;
   longTermPreservation: LongTermHairPreservationContent;
+  futureHairLossRisk: FutureHairLossRiskResult;
   patientSafeSummary: PatientSafeReportSummary;
 };
 
@@ -94,6 +101,7 @@ export type GeneratePreSurgeryPlanningReportInput = {
   reportVersion?: number;
   patientReviewPathway?: PatientReviewPathway | unknown;
   photosByCategory?: Record<string, { signedUrl: string | null; label: string }[]>;
+  clinicalHistory?: ClinicalHistorySnapshot | null;
 };
 
 function isRecord(v: unknown): v is Record<string, unknown> {
@@ -649,6 +657,12 @@ export function generatePreSurgeryPlanningReport(
     graftEstimateRange: graftRange,
     graftEstimateCaveat: GRAFT_ESTIMATE_CAVEAT,
     longTermPreservation: buildLongTermHairPreservationContent("pre_surgery"),
+    futureHairLossRisk: buildFutureHairLossProgressionRisk({
+      pathway: "pre_surgery",
+      intelligenceBundle: bundle,
+      clinicalHistory: input.clinicalHistory ?? null,
+      summary: input.summary,
+    }),
     patientSafeSummary,
   };
 }
@@ -670,6 +684,7 @@ export function resolvePreSurgeryPlanningReport(
     reportVersion?: number;
     patientReviewPathway?: PatientReviewPathway | unknown;
     photosByCategory?: Record<string, { signedUrl: string | null; label: string }[]>;
+    clinicalHistory?: ClinicalHistorySnapshot | null;
   }
 ): PreSurgeryPlanningReport | null {
   const pathway = normalizePatientReviewPathway(
@@ -686,6 +701,19 @@ export function resolvePreSurgeryPlanningReport(
       longTermPreservation: isLongTermHairPreservationContent(stored.longTermPreservation)
         ? stored.longTermPreservation
         : buildLongTermHairPreservationContent("pre_surgery"),
+      futureHairLossRisk: isFutureHairLossRiskResult(stored.futureHairLossRisk)
+        ? stored.futureHairLossRisk
+        : buildFutureHairLossProgressionRisk({
+            pathway: "pre_surgery",
+            intelligenceBundle:
+              isRecord(summary?.metadata) &&
+              isRecord((summary.metadata as Record<string, unknown>).hairAuditIntelligence)
+                ? ((summary.metadata as Record<string, unknown>)
+                    .hairAuditIntelligence as HairAuditIntelligenceBundle)
+                : null,
+            clinicalHistory: opts.clinicalHistory ?? null,
+            summary: summary ?? undefined,
+          }),
     };
   }
 
@@ -697,6 +725,7 @@ export function resolvePreSurgeryPlanningReport(
     reportVersion: opts.reportVersion,
     patientReviewPathway: pathway,
     photosByCategory: opts.photosByCategory,
+    clinicalHistory: opts.clinicalHistory ?? null,
   });
 }
 

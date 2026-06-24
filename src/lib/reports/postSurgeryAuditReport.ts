@@ -18,6 +18,11 @@ import {
   type LongTermHairPreservationContent,
 } from "./longTermHairPreservation";
 import {
+  buildFutureHairLossProgressionRisk,
+  isFutureHairLossRiskResult,
+  type FutureHairLossRiskResult,
+} from "./futureHairLossProgressionRisk";
+import {
   buildPostSurgeryRecommendedNextSteps,
   buildRepairPlanningGuidance,
   enrichSectionFinding,
@@ -107,6 +112,8 @@ export type PostSurgeryAuditReport = {
   recommendedNextSteps: string[];
   /** Long-term hair preservation educational guidance for patient PDF */
   longTermPreservation: LongTermHairPreservationContent;
+  /** Deterministic future hair loss progression risk estimate */
+  futureHairLossRisk: FutureHairLossRiskResult;
   /** Repair / refinement planning guidance for patient PDF */
   repairPlanningGuidance: string[];
   /** Embedded patient-safe summary for backward-compatible surfaces */
@@ -860,6 +867,12 @@ export function generatePostSurgeryAuditReport(
     bundle
   );
   const longTermPreservation = buildLongTermHairPreservationContent("post_surgery");
+  const futureHairLossRisk = buildFutureHairLossProgressionRisk({
+    pathway: "post_surgery",
+    intelligenceBundle: bundle,
+    clinicalHistory: input.clinicalHistory ?? null,
+    summary: input.summary,
+  });
   const repairPlanningGuidance = buildRepairPlanningGuidance(bundle, repairConsiderationId);
 
   const version = input.reportVersion ?? 1;
@@ -878,6 +891,7 @@ export function generatePostSurgeryAuditReport(
     imageAssessments,
     recommendedNextSteps,
     longTermPreservation,
+    futureHairLossRisk,
     repairPlanningGuidance,
     patientSafeSummary,
   };
@@ -924,6 +938,19 @@ export function resolvePostSurgeryAuditReport(
       longTermPreservation: isLongTermHairPreservationContent(stored.longTermPreservation)
         ? stored.longTermPreservation
         : buildLongTermHairPreservationContent("post_surgery"),
+      futureHairLossRisk: isFutureHairLossRiskResult(stored.futureHairLossRisk)
+        ? stored.futureHairLossRisk
+        : buildFutureHairLossProgressionRisk({
+            pathway: "post_surgery",
+            intelligenceBundle:
+              isRecord(summary?.metadata) &&
+              isRecord((summary.metadata as Record<string, unknown>).hairAuditIntelligence)
+                ? ((summary.metadata as Record<string, unknown>)
+                    .hairAuditIntelligence as HairAuditIntelligenceBundle)
+                : null,
+            clinicalHistory: opts.clinicalHistory ?? null,
+            summary: summary ?? undefined,
+          }),
       repairPlanningGuidance:
         stored.repairPlanningGuidance?.length
           ? stored.repairPlanningGuidance

@@ -4,6 +4,10 @@ import {
   renderLongTermHairPreservationHtml,
 } from "./longTermHairPreservation";
 import {
+  FUTURE_HAIR_LOSS_RISK_CSS,
+  renderFutureHairLossProgressionRiskHtml,
+} from "./futureHairLossProgressionRisk";
+import {
   buildClinicalEvidenceImagesFromPhotosByCategory,
   CLINICAL_EVIDENCE_GALLERY_CSS,
   renderClinicalEvidenceGalleryHtml,
@@ -188,6 +192,10 @@ export function renderPreSurgeryPlanningReportHtml(vm: PreSurgeryReportHtmlVm): 
     ? renderLongTermHairPreservationHtml(report.longTermPreservation)
     : "";
 
+  const futureHairLossRiskHtml = report.futureHairLossRisk
+    ? renderFutureHairLossProgressionRiskHtml(report.futureHairLossRisk)
+    : "";
+
   const nextStepsHtml = report.recommendedNextSteps
     .map((step) => `<li><span class="check">✓</span> ${esc(step)}</li>`)
     .join("");
@@ -299,6 +307,7 @@ export function renderPreSurgeryPlanningReportHtml(vm: PreSurgeryReportHtmlVm): 
     ${ASSESSMENT_CONFIDENCE_CSS}
     ${ASSESSMENT_IMPROVEMENT_CSS}
     ${LONG_TERM_PRESERVATION_CSS}
+    ${FUTURE_HAIR_LOSS_RISK_CSS}
     .trustBox { background: #f0f9ff; border-color: #bae6fd; }
     .nextSteps { background: #ecfdf5; border-color: #a7f3d0; }
     .nextList { margin: 12px 0 0; padding: 0; list-style: none; }
@@ -350,6 +359,8 @@ export function renderPreSurgeryPlanningReportHtml(vm: PreSurgeryReportHtmlVm): 
     ${clinicalEvidenceHtml}
 
     ${preservationHtml}
+
+    ${futureHairLossRiskHtml}
 
     <div class="section trustBox certificationSection">
       <div class="sectionHead"><h2>${esc(labels.trustTitle)}</h2></div>

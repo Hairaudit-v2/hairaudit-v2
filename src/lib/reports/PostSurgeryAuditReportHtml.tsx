@@ -4,6 +4,10 @@ import {
   renderLongTermHairPreservationHtml,
 } from "./longTermHairPreservation";
 import {
+  FUTURE_HAIR_LOSS_RISK_CSS,
+  renderFutureHairLossProgressionRiskHtml,
+} from "./futureHairLossProgressionRisk";
+import {
   buildClinicalEvidenceImagesFromPhotosByCategory,
   CLINICAL_EVIDENCE_GALLERY_CSS,
   renderClinicalEvidenceGalleryHtml,
@@ -204,6 +208,10 @@ export function renderPostSurgeryAuditReportHtml(vm: PostSurgeryReportHtmlVm): s
     ? renderLongTermHairPreservationHtml(report.longTermPreservation)
     : "";
 
+  const futureHairLossRiskHtml = report.futureHairLossRisk
+    ? renderFutureHairLossProgressionRiskHtml(report.futureHairLossRisk)
+    : "";
+
   const reviewInputsHtml = renderReviewInputsProcessedHtml(
     buildReviewInputsProcessed({
       pathway: "post_surgery",
@@ -356,6 +364,7 @@ export function renderPostSurgeryAuditReportHtml(vm: PostSurgeryReportHtmlVm): s
     .contextList li { margin-bottom: 6px; }
     .postOpSection { background: #f0f9ff; border-color: #bae6fd; }
     ${LONG_TERM_PRESERVATION_CSS}
+    ${FUTURE_HAIR_LOSS_RISK_CSS}
     .repairPlanningSection { background: #faf5ff; border-color: #e9d5ff; }
     .concernList { list-style: none; margin: 12px 0 0; padding: 0; }
     .concernItem {
@@ -448,6 +457,8 @@ export function renderPostSurgeryAuditReportHtml(vm: PostSurgeryReportHtmlVm): s
     ${clinicalEvidenceHtml}
 
     ${preservationHtml}
+
+    ${futureHairLossRiskHtml}
 
     ${repairPlanningHtml}
 

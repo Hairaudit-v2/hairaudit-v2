@@ -15,6 +15,7 @@ import {
 } from "@/lib/reports/patientSafeSummaryDisclosure";
 import ClinicalEvidenceReviewGallery from "@/components/reports/ClinicalEvidenceReviewGallery";
 import LongTermHairPreservationSection from "@/components/patient/LongTermHairPreservationSection";
+import FutureHairLossRiskSection from "@/components/patient/FutureHairLossRiskSection";
 import ReviewInputsProcessedSection from "@/components/patient/ReviewInputsProcessedSection";
 import AssessmentConfidenceSection from "@/components/patient/AssessmentConfidenceSection";
 import AssessmentImprovementRecommendationsSection from "@/components/patient/AssessmentImprovementRecommendationsSection";
@@ -276,6 +277,8 @@ export default function PostSurgeryAuditReportShell({
       ) : null}
 
       <LongTermHairPreservationSection pathway="post_surgery" />
+
+      <FutureHairLossRiskSection pathway="post_surgery" result={report.futureHairLossRisk} />
 
       <div className="rounded-2xl border border-sky-200/80 bg-sky-50/50 p-5 shadow-sm sm:p-6">
         <h3 className="text-lg font-semibold text-sky-950">

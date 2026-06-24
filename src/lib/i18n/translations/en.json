@@ -1008,6 +1008,31 @@
             "patientNotes": "Include additional background information about your concerns or surgery history.",
             "supportingDocuments": "Upload supporting documents such as clinic procedure summaries if available."
           }
+        },
+        "futureHairLossRisk": {
+          "title": "Future Hair Loss Progression Risk",
+          "subtitle": "Hair transplantation restores existing hair loss, but surrounding non-transplanted hair may continue changing over time depending on genetic, age-related, and long-term progression factors. This section helps estimate whether future monitoring or preventative planning may be beneficial.",
+          "band": {
+            "low": "Low",
+            "moderate": "Moderate",
+            "elevated": "Elevated"
+          },
+          "contributingFactors": "Contributing factors",
+          "recommendations": "Recommendations",
+          "summary": {
+            "low": {
+              "pre_surgery": "Current visible patterns suggest relatively stable long-term hair characteristics for planning purposes, though periodic monitoring remains valuable.",
+              "post_surgery": "Current visible patterns suggest relatively stable long-term hair characteristics surrounding your transplant, though periodic monitoring remains valuable."
+            },
+            "moderate": {
+              "pre_surgery": "Some visible or clinical factors suggest future hair loss progression may continue over time. Ongoing monitoring and preventative planning before surgery may be beneficial.",
+              "post_surgery": "Some visible or clinical factors suggest future hair loss progression may continue over time. Ongoing monitoring and preventative planning may help protect surrounding native hair."
+            },
+            "elevated": {
+              "pre_surgery": "Several current factors suggest future hair loss progression may remain active over time. Long-term candidacy planning and preventative discussions with your clinician may be worth considering.",
+              "post_surgery": "Several current factors suggest future hair loss progression may remain active over time. Long-term planning and preventative discussions with your clinician may help preserve transplant aesthetic balance."
+            }
+          }
         }
       },
       "preSurgeryReport": {
