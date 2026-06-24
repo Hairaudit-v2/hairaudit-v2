@@ -8,6 +8,7 @@ import {
 } from "@/lib/auth/permissions";
 import { filterForensicAuditReports } from "@/lib/reports/forensicReportsFilter";
 import { buildPatientCaseStatusPayload } from "@/lib/patient/patientProcessingView";
+import { toPatientSafeApiResponse } from "@/lib/patient/patientTrustStatusTranslator";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -46,10 +47,14 @@ export async function GET(_req: Request, context: RouteContext) {
       .maybeSingle();
 
     if (caseError) {
-      return NextResponse.json({ error: caseError.message }, { status: 500 });
+      const safe = toPatientSafeApiResponse(caseError.message, "status");
+      return NextResponse.json(safe, { status: 500 });
     }
     if (!caseRow) {
-      return NextResponse.json({ error: "Case not found" }, { status: 404 });
+      return NextResponse.json(
+        toPatientSafeApiResponse("Case not found", "status"),
+        { status: 404 }
+      );
     }
 
     const { data: reports, error: reportsError } = await db
@@ -59,7 +64,8 @@ export async function GET(_req: Request, context: RouteContext) {
       .order("version", { ascending: false });
 
     if (reportsError) {
-      return NextResponse.json({ error: reportsError.message }, { status: 500 });
+      const safe = toPatientSafeApiResponse(reportsError.message, "status");
+      return NextResponse.json(safe, { status: 500 });
     }
 
     const forensicReports = filterForensicAuditReports(reports ?? []);
@@ -76,9 +82,10 @@ export async function GET(_req: Request, context: RouteContext) {
 
     return NextResponse.json(payload);
   } catch (error) {
-    return NextResponse.json(
-      { error: String((error as Error)?.message ?? "Server error") },
-      { status: 500 }
+    const safe = toPatientSafeApiResponse(
+      String((error as Error)?.message ?? "Server error"),
+      "status"
     );
+    return NextResponse.json(safe, { status: 500 });
   }
 }

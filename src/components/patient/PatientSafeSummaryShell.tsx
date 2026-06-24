@@ -13,6 +13,7 @@ import type {
   PatientSafeSummaryObservation,
 } from "@/lib/reports/patientSafeSummary";
 import { getPathwayDefinition } from "@/lib/patient/patientReviewPathway";
+import { PATIENT_IMAGE_LIMITED_TRUST_NOTICE } from "@/lib/patient/patientTrustStatusTranslator";
 import type { TranslationKey } from "@/lib/i18n/translationKeys";
 
 function concernBadgeClass(band?: PatientSafeSummaryObservation["concernBand"]) {
@@ -144,6 +145,20 @@ export default function PatientSafeSummaryShell({
             label={summary.overallConcernLabel}
             description={summary.overallConcernDescription}
           />
+
+          {summary.imageLimitedNotice ? (
+            <div
+              data-testid="patient-image-limited-trust-notice"
+              className="rounded-xl border border-cyan-200/80 bg-cyan-50/60 p-4"
+            >
+              <h3 className="text-sm font-semibold text-cyan-950">
+                {PATIENT_IMAGE_LIMITED_TRUST_NOTICE.title}
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-cyan-900/90">
+                {PATIENT_IMAGE_LIMITED_TRUST_NOTICE.subcopy}
+              </p>
+            </div>
+          ) : null}
 
           <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4">
             <h3 className="text-sm font-semibold text-slate-900">

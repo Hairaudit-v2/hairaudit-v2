@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { loadAuthorizedReportPdfDownloadContext } from "@/lib/reports/reportAccess";
 import { fetchReportPdfWithRecovery } from "@/lib/reports/reportPdfDownloadRecovery";
+import { toPatientSafeApiResponse } from "@/lib/patient/patientTrustStatusTranslator";
+import { requirePatientCaseAccess } from "@/lib/auth/permissions";
 
 function safeDownloadFilename(reportId: string) {
   const id = String(reportId ?? "").replace(/[^a-zA-Z0-9-]/g, "");
@@ -34,8 +36,14 @@ export async function GET(_req: Request, ctx: { params: Promise<{ reportId: stri
       return NextResponse.json({ error: authz.error }, { status: authz.status });
     }
 
+    const isPatientForCase = requirePatientCaseAccess(user.id, authz.case).ok;
+
     const file = await fetchReportPdfWithRecovery(authz);
     if (!file.ok) {
+      if (isPatientForCase) {
+        const safe = toPatientSafeApiResponse(file.error, "report_download");
+        return NextResponse.json(safe, { status: file.status });
+      }
       return NextResponse.json({ error: file.error }, { status: file.status });
     }
 

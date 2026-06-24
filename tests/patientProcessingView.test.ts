@@ -132,6 +132,8 @@ test("buildPatientCaseStatusPayload exposes report URL only when ready", () => {
   assert.equal(waiting.reportReady, false);
   assert.equal(waiting.reportUrl, null);
   assert.equal(waiting.maskedEmail, "p••••@example.com");
+  assert.equal(waiting.showTrustBanner, true);
+  assert.ok(waiting.trustTitle.length > 0);
 
   const ready = buildPatientCaseStatusPayload({
     caseId: "case-1",
@@ -142,6 +144,7 @@ test("buildPatientCaseStatusPayload exposes report URL only when ready", () => {
   assert.equal(ready.reportReady, true);
   assert.equal(ready.reportUrl, "/cases/case-1");
   assert.equal(ready.currentStage, "report_ready");
+  assert.equal(ready.showTrustBanner, false);
 });
 
 test("shouldPollPatientCaseStatus starts when report not ready and stops when ready", () => {

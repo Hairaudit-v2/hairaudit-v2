@@ -2,6 +2,7 @@
 import { serve } from "inngest/next";
 import { inngest } from "@/lib/inngest/client";
 import { runAudit, runGraftIntegrityEstimate, runPdfRebuild, auditorRerun } from "@/lib/inngest/functions";
+import { patientReviewDelayedEmail } from "@/lib/inngest/functions/patientReviewDelayedEmail";
 import { runSurgeryUploadEvidenceReviewReport } from "@/lib/inngest/functions/surgeryUploadEvidenceReviewReport";
 import { runFiImageIntelligenceWorker } from "@/lib/inngest/functions/fiImageIntelligenceWorker";
 import { contributionRequestReminders } from "@/lib/inngest/functions/contributionRequestReminders";
@@ -16,6 +17,7 @@ export const { GET, POST, PUT } = serve({
     runGraftIntegrityEstimate,
     runPdfRebuild,
     auditorRerun,
+    patientReviewDelayedEmail,
     historicalGiiBackfillWorkflow,
     contributionRequestReminders,
     runSurgeryUploadEvidenceReviewReport,

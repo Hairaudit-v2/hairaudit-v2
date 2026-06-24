@@ -45,6 +45,7 @@ import {
   shouldHidePatientForensicWorkspace,
   shouldShowPatientReportContent,
 } from "@/lib/patient/patientProcessingView";
+import { buildPatientTrustStatusDisplay } from "@/lib/patient/patientTrustStatusTranslator";
 import { BENCHMARKING_GLOBAL_STANDARDS } from "@/lib/benchmarkingCopy";
 import CaseNotFoundRecovery from "@/components/case/CaseNotFoundRecovery";
 import EvidenceCoveragePanel from "@/components/audit/EvidenceCoveragePanel";
@@ -609,8 +610,11 @@ export default async function Page({
   const hasReportPdf = !!(forensicReports[0] as { pdf_path?: string } | null)?.pdf_path;
   const isCompleteWithReport = status === "complete" && hasReportPdf;
   const isProcessing = status === "submitted" || status === "processing";
+  const earlyForensicSummary = (forensicReports[0]?.summary as Record<string, unknown> | null | undefined)
+    ?.forensic_audit as { imageLimitedAssessment?: boolean } | undefined;
+  const earlyImageLimitedPathway = Boolean(earlyForensicSummary?.imageLimitedAssessment);
   const patientDeliveryPhase = isPatientForCase
-    ? resolvePatientReportDeliveryPhase({ caseStatus: status, hasReportPdf })
+    ? resolvePatientReportDeliveryPhase({ caseStatus: status, hasReportPdf, patientTrustLayer: true })
     : null;
   const patientHidesForensicWorkspace =
     patientDeliveryPhase != null &&
@@ -618,17 +622,28 @@ export default async function Page({
   const patientShowReportContent =
     patientDeliveryPhase != null &&
     shouldShowPatientReportContent({ isPatientForCase, deliveryPhase: patientDeliveryPhase });
-  const statusDisplayLabel = isCompleteWithReport
-    ? tr("dashboard.reports.statusReportReady")
-    : isProcessing
-      ? tr("dashboard.reports.statusProcessing")
-      : status === "audit_failed"
-        ? tr("dashboard.reports.statusAuditFailed")
-        : status === "complete"
-          ? tr("dashboard.reports.statusComplete")
-          : status.replaceAll("_", " ");
+  const patientTrustStatus = isPatientForCase
+    ? buildPatientTrustStatusDisplay({
+        caseStatus: status,
+        hasReportPdf,
+        imageLimitedPathway: earlyImageLimitedPathway,
+      })
+    : null;
+  const statusDisplayLabel = isPatientForCase && patientTrustStatus
+    ? patientTrustStatus.title
+    : isCompleteWithReport
+      ? tr("dashboard.reports.statusReportReady")
+      : isProcessing
+        ? tr("dashboard.reports.statusProcessing")
+        : status === "audit_failed"
+          ? tr("dashboard.reports.statusAuditFailed")
+          : status === "complete"
+            ? tr("dashboard.reports.statusComplete")
+            : status.replaceAll("_", " ");
   const statusPill =
-    isCompleteWithReport
+    isPatientForCase && patientTrustStatus && !isCompleteWithReport
+      ? "border-cyan-300/20 bg-cyan-300/10 text-cyan-200"
+      : isCompleteWithReport
       ? "border-emerald-400/30 bg-emerald-400/15 text-emerald-100"
       : status === "complete"
         ? "border-emerald-300/20 bg-emerald-300/10 text-emerald-200"

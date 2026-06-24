@@ -52,22 +52,78 @@ export async function sendEmail({ to, subject, html, text }: SendEmailParams): P
   }
 }
 
-export async function notifyPatientAuditFailed(caseId: string, patientEmail: string, errorMessage: string): Promise<boolean> {
-  const dashboardUrl = process.env.NEXT_PUBLIC_APP_URL
-    ? `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`
-    : `${SITE_URL}/dashboard`;
+export async function notifyPatientAuditFailed(caseId: string, patientEmail: string, _errorMessage: string): Promise<boolean> {
+  // HA-TRUST-4: patient receives trust-preserving copy; technical reason stays internal.
+  return notifyPatientReviewStillInProgress({ to: patientEmail, caseId });
+}
+
+export type NotifyPatientReviewStillInProgressParams = {
+  to: string;
+  caseId?: string;
+  firstName?: string | null;
+};
+
+/**
+ * HA-TRUST-4 — Delayed reassurance when review extends beyond typical SLA.
+ * Never exposes technical failure language to patients.
+ */
+export async function notifyPatientReviewStillInProgress({
+  to,
+  caseId,
+  firstName,
+}: NotifyPatientReviewStillInProgressParams): Promise<boolean> {
+  const baseUrl = (process.env.NEXT_PUBLIC_APP_URL ?? SITE_URL).replace(/\/+$/, "");
+  const dashboardUrl = `${baseUrl}/dashboard/patient`;
+  const caseUrl = caseId ? `${baseUrl}/cases/${escapeHtml(caseId)}` : dashboardUrl;
+  const greeting = firstName && String(firstName).trim() ? `Hi ${escapeHtml(String(firstName).trim())},` : "Hi,";
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Your HairAudit review is still in progress</title></head>
+<body style="margin:0; padding:0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 16px; line-height: 1.5; color: #1a1a1a; background-color: #f5f5f5;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f5f5f5;">
+    <tr><td style="padding: 24px 16px;">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width: 560px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+        <tr><td style="padding: 32px 24px;">
+          <p style="margin: 0 0 24px 0; font-size: 15px; color: #4b5563;">${greeting}</p>
+          <h1 style="margin: 0 0 16px 0; font-size: 22px; font-weight: 700; color: #111827; line-height: 1.3;">Your HairAudit review is still in progress</h1>
+          <p style="margin: 0 0 16px 0; font-size: 15px; color: #374151;">Thank you for submitting your HairAudit review.</p>
+          <p style="margin: 0 0 16px 0; font-size: 15px; color: #374151;">Your case is currently undergoing an additional quality review step to ensure the highest level of assessment accuracy.</p>
+          <p style="margin: 0 0 16px 0; font-size: 15px; color: #374151;">In some situations our specialist team performs additional review to ensure your report is as accurate and helpful as possible.</p>
+          <p style="margin: 0 0 16px 0; font-size: 15px; color: #374151;">This occasionally takes slightly longer than standard processing.</p>
+          <p style="margin: 0 0 24px 0; font-size: 15px; color: #374151;">Our team is actively reviewing your case and we will notify you as soon as your report is ready.</p>
+          <table role="presentation" cellspacing="0" cellpadding="0" style="margin: 0 0 24px 0;">
+            <tr><td style="border-radius: 6px; background-color: #0891b2;">
+              <a href="${caseUrl}" target="_blank" rel="noopener noreferrer" style="display: inline-block; padding: 14px 28px; font-size: 16px; font-weight: 600; color: #ffffff; text-decoration: none;">View your review progress</a>
+            </td></tr>
+          </table>
+          <p style="margin: 0 0 16px 0; font-size: 15px; color: #374151;">Thank you for your patience.</p>
+          <p style="margin: 0; font-size: 13px; color: #6b7280;">The HairAudit Clinical Team</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+  const text =
+    `${greeting}\n\n` +
+    `Your HairAudit review is still in progress\n\n` +
+    `Thank you for submitting your HairAudit review.\n\n` +
+    `Your case is currently undergoing an additional quality review step to ensure the highest level of assessment accuracy.\n\n` +
+    `In some situations our specialist team performs additional review to ensure your report is as accurate and helpful as possible.\n\n` +
+    `This occasionally takes slightly longer than standard processing.\n\n` +
+    `Our team is actively reviewing your case and we will notify you as soon as your report is ready.\n\n` +
+    `Thank you for your patience.\n\n` +
+    `The HairAudit Clinical Team\n\n` +
+    `View progress: ${caseUrl}`;
 
   return sendEmail({
-    to: patientEmail,
-    subject: "HairAudit: Report generation delayed",
-    html: `
-      <p>We're sorry, but the automated audit for your case could not be completed.</p>
-      <p><strong>Case ID:</strong> ${caseId}</p>
-      <p><strong>Reason:</strong> ${escapeHtml(errorMessage)}</p>
-      <p>Our team has been notified and a human auditor will review your case. You can check your dashboard for updates.</p>
-      <p><a href="${dashboardUrl}">Go to Dashboard</a></p>
-      <p>— HairAudit</p>
-    `,
+    to,
+    subject: "Your HairAudit review is still in progress",
+    html,
+    text,
   });
 }
 

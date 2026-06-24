@@ -4,9 +4,9 @@ import Link from "next/link";
 import DownloadReport from "@/app/cases/[caseId]/download-report";
 import ReportShareButton from "@/components/reports/ReportShareButton";
 import PatientProcessingWaitingExperience from "@/components/patient/PatientProcessingWaitingExperience";
-import { CONTACT_EMAIL } from "@/lib/constants";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { resolvePatientReportDeliveryPhase } from "@/lib/patient/patientProcessingView";
+import { buildPatientTrustStatusDisplay } from "@/lib/patient/patientTrustStatusTranslator";
 
 export type PatientNextActionVariant = "dashboard" | "case";
 
@@ -37,15 +37,14 @@ export default function PatientNextActionPanel({
   const deliveryPhase = resolvePatientReportDeliveryPhase({
     caseStatus: status,
     hasReportPdf: Boolean(pdfPath),
+    patientTrustLayer: true,
   });
   const state =
-    deliveryPhase === "audit_failed"
-      ? "audit_failed"
-      : deliveryPhase === "delivered"
-        ? "complete"
-        : deliveryPhase === "processing"
-          ? "processing"
-          : "draft";
+    deliveryPhase === "delivered"
+      ? "complete"
+      : deliveryPhase === "processing"
+        ? "processing"
+        : "draft";
   const caseHref = `/cases/${caseId}`;
   const compact = variant === "dashboard";
 
@@ -146,24 +145,28 @@ export default function PatientNextActionPanel({
     );
   }
 
-  // Complete without PDF: Your audit is complete — View Report only
-  if (state === "complete") {
+  // Complete without PDF: trust-preserving preparation state (HA-TRUST-4)
+  if (state === "complete" && !pdfPath) {
+    const trustStatus = buildPatientTrustStatusDisplay({
+      caseStatus: status,
+      hasReportPdf: false,
+    });
     return (
       <div
         className={
           compact
-            ? "rounded-xl border border-emerald-300/20 bg-emerald-300/5 p-3"
-            : "rounded-2xl border border-emerald-300/25 bg-emerald-300/5 p-4 sm:p-5"
+            ? "rounded-xl border border-cyan-300/20 bg-cyan-300/5 p-3"
+            : "rounded-2xl border border-cyan-300/25 bg-cyan-300/5 p-4 sm:p-5"
         }
       >
-        <p className={compact ? "text-xs font-semibold uppercase tracking-wide text-emerald-200/90" : "text-xs font-semibold uppercase tracking-wide text-emerald-200/90"}>
+        <p className={compact ? "text-xs font-semibold uppercase tracking-wide text-cyan-200/90" : "text-xs font-semibold uppercase tracking-wide text-cyan-200/90"}>
           {t("dashboard.patient.nextAction.eyebrow")}
         </p>
         <p className={compact ? "mt-1 text-sm font-semibold text-white" : "mt-2 text-base font-semibold text-white"}>
-          {t("dashboard.patient.nextAction.completeNoPdfTitle")}
+          {trustStatus.title}
         </p>
-        <p className={compact ? "mt-1.5 text-xs text-slate-400/90" : "mt-2 text-xs text-slate-400/90"}>
-          {t("dashboard.reports.shareHint")}
+        <p className={compact ? "mt-0.5 text-xs text-slate-200/80" : "mt-1 text-sm text-slate-200/80"}>
+          {trustStatus.subcopy}
         </p>
         <div className={compact ? "mt-2" : "mt-4"}>
           <Link
@@ -176,51 +179,6 @@ export default function PatientNextActionPanel({
           >
             {t("dashboard.reports.viewReport")}
           </Link>
-        </div>
-      </div>
-    );
-  }
-
-  // Audit failed: We were unable to complete this audit
-  if (state === "audit_failed") {
-    return (
-      <div
-        className={
-          compact
-            ? "rounded-xl border border-amber-300/20 bg-amber-300/5 p-3"
-            : "rounded-2xl border border-amber-300/25 bg-amber-300/5 p-4 sm:p-5"
-        }
-      >
-        <p className={compact ? "text-xs font-semibold uppercase tracking-wide text-amber-200/90" : "text-xs font-semibold uppercase tracking-wide text-amber-200/90"}>
-          {t("dashboard.patient.nextAction.eyebrow")}
-        </p>
-        <p className={compact ? "mt-1 text-sm font-semibold text-white" : "mt-2 text-base font-semibold text-white"}>
-          {t("dashboard.patient.nextAction.failedTitle")}
-        </p>
-        <p className={compact ? "mt-0.5 text-xs text-slate-200/80" : "mt-1 text-sm text-slate-200/80"}>
-          {t("dashboard.patient.nextAction.failedBody")}
-        </p>
-        <div className={compact ? "mt-2 flex flex-wrap gap-2" : "mt-4 flex flex-wrap gap-3"}>
-          <Link
-            href="/dashboard/patient"
-            className={
-              compact
-                ? "inline-flex items-center rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-slate-100 hover:bg-white/15"
-                : "inline-flex items-center rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-semibold text-slate-100 hover:bg-white/15"
-            }
-          >
-            {t("dashboard.patient.nextAction.returnToDashboard")}
-          </Link>
-          <a
-            href={`mailto:${CONTACT_EMAIL}`}
-            className={
-              compact
-                ? "inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-950 bg-gradient-to-r from-amber-300 to-cyan-300 hover:from-amber-200 hover:to-cyan-200"
-                : "inline-flex items-center rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-950 bg-gradient-to-r from-amber-300 to-cyan-300 hover:from-amber-200 hover:to-cyan-200"
-            }
-          >
-            {t("dashboard.patient.nextAction.contactSupport")}
-          </a>
         </div>
       </div>
     );

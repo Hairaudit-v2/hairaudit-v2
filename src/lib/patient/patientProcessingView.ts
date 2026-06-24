@@ -1,7 +1,12 @@
 /**
- * Patient-facing delivery state for HA-TRUST-2.
+ * Patient-facing delivery state for HA-TRUST-2 / HA-TRUST-4.
  * Keeps partial reports, scores, and forensic workspace hidden until the report is ready.
  */
+
+import {
+  buildPatientTrustStatusDisplay,
+  type PatientTrustInternalState,
+} from "@/lib/patient/patientTrustStatusTranslator";
 
 export type PatientReportDeliveryPhase = "draft" | "processing" | "delivered" | "audit_failed";
 
@@ -54,6 +59,11 @@ export type PatientCaseStatusPayload = {
   timeline: PatientProcessingTimelineStep[];
   maskedEmail: string | null;
   reportUrl: string | null;
+  /** HA-TRUST-4 trust-preserving patient-visible status */
+  trustTitle: string;
+  trustSubcopy: string;
+  trustInternalState: PatientTrustInternalState;
+  showTrustBanner: boolean;
 };
 
 export function normalizePatientCaseStatus(status: string | null | undefined): string {
@@ -63,9 +73,13 @@ export function normalizePatientCaseStatus(status: string | null | undefined): s
 export function resolvePatientReportDeliveryPhase(args: {
   caseStatus: string | null | undefined;
   hasReportPdf: boolean;
+  /** When true, map failure states to processing for patient-facing delivery phase. */
+  patientTrustLayer?: boolean;
 }): PatientReportDeliveryPhase {
   const status = normalizePatientCaseStatus(args.caseStatus);
-  if (status === "audit_failed") return "audit_failed";
+  if (status === "audit_failed") {
+    return args.patientTrustLayer ? "processing" : "audit_failed";
+  }
   if (status === "draft") return "draft";
   if (status === "complete" && args.hasReportPdf) return "delivered";
   if (
@@ -228,9 +242,17 @@ export function buildPatientCaseStatusPayload(args: {
   submittedAt?: string | null;
   notificationEmail?: string | null;
   nowMs?: number;
+  imageLimitedPathway?: boolean;
+  rerunReason?: string | null;
 }): PatientCaseStatusPayload {
   const status = normalizePatientCaseStatus(args.caseStatus);
   const reportReady = status === "complete" && args.hasReportPdf;
+  const trustDisplay = buildPatientTrustStatusDisplay({
+    caseStatus: status,
+    hasReportPdf: args.hasReportPdf,
+    imageLimitedPathway: args.imageLimitedPathway,
+    rerunReason: args.rerunReason,
+  });
   const activeIndex = resolvePatientProcessingActiveIndex({
     caseStatus: args.caseStatus,
     hasReportPdf: args.hasReportPdf,
@@ -265,6 +287,10 @@ export function buildPatientCaseStatusPayload(args: {
     timeline,
     maskedEmail: maskNotificationEmail(args.notificationEmail),
     reportUrl: reportReady ? `/cases/${args.caseId}` : null,
+    trustTitle: trustDisplay.title,
+    trustSubcopy: trustDisplay.subcopy,
+    trustInternalState: trustDisplay.internalState,
+    showTrustBanner: trustDisplay.showTrustBanner,
   };
 }
 

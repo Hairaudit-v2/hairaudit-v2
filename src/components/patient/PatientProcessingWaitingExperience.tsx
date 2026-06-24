@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
+import PatientTrustBanner from "@/components/patient/PatientTrustBanner";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { usePatientCaseStatusPolling } from "@/hooks/usePatientCaseStatusPolling";
 import {
@@ -92,7 +93,7 @@ export default function PatientProcessingWaitingExperience({
   const redirectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const initialReportReady = caseStatus === "complete" && hasReportPdf;
-  const { payload, isPolling } = usePatientCaseStatusPolling({
+  const { payload, isPolling, pollError } = usePatientCaseStatusPolling({
     caseId,
     caseStatus,
     hasReportPdf,
@@ -117,6 +118,9 @@ export default function PatientProcessingWaitingExperience({
   }, []);
 
   const reportReady = payload.reportReady;
+  const trustTitle = payload.trustTitle;
+  const trustSubcopy = payload.trustSubcopy;
+  const showTrustBanner = payload.showTrustBanner;
   const timeline = reportReady
     ? payload.timeline
     : resolvePatientProcessingTimeline({
@@ -189,8 +193,8 @@ export default function PatientProcessingWaitingExperience({
             {t("dashboard.patient.processing.eyebrow")}
           </p>
           <h2 className={compact ? "mt-1 text-base font-semibold text-white" : "mt-2 text-xl font-semibold text-white"}>
-            {t("dashboard.patient.processing.title")}
-          </h2>
+          {trustTitle || t("dashboard.patient.processing.title")}
+        </h2>
         </div>
         {isPolling ? (
           <span className="shrink-0 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-cyan-100/90">
@@ -200,8 +204,20 @@ export default function PatientProcessingWaitingExperience({
       </div>
 
       <p className={compact ? "mt-1 text-xs leading-relaxed text-slate-200/80" : "mt-2 text-sm leading-relaxed text-slate-200/85"}>
-        {t("dashboard.patient.processing.lead")}
+        {trustSubcopy || t("dashboard.patient.processing.lead")}
       </p>
+
+      {showTrustBanner ? (
+        <div className={compact ? "mt-3" : "mt-4"}>
+          <PatientTrustBanner compact={compact} />
+        </div>
+      ) : null}
+
+      {pollError ? (
+        <p className={compact ? "mt-2 text-xs text-cyan-100/80" : "mt-3 text-sm text-cyan-100/85"} role="status">
+          {trustSubcopy}
+        </p>
+      ) : null}
 
       <p className={compact ? "mt-2 text-xs text-cyan-100/80" : "mt-3 text-sm text-cyan-100/85"}>
         {t("dashboard.patient.processing.etaTypical")}

@@ -5,6 +5,7 @@ import PatientNewCasePathwayButtons from "@/components/patient/PatientNewCasePat
 import { useI18n } from "@/components/i18n/I18nProvider";
 import PatientNextActionPanel from "@/components/patient/PatientNextActionPanel";
 import DeleteDraftCaseButton from "@/app/dashboard/patient/DeleteDraftCaseButton";
+import { buildPatientTrustStatusDisplay } from "@/lib/patient/patientTrustStatusTranslator";
 
 export type PatientCaseRow = {
   id: string;
@@ -20,12 +21,16 @@ function resolveStatusLabel(
   t: (key: string) => string
 ): string {
   if (isReportReady) return t("dashboard.reports.statusReportReady");
+  const trustDisplay = buildPatientTrustStatusDisplay({
+    caseStatus: status,
+    hasReportPdf: isReportReady,
+  });
   const s = status.toLowerCase();
-  if (s === "complete") return t("dashboard.reports.statusComplete");
-  if (s === "submitted" || s === "processing") return t("dashboard.reports.statusProcessing");
-  if (s === "audit_failed") return t("dashboard.reports.statusAuditFailed");
   if (s === "draft") return t("dashboard.reports.statusDraft");
-  return status;
+  if (isReportReady || trustDisplay.internalState === "completed") {
+    return t("dashboard.reports.statusReportReady");
+  }
+  return trustDisplay.title;
 }
 
 export default function PatientDashboardCaseHistorySection({
@@ -86,20 +91,15 @@ export default function PatientDashboardCaseHistorySection({
             const pdfPath = pdfByCase[c.id];
             const reportId = reportIdByCase[c.id];
             const isReportReady = status === "complete" && Boolean(pdfPath);
-            const isProcessing = status === "submitted" || status === "processing";
 
             const statusLabel = resolveStatusLabel(status, isReportReady, t);
 
             const pill =
               isReportReady
                 ? "border-emerald-400/30 bg-emerald-400/15 text-emerald-100"
-                : status === "complete"
-                  ? "border-emerald-300/20 bg-emerald-300/10 text-emerald-200"
-                  : isProcessing
-                    ? "border-cyan-300/20 bg-cyan-300/10 text-cyan-200"
-                    : status === "audit_failed"
-                      ? "border-rose-300/20 bg-rose-300/10 text-rose-200"
-                      : "border-white/10 bg-white/5 text-slate-200/80";
+                : status === "draft"
+                  ? "border-white/10 bg-white/5 text-slate-200/80"
+                  : "border-cyan-300/20 bg-cyan-300/10 text-cyan-200";
 
             return (
               <li key={c.id}>

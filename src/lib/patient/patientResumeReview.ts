@@ -136,6 +136,7 @@ export function buildPatientResumeCaseContext(args: {
   const deliveryPhase = resolvePatientReportDeliveryPhase({
     caseStatus: args.case.status,
     hasReportPdf: args.hasReportPdf,
+    patientTrustLayer: true,
   });
   const step = resolvePatientResumeStep({ photoProgress, questionsComplete, deliveryPhase });
 

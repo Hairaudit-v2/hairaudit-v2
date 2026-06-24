@@ -6,7 +6,7 @@ import {
   PATIENT_CLINICAL_SAFETY_DISCLAIMER,
   type PatientConcernBand,
 } from "./patientConcernBands";
-import { IMAGE_LIMITED_AUDIT_PATIENT_NOTICE } from "@/lib/patient/patientPhotoImageLimitedOverride";
+import { PATIENT_IMAGE_LIMITED_TRUST_NOTICE } from "@/lib/patient/patientTrustStatusTranslator";
 import { buildPatientWhatHappensNext } from "./patientWhatHappensNext";
 import {
   getPathwayDefinition,
@@ -173,7 +173,9 @@ export function buildPatientSafeReportSummary(
   const forensicBlock = (summary?.forensic_audit ?? summary?.forensic) as
     | { imageLimitedAssessment?: boolean }
     | undefined;
-  const imageLimitedNotice = forensicBlock?.imageLimitedAssessment ? IMAGE_LIMITED_AUDIT_PATIENT_NOTICE : undefined;
+  const imageLimitedNotice = forensicBlock?.imageLimitedAssessment
+    ? `${PATIENT_IMAGE_LIMITED_TRUST_NOTICE.title}. ${PATIENT_IMAGE_LIMITED_TRUST_NOTICE.subcopy}`
+    : undefined;
   const keyFindings = Array.isArray(summary?.key_findings) ? summary.key_findings : [];
   const redFlags = Array.isArray(summary?.red_flags) ? summary.red_flags : [];
 
