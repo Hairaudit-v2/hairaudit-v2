@@ -46,6 +46,8 @@ export function renderRadarSvg(opts: {
   levels: number;
   overall: number;
   confidence: number;
+  /** When set, hides numeric overall score and legacy auditor labels for patient pathway reports. */
+  patientSafe?: { centerLabel: string };
 }): string {
   const size = Math.max(360, Math.floor(opts.size));
   const levels = Math.max(3, Math.min(7, Math.floor(opts.levels)));
@@ -133,10 +135,35 @@ export function renderRadarSvg(opts: {
   const overall = Math.round(clamp100(opts.overall));
   const conf01 = clamp01(opts.confidence);
   const confPct = Math.round(conf01 * 100);
+  const patientSafe = opts.patientSafe;
 
   const centerRadius = Math.round(Math.min(width, height) * 0.14);
   const scoreFontSize = Math.round(height * 0.2);
   const confFontSize = Math.max(14, Math.round(height * 0.045));
+  const patientCenterFontSize = Math.max(13, Math.round(height * 0.055));
+  const patientCenterLines = patientSafe
+    ? wrapLabel(patientSafe.centerLabel, 16)
+    : [];
+
+  const centerContent = patientSafe
+    ? patientCenterLines
+        .map((line, j) => {
+          const dy = (j - (patientCenterLines.length - 1) / 2) * (patientCenterFontSize + 4);
+          return `<text x="${cx}" y="${cy + dy}" fill="#f1f5f9" font-size="${patientCenterFontSize}" font-weight="700" font-family="Arial,sans-serif" text-anchor="middle" dominant-baseline="middle">${escapeXml(line)}</text>`;
+        })
+        .join("\n  ")
+    : `<text x="${cx}" y="${cy - 4}" fill="#f1f5f9" font-size="${scoreFontSize}" font-weight="800" font-family="Arial,sans-serif" text-anchor="middle" dominant-baseline="middle">${overall}</text>
+  <text x="${cx}" y="${cy + Math.round(height * 0.095)}" fill="#e2e8f0" font-size="${confFontSize}" font-weight="700" font-family="Arial,sans-serif" text-anchor="middle" dominant-baseline="middle">Confidence: ${confPct}%</text>`;
+
+  const zeroDataMessage = patientSafe
+    ? ""
+    : allZeros
+      ? `<text x="${cx}" y="${cy + Math.round(height * 0.16)}" fill="#cbd5e1" font-size="12" font-weight="600" font-family="Arial,sans-serif" text-anchor="middle" dominant-baseline="middle">Performance data will populate as sections are scored</text>`
+      : "";
+
+  const footerLabel = patientSafe
+    ? ""
+    : `<text x="${cx}" y="${height - 14}" fill="#cbd5e1" font-size="12" font-weight="700" font-family="Arial,sans-serif" text-anchor="middle" dominant-baseline="middle">Audit Performance Signature</text>`;
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" style="overflow:visible">
   <defs>
@@ -160,10 +187,9 @@ export function renderRadarSvg(opts: {
   ${dots}
 
   <circle cx="${cx}" cy="${cy}" r="${centerRadius}" fill="rgba(0,0,0,0.35)"/>
-  <text x="${cx}" y="${cy - 4}" fill="#f1f5f9" font-size="${scoreFontSize}" font-weight="800" font-family="Arial,sans-serif" text-anchor="middle" dominant-baseline="middle">${overall}</text>
-  <text x="${cx}" y="${cy + Math.round(height * 0.095)}" fill="#e2e8f0" font-size="${confFontSize}" font-weight="700" font-family="Arial,sans-serif" text-anchor="middle" dominant-baseline="middle">Confidence: ${confPct}%</text>
-  ${allZeros ? `<text x="${cx}" y="${cy + Math.round(height * 0.16)}" fill="#cbd5e1" font-size="12" font-weight="600" font-family="Arial,sans-serif" text-anchor="middle" dominant-baseline="middle">Performance data will populate as sections are scored</text>` : ""}
-  <text x="${cx}" y="${height - 14}" fill="#cbd5e1" font-size="12" font-weight="700" font-family="Arial,sans-serif" text-anchor="middle" dominant-baseline="middle">Audit Performance Signature</text>
+  ${centerContent}
+  ${zeroDataMessage}
+  ${footerLabel}
 
   ${labelElems}
 </svg>`;

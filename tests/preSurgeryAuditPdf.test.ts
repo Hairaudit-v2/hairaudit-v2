@@ -25,7 +25,17 @@ const FORBIDDEN_OUTPUT_STRINGS = [
   "none_suggested",
   "await extraction pattern review",
   "imagingos",
+  "Diagnostic Radar",
+  "AI Score",
+  "Forensic",
+  "Graft Integrity Index",
+  "Evidence Intelligence",
+  "Audit Performance Signature",
 ];
+
+function htmlVisibleText(html: string): string {
+  return html.replace(/<style[\s\S]*?<\/style>/gi, " ");
+}
 
 const sampleForensicSummary = {
   forensic_audit: {
@@ -190,7 +200,7 @@ describe("HA-PDF-SAFETY-3 pre-surgery audit PDF quality", () => {
       intelligenceBundle: intelligenceWithClinicianNotesPlaceholder(),
     });
 
-    const html = renderHtmlForReport(report).toLowerCase();
+    const html = htmlVisibleText(renderHtmlForReport(report)).toLowerCase();
     for (const forbidden of FORBIDDEN_OUTPUT_STRINGS) {
       assert.ok(!html.includes(forbidden.toLowerCase()), `leaked in HTML: ${forbidden}`);
     }
@@ -234,5 +244,21 @@ describe("HA-PDF-SAFETY-3 pre-surgery audit PDF quality", () => {
     assert.match(html, /Planning future long-term preservation/);
     assert.match(html, /does not prescribe treatment/i);
     assert.equal(report.longTermPreservation.subsections.length, 4);
+  });
+
+  it("visual summary appears when clean pre-surgery score data exists", () => {
+    const report = generatePreSurgeryPlanningReport({
+      summary: {
+        ...sampleForensicSummary,
+        metadata: { hairAuditIntelligence: intelligenceWithClinicianNotesPlaceholder() },
+      },
+      caseId: CASE_ID,
+      patientReviewPathway: "pre_surgery",
+      intelligenceBundle: intelligenceWithClinicianNotesPlaceholder(),
+    });
+    const html = renderHtmlForReport(report);
+    assert.match(html, /Review overview by area/i);
+    assert.match(html, /data-section="pathwayVisualSummary"/);
+    assert.match(html, /<svg[^>]*xmlns="http:\/\/www\.w3\.org\/2000\/svg"/);
   });
 });

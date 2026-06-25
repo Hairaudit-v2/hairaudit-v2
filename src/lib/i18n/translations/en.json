@@ -1200,6 +1200,23 @@
           }
         }
       },
+      "pathwayVisualSummary": {
+        "title": "Review overview by area",
+        "subtitle": "Based on submitted images and information",
+        "emptyMessage": "A visual overview will appear here once enough review areas have been assessed from your submitted materials.",
+        "domains": {
+          "donor_preservation": "Donor preservation",
+          "extraction_pattern": "Extraction pattern",
+          "density_distribution": "Density distribution",
+          "recipient_area": "Recipient area",
+          "healing_quality": "Healing quality",
+          "hair_loss_progression_risk": "Progression risk",
+          "donor_area_strength": "Donor strength",
+          "restoration_suitability": "Restoration suitability",
+          "long_term_preservation_score": "Long-term preservation",
+          "treatment_stabilisation_priority": "Stabilisation priority"
+        }
+      },
       "preSurgeryReport": {
         "badges": {
           "complete": "Pre-surgery review complete"

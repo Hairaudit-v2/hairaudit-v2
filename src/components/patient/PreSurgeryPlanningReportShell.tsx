@@ -18,6 +18,7 @@ import FutureHairLossRiskSection from "@/components/patient/FutureHairLossRiskSe
 import ReviewInputsProcessedSection from "@/components/patient/ReviewInputsProcessedSection";
 import AssessmentConfidenceSection from "@/components/patient/AssessmentConfidenceSection";
 import AssessmentImprovementRecommendationsSection from "@/components/patient/AssessmentImprovementRecommendationsSection";
+import PathwayVisualSummarySection from "@/components/patient/PathwayVisualSummarySection";
 import type { ClinicalHistorySnapshot } from "@/lib/hairaudit/clinical-history/clinicalHistoryTypes";
 
 const SECTION_ORDER: PreSurgeryReviewSectionId[] = [
@@ -168,6 +169,8 @@ export default function PreSurgeryPlanningReportShell({
           })}
         </div>
       </div>
+
+      <PathwayVisualSummarySection pathway="pre_surgery" preReport={report} />
 
       <ReviewInputsProcessedSection pathway="pre_surgery" preReport={report} uploads={uploads} />
 

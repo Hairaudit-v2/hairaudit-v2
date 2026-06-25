@@ -31,6 +31,12 @@ import {
   renderAssessmentImprovementHtml,
   ASSESSMENT_IMPROVEMENT_CSS,
 } from "./assessmentImprovementRecommendations";
+import {
+  buildPathwayVisualSummaryLabelsEn,
+  buildPreSurgeryVisualSummary,
+  PATHWAY_VISUAL_SUMMARY_CSS,
+  renderPathwayVisualSummaryHtml,
+} from "./pathwayVisualSummary";
 import type { ClinicalHistorySnapshot } from "@/lib/hairaudit/clinical-history/clinicalHistoryTypes";
 
 export type PreSurgeryReportHtmlLabels = {
@@ -188,6 +194,13 @@ export function renderPreSurgeryPlanningReportHtml(vm: PreSurgeryReportHtmlVm): 
     labels: assessmentImprovementLabels,
   });
 
+  const visualSummaryHtml = renderPathwayVisualSummaryHtml(
+    buildPreSurgeryVisualSummary(report, {
+      labels: buildPathwayVisualSummaryLabelsEn(),
+      confidence: assessmentConfidenceResult.score / 100,
+    })
+  );
+
   const preservationHtml = report.longTermPreservation
     ? renderLongTermHairPreservationHtml(report.longTermPreservation)
     : "";
@@ -306,6 +319,7 @@ export function renderPreSurgeryPlanningReportHtml(vm: PreSurgeryReportHtmlVm): 
     ${REVIEW_INPUTS_PROCESSED_CSS}
     ${ASSESSMENT_CONFIDENCE_CSS}
     ${ASSESSMENT_IMPROVEMENT_CSS}
+    ${PATHWAY_VISUAL_SUMMARY_CSS}
     ${LONG_TERM_PRESERVATION_CSS}
     ${FUTURE_HAIR_LOSS_RISK_CSS}
     .trustBox { background: #f0f9ff; border-color: #bae6fd; }
@@ -343,6 +357,8 @@ export function renderPreSurgeryPlanningReportHtml(vm: PreSurgeryReportHtmlVm): 
       <p class="sectionLead">${esc(labels.scorecardsSubtitle)}</p>
       <div class="scoreGrid">${scorecardsHtml}</div>
     </div>
+
+    ${visualSummaryHtml}
 
     ${reviewInputsHtml}
 

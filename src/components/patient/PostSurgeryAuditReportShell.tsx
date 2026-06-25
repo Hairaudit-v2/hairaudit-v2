@@ -19,6 +19,7 @@ import FutureHairLossRiskSection from "@/components/patient/FutureHairLossRiskSe
 import ReviewInputsProcessedSection from "@/components/patient/ReviewInputsProcessedSection";
 import AssessmentConfidenceSection from "@/components/patient/AssessmentConfidenceSection";
 import AssessmentImprovementRecommendationsSection from "@/components/patient/AssessmentImprovementRecommendationsSection";
+import PathwayVisualSummarySection from "@/components/patient/PathwayVisualSummarySection";
 import type { ClinicalHistorySnapshot } from "@/lib/hairaudit/clinical-history/clinicalHistoryTypes";
 
 const SECTION_ORDER: PostSurgeryReviewSectionId[] = [
@@ -183,6 +184,8 @@ export default function PostSurgeryAuditReportShell({
           })}
         </div>
       </div>
+
+      <PathwayVisualSummarySection pathway="post_surgery" postReport={report} />
 
       <ReviewInputsProcessedSection pathway="post_surgery" postReport={report} uploads={uploads} />
 

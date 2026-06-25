@@ -26,7 +26,18 @@ const FORBIDDEN_PDF_STRINGS = [
   "Await extraction pattern review",
   "ImagingOS",
   "Photo not available in this export",
+  "Diagnostic Radar",
+  "AI Score",
+  "Forensic",
+  "Graft Integrity Index",
+  "Evidence Intelligence",
+  "clinicianNotes",
+  "Audit Performance Signature",
 ];
+
+function htmlVisibleText(html: string): string {
+  return html.replace(/<style[\s\S]*?<\/style>/gi, " ");
+}
 
 const sampleForensicSummary = {
   forensic_audit: {
@@ -120,7 +131,7 @@ describe("HA-FIX-8I post-surgery audit PDF quality", () => {
       patientReviewPathway: "post_surgery",
       clinicalHistory,
     });
-    const html = renderHtmlForReport(report).toLowerCase();
+    const html = htmlVisibleText(renderHtmlForReport(report)).toLowerCase();
     for (const forbidden of FORBIDDEN_PDF_STRINGS) {
       assert.ok(!html.includes(forbidden.toLowerCase()), `leaked: ${forbidden}`);
     }
@@ -231,6 +242,19 @@ describe("HA-FIX-8I post-surgery audit PDF quality", () => {
     assert.ok(integrity);
     assert.ok(!integrity!.finding.toLowerCase().includes("rule-based placeholder"));
     assert.ok(!integrity!.finding.toLowerCase().includes("await extraction"));
+  });
+
+  it("visual summary appears when score data exists", () => {
+    const report = generatePostSurgeryAuditReport({
+      summary: sampleForensicSummary,
+      caseId: CASE_ID,
+      patientReviewPathway: "post_surgery",
+    });
+    const html = renderHtmlForReport(report);
+    assert.match(html, /Review overview by area/i);
+    assert.match(html, /Based on submitted images and information/i);
+    assert.match(html, /data-section="pathwayVisualSummary"/);
+    assert.match(html, /<svg[^>]*xmlns="http:\/\/www\.w3\.org\/2000\/svg"/);
   });
 
   it("assessment confidence section appears after What We Reviewed and includes helper disclaimer", () => {

@@ -31,6 +31,12 @@ import {
   renderAssessmentImprovementHtml,
   ASSESSMENT_IMPROVEMENT_CSS,
 } from "./assessmentImprovementRecommendations";
+import {
+  buildPathwayVisualSummaryLabelsEn,
+  buildPostSurgeryVisualSummary,
+  PATHWAY_VISUAL_SUMMARY_CSS,
+  renderPathwayVisualSummaryHtml,
+} from "./pathwayVisualSummary";
 import type { ClinicalHistorySnapshot } from "@/lib/hairaudit/clinical-history/clinicalHistoryTypes";
 
 export type PostSurgeryReportHtmlLabels = {
@@ -252,6 +258,13 @@ export function renderPostSurgeryAuditReportHtml(vm: PostSurgeryReportHtmlVm): s
     labels: assessmentImprovementLabels,
   });
 
+  const visualSummaryHtml = renderPathwayVisualSummaryHtml(
+    buildPostSurgeryVisualSummary(report, {
+      labels: buildPathwayVisualSummaryLabelsEn(),
+      confidence: assessmentConfidenceResult.score / 100,
+    })
+  );
+
   const repairSteps = report.repairPlanningGuidance ?? [];
   const repairPlanningHtml =
     repairSteps.length > 0
@@ -400,6 +413,7 @@ export function renderPostSurgeryAuditReportHtml(vm: PostSurgeryReportHtmlVm): s
     ${REVIEW_INPUTS_PROCESSED_CSS}
     ${ASSESSMENT_CONFIDENCE_CSS}
     ${ASSESSMENT_IMPROVEMENT_CSS}
+    ${PATHWAY_VISUAL_SUMMARY_CSS}
     .trustBox { background: #f0f9ff; border-color: #bae6fd; }
     .nextSteps { background: #ecfdf5; border-color: #a7f3d0; }
     .nextList { margin: 12px 0 0; padding: 0; list-style: none; }
@@ -439,6 +453,8 @@ export function renderPostSurgeryAuditReportHtml(vm: PostSurgeryReportHtmlVm): s
       <p class="sectionLead">${esc(labels.scorecardsSubtitle)}</p>
       <div class="scoreGrid">${scorecardsHtml}</div>
     </div>
+
+    ${visualSummaryHtml}
 
     ${reviewInputsHtml}
 
