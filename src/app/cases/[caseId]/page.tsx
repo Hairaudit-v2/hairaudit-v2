@@ -39,6 +39,11 @@ import LatestReportCard from "@/components/reports/LatestReportCard";
 import InviteClinicContributionCard from "@/components/case/InviteClinicContributionCard";
 import ForensicCaseTimelineViewer from "@/components/reports/ForensicCaseTimelineViewer";
 import PatientNextActionPanel from "@/components/patient/PatientNextActionPanel";
+import {
+  extractPatientInfoRequestFromReportSummary,
+  isCaseAwaitingPatientInformation,
+} from "@/lib/auditor/patientInfoRequest";
+import { toPatientInfoRequestDisplay } from "@/lib/patient/patientInfoRequestDisplay";
 import PatientSafeSummaryShell from "@/components/patient/PatientSafeSummaryShell";
 import {
   resolvePatientReportDeliveryPhase,
@@ -661,6 +666,9 @@ export default async function Page({
   const showAuditorReview = isAuditor && latestReport && isAuditorReviewAvailable(auditorReviewEligibility);
   const latestSummary = (latestReport?.summary as Record<string, unknown>) ?? {};
   const previousSummary = (previousReport?.summary as Record<string, unknown>) ?? {};
+  const patientInfoRequestForCase = isCaseAwaitingPatientInformation(status)
+    ? toPatientInfoRequestDisplay(extractPatientInfoRequestFromReportSummary(latestSummary))
+    : null;
   const latestDoctorAnswers = (latestSummary?.doctor_answers as Record<string, unknown> | undefined) ?? null;
   const latestClinicAnswers = (latestSummary?.clinic_answers as Record<string, unknown> | undefined) ?? null;
   const previousDoctorAnswers = (previousSummary?.doctor_answers as Record<string, unknown> | undefined) ?? null;
@@ -1282,6 +1290,7 @@ export default async function Page({
           scoringBlock={auditorScoringBlock}
           patientAnswersBlock={auditorPatientAnswersBlock}
           manualAuditBanner={auditorManualAuditBanner}
+          infoRequestPending={isCaseAwaitingPatientInformation(status)}
         />
       ) : (
         <>
@@ -1327,6 +1336,7 @@ export default async function Page({
               variant="case"
               notificationEmail={isPatientForCase ? user.email : undefined}
               submittedAt={c.submitted_at ?? null}
+              patientInfoRequest={patientInfoRequestForCase}
             />
           )}
 

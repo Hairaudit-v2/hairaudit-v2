@@ -32,6 +32,7 @@ export const CASE_STATUSES = [
   "request_closed",
   "request_expired",
   "in_review",
+  "awaiting_patient_information",
 ] as const;
 
 export type CaseStatus = (typeof CASE_STATUSES)[number];
@@ -61,6 +62,7 @@ export const CASE_STATUS_IMPLYING_SUBMIT = [
   "request_closed",
   "request_expired",
   "in_review",
+  "awaiting_patient_information",
 ] as const;
 
 export const CASE_STATUS_IMPLYING_SUBMIT_SET = new Set<string>(CASE_STATUS_IMPLYING_SUBMIT);

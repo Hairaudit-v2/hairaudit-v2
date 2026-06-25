@@ -5,6 +5,7 @@
  */
 
 import { SITE_URL } from "@/lib/constants";
+import { buildPatientInfoRequestEmailContent, type PatientInfoRequestType } from "@/lib/auditor/patientInfoRequest";
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const FROM_EMAIL = process.env.NOTIFICATION_FROM_EMAIL ?? "noreply@hairaudit.com";
 const AUDITOR_EMAIL = process.env.AUDITOR_NOTIFICATION_EMAIL ?? "auditor@hairaudit.com";
@@ -299,6 +300,38 @@ export async function notifyPatientVerifyEmail({
     `— HairAudit`;
 
   return sendEmail({ to, subject: "Confirm your HairAudit account", html, text });
+}
+
+export type NotifyPatientMoreInformationRequestedParams = {
+  to: string;
+  caseId: string;
+  firstName?: string | null;
+  requestType: PatientInfoRequestType;
+  auditorNote?: string | null;
+};
+
+/**
+ * HA-AUDITOR-COMMS-1 — calm patient email when the review team needs more information.
+ */
+export async function notifyPatientMoreInformationRequested({
+  to,
+  caseId,
+  firstName,
+  requestType,
+  auditorNote,
+}: NotifyPatientMoreInformationRequestedParams): Promise<boolean> {
+  const content = buildPatientInfoRequestEmailContent({
+    caseId,
+    patientName: firstName,
+    requestType,
+    auditorNote,
+  });
+  return sendEmail({
+    to,
+    subject: content.subject,
+    html: content.html,
+    text: content.text,
+  });
 }
 
 function escapeHtml(s: string): string {

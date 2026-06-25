@@ -7,8 +7,14 @@ import PatientProcessingWaitingExperience from "@/components/patient/PatientProc
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { resolvePatientReportDeliveryPhase } from "@/lib/patient/patientProcessingView";
 import { buildPatientTrustStatusDisplay } from "@/lib/patient/patientTrustStatusTranslator";
+import { isCaseAwaitingPatientInformation } from "@/lib/auditor/patientInfoRequest";
 
 export type PatientNextActionVariant = "dashboard" | "case";
+
+export type PatientInfoRequestDisplay = {
+  requestType: string;
+  reasonLabel: string;
+};
 
 export type PatientNextActionPanelProps = {
   /** Case status from DB: draft, submitted, processing, complete, audit_failed */
@@ -22,6 +28,8 @@ export type PatientNextActionPanelProps = {
   /** Masked in UI; used to confirm report-ready email destination during processing */
   notificationEmail?: string | null;
   submittedAt?: string | null;
+  /** When set, patient must provide more information before review continues. */
+  patientInfoRequest?: PatientInfoRequestDisplay | null;
 };
 
 export default function PatientNextActionPanel({
@@ -32,8 +40,62 @@ export default function PatientNextActionPanel({
   variant = "case",
   notificationEmail,
   submittedAt,
+  patientInfoRequest,
 }: PatientNextActionPanelProps) {
   const { t } = useI18n();
+  const caseHref = `/cases/${caseId}`;
+  const compact = variant === "dashboard";
+
+  const activeInfoRequest =
+    patientInfoRequest ??
+    (isCaseAwaitingPatientInformation(status)
+      ? { requestType: "other", reasonLabel: t("dashboard.patient.infoRequest.defaultReason") }
+      : null);
+
+  if (activeInfoRequest) {
+    return (
+      <div
+        className={
+          compact
+            ? "rounded-xl border border-amber-300/25 bg-amber-300/5 p-3"
+            : "rounded-2xl border border-amber-300/25 bg-amber-300/5 p-4 sm:p-5"
+        }
+      >
+        <p className={compact ? "text-xs font-semibold uppercase tracking-wide text-amber-200/90" : "text-xs font-semibold uppercase tracking-wide text-amber-200/90"}>
+          {t("dashboard.patient.infoRequest.eyebrow")}
+        </p>
+        <p className={compact ? "mt-1 text-sm font-semibold text-white" : "mt-2 text-base font-semibold text-white"}>
+          {t("dashboard.patient.infoRequest.title")}
+        </p>
+        <p className={compact ? "mt-0.5 text-xs text-slate-200/80" : "mt-1 text-sm text-slate-200/80"}>
+          {activeInfoRequest.reasonLabel}
+        </p>
+        <div className={compact ? "mt-2 flex flex-wrap gap-2" : "mt-4 flex flex-wrap gap-3"}>
+          <Link
+            href={`${caseHref}/patient/photos`}
+            className={
+              compact
+                ? "inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-950 bg-gradient-to-r from-cyan-300 to-emerald-300 hover:from-cyan-200 hover:to-emerald-200"
+                : "inline-flex items-center rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-950 bg-gradient-to-r from-cyan-300 to-emerald-300 hover:from-cyan-200 hover:to-emerald-200"
+            }
+          >
+            {t("dashboard.patient.infoRequest.uploadCta")}
+          </Link>
+          <Link
+            href={caseHref}
+            className={
+              compact
+                ? "inline-flex items-center rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-slate-100 hover:bg-white/15"
+                : "inline-flex items-center rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-semibold text-slate-100 hover:bg-white/15"
+            }
+          >
+            {t("dashboard.patient.infoRequest.continueCta")}
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   const deliveryPhase = resolvePatientReportDeliveryPhase({
     caseStatus: status,
     hasReportPdf: Boolean(pdfPath),
@@ -45,8 +107,6 @@ export default function PatientNextActionPanel({
       : deliveryPhase === "processing"
         ? "processing"
         : "draft";
-  const caseHref = `/cases/${caseId}`;
-  const compact = variant === "dashboard";
 
   // Draft: Complete your audit (Upload photos / Complete questions)
   if (state === "draft") {

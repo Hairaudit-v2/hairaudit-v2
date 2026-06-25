@@ -81,6 +81,7 @@ export function resolvePatientReportDeliveryPhase(args: {
     return args.patientTrustLayer ? "processing" : "audit_failed";
   }
   if (status === "draft") return "draft";
+  if (status === "awaiting_patient_information") return "draft";
   if (status === "complete" && args.hasReportPdf) return "delivered";
   if (
     status === "submitted" ||

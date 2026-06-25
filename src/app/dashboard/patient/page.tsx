@@ -19,6 +19,10 @@ import { isPatientReportDelivered, resolvePatientReportDeliveryPhase } from "@/l
 import { shouldShowPatientDashboardAnalytics } from "@/lib/patient/patientResumeReview";
 import { PATHWAY_CHOOSER_HREF } from "@/lib/patient/patientReviewPathway";
 import PatientDashboardHliGuideCard from "@/components/patient/PatientDashboardHliGuideCard";
+import {
+  loadPatientInfoRequestsForCases,
+  toPatientInfoRequestDisplay,
+} from "@/lib/patient/patientInfoRequestDisplay";
 
 function isMissingFeatureError(error: unknown): boolean {
   const e = error as { status?: number; code?: string; message?: string } | null;
@@ -114,6 +118,8 @@ export default async function PatientDashboardPage() {
   const hliGuideSubmitCtaHref = openSubmitCase ? `/cases/${openSubmitCase.id}` : PATHWAY_CHOOSER_HREF;
   const showAnalytics = shouldShowPatientDashboardAnalytics(resumeModel.step);
 
+  const infoRequestsByCase = await loadPatientInfoRequestsForCases(admin, cases ?? []);
+
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6">
       <PatientResumeReviewPanel model={resumeModel} />
@@ -151,6 +157,9 @@ export default async function PatientDashboardPage() {
         notificationEmail={user.email}
         compact={resumeModel.step !== "no_open_case"}
         primaryCaseId={resumeModel.primaryCase?.case.id ?? null}
+        infoRequestsByCase={Object.fromEntries(
+          Object.entries(infoRequestsByCase).map(([id, state]) => [id, toPatientInfoRequestDisplay(state)!])
+        )}
       />
     </div>
   );

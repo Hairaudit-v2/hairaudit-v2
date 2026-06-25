@@ -4,6 +4,7 @@ import Link from "next/link";
 import PatientNewCasePathwayButtons from "@/components/patient/PatientNewCasePathwayButtons";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import PatientNextActionPanel from "@/components/patient/PatientNextActionPanel";
+import type { PatientInfoRequestDisplay } from "@/components/patient/PatientNextActionPanel";
 import DeleteDraftCaseButton from "@/app/dashboard/patient/DeleteDraftCaseButton";
 import { buildPatientTrustStatusDisplay } from "@/lib/patient/patientTrustStatusTranslator";
 
@@ -40,6 +41,7 @@ export default function PatientDashboardCaseHistorySection({
   notificationEmail,
   compact = false,
   primaryCaseId = null,
+  infoRequestsByCase = {},
 }: {
   cases: PatientCaseRow[] | null | undefined;
   pdfByCase: Record<string, string>;
@@ -49,6 +51,7 @@ export default function PatientDashboardCaseHistorySection({
   compact?: boolean;
   /** Hide the primary resume case from the history list (shown in resume panel). */
   primaryCaseId?: string | null;
+  infoRequestsByCase?: Record<string, PatientInfoRequestDisplay>;
 }) {
   const { t } = useI18n();
   const list = (cases ?? []).filter((c) => !primaryCaseId || c.id !== primaryCaseId);
@@ -131,6 +134,7 @@ export default function PatientDashboardCaseHistorySection({
                         variant="dashboard"
                         notificationEmail={notificationEmail}
                         submittedAt={c.submitted_at}
+                        patientInfoRequest={infoRequestsByCase[c.id] ?? null}
                       />
                     </div>
                   </div>

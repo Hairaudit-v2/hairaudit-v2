@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import RequestPatientInformationPanel from "@/components/auditor/case-workflow/RequestPatientInformationPanel";
 import AuditorCaseSummaryHeader from "@/components/auditor/case-workflow/AuditorCaseSummaryHeader";
 import AuditorAuditExecutionCenter from "@/components/auditor/case-workflow/AuditorAuditExecutionCenter";
 import AuditorStickyActionBar from "@/components/auditor/case-workflow/AuditorStickyActionBar";
@@ -149,6 +150,7 @@ export type AuditorCasePageWorkflowProps = {
   > | null;
   caseLabel: string | null;
   showAuditor: boolean;
+  infoRequestPending?: boolean;
   doctorAnswersBlock: ReactNode;
   clinicAnswersBlock: ReactNode;
   scoringBlock: ReactNode;
@@ -212,6 +214,15 @@ export default function AuditorCasePageWorkflow(props: AuditorCasePageWorkflowPr
         pathwayLabel={props.pathwayLabel}
         clinicLabel={props.clinicLabel}
         bulkBatchLabel={props.bulkBatchContext?.batch.batch_name ?? null}
+      />
+
+      <RequestPatientInformationPanel
+        caseId={props.caseId}
+        patientName={props.patientName}
+        infoRequestPending={
+          props.infoRequestPending ||
+          String(props.caseRow.status ?? "").toLowerCase() === "awaiting_patient_information"
+        }
       />
 
       <CaseClinicalHistoryPanel

@@ -941,6 +941,13 @@
         "failedBody": "Please contact support or try resubmitting your case materials.",
         "contactSupport": "Contact support"
       },
+      "infoRequest": {
+        "eyebrow": "Action needed",
+        "title": "More information requested",
+        "defaultReason": "Our review team needs a little more information before finalising your report.",
+        "uploadCta": "Upload information",
+        "continueCta": "Continue review"
+      },
       "processing": {
         "eyebrow": "Independent review in progress",
         "title": "Your case is being reviewed now",
