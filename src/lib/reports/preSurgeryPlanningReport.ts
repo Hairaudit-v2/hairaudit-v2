@@ -28,6 +28,7 @@ import {
   buildPatientSafeReportSummary,
   type PatientSafeReportSummary,
 } from "./patientSafeSummary";
+import { sanitizePatientReportText } from "./postSurgeryPatientText";
 
 export const PRE_SURGERY_PLANNING_REPORT_VERSION = 1 as const;
 
@@ -123,9 +124,9 @@ function buildSectionFinding(
     const text = extractFindingText(entry);
     if (!text) continue;
     const lower = text.toLowerCase();
-    if (keywords.some((k) => lower.includes(k))) return text;
+    if (keywords.some((k) => lower.includes(k))) return sanitizePatientReportText(text);
   }
-  return defaultText;
+  return sanitizePatientReportText(defaultText);
 }
 
 function norwoodNumericStage(stage: NorwoodStageEstimate): number | null {
@@ -309,13 +310,15 @@ function buildRecommendedNextSteps(
     steps.push("Prioritise conservative graft use and long-term donor preservation in any plan.");
   }
   if (bundle?.donorIntelligence?.suggestedNextStep) {
-    steps.push(bundle.donorIntelligence.suggestedNextStep);
+    const cleaned = sanitizePatientReportText(bundle.donorIntelligence.suggestedNextStep);
+    if (cleaned) steps.push(cleaned);
   }
   if (bundle?.hairLossClassification?.suggestedNextStep) {
-    steps.push(bundle.hairLossClassification.suggestedNextStep);
+    const cleaned = sanitizePatientReportText(bundle.hairLossClassification.suggestedNextStep);
+    if (cleaned) steps.push(cleaned);
   }
 
-  return [...new Set(steps.map((s) => s.trim()).filter(Boolean))].slice(0, 6);
+  return [...new Set(steps.map((s) => sanitizePatientReportText(s.trim())).filter(Boolean))].slice(0, 6);
 }
 
 function pickPhoto(
@@ -390,27 +393,30 @@ function buildImageAssessments(
       photoCategoryKey: frontPhoto.key,
       imageUrl: frontPhoto.url,
       imageLabel: frontPhoto.label ?? "Front hairline view",
-      assessment:
+      assessment: sanitizePatientReportText(
         (isRecord(frontObs) ? String(frontObs.observation ?? frontObs.summary ?? "").trim() : "") ||
-        defaultFront,
+          defaultFront
+      ),
     },
     {
       viewKey: "crown",
       photoCategoryKey: crownPhoto.key,
       imageUrl: crownPhoto.url,
       imageLabel: crownPhoto.label ?? "Crown / top view",
-      assessment:
+      assessment: sanitizePatientReportText(
         (isRecord(crownObs) ? String(crownObs.observation ?? crownObs.summary ?? "").trim() : "") ||
-        defaultCrown,
+          defaultCrown
+      ),
     },
     {
       viewKey: "donor",
       photoCategoryKey: donorPhoto.key,
       imageUrl: donorPhoto.url,
       imageLabel: donorPhoto.label ?? "Donor view",
-      assessment:
+      assessment: sanitizePatientReportText(
         (isRecord(donorObs) ? String(donorObs.observation ?? donorObs.summary ?? "").trim() : "") ||
-        defaultDonor,
+          defaultDonor
+      ),
     },
   ];
 }
@@ -444,10 +450,11 @@ function buildReviewSections(
     ...(Array.isArray(forensic?.red_flags) ? forensic.red_flags : []),
   ];
 
-  const summaryText = typeof forensic?.summary === "string" ? forensic.summary.trim() : "";
+  const summaryText =
+    typeof forensic?.summary === "string" ? sanitizePatientReportText(forensic.summary.trim()) : "";
   const overallDefault =
     summaryText ||
-    patientSummary.plainEnglishSummary ||
+    sanitizePatientReportText(patientSummary.plainEnglishSummary) ||
     "Your submitted images suggest a pattern that may be suitable for hair restoration planning, provided long-term donor preservation and future hair loss progression are considered.";
 
   const hairLossDefault =
@@ -478,7 +485,7 @@ function buildReviewSections(
   })();
 
   const progressionDefault =
-    bundle?.hairLossClassification?.clinicianNotes?.trim() ||
+    bundle?.hairLossClassification?.patientSafeSummary?.trim() ||
     "Because future progression may continue, any surgical plan should avoid using too much donor supply too early.";
 
   const medicalDefault =
@@ -501,7 +508,7 @@ function buildReviewSections(
       id: "donor_area",
       finding: buildSectionFinding(donorDefault, ["donor", "density", "reserve"], findings),
     },
-    { id: "estimated_graft_requirement", finding: graftDefault },
+    { id: "estimated_graft_requirement", finding: sanitizePatientReportText(graftDefault) },
     {
       id: "surgical_suitability",
       finding: buildSectionFinding(suitabilityDefault, ["surgery", "suitable", "restoration"], findings),
