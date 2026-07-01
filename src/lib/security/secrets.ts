@@ -5,6 +5,7 @@
 
 const DEV_CONTRIBUTION_TOKEN_SECRET = "dev-only-contribution-token-secret";
 const DEV_REPORT_RENDER_TOKEN_SECRET = "dev-only-report-render-token-secret";
+const DEV_ACCOUNT_CLAIM_TOKEN_SECRET = "dev-only-account-claim-token-secret";
 
 export function isProductionRuntime(): boolean {
   return process.env.NODE_ENV === "production";
@@ -18,6 +19,16 @@ export function getContributionTokenSecret(): string {
     throw new Error("CONTRIBUTION_TOKEN_SECRET is required in production");
   }
   return DEV_CONTRIBUTION_TOKEN_SECRET;
+}
+
+/** HMAC/pepper secret for Nexus account claim tokens (SHA-256 with secret prefix). */
+export function getAccountClaimTokenSecret(): string {
+  const explicit = String(process.env.HA_ACCOUNT_CLAIM_TOKEN_SECRET ?? "").trim();
+  if (explicit) return explicit;
+  if (isProductionRuntime()) {
+    throw new Error("HA_ACCOUNT_CLAIM_TOKEN_SECRET is required in production");
+  }
+  return DEV_ACCOUNT_CLAIM_TOKEN_SECRET;
 }
 
 /** Secret used to sign/verify short-lived report HTML/PDF render tokens. */

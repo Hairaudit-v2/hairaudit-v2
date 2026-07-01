@@ -219,7 +219,19 @@ export async function evaluateProfessionalAccess(args: {
     }
     const doctorProfile = await loadDoctorProfile(args.admin, args.userId);
     if (!doctorProfile) {
-      return { allowed: false, reason: "Doctor profile required.", httpStatus: 403 };
+      return {
+        allowed: false,
+        reason: "Doctor profile required. Network professionals must claim their invite before access.",
+        httpStatus: 403,
+      };
+    }
+
+    if (!doctorProfile.linked_user_id || doctorProfile.linked_user_id !== args.userId) {
+      return {
+        allowed: false,
+        reason: "Doctor account is not linked.",
+        httpStatus: 403,
+      };
     }
 
     const globalId = doctorProfile.external_provider_id?.trim() ?? "";

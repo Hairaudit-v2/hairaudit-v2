@@ -13,6 +13,10 @@ import {
   readExternalProfessionalState,
   writeNexusProvisioningAudit,
 } from "@/lib/nexus/readExternalProfessionalState.server";
+import {
+  ensureClaimTokenForUnlinkedNexusDoctor,
+} from "@/lib/nexus/accountClaim.server";
+import { sendNexusAccountClaimInviteEmail } from "@/lib/nexus/accountClaimEmail.server";
 
 function normalizeApprovalStatus(raw: string | undefined): string {
   const s = (raw?.trim() || "pending").toLowerCase();
@@ -215,6 +219,22 @@ export async function provisionExternalProfessionalFromNexus(
       payload.metadata
     );
     await syncEntitlements(supabase, globalProfessionalId, payload.entitlementKeys, approvalStatus);
+
+    const claimTokenResult = await ensureClaimTokenForUnlinkedNexusDoctor(supabase, {
+      doctorProfileId: linkResult.doctorProfileId,
+      globalProfessionalId,
+      email: payload.email.trim(),
+      professionalRole: payload.professionalRole.trim(),
+    });
+
+    if (claimTokenResult?.created && claimTokenResult.plaintextToken) {
+      await sendNexusAccountClaimInviteEmail({
+        to: payload.email.trim(),
+        claimToken: claimTokenResult.plaintextToken,
+        expiresAt: claimTokenResult.expiresAt,
+        professionalRole: payload.professionalRole.trim(),
+      });
+    }
 
     const stateResult = await readExternalProfessionalState(globalProfessionalId, supabase);
     if (!stateResult.ok) {

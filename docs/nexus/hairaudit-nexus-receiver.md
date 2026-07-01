@@ -51,6 +51,7 @@ HTTP statuses:
 | `HA_NEXUS_ENABLED` | `false` | Master feature gate |
 | `HA_NEXUS_SECRET` | unset | Shared HMAC secret (≥16 chars) |
 | `HA_NEXUS_ALLOWED_SOURCES` | `fi_os,iiohr` | Comma-separated allowed `sourceSystem` values |
+| `HA_ACCOUNT_CLAIM_TOKEN_SECRET` | unset (required in production) | SHA-256 pepper for network doctor claim invite tokens |
 
 ### Commercial access policy (HairAudit stays open by default)
 
@@ -135,8 +136,18 @@ FI OS / IIOHR should treat HairAudit as a downstream clinical audit node:
 2. Set `approvalStatus` to `pending` until network approval completes
 3. Re-provision with `approved` + entitlements to activate upload/access
 4. Rollback on certification revocation
+5. **HA-NEXUS-2:** HairAudit mints a claim invite for unlinked shells; professional validates token, signs in, and claims via `/api/nexus/account-claim/*`
 
-No SSO/OIDC is required for Phase HA-NEXUS-1.
+No SSO/OIDC is required for Phase HA-NEXUS-1/2. See `docs/nexus/hairaudit-nexus-account-claim.md` for the secure claim flow.
+
+## HA-NEXUS-2 account claim routes
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `GET` | `/api/nexus/account-claim/validate?token=` | Public safe invite preview |
+| `POST` | `/api/nexus/account-claim/claim` | Authenticated shell linking |
+
+See `docs/nexus/hairaudit-nexus-account-claim.md`.
 
 ## Tests
 

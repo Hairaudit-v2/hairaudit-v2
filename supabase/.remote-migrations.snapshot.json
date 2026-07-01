@@ -1,0 +1,18 @@
+{
+  "project_ref": "vbzjkqhvzfunahmlxevb",
+  "captured_at": "2026-07-02T20:57:53.000Z",
+  "source": "Supabase MCP list_migrations after HA-SECURITY-1B deploy",
+  "migrations": [
+    { "version": "20260614203633", "name": "20260320000003_patient_safe_summary_narrative_translations" },
+    { "version": "20260617015504", "name": "20260320000004_patient_safe_summary_review_action_metadata" },
+    { "version": "20260617015505", "name": "20260604000007_surgery_upload_audit_handoff" },
+    { "version": "20260617015528", "name": "20260320000001_i18n_language_fields" },
+    { "version": "20260617015545", "name": "20260315000002_auditor_rerun_tracking" },
+    { "version": "20260617015546", "name": "20260316000001_external_ids_future_integration" },
+    { "version": "20260621011606", "name": "patient_review_pathway" },
+    { "version": "20260701205452", "name": "patient_core_table_rls" },
+    { "version": "20260701205501", "name": "hairaudit_core_rls_hardening" },
+    { "version": "20260701205508", "name": "hairaudit_remote_security_alignment" },
+    { "version": "20260701205753", "name": "hairaudit_satellite_tables_rls_hardening" }
+  ]
+}
