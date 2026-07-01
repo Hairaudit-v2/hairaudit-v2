@@ -1116,7 +1116,31 @@ Phase 5: Full convergence (optional)
 | `CASE_FILES_BUCKET` | Storage bucket | `case-files` |
 | `CONTRIBUTION_TOKEN_SECRET` | Contribution portal tokens | **must set** |
 | `REPORT_RENDER_TOKEN` | Report HTML render tokens | **must set** |
+| `HA_NEXUS_ENABLED` | Inbound Nexus provisioning receiver | `false` |
+| `HA_NEXUS_SECRET` | HMAC secret for Nexus webhooks | unset |
+| `HA_NEXUS_ALLOWED_SOURCES` | Allowed `sourceSystem` values | `fi_os,iiohr` |
+| `HA_ALLOW_PUBLIC_PATIENT_AUDITS` | Patient self-audit pathway | `true` |
+| `HA_ALLOW_STANDALONE_DOCTOR_SIGNUP` | Independent doctor signup | `true` |
+| `HA_ALLOW_STANDALONE_CLINIC_SIGNUP` | Independent clinic signup | `true` |
+| `HA_REQUIRE_NEXUS_FOR_PROFESSIONAL_UPLOAD` | Network-only professional mode | `false` |
+| `HA_REQUIRE_LOCAL_APPROVAL_FOR_STANDALONE_PROFESSIONALS` | Local approval for standalone pros | `true` |
 
 ---
 
-*Audit performed read-only on 2026-06-17. No code modifications made.*
+## Appendix C: FI Network Progress Tracker (updated 2026-07-02)
+
+| Work item | Status | Notes |
+|-----------|--------|-------|
+| HA-NEXUS-1 Nexus receiver | **Done** | `POST/GET/POST` routes under `/api/nexus/*`, HMAC auth, fail-closed env gate |
+| Nexus schema | **Done** | `hairaudit_nexus_*` tables + provisioning audit |
+| Doctor identity linking | **Done** | `external_provider_id` anchor; inactive shell when no match |
+| Approval enforcement | **Done** | Standalone local approval + network Nexus path; open by default |
+| Core RLS | **Done (migration)** | `cases`, `reports`, `uploads`, `audit_photos` participant policies |
+| Outbound FI events | Partial | `hairaudit.case.created` only |
+| SSO/OIDC | Not started | Out of HA-NEXUS-1 scope |
+
+See `docs/nexus/hairaudit-nexus-receiver.md` for operator/API details.
+
+---
+
+*Audit performed read-only on 2026-06-17. Appendix C updated 2026-07-02 for HA-NEXUS-1.*

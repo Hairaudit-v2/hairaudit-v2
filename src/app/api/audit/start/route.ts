@@ -123,6 +123,7 @@ export async function POST(req: Request): Promise<NextResponse> {
   const result = await createAuditCase({
     admin: supabaseAdmin,
     userId,
+    userEmail: sessionUser.email,
     userMetadata: sessionUser.user_metadata as Record<string, unknown> | undefined,
     devRoleCookieValue: null,
     nodeEnv: process.env.NODE_ENV,

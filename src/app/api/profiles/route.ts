@@ -5,6 +5,10 @@ import { isAuditor } from "@/lib/auth/isAuditor";
 import { parseRole } from "@/lib/roles";
 import { isSupportedLocale, normalizeLocale } from "@/lib/i18n/constants";
 import { resolveProfileUpsertRole } from "@/lib/security/profileRolePolicy";
+import {
+  readHaAllowStandaloneClinicSignup,
+  readHaAllowStandaloneDoctorSignup,
+} from "@/lib/nexus/haAccessPolicy.server";
 
 // GET — fetch current user's profile (role)
 export async function GET() {
@@ -69,6 +73,15 @@ export async function POST(req: Request) {
 
   const body = await req.json().catch(() => ({} as Record<string, unknown>));
   const requestedRole = body?.role;
+
+  const requestedParsed = parseRole(requestedRole);
+  if (requestedParsed === "doctor" && !readHaAllowStandaloneDoctorSignup()) {
+    return NextResponse.json({ error: "Standalone doctor signup is not available." }, { status: 403 });
+  }
+  if (requestedParsed === "clinic" && !readHaAllowStandaloneClinicSignup()) {
+    return NextResponse.json({ error: "Standalone clinic signup is not available." }, { status: 403 });
+  }
+
   const name =
     typeof body?.name === "string" && body.name.trim().length > 0
       ? body.name.trim()

@@ -87,6 +87,7 @@ export async function handlePostCreateAuditCaseRoute(req?: Request): Promise<Nex
   const result = await createAuditCase({
     admin: supabaseAdmin,
     userId,
+    userEmail: user.email,
     userMetadata: user.user_metadata as Record<string, unknown> | undefined,
     devRoleCookieValue,
     nodeEnv: process.env.NODE_ENV,

@@ -52,6 +52,8 @@
     "test:upload-phase3d": "tsx --test tests/uploadPhase3d.test.ts",
     "test:upload-phase3e": "tsx --test tests/uploadPhase3e.test.ts",
     "test:upload-phase3f": "tsx --test tests/hairauditImageClassifyEndpoint.test.ts",
+    "test:nexus": "tsx --test src/lib/nexus/haNexusWebhookAuth.test.ts src/lib/nexus/nexusProvisioning.test.ts src/lib/nexus/professionalAccess.test.ts",
+    "test": "pnpm test:nexus && pnpm test:security-phase0 && pnpm test:security-phase0b && pnpm test:create-case && pnpm test:report-access && pnpm test:upload-auth",
     "check:hairaudit-events": "node scripts/check-hairaudit-event-readiness.mjs",
     "gen:supabase-types": "node scripts/gen-supabase-types.mjs",
     "test:file-validation": "tsx --test tests/fileValidation.test.ts",

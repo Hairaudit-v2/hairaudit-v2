@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { shouldHideProfessionalCases, loadProfileRole } from "@/lib/nexus/professionalAccess.server";
 import {
   evaluateCertification,
   certificationResultToProgress,
@@ -16,12 +17,22 @@ export default async function DoctorDashboardPage() {
   if (!user) redirect("/login");
 
   const admin = createSupabaseAdminClient();
-  const { data: cases } = await admin
-    .from("cases")
-    .select("id, title, status, created_at, submitted_at, evidence_score_doctor, doctor_id, audit_mode, visibility_scope")
-    .or(`doctor_id.eq.${user.id},clinic_id.eq.${user.id},user_id.eq.${user.id}`)
-    .order("created_at", { ascending: false })
-    .limit(50);
+  const profileRole = await loadProfileRole(admin, user.id);
+  const hideCases = await shouldHideProfessionalCases({
+    admin,
+    userId: user.id,
+    userEmail: user.email,
+    profileRole,
+  });
+
+  const { data: cases } = hideCases
+    ? { data: [] }
+    : await admin
+        .from("cases")
+        .select("id, title, status, created_at, submitted_at, evidence_score_doctor, doctor_id, audit_mode, visibility_scope")
+        .or(`doctor_id.eq.${user.id},clinic_id.eq.${user.id},user_id.eq.${user.id}`)
+        .order("created_at", { ascending: false })
+        .limit(50);
 
   const caseList = cases ?? [];
   const caseIds = caseList.map((c) => c.id);

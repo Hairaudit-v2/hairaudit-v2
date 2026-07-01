@@ -6,6 +6,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { tryCreateSupabaseAdminClient } from "@/lib/supabase/admin";
 import { requireCaseAccess, type CaseAccessRow, type AuthFailure } from "@/lib/auth/permissions";
+import { isDoctorCaseParticipant, isClinicCaseParticipant, isPatientCaseParticipant } from "@/lib/auth/permissions";
+import { evaluateProfessionalAccess, loadProfileRole } from "@/lib/nexus/professionalAccess.server";
 import { extractCaseIdFromPdfPath } from "@/lib/reports/pdfPathCaseId";
 import { getCaseFilesBucketNameForReadOnlyUse } from "@/lib/hairaudit/uploadStorage";
 
@@ -101,6 +103,25 @@ export async function loadAuthorizedReportPdfDownloadContext(args: {
       status,
       error: status === 404 ? "Report not found" : "Forbidden",
     };
+  }
+
+  const caseRow = gate.data.case;
+  const adminClient = admin ?? args.supabaseAuth;
+  const profileRole = await loadProfileRole(adminClient, args.userId);
+  if (
+    (isDoctorCaseParticipant(args.userId, caseRow) || isClinicCaseParticipant(args.userId, caseRow)) &&
+    !isPatientCaseParticipant(args.userId, caseRow)
+  ) {
+    const access = await evaluateProfessionalAccess({
+      admin: adminClient,
+      userId: args.userId,
+      userEmail: undefined,
+      profileRole,
+      action: "report_access",
+    });
+    if (!access.allowed) {
+      return { ok: false, status: access.httpStatus, error: access.reason };
+    }
   }
 
   if (!storagePathBelongsToReportCase(caseId, pdfPath)) {

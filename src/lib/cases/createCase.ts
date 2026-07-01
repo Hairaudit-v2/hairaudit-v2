@@ -8,6 +8,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { emitHairAuditEvent } from "@/lib/integrations";
 import {
+  evaluateProfessionalAccess,
+  loadProfileRole,
+} from "@/lib/nexus/professionalAccess.server";
+import {
   DEFAULT_PATIENT_REVIEW_PATHWAY,
   MISSING_PATIENT_REVIEW_PATHWAY_ERROR,
   parseExplicitPatientReviewPathway,
@@ -106,6 +110,7 @@ async function emitCaseCreatedHook(caseId: string, userId: string, auditType: st
 export async function createAuditCase(args: {
   admin: SupabaseClient;
   userId: string;
+  userEmail?: string | undefined;
   userMetadata: Record<string, unknown> | undefined;
   devRoleCookieValue: string | null;
   nodeEnv?: string;
@@ -128,6 +133,26 @@ export async function createAuditCase(args: {
   }
 
   const role: CaseCreationResolvedRole = eff;
+
+  if (role === "doctor" || role === "clinic") {
+    const profileRole = await loadProfileRole(args.admin, args.userId);
+    const access = await evaluateProfessionalAccess({
+      admin: args.admin,
+      userId: args.userId,
+      userEmail: args.userEmail,
+      profileRole,
+      action: "case_create",
+    });
+    if (!access.allowed) {
+      console.info(LOG_PREFIX, "reject professional case create", {
+        userId: args.userId,
+        role,
+        reason: access.reason,
+      });
+      return { ok: false, error: access.reason, status: access.httpStatus, logContext: { userId: args.userId } };
+    }
+  }
+
   const explicitPathway = parseExplicitPatientReviewPathway(args.patientReviewPathway);
   if (role === "patient" && !explicitPathway) {
     return {

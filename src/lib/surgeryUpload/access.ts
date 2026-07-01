@@ -2,6 +2,7 @@
 import type { User } from "@supabase/supabase-js";
 import { tryCreateSupabaseAdminClient } from "@/lib/supabase/admin";
 import { isAuditor } from "@/lib/auth/isAuditor";
+import { evaluateProfessionalAccess, loadProfileRole } from "@/lib/nexus/professionalAccess.server";
 import { parseRole, type UserRole } from "@/lib/roles";
 
 export type SurgeryUploadRole = "doctor" | "clinic" | "auditor";
@@ -13,6 +14,7 @@ export type SurgeryUploadActor = {
   allowed: boolean;
   role: UserRole;
   isAuditor: boolean;
+  denialReason?: string;
 };
 
 /**
@@ -33,6 +35,32 @@ export async function resolveSurgeryUploadActor(user: User): Promise<SurgeryUplo
 
   const auditor = isAuditor({ profileRole, userEmail: user.email });
   const role: UserRole = auditor ? "auditor" : parseRole(profileRole);
+
+  if (!ALLOWED_ROLES.has(role)) {
+    return { allowed: false, role, isAuditor: auditor, denialReason: "Forbidden" };
+  }
+
+  if (auditor) {
+    return { allowed: true, role, isAuditor: auditor };
+  }
+
+  if (admin && (role === "doctor" || role === "clinic")) {
+    const access = await evaluateProfessionalAccess({
+      admin,
+      userId: user.id,
+      userEmail: user.email,
+      profileRole,
+      action: "upload",
+    });
+    if (!access.allowed) {
+      return {
+        allowed: false,
+        role,
+        isAuditor: false,
+        denialReason: access.reason,
+      };
+    }
+  }
 
   return {
     allowed: ALLOWED_ROLES.has(role),

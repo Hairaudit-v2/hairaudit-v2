@@ -10,6 +10,7 @@ import {
   computeEvidenceDetails,
 } from "@/lib/auditPhotoSchemas";
 import { getUserRole } from "@/lib/case-access";
+import { evaluateProfessionalAccess, loadProfileRole } from "@/lib/nexus/professionalAccess.server";
 import { normalizedPatientAnswersFromReportRow } from "@/lib/patient/answersFromReportRow";
 import {
   evaluatePatientPhotoSubmitGate,
@@ -70,6 +71,20 @@ export async function POST(req: Request) {
       c.clinic_id === user.id;
     if (!isCaseMember || role === "auditor") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    if (role === "doctor" || role === "clinic") {
+      const profileRole = await loadProfileRole(admin, user.id);
+      const access = await evaluateProfessionalAccess({
+        admin,
+        userId: user.id,
+        userEmail: user.email,
+        profileRole,
+        action: "submit",
+      });
+      if (!access.allowed) {
+        return NextResponse.json({ error: access.reason }, { status: access.httpStatus });
+      }
     }
 
     if ((c.submitted_at || c.status === "submitted") && c.status !== "audit_failed") {
