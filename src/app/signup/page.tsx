@@ -56,6 +56,11 @@ function SignUpForm({
   }, [initialRole]);
 
   useEffect(() => {
+    if (claimValidation.status !== "valid") return;
+    setSignupRole(claimValidation.validation.subjectType === "clinic" ? "clinic" : "doctor");
+  }, [claimValidation]);
+
+  useEffect(() => {
     if (!compactPatientRolePicker) {
       setShowFullRolePicker(true);
     }
@@ -76,14 +81,17 @@ function SignUpForm({
   }, [signupRole, fromRequestReview]);
 
   const claimMode = claimValidation.status === "valid";
+  const claimSubjectType =
+    claimValidation.status === "valid" ? claimValidation.validation.subjectType : "doctor";
+  const claimRole: SignupRole = claimSubjectType === "clinic" ? "clinic" : "doctor";
   const showSignupForm = shouldShowClaimSignupForm(claimToken, claimValidation);
 
   useEffect(() => {
     if (claimMode) {
-      setSignupRole("doctor");
-      setShowFullRolePicker(true);
+      setSignupRole(claimRole);
+      setShowFullRolePicker(false);
     }
-  }, [claimMode]);
+  }, [claimMode, claimRole]);
 
   useEffect(() => {
     if (claimToken) persistClaimToken(claimToken);
@@ -120,8 +128,12 @@ function SignUpForm({
         fallback: appUrl,
       });
     }
-    const effectiveRole: SignupRole = claimMode ? "doctor" : signupRole;
-    const nextPath = claimMode ? "/dashboard/doctor" : dashboardPathForRole(effectiveRole);
+    const effectiveRole: SignupRole = claimMode ? claimRole : signupRole;
+    const nextPath = claimMode
+      ? claimRole === "clinic"
+        ? "/dashboard/clinic"
+        : "/dashboard/doctor"
+      : dashboardPathForRole(effectiveRole);
     const callbackParams = new URLSearchParams({
       signup_role: effectiveRole,
       next: nextPath,
@@ -232,9 +244,13 @@ function SignUpForm({
     setMsg(null);
     try {
       const appUrl = getCanonicalAppUrl();
-      const nextPath = claimMode ? "/dashboard/doctor" : dashboardPathForRole(signupRole);
+      const nextPath = claimMode
+        ? claimRole === "clinic"
+          ? "/dashboard/clinic"
+          : "/dashboard/doctor"
+        : dashboardPathForRole(signupRole);
       const callbackParams = new URLSearchParams({
-        signup_role: claimMode ? "doctor" : signupRole,
+        signup_role: claimMode ? claimRole : signupRole,
         next: nextPath,
       });
       const emailRedirectTo = `${appUrl}/auth/callback?${callbackParams.toString()}`;
@@ -328,7 +344,7 @@ function SignUpForm({
         : t("auth.signup.roleClinicDesc");
 
   const subtitle = claimMode
-    ? t("auth.claim.claimSubtitle")
+    ? t(claimRole === "clinic" ? "auth.claim.claimSubtitleClinic" : "auth.claim.claimSubtitle")
     : fromRequestReview && !showFullRolePicker
       ? t("auth.signup.subtitleRequestReview")
       : fromRequestReview && showFullRolePicker
@@ -361,7 +377,9 @@ function SignUpForm({
             {showSignupForm ? (
               <>
                 <h1 className="text-2xl font-bold text-slate-900">
-                  {claimMode ? t("auth.claim.validTitle") : t("auth.signup.title")}
+                  {claimMode
+                    ? t(claimRole === "clinic" ? "auth.claim.validTitleClinic" : "auth.claim.validTitle")
+                    : t("auth.signup.title")}
                 </h1>
                 {fromRequestReview && !claimMode ? (
                   <p className="mt-2 inline-flex max-w-full flex-wrap items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-900">
@@ -481,7 +499,11 @@ function SignUpForm({
                     {busy
                       ? t("auth.signup.creating")
                       : claimMode
-                        ? t("auth.claim.submitDoctorInvite")
+                        ? t(
+                            claimRole === "clinic"
+                              ? "auth.claim.submitClinicInvite"
+                              : "auth.claim.submitDoctorInvite"
+                          )
                         : signupRole === "clinic"
                           ? t("auth.signup.submitClinic")
                           : signupRole === "doctor"
@@ -550,7 +572,14 @@ function SignUpPageContent() {
   const explicitRole: SignupRole | null =
     roleRaw === "clinic" || roleRaw === "doctor" || roleRaw === "patient" ? roleRaw : null;
   const fromRequestReview = searchParams.get("from") === "request-review";
-  const initialRole: SignupRole = claimToken ? "doctor" : explicitRole ?? "patient";
+  const initialRole: SignupRole =
+    claimToken && claimValidation.status === "valid"
+      ? claimValidation.validation.subjectType === "clinic"
+        ? "clinic"
+        : "doctor"
+      : claimToken
+        ? "doctor"
+        : explicitRole ?? "patient";
   const compactPatientRolePicker = !claimToken && fromRequestReview && explicitRole === null;
 
   const authQ = new URLSearchParams();

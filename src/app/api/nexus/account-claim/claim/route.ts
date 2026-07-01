@@ -45,5 +45,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: result.error }, { status: result.httpStatus });
   }
 
-  return NextResponse.json({ ok: true, doctorProfileId: result.doctorProfileId });
+  if (result.subjectType === "clinic") {
+    return NextResponse.json({
+      ok: true,
+      subjectType: "clinic",
+      clinicProfileId: result.clinicProfileId,
+    });
+  }
+
+  return NextResponse.json({
+    ok: true,
+    subjectType: "doctor",
+    doctorProfileId: result.doctorProfileId,
+  });
 }

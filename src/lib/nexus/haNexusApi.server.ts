@@ -5,7 +5,7 @@ import {
   HA_NEXUS_HDR_TIMESTAMP,
 } from "@/lib/nexus/haNexusWebhookAuth.server";
 import type { HaNexusProvisionPayload, HaNexusRollbackPayload } from "@/lib/nexus/nexusProvisioningTypes";
-import { provisionExternalProfessionalFromNexus } from "@/lib/nexus/provisionExternalProfessional.server";
+import { provisionFromNexus } from "@/lib/nexus/provisionFromNexus.server";
 import { readExternalProfessionalState } from "@/lib/nexus/readExternalProfessionalState.server";
 import { rollbackExternalProfessionalProvisioning } from "@/lib/nexus/rollbackExternalProfessionalProvisioning.server";
 
@@ -94,7 +94,7 @@ export async function handleNexusProvisionHttp(
   if (isNexusHttpResponse(parsed)) return parsed;
 
   const payload = parsed as unknown as HaNexusProvisionPayload;
-  const result = await provisionExternalProfessionalFromNexus(payload);
+  const result = await provisionFromNexus(payload);
   if (!result.ok) {
     return { httpStatus: result.httpStatus, body: { ok: false, error: result.error } };
   }

@@ -22,6 +22,7 @@ import {
   claimAccountAfterAuth,
   completeAuthWithOptionalClaim,
   DOCTOR_DASHBOARD_PATH,
+  CLINIC_DASHBOARD_PATH,
 } from "@/lib/nexus/claimAccountAfterAuth";
 
 class MemoryStorage {
@@ -102,6 +103,42 @@ test("fetchClaimTokenValidation returns expired invalid state", async () => {
 
   const result = await fetchClaimTokenValidation("token", mockFetch);
   assert.deepEqual(result, { status: "invalid", reason: "expired" });
+});
+
+test("claimAccountAfterAuth redirects clinic claims to clinic dashboard", async () => {
+  const mockFetch = async () =>
+    ({
+      ok: true,
+      json: async () => ({ ok: true, subjectType: "clinic", clinicProfileId: "clinic-1" }),
+    }) as Response;
+
+  const result = await claimAccountAfterAuth("secret-token", mockFetch);
+  assert.equal(result.ok, true);
+  if (result.ok) {
+    assert.equal(result.redirectPath, CLINIC_DASHBOARD_PATH);
+  }
+});
+
+test("fetchClaimTokenValidation returns clinic subject metadata", async () => {
+  const mockFetch = async () =>
+    ({
+      ok: true,
+      json: async () => ({
+        valid: true,
+        subjectType: "clinic",
+        role: "clinic",
+        displayName: "Network Clinic Istanbul",
+        maskedEmail: "c***@example.com",
+        expiresAt: "2026-07-09T12:00:00.000Z",
+      }),
+    }) as Response;
+
+  const result = await fetchClaimTokenValidation("token", mockFetch);
+  assert.equal(result.status, "valid");
+  if (result.status === "valid") {
+    assert.equal(result.validation.subjectType, "clinic");
+    assert.equal(result.validation.displayName, "Network Clinic Istanbul");
+  }
 });
 
 test("claimAccountAfterAuth calls claim API and redirects to doctor dashboard", async () => {

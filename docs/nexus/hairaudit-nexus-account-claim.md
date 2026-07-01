@@ -1,13 +1,13 @@
-# HairAudit Nexus Account Claim (HA-NEXUS-2)
+# HairAudit Nexus Account Claim (HA-NEXUS-2 / HA-NEXUS-3)
 
-Secure invite activation for **network-provisioned doctor shells** only. Standalone doctors, clinics, and patients are out of scope.
+Secure invite activation for **network-provisioned professional shells** (doctors and clinics). Standalone signup paths remain available for both roles; patients are out of scope.
 
 ## Problem
 
-HA-NEXUS-1 provisions inactive doctor shells:
+HA-NEXUS-1/3 provision inactive shells:
 
-- `doctor_profiles.external_provider_id = global_professional_id`
-- `linked_user_id = null`
+- Doctors: `doctor_profiles.external_provider_id = global_professional_id`, `linked_user_id = null`
+- Clinics: `clinic_profiles.external_clinic_id = global_clinic_id`, `linked_user_id = null`
 
 Professionals need a secure way to link their HairAudit auth account to that shell **without email-only matching**.
 
@@ -43,24 +43,26 @@ sequenceDiagram
 | Plaintext | Never stored, never logged |
 | Comparison | Constant-time hash compare |
 | Lifetime | 7 days default, single-use |
-| Active tokens | One unclaimed/unrevoked token per `doctor_profile_id` |
+| Active tokens | One unclaimed/unrevoked token per subject profile |
+| Subject types | `claim_subject_type`: `doctor` \| `clinic` |
 | DB access | `service_role` only (RLS enabled, no public policies) |
 
 ## Account claim lifecycle
 
-1. **Provision** — Nexus webhook creates/updates shell; `ensureClaimTokenForUnlinkedNexusDoctor()` mints token if none active.
+1. **Provision** — Nexus webhook creates/updates shell; `ensureClaimTokenForUnlinkedNexusDoctor()` or `ensureClaimTokenForUnlinkedNexusClinic()` mints token if none active.
 2. **Invite** — Email sent via existing `sendEmail()` when a new token is created (`RESEND_API_KEY` optional; logs if missing).
 3. **Validate** — Public GET returns safe metadata only.
 4. **Authenticate** — User signs up/signs in via existing Supabase auth (no SSO/OIDC).
-5. **Claim** — Authenticated POST links `doctor_profiles.linked_user_id` when token matches `global_professional_id`.
-6. **Access** — `evaluateProfessionalAccess()` still enforces Nexus approval + entitlements after link.
+5. **Claim** — Authenticated POST links profile when token matches durable external anchor.
+6. **Access** — `evaluateProfessionalAccess()` enforces Nexus approval + entitlements (doctor or clinic membership tables).
 
 ### Invalid outcomes (audited)
 
 - Expired, revoked, already claimed, malformed token
 - Profile already linked to another user
-- User already has a different doctor profile
-- Patient or clinic role conflict (no silent elevation)
+- User already has a different doctor/clinic profile
+- Patient role conflict (no silent elevation)
+- Doctor ↔ clinic role conflict (no cross-subject claim)
 
 ## Routes
 
@@ -74,11 +76,15 @@ sequenceDiagram
 ```json
 {
   "valid": true,
+  "subjectType": "doctor",
   "role": "doctor",
+  "displayName": "hair_surgeon",
   "maskedEmail": "s***@c***.example.com",
   "expiresAt": "2026-07-09T12:00:00.000Z"
 }
 ```
+
+Clinic invites return `subjectType: "clinic"` and `displayName` set to the clinic name. Never returned: `global_clinic_id`, `clinic_profile_id`, full email, raw metadata.
 
 Invalid: `reason` ∈ `not_found` | `expired` | `revoked` | `already_claimed` | `malformed`
 
@@ -168,7 +174,8 @@ Provisioning always mints a hashed claim token in Postgres when a new network do
 
 | In scope | Out of scope |
 |----------|--------------|
-| Network-provisioned doctors | Standalone doctor signup |
-| Inactive shell linking | Clinic provisioning (HA-NEXUS-3) |
-| Token + audit tables | Patient bridge (HA-PATIENT-BRIDGE-1) |
+| Network-provisioned doctors and clinics | Standalone signup (unchanged; not claim-gated) |
+| Inactive shell linking by durable external anchor | Email-only linking |
+| Token + audit tables (doctor \| clinic) | Patient bridge (HA-PATIENT-BRIDGE-1) |
 | Claim validate/claim APIs | SSO/OIDC |
+| Clinic invite UI (HA-NEXUS-3) | FI OS / IIOHR sender implementation |

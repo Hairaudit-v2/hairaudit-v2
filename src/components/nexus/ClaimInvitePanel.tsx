@@ -23,6 +23,7 @@ function formatExpiry(iso: string, locale: string): string {
 function formatRoleLabel(role: string, t: (key: string) => string): string {
   const normalized = role.trim().toLowerCase();
   if (normalized === "doctor") return t("auth.claim.roleDoctor");
+  if (normalized === "clinic") return t("auth.claim.roleClinic");
   return role;
 }
 
@@ -62,17 +63,29 @@ export default function ClaimInvitePanel({
     );
   }
 
-  const { maskedEmail, role, expiresAt } = validation.validation;
+  const { maskedEmail, role, expiresAt, subjectType, displayName } = validation.validation;
+  const isClinic = subjectType === "clinic";
 
   return (
     <div
       className="mb-6 rounded-xl border border-violet-200 bg-violet-50/70 px-4 py-4"
       data-testid="claim-invite-panel"
       data-claim-state="valid"
+      data-claim-subject={subjectType}
     >
-      <h2 className="text-sm font-semibold text-violet-900">{t("auth.claim.validTitle")}</h2>
-      <p className="mt-2 text-sm leading-relaxed text-slate-700">{t("auth.claim.validBody")}</p>
+      <h2 className="text-sm font-semibold text-violet-900">
+        {t(isClinic ? "auth.claim.validTitleClinic" : "auth.claim.validTitle")}
+      </h2>
+      <p className="mt-2 text-sm leading-relaxed text-slate-700">
+        {t(isClinic ? "auth.claim.validBodyClinic" : "auth.claim.validBody")}
+      </p>
       <dl className="mt-3 space-y-2 text-sm text-slate-700">
+        {isClinic ? (
+          <div className="flex flex-wrap gap-x-2">
+            <dt className="font-medium text-slate-800">{t("auth.claim.clinicNameLabel")}</dt>
+            <dd>{displayName}</dd>
+          </div>
+        ) : null}
         <div className="flex flex-wrap gap-x-2">
           <dt className="font-medium text-slate-800">{t("auth.claim.intendedEmail")}</dt>
           <dd>{maskedEmail}</dd>

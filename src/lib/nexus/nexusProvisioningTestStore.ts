@@ -1,7 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type {
+  HaNexusClinicEntitlementRow,
+  HaNexusClinicMembershipRow,
   HaNexusEntitlementRow,
+  HaNexusExternalClinicRow,
   HaNexusExternalProfessionalRow,
   HaNexusMembershipRow,
 } from "@/lib/nexus/nexusProvisioningTypes";
@@ -9,6 +12,8 @@ import type {
 type AuditRow = {
   id: string;
   global_professional_id: string;
+  global_clinic_id: string | null;
+  entity_type: string;
   action_type: string;
   payload: Record<string, unknown> | null;
   before_state: Record<string, unknown> | null;
@@ -30,11 +35,26 @@ type DoctorProfileRow = {
   updated_at: string;
 };
 
+type ClinicProfileRow = {
+  id: string;
+  linked_user_id: string | null;
+  clinic_name: string;
+  clinic_email: string | null;
+  external_clinic_id: string | null;
+  participation_approval_status: string;
+  participation_status: string;
+  created_at: string;
+  updated_at: string;
+};
+
 type ClaimTokenRow = {
   id: string;
   token_hash: string;
-  global_professional_id: string;
-  doctor_profile_id: string;
+  claim_subject_type: "doctor" | "clinic";
+  global_professional_id: string | null;
+  global_clinic_id: string | null;
+  doctor_profile_id: string | null;
+  clinic_profile_id: string | null;
   external_professional_id: string | null;
   intended_email_snapshot: string;
   role_snapshot: string;
@@ -52,7 +72,9 @@ type ClaimTokenRow = {
 type LinkAuditRow = {
   id: string;
   doctor_profile_id: string | null;
+  clinic_profile_id: string | null;
   global_professional_id: string | null;
+  global_clinic_id: string | null;
   linked_user_id: string | null;
   action: string;
   actor_type: string;
@@ -81,13 +103,21 @@ export type HaNexusTestStore = {
   professionals: Map<string, HaNexusExternalProfessionalRow>;
   memberships: Map<string, HaNexusMembershipRow>;
   entitlements: Map<string, HaNexusEntitlementRow>;
+  externalClinics: Map<string, HaNexusExternalClinicRow>;
+  clinicMemberships: Map<string, HaNexusClinicMembershipRow>;
+  clinicEntitlements: Map<string, HaNexusClinicEntitlementRow>;
   doctorProfiles: Map<string, DoctorProfileRow>;
+  clinicProfiles: Map<string, ClinicProfileRow>;
   claimTokens: Map<string, ClaimTokenRow>;
   linkAudits: LinkAuditRow[];
   profiles: Map<string, ProfileRow>;
   audits: AuditRow[];
   client: SupabaseClient;
 };
+
+function clinicEntitlementStoreKey(globalId: string, key: string): string {
+  return `clinic::${globalId}::${key}`;
+}
 
 function entitlementStoreKey(globalId: string, key: string): string {
   return `${globalId}::${key}`;
@@ -98,7 +128,11 @@ export function createHaNexusTestStore(): HaNexusTestStore {
     professionals: new Map(),
     memberships: new Map(),
     entitlements: new Map(),
+    externalClinics: new Map(),
+    clinicMemberships: new Map(),
+    clinicEntitlements: new Map(),
     doctorProfiles: new Map(),
+    clinicProfiles: new Map(),
     claimTokens: new Map(),
     linkAudits: [],
     profiles: new Map(),
@@ -124,6 +158,10 @@ export function createHaNexusTestStore(): HaNexusTestStore {
       },
       eq(col: string, val: unknown) {
         filters.push([col, val]);
+        return api;
+      },
+      ilike(col: string, val: unknown) {
+        filters.push([`ilike:${col}`, val]);
         return api;
       },
       is(col: string, val: unknown) {
@@ -209,6 +247,13 @@ export function createHaNexusTestStore(): HaNexusTestStore {
         if ((row[key] ?? null) !== val) return false;
         continue;
       }
+      if (col.startsWith("ilike:")) {
+        const key = col.slice(6);
+        const rowVal = String(row[key] ?? "").toLowerCase();
+        const filterVal = String(val ?? "").toLowerCase();
+        if (rowVal !== filterVal) return false;
+        continue;
+      }
       if (row[col] !== val) return false;
     }
     return true;
@@ -250,8 +295,25 @@ export function createHaNexusTestStore(): HaNexusTestStore {
       const gid = rowFilters.find(([c]) => c === "global_professional_id")?.[1] as string;
       return { data: store.memberships.get(gid) ?? null, error: null };
     }
+    if (table === "hairaudit_nexus_external_clinics") {
+      const gid = rowFilters.find(([c]) => c === "global_clinic_id")?.[1] as string;
+      return { data: store.externalClinics.get(gid) ?? null, error: null };
+    }
+    if (table === "hairaudit_nexus_clinic_memberships") {
+      const gid = rowFilters.find(([c]) => c === "global_clinic_id")?.[1] as string;
+      return { data: store.clinicMemberships.get(gid) ?? null, error: null };
+    }
     if (table === "doctor_profiles") {
       let rows = [...store.doctorProfiles.values()].filter((row) =>
+        matches(row as unknown as Record<string, unknown>, rowFilters) &&
+        matchesNot(row as unknown as Record<string, unknown>, rowNotFilters)
+      );
+      rows = sortRows(rows as unknown as Record<string, unknown>[], orderCol, orderAsc) as typeof rows;
+      if (limitCount != null) rows = rows.slice(0, limitCount);
+      return { data: rows[0] ?? null, error: null };
+    }
+    if (table === "clinic_profiles") {
+      let rows = [...store.clinicProfiles.values()].filter((row) =>
         matches(row as unknown as Record<string, unknown>, rowFilters) &&
         matchesNot(row as unknown as Record<string, unknown>, rowNotFilters)
       );
@@ -284,6 +346,14 @@ export function createHaNexusTestStore(): HaNexusTestStore {
       }
       return { data: null, error: null };
     }
+    if (table === "hairaudit_nexus_clinic_entitlements") {
+      for (const row of store.clinicEntitlements.values()) {
+        if (matches(row as unknown as Record<string, unknown>, rowFilters)) {
+          return { data: row, error: null };
+        }
+      }
+      return { data: null, error: null };
+    }
     return { data: null, error: null };
   }
 
@@ -297,9 +367,28 @@ export function createHaNexusTestStore(): HaNexusTestStore {
     selectOpts?: { count?: string; head?: boolean }
   ) {
     if (table === "hairaudit_nexus_provisioning_audit" && selectOpts?.head) {
-      const gid = rowFilters.find(([c]) => c === "global_professional_id")?.[1] as string;
-      const count = store.audits.filter((a) => a.global_professional_id === gid).length;
+      const gid =
+        (rowFilters.find(([c]) => c === "global_professional_id")?.[1] as string | undefined) ??
+        (rowFilters.find(([c]) => c === "global_clinic_id")?.[1] as string | undefined);
+      const count = store.audits.filter(
+        (a) => a.global_professional_id === gid || a.global_clinic_id === gid
+      ).length;
       return { count, error: null };
+    }
+
+    if (table === "hairaudit_nexus_external_clinics") {
+      const gid = rowFilters.find(([c]) => c === "global_clinic_id")?.[1] as string;
+      return { data: store.externalClinics.get(gid) ?? null, error: null };
+    }
+    if (table === "hairaudit_nexus_clinic_memberships") {
+      const gid = rowFilters.find(([c]) => c === "global_clinic_id")?.[1] as string;
+      return { data: store.clinicMemberships.get(gid) ?? null, error: null };
+    }
+    if (table === "hairaudit_nexus_clinic_entitlements") {
+      const rows = [...store.clinicEntitlements.values()].filter((r) =>
+        matches(r as unknown as Record<string, unknown>, rowFilters)
+      );
+      return { data: rows, error: null };
     }
 
     if (table === "hairaudit_nexus_entitlements") {
@@ -341,6 +430,22 @@ export function createHaNexusTestStore(): HaNexusTestStore {
       store.doctorProfiles.set(id, created);
       return created;
     }
+    if (table === "clinic_profiles") {
+      const id = newId();
+      const created: ClinicProfileRow = {
+        id,
+        linked_user_id: (row.linked_user_id as string | null) ?? null,
+        clinic_name: String(row.clinic_name ?? "Network Clinic"),
+        clinic_email: (row.clinic_email as string | null) ?? null,
+        external_clinic_id: (row.external_clinic_id as string | null) ?? null,
+        participation_approval_status: String(row.participation_approval_status ?? "pending_review"),
+        participation_status: String(row.participation_status ?? "not_started"),
+        created_at: ts,
+        updated_at: ts,
+      };
+      store.clinicProfiles.set(id, created);
+      return created;
+    }
     if (table === "hairaudit_nexus_entitlements") {
       const gid = String(row.global_professional_id);
       const key = String(row.entitlement_key);
@@ -358,10 +463,29 @@ export function createHaNexusTestStore(): HaNexusTestStore {
       store.entitlements.set(entitlementStoreKey(gid, key), created);
       return created;
     }
+    if (table === "hairaudit_nexus_clinic_entitlements") {
+      const gid = String(row.global_clinic_id);
+      const key = String(row.entitlement_key);
+      const id = newId();
+      const created: HaNexusClinicEntitlementRow = {
+        id,
+        global_clinic_id: gid,
+        entitlement_key: key,
+        active: Boolean(row.active ?? true),
+        nexus_created: Boolean(row.nexus_created ?? true),
+        revoked_at: (row.revoked_at as string | null) ?? null,
+        created_at: ts,
+        updated_at: ts,
+      };
+      store.clinicEntitlements.set(clinicEntitlementStoreKey(gid, key), created);
+      return created;
+    }
     if (table === "hairaudit_nexus_provisioning_audit") {
       const audit = {
         id: newId(),
-        global_professional_id: String(row.global_professional_id),
+        global_professional_id: String(row.global_professional_id ?? row.global_clinic_id ?? ""),
+        global_clinic_id: (row.global_clinic_id as string | null) ?? null,
+        entity_type: String(row.entity_type ?? "doctor"),
         action_type: String(row.action_type),
         payload: (row.payload as Record<string, unknown>) ?? null,
         before_state: (row.before_state as Record<string, unknown>) ?? null,
@@ -375,14 +499,18 @@ export function createHaNexusTestStore(): HaNexusTestStore {
     }
     if (table === "hairaudit_account_claim_tokens") {
       const id = newId();
+      const subjectType = (row.claim_subject_type as "doctor" | "clinic") ?? "doctor";
       const created: ClaimTokenRow = {
         id,
         token_hash: String(row.token_hash),
-        global_professional_id: String(row.global_professional_id),
-        doctor_profile_id: String(row.doctor_profile_id),
+        claim_subject_type: subjectType,
+        global_professional_id: (row.global_professional_id as string | null) ?? null,
+        global_clinic_id: (row.global_clinic_id as string | null) ?? null,
+        doctor_profile_id: (row.doctor_profile_id as string | null) ?? null,
+        clinic_profile_id: (row.clinic_profile_id as string | null) ?? null,
         external_professional_id: (row.external_professional_id as string | null) ?? null,
         intended_email_snapshot: String(row.intended_email_snapshot),
-        role_snapshot: String(row.role_snapshot ?? "doctor"),
+        role_snapshot: String(row.role_snapshot ?? subjectType),
         expires_at: String(row.expires_at),
         claimed_at: (row.claimed_at as string | null) ?? null,
         revoked_at: (row.revoked_at as string | null) ?? null,
@@ -400,7 +528,9 @@ export function createHaNexusTestStore(): HaNexusTestStore {
       const created: LinkAuditRow = {
         id: newId(),
         doctor_profile_id: (row.doctor_profile_id as string | null) ?? null,
+        clinic_profile_id: (row.clinic_profile_id as string | null) ?? null,
         global_professional_id: (row.global_professional_id as string | null) ?? null,
+        global_clinic_id: (row.global_clinic_id as string | null) ?? null,
         linked_user_id: (row.linked_user_id as string | null) ?? null,
         action: String(row.action),
         actor_type: String(row.actor_type),
@@ -467,6 +597,48 @@ export function createHaNexusTestStore(): HaNexusTestStore {
       };
       store.memberships.set(gid, next);
     }
+    if (table === "hairaudit_nexus_external_clinics") {
+      const gid = String(row.global_clinic_id);
+      const existing = store.externalClinics.get(gid);
+      const next: HaNexusExternalClinicRow = {
+        id: existing?.id ?? newId(),
+        global_clinic_id: gid,
+        source_system: String(row.source_system ?? "iiohr"),
+        source_external_id: (row.source_external_id as string | null) ?? null,
+        fi_tenant_id: (row.fi_tenant_id as string | null) ?? null,
+        fi_clinic_id: (row.fi_clinic_id as string | null) ?? null,
+        clinic_name: String(row.clinic_name),
+        primary_contact_email: String(row.primary_contact_email),
+        primary_contact_name: (row.primary_contact_name as string | null) ?? null,
+        country: (row.country as string | null) ?? null,
+        region: (row.region as string | null) ?? null,
+        clinic_profile_id: (row.clinic_profile_id as string | null) ?? null,
+        claimed_by_user_id: (row.claimed_by_user_id as string | null) ?? null,
+        nexus_created: Boolean(row.nexus_created ?? true),
+        metadata: (row.metadata as Record<string, unknown>) ?? {},
+        created_at: existing?.created_at ?? ts,
+        updated_at: ts,
+      };
+      store.externalClinics.set(gid, next);
+    }
+    if (table === "hairaudit_nexus_clinic_memberships") {
+      const gid = String(row.global_clinic_id);
+      const existing = store.clinicMemberships.get(gid);
+      const next: HaNexusClinicMembershipRow = {
+        id: existing?.id ?? newId(),
+        global_clinic_id: gid,
+        clinic_profile_id: (row.clinic_profile_id as string | null) ?? null,
+        approval_status: String(row.approval_status ?? "pending"),
+        provision_status: String(row.provision_status ?? "active"),
+        revoked_at: (row.revoked_at as string | null) ?? null,
+        suspended_at: (row.suspended_at as string | null) ?? null,
+        nexus_created: Boolean(row.nexus_created ?? true),
+        metadata: (row.metadata as Record<string, unknown>) ?? {},
+        created_at: existing?.created_at ?? ts,
+        updated_at: ts,
+      };
+      store.clinicMemberships.set(gid, next);
+    }
   }
 
   function updateRows(table: string, rowFilters: [string, unknown][], patch: Record<string, unknown>) {
@@ -480,10 +652,41 @@ export function createHaNexusTestStore(): HaNexusTestStore {
         } as DoctorProfileRow);
       }
     }
+    if (table === "clinic_profiles") {
+      for (const [id, row] of store.clinicProfiles) {
+        if (!matches(row as unknown as Record<string, unknown>, rowFilters)) continue;
+        store.clinicProfiles.set(id, {
+          ...row,
+          ...patch,
+          updated_at: nowIso(),
+        } as ClinicProfileRow);
+      }
+    }
+    if (table === "hairaudit_nexus_external_clinics") {
+      for (const [gid, row] of store.externalClinics) {
+        if (!matches(row as unknown as Record<string, unknown>, rowFilters)) continue;
+        store.externalClinics.set(gid, {
+          ...row,
+          ...patch,
+          updated_at: nowIso(),
+        } as HaNexusExternalClinicRow);
+      }
+    }
     if (table === "hairaudit_nexus_entitlements") {
       for (const [key, row] of store.entitlements) {
         if (!matches(row as unknown as Record<string, unknown>, rowFilters)) continue;
         store.entitlements.set(key, {
+          ...row,
+          active: patch.active !== undefined ? Boolean(patch.active) : row.active,
+          revoked_at: (patch.revoked_at as string | null) ?? row.revoked_at,
+          updated_at: nowIso(),
+        });
+      }
+    }
+    if (table === "hairaudit_nexus_clinic_entitlements") {
+      for (const [key, row] of store.clinicEntitlements) {
+        if (!matches(row as unknown as Record<string, unknown>, rowFilters)) continue;
+        store.clinicEntitlements.set(key, {
           ...row,
           active: patch.active !== undefined ? Boolean(patch.active) : row.active,
           revoked_at: (patch.revoked_at as string | null) ?? row.revoked_at,

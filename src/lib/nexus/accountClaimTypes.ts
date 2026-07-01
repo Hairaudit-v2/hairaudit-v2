@@ -8,11 +8,16 @@ export type AccountClaimLinkAction =
 
 export type AccountClaimActorType = "system" | "admin" | "doctor" | "nexus";
 
+export type AccountClaimSubjectType = "doctor" | "clinic";
+
 export type AccountClaimTokenRow = {
   id: string;
   token_hash: string;
-  global_professional_id: string;
-  doctor_profile_id: string;
+  claim_subject_type: AccountClaimSubjectType;
+  global_professional_id: string | null;
+  global_clinic_id: string | null;
+  doctor_profile_id: string | null;
+  clinic_profile_id: string | null;
   external_professional_id: string | null;
   intended_email_snapshot: string;
   role_snapshot: string;
@@ -30,7 +35,9 @@ export type AccountClaimTokenRow = {
 export type AccountClaimLinkAuditRow = {
   id: string;
   doctor_profile_id: string | null;
+  clinic_profile_id: string | null;
   global_professional_id: string | null;
+  global_clinic_id: string | null;
   linked_user_id: string | null;
   action: AccountClaimLinkAction;
   actor_type: AccountClaimActorType;
@@ -50,7 +57,9 @@ export type AccountClaimInvalidReason =
 export type AccountClaimValidationResult =
   | {
       valid: true;
+      subjectType: AccountClaimSubjectType;
       role: string;
+      displayName: string;
       maskedEmail: string;
       expiresAt: string;
     }
@@ -60,8 +69,11 @@ export type AccountClaimValidationResult =
     };
 
 export type AccountClaimStatus = {
-  doctorProfileId: string;
-  globalProfessionalId: string;
+  subjectType: AccountClaimSubjectType;
+  doctorProfileId?: string;
+  clinicProfileId?: string;
+  globalProfessionalId?: string;
+  globalClinicId?: string;
   hasActiveToken: boolean;
   activeTokenExpiresAt: string | null;
   claimedAt: string | null;

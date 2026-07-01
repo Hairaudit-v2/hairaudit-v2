@@ -12,15 +12,18 @@ FI OS / IIOHR ──HMAC POST──► HairAudit /api/nexus/*
                                   ├─ hairaudit_nexus_entitlements
                                   ├─ hairaudit_nexus_provisioning_audit
                                   └─ doctor_profiles.external_provider_id (network anchor)
+                                  └─ clinic_profiles.external_clinic_id (clinic anchor, HA-NEXUS-3)
 ```
 
-Doctor identity is anchored on `global_professional_id` stored as `doctor_profiles.external_provider_id`. Email is informational only and must **not** be used alone to grant access.
+Doctor identity is anchored on `global_professional_id` stored as `doctor_profiles.external_provider_id`. Clinic identity uses `global_clinic_id` → `clinic_profiles.external_clinic_id`. Email is informational only and must **not** be used alone to grant access.
+
+See `docs/nexus/hairaudit-nexus-clinic-provisioning.md` for clinic payload and linking rules.
 
 ## Routes
 
 | Method | Path | Purpose |
 |--------|------|---------|
-| `POST` | `/api/nexus/provision` | Idempotent upsert of professional + membership + entitlements |
+| `POST` | `/api/nexus/provision` | Idempotent upsert of professional **or clinic** + membership + entitlements |
 | `GET` | `/api/nexus/state?globalProfessionalId=` | Reconciliation read |
 | `POST` | `/api/nexus/rollback` | Revoke/suspend network access |
 
@@ -66,6 +69,8 @@ HTTP statuses:
 Nexus is an **acceleration/verification layer** for IIOHR/FI OS network doctors — not the only commercial route unless `HA_REQUIRE_NEXUS_FOR_PROFESSIONAL_UPLOAD=true`.
 
 ## Provision payload
+
+Doctor (default — omit `entityType` or set `"doctor"`):
 
 ```json
 {

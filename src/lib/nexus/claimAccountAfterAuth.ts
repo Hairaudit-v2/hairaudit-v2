@@ -1,10 +1,10 @@
 import {
   clearPersistedClaimToken,
-  DOCTOR_DASHBOARD_PATH,
   resolveActiveClaimToken,
+  resolveClaimDashboardPath,
 } from "@/lib/nexus/claimTokenClient";
 
-export { DOCTOR_DASHBOARD_PATH };
+export { DOCTOR_DASHBOARD_PATH, CLINIC_DASHBOARD_PATH, resolveClaimDashboardPath } from "@/lib/nexus/claimTokenClient";
 
 export type ClaimAfterAuthResult =
   | { ok: true; redirectPath: string }
@@ -26,20 +26,23 @@ export async function claimAccountAfterAuth(
       credentials: "same-origin",
       body: JSON.stringify({ token: normalized }),
     });
-    const body = (await res.json().catch(() => null)) as { ok?: boolean; error?: string } | null;
+    const body = (await res.json().catch(() => null)) as
+      | { ok?: boolean; error?: string; subjectType?: "doctor" | "clinic" }
+      | null;
     if (res.ok && body?.ok) {
       clearPersistedClaimToken();
-      return { ok: true, redirectPath: DOCTOR_DASHBOARD_PATH };
+      const subjectType = body.subjectType === "clinic" ? "clinic" : "doctor";
+      return { ok: true, redirectPath: resolveClaimDashboardPath(subjectType) };
     }
     const error =
       typeof body?.error === "string" && body.error.trim()
         ? body.error.trim()
-        : "We could not activate your doctor account. Please contact support.";
+        : "We could not activate your account. Please contact support.";
     return { ok: false, error };
   } catch {
     return {
       ok: false,
-      error: "We could not activate your doctor account. Please try again.",
+      error: "We could not activate your account. Please try again.",
     };
   }
 }

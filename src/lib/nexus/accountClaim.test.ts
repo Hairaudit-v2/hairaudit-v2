@@ -202,8 +202,11 @@ describe("accountClaim lifecycle", () => {
     store.claimTokens.set(tokenHash, {
       id: crypto.randomUUID(),
       token_hash: tokenHash,
+      claim_subject_type: "doctor",
       global_professional_id: GLOBAL_ID,
+      global_clinic_id: null,
       doctor_profile_id: shell.id,
+      clinic_profile_id: null,
       external_professional_id: GLOBAL_ID,
       intended_email_snapshot: "surgeon@example.com",
       role_snapshot: "doctor",

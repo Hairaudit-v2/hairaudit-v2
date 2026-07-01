@@ -29,6 +29,7 @@ type DoctorProfileRow = {
 
 type ClinicProfileRow = {
   id: string;
+  external_clinic_id: string | null;
   participation_approval_status: string | null;
   linked_user_id: string | null;
 };
@@ -71,11 +72,85 @@ async function loadClinicProfile(
 ): Promise<ClinicProfileRow | null> {
   const { data, error } = await admin
     .from("clinic_profiles")
-    .select("id, participation_approval_status, linked_user_id")
+    .select("id, external_clinic_id, participation_approval_status, linked_user_id")
     .eq("linked_user_id", userId)
     .maybeSingle();
   if (error) throw new Error(error.message);
   return (data as ClinicProfileRow | null) ?? null;
+}
+
+async function hasNexusClinicMembership(
+  admin: SupabaseClient,
+  globalClinicId: string
+): Promise<boolean> {
+  const { data, error } = await admin
+    .from("hairaudit_nexus_clinic_memberships")
+    .select("id")
+    .eq("global_clinic_id", globalClinicId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return Boolean(data?.id);
+}
+
+async function evaluateNetworkClinicAccess(
+  admin: SupabaseClient,
+  globalClinicId: string,
+  action: ProfessionalAccessAction
+): Promise<ProfessionalAccessDecision> {
+  const { data: membership, error: membershipErr } = await admin
+    .from("hairaudit_nexus_clinic_memberships")
+    .select("approval_status, provision_status")
+    .eq("global_clinic_id", globalClinicId)
+    .maybeSingle();
+
+  if (membershipErr) throw new Error(membershipErr.message);
+
+  const approvalStatus = (membership?.approval_status ?? "pending").toLowerCase();
+  if (approvalStatus === "suspended" || approvalStatus === "revoked") {
+    return {
+      allowed: false,
+      reason: "Network clinic access is suspended or revoked.",
+      httpStatus: 403,
+    };
+  }
+
+  if (approvalStatus === "pending" || approvalStatus === "pending_review") {
+    return {
+      allowed: false,
+      reason: "Network clinic participation is pending approval.",
+      httpStatus: 403,
+    };
+  }
+
+  if (approvalStatus !== "approved") {
+    return {
+      allowed: false,
+      reason: "Network clinic participation is not approved.",
+      httpStatus: 403,
+    };
+  }
+
+  const requiredEntitlement = ACTION_ENTITLEMENT[action];
+  if (requiredEntitlement) {
+    const { data: entitlement, error: entErr } = await admin
+      .from("hairaudit_nexus_clinic_entitlements")
+      .select("id")
+      .eq("global_clinic_id", globalClinicId)
+      .eq("entitlement_key", requiredEntitlement)
+      .eq("active", true)
+      .maybeSingle();
+
+    if (entErr) throw new Error(entErr.message);
+    if (!entitlement) {
+      return {
+        allowed: false,
+        reason: `Missing required network entitlement: ${requiredEntitlement}.`,
+        httpStatus: 403,
+      };
+    }
+  }
+
+  return { allowed: true, mode: "nexus" };
 }
 
 async function hasNexusMembership(
@@ -251,7 +326,24 @@ export async function evaluateProfessionalAccess(args: {
 
   const clinicProfile = await loadClinicProfile(args.admin, args.userId);
   if (!clinicProfile) {
-    return { allowed: false, reason: "Clinic profile required.", httpStatus: 403 };
+    return {
+      allowed: false,
+      reason: "Clinic profile required. Network clinics must claim their invite before access.",
+      httpStatus: 403,
+    };
+  }
+
+  if (!clinicProfile.linked_user_id || clinicProfile.linked_user_id !== args.userId) {
+    return {
+      allowed: false,
+      reason: "Clinic account is not linked.",
+      httpStatus: 403,
+    };
+  }
+
+  const globalClinicId = clinicProfile.external_clinic_id?.trim() ?? "";
+  if (globalClinicId && (await hasNexusClinicMembership(args.admin, globalClinicId))) {
+    return evaluateNetworkClinicAccess(args.admin, globalClinicId, args.action);
   }
 
   return evaluateStandaloneProfessionalAccess({

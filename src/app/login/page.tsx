@@ -248,7 +248,11 @@ function LoginPageContent() {
             <h1 className="text-2xl font-bold text-slate-900">{t("auth.login.title")}</h1>
             <p className="mt-2 text-sm leading-relaxed text-slate-600">
               {claimToken && claimValidation.status === "valid"
-                ? t("auth.claim.claimSubtitle")
+                ? t(
+                    claimValidation.validation.subjectType === "clinic"
+                      ? "auth.claim.claimSubtitleClinic"
+                      : "auth.claim.claimSubtitle"
+                  )
                 : t("auth.login.subtitle")}
             </p>
 

@@ -2,6 +2,11 @@ import type { AccountClaimInvalidReason, AccountClaimValidationResult } from "@/
 
 export const CLAIM_TOKEN_SESSION_KEY = "hairaudit:account_claim_token";
 export const DOCTOR_DASHBOARD_PATH = "/dashboard/doctor";
+export const CLINIC_DASHBOARD_PATH = "/dashboard/clinic";
+
+export function resolveClaimDashboardPath(subjectType: "doctor" | "clinic"): string {
+  return subjectType === "clinic" ? CLINIC_DASHBOARD_PATH : DOCTOR_DASHBOARD_PATH;
+}
 
 export type ClaimValidationState =
   | { status: "idle" }
@@ -106,7 +111,11 @@ const CLAIM_ERROR_MESSAGE_KEYS: Record<string, string> = {
   "Your account is already linked to a different doctor profile.": "auth.claim.errorUserLinkedOther",
   "Your account is registered as a patient. Network professional access requires a separate doctor account.":
     "auth.claim.errorPatientConflict",
-  "Clinic accounts cannot claim network doctor profiles.": "auth.claim.errorClinicConflict",
+  "Doctor accounts cannot claim network clinic profiles.": "auth.claim.errorDoctorConflict",
+  "Your account is registered as a patient. Network clinic access requires a separate clinic account.":
+    "auth.claim.errorPatientClinicConflict",
+  "Your account is already linked to a different clinic profile.": "auth.claim.errorUserLinkedOtherClinic",
+  "This clinic profile is already linked to another account.": "auth.claim.errorClinicProfileLinked",
   "Authentication required.": "auth.claim.errorAuthRequired",
   "Claim token is required.": "auth.claim.errorMissingToken",
 };

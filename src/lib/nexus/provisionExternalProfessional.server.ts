@@ -7,7 +7,7 @@ import {
   linkDoctorIdentityFromNexus,
   validateNexusSourceSystem,
 } from "@/lib/nexus/linkDoctorIdentity.server";
-import type { HaNexusProvisionPayload, ProvisionResult } from "@/lib/nexus/nexusProvisioningTypes";
+import type { HaNexusDoctorProvisionPayload, ProvisionResult } from "@/lib/nexus/nexusProvisioningTypes";
 import { EMAIL_RE, GLOBAL_PROFESSIONAL_ID_RE } from "@/lib/nexus/nexusProvisioningTypes";
 import {
   readExternalProfessionalState,
@@ -28,7 +28,7 @@ function normalizeApprovalStatus(raw: string | undefined): string {
 }
 
 function validateProvisionPayload(
-  payload: HaNexusProvisionPayload
+  payload: HaNexusDoctorProvisionPayload
 ): { ok: true } | { ok: false; error: string } {
   const globalProfessionalId = payload.globalProfessionalId?.trim() ?? "";
   if (!GLOBAL_PROFESSIONAL_ID_RE.test(globalProfessionalId)) {
@@ -67,7 +67,7 @@ function validateProvisionPayload(
 
 async function upsertExternalProfessional(
   supabase: SupabaseClient,
-  payload: HaNexusProvisionPayload,
+  payload: HaNexusDoctorProvisionPayload,
   globalProfessionalId: string,
   sourceSystem: string,
   doctorProfileId: string
@@ -174,7 +174,7 @@ async function syncEntitlements(
 }
 
 export async function provisionExternalProfessionalFromNexus(
-  payload: HaNexusProvisionPayload,
+  payload: HaNexusDoctorProvisionPayload,
   client?: SupabaseClient
 ): Promise<ProvisionResult> {
   const validation = validateProvisionPayload(payload);
