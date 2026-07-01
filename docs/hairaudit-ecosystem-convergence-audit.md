@@ -1147,4 +1147,23 @@ See `docs/nexus/hairaudit-nexus-receiver.md`, `docs/nexus/hairaudit-nexus-accoun
 
 ---
 
-*Audit performed read-only on 2026-06-17. Appendix C updated 2026-07-02 for HA-NEXUS-1/2/2B/3.*
+## Appendix D: FIN-IMAGING-3 Unified Classifier Staging Cutover (2026-07-02)
+
+| Work item | Status | Notes |
+|-----------|--------|-------|
+| FIN-IMAGING-1 architecture audit | **Done** | `docs/fin-imaging-1-unified-imaging-architecture-audit.md` |
+| FIN-IMAGING-2 unified FI endpoint | **Done** (follicleintelligence) | `POST /api/internal/imaging/classify` |
+| FIN-IMAGING-3 HairAudit adapter | **Done** (staging) | `src/lib/integrations/fiOsUnifiedImageClassifier.ts` |
+| Shadow compare table | **Done** | `hairaudit_classifier_shadow_comparisons` |
+| Cutover flag | **Done** | `HAIRAUDIT_FI_IMAGE_CLASSIFIER_PROVIDER=legacy\|shadow\|fi_os` |
+| Production cutover | **Not started** | FIN-IMAGING-4 |
+| HLI shadow mode | **Not started** | FIN-IMAGING-4 |
+| Legacy code removal | **Not in scope** | Rollback requires legacy path intact |
+
+**Operator doc:** `docs/fin-imaging-3-hairaudit-staging-cutover.md`
+
+**Rollback:** set `HAIRAUDIT_FI_IMAGE_CLASSIFIER_PROVIDER=legacy` (or unset) — no migration dependency.
+
+---
+
+*Audit performed read-only on 2026-06-17. Appendix C updated 2026-07-02 for HA-NEXUS-1/2/2B/3. Appendix D added 2026-07-02 for FIN-IMAGING-3.*

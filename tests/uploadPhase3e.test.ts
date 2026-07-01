@@ -323,7 +323,7 @@ describe("upload phase 3e", () => {
       const line = lines.find((l) => l.id === "fi-classifier-ai-env");
       assert.ok(line);
       assert.strictEqual(line?.status, "WARN");
-      assert.ok(line?.message.includes("fi_os adapter"));
+      assert.ok(line?.message.includes("unified"));
     });
 
     it("documents fi_os adapter-only execution", () => {
@@ -336,7 +336,7 @@ describe("upload phase 3e", () => {
       const line = lines.find((l) => l.id === "fi-ai-execution-phase3e");
       assert.ok(line);
       assert.strictEqual(line?.status, "PASS");
-      assert.ok(line?.message.includes("internal FI HTTP adapter"));
+      assert.ok(line?.message.includes("unified FI classifier"));
     });
   });
 

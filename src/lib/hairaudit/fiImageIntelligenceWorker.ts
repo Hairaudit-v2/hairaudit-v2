@@ -23,8 +23,10 @@ import {
 } from "./fiImageIntelligenceQueue";
 import {
   classifyHairAuditImage,
+  resolveFiImageClassifierCutoverModeFromEnv,
   resolveFiImageClassifierProvider,
   workerStatusForClassification,
+  type FiImageClassifierCutoverMode,
   type FiImageClassifierProvider,
 } from "./fiImageClassifierAdapter";
 import {
@@ -69,8 +71,10 @@ export type FiImageIntelligenceWorkerOptions = {
   workerEnabled?: boolean;
   /** Override HAIRAUDIT_FI_IMAGE_FETCH_ENABLED for tests. */
   imageFetchEnabled?: boolean;
-  /** Override HAIRAUDIT_FI_IMAGE_CLASSIFIER_PROVIDER for tests. */
+  /** Override HAIRAUDIT_FI_IMAGE_CLASSIFIER_LEGACY_PROVIDER / provider for tests. */
   classifierProvider?: FiImageClassifierProvider;
+  /** Override HAIRAUDIT_FI_IMAGE_CLASSIFIER_PROVIDER cutover mode for tests. */
+  cutoverMode?: FiImageClassifierCutoverMode;
   /** Injectable storage download for tests. */
   imageDownloadFn?: FiImageStorageDownloadFn;
   /** Injectable FI OS classifier fetch for tests. */
@@ -331,6 +335,8 @@ export async function processFiImageIntelligenceJob(
 
   const classifierProvider =
     options.classifierProvider ?? resolveFiImageClassifierProvider();
+  const cutoverMode =
+    options.cutoverMode ?? resolveFiImageClassifierCutoverModeFromEnv();
 
   const classification = await classifyHairAuditImage(
     {
@@ -339,9 +345,16 @@ export async function processFiImageIntelligenceJob(
       source_upload_id: payload.input.source_upload_id,
       canonical_photo_category: payload.input.canonical_photo_category,
       legacy_upload_type: payload.input.legacy_upload_type,
+      capture_source: payload.input.upload_surface,
+      upload_source: payload.input.source_system,
       image_fetch: imageFetch,
     },
-    { provider: classifierProvider, fiOsFetchImpl: options.fiOsFetchImpl }
+    {
+      provider: classifierProvider,
+      cutoverMode,
+      fiOsFetchImpl: options.fiOsFetchImpl,
+      logger: options.logger,
+    }
   );
 
   if (!classification.ok) {

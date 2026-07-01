@@ -1,12 +1,14 @@
 /**
- * FI image-intelligence classifier adapter — Phase 3D scaffold, Phase 3E fi_os adapter
+ * FI image-intelligence classifier adapter — Phase 3D scaffold, Phase 3E fi_os adapter,
+ * FIN-IMAGING-3 unified cutover (legacy / shadow / fi_os).
  *
  * Provider switch for classification. Default is dry_run; manual_stub infers
- * category from canonical/legacy metadata only. fi_os calls the internal FI
- * HTTP adapter when configured. No direct OpenAI / Claude / Gemini calls.
+ * category from canonical/legacy metadata only. fi_os_legacy calls the legacy FI
+ * HTTP adapter. fi_os cutover mode uses POST /api/internal/imaging/classify.
  *
  * See: docs/hairaudit-v2-phase-3d-image-fetch-classifier-adapter.md
  *      docs/hairaudit-v2-phase-3e-fi-os-classifier-adapter.md
+ *      docs/fin-imaging-3-hairaudit-staging-cutover.md
  */
 
 import {
@@ -15,18 +17,32 @@ import {
   FI_OS_IMAGE_CLASSIFIER_URL_ENV,
   type FiOsClassifierFetchImpl,
 } from "./fiOsImageClassifierClient";
+import {
+  classifyWithFiOsUnifiedImageClassifier,
+  type FiOsUnifiedClassifierInput,
+} from "@/lib/integrations/fiOsUnifiedImageClassifier";
+import {
+  resolveFiImageClassifierCutoverMode,
+  resolveFiImageClassifierLegacyProvider,
+  resolveLegacyProviderFromOption,
+  type FiImageClassifierCutoverMode,
+  type FiImageClassifierLegacyProvider,
+  type FiImageClassifierProvider,
+} from "./fiImageClassifierCutover";
+import { runClassifierShadowComparison } from "./fiImageClassifierShadowCompare";
+import { logClassifierCutoverEvent } from "./fiImageClassifierObservability";
 import { resolveCanonicalCategoryForUploadEvent } from "./uploadEvents";
 import type { FiImageFetchResult } from "./fiImageIntelligenceImageFetch";
 import type { FiImageIntelligenceResult } from "./fiImageIntelligenceResult";
 import { buildDryRunFiImageIntelligenceResult } from "./fiImageIntelligenceResult";
 
-export type FiImageClassifierProvider = "dry_run" | "fi_os" | "openai" | "manual_stub";
+export type { FiImageClassifierProvider, FiImageClassifierCutoverMode, FiImageClassifierLegacyProvider };
 
-const VALID_PROVIDERS = new Set<FiImageClassifierProvider>([
+const VALID_LEGACY_PROVIDERS = new Set<FiImageClassifierLegacyProvider>([
   "dry_run",
-  "fi_os",
-  "openai",
   "manual_stub",
+  "fi_os_legacy",
+  "openai",
 ]);
 
 /** Primary env var for fi_os provider readiness (URL also required). */
@@ -43,38 +59,49 @@ export type ClassifyHairAuditImageInput = {
   source_upload_id: string;
   canonical_photo_category: string;
   legacy_upload_type?: string;
+  patient_id?: string;
+  capture_source?: string;
+  upload_source?: string;
   image_fetch?: FiImageFetchResult;
   processed_at?: string;
 };
 
 export type ClassifyHairAuditImageOptions = {
+  /** Legacy inner provider override (Phase 3E tests). `fi_os` maps to fi_os_legacy. */
   provider?: FiImageClassifierProvider;
-  /** Injectable fetch for fi_os provider tests. */
+  /** FIN-IMAGING-3 cutover mode override. */
+  cutoverMode?: FiImageClassifierCutoverMode;
+  /** Injectable fetch for fi_os providers (legacy + unified). */
   fiOsFetchImpl?: FiOsClassifierFetchImpl;
+  logger?: { info: (msg: string, meta?: Record<string, unknown>) => void; warn?: (msg: string, meta?: Record<string, unknown>) => void };
 };
 
 export type ClassifyHairAuditImageOutcome =
   | { ok: true; result: FiImageIntelligenceResult }
   | { ok: false; reason: string };
 
+/** @deprecated Prefer resolveFiImageClassifierLegacyProvider — retained for Phase 3D/E callers. */
 export function resolveFiImageClassifierProvider(
   env: NodeJS.ProcessEnv = process.env
 ): FiImageClassifierProvider {
-  const raw = env.HAIRAUDIT_FI_IMAGE_CLASSIFIER_PROVIDER?.trim().toLowerCase();
-  if (raw && VALID_PROVIDERS.has(raw as FiImageClassifierProvider)) {
-    return raw as FiImageClassifierProvider;
-  }
-  return "dry_run";
+  const legacy = resolveFiImageClassifierLegacyProvider(env);
+  return legacy;
 }
 
-export function isRealAiClassifierProvider(provider: FiImageClassifierProvider): boolean {
-  return provider === "fi_os" || provider === "openai";
+export function resolveFiImageClassifierCutoverModeFromEnv(
+  env: NodeJS.ProcessEnv = process.env
+): FiImageClassifierCutoverMode {
+  return resolveFiImageClassifierCutoverMode(env);
+}
+
+export function isRealAiClassifierProvider(provider: FiImageClassifierLegacyProvider): boolean {
+  return provider === "fi_os_legacy" || provider === "openai";
 }
 
 export function requiredEnvKeyForClassifierProvider(
-  provider: FiImageClassifierProvider
+  provider: FiImageClassifierLegacyProvider
 ): string | null {
-  if (provider === "fi_os") return FI_OS_IMAGE_CLASSIFIER_URL_ENV;
+  if (provider === "fi_os_legacy") return FI_OS_IMAGE_CLASSIFIER_URL_ENV;
   if (provider === "openai") return OPENAI_CLASSIFIER_ENV_KEY;
   return null;
 }
@@ -93,7 +120,22 @@ function storageFieldsFromFetch(
   };
 }
 
-async function classifyWithFiOsProvider(
+function buildUnifiedInput(input: ClassifyHairAuditImageInput): FiOsUnifiedClassifierInput {
+  return {
+    source_image_id: input.source_upload_id,
+    case_id: input.source_case_id,
+    patient_id: input.patient_id,
+    canonical_photo_category: input.canonical_photo_category,
+    legacy_upload_type: input.legacy_upload_type,
+    capture_source: input.capture_source,
+    upload_source: input.upload_source,
+    idempotency_key: input.idempotency_key,
+    processed_at: input.processed_at,
+    ...storageFieldsFromFetch(input.image_fetch),
+  };
+}
+
+async function classifyWithFiOsLegacyProvider(
   input: ClassifyHairAuditImageInput,
   fetchFields: Pick<
     FiImageIntelligenceResult,
@@ -122,6 +164,34 @@ async function classifyWithFiOsProvider(
     ok: true,
     result: {
       ...fiOutcome.result,
+      idempotency_key: input.idempotency_key,
+      source_case_id: input.source_case_id,
+      source_upload_id: input.source_upload_id,
+      ...fetchFields,
+    },
+  };
+}
+
+async function classifyWithUnifiedFiOsProvider(
+  input: ClassifyHairAuditImageInput,
+  fetchFields: Pick<
+    FiImageIntelligenceResult,
+    "image_fetch_status" | "image_content_type" | "image_size_bytes"
+  >,
+  fiOsFetchImpl?: FiOsClassifierFetchImpl
+): Promise<ClassifyHairAuditImageOutcome> {
+  const unifiedOutcome = await classifyWithFiOsUnifiedImageClassifier(buildUnifiedInput(input), {
+    fetchImpl: fiOsFetchImpl,
+  });
+
+  if (!unifiedOutcome.ok) {
+    return { ok: false, reason: unifiedOutcome.reason };
+  }
+
+  return {
+    ok: true,
+    result: {
+      ...unifiedOutcome.result,
       idempotency_key: input.idempotency_key,
       source_case_id: input.source_case_id,
       source_upload_id: input.source_upload_id,
@@ -240,47 +310,106 @@ function buildDryRunAdapterResult(
   };
 }
 
+async function classifyWithLegacyInnerProvider(
+  input: ClassifyHairAuditImageInput,
+  legacyProvider: FiImageClassifierLegacyProvider,
+  fetchFields: Pick<
+    FiImageIntelligenceResult,
+    "image_fetch_status" | "image_content_type" | "image_size_bytes"
+  >,
+  fiOsFetchImpl?: FiOsClassifierFetchImpl
+): Promise<ClassifyHairAuditImageOutcome> {
+  if (legacyProvider === "dry_run") {
+    return { ok: true, result: buildDryRunAdapterResult(input, fetchFields) };
+  }
+
+  if (legacyProvider === "manual_stub") {
+    return { ok: true, result: buildManualStubResult(input, fetchFields) };
+  }
+
+  if (legacyProvider === "fi_os_legacy") {
+    return classifyWithFiOsLegacyProvider(input, fetchFields, fiOsFetchImpl);
+  }
+
+  if (legacyProvider === "openai") {
+    return { ok: false, reason: "openai classification is not implemented (Phase 3F+)" };
+  }
+
+  return { ok: false, reason: "unknown classifier provider" };
+}
+
 /**
- * Classify a HairAudit upload image using the configured provider.
- * fi_os uses the internal FI HTTP adapter when configured; openai remains deferred.
+ * Classify a HairAudit upload image using cutover mode + legacy/unified providers.
  */
 export async function classifyHairAuditImage(
   input: ClassifyHairAuditImageInput,
   options: ClassifyHairAuditImageOptions = {}
 ): Promise<ClassifyHairAuditImageOutcome> {
-  const provider = options.provider ?? resolveFiImageClassifierProvider();
+  const cutoverMode = options.cutoverMode ?? resolveFiImageClassifierCutoverMode();
+  const legacyProvider = resolveLegacyProviderFromOption(options.provider);
   const fetchFields = imageFetchFields(input.image_fetch);
+  const legacyStartedAt = Date.now();
 
-  if (provider === "dry_run") {
-    return {
-      ok: true,
-      result: buildDryRunAdapterResult(input, fetchFields),
-    };
+  if (cutoverMode === "fi_os") {
+    const outcome = await classifyWithUnifiedFiOsProvider(input, fetchFields, options.fiOsFetchImpl);
+    logClassifierCutoverEvent(options.logger, {
+      cutover_mode: "fi_os",
+      upload_id: input.source_upload_id,
+      case_id: input.source_case_id,
+      ok: outcome.ok,
+      provider: outcome.ok ? outcome.result.classification_source : undefined,
+      latency_ms: Date.now() - legacyStartedAt,
+    });
+    return outcome;
   }
 
-  if (provider === "manual_stub") {
-    return {
-      ok: true,
-      result: buildManualStubResult(input, fetchFields),
-    };
+  const legacyOutcome = await classifyWithLegacyInnerProvider(
+    input,
+    legacyProvider,
+    fetchFields,
+    options.fiOsFetchImpl
+  );
+
+  if (cutoverMode !== "shadow") {
+    return legacyOutcome;
   }
 
-  if (provider === "fi_os") {
-    return classifyWithFiOsProvider(input, fetchFields, options.fiOsFetchImpl);
-  }
-
-  if (provider === "openai") {
-    return {
+  if (!legacyOutcome.ok) {
+    logClassifierCutoverEvent(options.logger, {
+      cutover_mode: "shadow",
+      upload_id: input.source_upload_id,
+      case_id: input.source_case_id,
       ok: false,
-      reason: "openai classification is not implemented (Phase 3F+)",
-    };
+      legacy_error: legacyOutcome.reason,
+    });
+    return legacyOutcome;
   }
 
-  return { ok: false, reason: "unknown classifier provider" };
+  const legacyLatencyMs = Date.now() - legacyStartedAt;
+
+  try {
+    await runClassifierShadowComparison(
+      {
+        ...buildUnifiedInput(input),
+        upload_id: input.source_upload_id,
+        legacy_result: legacyOutcome.result,
+        legacy_latency_ms: legacyLatencyMs,
+      },
+      { fetchImpl: options.fiOsFetchImpl, logger: options.logger }
+    );
+  } catch {
+    // shadow compare must never block legacy authoritative path
+  }
+
+  return legacyOutcome;
 }
 
 export function workerStatusForClassification(
   result: FiImageIntelligenceResult
 ): "dry_run" | "classified" {
   return result.classification_status === "classified" ? "classified" : "dry_run";
+}
+
+export function isLegacyClassifierProviderValue(value: string): value is FiImageClassifierLegacyProvider {
+  return VALID_LEGACY_PROVIDERS.has(value as FiImageClassifierLegacyProvider);
 }

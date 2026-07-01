@@ -455,7 +455,16 @@ export function runHairAuditEventReadinessChecks(env = process.env) {
     });
   }
 
-  const validProviders = new Set(["dry_run", "fi_os", "openai", "manual_stub"]);
+  const validProviders = new Set([
+    "dry_run",
+    "fi_os",
+    "openai",
+    "manual_stub",
+    "legacy",
+    "shadow",
+  ]);
+  const cutoverModes = new Set(["legacy", "shadow", "fi_os"]);
+  const isCutoverMode = cutoverModes.has(fiClassifierProvider);
   if (!validProviders.has(fiClassifierProvider)) {
     lines.push({
       id: "fi-classifier-provider",
@@ -465,12 +474,19 @@ export function runHairAuditEventReadinessChecks(env = process.env) {
   } else {
     lines.push({
       id: "fi-classifier-provider",
-      status: fiClassifierProvider === "dry_run" ? "PASS" : "WARN",
-      message: `HAIRAUDIT_FI_IMAGE_CLASSIFIER_PROVIDER=${fiClassifierProvider}`,
+      status:
+        fiClassifierProvider === "dry_run" || fiClassifierProvider === "legacy"
+          ? "PASS"
+          : "WARN",
+      message: isCutoverMode
+        ? `HAIRAUDIT_FI_IMAGE_CLASSIFIER_PROVIDER=${fiClassifierProvider} (FIN-IMAGING-3 cutover mode)`
+        : `HAIRAUDIT_FI_IMAGE_CLASSIFIER_PROVIDER=${fiClassifierProvider}`,
     });
   }
 
-  if (fiClassifierProvider === "fi_os") {
+  const needsUnifiedEndpoint =
+    fiClassifierProvider === "fi_os" || fiClassifierProvider === "shadow";
+  if (needsUnifiedEndpoint) {
     const fiOsCheck = validateFiOsClassifierReadiness(env);
     if (!fiOsCheck.ok) {
       lines.push({
@@ -483,7 +499,9 @@ export function runHairAuditEventReadinessChecks(env = process.env) {
         id: "fi-classifier-ai-env",
         status: "WARN",
         message:
-          "FI_OS_IMAGE_CLASSIFIER_URL and FI_OS_IMAGE_CLASSIFIER_TOKEN are set — fi_os adapter will call the internal FI endpoint",
+          fiClassifierProvider === "shadow"
+            ? "FI unified endpoint configured — shadow mode will compare legacy vs POST /api/internal/imaging/classify"
+            : "FI unified endpoint configured — fi_os cutover uses POST /api/internal/imaging/classify",
       });
     }
   } else if (fiClassifierProvider === "openai") {
@@ -505,12 +523,14 @@ export function runHairAuditEventReadinessChecks(env = process.env) {
     }
   }
 
-  if (fiClassifierProvider === "fi_os") {
+  if (fiClassifierProvider === "fi_os" || fiClassifierProvider === "shadow") {
     lines.push({
       id: "fi-ai-execution-phase3e",
       status: "PASS",
       message:
-        "fi_os provider uses internal FI HTTP adapter only — no direct OpenAI / Claude / Gemini calls",
+        fiClassifierProvider === "shadow"
+          ? "shadow cutover — legacy authoritative + unified FI classifier comparison (FIN-IMAGING-3)"
+          : "fi_os cutover — unified FI classifier authoritative via internal HTTP adapter only",
     });
   } else {
     lines.push({
