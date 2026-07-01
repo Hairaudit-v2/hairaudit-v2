@@ -1133,6 +1133,7 @@ Phase 5: Full convergence (optional)
 |-----------|--------|-------|
 | HA-NEXUS-1 Nexus receiver | **Done** | `POST/GET/POST` routes under `/api/nexus/*`, HMAC auth, fail-closed env gate |
 | HA-NEXUS-2 Account claim | **Done** | Hashed invite tokens, validate/claim APIs, provision hook, link audit |
+| HA-NEXUS-2B Claim invite UI | **Done** | `/signup?claimToken=`, `ClaimInvitePanel`, auth handoff + post-login claim |
 | Nexus schema | **Done** | `hairaudit_nexus_*` tables + provisioning audit + claim token tables |
 | Doctor identity linking | **Done** | `external_provider_id` anchor; inactive shell when no match |
 | Approval enforcement | **Done** | Standalone local approval + network Nexus path; open by default |
@@ -1144,4 +1145,4 @@ See `docs/nexus/hairaudit-nexus-receiver.md` and `docs/nexus/hairaudit-nexus-acc
 
 ---
 
-*Audit performed read-only on 2026-06-17. Appendix C updated 2026-07-02 for HA-NEXUS-1/2.*
+*Audit performed read-only on 2026-06-17. Appendix C updated 2026-07-02 for HA-NEXUS-1/2/2B.*

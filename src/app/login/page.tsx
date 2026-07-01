@@ -1,17 +1,31 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useSearchParams } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import SiteHeader from "@/components/SiteHeader";
+import ClaimInvitePanel from "@/components/nexus/ClaimInvitePanel";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { getCanonicalAppUrl, buildAuthRedirectUrl, sanitizeNextPath } from "@/lib/auth/redirects";
 import { trackAuthFunnel } from "@/lib/analytics/authFunnel";
 import { resolvePostLoginRedirectPath } from "@/lib/auth/patientLogin";
+import { completeAuthWithOptionalClaim } from "@/lib/nexus/claimAccountAfterAuth";
+import {
+  buildAuthHrefWithClaimToken,
+  claimErrorMessageKey,
+  getClaimTokenFromSearchParams,
+  persistClaimToken,
+  readPersistedClaimToken,
+} from "@/lib/nexus/claimTokenClient";
+import { useClaimTokenValidation } from "@/lib/nexus/useClaimTokenValidation";
 
-export default function LoginPage() {
+function LoginPageContent() {
   const { t } = useI18n();
+  const searchParams = useSearchParams();
+  const claimToken = getClaimTokenFromSearchParams(searchParams);
+  const claimValidation = useClaimTokenValidation(claimToken);
   const supabase = createSupabaseBrowserClient();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -32,8 +46,10 @@ export default function LoginPage() {
 
   useEffect(() => {
     const s = window.location.search;
-    setSignupHref(s ? `/signup${s}` : "/signup");
     const params = new URLSearchParams(s.startsWith("?") ? s.slice(1) : s);
+    const token = getClaimTokenFromSearchParams(params);
+    if (token) persistClaimToken(token);
+    setSignupHref(token ? buildAuthHrefWithClaimToken(s ? `/signup${s}` : "/signup", token) : s ? `/signup${s}` : "/signup");
     setLoginNextPath(sanitizeNextPath(params.get("next")));
   }, []);
 
@@ -65,14 +81,36 @@ export default function LoginPage() {
     let mounted = true;
     supabase.auth.getSession().then(async ({ data }) => {
       if (!mounted || !data.session) return;
-      const href = await resolvePostLoginRedirectPath(supabase, loginNextPath);
+      const defaultRedirect = await resolvePostLoginRedirectPath(supabase, loginNextPath);
+      const claimResult = await completeAuthWithOptionalClaim({
+        queryToken: claimToken,
+        persistedToken: readPersistedClaimToken(),
+        defaultRedirect,
+      });
       if (!mounted) return;
-      window.location.href = href;
+      if (!claimResult.ok) {
+        setMsg(`❌ ${t("auth.claim.claimFailedPrefix")} ${t(claimErrorMessageKey(claimResult.error))}`);
+        return;
+      }
+      window.location.href = claimResult.redirectPath;
     });
     return () => {
       mounted = false;
     };
-  }, [supabase, loginNextPath]);
+  }, [supabase, loginNextPath, claimToken, t]);
+
+  async function redirectAfterAuth(defaultRedirect: string) {
+    const claimResult = await completeAuthWithOptionalClaim({
+      queryToken: claimToken,
+      persistedToken: readPersistedClaimToken(),
+      defaultRedirect,
+    });
+    if (!claimResult.ok) {
+      setMsg(`❌ ${t("auth.claim.claimFailedPrefix")} ${t(claimErrorMessageKey(claimResult.error))}`);
+      return;
+    }
+    window.location.href = claimResult.redirectPath;
+  }
 
   async function signInWithProvider(provider: "google") {
     setMsg(null);
@@ -84,6 +122,7 @@ export default function LoginPage() {
       { pathname: path, search }
     );
     setBusyProvider(provider);
+    if (claimToken) persistClaimToken(claimToken);
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
@@ -109,7 +148,7 @@ export default function LoginPage() {
     } else {
       const path = window.location.pathname;
       const search = window.location.search;
-      const href = await resolvePostLoginRedirectPath(supabase, loginNextPath);
+      const defaultRedirect = await resolvePostLoginRedirectPath(supabase, loginNextPath);
       trackAuthFunnel(
         "auth_session_success",
         { auth_method: "password", auth_surface: "login" },
@@ -117,10 +156,10 @@ export default function LoginPage() {
       );
       trackAuthFunnel(
         "auth_dashboard_redirect_success",
-        { auth_target: href, auth_surface: "login" },
+        { auth_target: defaultRedirect, auth_surface: "login" },
         { pathname: path, search }
       );
-      window.location.href = href;
+      await redirectAfterAuth(defaultRedirect);
     }
     setBusyProvider(null);
   }
@@ -135,6 +174,7 @@ export default function LoginPage() {
     const search = window.location.search;
     trackAuthFunnel("auth_email_submit", { auth_method: "magic_link", auth_surface: "login" }, { pathname: path, search });
     setBusyProvider("email");
+    if (claimToken) persistClaimToken(claimToken);
 
     const { error } = await supabase.auth.signInWithOtp({
       email,
@@ -176,6 +216,8 @@ export default function LoginPage() {
     setSendingReset(false);
   }
 
+  const signupHrefWithClaim = buildAuthHrefWithClaimToken(signupHref, claimToken);
+
   return (
     <div className="min-h-screen flex flex-col">
       <SiteHeader variant="minimal" />
@@ -198,8 +240,17 @@ export default function LoginPage() {
                 className="h-10 w-auto object-contain"
               />
             </div>
+            <ClaimInvitePanel
+              validation={claimValidation}
+              loginHref={signupHrefWithClaim}
+              showSignInLink={false}
+            />
             <h1 className="text-2xl font-bold text-slate-900">{t("auth.login.title")}</h1>
-            <p className="mt-2 text-sm leading-relaxed text-slate-600">{t("auth.login.subtitle")}</p>
+            <p className="mt-2 text-sm leading-relaxed text-slate-600">
+              {claimToken && claimValidation.status === "valid"
+                ? t("auth.claim.claimSubtitle")
+                : t("auth.login.subtitle")}
+            </p>
 
             <div className="mt-6 space-y-3">
               <button
@@ -282,7 +333,7 @@ export default function LoginPage() {
             <p className="mt-6 text-center text-xs leading-relaxed text-slate-500">{t("auth.login.footerRedirect")}</p>
             <p className="mt-2 text-center text-sm text-slate-600">
               {t("auth.login.needAccount")}{" "}
-              <Link href={signupHref} className="font-medium text-amber-600 hover:text-amber-500">
+              <Link href={signupHrefWithClaim} className="font-medium text-amber-600 hover:text-amber-500">
                 {t("auth.login.signUpCta")}
               </Link>
             </p>
@@ -296,5 +347,13 @@ export default function LoginPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen" />}>
+      <LoginPageContent />
+    </Suspense>
   );
 }

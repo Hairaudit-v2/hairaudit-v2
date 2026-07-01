@@ -6,9 +6,20 @@ import Link from "next/link";
 import Image from "next/image";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import SiteHeader from "@/components/SiteHeader";
+import ClaimInvitePanel from "@/components/nexus/ClaimInvitePanel";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { getCanonicalAppUrl, dashboardPathForRole } from "@/lib/auth/redirects";
 import { trackAuthFunnel } from "@/lib/analytics/authFunnel";
+import { claimAccountAfterAuth } from "@/lib/nexus/claimAccountAfterAuth";
+import {
+  buildAuthHrefWithClaimToken,
+  claimErrorMessageKey,
+  getClaimTokenFromSearchParams,
+  persistClaimToken,
+  shouldShowClaimSignupForm,
+  type ClaimValidationState,
+} from "@/lib/nexus/claimTokenClient";
+import { useClaimTokenValidation } from "@/lib/nexus/useClaimTokenValidation";
 
 type SignupRole = "patient" | "doctor" | "clinic";
 
@@ -17,12 +28,15 @@ function SignUpForm({
   fromRequestReview = false,
   compactPatientRolePicker = false,
   loginHref = "/login",
+  claimToken = null,
+  claimValidation = { status: "idle" as const },
 }: {
   initialRole?: SignupRole;
   fromRequestReview?: boolean;
   compactPatientRolePicker?: boolean;
-  /** Preserves ?from=request-review and optional ?role= for login ↔ signup continuity. */
   loginHref?: string;
+  claimToken?: string | null;
+  claimValidation?: ClaimValidationState;
 }) {
   const { t } = useI18n();
   const supabase = createSupabaseBrowserClient();
@@ -61,6 +75,39 @@ function SignUpForm({
     );
   }, [signupRole, fromRequestReview]);
 
+  const claimMode = claimValidation.status === "valid";
+  const showSignupForm = shouldShowClaimSignupForm(claimToken, claimValidation);
+
+  useEffect(() => {
+    if (claimMode) {
+      setSignupRole("doctor");
+      setShowFullRolePicker(true);
+    }
+  }, [claimMode]);
+
+  useEffect(() => {
+    if (claimToken) persistClaimToken(claimToken);
+  }, [claimToken]);
+
+  async function finalizeSignupSession(signupRoleForRedirect: SignupRole) {
+    if (claimToken) {
+      const claimResult = await claimAccountAfterAuth(claimToken);
+      if (!claimResult.ok) {
+        setMsgKind("error");
+        setMsg(`❌ ${t("auth.claim.claimFailedPrefix")} ${t(claimErrorMessageKey(claimResult.error))}`);
+        setBusy(false);
+        return false;
+      }
+      router.push(claimResult.redirectPath);
+      router.refresh();
+      return true;
+    }
+
+    router.push("/dashboard");
+    router.refresh();
+    return true;
+  }
+
   async function signUp(e: React.FormEvent) {
     e.preventDefault();
     setMsg(null);
@@ -73,8 +120,13 @@ function SignUpForm({
         fallback: appUrl,
       });
     }
-    const nextPath = dashboardPathForRole(signupRole);
-    const emailRedirectTo = `${appUrl}/auth/callback?signup_role=${signupRole}&next=${encodeURIComponent(nextPath)}`;
+    const effectiveRole: SignupRole = claimMode ? "doctor" : signupRole;
+    const nextPath = claimMode ? "/dashboard/doctor" : dashboardPathForRole(effectiveRole);
+    const callbackParams = new URLSearchParams({
+      signup_role: effectiveRole,
+      next: nextPath,
+    });
+    const emailRedirectTo = `${appUrl}/auth/callback?${callbackParams.toString()}`;
     console.info("[signup] attempting signup", {
       emailRedirectTo,
       email: maskEmail(email),
@@ -86,7 +138,7 @@ function SignUpForm({
       options: {
         emailRedirectTo,
         data: {
-          role: signupRole,
+          role: effectiveRole,
         },
       },
     });
@@ -124,7 +176,7 @@ function SignUpForm({
       const profileRes = await fetch("/api/profiles", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ role: signupRole }),
+        body: JSON.stringify({ role: effectiveRole }),
       });
       if (!profileRes.ok) {
         const body = await profileRes.text();
@@ -162,8 +214,9 @@ function SignUpForm({
         { pathname: path, search }
       );
     }
-    router.push("/dashboard");
-    router.refresh();
+    const completed = await finalizeSignupSession(effectiveRole);
+    if (!completed) return;
+
     setAwaitingConfirmation(false);
     setBusy(false);
   }
@@ -179,8 +232,12 @@ function SignUpForm({
     setMsg(null);
     try {
       const appUrl = getCanonicalAppUrl();
-      const nextPath = dashboardPathForRole(signupRole);
-      const emailRedirectTo = `${appUrl}/auth/callback?signup_role=${signupRole}&next=${encodeURIComponent(nextPath)}`;
+      const nextPath = claimMode ? "/dashboard/doctor" : dashboardPathForRole(signupRole);
+      const callbackParams = new URLSearchParams({
+        signup_role: claimMode ? "doctor" : signupRole,
+        next: nextPath,
+      });
+      const emailRedirectTo = `${appUrl}/auth/callback?${callbackParams.toString()}`;
       const { error } = await supabase.auth.resend({
         type: "signup",
         email: trimmedEmail,
@@ -270,8 +327,9 @@ function SignUpForm({
         ? t("auth.signup.roleDoctorDesc")
         : t("auth.signup.roleClinicDesc");
 
-  const subtitle =
-    fromRequestReview && !showFullRolePicker
+  const subtitle = claimMode
+    ? t("auth.claim.claimSubtitle")
+    : fromRequestReview && !showFullRolePicker
       ? t("auth.signup.subtitleRequestReview")
       : fromRequestReview && showFullRolePicker
         ? t("auth.signup.subtitleRequestReviewExpanded")
@@ -299,173 +357,184 @@ function SignUpForm({
                 className="h-10 w-auto object-contain"
               />
             </div>
-            <h1 className="text-2xl font-bold text-slate-900">{t("auth.signup.title")}</h1>
-            {fromRequestReview ? (
-              <p className="mt-2 inline-flex max-w-full flex-wrap items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-900">
-                {t("auth.signup.continuingFromAudit")}
-              </p>
-            ) : null}
-            <p className={`text-sm leading-relaxed text-slate-600 ${fromRequestReview ? "mt-3" : "mt-2"}`}>
-              {subtitle}
-            </p>
+            <ClaimInvitePanel validation={claimValidation} loginHref={loginHref} showSignInLink={showSignupForm} />
+            {showSignupForm ? (
+              <>
+                <h1 className="text-2xl font-bold text-slate-900">
+                  {claimMode ? t("auth.claim.validTitle") : t("auth.signup.title")}
+                </h1>
+                {fromRequestReview && !claimMode ? (
+                  <p className="mt-2 inline-flex max-w-full flex-wrap items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-900">
+                    {t("auth.signup.continuingFromAudit")}
+                  </p>
+                ) : null}
+                <p className={`text-sm leading-relaxed text-slate-600 ${fromRequestReview && !claimMode ? "mt-3" : "mt-2"}`}>
+                  {subtitle}
+                </p>
 
-            <form onSubmit={signUp} className="mt-6 space-y-4">
-              {compactPatientRolePicker && !showFullRolePicker ? (
-                <div className="rounded-xl border border-amber-200 bg-amber-50/60 px-4 py-3">
-                  <p className="text-sm font-medium text-slate-800">{t("auth.signup.patientPathDefault")}</p>
-                  <button
-                    type="button"
-                    onClick={() => setShowFullRolePicker(true)}
-                    className="mt-2 text-sm font-semibold text-amber-800 hover:text-amber-900 underline-offset-2 hover:underline"
-                  >
-                    {t("auth.signup.expandProfessionalSignup")}
-                  </button>
-                </div>
-              ) : (
-                <div>
-                  <div className="flex items-start justify-between gap-3">
-                    <p className="mb-2 block text-sm font-medium text-slate-700">{t("auth.signup.roleLabel")}</p>
-                    {compactPatientRolePicker && showFullRolePicker ? (
+                <form onSubmit={signUp} className="mt-6 space-y-4">
+                  {!claimMode && compactPatientRolePicker && !showFullRolePicker ? (
+                    <div className="rounded-xl border border-amber-200 bg-amber-50/60 px-4 py-3">
+                      <p className="text-sm font-medium text-slate-800">{t("auth.signup.patientPathDefault")}</p>
                       <button
                         type="button"
-                        onClick={() => {
-                          setSignupRole("patient");
-                          setShowFullRolePicker(false);
-                        }}
-                        className="shrink-0 text-xs font-semibold text-slate-500 hover:text-amber-700"
+                        onClick={() => setShowFullRolePicker(true)}
+                        className="mt-2 text-sm font-semibold text-amber-800 hover:text-amber-900 underline-offset-2 hover:underline"
                       >
-                        {t("auth.signup.collapseToPatientSignup")}
+                        {t("auth.signup.expandProfessionalSignup")}
                       </button>
-                    ) : null}
+                    </div>
+                  ) : !claimMode ? (
+                    <div>
+                      <div className="flex items-start justify-between gap-3">
+                        <p className="mb-2 block text-sm font-medium text-slate-700">{t("auth.signup.roleLabel")}</p>
+                        {compactPatientRolePicker && showFullRolePicker ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSignupRole("patient");
+                              setShowFullRolePicker(false);
+                            }}
+                            className="shrink-0 text-xs font-semibold text-slate-500 hover:text-amber-700"
+                          >
+                            {t("auth.signup.collapseToPatientSignup")}
+                          </button>
+                        ) : null}
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setSignupRole("patient")}
+                          className={`rounded-lg border px-3 py-2.5 text-sm font-semibold transition-colors ${
+                            signupRole === "patient"
+                              ? "border-amber-500 bg-amber-50 text-amber-800"
+                              : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                          }`}
+                        >
+                          {t("auth.signup.rolePatient")}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSignupRole("doctor")}
+                          className={`rounded-lg border px-3 py-2.5 text-sm font-semibold transition-colors ${
+                            signupRole === "doctor"
+                              ? "border-violet-500 bg-violet-50 text-violet-800"
+                              : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                          }`}
+                        >
+                          {t("auth.signup.roleDoctor")}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSignupRole("clinic")}
+                          className={`rounded-lg border px-3 py-2.5 text-sm font-semibold transition-colors ${
+                            signupRole === "clinic"
+                              ? "border-cyan-500 bg-cyan-50 text-cyan-800"
+                              : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                          }`}
+                        >
+                          {t("auth.signup.roleClinic")}
+                        </button>
+                      </div>
+                      <p className="mt-2 text-xs leading-relaxed text-slate-500">{roleDescription}</p>
+                    </div>
+                  ) : null}
+                  <div>
+                    <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1">
+                      {t("auth.common.email")}
+                    </label>
+                    <input
+                      id="email"
+                      name="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      autoComplete="email"
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-slate-900 placeholder-slate-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-colors"
+                    />
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setSignupRole("patient")}
-                      className={`rounded-lg border px-3 py-2.5 text-sm font-semibold transition-colors ${
-                        signupRole === "patient"
-                          ? "border-amber-500 bg-amber-50 text-amber-800"
-                          : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
-                      }`}
-                    >
-                      {t("auth.signup.rolePatient")}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setSignupRole("doctor")}
-                      className={`rounded-lg border px-3 py-2.5 text-sm font-semibold transition-colors ${
-                        signupRole === "doctor"
-                          ? "border-violet-500 bg-violet-50 text-violet-800"
-                          : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
-                      }`}
-                    >
-                      {t("auth.signup.roleDoctor")}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setSignupRole("clinic")}
-                      className={`rounded-lg border px-3 py-2.5 text-sm font-semibold transition-colors ${
-                        signupRole === "clinic"
-                          ? "border-cyan-500 bg-cyan-50 text-cyan-800"
-                          : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
-                      }`}
-                    >
-                      {t("auth.signup.roleClinic")}
-                    </button>
+                  <div>
+                    <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1">
+                      {t("auth.common.password")}
+                    </label>
+                    <input
+                      id="password"
+                      name="password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      minLength={6}
+                      autoComplete="new-password"
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-slate-900 placeholder-slate-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-colors"
+                    />
                   </div>
-                  <p className="mt-2 text-xs leading-relaxed text-slate-500">{roleDescription}</p>
-                </div>
-              )}
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1">
-                  {t("auth.common.email")}
-                </label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  autoComplete="email"
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-slate-900 placeholder-slate-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-colors"
-                />
-              </div>
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1">
-                  {t("auth.common.password")}
-                </label>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={6}
-                  autoComplete="new-password"
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-slate-900 placeholder-slate-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-colors"
-                />
-              </div>
-              <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs leading-relaxed text-slate-600">
-                {t("auth.signup.privacyReassurance")}
-              </p>
-              <button
-                type="submit"
-                disabled={busy}
-                className="w-full rounded-lg bg-amber-500 text-slate-900 py-2.5 font-semibold hover:bg-amber-400 transition-colors disabled:opacity-60 disabled:cursor-not-allowed focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
-              >
-                {busy
-                  ? t("auth.signup.creating")
-                  : signupRole === "clinic"
-                    ? t("auth.signup.submitClinic")
-                    : signupRole === "doctor"
-                      ? t("auth.signup.submitDoctor")
-                      : t("auth.signup.submitPatient")}
-              </button>
-            </form>
-
-            {msg && (
-              <p
-                className={`mt-4 text-sm rounded-lg px-3 py-2 ${
-                  msgKind === "success"
-                    ? "text-emerald-700 bg-emerald-50"
-                    : "text-red-600 bg-red-50"
-                }`}
-              >
-                {msg}
-              </p>
-            )}
-            {awaitingConfirmation && (
-              <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
-                <p className="text-xs leading-relaxed text-slate-600">{t("auth.signup.awaitingEmailHelp")}</p>
-                <div className="mt-2 flex flex-wrap gap-2">
+                  <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs leading-relaxed text-slate-600">
+                    {t("auth.signup.privacyReassurance")}
+                  </p>
                   <button
-                    type="button"
-                    onClick={resendConfirmationEmail}
-                    disabled={resending !== null}
-                    className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-60"
+                    type="submit"
+                    disabled={busy}
+                    className="w-full rounded-lg bg-amber-500 text-slate-900 py-2.5 font-semibold hover:bg-amber-400 transition-colors disabled:opacity-60 disabled:cursor-not-allowed focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
                   >
-                    {resending === "confirm" ? t("auth.signup.resending") : t("auth.signup.resendConfirmation")}
+                    {busy
+                      ? t("auth.signup.creating")
+                      : claimMode
+                        ? t("auth.claim.submitDoctorInvite")
+                        : signupRole === "clinic"
+                          ? t("auth.signup.submitClinic")
+                          : signupRole === "doctor"
+                            ? t("auth.signup.submitDoctor")
+                            : t("auth.signup.submitPatient")}
                   </button>
-                  <button
-                    type="button"
-                    onClick={sendMagicLinkFallback}
-                    disabled={resending !== null}
-                    className="rounded-md border border-cyan-300 bg-cyan-50 px-3 py-1.5 text-xs font-semibold text-cyan-800 hover:bg-cyan-100 disabled:opacity-60"
-                  >
-                    {resending === "magic" ? t("auth.signup.sendingShort") : t("auth.signup.sendMagicLinkInstead")}
-                  </button>
-                </div>
-              </div>
-            )}
+                </form>
 
-            <p className="mt-6 text-center text-sm text-slate-600">
-              {t("auth.signup.alreadyHaveAccount")}{" "}
-              <Link href={loginHref} className="font-medium text-amber-600 hover:text-amber-500">
-                {t("nav.signIn")}
-              </Link>
-            </p>
+                {msg && (
+                  <p
+                    className={`mt-4 text-sm rounded-lg px-3 py-2 ${
+                      msgKind === "success"
+                        ? "text-emerald-700 bg-emerald-50"
+                        : "text-red-600 bg-red-50"
+                    }`}
+                  >
+                    {msg}
+                  </p>
+                )}
+                {awaitingConfirmation && (
+                  <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                    <p className="text-xs leading-relaxed text-slate-600">{t("auth.signup.awaitingEmailHelp")}</p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={resendConfirmationEmail}
+                        disabled={resending !== null}
+                        className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-60"
+                      >
+                        {resending === "confirm" ? t("auth.signup.resending") : t("auth.signup.resendConfirmation")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={sendMagicLinkFallback}
+                        disabled={resending !== null}
+                        className="rounded-md border border-cyan-300 bg-cyan-50 px-3 py-1.5 text-xs font-semibold text-cyan-800 hover:bg-cyan-100 disabled:opacity-60"
+                      >
+                        {resending === "magic" ? t("auth.signup.sendingShort") : t("auth.signup.sendMagicLinkInstead")}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {!claimMode ? (
+                  <p className="mt-6 text-center text-sm text-slate-600">
+                    {t("auth.signup.alreadyHaveAccount")}{" "}
+                    <Link href={loginHref} className="font-medium text-amber-600 hover:text-amber-500">
+                      {t("nav.signIn")}
+                    </Link>
+                  </p>
+                ) : null}
+              </>
+            ) : null}
           </div>
         </div>
       </main>
@@ -475,17 +544,22 @@ function SignUpForm({
 
 function SignUpPageContent() {
   const searchParams = useSearchParams();
+  const claimToken = getClaimTokenFromSearchParams(searchParams);
+  const claimValidation = useClaimTokenValidation(claimToken);
   const roleRaw = searchParams.get("role");
   const explicitRole: SignupRole | null =
     roleRaw === "clinic" || roleRaw === "doctor" || roleRaw === "patient" ? roleRaw : null;
   const fromRequestReview = searchParams.get("from") === "request-review";
-  const initialRole: SignupRole = explicitRole ?? "patient";
-  const compactPatientRolePicker = fromRequestReview && explicitRole === null;
+  const initialRole: SignupRole = claimToken ? "doctor" : explicitRole ?? "patient";
+  const compactPatientRolePicker = !claimToken && fromRequestReview && explicitRole === null;
 
   const authQ = new URLSearchParams();
   if (fromRequestReview) authQ.set("from", "request-review");
-  if (explicitRole) authQ.set("role", explicitRole);
-  const loginHref = authQ.toString() ? `/login?${authQ.toString()}` : "/login";
+  if (explicitRole && !claimToken) authQ.set("role", explicitRole);
+  const loginHref = buildAuthHrefWithClaimToken(
+    authQ.toString() ? `/login?${authQ.toString()}` : "/login",
+    claimToken
+  );
 
   return (
     <SignUpForm
@@ -493,6 +567,8 @@ function SignUpPageContent() {
       fromRequestReview={fromRequestReview}
       compactPatientRolePicker={compactPatientRolePicker}
       loginHref={loginHref}
+      claimToken={claimToken}
+      claimValidation={claimValidation}
     />
   );
 }
