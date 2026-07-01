@@ -128,9 +128,41 @@ Email is informational and can diverge across systems (typos, aliases, shared in
 
 ```bash
 pnpm test:nexus
+pnpm test:account-claim-ui
 ```
 
-See `src/lib/nexus/accountClaim.test.ts`.
+See `src/lib/nexus/accountClaim.test.ts` and `tests/accountClaimUi.test.ts`.
+
+## Invite link UI flow (HA-NEXUS-2B)
+
+Entry point: `/signup?claimToken=<plaintext-token>` (also supported on `/login?claimToken=` for sign-in continuation).
+
+1. Browser calls `GET /api/nexus/account-claim/validate?token=` and renders `ClaimInvitePanel` with safe preview fields only.
+2. User creates an account or signs in via existing Supabase auth (no SSO).
+3. `claimToken` is preserved in the URL and `sessionStorage` (`hairaudit:account_claim_token`) across email-confirm / OAuth / magic-link handoffs.
+4. After session is established, the client calls `POST /api/nexus/account-claim/claim` with `{ token }` only.
+5. On success, user is redirected to `/dashboard/doctor`. On failure, a safe error is shown and no access is granted.
+
+### UI components
+
+| Piece | Location |
+|-------|----------|
+| `ClaimInvitePanel` | `src/components/nexus/ClaimInvitePanel.tsx` |
+| `useClaimTokenValidation` | `src/lib/nexus/useClaimTokenValidation.ts` |
+| `claimAccountAfterAuth` | `src/lib/nexus/claimAccountAfterAuth.ts` |
+
+### Operator note
+
+Provisioning always mints a hashed claim token in Postgres when a new network doctor shell is unlinked. Email delivery via Resend is optional — if `RESEND_API_KEY` is not configured, the token still exists server-side and can be handed to the professional through your support channel (never log or expose plaintext tokens in application logs).
+
+### Troubleshooting
+
+| Symptom | Likely cause | Action |
+|---------|--------------|--------|
+| “Invite expired” | Token past 7-day TTL | Re-provision or admin re-send (future) |
+| “Already used” | Token consumed | User should sign in normally |
+| “Revoked” | Superseded by newer token | Send latest invite link |
+| Claim fails after sign-in | Role conflict (patient/clinic) or profile already linked | Use a fresh doctor account or contact support |
 
 ## Scope boundaries
 
