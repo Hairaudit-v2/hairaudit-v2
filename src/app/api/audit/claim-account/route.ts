@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import {
+  CLAIM_ACCOUNT_LOG_PREFIX,
+  EMAIL_RE,
+  PATIENT_SAFE_CLAIM_ERROR,
+  claimAnonymousAccount,
+} from "@/lib/audit/claimAnonymousAccount";
 
 /**
  * POST /api/audit/claim-account
@@ -18,10 +24,6 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
  * Body: { caseId: string, email: string, firstName?: string }
  */
 
-const LOG_PREFIX = "[audit/claim-account]";
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 export async function POST(req: Request): Promise<NextResponse> {
   const body = await req.json().catch(() => ({}) as Record<string, unknown>);
   const caseId = typeof body?.caseId === "string" ? body.caseId.trim() : "";
@@ -34,12 +36,11 @@ export async function POST(req: Request): Promise<NextResponse> {
     return NextResponse.json({ ok: false, error: "Please enter a valid email address." }, { status: 400 });
   }
 
-  // Identify the current (anonymous) user from their session.
   let supabaseAuth;
   try {
     supabaseAuth = await createSupabaseAuthServerClient();
   } catch (e) {
-    console.error(LOG_PREFIX, "auth client failed", { error: e });
+    console.error(CLAIM_ACCOUNT_LOG_PREFIX, "auth client failed", { error: e });
     return NextResponse.json({ ok: false, error: "Auth unavailable" }, { status: 500 });
   }
 
@@ -47,71 +48,49 @@ export async function POST(req: Request): Promise<NextResponse> {
     data: { user },
   } = await supabaseAuth.auth.getUser();
   if (!user) {
-    return NextResponse.json({ ok: false, error: "Your session has expired. Please start again." }, { status: 401 });
+    return NextResponse.json(
+      { ok: false, error: "Your session has expired. Please start again." },
+      { status: 401 }
+    );
   }
-  const userId = user.id;
 
   let admin;
   try {
     admin = createSupabaseAdminClient();
   } catch (e) {
-    console.error(LOG_PREFIX, "admin client failed", { userId, error: e });
+    console.error(CLAIM_ACCOUNT_LOG_PREFIX, "admin client failed", { userId: user.id, error: e });
     return NextResponse.json({ ok: false, error: "Server configuration error" }, { status: 500 });
   }
 
-  // Ownership: the current user must own this case.
-  const { data: c, error: caseErr } = await admin
-    .from("cases")
-    .select("id, user_id, patient_id")
-    .eq("id", caseId)
-    .maybeSingle();
-  if (caseErr) {
-    console.error(LOG_PREFIX, "case lookup failed", { userId, caseId, error: caseErr.message });
-    return NextResponse.json({ ok: false, error: "Could not load your audit." }, { status: 500 });
-  }
-  if (!c || (c.user_id !== userId && c.patient_id !== userId)) {
-    return NextResponse.json({ ok: false, error: "Audit not found." }, { status: 404 });
-  }
-
-  // Upgrade anonymous user → permanent account (same uid; email left unconfirmed
-  // so the verification email can be sent after report generation).
-  const nextMetadata: Record<string, unknown> = {
-    ...(user.user_metadata as Record<string, unknown> | undefined),
-    role: "patient",
-  };
-  if (firstName) nextMetadata.first_name = firstName;
-
-  const { error: updateErr } = await admin.auth.admin.updateUserById(userId, {
+  const result = await claimAnonymousAccount({
+    admin,
+    userId: user.id,
+    caseId,
     email,
-    user_metadata: nextMetadata,
+    firstName,
+    userMetadata: user.user_metadata as Record<string, unknown> | undefined,
   });
 
-  if (updateErr) {
-    const msg = String(updateErr.message ?? "");
-    console.error(LOG_PREFIX, "updateUserById failed", { userId, code: updateErr.code, error: msg });
-    if (/already|registered|exists|duplicate/i.test(msg) || updateErr.code === "email_exists") {
-      return NextResponse.json(
-        { ok: false, error: "That email is already registered. Please sign in to continue.", code: "email_exists" },
-        { status: 409 }
-      );
-    }
-    return NextResponse.json({ ok: false, error: "Could not save your email. Please try again." }, { status: 500 });
+  if (!result.ok) {
+    console.error(CLAIM_ACCOUNT_LOG_PREFIX, "claim failed", result.logContext);
+    return NextResponse.json(
+      {
+        ok: false,
+        error: result.error,
+        code: result.code,
+        correlationId: result.correlationId,
+      },
+      { status: result.status }
+    );
   }
 
-  // Sync the patient profile row (created on anonymous sign-in by the
-  // `on_auth_user_created` trigger with a null email) with the collected email
-  // and name. The trigger only fires on INSERT, so the email-change UPDATE above
-  // does not propagate to `profiles` on its own.
-  const profilePatch: Record<string, unknown> = { id: userId, role: "patient", email };
-  if (firstName) profilePatch.name = firstName;
-  const { error: profileErr } = await admin
-    .from("profiles")
-    .upsert(profilePatch, { onConflict: "id" });
-  if (profileErr) {
-    // Non-fatal: account/email upgrade already succeeded.
-    console.error(LOG_PREFIX, "profile upsert failed (non-fatal)", { userId, error: profileErr.message });
-  }
-
-  console.info(LOG_PREFIX, "anonymous account claimed", { userId, caseId });
-  return NextResponse.json({ ok: true });
+  console.info(CLAIM_ACCOUNT_LOG_PREFIX, "anonymous account claimed", {
+    userId: result.userId,
+    caseId: result.caseId,
+    correlationId: result.correlationId,
+  });
+  return NextResponse.json({ ok: true, correlationId: result.correlationId });
 }
+
+/** Patient-safe message export for tests (no auth details). */
+export { PATIENT_SAFE_CLAIM_ERROR };

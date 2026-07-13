@@ -207,10 +207,10 @@ export const PATIENT_QA_ROLLUPS: readonly PatientUxFeature[] = [
   {
     id: "patient-journey-reliability",
     name: "Patient Journey Reliability",
-    completionPercent: 96,
+    completionPercent: 97,
     description:
-      "End-to-end patient funnel verification — login, case access, processing timeline polling, ready-state handoff, and mobile layout smoke tests.",
-    focus: "Full journey reliability, not unit tests alone.",
+      "End-to-end patient funnel verification — login, case access, anonymous→email account claim, processing timeline polling, ready-state handoff, and mobile layout smoke tests.",
+    focus: "Full journey reliability, not unit tests alone. HA-PROD-CLAIM-ACCOUNT-INCIDENT-1A hardening.",
   },
   {
     id: "report-delivery-qa",
@@ -272,6 +272,13 @@ export const PATIENT_UX_FEATURES: readonly PatientUxFeature[] = [
 
 /** Public engineering changelog — newest first. */
 export const ENGINEERING_CHANGELOG: readonly EngineeringChangelogEntry[] = [
+  {
+    date: "2026-07-14",
+    title: "HA-PROD-CLAIM-ACCOUNT-INCIDENT-1A — anonymous account claim fix",
+    description:
+      "Production account-claim failures at contact step are mapped correctly when an email is already registered (Postgres users_email_partial_key). Auth profile sync now supports anonymous null-email → populated email on the same uid, with correlation-id logging and patient-safe errors.",
+    area: "Patient Experience",
+  },
   {
     date: "2026-06-22",
     title: "HA-QA-E2E-2 deployed",
