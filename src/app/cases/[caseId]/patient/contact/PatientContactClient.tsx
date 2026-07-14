@@ -38,6 +38,15 @@ export default function PatientContactClient({ caseId }: { caseId: string }) {
       });
       const claimJson = await claimRes.json().catch(() => ({}));
       if (!claimRes.ok || !claimJson?.ok) {
+        if (claimRes.status === 409 || claimJson?.code === "email_exists") {
+          setError(
+            typeof claimJson?.error === "string" && claimJson.error
+              ? claimJson.error
+              : "That email is already registered. Please sign in to continue."
+          );
+          setBusy(false);
+          return;
+        }
         throw new Error(claimJson?.error ?? "Could not save your email. Please try again.");
       }
 
@@ -105,9 +114,16 @@ export default function PatientContactClient({ caseId }: { caseId: string }) {
           </div>
 
           {error && (
-            <p role="alert" className="rounded-lg border border-rose-400/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
-              {error}
-            </p>
+            <div role="alert" className="rounded-lg border border-rose-400/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-200 space-y-2">
+              <p>{error}</p>
+              {/sign in/i.test(error) ? (
+                <p>
+                  <Link href="/login" className="underline underline-offset-2 hover:text-rose-100">
+                    Sign in to continue
+                  </Link>
+                </p>
+              ) : null}
+            </div>
           )}
 
           <button

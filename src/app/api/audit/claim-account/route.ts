@@ -4,7 +4,6 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import {
   CLAIM_ACCOUNT_LOG_PREFIX,
   EMAIL_RE,
-  PATIENT_SAFE_CLAIM_ERROR,
   claimAnonymousAccount,
 } from "@/lib/audit/claimAnonymousAccount";
 
@@ -91,6 +90,3 @@ export async function POST(req: Request): Promise<NextResponse> {
   });
   return NextResponse.json({ ok: true, correlationId: result.correlationId });
 }
-
-/** Patient-safe message export for tests (no auth details). */
-export { PATIENT_SAFE_CLAIM_ERROR };
