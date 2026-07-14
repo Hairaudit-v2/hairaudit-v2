@@ -161,6 +161,7 @@ async function freshPath() {
     (user.email || "").toLowerCase() === email &&
     (profile?.email || "").toLowerCase() === email &&
     profile?.role === "patient" &&
+    user.is_anonymous === false &&
     caseAfter.user_id === userId &&
     caseAfter.patient_id === userId &&
     Boolean(claimed.json.correlationId) &&

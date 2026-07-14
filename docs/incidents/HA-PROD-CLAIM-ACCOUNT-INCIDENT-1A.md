@@ -1,9 +1,10 @@
 # HA-PROD-CLAIM-ACCOUNT-INCIDENT-1A
 
-**Status:** Fix shipped in repo; production resolution requires migration apply + deploy + smoke.  
+**Status:** Production smoke passed for 409 path + same-UID claim; `email_confirm:true` follow-up (`225ab4c`) clears `is_anonymous`.  
 **Date:** 2026-07-14  
+**Fix commits:** `d6873ef` → `a958788` (build unblock) → `225ab4c` (`is_anonymous` via email_confirm)  
 **Incident uid:** `d7698f54-5e0e-4ce4-9355-3910ece3ede1`  
-**Case:** `b7ea67d0-2e72-470a-b682-939eb3653caf` (draft; photos/uploads preserved)
+**Case:** `b7ea67d0-2e72-470a-b682-939eb3653caf` (draft; 6 uploads — leave untouched)
 
 ## Exact Postgres error
 
