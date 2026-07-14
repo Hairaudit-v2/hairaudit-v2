@@ -176,9 +176,11 @@ export async function claimAnonymousAccount(
 
   const { data: updated, error: updateErr } = await admin.auth.admin.updateUserById(userId, {
     email,
-    email_confirm: false,
+    // GoTrue keeps is_anonymous=true while email_confirm is false; confirming here
+    // permanently converts the anon session while still allowing a later report-ready
+    // verification / welcome email from application code.
+    email_confirm: true,
     user_metadata: nextMetadata,
-    // Prefer permanent account once email is attached (GoTrue may ignore on some versions).
     ...( { is_anonymous: false } as Record<string, unknown> ),
   } as Parameters<SupabaseClient["auth"]["admin"]["updateUserById"]>[1]);
 
