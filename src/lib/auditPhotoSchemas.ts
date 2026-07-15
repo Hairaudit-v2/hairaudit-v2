@@ -8,6 +8,7 @@ import { PATIENT_PHOTO_SCHEMA as PATIENT_SCHEMA, DOCTOR_PHOTO_SCHEMA as DOCTOR_S
 import {
   isPathwayRequiredUploadComplete,
   PATHWAY_REQUIRED_AUDIT_KEYS,
+  type PathwaySatisfactionOpts,
   type PatientReviewPathway,
 } from "@/lib/patient/patientReviewPathway";
 
@@ -333,10 +334,11 @@ export { submitterUsesDoctorSchema };
 export function canSubmit(
   submitterType: SubmitterType,
   photos: Array<{ type?: string; photo_key?: string; submitter_type?: string }>,
-  patientReviewPathway?: PatientReviewPathway
+  patientReviewPathway?: PatientReviewPathway,
+  satisfactionOpts?: PathwaySatisfactionOpts
 ): boolean {
   if (submitterType === "patient" && patientReviewPathway) {
-    return isPathwayRequiredUploadComplete(patientReviewPathway, photos);
+    return isPathwayRequiredUploadComplete(patientReviewPathway, photos, satisfactionOpts);
   }
   const completed = getCompletedCategories(submitterType, photos);
   const required = getRequiredKeys(submitterType, patientReviewPathway);

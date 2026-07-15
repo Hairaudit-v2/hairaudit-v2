@@ -963,7 +963,14 @@ export const runAudit = inngest.createFunction(
         documentAssistedAssessment: imageLimitedOverride.allowed,
         missingRequiredPhotoLabels: imageLimitedOverride.allowed
           ? imageLimitedOverride.missingRequiredPhotoLabels
-          : getMissingRequiredPatientPhotoLabels(uploads),
+          : getMissingRequiredPatientPhotoLabels(uploads, {
+              patientReviewPathway: (c as { patient_review_pathway?: string | null }).patient_review_pathway
+                ? normalizePatientReviewPathway(
+                    (c as { patient_review_pathway?: string | null }).patient_review_pathway
+                  )
+                : null,
+              patientAnswers: patientAnswersForPhotoGate,
+            }),
         auditorOverrideReason: imageLimitedOverride.allowed ? (auditorRerunReason ?? undefined) : undefined,
         ...(aiExtendedEvidence ? { patientImageEvidenceGroups, patientImageEvidenceConfidence } : {}),
       });

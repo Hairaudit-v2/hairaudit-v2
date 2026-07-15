@@ -69,6 +69,8 @@ export function evaluateRunAuditPatientPhotoGate(args: {
     triggeredRole: args.triggeredRole,
     rerunSource: args.rerunSource,
     allowImageLimitedOverride: args.allowImageLimitedOverride,
+    patientReviewPathway: args.patientReviewPathway,
+    patientAnswers: args.patientAnswers,
   });
 
   const relaxedAuditorPatientPhotoGate =
@@ -78,10 +80,15 @@ export function evaluateRunAuditPatientPhotoGate(args: {
   const allowed =
     photoSubmitGate.allowed || relaxedAuditorPatientPhotoGate || imageLimitedOverride.allowed;
 
+  const missingLabelOpts = {
+    patientReviewPathway: args.patientReviewPathway,
+    patientAnswers: args.patientAnswers,
+  };
+
   const missingRequiredPhotoLabels =
     imageLimitedOverride.missingRequiredPhotoLabels.length > 0
       ? imageLimitedOverride.missingRequiredPhotoLabels
-      : getMissingRequiredPatientPhotoLabels(args.uploadRows);
+      : getMissingRequiredPatientPhotoLabels(args.uploadRows, missingLabelOpts);
 
   const imageLimitedOverrideEligible =
     imageLimitedOverride.hasPatientImages || imageLimitedOverride.hasClinicalHistory;

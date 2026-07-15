@@ -15,6 +15,8 @@ import EvidenceSummary from "@/components/reports/EvidenceSummary";
 import CompletenessIndexCard from "@/components/reports/CompletenessIndexCard";
 import CaseReadinessCard from "@/components/reports/CaseReadinessCard";
 import { getCompletedCategories, getRequiredKeys } from "@/lib/auditPhotoSchemas";
+import { getMissingPathwayRequiredUploadKeys } from "@/lib/patient/patientReviewPathway";
+import { readMonthsSinceFromPatientAnswers } from "@/lib/patientPhoto/patientPhotoReadinessPolicy";
 import DoctorScoringNarrativeCard from "@/components/reports/DoctorScoringNarrativeCard";
 import { mapLegacyDoctorAnswers } from "@/lib/doctorAuditSchema";
 import { normalizeIntakeFormData } from "@/lib/intake/normalizeIntakeFormData";
@@ -1023,9 +1025,15 @@ export default async function Page({
 
   const photoUploads = (uploads ?? []).map((u) => ({ type: (u as { type?: string }).type ?? "" }));
   const doctorCompleted = getCompletedCategories("doctor", photoUploads);
-  const patientCompleted = getCompletedCategories("patient", photoUploads);
   const missingDoctorRequired = [...getRequiredKeys("doctor")].filter((k) => !doctorCompleted.has(k));
-  const missingPatientRequired = [...getRequiredKeys("patient")].filter((k) => !patientCompleted.has(k));
+  const patientMonthsSinceBand = readMonthsSinceFromPatientAnswers(
+    (reportPatientAnswers as Record<string, unknown> | null) ?? null
+  );
+  const missingPatientRequired = getMissingPathwayRequiredUploadKeys(
+    patientReviewPathway,
+    photoUploads,
+    { monthsSinceBand: patientMonthsSinceBand }
+  );
   const missingRequiredPhotoCategories =
     showDoctorFlow && (uploads ?? []).some((u) => String((u as { type?: string }).type ?? "").startsWith("doctor_photo:"))
       ? missingDoctorRequired
@@ -1034,7 +1042,10 @@ export default async function Page({
         : missingDoctorRequired;
 
   const uploadRowsForImageLimited = (uploads ?? []) as { type?: string; metadata?: unknown }[];
-  const missingPatientPhotoLabelsForOverride = getMissingRequiredPatientPhotoLabels(uploadRowsForImageLimited);
+  const missingPatientPhotoLabelsForOverride = getMissingRequiredPatientPhotoLabels(uploadRowsForImageLimited, {
+    patientReviewPathway,
+    patientAnswers: (reportPatientAnswers as Record<string, unknown> | null) ?? null,
+  });
   const hasPatientImagesForImageLimited = hasActivePatientPhotosForImageLimitedOverride(uploadRowsForImageLimited);
   const hasClinicalHistoryForImageLimited = hasMeaningfulClinicalHistory(clinicalHistorySnapshot);
   const imageLimitedForensicNotice = Boolean(forensic?.imageLimitedAssessment);
@@ -1658,6 +1669,7 @@ export default async function Page({
             hasClinicAnswers={hasClinicAnswersInSummary(latestSummary)}
             missingRequiredPhotoCategories={missingRequiredPhotoCategories}
             submitterType={showDoctorFlow ? "doctor" : "patient"}
+            patientReviewPathway={patientReviewPathway}
             fieldProvenance={(latestDoctorAnswers?.field_provenance as Record<string, string> | undefined) ?? null}
           />
           <CompletenessIndexCard ci={completenessIndex} />

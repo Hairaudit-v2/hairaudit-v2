@@ -7,6 +7,13 @@ import { getCompletedCategories, PATIENT_REQUIRED_KEYS } from "@/lib/auditPhotoS
 import { auditorPatientPhotoCategoryLabel } from "@/lib/auditor/auditorPatientPhotoCategories";
 import { hasMeaningfulClinicalHistory } from "@/lib/hairaudit/clinical-history/clinicalHistoryUtils";
 import type { ClinicalHistorySnapshot } from "@/lib/hairaudit/clinical-history/clinicalHistoryTypes";
+import {
+  DEFAULT_PATIENT_REVIEW_PATHWAY,
+  getMissingPathwayRequiredUploadKeys,
+  normalizePatientReviewPathway,
+  type PatientReviewPathway,
+} from "@/lib/patient/patientReviewPathway";
+import { readMonthsSinceFromPatientAnswers } from "@/lib/patientPhoto/patientPhotoReadinessPolicy";
 import { filterPatientPhotosForAuditUse } from "@/lib/uploads/patientPhotoAuditMeta";
 
 /** Must match `AUDITOR_RERUN_REASONS` in queueAuditorRerun.ts and DB constraint. */
@@ -17,17 +24,49 @@ export const IMAGE_LIMITED_AUDIT_PATIENT_NOTICE =
 
 export type PatientPhotoUploadRow = { type?: string | null; metadata?: unknown };
 
-export function getMissingRequiredPatientPhotoKeys(uploadRows: PatientPhotoUploadRow[]): string[] {
+export type MissingPatientPhotoOpts = {
+  patientReviewPathway?: PatientReviewPathway | null;
+  patientAnswers?: Record<string, unknown> | null;
+};
+
+function activePatientPhotoPayload(uploadRows: PatientPhotoUploadRow[]) {
   const patientRows = filterPatientPhotosForAuditUse(
     uploadRows.filter((u) => String(u.type ?? "").toLowerCase().startsWith("patient_photo:"))
   );
-  const photoPayload = patientRows.map((u) => ({ type: u.type ?? undefined }));
+  return patientRows.map((u) => ({ type: u.type ?? undefined }));
+}
+
+/**
+ * Missing required keys using canonical pathway satisfaction when pathway is known.
+ * Falls back to legacy three-bucket model only when pathway is omitted.
+ */
+export function getMissingRequiredPatientPhotoKeys(
+  uploadRows: PatientPhotoUploadRow[],
+  opts?: MissingPatientPhotoOpts
+): string[] {
+  const photoPayload = activePatientPhotoPayload(uploadRows);
+  if (opts?.patientReviewPathway != null || opts?.patientAnswers != null) {
+    const pathway = normalizePatientReviewPathway(
+      opts.patientReviewPathway ?? DEFAULT_PATIENT_REVIEW_PATHWAY
+    );
+    const monthsSinceBand = readMonthsSinceFromPatientAnswers(opts.patientAnswers ?? null);
+    return getMissingPathwayRequiredUploadKeys(pathway, photoPayload, { monthsSinceBand });
+  }
   const completed = getCompletedCategories("patient", photoPayload);
   return PATIENT_REQUIRED_KEYS.filter((k) => !completed.has(k));
 }
 
-export function getMissingRequiredPatientPhotoLabels(uploadRows: PatientPhotoUploadRow[]): string[] {
-  return getMissingRequiredPatientPhotoKeys(uploadRows).map((k) => auditorPatientPhotoCategoryLabel(k));
+export function getMissingRequiredPatientPhotoLabels(
+  uploadRows: PatientPhotoUploadRow[],
+  opts?: MissingPatientPhotoOpts
+): string[] {
+  const pathway =
+    opts?.patientReviewPathway != null
+      ? normalizePatientReviewPathway(opts.patientReviewPathway)
+      : undefined;
+  return getMissingRequiredPatientPhotoKeys(uploadRows, opts).map((k) =>
+    auditorPatientPhotoCategoryLabel(k, pathway)
+  );
 }
 
 export function hasActivePatientPhotosForImageLimitedOverride(uploadRows: PatientPhotoUploadRow[]): boolean {
@@ -72,8 +111,13 @@ export function evaluateImageLimitedPhotoOverride(args: {
   triggeredRole?: string | null;
   rerunSource?: string | null;
   allowImageLimitedOverride?: boolean;
+  patientReviewPathway?: PatientReviewPathway | null;
+  patientAnswers?: Record<string, unknown> | null;
 }): ImageLimitedPhotoOverrideEval {
-  const missingRequiredPhotoLabels = getMissingRequiredPatientPhotoLabels(args.uploadRows);
+  const missingRequiredPhotoLabels = getMissingRequiredPatientPhotoLabels(args.uploadRows, {
+    patientReviewPathway: args.patientReviewPathway,
+    patientAnswers: args.patientAnswers,
+  });
   const hasPatientImages = hasActivePatientPhotosForImageLimitedOverride(args.uploadRows);
   const hasClinicalHistory = hasMeaningfulClinicalHistory(args.clinicalHistory);
 

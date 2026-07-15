@@ -6,6 +6,7 @@ import { AUDITOR_REASSIGNABLE_CATEGORY_KEYS, auditorPatientPhotoCategoryLabel, n
 import {
   getMissingPathwayRequiredUploadKeys,
   requiredPhotoKeys,
+  type PathwaySatisfactionOpts,
   type PatientReviewPathway,
 } from "@/lib/patient/patientReviewPathway";
 
@@ -80,9 +81,12 @@ export const AUDITOR_IMAGE_CATEGORY_GROUP_DEFS: readonly AuditorImageCategoryGro
 /** Pathway-specific keys pinned to the top of dropdowns (post-surgery audit workflow). */
 export const POST_SURGERY_PINNED_CATEGORY_KEYS: readonly string[] = [
   "preop_front",
+  "patient_current_front",
   "current_recipient_closeup",
   "preop_top",
+  "patient_current_top",
   "preop_donor_rear",
+  "patient_current_donor_rear",
   "preop_donor_closeup",
   "preop_clinic_quote",
   "graft_count_board",
@@ -123,9 +127,11 @@ function filterReassignable(keys: readonly string[]): string[] {
   return keys.filter((k) => REASSIGNABLE.has(k));
 }
 
-function sortAlpha(keys: string[]): string[] {
+function sortAlpha(keys: string[], pathway?: PatientReviewPathway): string[] {
   return [...keys].sort((a, b) =>
-    auditorPatientPhotoCategoryLabel(a).localeCompare(auditorPatientPhotoCategoryLabel(b))
+    auditorPatientPhotoCategoryLabel(a, pathway).localeCompare(
+      auditorPatientPhotoCategoryLabel(b, pathway)
+    )
   );
 }
 
@@ -153,7 +159,7 @@ export function buildAuditorGroupedCategoryOptions(opts: {
   const pinnedOptions: AuditorGroupedCategoryOption[] = [];
   for (const key of getPathwayPinnedCategoryKeys(opts.pathway)) {
     if (!REASSIGNABLE.has(key) || key === exclude) continue;
-    const label = auditorPatientPhotoCategoryLabel(key);
+    const label = auditorPatientPhotoCategoryLabel(key, opts.pathway);
     if (query && !label.toLowerCase().includes(query) && !key.includes(query)) continue;
     pinnedOptions.push({
       groupId: "pinned",
@@ -170,9 +176,9 @@ export function buildAuditorGroupedCategoryOptions(opts: {
     if (!opts.showAdvanced) {
       keys = keys.filter((k) => PRIMARY_GROUP_KEY_SET.has(k));
     }
-    keys = sortAlpha(keys);
+    keys = sortAlpha(keys, opts.pathway);
     for (const key of keys) {
-      const label = auditorPatientPhotoCategoryLabel(key);
+      const label = auditorPatientPhotoCategoryLabel(key, opts.pathway);
       if (query && !label.toLowerCase().includes(query) && !key.includes(query)) continue;
       out.push({ groupId: group.id, groupLabel: group.label, key, label });
     }
@@ -183,10 +189,11 @@ export function buildAuditorGroupedCategoryOptions(opts: {
     const advanced = sortAlpha(
       AUDITOR_REASSIGNABLE_CATEGORY_KEYS.filter(
         (k) => k !== exclude && !covered.has(k) && !pinned.has(k)
-      )
+      ),
+      opts.pathway
     );
     for (const key of advanced) {
-      const label = auditorPatientPhotoCategoryLabel(key);
+      const label = auditorPatientPhotoCategoryLabel(key, opts.pathway);
       if (query && !label.toLowerCase().includes(query) && !key.includes(query)) continue;
       out.push({
         groupId: "advanced",
@@ -208,14 +215,15 @@ export type RequiredPhotoChecklistItem = {
 
 export function buildRequiredPhotoChecklist(
   pathway: PatientReviewPathway,
-  uploads: Array<{ type?: string | null; metadata?: unknown }>
+  uploads: Array<{ type?: string | null; metadata?: unknown }>,
+  opts?: PathwaySatisfactionOpts
 ): RequiredPhotoChecklistItem[] {
-  const missing = new Set(getMissingPathwayRequiredUploadKeys(pathway, uploads));
+  const missing = new Set(getMissingPathwayRequiredUploadKeys(pathway, uploads, opts));
   return requiredPhotoKeys[pathway]
     .filter((k) => REASSIGNABLE.has(k))
     .map((key) => ({
       key,
-      label: auditorPatientPhotoCategoryLabel(key),
+      label: auditorPatientPhotoCategoryLabel(key, pathway),
       satisfied: !missing.has(key),
     }));
 }

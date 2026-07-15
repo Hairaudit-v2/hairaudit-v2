@@ -1,6 +1,8 @@
 "use client";
 
 import { type FieldProvenanceValue } from "@/lib/audit/fieldProvenance";
+import type { PatientReviewPathway } from "@/lib/patient/patientReviewPathway";
+import { POST_SURGERY_CURRENT_VIEW_LABELS } from "@/lib/patient/patientPhotoSatisfaction";
 
 const REQUIRED_KEY_LABELS: Record<string, string> = {
   img_preop_front: "Pre-op front",
@@ -13,6 +15,13 @@ const REQUIRED_KEY_LABELS: Record<string, string> = {
   patient_current_front: "Your Hair Today — Front View (Required)",
   patient_current_top: "Your Hair Today — Top View (Required)",
   patient_current_donor_rear: "Your Hair Today — Back of Head (Required)",
+  preop_front: "Before Surgery — Front View",
+  preop_left: "Before Surgery — Left Side",
+  preop_right: "Before Surgery — Right Side",
+  preop_top: "Before Surgery — Top View",
+  preop_donor_rear: "Before Surgery — Back of Head",
+  preop_donor_closeup: "Donor Close-up",
+  current_recipient_closeup: "Recipient Area Close-up",
 };
 
 type CaseReadinessCardProps = {
@@ -20,9 +29,17 @@ type CaseReadinessCardProps = {
   hasClinicAnswers: boolean;
   missingRequiredPhotoCategories: string[];
   submitterType?: "doctor" | "patient";
+  patientReviewPathway?: PatientReviewPathway | null;
   fieldProvenance?: Record<string, string> | null;
   className?: string;
 };
+
+function labelForRequiredKey(key: string, pathway?: PatientReviewPathway | null): string {
+  if (pathway === "post_surgery" && POST_SURGERY_CURRENT_VIEW_LABELS[key]) {
+    return POST_SURGERY_CURRENT_VIEW_LABELS[key];
+  }
+  return REQUIRED_KEY_LABELS[key] ?? key;
+}
 
 function provenanceSummary(provenance: Record<string, string>): {
   fromDefaults: number;
@@ -45,6 +62,7 @@ export default function CaseReadinessCard({
   hasClinicAnswers,
   missingRequiredPhotoCategories,
   submitterType = "doctor",
+  patientReviewPathway = null,
   fieldProvenance = null,
   className = "",
 }: CaseReadinessCardProps) {
@@ -77,7 +95,7 @@ export default function CaseReadinessCard({
           <div className={`rounded-lg border px-3 py-2 text-sm ${evidenceComplete ? "border-emerald-300/40 bg-emerald-300/10 text-emerald-100" : "border-amber-300/40 bg-amber-300/10 text-amber-100"}`}>
             {evidenceComplete
               ? "All required photo categories met"
-              : `${missingRequiredPhotoCategories.length} missing: ${missingRequiredPhotoCategories.map((k) => REQUIRED_KEY_LABELS[k] ?? k).join(", ")}`}
+              : `${missingRequiredPhotoCategories.length} missing: ${missingRequiredPhotoCategories.map((k) => labelForRequiredKey(k, patientReviewPathway)).join(", ")}`}
           </div>
           {!evidenceComplete && missingRequiredPhotoCategories.length > 0 && (
             <ul className="mt-2 space-y-1 text-xs text-slate-300">

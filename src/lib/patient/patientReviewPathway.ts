@@ -10,6 +10,11 @@ import {
   PATIENT_UPLOAD_CATEGORY_DEFS,
   type PatientUploadCategoryDef,
 } from "@/lib/patientPhotoCategoryConfig";
+import {
+  patientPhotoSatisfactionLabel,
+  resolvePatientPhotoSatisfactionFromUploads,
+  type SatisfactionMonthsSinceBand,
+} from "@/lib/patient/patientPhotoSatisfaction";
 
 export const PATIENT_REVIEW_PATHWAYS = ["pre_surgery", "post_surgery"] as const;
 
@@ -382,11 +387,13 @@ export function resolvePathwayPhotoSlotDef(
   const tier = getPathwayUploadTier(photoKey, pathway);
   if (!tier) return null;
 
+  const pathwayTitle = patientPhotoSatisfactionLabel(photoKey, pathway);
+
   const uploadDef = uploadDefByKey.get(photoKey);
   if (uploadDef) {
     return {
       key: photoKey,
-      title: fallbackTitle ?? uploadDef.label,
+      title: fallbackTitle ?? pathwayTitle ?? uploadDef.label,
       help: fallbackHelp ?? uploadDef.description,
       quickTips: uploadDef.tips,
       min: tier === "required" ? Math.max(1, uploadDef.minFiles) : uploadDef.minFiles,
@@ -402,7 +409,7 @@ export function resolvePathwayPhotoSlotDef(
   if (auditDef) {
     return {
       key: photoKey,
-      title: fallbackTitle ?? auditDef.title,
+      title: fallbackTitle ?? pathwayTitle ?? auditDef.title,
       help: fallbackHelp ?? auditDef.help ?? "",
       quickTips: auditDef.quickTips,
       min: tier === "required" ? Math.max(1, auditDef.min) : auditDef.min,
@@ -442,20 +449,57 @@ export function countPathwayUploadKeys(
 ): Record<string, number> {
   const counts: Record<string, number> = {};
   for (const p of photos) {
-    const k = parsePatientPhotoStorageKey(p.type ?? "");
+    let k = parsePatientPhotoStorageKey(p.type ?? "");
+    if (!k && p.photo_key) {
+      const raw = String(p.photo_key).trim();
+      k = parsePatientPhotoStorageKey(
+        raw.toLowerCase().startsWith("patient_photo:") ? raw : `patient_photo:${raw}`
+      );
+    }
     if (!k) continue;
     counts[k] = (counts[k] ?? 0) + 1;
   }
   return counts;
 }
 
+export type PathwaySatisfactionOpts = {
+  monthsSinceBand?: SatisfactionMonthsSinceBand | null;
+  monthsSinceProcedure?: number | null;
+};
+
+/**
+ * Required-slot completion via canonical satisfaction resolver
+ * (pathway keys ↔ patient_current_* ↔ eligible milestones).
+ */
+export function getCompletedPathwayRequiredUploadKeys(
+  pathway: PatientReviewPathway,
+  photos: Array<{ type?: string | null; photo_key?: string | null }>,
+  opts?: PathwaySatisfactionOpts
+): Set<string> {
+  const result = resolvePatientPhotoSatisfactionFromUploads(photos, {
+    pathway,
+    requiredKeys: requiredPhotoKeys[pathway],
+    monthsSinceBand: opts?.monthsSinceBand,
+    monthsSinceProcedure: opts?.monthsSinceProcedure,
+  });
+  return result.satisfiedKeys;
+}
+
+/**
+ * @deprecated Prefer getCompletedPathwayRequiredUploadKeys for required completion.
+ * Retained for recommended/optional progress UIs that still need exact-key counts.
+ */
 export function getCompletedPathwayUploadKeys(
   pathway: PatientReviewPathway,
   photos: Array<{ type?: string | null }>
 ): Set<string> {
   const counts = countPathwayUploadKeys(photos);
   const completed = new Set<string>();
+  const requiredSatisfied = getCompletedPathwayRequiredUploadKeys(pathway, photos);
+  for (const key of requiredSatisfied) completed.add(key);
+  const requiredSet = new Set<string>(requiredPhotoKeys[pathway]);
   for (const key of getPathwayPhotoKeys(pathway)) {
+    if (completed.has(key) || requiredSet.has(key)) continue;
     const def = resolvePathwayPhotoSlotDef(pathway, key);
     const min = def?.min ?? 1;
     const count = counts[key] ?? 0;
@@ -466,17 +510,23 @@ export function getCompletedPathwayUploadKeys(
 
 export function getMissingPathwayRequiredUploadKeys(
   pathway: PatientReviewPathway,
-  photos: Array<{ type?: string | null }>
+  photos: Array<{ type?: string | null; photo_key?: string | null }>,
+  opts?: PathwaySatisfactionOpts
 ): string[] {
-  const completed = getCompletedPathwayUploadKeys(pathway, photos);
-  return requiredPhotoKeys[pathway].filter((k) => !completed.has(k));
+  return resolvePatientPhotoSatisfactionFromUploads(photos, {
+    pathway,
+    requiredKeys: requiredPhotoKeys[pathway],
+    monthsSinceBand: opts?.monthsSinceBand,
+    monthsSinceProcedure: opts?.monthsSinceProcedure,
+  }).missingKeys;
 }
 
 export function isPathwayRequiredUploadComplete(
   pathway: PatientReviewPathway,
-  photos: Array<{ type?: string | null }>
+  photos: Array<{ type?: string | null; photo_key?: string | null }>,
+  opts?: PathwaySatisfactionOpts
 ): boolean {
-  return getMissingPathwayRequiredUploadKeys(pathway, photos).length === 0;
+  return getMissingPathwayRequiredUploadKeys(pathway, photos, opts).length === 0;
 }
 
 /** Patient-safe submit gate message when required pathway photos are incomplete. */

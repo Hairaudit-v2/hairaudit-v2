@@ -175,11 +175,10 @@ export function evaluatePatientPhotoSubmitGate(args: {
   );
   const photoPayload = patientRows.map((u) => ({ type: u.type ?? undefined }));
   const pathway = args.patientReviewPathway;
-  const viaBaseline = pathway
-    ? canSubmit("patient", photoPayload, pathway)
-    : canSubmit("patient", photoPayload);
-
   const monthsSince = readMonthsSinceFromPatientAnswers(args.patientAnswers ?? null);
+  const viaBaseline = pathway
+    ? canSubmit("patient", photoPayload, pathway, { monthsSinceBand: monthsSince })
+    : canSubmit("patient", photoPayload);
   const milestoneSpec =
     args.stageAwareSubmitEnabled && monthsSince && monthsSince !== "under_3"
       ? ALTERNATE_OUTCOME_MILESTONE_SPECS[monthsSince]

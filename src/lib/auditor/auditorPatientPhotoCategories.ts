@@ -1,4 +1,6 @@
 import { PATIENT_AUDIT_PHOTO_BUCKET_DEFS, PATIENT_UPLOAD_CATEGORY_DEFS } from "@/lib/patientPhotoCategoryConfig";
+import type { PatientReviewPathway } from "@/lib/patient/patientReviewPathway";
+import { patientPhotoSatisfactionLabel } from "@/lib/patient/patientPhotoSatisfaction";
 import { normalizePatientPhotoCategory, PATIENT_PHOTO_CATEGORY_ALIASES } from "@/lib/photoCategories";
 
 const REASSIGNABLE_SET = new Set<string>([
@@ -11,7 +13,14 @@ export const AUDITOR_REASSIGNABLE_CATEGORY_KEYS: readonly string[] = Array.from(
   a.localeCompare(b)
 );
 
-export function auditorPatientPhotoCategoryLabel(key: string): string {
+export function auditorPatientPhotoCategoryLabel(
+  key: string,
+  pathway?: PatientReviewPathway | null
+): string {
+  if (pathway) {
+    const pathwayLabel = patientPhotoSatisfactionLabel(key, pathway);
+    if (pathwayLabel) return pathwayLabel;
+  }
   const u = PATIENT_UPLOAD_CATEGORY_DEFS.find((d) => d.key === key);
   if (u) return u.label;
   const b = PATIENT_AUDIT_PHOTO_BUCKET_DEFS.find((d) => d.key === key);
