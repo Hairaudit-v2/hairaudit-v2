@@ -1,6 +1,7 @@
 /**
  * HA-PROJECTION — Public exports for surgery-day reconstruction (1A), projected outcome (1B),
- * immutable projection persistence / lineage (1D), and longitudinal observed outcomes (1E).
+ * immutable projection persistence / lineage (1D), longitudinal observed outcomes (1E),
+ * and projected vs observed comparison (1F).
  *
  * Patient projection report presentation lives in `src/lib/reports/surgeryDayProjection*` (1C).
  */
@@ -33,7 +34,12 @@ export type {
   LongitudinalOutcomeObservation,
   LongitudinalEvidenceContext,
   ObservationConfidence,
+  ProjectionComparisonStatus,
+  ComparisonConfidence,
+  ProjectionDomainComparison,
+  ProjectionObservedComparison,
 } from "./types";
+
 
 export {
   resolveProjectionEvidenceRole,
@@ -100,6 +106,7 @@ export {
   PROJECTION_SNAPSHOT_SCHEMA_VERSION,
   OBSERVATION_SCHEMA_VERSION,
   OBSERVATION_LINEAGE_VERSION,
+  COMPARISON_SCHEMA_VERSION,
 } from "./versions";
 
 export {
@@ -235,3 +242,78 @@ export {
   observationChecksumDomain,
   type ProjectionObservationServiceDeps,
 } from "./projectionObservationService";
+
+/* -------------------------------------------------------------------------- */
+/* HA-PROJECTION-1F                                                           */
+/* -------------------------------------------------------------------------- */
+
+export {
+  STAGE_DOMAIN_ASSESSABILITY,
+  getDomainAssessability,
+  collectObservationForDomain,
+  hasAdequateEvidenceForDomain,
+  compareProjectedDomain,
+  deriveOverallComparisonStatus,
+  buildComparisonSummary,
+  listComparableProjectedDomains,
+  extractFrontalSignal,
+  extractDensitySignal,
+  extractTransitionSignal,
+  extractNativeSignal,
+  extractUntreatedSignal,
+  type DomainAssessability,
+  type DomainObservationBundle,
+} from "./projectionComparisonRules";
+
+export {
+  deriveComparisonConfidence,
+  extractComparisonConfidenceFactors,
+  type ComparisonConfidenceFactors,
+  type ComparisonDomainAssessability,
+} from "./projectionComparisonConfidence";
+
+export {
+  findUnsafeComparisonClaims,
+  assertPatientSafeComparisonText,
+  sanitizeComparisonText,
+  isAllowedComparisonVocabulary,
+  type ComparisonSafetyViolation,
+} from "./projectionComparisonSafety";
+
+export {
+  buildProjectionObservedComparison,
+  computeComparisonChecksum,
+  comparisonChecksumDomain,
+  resolveProjectionContentChecksum,
+  type BuildProjectionObservedComparisonResult,
+} from "./projectionComparison";
+
+export type {
+  ProjectionComparisonSnapshot,
+  ProjectionComparisonStatusRow,
+  ProjectionComparisonSupersessionReasonCode,
+  CreateProjectionComparisonInput,
+  CreateProjectionComparisonResult,
+} from "./projectionComparisonTypes";
+
+export { PROJECTION_COMPARISON_SUPERSESSION_REASON_CODES } from "./projectionComparisonTypes";
+
+export {
+  InMemoryProjectionComparisonRepository,
+  type ProjectionComparisonRepository,
+} from "./projectionComparisonRepository";
+
+export {
+  InMemoryProjectionComparisonAuditSink,
+  buildComparisonAuditMetadata,
+  createComparisonAuditEvent,
+  type ProjectionComparisonAuditEvent,
+  type ProjectionComparisonAuditEventType,
+  type ProjectionComparisonAuditSink,
+} from "./projectionComparisonAudit";
+
+export {
+  ProjectionComparisonService,
+  createProjectionComparisonService,
+  type ProjectionComparisonServiceDeps,
+} from "./projectionComparisonService";

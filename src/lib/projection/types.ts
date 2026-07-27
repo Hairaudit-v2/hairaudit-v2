@@ -304,3 +304,53 @@ export type LongitudinalEvidenceContext = {
   /** Treated zones from frozen projection reconstruction (treatment-aware evidence). */
   treatedAreas?: string[] | null;
 };
+
+/* -------------------------------------------------------------------------- */
+/* HA-PROJECTION-1F — Projected vs observed comparison                        */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Canonical comparison vocabulary.
+ * Characteristics only — never success/failure, better/worse, or accuracy %.
+ */
+export type ProjectionComparisonStatus =
+  | "consistent"
+  | "partially_consistent"
+  | "divergent"
+  | "not_yet_assessable"
+  | "insufficient_evidence";
+
+export type ComparisonConfidence = "low" | "moderate" | "high";
+
+/**
+ * Domain-level projected vs observed comparison.
+ * Only domains present in the frozen 1B projection are compared.
+ */
+export type ProjectionDomainComparison = {
+  domain: ProjectedOutcomeDomain;
+  projectedCharacteristic: string;
+  observedCharacteristic: string | null;
+  status: ProjectionComparisonStatus;
+  confidence: ComparisonConfidence;
+  rationale: string;
+  limitations: string[];
+  projectionSourceKeys: string[];
+  observationSourceKeys: string[];
+};
+
+/**
+ * Canonical comparison between a frozen 1D projection and a linked 1E observation.
+ */
+export type ProjectionObservedComparison = {
+  projectionSnapshotId: string;
+  observationSnapshotId: string;
+  caseId: string;
+  patientId: string;
+  stage: LongitudinalOutcomeStage;
+  comparisonVersion: "ha-projection-comparison-v1";
+  overallStatus: ProjectionComparisonStatus;
+  domains: ProjectionDomainComparison[];
+  summary: string | null;
+  limitations: string[];
+  generatedAt: string;
+};
