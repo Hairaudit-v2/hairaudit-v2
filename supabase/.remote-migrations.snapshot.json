@@ -1,7 +1,7 @@
 {
   "project_ref": "vbzjkqhvzfunahmlxevb",
-  "captured_at": "2026-07-27T03:52:30.000Z",
-  "source": "Supabase MCP list_migrations after migration catch-up (nexus + projection + claim)",
+  "captured_at": "2026-07-27T05:52:19.000Z",
+  "source": "Supabase MCP list_migrations after FI-OUTCOME-INTELLIGENCE-1C catch-up",
   "migrations": [
     { "version": "20260614203633", "name": "20260320000003_patient_safe_summary_narrative_translations" },
     { "version": "20260617015504", "name": "20260320000004_patient_safe_summary_review_action_metadata" },
@@ -21,6 +21,8 @@
     { "version": "20260727035133", "name": "20260727120000_hairaudit_projection_snapshots" },
     { "version": "20260727035151", "name": "20260727140000_hairaudit_projection_observations" },
     { "version": "20260727035210", "name": "20260727160000_hairaudit_projection_comparisons" },
-    { "version": "20260727035225", "name": "20260714090000_hairaudit_anon_claim_auth_users_fix" }
+    { "version": "20260727035225", "name": "20260714090000_hairaudit_anon_claim_auth_users_fix" },
+    { "version": "20260727051222", "name": "20260727180000_fi_outcome_longitudinal_cohort" },
+    { "version": "20260727055219", "name": "hairaudit_longitudinal_capture_plans" }
   ]
 }

@@ -157,3 +157,77 @@ export {
   formatAuditHumanReadable,
   type OutcomeCohortDataQualityAuditDeps,
 } from "./cohortDataQualityAudit";
+
+/* -------------------------------------------------------------------------- */
+/* FI-OUTCOME-INTELLIGENCE-1C — Prospective longitudinal capture              */
+/* -------------------------------------------------------------------------- */
+
+export {
+  CAPTURE_PLAN_VERSION,
+  CAPTURE_PROTOCOL_VERSION,
+  CAPTURE_PROTOCOL_VERSIONS,
+  type CapturePlanVersion,
+  type CaptureProtocolVersion,
+  type LongitudinalCaptureMilestoneStatus,
+  type LongitudinalCaptureNextActionType,
+  type LongitudinalCaptureMilestone,
+  type LongitudinalCapturePlan,
+  type LongitudinalCapturePlanRecord,
+  type CaptureViewInstruction,
+  type PatientLongitudinalMilestoneDto,
+  type PatientLongitudinalCaptureDto,
+  type CaptureProgrammeHealth,
+  type CreateCapturePlanInput,
+  type CreateCapturePlanResult,
+  type ResolveCapturePlanResult,
+} from "./longitudinalCaptureTypes";
+
+export {
+  CAPTURE_WINDOW_RADIUS_DAYS,
+  normalizeProcedureDate,
+  addCalendarMonths,
+  addCalendarDays,
+  todayUtcDate,
+  buildMilestoneSchedule,
+  relateToCaptureWindow,
+  describeCaptureWindowPolicy,
+} from "./longitudinalCaptureSchedule";
+
+export {
+  CAPTURE_PHOTOGRAPHY_GUIDANCE,
+  getCapturePolicy,
+  buildMilestoneEvidenceRequirements,
+  resolveTreatmentCaptureContext,
+  patientSafeLabelForRole,
+  patientMilestoneLabel,
+  publicViewKeyForRole,
+  postopCategoryPrefixForStage,
+  isSupportedCapturePlanVersion,
+  isSupportedCaptureProtocolVersion,
+} from "./longitudinalCapturePolicy";
+
+export {
+  assessMilestoneEvidence,
+  toPatientViewDtos,
+  assertPatientSafeMissingLabels,
+} from "./longitudinalCaptureEvidence";
+
+export {
+  deriveMilestoneStatus,
+  deriveNextAction,
+  selectNextPatientMilestone,
+} from "./longitudinalCaptureDto";
+
+export {
+  InMemoryLongitudinalCapturePlanRepository,
+  type LongitudinalCapturePlanRepository,
+  type CapturePlanIdempotencyKey,
+} from "./longitudinalCaptureRepository";
+
+export {
+  LongitudinalCapturePlanService,
+  createLongitudinalCapturePlanService,
+  assertPatientCaptureDtoSafe,
+  type LongitudinalCapturePlanServiceDeps,
+  type ResolveCapturePlanInput,
+} from "./longitudinalCaptureService";

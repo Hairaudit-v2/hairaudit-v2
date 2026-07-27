@@ -71,7 +71,8 @@
     "outcome-cohort:backfill": "tsx scripts/backfill-outcome-cohort.ts",
     "outcome-cohort:audit": "tsx scripts/audit-outcome-cohort.ts",
     "test:outcome-cohort": "tsx --test tests/outcomeCohortIdentity.test.ts tests/outcomeCohortDeidentification.test.ts tests/outcomeCohortMaterialization.test.ts tests/outcomeCohortAggregates.test.ts tests/outcomeCohortGovernance.test.ts",
-    "test:outcome-cohort-1b": "tsx --test tests/outcomeCohortDataQualityAudit.test.ts tests/outcomeCohortCoverage.test.ts tests/outcomeCohortReadiness.test.ts tests/outcomeCohortSuppression.test.ts"
+    "test:outcome-cohort-1b": "tsx --test tests/outcomeCohortDataQualityAudit.test.ts tests/outcomeCohortCoverage.test.ts tests/outcomeCohortReadiness.test.ts tests/outcomeCohortSuppression.test.ts",
+    "test:outcome-capture-1c": "tsx --test tests/longitudinalCaptureSchedule.test.ts tests/longitudinalCaptureStatus.test.ts tests/longitudinalCapturePolicy.test.ts tests/longitudinalCaptureService.test.ts"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.4",
