@@ -185,6 +185,30 @@ describe("HA-PROJECTION-1B domain generation", () => {
     assert.ok(frontal!.sourceObservationKeys.includes("hairline_design"));
   });
 
+  it("frontal framing includes recipientPlacement observation when keyed as evidence", () => {
+    const reconstruction = requireReconstruction({
+      uploads: [{ type: "patient_photo:day0_recipient" }],
+      forensicAudit: {
+        section_scores: { hairline_design: 82, recipient_placement: 75 },
+        section_score_evidence: {
+          hairline_design: [
+            "The hairline demonstrates visible irregularity rather than a uniform straight edge.",
+          ],
+          recipient_placement: [
+            "Placement appears concentrated through the frontal region.",
+          ],
+        },
+      },
+      procedureSources: { clinicAnswers: { areas_treated: ["hairline", "frontal"] } },
+    });
+    assert.ok(reconstruction.recipient.recipientPlacement);
+    const outcome = requireProjection(reconstruction);
+    const frontal = outcome.projectedCharacteristics.find((c) => c.domain === "frontal_framing");
+    assert.ok(frontal);
+    assert.ok(frontal!.sourceObservationKeys.includes(reconstruction.recipient.recipientPlacement!.key));
+    assert.match(frontal!.observation, /Placement appears concentrated through the frontal region/i);
+  });
+
   it("qualitative density generates qualitative projected density distribution", () => {
     const reconstruction = requireReconstruction({
       uploads: [{ type: "patient_photo:day0_recipient" }],

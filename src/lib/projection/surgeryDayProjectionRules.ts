@@ -82,6 +82,7 @@ function buildFrontalFraming(r: SurgeryDayProcedureReconstruction): DraftCharact
   }
   if (r.recipient.recipientPlacement) {
     keys.push(r.recipient.recipientPlacement.key);
+    obsParts.push(r.recipient.recipientPlacement.observation);
   }
 
   const zones = treatedZones(r);
@@ -119,7 +120,10 @@ function buildFrontalFraming(r: SurgeryDayProcedureReconstruction): DraftCharact
       "Final hairline softness after maturation cannot yet be assessed.",
       "No verified statement is made about exact hairline lowering without further longitudinal evidence.",
     ],
-    observationConfidence: r.recipient.hairlineDesign?.confidence ?? "moderate",
+    observationConfidence:
+      r.recipient.hairlineDesign?.confidence ??
+      r.recipient.recipientPlacement?.confidence ??
+      "moderate",
   };
 }
 
