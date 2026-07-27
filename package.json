@@ -67,7 +67,9 @@
     "test:security-supabase": "tsx --test tests/hairauditSupabaseSecurityAlignment.test.ts tests/hairauditSatelliteTablesRls.test.ts tests/patientCoreRlsMigration.test.ts",
     "test:file-validation": "tsx --test tests/fileValidation.test.ts",
     "test:training-corrections": "tsx --test tests/trainingCaseCorrections.test.ts",
-    "backfill:gii": "tsx scripts/backfill-graft-integrity-cases.ts"
+    "backfill:gii": "tsx scripts/backfill-graft-integrity-cases.ts",
+    "outcome-cohort:backfill": "tsx scripts/backfill-outcome-cohort.ts",
+    "test:outcome-cohort": "tsx --test tests/outcomeCohortIdentity.test.ts tests/outcomeCohortDeidentification.test.ts tests/outcomeCohortMaterialization.test.ts tests/outcomeCohortAggregates.test.ts tests/outcomeCohortGovernance.test.ts"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.4",
