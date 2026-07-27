@@ -11,6 +11,8 @@ import {
   resolveCaseFilesBucket,
 } from "@/lib/hairaudit/uploadStorage";
 import { notifyHairAuditUploadDeleted } from "@/lib/hairaudit/uploadEventDispatcher";
+import { caseSubmitSurfaceOpen } from "@/lib/patient/caseSubmitStatus";
+import { isLongitudinalFollowupUploadAllowed } from "@/lib/outcomeIntelligence/longitudinalFollowupUploadAllowance";
 
 // DELETE /api/uploads/delete?uploadId=...
 export async function DELETE(req: Request) {
@@ -40,7 +42,7 @@ export async function DELETE(req: Request) {
 
     const { data: upload, error: upErr } = await admin
       .from("uploads")
-      .select("id, case_id, user_id, storage_path, type, created_at")
+      .select("id, case_id, user_id, storage_path, type, created_at, metadata")
       .eq("id", uploadId)
       .maybeSingle();
 
@@ -75,11 +77,30 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: "Could not delete upload" }, { status: 500 });
     }
 
-    if (caseSubmit?.submitted_at || caseSubmit?.status === "submitted") {
-      return NextResponse.json(
-        { error: "This case has been submitted and cannot be modified." },
-        { status: 409 }
+    if (!caseSubmitSurfaceOpen({
+      status: caseSubmit?.status ?? "draft",
+      submitted_at: caseSubmit?.submitted_at ?? null,
+    })) {
+      const uploadType = String(upload.type ?? "");
+      const category = uploadType.startsWith("patient_photo:")
+        ? uploadType.slice("patient_photo:".length)
+        : uploadType.includes(":")
+          ? uploadType.slice(uploadType.indexOf(":") + 1)
+          : uploadType;
+      const meta = (upload.metadata ?? {}) as Record<string, unknown>;
+      const captureWorkflow = String(
+        meta.capture_workflow ?? meta.captureWorkflow ?? ""
       );
+      const allowFollowup = isLongitudinalFollowupUploadAllowed({
+        category,
+        captureWorkflow,
+      });
+      if (!allowFollowup) {
+        return NextResponse.json(
+          { error: "This case has been submitted and cannot be modified." },
+          { status: 409 }
+        );
+      }
     }
 
     if (String(upload.type ?? "").startsWith("surgery_photo:")) {

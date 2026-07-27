@@ -5,6 +5,7 @@ import { normalizePatientPhotoCategory } from "@/lib/photoCategories";
 import { applyPatientPhotoCategoryFields } from "@/lib/uploads/patientPhotoCategoryIntegrity";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { caseSubmitSurfaceOpen } from "@/lib/patient/caseSubmitStatus";
+import { isLongitudinalFollowupUploadAllowed } from "@/lib/outcomeIntelligence/longitudinalFollowupUploadAllowance";
 import {
   UPLOAD_LIMITS,
   validateFileCount,
@@ -237,10 +238,19 @@ export async function POST(req: Request) {
     }
 
     if (!caseSubmitSurfaceOpen({ status: c.status, submitted_at: c.submitted_at })) {
-      return NextResponse.json(
-        { ok: false, error: "Case submitted and cannot be modified", requestId },
-        { status: 409 }
+      const captureWorkflow = String(
+        form.get("captureWorkflow") ?? form.get("capture_workflow") ?? ""
       );
+      const allowFollowup = isLongitudinalFollowupUploadAllowed({
+        category: normalizedCategory,
+        captureWorkflow,
+      });
+      if (!allowFollowup) {
+        return NextResponse.json(
+          { ok: false, error: "Case submitted and cannot be modified", requestId },
+          { status: 409 }
+        );
+      }
     }
 
     const userId = (c as any)?.user_id ?? process.env.UPLOAD_SYSTEM_USER_ID ?? null;

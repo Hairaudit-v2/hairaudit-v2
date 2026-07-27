@@ -502,7 +502,10 @@ describe("FI-OUTCOME-INTELLIGENCE-1D patient DTO / RLS migration", () => {
     });
     const safe = service.assertPatientDtoSafe(dto);
     assert.equal(safe.ok, true, JSON.stringify(safe));
-    assert.equal(dto.action?.href, `/cases/${plan().caseId}/patient/photos`);
+    assert.equal(
+      dto.action?.href,
+      `/cases/${plan().caseId}/patient/follow-up/month_6`
+    );
   });
 
   it("38-41. migration SQL enforces service-role RLS", () => {

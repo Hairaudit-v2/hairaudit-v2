@@ -74,6 +74,7 @@
     "test:outcome-cohort-1b": "tsx --test tests/outcomeCohortDataQualityAudit.test.ts tests/outcomeCohortCoverage.test.ts tests/outcomeCohortReadiness.test.ts tests/outcomeCohortSuppression.test.ts",
     "test:outcome-capture-1c": "tsx --test tests/longitudinalCaptureSchedule.test.ts tests/longitudinalCaptureStatus.test.ts tests/longitudinalCapturePolicy.test.ts tests/longitudinalCaptureService.test.ts",
     "test:outcome-engagement-1d": "tsx --test tests/longitudinalEngagementDecision.test.ts tests/longitudinalEngagementService.test.ts tests/longitudinalEngagementSafety.test.ts tests/longitudinalEngagementScheduling.test.ts",
+    "test:outcome-capture-1e": "tsx --test tests/guidedLongitudinalCaptureDto.test.ts tests/guidedLongitudinalCaptureWizard.test.ts tests/guidedLongitudinalCaptureSafety.test.ts tests/guidedLongitudinalCaptureReference.test.ts tests/longitudinalFollowupUploadAllowance.test.ts",
     "longitudinal-engagement:run": "tsx scripts/run-longitudinal-engagement.ts"
   },
   "dependencies": {

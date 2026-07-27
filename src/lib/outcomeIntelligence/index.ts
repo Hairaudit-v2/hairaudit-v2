@@ -312,3 +312,72 @@ export {
   type LongitudinalEngagementServiceDeps,
   type LongitudinalEngagementAuditSink,
 } from "./longitudinalEngagementService";
+
+/* -------------------------------------------------------------------------- */
+/* FI-OUTCOME-INTELLIGENCE-1E — Guided longitudinal capture                   */
+/* -------------------------------------------------------------------------- */
+
+export {
+  resolveGuidedLongitudinalCaptureConfig,
+  isGuidedCaptureUiEnabled,
+  type GuidedLongitudinalCaptureConfig,
+} from "./guidedCaptureConfig";
+
+export type {
+  GuidedCaptureViewDto,
+  GuidedCaptureProgressDto,
+  GuidedLongitudinalCaptureDto,
+  GuidedCaptureLandingMilestoneDto,
+  GuidedCaptureLandingDto,
+  GuidedCaptureWizardStep,
+} from "./guidedCaptureDto";
+
+export {
+  GUIDED_CAPTURE_STANDARDIZATION,
+  GUIDED_CAPTURE_REPRESENTATIVE_COPY,
+  GUIDED_CAPTURE_REFERENCE_MATCH_COPY,
+  GUIDED_CAPTURE_RECOMMENDED_COPY,
+  guidedInstructionsForRole,
+  guidedPhotographyGuidance,
+} from "./guidedCaptureInstructions";
+
+export {
+  FORBIDDEN_GUIDED_CAPTURE_LANGUAGE,
+  scanGuidedCaptureCopyForForbiddenLanguage,
+  assertGuidedCaptureCopySafe,
+  assertPatientGuidedCaptureDtoSafe,
+} from "./guidedCaptureSafety";
+
+export {
+  orderedGuidedViews,
+  firstMissingRequiredView,
+  allRequiredComplete,
+  resolveGuidedCaptureInitialStep,
+  nextViewStep,
+  canUploadForMilestoneStatus,
+  primaryCtaLabel,
+  formatTargetDateForPatient,
+} from "./guidedCaptureWizard";
+
+export {
+  resolveReferenceImageForRole,
+  resolveCurrentImageForCategory,
+} from "./guidedCaptureReference";
+
+export {
+  isMonthBandedFollowupCategory,
+  isSharedLongitudinalRoleCategory,
+  isLongitudinalFollowupUploadAllowed,
+  uploadCategoryForGuidedRole,
+  LONGITUDINAL_CAPTURE_WORKFLOW,
+} from "./longitudinalFollowupUploadAllowance";
+
+export {
+  buildGuidedLongitudinalCaptureDto,
+  buildGuidedCaptureLandingDto,
+  buildStatusMessage,
+  landingStatusLabel,
+  guidedCaptureHref,
+  guidedCaptureLandingHref,
+  isLongitudinalOutcomeStage,
+} from "./guidedCaptureBuilder";

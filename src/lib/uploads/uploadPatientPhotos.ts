@@ -66,8 +66,11 @@ export async function uploadPatientPhotoFiles(params: {
   files: File[];
   submitterType: SubmitterType;
   onFileStateChange?: (states: PerFileUploadState[]) => void;
+  /** Extra FormData fields (e.g. longitudinal capture workflow metadata). */
+  extraFormFields?: Record<string, string>;
 }): Promise<CategoryUploadResult> {
-  const { caseId, category, files, submitterType, onFileStateChange } = params;
+  const { caseId, category, files, submitterType, onFileStateChange, extraFormFields } =
+    params;
 
   const states: PerFileUploadState[] = files.map((f) => ({
     id: fileKey(f),
@@ -105,6 +108,11 @@ export async function uploadPatientPhotoFiles(params: {
       fd.append("category", category);
       fd.append("files[]", file);
       appendPatientUploadMetadata(fd, meta);
+      if (extraFormFields) {
+        for (const [key, value] of Object.entries(extraFormFields)) {
+          if (value != null && value !== "") fd.append(key, value);
+        }
+      }
 
       const { ok, json } = await uploadFormDataWithProgress(
         "/api/uploads/audit-photos",

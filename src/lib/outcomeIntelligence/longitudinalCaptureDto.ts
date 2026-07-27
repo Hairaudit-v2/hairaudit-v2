@@ -83,21 +83,22 @@ export function deriveNextAction(args: {
   missingRequiredCount: number;
 }): PatientLongitudinalNextActionDto {
   const label = patientMilestoneLabel(args.stage);
-  const photosHref = `/cases/${args.caseId}/patient/photos`;
+  /** FI-OUTCOME-INTELLIGENCE-1E guided capture entry (consumes 1C). */
+  const followUpHref = `/cases/${args.caseId}/patient/follow-up/${args.stage}`;
 
   switch (args.status) {
     case "future": {
       return {
         type: "wait",
         label: `Your next HairAudit review is scheduled for your ${label}.`,
-        href: null,
+        href: followUpHref,
       };
     }
     case "due": {
       return {
         type: "upload_followup_images",
         label: `Your ${label} photos are ready to upload.`,
-        href: photosHref,
+        href: followUpHref,
       };
     }
     case "evidence_incomplete": {
@@ -108,14 +109,14 @@ export function deriveNextAction(args: {
           n > 0
             ? `Add ${n} remaining follow-up photo${n === 1 ? "" : "s"}.`
             : "Complete your follow-up photos.",
-        href: photosHref,
+        href: followUpHref,
       };
     }
     case "ready_for_review": {
       return {
         type: "wait_for_review",
         label: `Your ${label} images are ready for review.`,
-        href: null,
+        href: followUpHref,
       };
     }
     case "observed": {
@@ -136,7 +137,7 @@ export function deriveNextAction(args: {
       return {
         type: "upload_followup_images",
         label: "Follow-up not yet completed. You can still upload photos.",
-        href: photosHref,
+        href: followUpHref,
       };
     }
     default: {

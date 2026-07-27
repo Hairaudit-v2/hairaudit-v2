@@ -120,7 +120,7 @@ describe("FI-OUTCOME-INTELLIGENCE-1C next actions", () => {
       missingRequiredCount: 3,
     });
     assert.equal(a.type, "upload_followup_images");
-    assert.ok(a.href?.includes("/patient/photos"));
+    assert.ok(a.href?.includes("/patient/follow-up/month_6"));
   });
 
   it("35. incomplete → complete photos", () => {

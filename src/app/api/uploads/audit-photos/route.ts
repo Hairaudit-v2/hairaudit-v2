@@ -26,6 +26,7 @@ import {
 } from "@/lib/hairaudit/uploadStorage";
 import { notifyHairAuditUploadCreated } from "@/lib/hairaudit/uploadEventDispatcher";
 import { caseSubmitSurfaceOpen } from "@/lib/patient/caseSubmitStatus";
+import { isLongitudinalFollowupUploadAllowed } from "@/lib/outcomeIntelligence/longitudinalFollowupUploadAllowance";
 
 export const runtime = "nodejs";
 
@@ -100,6 +101,12 @@ type ClientUploadMeta = {
   height?: number | null;
   compressionApplied?: boolean;
   qualityWarning?: string | null;
+  captureWorkflow?: string | null;
+  captureStage?: string | null;
+  captureRole?: string | null;
+  referenceUsed?: boolean;
+  capturePolicyVersion?: string | null;
+  clientCaptureTimestamp?: string | null;
 };
 
 function parseClientUploadMeta(form: FormData): ClientUploadMeta {
@@ -108,6 +115,10 @@ function parseClientUploadMeta(form: FormData): ClientUploadMeta {
     if (v == null || v === "") return undefined;
     const n = Number(v);
     return Number.isFinite(n) ? n : undefined;
+  };
+  const str = (key: string) => {
+    const v = form.get(key);
+    return typeof v === "string" && v.trim() ? v.trim() : null;
   };
   const originalFilename = form.get("originalFilename");
   const qualityWarning = form.get("qualityWarning");
@@ -119,6 +130,17 @@ function parseClientUploadMeta(form: FormData): ClientUploadMeta {
     height: num("height") ?? null,
     compressionApplied: form.get("compressionApplied") === "true",
     qualityWarning: typeof qualityWarning === "string" && qualityWarning.trim() ? qualityWarning.trim() : null,
+    captureWorkflow: str("captureWorkflow") ?? str("capture_workflow"),
+    captureStage: str("captureStage") ?? str("capture_stage"),
+    captureRole: str("captureRole") ?? str("capture_role"),
+    referenceUsed:
+      form.get("referenceUsed") === "true" || form.get("reference_used") === "true"
+        ? true
+        : form.get("referenceUsed") === "false" || form.get("reference_used") === "false"
+          ? false
+          : undefined,
+    capturePolicyVersion: str("capturePolicyVersion") ?? str("capture_policy_version"),
+    clientCaptureTimestamp: str("clientCaptureTimestamp") ?? str("client_capture_timestamp"),
   };
 }
 
@@ -216,6 +238,16 @@ async function uploadSingleFile(
       if (clientMeta?.height != null) metadata.height = clientMeta.height;
       if (clientMeta?.compressionApplied != null) metadata.compression_applied = clientMeta.compressionApplied;
       if (clientMeta?.qualityWarning) metadata.quality_warning = clientMeta.qualityWarning;
+      if (clientMeta?.captureWorkflow) metadata.capture_workflow = clientMeta.captureWorkflow;
+      if (clientMeta?.captureStage) metadata.capture_stage = clientMeta.captureStage;
+      if (clientMeta?.captureRole) metadata.capture_role = clientMeta.captureRole;
+      if (clientMeta?.referenceUsed != null) metadata.reference_used = clientMeta.referenceUsed;
+      if (clientMeta?.capturePolicyVersion) {
+        metadata.capture_policy_version = clientMeta.capturePolicyVersion;
+      }
+      if (clientMeta?.clientCaptureTimestamp) {
+        metadata.client_capture_timestamp = clientMeta.clientCaptureTimestamp;
+      }
 
       const { data: row, error: insErr } = await admin
         .from("uploads")
@@ -376,10 +408,17 @@ export async function POST(req: Request) {
     }
 
     if (!caseSubmitSurfaceOpen({ status: c.status ?? "draft", submitted_at: c.submitted_at })) {
-      return NextResponse.json(
-        { ok: false, error: "Case submitted; cannot modify", requestId, code: "CASE_LOCKED" },
-        { status: 409 }
-      );
+      const captureWorkflow = String(form.get("captureWorkflow") ?? form.get("capture_workflow") ?? "");
+      const allowFollowup = isLongitudinalFollowupUploadAllowed({
+        category,
+        captureWorkflow,
+      });
+      if (!allowFollowup) {
+        return NextResponse.json(
+          { ok: false, error: "Case submitted; cannot modify", requestId, code: "CASE_LOCKED" },
+          { status: 409 }
+        );
+      }
     }
 
     const prefix = st === "doctor" ? "doctor_photo" : "patient_photo";
