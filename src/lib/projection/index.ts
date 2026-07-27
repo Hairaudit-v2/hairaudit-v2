@@ -1,16 +1,21 @@
 /**
- * HA-PROJECTION-1A — Public exports for surgery-day procedure reconstruction.
+ * HA-PROJECTION — Public exports for surgery-day reconstruction (1A) and projected outcome (1B).
  *
- * Derived canonical layer only. No patient projection PDF / outcome claims in 1A.
+ * Derived canonical layers only. No patient projection PDF / report UI in 1A–1B.
  */
 
 export type {
   HairAuditAssessmentType,
   SurgeryDayReconstructionAssessmentType,
+  SurgeryDayProjectionAssessmentType,
   SurgeryDayEvidenceRole,
   SurgeryDayReconstructionMode,
   SurgeryDayEvidenceAssessment,
   SurgeryDayProcedureReconstruction,
+  SurgeryDayProjectedOutcome,
+  PatientSafeProjectedCharacteristic,
+  ProjectedOutcomeDomain,
+  ProjectionConfidence,
   ObservedFeature,
   ObservedFeatureSource,
   RecipientZone,
@@ -47,6 +52,12 @@ export {
 } from "./surgeryDayProcedureReconstruction";
 
 export {
+  buildSurgeryDayProjectedOutcome,
+  type BuildSurgeryDayProjectedOutcomeOptions,
+  type BuildSurgeryDayProjectedOutcomeResult,
+} from "./surgeryDayProjectedOutcome";
+
+export {
   normalizeRecipientZone,
   normalizeZoneList,
   uniqueNormalizedZones,
@@ -59,3 +70,18 @@ export {
   assertNoFutureResultClaims,
   SAFE_LIMITATION_TEMPLATES,
 } from "./surgeryDayReconstructionSafety";
+
+export {
+  findUnsafeProjectionClaims,
+  assertPatientSafeProjectionText,
+  validateProjectedCharacteristic,
+  STANDARD_PROJECTION_ASSUMPTIONS,
+  STANDARD_WHAT_CANNOT_YET_BE_DETERMINED,
+} from "./surgeryDayProjectionSafety";
+
+export {
+  deriveProjectionConfidence,
+  extractProjectionConfidenceFactors,
+  characteristicConfidence,
+  type ProjectionConfidenceFactors,
+} from "./surgeryDayProjectionConfidence";

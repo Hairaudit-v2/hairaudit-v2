@@ -1,21 +1,61 @@
 /**
- * HA-PROJECTION-1A — Canonical surgery-day procedure reconstruction types.
+ * HA-PROJECTION — Canonical surgery-day reconstruction (1A) and projected outcome (1B) types.
  *
  * Assessment classification is separate from PatientReviewPathway.
- * 1A implements only the two surgery-day reconstruction assessment types.
+ * 1A implements reconstruction assessment values; 1B implements projection values.
  */
 
-/** Full assessment taxonomy (1A implements reconstruction values only). */
+/** Full assessment taxonomy (implemented values grow per milestone). */
 export type HairAuditAssessmentType =
   | "pre_surgery_planning"
   | "surgery_day_reconstruction"
   | "surgery_day_reconstruction_with_baseline"
+  | "surgery_day_projection"
+  | "surgery_day_projection_with_baseline"
   | "early_postop_assessment"
   | "post_surgery_outcome";
 
 export type SurgeryDayReconstructionAssessmentType =
   | "surgery_day_reconstruction"
   | "surgery_day_reconstruction_with_baseline";
+
+export type SurgeryDayProjectionAssessmentType =
+  | "surgery_day_projection"
+  | "surgery_day_projection_with_baseline";
+
+export type ProjectionConfidence = "low" | "moderate" | "high";
+
+export type ProjectedOutcomeDomain =
+  | "frontal_framing"
+  | "density_distribution"
+  | "transition_characteristics"
+  | "native_hair_dependency"
+  | "untreated_or_lower_treatment_areas";
+
+/**
+ * Patient-safe projected characteristic.
+ * observation / projection / confidence / limitations must remain separate fields.
+ */
+export type PatientSafeProjectedCharacteristic = {
+  domain: ProjectedOutcomeDomain;
+  title: string;
+  observation: string;
+  projection: string;
+  confidence: ProjectionConfidence;
+  sourceObservationKeys: string[];
+  limitations: string[];
+};
+
+export type SurgeryDayProjectedOutcome = {
+  assessmentType: SurgeryDayProjectionAssessmentType;
+  reconstructionConfidence: ReconstructionConfidence;
+  projectionConfidence: ProjectionConfidence;
+  summary: string | null;
+  projectedCharacteristics: PatientSafeProjectedCharacteristic[];
+  whatCannotYetBeDetermined: string[];
+  assumptions: string[];
+  limitations: string[];
+};
 
 export type SurgeryDayEvidenceRole =
   | "preop_front"
