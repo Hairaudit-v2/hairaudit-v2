@@ -1,31 +1,30 @@
 /**
- * HA-PROJECTION-1D — Longitudinal observation attachment contract (future months).
+ * HA-PROJECTION-1D/1E — Longitudinal observation attachment contract.
  *
- * Do NOT implement month-3/6/9/12 outcome modelling here.
- * Future observation records must reference a frozen projection_id so comparisons
- * never recalculate day-0 projections from later clinical data.
+ * 1E implements observed outcome capture attached to frozen projection_id.
+ * Projected-vs-observed comparison remains deferred to HA-PROJECTION-1F.
  */
 
+import { LONGITUDINAL_OUTCOME_STAGES } from "./longitudinalEvidence";
 import type {
   LongitudinalObservationReference,
   LongitudinalObservationTimepoint,
   ProjectionSnapshot,
 } from "./projectionSnapshotTypes";
+import type { LongitudinalOutcomeStage } from "./types";
 
-export const LONGITUDINAL_OBSERVATION_TIMEPOINTS = [
-  "month_3",
-  "month_6",
-  "month_9",
-  "month_12",
-] as const satisfies readonly LongitudinalObservationTimepoint[];
+/** @deprecated Prefer LONGITUDINAL_OUTCOME_STAGES — same values. */
+export const LONGITUDINAL_OBSERVATION_TIMEPOINTS = LONGITUDINAL_OUTCOME_STAGES;
+
+export type { LongitudinalOutcomeStage };
 
 /**
- * Build a reference that future LongitudinalObservation rows can attach to.
+ * Build a reference that LongitudinalObservation rows attach to.
  * Critical: projectionId is the historical surgery-day snapshot — never recomputed.
  */
 export function attachLongitudinalObservationReference(args: {
   snapshot: ProjectionSnapshot;
-  observationTimepoint: LongitudinalObservationTimepoint;
+  observationTimepoint: LongitudinalObservationTimepoint | LongitudinalOutcomeStage;
   observationDate: string;
   measurementVersion?: string | null;
 }): LongitudinalObservationReference {

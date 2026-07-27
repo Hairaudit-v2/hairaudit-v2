@@ -1,6 +1,6 @@
 /**
  * HA-PROJECTION — Public exports for surgery-day reconstruction (1A), projected outcome (1B),
- * and immutable projection persistence / lineage (1D).
+ * immutable projection persistence / lineage (1D), and longitudinal observed outcomes (1E).
  *
  * Patient projection report presentation lives in `src/lib/reports/surgeryDayProjection*` (1C).
  */
@@ -26,6 +26,13 @@ export type {
   ReconstructionConfidence,
   ProjectionUploadInput,
   ProjectionEvidenceContext,
+  LongitudinalOutcomeStage,
+  LongitudinalEvidenceRole,
+  LongitudinalObservedFeature,
+  LongitudinalObservedFeatureSource,
+  LongitudinalOutcomeObservation,
+  LongitudinalEvidenceContext,
+  ObservationConfidence,
 } from "./types";
 
 export {
@@ -91,6 +98,8 @@ export {
   RECONSTRUCTION_CONTRACT_VERSION,
   PROJECTION_ENGINE_VERSION,
   PROJECTION_SNAPSHOT_SCHEMA_VERSION,
+  OBSERVATION_SCHEMA_VERSION,
+  OBSERVATION_LINEAGE_VERSION,
 } from "./versions";
 
 export {
@@ -154,3 +163,75 @@ export {
   isSurgeryDayReconstruction,
   isSurgeryDayProjectedOutcome,
 } from "./projectionSnapshotValidate";
+
+/* -------------------------------------------------------------------------- */
+/* HA-PROJECTION-1E                                                           */
+/* -------------------------------------------------------------------------- */
+
+export {
+  resolveLongitudinalEvidenceRole,
+  resolveLongitudinalOutcomeStage,
+  assessLongitudinalEvidence,
+  isCrownRelevant,
+  listLongitudinalCategoryAliases,
+  listLongitudinalCategoryStages,
+  LONGITUDINAL_OUTCOME_STAGES,
+  LONGITUDINAL_MINIMUM_ROLE,
+  LONGITUDINAL_RECOMMENDED_ROLES,
+  type ResolvedLongitudinalEvidence,
+  type ResolvedLongitudinalStage,
+  type LongitudinalEvidenceAssessment,
+} from "./longitudinalEvidence";
+
+export {
+  findUnsafeLongitudinalObservationClaims,
+  sanitizeLongitudinalObservationText,
+  assertPatientSafeLongitudinalObservation,
+  STAGE_AWARE_OBSERVATION_TEMPLATES,
+  type LongitudinalSafetyViolation,
+} from "./longitudinalObservationSafety";
+
+export {
+  extractLongitudinalObservationConfidenceFactors,
+  deriveObservationConfidence,
+  type LongitudinalObservationConfidenceFactors,
+} from "./longitudinalObservationConfidence";
+
+export {
+  buildLongitudinalOutcomeObservation,
+  collectStageEvidence,
+  type BuildLongitudinalOutcomeObservationInput,
+  type BuildLongitudinalOutcomeObservationResult,
+} from "./longitudinalOutcomeObservation";
+
+export type {
+  ProjectionObservationSnapshot,
+  ProjectionObservationStatus,
+  ProjectionObservationSupersessionReasonCode,
+  CreateProjectionObservationInput,
+  CreateProjectionObservationResult,
+} from "./projectionObservationTypes";
+
+export { PROJECTION_OBSERVATION_SUPERSESSION_REASON_CODES } from "./projectionObservationTypes";
+
+export {
+  InMemoryProjectionObservationRepository,
+  type ProjectionObservationRepository,
+} from "./projectionObservationRepository";
+
+export {
+  InMemoryProjectionObservationAuditSink,
+  buildObservationAuditMetadata,
+  createObservationAuditEvent,
+  type ProjectionObservationAuditEvent,
+  type ProjectionObservationAuditEventType,
+  type ProjectionObservationAuditSink,
+} from "./projectionObservationAudit";
+
+export {
+  ProjectionObservationService,
+  createProjectionObservationService,
+  computeObservationChecksum,
+  observationChecksumDomain,
+  type ProjectionObservationServiceDeps,
+} from "./projectionObservationService";

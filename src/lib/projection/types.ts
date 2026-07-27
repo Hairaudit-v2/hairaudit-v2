@@ -208,3 +208,99 @@ export type ProjectionEvidenceContext = {
   /** When true, treat patient preop_* as baseline-eligible (explicit confirm). */
   baselineConfirmed?: boolean;
 };
+
+/* -------------------------------------------------------------------------- */
+/* HA-PROJECTION-1E — Longitudinal observed outcome (observation-only)        */
+/* -------------------------------------------------------------------------- */
+
+/** Canonical follow-up stages. month_18 is intentionally absent (no taxonomy). */
+export type LongitudinalOutcomeStage =
+  | "month_3"
+  | "month_6"
+  | "month_9"
+  | "month_12";
+
+export type LongitudinalEvidenceRole =
+  | "followup_front"
+  | "followup_left"
+  | "followup_right"
+  | "followup_top"
+  | "followup_crown"
+  | "followup_donor_rear"
+  | "followup_donor_closeup"
+  | "followup_recipient_closeup";
+
+export type ObservationConfidence = "low" | "moderate" | "high";
+
+export type LongitudinalObservedFeatureSource =
+  | "forensic_ai"
+  | "patient_reported"
+  | "clinic_reported"
+  | "auditor"
+  | "rule"
+  | "mixed";
+
+/**
+ * Patient-safe observed feature at a follow-up stage.
+ * Observation-only — no success/failure or projection-comparison semantics.
+ */
+export type LongitudinalObservedFeature = {
+  key: string;
+  label: string;
+  observation: string;
+  confidence: ObservationConfidence;
+  evidenceRoles: LongitudinalEvidenceRole[];
+  source: LongitudinalObservedFeatureSource;
+};
+
+/**
+ * Canonical longitudinal outcome observation attached to a frozen 1D projection.
+ * Answers only: "What can HairAudit observe at this follow-up stage?"
+ */
+export type LongitudinalOutcomeObservation = {
+  projectionSnapshotId: string;
+  caseId: string;
+  patientId: string;
+  stage: LongitudinalOutcomeStage;
+  observedAt: string;
+  evidence: {
+    confidence: ObservationConfidence;
+    presentRoles: LongitudinalEvidenceRole[];
+    limitations: string[];
+  };
+  recipient: {
+    frontalAppearance: LongitudinalObservedFeature | null;
+    densityAppearance: LongitudinalObservedFeature | null;
+    transitionAppearance: LongitudinalObservedFeature | null;
+    directionalAppearance: LongitudinalObservedFeature | null;
+    crownAppearance: LongitudinalObservedFeature | null;
+  };
+  donor: {
+    donorAppearance: LongitudinalObservedFeature | null;
+    visibleDepletionPattern: LongitudinalObservedFeature | null;
+    visibleScarring: LongitudinalObservedFeature | null;
+  } | null;
+  nativeHair: {
+    visibleNativeHairStatus: LongitudinalObservedFeature | null;
+    treatedVsUntreatedRelationship: LongitudinalObservedFeature | null;
+  };
+  healing: {
+    visibleHealingStatus: LongitudinalObservedFeature | null;
+    visibleConcerns: LongitudinalObservedFeature[];
+  };
+  overallObservations: LongitudinalObservedFeature[];
+  limitations: string[];
+};
+
+/** Case/upload context for longitudinal stage + role resolution. */
+export type LongitudinalEvidenceContext = {
+  procedureDate?: string | null;
+  /** Intake months_since band when known (under_3, 3_6, 6_9, 9_12, 12_plus). */
+  monthsSinceBand?: string | null;
+  /** Numeric months since procedure when known. */
+  monthsSinceProcedure?: number | null;
+  /** Explicit stage override from trusted workflow (rare). */
+  declaredStage?: LongitudinalOutcomeStage | null;
+  /** Treated zones from frozen projection reconstruction (treatment-aware evidence). */
+  treatedAreas?: string[] | null;
+};
