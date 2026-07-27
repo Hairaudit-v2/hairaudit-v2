@@ -80,6 +80,11 @@ export type SurgeryDayProjectionReport = {
   imageGroups: ProjectionImageGroup[];
   reportId: string;
   generatedAt: string;
+  /**
+   * HA-PROJECTION-1D — audit metadata only (not patient-facing copy).
+   * When set, this report was rendered from a frozen historical snapshot.
+   */
+  projectionSnapshotId?: string | null;
 };
 
 export type BuildSurgeryDayProjectionReportInput = {
@@ -89,6 +94,8 @@ export type BuildSurgeryDayProjectionReportInput = {
   reportVersion?: number | null;
   generatedAt?: string | null;
   photosByCategory?: Record<string, { signedUrl: string | null; label: string }[]>;
+  /** HA-PROJECTION-1D — when rendering from a frozen snapshot. */
+  projectionSnapshotId?: string | null;
 };
 
 export type BuildSurgeryDayProjectionReportResult =
@@ -303,6 +310,7 @@ export function buildSurgeryDayProjectionReport(
       String(input.reportVersion ?? 1),
     ].join("-"),
     generatedAt: input.generatedAt ?? new Date().toISOString(),
+    projectionSnapshotId: input.projectionSnapshotId ?? null,
   };
 
   // Hide baseline-only observed block already handled; native hair domain only if 1B emitted it.
@@ -376,6 +384,12 @@ export function extractCanonicalProjectionPairFromSummary(summary: unknown): {
   return { reconstruction, projectedOutcome };
 }
 
+export type PersistedProjectionSnapshotSource = {
+  projectionId: string;
+  reconstruction: SurgeryDayProcedureReconstruction;
+  projectedOutcome: SurgeryDayProjectedOutcome;
+};
+
 export type ResolveSurgeryDayProjectionReportArgs = {
   summary?: unknown;
   caseId?: string | null;
@@ -384,11 +398,19 @@ export type ResolveSurgeryDayProjectionReportArgs = {
   photosByCategory?: Record<string, { signedUrl: string | null; label: string }[]>;
   /** Optional on-demand 1A inputs when summary does not already embed reconstruction/outcome. */
   reconstructionInput?: BuildSurgeryDayProcedureReconstructionInput | null;
+  /**
+   * HA-PROJECTION-1D — prefer a frozen historical snapshot when present.
+   * Historical re-renders must use this path so engine changes do not rewrite day-0 content.
+   */
+  persistedSnapshot?: PersistedProjectionSnapshotSource | null;
 };
 
 /**
  * Resolve a projection report for print/PDF.
- * Uses embedded 1A+1B when present; otherwise builds 1A→1B from provided inputs.
+ * Precedence:
+ * 1. Frozen HA-PROJECTION-1D persisted snapshot (historical truth)
+ * 2. Embedded 1A+1B on summary
+ * 3. On-demand 1A→1B rebuild (legacy / explicit fallback)
  * Never invents a generic projection when reconstruction is insufficient.
  */
 export function resolveSurgeryDayProjectionReport(
@@ -396,42 +418,69 @@ export function resolveSurgeryDayProjectionReport(
 ): BuildSurgeryDayProjectionReportResult {
   let reconstruction: SurgeryDayProcedureReconstruction | null = null;
   let projectedOutcome: SurgeryDayProjectedOutcome | null = null;
+  let projectionSnapshotId: string | null = null;
 
-  const embedded = extractCanonicalProjectionPairFromSummary(args.summary);
-  if (embedded) {
-    reconstruction = embedded.reconstruction;
-    projectedOutcome = embedded.projectedOutcome;
-  } else if (args.reconstructionInput) {
-    const rebuilt = buildSurgeryDayProcedureReconstruction(args.reconstructionInput);
-    if (!rebuilt.ok) {
-      return {
-        ok: false,
-        reason: rebuilt.reason || "Surgery-day reconstruction evidence is insufficient.",
-        report: null,
-      };
-    }
-    reconstruction = rebuilt.reconstruction;
-    const outcome = buildSurgeryDayProjectedOutcome(reconstruction);
-    if (!outcome.ok || !outcome.projectedOutcome) {
-      return {
-        ok: false,
-        reason: outcome.reason || "Projected outcome could not be validated.",
-        report: null,
-      };
-    }
-    projectedOutcome = outcome.projectedOutcome;
+  if (args.persistedSnapshot) {
+    reconstruction = args.persistedSnapshot.reconstruction;
+    projectedOutcome = args.persistedSnapshot.projectedOutcome;
+    projectionSnapshotId = args.persistedSnapshot.projectionId;
   } else {
-    return {
-      ok: false,
-      reason:
-        "No canonical reconstruction/projected outcome available for surgery-day projection report.",
-      report: null,
-    };
+    const embedded = extractCanonicalProjectionPairFromSummary(args.summary);
+    if (embedded) {
+      reconstruction = embedded.reconstruction;
+      projectedOutcome = embedded.projectedOutcome;
+    } else if (args.reconstructionInput) {
+      const rebuilt = buildSurgeryDayProcedureReconstruction(args.reconstructionInput);
+      if (!rebuilt.ok) {
+        return {
+          ok: false,
+          reason: rebuilt.reason || "Surgery-day reconstruction evidence is insufficient.",
+          report: null,
+        };
+      }
+      reconstruction = rebuilt.reconstruction;
+      const outcome = buildSurgeryDayProjectedOutcome(reconstruction);
+      if (!outcome.ok || !outcome.projectedOutcome) {
+        return {
+          ok: false,
+          reason: outcome.reason || "Projected outcome could not be validated.",
+          report: null,
+        };
+      }
+      projectedOutcome = outcome.projectedOutcome;
+    } else {
+      return {
+        ok: false,
+        reason:
+          "No canonical reconstruction/projected outcome available for surgery-day projection report.",
+        report: null,
+      };
+    }
   }
 
   return buildSurgeryDayProjectionReport({
     reconstruction,
     projectedOutcome,
+    caseId: args.caseId,
+    reportVersion: args.reportVersion,
+    generatedAt: args.generatedAt,
+    photosByCategory: args.photosByCategory,
+    projectionSnapshotId,
+  });
+}
+
+/**
+ * HA-PROJECTION-1D — render exclusively from a frozen snapshot (no recalculation).
+ */
+export function buildSurgeryDayProjectionReportFromSnapshot(args: {
+  persistedSnapshot: PersistedProjectionSnapshotSource;
+  caseId?: string | null;
+  reportVersion?: number | null;
+  generatedAt?: string | null;
+  photosByCategory?: Record<string, { signedUrl: string | null; label: string }[]>;
+}): BuildSurgeryDayProjectionReportResult {
+  return resolveSurgeryDayProjectionReport({
+    persistedSnapshot: args.persistedSnapshot,
     caseId: args.caseId,
     reportVersion: args.reportVersion,
     generatedAt: args.generatedAt,

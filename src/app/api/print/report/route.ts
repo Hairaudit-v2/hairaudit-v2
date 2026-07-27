@@ -22,6 +22,10 @@ import {
 import { renderSurgeryDayProjectionReportHtml } from "@/lib/reports/SurgeryDayProjectionReportHtml";
 import type { ForensicAuditLike } from "@/lib/projection/surgeryDayObservedFeatures";
 import {
+  HAIRAUDIT_PROJECTION_SNAPSHOTS_TABLE,
+} from "@/lib/projection/projectionSnapshotPersist.server";
+import type { SurgeryDayProcedureReconstruction, SurgeryDayProjectedOutcome } from "@/lib/projection/types";
+import {
   buildPostSurgeryReportHtmlLabelsEn,
   buildPostSurgeryClinicalEvidenceGalleryLabelsEn,
   POST_SURGERY_OUTCOME_LABELS_EN,
@@ -600,6 +604,48 @@ export async function GET(req: Request) {
   const assessmentType =
     assessmentTypeFromQuery || extractAssessmentTypeFromSummary(summary) || null;
 
+  // HA-PROJECTION-1D — optional frozen snapshot for historical re-render.
+  const projectionSnapshotIdParam =
+    (url.searchParams.get("projectionSnapshotId") ?? "").trim() || null;
+  let persistedProjectionSnapshot: {
+    projectionId: string;
+    reconstruction: SurgeryDayProcedureReconstruction;
+    projectedOutcome: SurgeryDayProjectedOutcome;
+  } | null = null;
+  if (projectionSnapshotIdParam && shouldUseSurgeryDayProjectionReportTemplate(assessmentType, mode)) {
+    try {
+      const { data: snapRow } = await supabase
+        .from(HAIRAUDIT_PROJECTION_SNAPSHOTS_TABLE)
+        .select(
+          "id, case_id, patient_id, reconstruction_snapshot, projection_snapshot"
+        )
+        .eq("id", projectionSnapshotIdParam)
+        .eq("case_id", caseId)
+        .maybeSingle();
+      if (
+        snapRow &&
+        snapRow.reconstruction_snapshot &&
+        snapRow.projection_snapshot &&
+        // Ownership: snapshot patient must match case patient/user when available
+        (() => {
+          const owners = [c.patient_id, c.user_id].filter(Boolean);
+          return (
+            owners.length === 0 ||
+            owners.includes(snapRow.patient_id as string)
+          );
+        })()
+      ) {
+        persistedProjectionSnapshot = {
+          projectionId: String(snapRow.id),
+          reconstruction: snapRow.reconstruction_snapshot as SurgeryDayProcedureReconstruction,
+          projectedOutcome: snapRow.projection_snapshot as SurgeryDayProjectedOutcome,
+        };
+      }
+    } catch {
+      // Table may be absent in older environments; fall back to on-demand 1A→1B.
+    }
+  }
+
   const html = (() => {
     // HA-PROJECTION-1C — surgery-day projection presentation (patient mode only).
     // Precedence over pathway templates when assessmentType is explicit.
@@ -610,6 +656,7 @@ export async function GET(req: Request) {
         reportVersion: content.version,
         generatedAt: content.generatedAt,
         photosByCategory,
+        persistedSnapshot: persistedProjectionSnapshot,
         reconstructionInput: uploadRowsForEvidence
           ? {
               uploads: uploadRowsForEvidence.map((u) => ({
@@ -760,6 +807,9 @@ export async function GET(req: Request) {
       "Cache-Control": "no-store",
       "X-Report-Template": pdfTemplate,
       "X-Audit-Mode": mode,
+      ...(persistedProjectionSnapshot?.projectionId
+        ? { "X-Projection-Snapshot-Id": persistedProjectionSnapshot.projectionId }
+        : {}),
       "X-Pdf-Print-Html-Bytes": String(htmlUtf8Bytes),
       "X-Pdf-Print-Image-Count": String(printPhotoStats.imageCount),
       "X-Pdf-Print-Source-Bytes": String(printPhotoStats.sourceBytesTotal),
