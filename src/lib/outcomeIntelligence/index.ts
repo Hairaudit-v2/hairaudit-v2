@@ -231,3 +231,84 @@ export {
   type LongitudinalCapturePlanServiceDeps,
   type ResolveCapturePlanInput,
 } from "./longitudinalCaptureService";
+
+/* -------------------------------------------------------------------------- */
+/* FI-OUTCOME-INTELLIGENCE-1D — Longitudinal reminder / engagement            */
+/* -------------------------------------------------------------------------- */
+
+export {
+  ENGAGEMENT_POLICY_VERSION,
+  type EngagementPolicyVersion,
+  type LongitudinalReminderEventType,
+  type LongitudinalReminderActionType,
+  type LongitudinalReminderSuppressionCode,
+  type LongitudinalEngagementEventStatus,
+  type LongitudinalReminderMessageKey,
+  type CanonicalEngagementMilestoneInput,
+  type LongitudinalReminderEvent,
+  type LongitudinalEngagementEventRecord,
+  type PatientLongitudinalEngagementDto,
+  type EngagementDecisionResult,
+  type RevalidationResult,
+  type EngagementBatchHealth,
+  type LongitudinalEngagementAuditEventType,
+  type LongitudinalEngagementAuditEvent,
+} from "./longitudinalEngagementTypes";
+
+export {
+  ENGAGEMENT_POLICY_V1,
+  getEngagementPolicy,
+  describeEngagementTimingPolicy,
+  isContactEventType,
+  type LongitudinalEngagementPolicy,
+} from "./longitudinalEngagementPolicy";
+
+export {
+  resolveLongitudinalEngagementConfig,
+  assertEngagementApplyAllowed,
+  anyExternalChannelEnabled,
+  type LongitudinalEngagementConfig,
+  type EngagementApplyGate,
+} from "./longitudinalEngagementConfig";
+
+export {
+  evaluateEngagementEligibility,
+  buildReminderEvent,
+  buildStateFingerprint,
+  buildDedupeKey,
+  revalidateReminderAgainstMilestone,
+  mapReminderActionToPatientAction,
+  patientActionLabel,
+} from "./longitudinalEngagementDecision";
+
+export {
+  renderReminderMessage,
+  stageLabelForEngagement,
+  buildMessageVariables,
+  FORBIDDEN_ENGAGEMENT_LANGUAGE,
+} from "./longitudinalEngagementTemplates";
+
+export {
+  COMMUNICATION_PREFERENCE_GAP,
+  resolveChannelAllowance,
+  isWithinQuietHours,
+  scanMessageForForbiddenLanguage,
+  assertReminderCopySafe,
+  assertPatientEngagementDtoSafe,
+  type CommunicationPreferenceSnapshot,
+} from "./longitudinalEngagementSafety";
+
+export {
+  InMemoryLongitudinalEngagementEventRepository,
+  type LongitudinalEngagementEventRepository,
+  type EngagementEventListFilter,
+} from "./longitudinalEngagementRepository";
+
+export {
+  LongitudinalEngagementService,
+  createLongitudinalEngagementService,
+  InMemoryEngagementAuditSink,
+  milestoneToEngagementInput,
+  type LongitudinalEngagementServiceDeps,
+  type LongitudinalEngagementAuditSink,
+} from "./longitudinalEngagementService";
