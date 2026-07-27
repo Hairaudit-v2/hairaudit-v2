@@ -20,11 +20,26 @@ import {
   shouldUseSurgeryDayProjectionReportTemplate,
 } from "@/lib/reports/surgeryDayProjectionReport";
 import { renderSurgeryDayProjectionReportHtml } from "@/lib/reports/SurgeryDayProjectionReportHtml";
+import {
+  LONGITUDINAL_PROJECTION_TABLES,
+  resolveLongitudinalProjectionReviewReport,
+  shouldUseLongitudinalProjectionReviewTemplate,
+} from "@/lib/reports/longitudinalProjectionReview";
+import { renderLongitudinalProjectionReviewHtml } from "@/lib/reports/LongitudinalProjectionReviewHtml";
 import type { ForensicAuditLike } from "@/lib/projection/surgeryDayObservedFeatures";
 import {
   HAIRAUDIT_PROJECTION_SNAPSHOTS_TABLE,
 } from "@/lib/projection/projectionSnapshotPersist.server";
-import type { SurgeryDayProcedureReconstruction, SurgeryDayProjectedOutcome } from "@/lib/projection/types";
+import { validateCaseOwnership } from "@/lib/projection/projectionSnapshotValidate";
+import type { ProjectionSnapshot } from "@/lib/projection/projectionSnapshotTypes";
+import type { ProjectionObservationSnapshot } from "@/lib/projection/projectionObservationTypes";
+import type { ProjectionComparisonSnapshot } from "@/lib/projection/projectionComparisonTypes";
+import type {
+  LongitudinalOutcomeObservation,
+  ProjectionObservedComparison,
+  SurgeryDayProcedureReconstruction,
+  SurgeryDayProjectedOutcome,
+} from "@/lib/projection/types";
 import {
   buildPostSurgeryReportHtmlLabelsEn,
   buildPostSurgeryClinicalEvidenceGalleryLabelsEn,
@@ -607,6 +622,10 @@ export async function GET(req: Request) {
   // HA-PROJECTION-1D — optional frozen snapshot for historical re-render.
   const projectionSnapshotIdParam =
     (url.searchParams.get("projectionSnapshotId") ?? "").trim() || null;
+  const observationSnapshotIdParam =
+    (url.searchParams.get("observationSnapshotId") ?? "").trim() || null;
+  const comparisonSnapshotIdParam =
+    (url.searchParams.get("comparisonSnapshotId") ?? "").trim() || null;
   let persistedProjectionSnapshot: {
     projectionId: string;
     reconstruction: SurgeryDayProcedureReconstruction;
@@ -626,14 +645,16 @@ export async function GET(req: Request) {
         snapRow &&
         snapRow.reconstruction_snapshot &&
         snapRow.projection_snapshot &&
-        // Ownership: snapshot patient must match case patient/user when available
-        (() => {
-          const owners = [c.patient_id, c.user_id].filter(Boolean);
-          return (
-            owners.length === 0 ||
-            owners.includes(snapRow.patient_id as string)
-          );
-        })()
+        // Ownership: require case patient/user match; fail closed when ownership metadata is missing
+        validateCaseOwnership({
+          caseId,
+          patientId: String(snapRow.patient_id ?? ""),
+          caseRow: {
+            id: caseId,
+            patient_id: c.patient_id ?? null,
+            user_id: c.user_id ?? null,
+          },
+        }).ok
       ) {
         persistedProjectionSnapshot = {
           projectionId: String(snapRow.id),
@@ -646,7 +667,184 @@ export async function GET(req: Request) {
     }
   }
 
+  // HA-PROJECTION-1G — load frozen 1D+1E+1F for longitudinal review (fail closed; no latest auto-pick).
+  let longitudinalFrozen: {
+    projection: ProjectionSnapshot;
+    observation: ProjectionObservationSnapshot;
+    comparison: ProjectionComparisonSnapshot;
+  } | null = null;
+  if (shouldUseLongitudinalProjectionReviewTemplate(assessmentType, mode)) {
+    const summaryObj = (summary && typeof summary === "object" ? summary : {}) as Record<
+      string,
+      unknown
+    >;
+    const embedded =
+      (summaryObj.longitudinal_projection_review as Record<string, unknown> | undefined) ??
+      (summaryObj.longitudinalProjectionReview as Record<string, unknown> | undefined) ??
+      null;
+
+    const embeddedProjection = embedded?.projection as ProjectionSnapshot | undefined;
+    const embeddedObservation = embedded?.observation as ProjectionObservationSnapshot | undefined;
+    const embeddedComparison = embedded?.comparison as ProjectionComparisonSnapshot | undefined;
+
+    if (
+      embeddedProjection?.id &&
+      embeddedObservation?.id &&
+      embeddedComparison?.id &&
+      (!projectionSnapshotIdParam || embeddedProjection.id === projectionSnapshotIdParam) &&
+      (!observationSnapshotIdParam || embeddedObservation.id === observationSnapshotIdParam) &&
+      (!comparisonSnapshotIdParam || embeddedComparison.id === comparisonSnapshotIdParam)
+    ) {
+      longitudinalFrozen = {
+        projection: embeddedProjection,
+        observation: embeddedObservation,
+        comparison: embeddedComparison,
+      };
+    } else if (
+      projectionSnapshotIdParam &&
+      observationSnapshotIdParam &&
+      comparisonSnapshotIdParam
+    ) {
+      try {
+        const ownershipOk = (patientId: string) =>
+          validateCaseOwnership({
+            caseId,
+            patientId,
+            caseRow: {
+              id: caseId,
+              patient_id: c.patient_id ?? null,
+              user_id: c.user_id ?? null,
+            },
+          }).ok;
+
+        const { data: projRow } = await supabase
+          .from(HAIRAUDIT_PROJECTION_SNAPSHOTS_TABLE)
+          .select("*")
+          .eq("id", projectionSnapshotIdParam)
+          .eq("case_id", caseId)
+          .maybeSingle();
+        const { data: obsRow } = await supabase
+          .from(LONGITUDINAL_PROJECTION_TABLES.observations)
+          .select("*")
+          .eq("id", observationSnapshotIdParam)
+          .eq("case_id", caseId)
+          .maybeSingle();
+        const { data: cmpRow } = await supabase
+          .from(LONGITUDINAL_PROJECTION_TABLES.comparisons)
+          .select("*")
+          .eq("id", comparisonSnapshotIdParam)
+          .eq("case_id", caseId)
+          .maybeSingle();
+
+        if (
+          projRow &&
+          obsRow &&
+          cmpRow &&
+          ownershipOk(String(projRow.patient_id ?? "")) &&
+          ownershipOk(String(obsRow.patient_id ?? "")) &&
+          ownershipOk(String(cmpRow.patient_id ?? ""))
+        ) {
+          longitudinalFrozen = {
+            projection: {
+              id: String(projRow.id),
+              caseId: String(projRow.case_id),
+              patientId: String(projRow.patient_id),
+              procedureId: String(projRow.procedure_id ?? projRow.case_id),
+              projectionType: projRow.projection_type,
+              projectionStatus: projRow.projection_status,
+              reconstructionVersion: String(projRow.reconstruction_version),
+              projectionEngineVersion: String(projRow.projection_engine_version),
+              snapshotSchemaVersion: String(projRow.snapshot_schema_version),
+              reportTemplateVersion: Number(projRow.report_template_version ?? 1),
+              reconstructionInputChecksum: String(projRow.reconstruction_input_checksum ?? ""),
+              projectionInputChecksum: String(projRow.projection_input_checksum ?? ""),
+              projectionOutputChecksum: String(projRow.projection_output_checksum ?? ""),
+              reconstructionSnapshot:
+                projRow.reconstruction_snapshot as SurgeryDayProcedureReconstruction,
+              projectionSnapshot: projRow.projection_snapshot as SurgeryDayProjectedOutcome,
+              confidenceSummary: (projRow.confidence_summary ?? {}) as ProjectionSnapshot["confidenceSummary"],
+              evidenceSummary: (projRow.evidence_summary ?? {}) as ProjectionSnapshot["evidenceSummary"],
+              createdAt: String(projRow.created_at),
+              createdBy: projRow.created_by ?? null,
+              supersedesProjectionId: projRow.supersedes_projection_id ?? null,
+              supersededByProjectionId: projRow.superseded_by_projection_id ?? null,
+              lineageRootId: String(projRow.lineage_root_id ?? projRow.id),
+              supersessionReasonCode: projRow.supersession_reason_code ?? null,
+              sourceReportId: projRow.source_report_id ?? null,
+              sourceAssessmentId: projRow.source_assessment_id ?? null,
+            },
+            observation: {
+              id: String(obsRow.id),
+              projectionSnapshotId: String(obsRow.projection_snapshot_id),
+              caseId: String(obsRow.case_id),
+              patientId: String(obsRow.patient_id),
+              stage: obsRow.stage,
+              observedAt: String(obsRow.observed_at),
+              observationStatus: obsRow.observation_status,
+              observationSchemaVersion: String(obsRow.observation_schema_version),
+              observationLineageVersion: String(obsRow.observation_lineage_version),
+              observationChecksum: String(obsRow.observation_checksum),
+              observationPayload: obsRow.observation_payload as LongitudinalOutcomeObservation,
+              createdAt: String(obsRow.created_at),
+              createdBy: obsRow.created_by ?? null,
+              supersedesObservationId: obsRow.supersedes_observation_id ?? null,
+              supersededByObservationId: obsRow.superseded_by_observation_id ?? null,
+              supersessionReasonCode: obsRow.supersession_reason_code ?? null,
+              sourceReportId: obsRow.source_report_id ?? null,
+              sourceAuditId: obsRow.source_audit_id ?? null,
+            },
+            comparison: {
+              id: String(cmpRow.id),
+              projectionSnapshotId: String(cmpRow.projection_snapshot_id),
+              observationSnapshotId: String(cmpRow.observation_snapshot_id),
+              caseId: String(cmpRow.case_id),
+              patientId: String(cmpRow.patient_id),
+              stage: cmpRow.stage,
+              comparisonStatus: cmpRow.comparison_status,
+              comparisonSchemaVersion: String(cmpRow.comparison_schema_version),
+              projectionSchemaVersion: String(cmpRow.projection_schema_version),
+              observationSchemaVersion: String(cmpRow.observation_schema_version),
+              comparisonChecksum: String(cmpRow.comparison_checksum),
+              comparisonPayload: cmpRow.comparison_payload as ProjectionObservedComparison,
+              createdAt: String(cmpRow.created_at),
+              createdBy: cmpRow.created_by ?? null,
+              supersedesComparisonId: cmpRow.supersedes_comparison_id ?? null,
+              supersededByComparisonId: cmpRow.superseded_by_comparison_id ?? null,
+              supersessionReasonCode: cmpRow.supersession_reason_code ?? null,
+            },
+          };
+        }
+      } catch {
+        // Tables may be absent; fail closed below when longitudinalFrozen remains null.
+      }
+    }
+  }
+
   const html = (() => {
+    // HA-PROJECTION-1G — longitudinal projection review (patient mode only).
+    // Precedence over 1C / pathway templates when assessmentType is explicit.
+    if (shouldUseLongitudinalProjectionReviewTemplate(assessmentType, mode)) {
+      if (!longitudinalFrozen) {
+        return null;
+      }
+      const longitudinalResolved = resolveLongitudinalProjectionReviewReport({
+        projection: longitudinalFrozen.projection,
+        observation: longitudinalFrozen.observation,
+        comparison: longitudinalFrozen.comparison,
+        caseId,
+        reportVersion: content.version,
+        generatedAt: content.generatedAt,
+        photosByCategory,
+      });
+      if (!longitudinalResolved.ok || !longitudinalResolved.report) {
+        return null;
+      }
+      return renderLongitudinalProjectionReviewHtml({
+        report: longitudinalResolved.report,
+        caseId,
+        generatedAtDisplay: content.generatedAt,
+      });
+    }
     // HA-PROJECTION-1C — surgery-day projection presentation (patient mode only).
     // Precedence over pathway templates when assessmentType is explicit.
     if (shouldUseSurgeryDayProjectionReportTemplate(assessmentType, mode)) {
@@ -772,14 +970,22 @@ export async function GET(req: Request) {
   })();
 
   if (html == null) {
+    const longitudinalNotReady = shouldUseLongitudinalProjectionReviewTemplate(
+      assessmentType,
+      mode
+    );
     return new NextResponse(
-      "PROJECTION_NOT_READY: surgery-day reconstruction evidence is insufficient for a projected result report",
+      longitudinalNotReady
+        ? "LONGITUDINAL_REVIEW_NOT_READY: frozen projection, observation, and comparison snapshots are required and must share valid lineage"
+        : "PROJECTION_NOT_READY: surgery-day reconstruction evidence is insufficient for a projected result report",
       {
         status: 409,
         headers: {
           "Content-Type": "text/plain; charset=utf-8",
           "Cache-Control": "no-store",
-          "X-Report-Status": "projection-not-ready",
+          "X-Report-Status": longitudinalNotReady
+            ? "longitudinal-review-not-ready"
+            : "projection-not-ready",
         },
       }
     );
@@ -787,8 +993,9 @@ export async function GET(req: Request) {
 
   const htmlUtf8Bytes = Buffer.byteLength(html, "utf8");
 
-  const clinicalTemplate =
-    shouldUseSurgeryDayProjectionReportTemplate(assessmentType, mode)
+  const clinicalTemplate = shouldUseLongitudinalProjectionReviewTemplate(assessmentType, mode)
+    ? "longitudinal-projection-review"
+    : shouldUseSurgeryDayProjectionReportTemplate(assessmentType, mode)
       ? "surgery-day-projection"
       : resolvePatientReportTemplateName(c.patient_review_pathway, mode);
   const reportId =
@@ -809,6 +1016,15 @@ export async function GET(req: Request) {
       "X-Audit-Mode": mode,
       ...(persistedProjectionSnapshot?.projectionId
         ? { "X-Projection-Snapshot-Id": persistedProjectionSnapshot.projectionId }
+        : {}),
+      ...(longitudinalFrozen?.projection.id
+        ? { "X-Projection-Snapshot-Id": longitudinalFrozen.projection.id }
+        : {}),
+      ...(longitudinalFrozen?.observation.id
+        ? { "X-Observation-Snapshot-Id": longitudinalFrozen.observation.id }
+        : {}),
+      ...(longitudinalFrozen?.comparison.id
+        ? { "X-Comparison-Snapshot-Id": longitudinalFrozen.comparison.id }
         : {}),
       "X-Pdf-Print-Html-Bytes": String(htmlUtf8Bytes),
       "X-Pdf-Print-Image-Count": String(printPhotoStats.imageCount),

@@ -3,11 +3,13 @@
  * immutable projection persistence / lineage (1D), longitudinal observed outcomes (1E),
  * and projected vs observed comparison (1F).
  *
- * Patient projection report presentation lives in `src/lib/reports/surgeryDayProjection*` (1C).
+ * Patient projection report presentation lives in `src/lib/reports/surgeryDayProjection*` (1C)
+ * and longitudinal review in `src/lib/reports/longitudinalProjectionReview*` (1G).
  */
 
 export type {
   HairAuditAssessmentType,
+  LongitudinalProjectionReviewAssessmentType,
   SurgeryDayReconstructionAssessmentType,
   SurgeryDayProjectionAssessmentType,
   SurgeryDayEvidenceRole,

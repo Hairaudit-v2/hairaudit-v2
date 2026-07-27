@@ -12,8 +12,12 @@ export type HairAuditAssessmentType =
   | "surgery_day_reconstruction_with_baseline"
   | "surgery_day_projection"
   | "surgery_day_projection_with_baseline"
+  | "longitudinal_projection_review"
   | "early_postop_assessment"
   | "post_surgery_outcome";
+
+/** HA-PROJECTION-1G — patient longitudinal projection review presentation. */
+export type LongitudinalProjectionReviewAssessmentType = "longitudinal_projection_review";
 
 export type SurgeryDayReconstructionAssessmentType =
   | "surgery_day_reconstruction"

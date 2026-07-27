@@ -129,7 +129,8 @@ export function resolveSurgeryDayProjectionTemplateName(
 
 /**
  * Resolve presentation template across assessmentType + pathway.
- * Projection assessmentType takes precedence when present for patient mode.
+ * Longitudinal review (1G) then surgery-day projection (1C) take precedence
+ * when present for patient mode.
  */
 export function resolveReportPresentationTemplateName(args: {
   assessmentType?: unknown;
@@ -139,7 +140,18 @@ export function resolveReportPresentationTemplateName(args: {
     pathway: unknown,
     auditMode?: string | null
   ) => "post-surgery-audit" | "pre-surgery-planning" | "elite";
-}): "surgery-day-projection" | "post-surgery-audit" | "pre-surgery-planning" | "elite" {
+}):
+  | "longitudinal-projection-review"
+  | "surgery-day-projection"
+  | "post-surgery-audit"
+  | "pre-surgery-planning"
+  | "elite" {
+  if (
+    args.auditMode === "patient" &&
+    args.assessmentType === "longitudinal_projection_review"
+  ) {
+    return "longitudinal-projection-review";
+  }
   const projection = resolveSurgeryDayProjectionTemplateName(args.assessmentType, args.auditMode);
   if (projection) return projection;
   return args.resolvePathwayTemplate(args.pathway, args.auditMode);
@@ -152,6 +164,8 @@ export function extractAssessmentTypeFromSummary(summary: unknown): string | nul
     s.assessmentType,
     s.assessment_type,
     s.hairAuditAssessmentType,
+    (s.longitudinal_projection_review as Record<string, unknown> | undefined)?.assessmentType,
+    (s.longitudinalProjectionReview as Record<string, unknown> | undefined)?.assessmentType,
     (s.surgery_day_projection as Record<string, unknown> | undefined)?.assessmentType,
     (s.projectedOutcome as Record<string, unknown> | undefined)?.assessmentType,
   ];
