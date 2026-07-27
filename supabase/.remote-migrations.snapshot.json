@@ -1,7 +1,7 @@
 {
   "project_ref": "vbzjkqhvzfunahmlxevb",
-  "captured_at": "2026-07-02T20:57:53.000Z",
-  "source": "Supabase MCP list_migrations after HA-SECURITY-1B deploy",
+  "captured_at": "2026-07-27T03:52:30.000Z",
+  "source": "Supabase MCP list_migrations after migration catch-up (nexus + projection + claim)",
   "migrations": [
     { "version": "20260614203633", "name": "20260320000003_patient_safe_summary_narrative_translations" },
     { "version": "20260617015504", "name": "20260320000004_patient_safe_summary_review_action_metadata" },
@@ -13,6 +13,14 @@
     { "version": "20260701205452", "name": "patient_core_table_rls" },
     { "version": "20260701205501", "name": "hairaudit_core_rls_hardening" },
     { "version": "20260701205508", "name": "hairaudit_remote_security_alignment" },
-    { "version": "20260701205753", "name": "hairaudit_satellite_tables_rls_hardening" }
+    { "version": "20260701205753", "name": "hairaudit_satellite_tables_rls_hardening" },
+    { "version": "20260727034948", "name": "20260702120000_hairaudit_nexus_network_identity" },
+    { "version": "20260727035008", "name": "20260702170000_hairaudit_classifier_shadow_comparisons" },
+    { "version": "20260727035024", "name": "20260702150000_hairaudit_account_claim" },
+    { "version": "20260727035058", "name": "20260702160000_hairaudit_nexus_clinic_provisioning" },
+    { "version": "20260727035133", "name": "20260727120000_hairaudit_projection_snapshots" },
+    { "version": "20260727035151", "name": "20260727140000_hairaudit_projection_observations" },
+    { "version": "20260727035210", "name": "20260727160000_hairaudit_projection_comparisons" },
+    { "version": "20260727035225", "name": "20260714090000_hairaudit_anon_claim_auth_users_fix" }
   ]
 }

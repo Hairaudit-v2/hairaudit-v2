@@ -1,25 +1,47 @@
 # Supabase Migrations
 
-Run migrations to add profiles (roles), case linking, and report failure handling:
+HairAudit uses the Supabase CLI against project **HairAudit's Project**
+(`vbzjkqhvzfunahmlxevb`).
+
+## One-time CLI setup
 
 ```bash
-# If using Supabase CLI:
-supabase db push
-
-# Or run manually in Supabase SQL Editor:
-# 1. migrations/20250210000001_profiles_and_roles.sql
-# 2. migrations/20250210000003_add_patient_id.sql (if needed)
-# 3. migrations/20250210000004_reports_status_error.sql (adds reports.status, reports.error)
+# From repo root (CLI is a local devDependency)
+npm run supabase:login
+npm run supabase:link
 ```
 
-**20250210000004_reports_status_error.sql** (required for audit failure handling):
-```sql
-ALTER TABLE reports ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'complete';
-ALTER TABLE reports ADD COLUMN IF NOT EXISTS error TEXT;
+`supabase init` already created `supabase/config.toml` (Postgres 17).
+Project ref is pre-seeded in `supabase/.temp/project-ref` (gitignored).
+
+## Day-to-day workflow
+
+```bash
+# Create a new migration file (preferred — do not invent timestamps by hand)
+npx supabase migration new <descriptive_name>
+
+# Compare local migration history vs remote
+npm run supabase:migration:list
+
+# Apply pending local migrations to the linked remote
+npm run supabase:db:push
 ```
 
-After migrations:
-- New users get a profile with role from signup (or default "patient")
-- Existing users: set role via POST /api/profiles with body `{ "role": "auditor" }` etc.
-- Cases can have optional doctor_id and clinic_id for linking
-- Reports support status/error for Inngest failure handling
+Prefer **local testing** (`npx supabase start` + migrate locally) before
+`db push` to production when the change is non-trivial.
+
+## History note
+
+This database was partly migrated outside the CLI migration registry
+(SQL Editor / MCP `apply_migration`). Schema is kept in sync with files under
+`supabase/migrations/`, but remote history versions may not match every local
+filename 1:1. Use `migration list` after linking to see the current gap, and
+prefer CLI `db push` for all new changes going forward.
+
+Snapshot of previously observed remote history:
+`supabase/.remote-migrations.snapshot.json`.
+
+## Manual fallback (SQL Editor)
+
+Only if CLI link/push is unavailable: run the pending `.sql` files from
+`supabase/migrations/` in version order in the Supabase SQL Editor.
