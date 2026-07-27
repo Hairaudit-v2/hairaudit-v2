@@ -104,3 +104,56 @@ export {
   createOutcomeCohortAggregates,
   type OutcomeCohortAggregateDeps,
 } from "./cohortAggregates";
+
+/* -------------------------------------------------------------------------- */
+/* FI-OUTCOME-INTELLIGENCE-1B                                                 */
+/* -------------------------------------------------------------------------- */
+
+export type {
+  OutcomeCohortDataQualityAudit,
+  StageCoverage,
+  SafeDistribution,
+  CohortCaptureGap,
+  CohortDataRecommendation,
+  ProspectiveCapturePriority,
+  CohortDataQualityFlag,
+  FollowUpRetention,
+  MaterializationStatus,
+  DomainCoverageEntry,
+  ConfidenceDistribution,
+  AssessabilityDistribution,
+} from "./cohortAuditTypes";
+
+export {
+  AUDIT_STAGES,
+  AUDIT_DOMAINS,
+  uniqueProcedureKeys,
+  buildSafeDistribution,
+  buildStageCoverage,
+  buildFollowUpRetention,
+  assessabilityForStage,
+  domainStatusCounts,
+  suppressCount,
+} from "./cohortCoverage";
+
+export {
+  countEligibleForFutureCalibration,
+  resolveCalibrationReadiness,
+  type CalibrationReadinessResult,
+} from "./cohortReadiness";
+
+export { deriveDataQualityFlags } from "./cohortDataQualityFlags";
+
+export {
+  buildCaptureGaps,
+  buildRecommendations,
+  buildProspectiveCapturePriorities,
+} from "./cohortAuditRecommendations";
+
+export {
+  OutcomeCohortDataQualityAuditService,
+  createOutcomeCohortDataQualityAuditService,
+  sanitizeAuditForExport,
+  formatAuditHumanReadable,
+  type OutcomeCohortDataQualityAuditDeps,
+} from "./cohortDataQualityAudit";
