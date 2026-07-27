@@ -75,7 +75,13 @@
     "test:outcome-capture-1c": "tsx --test tests/longitudinalCaptureSchedule.test.ts tests/longitudinalCaptureStatus.test.ts tests/longitudinalCapturePolicy.test.ts tests/longitudinalCaptureService.test.ts",
     "test:outcome-engagement-1d": "tsx --test tests/longitudinalEngagementDecision.test.ts tests/longitudinalEngagementService.test.ts tests/longitudinalEngagementSafety.test.ts tests/longitudinalEngagementScheduling.test.ts",
     "test:outcome-capture-1e": "tsx --test tests/guidedLongitudinalCaptureDto.test.ts tests/guidedLongitudinalCaptureWizard.test.ts tests/guidedLongitudinalCaptureSafety.test.ts tests/guidedLongitudinalCaptureReference.test.ts tests/longitudinalFollowupUploadAllowance.test.ts",
-    "longitudinal-engagement:run": "tsx scripts/run-longitudinal-engagement.ts"
+    "test:outcome-e2e-1f": "tsx --test tests/longitudinalE2eFixtures.test.ts",
+    "longitudinal-engagement:run": "tsx scripts/run-longitudinal-engagement.ts",
+    "longitudinal-e2e:seed": "tsx scripts/seed-longitudinal-e2e.ts",
+    "longitudinal-e2e:reset": "tsx scripts/seed-longitudinal-e2e.ts -- --reset",
+    "longitudinal-e2e:cleanup": "tsx scripts/cleanup-longitudinal-e2e.ts",
+    "longitudinal-e2e:test": "playwright test --config=playwright.config.ts tests/e2e/hairaudit/longitudinal-journey.spec.ts tests/e2e/hairaudit/longitudinal-journey-extended.spec.ts tests/e2e/hairaudit/longitudinal-journey-mobile.spec.ts",
+    "longitudinal-e2e:test:smoke": "playwright test --config=playwright.config.ts tests/e2e/hairaudit/longitudinal-journey.spec.ts tests/e2e/hairaudit/longitudinal-journey-mobile.spec.ts"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.4",

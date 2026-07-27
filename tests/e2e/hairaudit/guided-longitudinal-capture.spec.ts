@@ -1,11 +1,12 @@
 /**
- * FI-OUTCOME-INTELLIGENCE-1E — Playwright smoke (synthetic / feature-flag aware).
+ * FI-OUTCOME-INTELLIGENCE-1E — Playwright smoke (route-level).
  *
- * Full upload flows require projection + capture plan fixtures; this covers
- * deep-link routing and disabled-flag fallback without real patients.
+ * Full upload / projection journeys live in FI-OUTCOME-INTELLIGENCE-1F:
+ *   tests/e2e/hairaudit/longitudinal-journey*.spec.ts
+ *   pnpm longitudinal-e2e:seed && pnpm longitudinal-e2e:test
  */
 
-import { test, expect, skipIfE2eBlocked } from "./fixtures/hairaudit.fixture";
+import { test, expect, skipIfE2eBlocked } from "../fixtures/hairaudit.fixture";
 
 test.describe("Guided longitudinal capture (1E)", () => {
   test.beforeEach(() => skipIfE2eBlocked());

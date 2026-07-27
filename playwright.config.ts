@@ -30,7 +30,7 @@ export default defineConfig({
     {
       name: "mobile-chrome",
       use: { ...devices["Pixel 7"] },
-      testMatch: /mobile-reports\.spec\.ts/,
+      testMatch: /mobile-reports\.spec\.ts|longitudinal-journey-mobile\.spec\.ts/,
     },
   ],
   webServer: skipWebServer
