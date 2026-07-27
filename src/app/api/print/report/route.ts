@@ -15,6 +15,13 @@ import {
   shouldUsePreSurgeryReportTemplate,
 } from "@/lib/reports/preSurgeryPlanningReport";
 import {
+  extractAssessmentTypeFromSummary,
+  resolveSurgeryDayProjectionReport,
+  shouldUseSurgeryDayProjectionReportTemplate,
+} from "@/lib/reports/surgeryDayProjectionReport";
+import { renderSurgeryDayProjectionReportHtml } from "@/lib/reports/SurgeryDayProjectionReportHtml";
+import type { ForensicAuditLike } from "@/lib/projection/surgeryDayObservedFeatures";
+import {
   buildPostSurgeryReportHtmlLabelsEn,
   buildPostSurgeryClinicalEvidenceGalleryLabelsEn,
   POST_SURGERY_OUTCOME_LABELS_EN,
@@ -589,7 +596,73 @@ export async function GET(req: Request) {
       : null;
   }
 
+  const assessmentTypeFromQuery = (url.searchParams.get("assessmentType") ?? "").trim() || null;
+  const assessmentType =
+    assessmentTypeFromQuery || extractAssessmentTypeFromSummary(summary) || null;
+
   const html = (() => {
+    // HA-PROJECTION-1C — surgery-day projection presentation (patient mode only).
+    // Precedence over pathway templates when assessmentType is explicit.
+    if (shouldUseSurgeryDayProjectionReportTemplate(assessmentType, mode)) {
+      const projectionResolved = resolveSurgeryDayProjectionReport({
+        summary,
+        caseId,
+        reportVersion: content.version,
+        generatedAt: content.generatedAt,
+        photosByCategory,
+        reconstructionInput: uploadRowsForEvidence
+          ? {
+              uploads: uploadRowsForEvidence.map((u) => ({
+                type: (u as { type?: string | null }).type ?? null,
+                metadata: (u as { metadata?: Record<string, unknown> | null }).metadata ?? null,
+              })),
+              evidenceContext: {
+                pathway:
+                  c.patient_review_pathway === "pre_surgery" ||
+                  c.patient_review_pathway === "post_surgery"
+                    ? c.patient_review_pathway
+                    : null,
+              },
+              procedureSources: {
+                clinicAnswers:
+                  (summary as { clinic_answers?: Record<string, unknown> | null }).clinic_answers ??
+                  null,
+                doctorAnswers:
+                  (summary as { doctor_answers?: Record<string, unknown> | null }).doctor_answers ??
+                  null,
+                patientAnswers:
+                  ((summary as { patient_audit_v2?: { answers?: Record<string, unknown> } })
+                    .patient_audit_v2?.answers ??
+                    (summary as { patient_answers?: Record<string, unknown> | null })
+                      .patient_answers) ??
+                  null,
+              },
+              forensicAudit: ((summary as { forensic_audit?: unknown }).forensic_audit ??
+                (summary as { forensic?: unknown }).forensic ??
+                null) as ForensicAuditLike | null,
+              graftIntegrity: graftIntegrity
+                ? {
+                    estimated_implanted_min: graftIntegrity.estimated_implanted.min,
+                    estimated_implanted_max: graftIntegrity.estimated_implanted.max,
+                    estimated_extracted_min: graftIntegrity.estimated_extracted.min,
+                    estimated_extracted_max: graftIntegrity.estimated_extracted.max,
+                    confidence_label: graftIntegrity.confidence_label,
+                    confidence: graftIntegrity.confidence,
+                    auditor_status: graftIntegrity.auditor_status,
+                  }
+                : null,
+            }
+          : null,
+      });
+      if (!projectionResolved.ok || !projectionResolved.report) {
+        return null;
+      }
+      return renderSurgeryDayProjectionReportHtml({
+        report: projectionResolved.report,
+        caseId,
+        generatedAtDisplay: content.generatedAt,
+      });
+    }
     if (shouldUsePostSurgeryReportTemplate(c.patient_review_pathway, mode)) {
       const postReport = resolvePostSurgeryAuditReport(summary as Record<string, unknown>, {
         caseId,
@@ -650,9 +723,27 @@ export async function GET(req: Request) {
     }
     return renderEliteReportHtml(eliteVm);
   })();
+
+  if (html == null) {
+    return new NextResponse(
+      "PROJECTION_NOT_READY: surgery-day reconstruction evidence is insufficient for a projected result report",
+      {
+        status: 409,
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+          "Cache-Control": "no-store",
+          "X-Report-Status": "projection-not-ready",
+        },
+      }
+    );
+  }
+
   const htmlUtf8Bytes = Buffer.byteLength(html, "utf8");
 
-  const clinicalTemplate = resolvePatientReportTemplateName(c.patient_review_pathway, mode);
+  const clinicalTemplate =
+    shouldUseSurgeryDayProjectionReportTemplate(assessmentType, mode)
+      ? "surgery-day-projection"
+      : resolvePatientReportTemplateName(c.patient_review_pathway, mode);
   const reportId =
     String(url.searchParams.get("reportId") ?? "").trim() ||
     String((latestReport as { id?: string } | null)?.id ?? "").trim() ||

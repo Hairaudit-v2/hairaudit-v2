@@ -8,6 +8,8 @@ const ELITE_CLINICAL_TEMPLATE_KEYS = new Set([
   "post-surgery",
   "pre-surgery-planning",
   "pre-surgery",
+  "surgery-day-projection",
+  "surgery-day-projection-with-baseline",
 ]);
 
 function canonicalTemplateKey(input: string): string {

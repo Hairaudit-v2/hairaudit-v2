@@ -28,6 +28,15 @@ describe("normalizeReportTemplateForPdf", () => {
     assert.equal(normalizeReportTemplateForPdf("pre-surgery"), "elite");
   });
 
+  it("maps surgery-day projection clinical template keys to elite", () => {
+    assert.equal(normalizeReportTemplateForPdf("surgery-day-projection"), "elite");
+    assert.equal(normalizeReportTemplateForPdf("surgery_day_projection"), "elite");
+    assert.equal(
+      normalizeReportTemplateForPdf("surgery-day-projection-with-baseline"),
+      "elite"
+    );
+  });
+
   it("passes elite and demo through unchanged", () => {
     assert.equal(normalizeReportTemplateForPdf("elite"), "elite");
     assert.equal(normalizeReportTemplateForPdf("demo"), "demo");

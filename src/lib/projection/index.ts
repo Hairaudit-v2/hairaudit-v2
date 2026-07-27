@@ -1,7 +1,7 @@
 /**
  * HA-PROJECTION — Public exports for surgery-day reconstruction (1A) and projected outcome (1B).
  *
- * Derived canonical layers only. No patient projection PDF / report UI in 1A–1B.
+ * Patient projection report presentation lives in `src/lib/reports/surgeryDayProjection*` (1C).
  */
 
 export type {
