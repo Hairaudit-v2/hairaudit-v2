@@ -1518,6 +1518,14 @@
           "backToCase": "← Back to case",
           "title": "About your procedure",
           "subtitle": "These questions help us understand your surgery, healing, and results.",
+          "preSurgery": {
+            "title": "About Your Hair Restoration Goals",
+            "subtitle": "These questions help us understand your hair-loss history, goals, and any proposed clinic plan."
+          },
+          "postSurgery": {
+            "title": "About your procedure",
+            "subtitle": "These questions help us understand your surgery, healing, and results."
+          },
           "poweredBy": "",
           "visionModel": ""
         },
@@ -1550,6 +1558,14 @@
         "sections": {
           "clinic_procedure": {
             "title": "Clinic & Procedure Details"
+          },
+          "goals_planning": {
+            "title": "Your Hair Restoration Goals",
+            "description": "Tell us about your hair-loss history and what you hope a transplant could achieve."
+          },
+          "proposed_clinic_plan": {
+            "title": "Proposed Clinic Plan (optional)",
+            "description": "If a clinic has already shared a plan or quote, you can add those details here. Everything in this section is optional."
           },
           "transparency": {
             "title": "Transparency & Process"

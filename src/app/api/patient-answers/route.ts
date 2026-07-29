@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { caseSubmitSurfaceOpen } from "@/lib/patient/caseSubmitStatus";
+import { normalizeIntakeFormData } from "@/lib/intake/normalizeIntakeFormData";
+import {
+  resolveCanonicalPatientReviewPathway,
+  validatePathwayMinimalIntake,
+} from "@/lib/patient/patientPathwayQuestionnaire";
 
 // GET ?caseId=... — load patient answers (v2 preferred, legacy fallback)
 export async function GET(req: Request) {
@@ -17,7 +22,7 @@ export async function GET(req: Request) {
     const supabase = createSupabaseAdminClient();
     const { data: c } = await supabase
       .from("cases")
-      .select("id, user_id, patient_id")
+      .select("id, user_id, patient_id, patient_review_pathway")
       .eq("id", caseId)
       .maybeSingle();
 
@@ -42,7 +47,10 @@ export async function GET(req: Request) {
         .limit(1)
         .maybeSingle();
       const patientAnswers = (fallback?.data?.summary as Record<string, unknown> | undefined)?.patient_answers as Record<string, unknown> | null ?? null;
-      return NextResponse.json({ patientAnswers });
+      return NextResponse.json({
+        patientAnswers,
+        patientReviewPathway: c.patient_review_pathway ?? null,
+      });
     }
     if (reportErr) throw reportErr;
 
@@ -53,7 +61,10 @@ export async function GET(req: Request) {
     } else {
       patientAnswers = (report?.summary as Record<string, unknown> | undefined)?.patient_answers as Record<string, unknown> | null ?? null;
     }
-    return NextResponse.json({ patientAnswers });
+    return NextResponse.json({
+      patientAnswers,
+      patientReviewPathway: c.patient_review_pathway ?? null,
+    });
   } catch (e: unknown) {
     const errMsg = (e as Error)?.message ?? "Server error";
     console.error("patient-answers GET:", errMsg, e);
@@ -76,7 +87,7 @@ export async function POST(req: Request) {
 
     const { data: c } = await supabase
       .from("cases")
-      .select("id, user_id, patient_id, status, submitted_at")
+      .select("id, user_id, patient_id, status, submitted_at, patient_review_pathway")
       .eq("id", caseId)
       .maybeSingle();
 
@@ -94,7 +105,34 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing patientAnswers object" }, { status: 400 });
     }
 
+    // Pathway cannot be changed via request body / stale client state.
+    if (
+      body?.patientReviewPathway != null ||
+      body?.pathway != null ||
+      (raw as Record<string, unknown>).patient_review_pathway != null
+    ) {
+      return NextResponse.json(
+        { error: "patient_review_pathway cannot be set via questionnaire payload" },
+        { status: 400 }
+      );
+    }
+
+    const pathway = resolveCanonicalPatientReviewPathway(c.patient_review_pathway);
+    if (!pathway) {
+      return NextResponse.json(
+        { error: "Case is missing a valid patient_review_pathway" },
+        { status: 422 }
+      );
+    }
+
     const patientAnswers = raw as Record<string, unknown>;
+    const flat = normalizeIntakeFormData(patientAnswers);
+
+    // Soft validate when client marks continue/complete; drafts may still save partial answers.
+    if (body?.validateMinimal === true) {
+      const err = validatePathwayMinimalIntake(pathway, flat);
+      if (err) return NextResponse.json({ error: err }, { status: 400 });
+    }
 
     const { data: existing } = await supabase
       .from("reports")
@@ -128,7 +166,7 @@ export async function POST(req: Request) {
       } else if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
-      return NextResponse.json({ ok: true, reportId: existing.id });
+      return NextResponse.json({ ok: true, reportId: existing.id, patientReviewPathway: pathway });
     }
 
     const insertPayload: Record<string, unknown> = {
@@ -159,12 +197,16 @@ export async function POST(req: Request) {
           .select("id")
           .maybeSingle();
         if (fallback.error) return NextResponse.json({ error: fallback.error.message }, { status: 500 });
-        return NextResponse.json({ ok: true, reportId: fallback.data?.id });
+        return NextResponse.json({
+          ok: true,
+          reportId: fallback.data?.id,
+          patientReviewPathway: pathway,
+        });
       }
       return NextResponse.json({ error: insErr.message }, { status: 500 });
     }
     if (!created) return NextResponse.json({ error: "Insert failed" }, { status: 500 });
-    return NextResponse.json({ ok: true, reportId: created.id });
+    return NextResponse.json({ ok: true, reportId: created.id, patientReviewPathway: pathway });
   } catch (e: unknown) {
     const errMsg = (e as Error)?.message ?? "Server error";
     console.error("patient-answers POST:", errMsg, e);

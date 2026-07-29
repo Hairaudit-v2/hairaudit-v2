@@ -7,14 +7,21 @@ import CaseNotFoundRecovery from "@/components/case/CaseNotFoundRecovery";
 import { getTranslation } from "@/lib/i18n/getTranslation";
 import type { TranslationKey } from "@/lib/i18n/translationKeys";
 import { resolvePublicSeoLocale } from "@/lib/seo/localeMetadata";
-import { resolvePatientReviewPathwayFromCase } from "@/lib/patient/patientReviewPathway";
+import {
+  getPathwayQuestionnairePageCopy,
+  INVALID_PATIENT_REVIEW_PATHWAY_QUESTIONNAIRE_ERROR,
+  resolveQuestionnairePathwayIgnoringClientOverrides,
+} from "@/lib/patient/patientPathwayQuestionnaire";
 
 export default async function Page({
   params,
+  searchParams,
 }: {
   params: Promise<{ caseId: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { caseId } = await params;
+  const query = searchParams ? await searchParams : {};
   const supabase = await createSupabaseAuthServerClient();
   const {
     data: { user },
@@ -41,7 +48,42 @@ export default async function Page({
   const seoLocale = await resolvePublicSeoLocale();
   const tr = (key: TranslationKey) => getTranslation(key, seoLocale);
 
-  const patientReviewPathway = resolvePatientReviewPathwayFromCase(c);
+  // Exclusive source of truth: cases.patient_review_pathway. URL/query ignored.
+  const patientReviewPathway = resolveQuestionnairePathwayIgnoringClientOverrides({
+    caseRow: c,
+    urlPathway: query.pathway ?? query.patient_review_pathway,
+  });
+
+  if (!patientReviewPathway) {
+    return (
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+        <Link
+          href={`/cases/${caseId}`}
+          className="inline-flex items-center text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
+        >
+          {tr("dashboard.patient.forms.questionsPage.backToCase")}
+        </Link>
+        <div className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 p-6">
+          <h1 className="text-lg font-semibold text-rose-900">Unable to load questionnaire</h1>
+          <p className="mt-2 text-sm text-rose-800">
+            {INVALID_PATIENT_REVIEW_PATHWAY_QUESTIONNAIRE_ERROR}
+          </p>
+          <Link
+            href="/dashboard/patient"
+            className="mt-4 inline-flex text-sm font-semibold text-rose-900 underline underline-offset-4"
+          >
+            Return to dashboard
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const pageCopy = getPathwayQuestionnairePageCopy(patientReviewPathway);
+  const titleTr = tr(pageCopy.titleKey as TranslationKey);
+  const subtitleTr = tr(pageCopy.subtitleKey as TranslationKey);
+  const title = titleTr === pageCopy.titleKey ? pageCopy.title : titleTr;
+  const subtitle = subtitleTr === pageCopy.subtitleKey ? pageCopy.subtitle : subtitleTr;
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
@@ -57,12 +99,8 @@ export default async function Page({
         <div className="pointer-events-none absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-emerald-500/10 blur-3xl" />
 
         <div className="relative">
-          <h1 className="text-2xl sm:text-3xl font-semibold text-white">
-            {tr("dashboard.patient.forms.questionsPage.title")}
-          </h1>
-          <p className="mt-2 text-sm sm:text-base text-slate-200/70 max-w-2xl">
-            {tr("dashboard.patient.forms.questionsPage.subtitle")}
-          </p>
+          <h1 className="text-2xl sm:text-3xl font-semibold text-white">{title}</h1>
+          <p className="mt-2 text-sm sm:text-base text-slate-200/70 max-w-2xl">{subtitle}</p>
         </div>
       </section>
 
@@ -79,4 +117,3 @@ export default async function Page({
     </div>
   );
 }
-

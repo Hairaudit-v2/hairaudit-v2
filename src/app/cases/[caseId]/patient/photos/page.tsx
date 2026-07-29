@@ -4,6 +4,7 @@ import PhotoUploader from "@/components/photos/PhotoUploader";
 import { buildPatientLoginHref } from "@/lib/auth/patientLogin";
 import { loadPatientPhotoStageGuidanceForCase } from "@/lib/patientPhoto/loadPatientPhotoStageGuidanceForCase";
 import { resolvePatientReviewPathwayFromCase } from "@/lib/patient/patientReviewPathway";
+import { getQuestionsHrefAfterRequiredImages } from "@/lib/patient/patientPathwayQuestionnaire";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 
 type PageProps = { params: Promise<{ caseId: string }> };
@@ -55,7 +56,7 @@ export default async function Page({ params }: PageProps) {
         caseStatus={c.status ?? "draft"}
         submittedAt={c.submitted_at}
         backHref="/"
-        nextHref={`/cases/${caseId}/patient/questions`}
+        nextHref={getQuestionsHrefAfterRequiredImages(caseId)}
         nextLabel="Continue to questions"
         patientPhotoStageGuidance={patientPhotoStageGuidance}
         patientReviewPathway={patientReviewPathway}

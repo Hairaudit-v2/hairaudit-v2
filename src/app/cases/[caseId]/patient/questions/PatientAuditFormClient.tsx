@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { formatTemplate } from "@/lib/i18n/formatTemplate";
 import type { TranslateFn } from "@/lib/i18n/getTranslation";
-import { PATIENT_AUDIT_SECTIONS } from "@/lib/patientAuditForm";
 import type { PatientFormQuestion } from "@/lib/patientAuditForm";
 import {
   type IntakeFormData,
@@ -25,10 +24,9 @@ import {
 import { caseSubmitSurfaceOpen } from "@/lib/patient/caseSubmitStatus";
 import type { PatientReviewPathway } from "@/lib/patient/patientReviewPathway";
 import {
-  DEFAULT_PATIENT_REVIEW_PATHWAY,
-  isIntakeSectionVisibleForPathway,
-  PATHWAY_MINIMAL_REQUIRED_FIELD_IDS,
-} from "@/lib/patient/patientReviewPathway";
+  filterIntakeSectionsForPathway,
+  getMissingPathwayMinimalRequiredFields,
+} from "@/lib/patient/patientPathwayQuestionnaire";
 
 function isNonEmptyObject(v: unknown): v is Record<string, unknown> {
   return !!v && typeof v === "object" && !Array.isArray(v) && Object.keys(v as Record<string, unknown>).length > 0;
@@ -58,7 +56,7 @@ export default function PatientAuditFormClient({
   submittedAt,
   minimal = false,
   nextHref,
-  patientReviewPathway = DEFAULT_PATIENT_REVIEW_PATHWAY,
+  patientReviewPathway,
 }: {
   caseId: string;
   caseStatus: string;
@@ -67,7 +65,8 @@ export default function PatientAuditFormClient({
   minimal?: boolean;
   /** Destination after the questions step (defaults to the photo-upload page). */
   nextHref?: string;
-  patientReviewPathway?: PatientReviewPathway;
+  /** Required — resolved server-side from cases.patient_review_pathway only. */
+  patientReviewPathway: PatientReviewPathway;
 }) {
   const glassCard =
     "rounded-2xl border border-slate-300 bg-white shadow-sm";
@@ -85,16 +84,10 @@ export default function PatientAuditFormClient({
 
   const visibleSections = useMemo(
     () =>
-      minimal
-        ? PATIENT_AUDIT_SECTIONS.filter((s) =>
-            isIntakeSectionVisibleForPathway(s.id, patientReviewPathway, { minimal: true })
-          )
-        : PATIENT_AUDIT_SECTIONS.filter(
-            (s) =>
-              isIntakeSectionVisibleForPathway(s.id, patientReviewPathway, {
-                includeAdvanced: showAdvanced,
-              }) && (!s.advanced || showAdvanced)
-          ),
+      filterIntakeSectionsForPathway(patientReviewPathway, {
+        minimal,
+        includeAdvanced: showAdvanced,
+      }),
     [showAdvanced, minimal, patientReviewPathway]
   );
   const STEPS = useMemo(
@@ -172,16 +165,12 @@ export default function PatientAuditFormClient({
     const payload = toNestedForApi(formData) as Record<string, unknown>;
 
     if (minimal) {
-      const minimalRequiredFields = PATHWAY_MINIMAL_REQUIRED_FIELD_IDS[patientReviewPathway];
-      const missing = minimalRequiredFields.filter((id) => {
-        const v = formData[id];
-        return v === undefined || v === null || (typeof v === "string" && v.trim() === "");
-      });
+      const missing = getMissingPathwayMinimalRequiredFields(patientReviewPathway, formData);
       if (missing.length > 0) {
         setMessage({ type: "err", text: t("dashboard.patient.forms.intake.minimalMissingRequired") });
         return;
       }
-    } else {
+    } else if (patientReviewPathway === "post_surgery") {
       const normalized = normalizePatientV2ForValidation(payload);
       if (normalized.pain_level === undefined || normalized.pain_level === null) {
         (payload as Record<string, unknown>).pain_level = 1;
@@ -198,7 +187,7 @@ export default function PatientAuditFormClient({
       const res = await fetch(`/api/patient-answers?caseId=${caseId}`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ patientAnswers: payload }),
+        body: JSON.stringify({ patientAnswers: payload, validateMinimal: true }),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json?.error ?? t("forms.shared.saveFailedGeneric"));
@@ -250,7 +239,7 @@ export default function PatientAuditFormClient({
     <div className="max-w-4xl space-y-6">
       <header>
         <p className="text-sm text-slate-900">{t("dashboard.patient.forms.intake.introLine")}</p>
-        {!minimal && (
+        {!minimal && patientReviewPathway === "post_surgery" && (
         <div className={`mt-3 p-4 ${glassCard}`}>
           <div className="flex items-start justify-between gap-4">
             <div>

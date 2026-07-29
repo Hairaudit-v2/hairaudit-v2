@@ -202,10 +202,23 @@ describe("patientReviewPathway", () => {
       isIntakeSectionVisibleForPathway("results", "pre_surgery", { minimal: false }),
       false
     );
-    assert.deepStrictEqual(
-      PATHWAY_MINIMAL_REQUIRED_FIELD_IDS.pre_surgery,
-      ["clinic_country", "procedure_type"]
+    assert.strictEqual(
+      isIntakeSectionVisibleForPathway("goals_planning", "pre_surgery", { minimal: true }),
+      true
     );
+    assert.strictEqual(
+      isIntakeSectionVisibleForPathway("clinic_procedure", "pre_surgery", { minimal: true }),
+      false
+    );
+    assert.deepStrictEqual(PATHWAY_MINIMAL_REQUIRED_FIELD_IDS.pre_surgery, [
+      "hair_loss_history",
+      "hair_loss_pattern_self",
+      "current_treatments",
+      "transplant_goals",
+      "priority_areas",
+      "expectations",
+    ]);
+    assert.ok(!PATHWAY_MINIMAL_REQUIRED_FIELD_IDS.pre_surgery.includes("procedure_date"));
   });
 
   it("runs pathway intelligence bundle without throwing", () => {

@@ -37,8 +37,12 @@ function post(
 }
 
 const PRE_INTAKE_BASE = {
-  clinic_country: "uk",
-  procedure_type: "fue",
+  hair_loss_history: "3_5_years",
+  hair_loss_pattern_self: ["hairline", "crown"],
+  current_treatments: "minoxidil",
+  transplant_goals: "Restore a natural hairline and improve frontal density",
+  priority_areas: ["hairline", "temples"],
+  expectations: "A natural-looking result that ages well over time",
 } as const;
 
 const POST_INTAKE_BASE = {
@@ -84,7 +88,7 @@ export const DEMO_QA_PRE_SURGERY_SCENARIOS: readonly DemoQaScenario[] = [
     extraRecommendedUploadKeys: ["preop_hairline_closeup"],
   }),
   pre(2, "donor_limitations", "Donor limitations", {
-    intakeAnswers: { ...PRE_INTAKE_BASE, procedure_type: "fut" },
+    intakeAnswers: { ...PRE_INTAKE_BASE, proposed_technique: "fut" },
     forensic: {
       overallScore: 58,
       sectionScores: { donor_management: 48, hairline_design: 62, naturalness_and_aesthetics: 60 },
@@ -231,7 +235,11 @@ export const DEMO_QA_PRE_SURGERY_SCENARIOS: readonly DemoQaScenario[] = [
     extraRecommendedUploadKeys: ["preop_hairline_closeup"],
   }),
   pre(10, "further_professional_review", "Further professional review", {
-    intakeAnswers: { ...PRE_INTAKE_BASE, clinic_country: "other", clinic_country_other: "Portugal" },
+    intakeAnswers: {
+      ...PRE_INTAKE_BASE,
+      clinic_country: "other",
+      clinic_country_other: "Portugal",
+    },
     forensic: {
       overallScore: 55,
       sectionScores: { donor_management: 50, hairline_design: 52, naturalness_and_aesthetics: 54 },

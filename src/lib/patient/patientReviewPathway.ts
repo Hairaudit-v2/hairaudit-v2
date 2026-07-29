@@ -285,9 +285,12 @@ export const PATHWAY_REQUIRED_AUDIT_KEYS: Record<PatientReviewPathway, readonly 
   ],
 };
 
-/** Full intake section ids shown when advanced questionnaire is enabled. */
+/**
+ * Full intake section ids shown when advanced questionnaire is enabled.
+ * Canonical source: `patientPathwayQuestionnaire.ts` (HA-PATHWAY-FIX).
+ */
 export const PATHWAY_INTAKE_SECTION_IDS: Record<PatientReviewPathway, readonly string[]> = {
-  pre_surgery: ["clinic_procedure", "transparency", "cost"],
+  pre_surgery: ["goals_planning", "proposed_clinic_plan"],
   post_surgery: [
     "clinic_procedure",
     "transparency",
@@ -298,9 +301,20 @@ export const PATHWAY_INTAKE_SECTION_IDS: Record<PatientReviewPathway, readonly s
   ],
 };
 
-/** Minimum friction-free intake fields on first submit. */
+/**
+ * Minimum friction-free intake fields on first submit.
+ * Pre-surgery must not require a procedure date.
+ * Canonical source: `patientPathwayQuestionnaire.ts` (HA-PATHWAY-FIX).
+ */
 export const PATHWAY_MINIMAL_REQUIRED_FIELD_IDS: Record<PatientReviewPathway, readonly string[]> = {
-  pre_surgery: ["clinic_country", "procedure_type"],
+  pre_surgery: [
+    "hair_loss_history",
+    "hair_loss_pattern_self",
+    "current_treatments",
+    "transplant_goals",
+    "priority_areas",
+    "expectations",
+  ],
   post_surgery: [
     "clinic_name",
     "clinic_country",
@@ -312,7 +326,7 @@ export const PATHWAY_MINIMAL_REQUIRED_FIELD_IDS: Record<PatientReviewPathway, re
 
 /** Minimal intake section ids for the friction-free marketing funnel. */
 export const PATHWAY_MINIMAL_SECTION_IDS: Record<PatientReviewPathway, readonly string[]> = {
-  pre_surgery: ["clinic_procedure"],
+  pre_surgery: ["goals_planning"],
   post_surgery: ["clinic_procedure"],
 };
 

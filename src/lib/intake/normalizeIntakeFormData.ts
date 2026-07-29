@@ -4,13 +4,17 @@
  */
 
 import { PATIENT_AUDIT_SECTIONS } from "@/lib/patientAuditForm";
+import { PATIENT_PRE_SURGERY_SECTIONS } from "@/lib/patient/patientPathwayQuestionnaire";
 
 /** Flat canonical type — all fields at top level, keyed by question id (including dot-path for advanced). */
 export type IntakeFormData = Record<string, unknown>;
 
-/** All field keys from the form definition (basic + advanced). */
-export const INTAKE_FORM_FIELD_KEYS: string[] = PATIENT_AUDIT_SECTIONS.flatMap((s) =>
-  s.questions.map((q) => q.id)
+/** All field keys from post- and pre-surgery form definitions (basic + advanced). */
+export const INTAKE_FORM_FIELD_KEYS: string[] = Array.from(
+  new Set([
+    ...PATIENT_AUDIT_SECTIONS.flatMap((s) => s.questions.map((q) => q.id)),
+    ...PATIENT_PRE_SURGERY_SECTIONS.flatMap((s) => s.questions.map((q) => q.id)),
+  ])
 );
 
 /** Keys for advanced sections only (for completion stats). */
