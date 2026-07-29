@@ -10,7 +10,7 @@ import ClaimInvitePanel from "@/components/nexus/ClaimInvitePanel";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { getCanonicalAppUrl, buildAuthRedirectUrl, sanitizeNextPath } from "@/lib/auth/redirects";
 import { trackAuthFunnel } from "@/lib/analytics/authFunnel";
-import { resolvePostLoginRedirectPath } from "@/lib/auth/patientLogin";
+import { isPermanentLoginSessionUser, resolvePostLoginRedirectPath } from "@/lib/auth/patientLogin";
 import { completeAuthWithOptionalClaim } from "@/lib/nexus/claimAccountAfterAuth";
 import {
   buildAuthHrefWithClaimToken,
@@ -81,6 +81,12 @@ function LoginPageContent() {
     let mounted = true;
     supabase.auth.getSession().then(async ({ data }) => {
       if (!mounted || !data.session) return;
+      // HA-AUTH-HANDOFF-FIX: anonymous / email-less draft sessions are not permanent
+      // accounts. Auto-redirecting them to /dashboard/patient caused "Sign out" +
+      // "Please sign in" contradiction and stranded Pre-Surgery Review handoffs.
+      if (!isPermanentLoginSessionUser(data.session.user)) {
+        return;
+      }
       const defaultRedirect = await resolvePostLoginRedirectPath(supabase, loginNextPath);
       const claimResult = await completeAuthWithOptionalClaim({
         queryToken: claimToken,

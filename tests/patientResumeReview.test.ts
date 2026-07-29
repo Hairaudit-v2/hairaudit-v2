@@ -81,9 +81,10 @@ describe("patientResumeReview", () => {
     const ctx = ctxFor({ uploads, patientAnswers });
     assert.strictEqual(ctx.step, "contact_pending");
     const model = buildPatientResumeReviewViewModel({ contexts: [ctx] });
-    assert.strictEqual(model.primaryCtaLabel, "Send My Report");
+    assert.strictEqual(model.primaryCtaLabel, "Continue My Review");
     assert.match(model.primaryCtaHref, /\/patient\/contact$/);
     assert.match(model.stepLabel, /Step 3 of 4/);
+    assert.match(model.reassurance, /secure account/i);
   });
 
   it("returns processing for submitted cases without a delivered report", () => {

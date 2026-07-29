@@ -2,7 +2,12 @@ import Link from "next/link";
 import Image from "next/image";
 import SignOutButton from "./SignOutButton";
 
-export default function DashboardHeader() {
+export default function DashboardHeader({
+  isAnonymousSession = false,
+}: {
+  /** HA-AUTH-HANDOFF-FIX — anonymous draft sessions are not permanent accounts. */
+  isAnonymousSession?: boolean;
+}) {
   const isDev = process.env.NODE_ENV === "development";
 
   return (
@@ -29,7 +34,7 @@ export default function DashboardHeader() {
                 Dev: Switch role
               </Link>
             )}
-            <SignOutButton />
+            <SignOutButton label={isAnonymousSession ? "Exit" : undefined} />
           </div>
         </div>
       </div>

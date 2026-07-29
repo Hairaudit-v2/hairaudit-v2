@@ -1,9 +1,22 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { browserPathAfterLoginSession } from "@/lib/academy/postLoginRedirect";
 import { sanitizeNextPath } from "@/lib/auth/redirects";
 
 /** Canonical patient login surface — never `/login/auditor`. */
 export const PATIENT_LOGIN_PATH = "/login";
+
+/**
+ * Permanent sessions may auto-redirect from /login. Anonymous / email-less
+ * draft sessions must not — they need an explicit sign-in for existing accounts.
+ */
+export function isPermanentLoginSessionUser(
+  user: Pick<User, "email" | "is_anonymous" | "app_metadata"> | null | undefined
+): boolean {
+  if (!user) return false;
+  if (user.is_anonymous === true) return false;
+  if (String(user.app_metadata?.provider ?? "") === "anonymous") return false;
+  return Boolean(String(user.email ?? "").trim());
+}
 
 /**
  * Build `/login` with optional return path for patient funnel continuity.

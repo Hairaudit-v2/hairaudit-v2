@@ -3,6 +3,7 @@ import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import DashboardHeader from "@/components/DashboardHeader";
 import { isBetaAllowedUser } from "@/lib/auth/betaAccess";
 import { buildLoginRedirectFromRequest } from "@/lib/auth/loginRedirectFromRequest";
+import { isAnonymousAuthUser } from "@/lib/patient/intakeCaseOwnership";
 
 export default async function CasesLayout({
   children,
@@ -15,9 +16,11 @@ export default async function CasesLayout({
   if (!user) redirect(await buildLoginRedirectFromRequest());
   if (!(await isBetaAllowedUser(user))) redirect("/beta-access-message");
 
+  const isAnonymousSession = isAnonymousAuthUser(user);
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
-      <DashboardHeader />
+      <DashboardHeader isAnonymousSession={isAnonymousSession} />
       <main className="flex-1 py-6 sm:py-8">{children}</main>
     </div>
   );

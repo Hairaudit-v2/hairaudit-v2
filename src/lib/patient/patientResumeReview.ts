@@ -204,10 +204,16 @@ function copyForStep(
       return {
         headline: pathway ? pathwayHeadline(pathway) : "Continue Your Review",
         subtext: "You are a few steps away from receiving your independent review.",
-        stepLabel: "Step 3 of 4 — Confirm where to send your report",
-        primaryCtaLabel: "Send My Report",
+        stepLabel:
+          pathway === "pre_surgery"
+            ? "Step 3 of 4 — Confirm your account"
+            : "Step 3 of 4 — Confirm your account",
+        primaryCtaLabel: "Continue My Review",
         primaryCtaHref: `/cases/${caseId}/patient/contact`,
-        reassurance: "We will email your report as soon as it is ready.",
+        reassurance:
+          pathway === "pre_surgery"
+            ? "Your secure account keeps your photos, answers and Pre-Surgery Review Report together."
+            : "Your secure account keeps your photos, answers and review report together.",
       };
     case "processing":
       return {

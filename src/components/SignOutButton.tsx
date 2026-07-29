@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useI18n } from "@/components/i18n/I18nProvider";
 
-export default function SignOutButton() {
+export default function SignOutButton({ label }: { label?: string }) {
   const router = useRouter();
   const { t } = useI18n();
 
@@ -20,7 +20,7 @@ export default function SignOutButton() {
       onClick={signOut}
       className="text-sm font-medium text-slate-300 hover:text-amber-400 transition-colors"
     >
-      {t("dashboard.shared.signOut")}
+      {label ?? t("dashboard.shared.signOut")}
     </button>
   );
 }
