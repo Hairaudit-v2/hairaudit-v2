@@ -17,7 +17,7 @@ import {
 } from "@/lib/patient/fetchPatientCasesForPostOpGuide";
 import { isPatientReportDelivered, resolvePatientReportDeliveryPhase } from "@/lib/patient/patientProcessingView";
 import { shouldShowPatientDashboardAnalytics } from "@/lib/patient/patientResumeReview";
-import { PATHWAY_CHOOSER_HREF } from "@/lib/patient/patientReviewPathway";
+import { PATHWAY_CHOOSER_HREF, resolvePatientReviewPathwayFromCase } from "@/lib/patient/patientReviewPathway";
 import PatientDashboardHliGuideCard from "@/components/patient/PatientDashboardHliGuideCard";
 import {
   loadPatientInfoRequestsForCases,
@@ -84,7 +84,16 @@ export default async function PatientDashboardPage() {
 
   let graftIntegrityInitial: unknown = null;
   let graftIntegrityRolloutPending = false;
-  if (latestSubmittedCase?.id && latestSubmittedDelivered && shouldShowPatientDashboardAnalytics(resumeModel.step)) {
+  const latestSubmittedPathway = latestSubmittedCase
+    ? resolvePatientReviewPathwayFromCase(latestSubmittedCase)
+    : null;
+  // HA-PATHWAY-FIX-2 — Graft Integrity is post-surgery only; never surface for pre_surgery.
+  if (
+    latestSubmittedCase?.id &&
+    latestSubmittedDelivered &&
+    latestSubmittedPathway === "post_surgery" &&
+    shouldShowPatientDashboardAnalytics(resumeModel.step)
+  ) {
     const giiRes = await admin
       .from("graft_integrity_estimates")
       .select(

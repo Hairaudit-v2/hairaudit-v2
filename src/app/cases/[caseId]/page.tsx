@@ -41,6 +41,7 @@ import LatestReportCard from "@/components/reports/LatestReportCard";
 import InviteClinicContributionCard from "@/components/case/InviteClinicContributionCard";
 import ForensicCaseTimelineViewer from "@/components/reports/ForensicCaseTimelineViewer";
 import PatientNextActionPanel from "@/components/patient/PatientNextActionPanel";
+import PatientPreSurgeryCaseDashboard from "@/components/patient/PatientPreSurgeryCaseDashboard";
 import {
   extractPatientInfoRequestFromReportSummary,
   isCaseAwaitingPatientInformation,
@@ -53,6 +54,13 @@ import {
   shouldShowPatientReportContent,
 } from "@/lib/patient/patientProcessingView";
 import { buildPatientTrustStatusDisplay } from "@/lib/patient/patientTrustStatusTranslator";
+import {
+  buildPatientCaseDashboardViewModel,
+  INVALID_PATIENT_REVIEW_PATHWAY_DASHBOARD_ERROR,
+  resolvePatientDashboardPathwayFromCase,
+  shouldMountPatientPostSurgeryChrome,
+  shouldMountPatientPreSurgeryChrome,
+} from "@/lib/patient/patientCaseDashboard";
 import { BENCHMARKING_GLOBAL_STANDARDS } from "@/lib/benchmarkingCopy";
 import CaseNotFoundRecovery from "@/components/case/CaseNotFoundRecovery";
 import EvidenceCoveragePanel from "@/components/audit/EvidenceCoveragePanel";
@@ -133,6 +141,7 @@ import PostSurgeryAuditReportShell from "@/components/patient/PostSurgeryAuditRe
 import PreSurgeryPlanningReportShell from "@/components/patient/PreSurgeryPlanningReportShell";
 import { resolvePatientSafeSummaryNarrativePresentation } from "@/lib/reports/patientSafeSummaryNarrativeTranslation";
 import { resolvePatientReviewPathwayFromCase } from "@/lib/patient/patientReviewPathway";
+import type { PatientReviewPathway } from "@/lib/patient/patientReviewPathway";
 import { resolvePublicSeoLocale } from "@/lib/seo/localeMetadata";
 
 function scoreChipClass(score: number | null | undefined) {
@@ -922,7 +931,33 @@ export default async function Page({
   const patientReportSummary = buildPatientSafeReportSummary(latestSummary, {
     patientReviewPathway: c.patient_review_pathway,
   });
-  const patientReviewPathway = resolvePatientReviewPathwayFromCase(c);
+  /** Patient dashboard: fail closed. Professionals: legacy default for older rows. */
+  const patientDashboardPathway = isPatientForCase
+    ? resolvePatientDashboardPathwayFromCase(c)
+    : null;
+  const patientReviewPathway: PatientReviewPathway =
+    patientDashboardPathway ?? resolvePatientReviewPathwayFromCase(c);
+  const patientPathwayInvalid = isPatientForCase && patientDashboardPathway == null;
+  const mountPatientPreSurgeryChrome = shouldMountPatientPreSurgeryChrome({
+    isPatientForCase,
+    pathway: patientDashboardPathway,
+  });
+  const mountPatientPostSurgeryChrome = shouldMountPatientPostSurgeryChrome({
+    isPatientForCase,
+    pathway: patientDashboardPathway ?? (isPatientForCase ? null : patientReviewPathway),
+    patientHidesForensicWorkspace,
+  });
+  const patientCaseDashboardModel = isPatientForCase
+    ? buildPatientCaseDashboardViewModel({
+        caseId: c.id,
+        caseTitle: c.title,
+        caseStatus: status,
+        patientReviewPathway: c.patient_review_pathway,
+        uploads: (uploads ?? []).map((u) => ({ type: (u as { type?: string }).type ?? "" })),
+        patientAnswers: reportPatientAnswers as Record<string, unknown> | null,
+        hasReportPdf,
+      })
+    : null;
   const postSurgeryAuditReport =
     patientReviewPathway === "post_surgery" && latestSummary
       ? resolvePostSurgeryAuditReport(latestSummary as Record<string, unknown>, {
@@ -1303,6 +1338,71 @@ export default async function Page({
           manualAuditBanner={auditorManualAuditBanner}
           infoRequestPending={isCaseAwaitingPatientInformation(status)}
         />
+      ) : patientPathwayInvalid ? (
+        <section className="mt-6 rounded-2xl border border-amber-300/30 bg-amber-950/40 p-6">
+          <h1 className="text-xl font-semibold text-white">Review pathway unavailable</h1>
+          <p className="mt-2 text-sm text-amber-100/90">{INVALID_PATIENT_REVIEW_PATHWAY_DASHBOARD_ERROR}</p>
+          <Link
+            href="/dashboard/patient"
+            className="mt-4 inline-flex items-center rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-950 bg-gradient-to-r from-cyan-300 to-emerald-300"
+          >
+            Return to dashboard
+          </Link>
+        </section>
+      ) : mountPatientPreSurgeryChrome && patientCaseDashboardModel ? (
+        <PatientPreSurgeryCaseDashboard
+          model={patientCaseDashboardModel}
+          caseId={c.id}
+          caseStatus={status}
+          submittedAt={c.submitted_at ?? null}
+          createdAt={c.created_at ?? null}
+          updatedAt={c.submitted_at ?? c.created_at ?? null}
+          statusDisplayLabel={statusDisplayLabel}
+          statusPillClass={statusPill}
+          pdfPath={(latestReport as { pdf_path?: string } | null)?.pdf_path}
+          reportId={latestReport?.id}
+          notificationEmail={isPatientForCase ? user.email : undefined}
+          patientInfoRequest={patientInfoRequestForCase}
+          uploads={(uploads ?? []).map((u) => ({ type: (u as { type?: string }).type ?? "" }))}
+          reportReady={Boolean(patientShowReportContent && latestReport && (preSurgeryPlanningReport || patientReportSummary))}
+        >
+          {patientShowReportContent && latestReport && preSurgeryPlanningReport ? (
+            <PreSurgeryPlanningReportShell
+              report={preSurgeryPlanningReport}
+              statusLabel={statusDisplayLabel}
+              translatedNarrativeActive={patientSafeSummaryNarrative.translatedNarrativeActive}
+              requestedLocale={seoLocale}
+              fallbackReason={patientSafeSummaryNarrative.fallbackReason}
+              uploads={(uploads ?? []) as Array<{
+                id: string;
+                type: string;
+                storage_path: string;
+                metadata?: Record<string, unknown> | null;
+              }>}
+              caseId={c.id}
+              clinicalHistory={clinicalHistorySnapshot}
+              imageLimitedAssessment={imageLimitedForensicNotice}
+              documentAssistedAssessment={Boolean(
+                (forensic as { documentAssistedAssessment?: boolean } | null)?.documentAssistedAssessment
+              )}
+            />
+          ) : null}
+          {patientShowReportContent &&
+          latestReport &&
+          !preSurgeryPlanningReport ? (
+            <PatientSafeSummaryShell
+              statusLabel={statusDisplayLabel}
+              observations={patientSafeSummaryNarrative.observations}
+              reportSummary={patientReportSummary}
+              translatedNarrativeActive={patientSafeSummaryNarrative.translatedNarrativeActive}
+              requestedLocale={seoLocale}
+              fallbackReason={patientSafeSummaryNarrative.fallbackReason}
+            />
+          ) : null}
+          {patientShowReportContent && patientIntelligenceTranslation?.hasObservations && (
+            <PatientIntelligenceObservations translation={patientIntelligenceTranslation} />
+          )}
+        </PatientPreSurgeryCaseDashboard>
       ) : (
         <>
       <section className="relative mt-6 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-6">
@@ -1348,33 +1448,14 @@ export default async function Page({
               notificationEmail={isPatientForCase ? user.email : undefined}
               submittedAt={c.submitted_at ?? null}
               patientInfoRequest={patientInfoRequestForCase}
+              patientReviewPathway={patientDashboardPathway ?? patientReviewPathway}
+              dashboardNextAction={patientCaseDashboardModel?.nextAction ?? null}
             />
           )}
 
           {patientShowReportContent && latestReport && postSurgeryAuditReport ? (
             <PostSurgeryAuditReportShell
               report={postSurgeryAuditReport}
-              statusLabel={statusDisplayLabel}
-              translatedNarrativeActive={patientSafeSummaryNarrative.translatedNarrativeActive}
-              requestedLocale={seoLocale}
-              fallbackReason={patientSafeSummaryNarrative.fallbackReason}
-              uploads={(uploads ?? []) as Array<{
-                id: string;
-                type: string;
-                storage_path: string;
-                metadata?: Record<string, unknown> | null;
-              }>}
-              caseId={c.id}
-              clinicalHistory={clinicalHistorySnapshot}
-              imageLimitedAssessment={imageLimitedForensicNotice}
-              documentAssistedAssessment={Boolean(
-                (forensic as { documentAssistedAssessment?: boolean } | null)?.documentAssistedAssessment
-              )}
-            />
-          ) : null}
-          {patientShowReportContent && latestReport && preSurgeryPlanningReport ? (
-            <PreSurgeryPlanningReportShell
-              report={preSurgeryPlanningReport}
               statusLabel={statusDisplayLabel}
               translatedNarrativeActive={patientSafeSummaryNarrative.translatedNarrativeActive}
               requestedLocale={seoLocale}
@@ -1422,7 +1503,7 @@ export default async function Page({
             />
           ) : null}
 
-          {!patientHidesForensicWorkspace ? (
+          {mountPatientPostSurgeryChrome ? (
           <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               <div className="rounded-xl border border-white/10 bg-white/5 p-3 transition-colors hover:bg-white/10">
@@ -1484,7 +1565,16 @@ export default async function Page({
               </Link>
               <div className="rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm">
                 <p className="mb-1 text-xs uppercase tracking-wide text-slate-400">{tr("reports.chrome.runAuditLabel")}</p>
-                <SubmitButton caseId={c.id} caseStatus={c.status ?? "draft"} submittedAt={c.submitted_at} compact />
+                <SubmitButton
+                  caseId={c.id}
+                  caseStatus={c.status ?? "draft"}
+                  submittedAt={c.submitted_at}
+                  compact
+                  patientReviewPathway={patientReviewPathway}
+                  submitLabel={patientCaseDashboardModel?.submitLabel}
+                  resubmitLabel={patientCaseDashboardModel?.submitResubmitLabel}
+                  whatHappensNext={patientCaseDashboardModel?.submitWhatHappensNext}
+                />
               </div>
               <div className="rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm">
                 <p className="mb-2 text-xs uppercase tracking-wide text-slate-400">{tr("reports.chrome.downloadReportLabel")}</p>
@@ -1582,7 +1672,7 @@ export default async function Page({
         </div>
       )}
 
-      {!patientHidesForensicWorkspace ? (
+      {mountPatientPostSurgeryChrome ? (
       <section className="mt-6 rounded-2xl border border-slate-700 bg-slate-900 p-6">
         <h2 className="mb-4 text-lg font-semibold text-white">Contribution Paths</h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -1614,11 +1704,12 @@ export default async function Page({
       </section>
       ) : null}
 
-      {isPatientForCase && !patientHidesForensicWorkspace && (
+      {isPatientForCase && mountPatientPostSurgeryChrome && (
         <InviteClinicContributionCard
           caseId={c.id}
           defaultClinicName={clinicLabel === "Unknown clinic" ? "" : clinicLabel}
           defaultDoctorName={doctorLabel}
+          patientReviewPathway="post_surgery"
         />
       )}
 
@@ -1660,7 +1751,7 @@ export default async function Page({
         </div>
       ) : null}
 
-      {!patientHidesForensicWorkspace ? (
+      {mountPatientPostSurgeryChrome ? (
       <section className="mt-6 grid gap-6 lg:grid-cols-2">
         <div className="grid gap-6">
           <EvidenceSummary caseRow={c} uploads={uploads ?? []} />
@@ -1753,7 +1844,7 @@ export default async function Page({
           />
         </div>
       )}
-      {isPatientForCase && !patientHidesForensicWorkspace && (
+      {isPatientForCase && mountPatientPostSurgeryChrome && (
         <div className="mt-6">
           <GraftIntegrityCard caseId={c.id} initialEstimate={graftIntegrityEstimate} />
         </div>
@@ -1791,7 +1882,7 @@ export default async function Page({
         </div>
       ) : null}
 
-      {domains.length > 0 && !patientHidesForensicWorkspace && (
+      {domains.length > 0 && mountPatientPostSurgeryChrome && (
         <div className="mt-6">
           {showAuditorReview && latestReport ? (
             <>
@@ -1837,7 +1928,7 @@ export default async function Page({
         </div>
       )}
 
-      {latestReport && !patientHidesForensicWorkspace && (() => {
+      {latestReport && mountPatientPostSurgeryChrome && (() => {
         const latest = latestReport;
         const summary = latest?.summary as Record<string, unknown> | undefined;
         const raw = summary?.doctor_answers as Record<string, unknown> | undefined;
@@ -1892,7 +1983,7 @@ export default async function Page({
         );
       })()}
 
-      {!patientHidesForensicWorkspace ? (
+      {mountPatientPostSurgeryChrome ? (
       <section className="mt-6 rounded-2xl border border-slate-700 bg-slate-900 p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -1927,7 +2018,7 @@ export default async function Page({
       )}
 
       {upErr && <p className="mt-6 text-sm text-rose-300">{upErr.message}</p>}
-      {!patientHidesForensicWorkspace ? (
+      {mountPatientPostSurgeryChrome ? (
       <div className="mt-6">
         <UploadThumbnailGallery
           caseId={c.id}

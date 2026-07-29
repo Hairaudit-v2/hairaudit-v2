@@ -1,12 +1,18 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import type { PatientReviewPathway } from "@/lib/patient/patientReviewPathway";
 
 type Props = {
   caseId: string;
   disabled?: boolean;
   defaultClinicName?: string;
   defaultDoctorName?: string;
+  patientReviewPathway?: PatientReviewPathway | null;
+  title?: string;
+  body?: string;
+  /** Pre-surgery: section is optional and must not block submission. */
+  allowSkip?: boolean;
 };
 
 export default function InviteClinicContributionCard({
@@ -14,14 +20,29 @@ export default function InviteClinicContributionCard({
   disabled = false,
   defaultClinicName = "",
   defaultDoctorName = "",
+  patientReviewPathway = null,
+  title,
+  body,
+  allowSkip = false,
 }: Props) {
+  const isPre = patientReviewPathway === "pre_surgery";
   const [clinicName, setClinicName] = useState(defaultClinicName);
   const [doctorName, setDoctorName] = useState(defaultDoctorName);
   const [clinicEmail, setClinicEmail] = useState("");
   const [doctorEmail, setDoctorEmail] = useState("");
   const [patientConsent, setPatientConsent] = useState(false);
+  const [skipped, setSkipped] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null);
+
+  const heading =
+    title ??
+    (isPre ? "Add a Clinic Quote or Treatment Plan" : "Invite Clinic Contribution");
+  const description =
+    body ??
+    (isPre
+      ? "Optionally upload a quote or proposed treatment plan, or invite a clinic to share proposed technique, graft estimate, surgeon, and treatment details. You can skip this section — it does not block submission."
+      : "Allow HairAudit to contact your clinic or surgeon to request procedural documentation for a more complete independent review of your case.");
 
   const validationError = useMemo(() => {
     if (!patientConsent) return "Please confirm consent before sending a request.";
@@ -47,11 +68,12 @@ export default function InviteClinicContributionCard({
           clinicEmail,
           doctorEmail,
           patientConsent,
+          pathway: patientReviewPathway ?? undefined,
         }),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json?.error ?? "Unable to send contribution request.");
-      setMessage({ type: "ok", text: "Contribution request sent." });
+      setMessage({ type: "ok", text: isPre ? "Clinic invite sent." : "Contribution request sent." });
     } catch (e: unknown) {
       setMessage({ type: "err", text: (e as Error)?.message ?? "Unable to send contribution request." });
     } finally {
@@ -59,16 +81,61 @@ export default function InviteClinicContributionCard({
     }
   };
 
+  if (skipped) {
+    return (
+      <section className="mt-6 rounded-2xl border border-slate-700 bg-slate-900 p-6" data-testid="clinic-contribution-skipped">
+        <h2 className="text-lg font-semibold text-white">{heading}</h2>
+        <p className="mt-2 text-sm text-slate-300">Skipped — you can add this later without blocking submission.</p>
+        <button
+          type="button"
+          className="mt-3 text-sm font-semibold text-cyan-200 hover:text-cyan-100"
+          onClick={() => setSkipped(false)}
+        >
+          Undo skip
+        </button>
+      </section>
+    );
+  }
+
   return (
-    <section className="mt-6 rounded-2xl border border-cyan-500/30 bg-slate-900 p-6">
-      <h2 className="text-lg font-semibold text-white">Invite Clinic Contribution</h2>
-      <p className="mt-2 text-sm text-slate-300">
-        Allow HairAudit to contact your clinic or surgeon to request procedural documentation for a more complete forensic
-        review of your case.
-      </p>
-      <p className="mt-2 text-xs text-cyan-200/90">
-        You can send a contribution request even after your case has been submitted.
-      </p>
+    <section
+      className="mt-6 rounded-2xl border border-cyan-500/30 bg-slate-900 p-6"
+      data-testid={isPre ? "pre-surgery-clinic-contribution" : "invite-clinic-contribution"}
+    >
+      <h2 className="text-lg font-semibold text-white">{heading}</h2>
+      <p className="mt-2 text-sm text-slate-300">{description}</p>
+      {!isPre ? (
+        <p className="mt-2 text-xs text-cyan-200/90">
+          You can send a contribution request even after your case has been submitted.
+        </p>
+      ) : (
+        <p className="mt-2 text-xs text-cyan-200/90">
+          Optional: invite a clinic for proposed technique, graft estimate, surgeon, and treatment details.
+        </p>
+      )}
+
+      {isPre ? (
+        <div className="mt-4">
+          <label className="text-sm text-slate-200">
+            Upload quote or treatment plan (optional)
+            <input
+              type="file"
+              accept="image/*,.pdf,application/pdf"
+              className="mt-1 block w-full text-sm text-slate-300 file:mr-3 file:rounded-lg file:border-0 file:bg-cyan-300/20 file:px-3 file:py-1.5 file:text-cyan-100"
+              disabled={disabled || submitting}
+              onChange={() => {
+                setMessage({
+                  type: "ok",
+                  text: "Attach this file on the photos step under optional clinic quote, or continue with the clinic invite below.",
+                });
+              }}
+            />
+          </label>
+          <p className="mt-1 text-xs text-slate-400">
+            Prefer the photo upload step&apos;s optional clinic-quote slot for a saved copy on your case.
+          </p>
+        </div>
+      ) : null}
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <label className="text-sm text-slate-200">
@@ -82,12 +149,12 @@ export default function InviteClinicContributionCard({
           />
         </label>
         <label className="text-sm text-slate-200">
-          Doctor Name
+          {isPre ? "Surgeon / doctor name" : "Doctor Name"}
           <input
             className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
             value={doctorName}
             onChange={(e) => setDoctorName(e.target.value)}
-            placeholder="Treating doctor name"
+            placeholder={isPre ? "Proposed treating surgeon" : "Treating doctor name"}
             disabled={disabled || submitting}
           />
         </label>
@@ -123,22 +190,36 @@ export default function InviteClinicContributionCard({
           disabled={disabled || submitting}
           className="mt-0.5"
         />
-        <span>I consent to HairAudit contacting my clinic and/or surgeon for documentation related to this case.</span>
+        <span>
+          {isPre
+            ? "I consent to HairAudit contacting this clinic about a proposed treatment plan for my planning review."
+            : "I consent to HairAudit contacting my clinic and/or surgeon for documentation related to this case."}
+        </span>
       </label>
 
       {message && (
         <p className={`mt-3 text-sm ${message.type === "ok" ? "text-emerald-300" : "text-rose-300"}`}>{message.text}</p>
       )}
 
-      <div className="mt-4">
+      <div className="mt-4 flex flex-wrap gap-3">
         <button
           type="button"
           onClick={onSubmit}
           disabled={disabled || submitting}
           className="rounded-xl border border-cyan-300/40 bg-cyan-300/15 px-4 py-2 text-sm font-semibold text-cyan-100 hover:bg-cyan-300/25 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {submitting ? "Sending..." : "Send Contribution Request"}
+          {submitting ? "Sending..." : isPre ? "Invite Clinic" : "Send Contribution Request"}
         </button>
+        {(allowSkip || isPre) && (
+          <button
+            type="button"
+            onClick={() => setSkipped(true)}
+            disabled={disabled || submitting}
+            className="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-200 hover:bg-white/10"
+          >
+            Skip for now
+          </button>
+        )}
       </div>
     </section>
   );

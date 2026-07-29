@@ -982,7 +982,18 @@
         "completeNoPdfTitle": "Your audit is complete",
         "failedTitle": "We were unable to complete this audit",
         "failedBody": "Please contact support or try resubmitting your case materials.",
-        "contactSupport": "Contact support"
+        "contactSupport": "Contact support",
+        "preSurgery": {
+          "draftTitle": "Complete Your Photos",
+          "draftSubtitle": "Upload planning photos · Answer pre-surgery questions",
+          "continueQuestions": "Continue Questions",
+          "completeQuestionsTitle": "Complete Your Pre-Surgery Questions",
+          "submitTitle": "Submit Pre-Surgery Review",
+          "preparingTitle": "Your Pre-Surgery Review Is Being Prepared",
+          "preparingSubtitle": "Specialists are preparing your independent planning review. We will notify you when it is ready.",
+          "readyTitle": "View Your Pre-Surgery Review Report",
+          "viewReport": "View Pre-Surgery Review Report"
+        }
       },
       "infoRequest": {
         "eyebrow": "Action needed",

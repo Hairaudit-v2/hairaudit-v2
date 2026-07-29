@@ -8,6 +8,8 @@ import { useI18n } from "@/components/i18n/I18nProvider";
 import { resolvePatientReportDeliveryPhase } from "@/lib/patient/patientProcessingView";
 import { buildPatientTrustStatusDisplay } from "@/lib/patient/patientTrustStatusTranslator";
 import { isCaseAwaitingPatientInformation } from "@/lib/auditor/patientInfoRequest";
+import type { PatientCaseDashboardNextAction } from "@/lib/patient/patientCaseDashboard";
+import type { PatientReviewPathway } from "@/lib/patient/patientReviewPathway";
 
 export type PatientNextActionVariant = "dashboard" | "case";
 
@@ -30,6 +32,10 @@ export type PatientNextActionPanelProps = {
   submittedAt?: string | null;
   /** When set, patient must provide more information before review continues. */
   patientInfoRequest?: PatientInfoRequestDisplay | null;
+  /** Canonical pathway from the case record (never from URL). */
+  patientReviewPathway?: PatientReviewPathway | null;
+  /** Pathway-aware next-action copy from the case dashboard view-model. */
+  dashboardNextAction?: PatientCaseDashboardNextAction | null;
 };
 
 export default function PatientNextActionPanel({
@@ -41,10 +47,13 @@ export default function PatientNextActionPanel({
   notificationEmail,
   submittedAt,
   patientInfoRequest,
+  patientReviewPathway = null,
+  dashboardNextAction = null,
 }: PatientNextActionPanelProps) {
   const { t } = useI18n();
   const caseHref = `/cases/${caseId}`;
   const compact = variant === "dashboard";
+  const isPre = patientReviewPathway === "pre_surgery";
 
   const activeInfoRequest =
     patientInfoRequest ??
@@ -108,7 +117,59 @@ export default function PatientNextActionPanel({
         ? "processing"
         : "draft";
 
-  // Draft: Complete your audit (Upload photos / Complete questions)
+  // Pathway-aware draft / submit next action from case dashboard view-model
+  if (state === "draft" && dashboardNextAction) {
+    const action = dashboardNextAction;
+    return (
+      <div
+        className={
+          compact
+            ? "rounded-xl border border-cyan-300/20 bg-cyan-300/5 p-3"
+            : "rounded-2xl border border-cyan-300/25 bg-cyan-300/5 p-4 sm:p-5"
+        }
+        data-testid="patient-next-action"
+        data-next-action-id={action.id}
+      >
+        <p className={compact ? "text-xs font-semibold uppercase tracking-wide text-cyan-200/90" : "text-xs font-semibold uppercase tracking-wide text-cyan-200/90"}>
+          {t("dashboard.patient.nextAction.eyebrow")}
+        </p>
+        <p className={compact ? "mt-1 text-sm font-semibold text-white" : "mt-2 text-base font-semibold text-white"}>
+          {action.title}
+        </p>
+        <p className={compact ? "mt-0.5 text-xs text-slate-200/80" : "mt-1 text-sm text-slate-200/80"}>
+          {action.subtitle}
+        </p>
+        <div className={compact ? "mt-2 flex flex-wrap gap-2" : "mt-4 flex flex-wrap gap-3"}>
+          {action.primaryCtaLabel && action.primaryCtaHref ? (
+            <Link
+              href={action.primaryCtaHref}
+              className={
+                compact
+                  ? "inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-950 bg-gradient-to-r from-cyan-300 to-emerald-300 hover:from-cyan-200 hover:to-emerald-200"
+                  : "inline-flex items-center rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-950 bg-gradient-to-r from-cyan-300 to-emerald-300 hover:from-cyan-200 hover:to-emerald-200"
+              }
+            >
+              {action.primaryCtaLabel}
+            </Link>
+          ) : null}
+          {action.secondaryCtaLabel && action.secondaryCtaHref ? (
+            <Link
+              href={action.secondaryCtaHref}
+              className={
+                compact
+                  ? "inline-flex items-center rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-slate-100 hover:bg-white/15"
+                  : "inline-flex items-center rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-semibold text-slate-100 hover:bg-white/15"
+              }
+            >
+              {action.secondaryCtaLabel}
+            </Link>
+          ) : null}
+        </div>
+      </div>
+    );
+  }
+
+  // Draft fallback (post_surgery or no view-model)
   if (state === "draft") {
     return (
       <div
@@ -117,15 +178,21 @@ export default function PatientNextActionPanel({
             ? "rounded-xl border border-cyan-300/20 bg-cyan-300/5 p-3"
             : "rounded-2xl border border-cyan-300/25 bg-cyan-300/5 p-4 sm:p-5"
         }
+        data-testid="patient-next-action"
+        data-next-action-id="complete_photos"
       >
         <p className={compact ? "text-xs font-semibold uppercase tracking-wide text-cyan-200/90" : "text-xs font-semibold uppercase tracking-wide text-cyan-200/90"}>
           {t("dashboard.patient.nextAction.eyebrow")}
         </p>
         <p className={compact ? "mt-1 text-sm font-semibold text-white" : "mt-2 text-base font-semibold text-white"}>
-          {t("dashboard.patient.nextAction.draftTitle")}
+          {isPre
+            ? t("dashboard.patient.nextAction.preSurgery.draftTitle")
+            : t("dashboard.patient.nextAction.draftTitle")}
         </p>
         <p className={compact ? "mt-0.5 text-xs text-slate-200/80" : "mt-1 text-sm text-slate-200/80"}>
-          {t("dashboard.patient.nextAction.draftSubtitle")}
+          {isPre
+            ? t("dashboard.patient.nextAction.preSurgery.draftSubtitle")
+            : t("dashboard.patient.nextAction.draftSubtitle")}
         </p>
         <div className={compact ? "mt-2 flex flex-wrap gap-2" : "mt-4 flex flex-wrap gap-3"}>
           <Link
@@ -146,7 +213,9 @@ export default function PatientNextActionPanel({
                 : "inline-flex items-center rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-semibold text-slate-100 hover:bg-white/15"
             }
           >
-            {t("dashboard.patient.completeIntake")}
+            {isPre
+              ? t("dashboard.patient.nextAction.preSurgery.continueQuestions")
+              : t("dashboard.patient.completeIntake")}
           </Link>
         </div>
       </div>
@@ -155,6 +224,40 @@ export default function PatientNextActionPanel({
 
   // Submitted or processing: premium waiting experience (no partial report surfacing)
   if (state === "processing") {
+    if (isPre || dashboardNextAction?.id === "review_preparing") {
+      return (
+        <div data-testid="patient-next-action" data-next-action-id="review_preparing">
+          <div
+            className={
+              compact
+                ? "mb-3 rounded-xl border border-cyan-300/20 bg-cyan-300/5 p-3"
+                : "mb-4 rounded-2xl border border-cyan-300/25 bg-cyan-300/5 p-4 sm:p-5"
+            }
+          >
+            <p className="text-xs font-semibold uppercase tracking-wide text-cyan-200/90">
+              {t("dashboard.patient.nextAction.eyebrow")}
+            </p>
+            <p className={compact ? "mt-1 text-sm font-semibold text-white" : "mt-2 text-base font-semibold text-white"}>
+              {dashboardNextAction?.title ??
+                t("dashboard.patient.nextAction.preSurgery.preparingTitle")}
+            </p>
+            <p className={compact ? "mt-0.5 text-xs text-slate-200/80" : "mt-1 text-sm text-slate-200/80"}>
+              {dashboardNextAction?.subtitle ??
+                t("dashboard.patient.nextAction.preSurgery.preparingSubtitle")}
+            </p>
+          </div>
+          <PatientProcessingWaitingExperience
+            caseId={caseId}
+            caseStatus={status}
+            hasReportPdf={Boolean(pdfPath)}
+            notificationEmail={notificationEmail}
+            submittedAt={submittedAt}
+            variant={variant}
+            showReturnLink
+          />
+        </div>
+      );
+    }
     return (
       <PatientProcessingWaitingExperience
         caseId={caseId}
@@ -177,12 +280,17 @@ export default function PatientNextActionPanel({
             ? "rounded-xl border border-emerald-300/20 bg-emerald-300/5 p-3"
             : "rounded-2xl border border-emerald-300/25 bg-emerald-300/5 p-4 sm:p-5"
         }
+        data-testid="patient-next-action"
+        data-next-action-id="view_report"
       >
         <p className={compact ? "text-xs font-semibold uppercase tracking-wide text-emerald-200/90" : "text-xs font-semibold uppercase tracking-wide text-emerald-200/90"}>
           {t("dashboard.patient.nextAction.eyebrow")}
         </p>
         <p className={compact ? "mt-1 text-sm font-semibold text-white" : "mt-2 text-base font-semibold text-white"}>
-          {t("dashboard.patient.nextAction.readyTitle")}
+          {dashboardNextAction?.title ??
+            (isPre
+              ? t("dashboard.patient.nextAction.preSurgery.readyTitle")
+              : t("dashboard.patient.nextAction.readyTitle"))}
         </p>
         <div className={compact ? "mt-2 flex flex-wrap items-center gap-2" : "mt-4 flex flex-wrap items-center gap-3"}>
           <Link
@@ -193,7 +301,10 @@ export default function PatientNextActionPanel({
                 : "inline-flex items-center rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-950 bg-gradient-to-r from-cyan-300 to-emerald-300 hover:from-cyan-200 hover:to-emerald-200"
             }
           >
-            {t("dashboard.reports.viewReport")}
+            {dashboardNextAction?.primaryCtaLabel ??
+              (isPre
+                ? t("dashboard.patient.nextAction.preSurgery.viewReport")
+                : t("dashboard.reports.viewReport"))}
           </Link>
           {reportId ? <DownloadReport reportId={reportId} label={t("dashboard.reports.downloadPdf")} /> : null}
           <ReportShareButton caseId={caseId} variant={compact ? "compact" : "default"} />
@@ -223,10 +334,14 @@ export default function PatientNextActionPanel({
           {t("dashboard.patient.nextAction.eyebrow")}
         </p>
         <p className={compact ? "mt-1 text-sm font-semibold text-white" : "mt-2 text-base font-semibold text-white"}>
-          {trustStatus.title}
+          {isPre
+            ? t("dashboard.patient.nextAction.preSurgery.preparingTitle")
+            : trustStatus.title}
         </p>
         <p className={compact ? "mt-0.5 text-xs text-slate-200/80" : "mt-1 text-sm text-slate-200/80"}>
-          {trustStatus.subcopy}
+          {isPre
+            ? t("dashboard.patient.nextAction.preSurgery.preparingSubtitle")
+            : trustStatus.subcopy}
         </p>
         <div className={compact ? "mt-2" : "mt-4"}>
           <Link
@@ -237,7 +352,9 @@ export default function PatientNextActionPanel({
                 : "inline-flex items-center rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-950 bg-gradient-to-r from-cyan-300 to-emerald-300 hover:from-cyan-200 hover:to-emerald-200"
             }
           >
-            {t("dashboard.reports.viewReport")}
+            {isPre
+              ? t("dashboard.patient.nextAction.preSurgery.viewReport")
+              : t("dashboard.reports.viewReport")}
           </Link>
         </div>
       </div>
