@@ -51,6 +51,11 @@ import {
   toPatientSafeDonorZoneAnnotationSlice,
   type PatientSafeDonorZoneAnnotationSlice,
 } from "@/lib/patient/donorZoneAnnotation";
+import {
+  resolveDonorCapacityPlanForReport,
+  toPatientSafeDonorCapacityPlanSlice,
+  type PatientSafeDonorCapacityPlanSlice,
+} from "@/lib/patient/donorCapacityPlan";
 import { normalizedPatientAnswersFromReportRow } from "@/lib/patient/answersFromReportRow";
 
 export const POST_SURGERY_AUDIT_REPORT_VERSION = 1 as const;
@@ -151,6 +156,11 @@ export type PostSurgeryAuditReport = {
    * Absent until clinician confirmation/correction.
    */
   donorZoneAnnotation?: PatientSafeDonorZoneAnnotationSlice | null;
+  /**
+   * HA-DONOR-HEALING-1E — clinician-gated qualitative capacity planning.
+   * Absent until clinician confirmation/correction. No graft numbers.
+   */
+  donorCapacityPlan?: PatientSafeDonorCapacityPlanSlice | null;
 };
 
 export type GeneratePostSurgeryAuditReportInput = {
@@ -995,6 +1005,27 @@ export function generatePostSurgeryAuditReport(
     ? toPatientSafeDonorZoneAnnotationSlice(zoneRecord)
     : null;
 
+  const capacityRecord = caseHasDonorHealingEntryContext({
+    answers: patientAnswers,
+    summary: input.summary,
+  })
+    ? resolveDonorCapacityPlanForReport({
+        answers: patientAnswers,
+        summary: input.summary,
+        doctorAnswers: isRecord(input.summary.doctor_answers)
+          ? (input.summary.doctor_answers as Record<string, unknown>)
+          : null,
+        clinicAnswers: isRecord(input.summary.clinic_answers)
+          ? (input.summary.clinic_answers as Record<string, unknown>)
+          : null,
+        clinicalHistory: input.clinicalHistory ?? null,
+        stored: input.summary.donor_capacity_plan,
+      })
+    : null;
+  const donorCapacityPlan = capacityRecord
+    ? toPatientSafeDonorCapacityPlanSlice(capacityRecord)
+    : null;
+
   const sections = buildReviewSections(
     forensic,
     bundle,
@@ -1046,6 +1077,7 @@ export function generatePostSurgeryAuditReport(
     donorHealingOrientation,
     donorLongitudinalComparison,
     donorZoneAnnotation,
+    donorCapacityPlan,
   };
 }
 
@@ -1120,6 +1152,22 @@ export function resolvePostSurgeryAuditReport(
     ? toPatientSafeDonorZoneAnnotationSlice(zoneRecord)
     : null;
 
+  const capacityRecord = resolveDonorCapacityPlanForReport({
+    answers: patientAnswers,
+    summary: summary ?? null,
+    doctorAnswers: isRecord(summary?.doctor_answers)
+      ? (summary!.doctor_answers as Record<string, unknown>)
+      : null,
+    clinicAnswers: isRecord(summary?.clinic_answers)
+      ? (summary!.clinic_answers as Record<string, unknown>)
+      : null,
+    clinicalHistory: opts.clinicalHistory ?? null,
+    stored: summary?.donor_capacity_plan,
+  });
+  const donorCapacityPlan = capacityRecord
+    ? toPatientSafeDonorCapacityPlanSlice(capacityRecord)
+    : null;
+
   const stored = summary?.post_surgery_audit_report;
   if (isPostSurgeryAuditReport(stored)) {
     const merged = {
@@ -1158,6 +1206,8 @@ export function resolvePostSurgeryAuditReport(
         donorLongitudinalComparison ?? stored.donorLongitudinalComparison ?? null,
       donorZoneAnnotation:
         donorZoneAnnotation ?? stored.donorZoneAnnotation ?? null,
+      donorCapacityPlan:
+        donorCapacityPlan ?? stored.donorCapacityPlan ?? null,
     };
     return merged;
   }

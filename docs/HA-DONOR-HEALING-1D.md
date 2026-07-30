@@ -85,7 +85,7 @@ Patient-safe slice on `post_surgery_audit_report.donorZoneAnnotation` — only w
 
 ## Out of scope (later)
 
-- **1E** Future donor-capacity planning using clinical measurements
+- **1E** Future donor-capacity planning using clinical measurements — see `docs/HA-DONOR-HEALING-1E.md`
 - **1F** Donor content cluster and conversion optimisation
 - **1G** Clinic-facing longitudinal donor monitoring inside FiOS
 - Automated CV heatmaps, follicle counts, density %, geometric registration across timepoints

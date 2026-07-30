@@ -142,6 +142,7 @@ import DonorReportViewedTracker from "@/components/patient/DonorReportViewedTrac
 import DonorHealingOrientationReviewPanel from "@/components/auditor/DonorHealingOrientationReviewPanel";
 import DonorLongitudinalComparisonReviewPanel from "@/components/auditor/DonorLongitudinalComparisonReviewPanel";
 import DonorZoneAnnotationReviewPanel from "@/components/auditor/DonorZoneAnnotationReviewPanel";
+import DonorCapacityPlanReviewPanel from "@/components/auditor/DonorCapacityPlanReviewPanel";
 import {
   caseHasDonorHealingEntryContext,
   isDonorHealingOrientationRecord,
@@ -155,6 +156,10 @@ import {
   isDonorZoneAnnotationRecord,
   type DonorZoneAnnotationRecord,
 } from "@/lib/patient/donorZoneAnnotation";
+import {
+  isDonorCapacityPlanRecord,
+  type DonorCapacityPlanRecord,
+} from "@/lib/patient/donorCapacityPlan";
 import { parseDonorEntryContext } from "@/lib/patient/donorHealingEntry";
 import PreSurgeryPlanningReportShell from "@/components/patient/PreSurgeryPlanningReportShell";
 import { resolvePatientSafeSummaryNarrativePresentation } from "@/lib/reports/patientSafeSummaryNarrativeTranslation";
@@ -1032,6 +1037,12 @@ export default async function Page({
     ? ((latestSummary as Record<string, unknown>)
         .donor_zone_annotation as DonorZoneAnnotationRecord)
     : null;
+  const donorCapacityRecord = isDonorCapacityPlanRecord(
+    (latestSummary as Record<string, unknown> | null)?.donor_capacity_plan
+  )
+    ? ((latestSummary as Record<string, unknown>)
+        .donor_capacity_plan as DonorCapacityPlanRecord)
+    : null;
   const preSurgeryPlanningReport =
     patientReviewPathway === "pre_surgery" && latestSummary
       ? resolvePreSurgeryPlanningReport(latestSummary as Record<string, unknown>, {
@@ -1343,81 +1354,145 @@ export default async function Page({
       ) : null}
 
       {isAuditor ? (
-        <AuditorCasePageWorkflow
-          caseId={c.id}
-          caseRow={c as Record<string, unknown>}
-          statusLabel={statusDisplayLabel}
-          statusPillClass={statusPill}
-          patientName={auditorPatientName}
-          clinicLabel={clinicLabel}
-          auditType={auditType}
-          auditSource={auditSource}
-          submittedAt={c.submitted_at ?? null}
-          auditStage={auditorAuditStage}
-          language={seoLocale}
-          priorityScore={auditorPriorityScore}
-          pathwayLabel={auditorPathwayLabel}
-          patientReviewPathway={patientReviewPathway}
-          clinicalHistorySnapshot={clinicalHistorySnapshot}
-          hasPatientImagesForImageLimited={hasPatientImagesForImageLimited}
-          missingPatientPhotoLabels={missingPatientPhotoLabelsForOverride}
-          hasClinicalHistoryForImageLimited={hasClinicalHistoryForImageLimited}
-          imagesSortedLabel={auditorImagesSortedLabel}
-          hasReportPdf={hasReportPdf}
-          readyToRun={auditorReadyToRun}
-          clinicalDataPresent={auditorClinicalDataPresent}
-          isAuditFailed={status === "audit_failed"}
-          imageLimitedForensicNotice={imageLimitedForensicNotice}
-          forensicReports={forensicReports}
-          latestReport={latestReport}
-          latestReportDisplayScore={latestReportDisplayScore}
-          repErr={repErr}
-          showAuditorReview={Boolean(showAuditorReview)}
-          auditorReviewEligibility={auditorReviewEligibility}
-          domains={domains}
-          benchmark={benchmark}
-          overallScores={overallScores}
-          provisionalStatus={provisionalStatus}
-          countsForAwards={countsForAwards}
-          hairAuditIntelligenceBundle={hairAuditIntelligenceBundle}
-          auditOsShadowDebug={auditOsShadowDebug}
-          auditOsReviewPanel={auditOsReviewPanel}
-          uploads={uploads ?? []}
-          graftIntegrityEstimate={graftIntegrityEstimate}
-          procedureDate={normalizedPatient?.procedure_date ? String(normalizedPatient.procedure_date) : null}
-          monthsSinceSurgery={monthsSinceSurgery}
-          confidenceLabel={String(confidenceLabel)}
-          summaryObservations={summaryObservations}
-          giiNotes={giiNotes}
-          giiLimitations={giiLimitations}
-          priorityEvidence={priorityEvidence}
-          changedFieldsOnly={changedFieldsOnly}
-          completenessScoreNum={completenessScoreNum}
-          evidenceScoreNum={evidenceScoreNum}
-          confidenceEstimateNum={confidenceEstimateNum}
-          technicalDataSufficiency={technicalDataSufficiency}
-          manualAuditReadinessScore={manualAuditReadinessScore}
-          missingCriticalEvidenceFlags={missingCriticalEvidenceFlags}
-          evidenceCoverageDashboardPct={evidenceCoverageDashboardPct}
-          patientImageEvidenceQuality={patientImageEvidenceQuality}
-          surgeryUploadDetails={surgeryUploadDetails}
-          surgerySlotReviews={surgerySlotReviews}
-          surgeryEvidenceEvents={surgeryEvidenceEvents}
-          surgeryPhotoExportHistory={surgeryPhotoExportHistory}
-          surgeryAuditIntakeView={surgeryAuditIntakeView}
-          surgeryEvidenceReportPdfPath={surgeryEvidenceReportPdfPath}
-          evidenceReportRequestedByLabel={evidenceReportRequestedByLabel}
-          canExportSurgeryPhotoPack={canExportSurgeryPhotoPack}
-          bulkBatchContext={bulkBatchContext}
-          caseLabel={c.case_label ?? null}
-          showAuditor={isAuditor}
-          doctorAnswersBlock={auditorDoctorAnswersBlock}
-          clinicAnswersBlock={auditorClinicAnswersBlock}
-          scoringBlock={auditorScoringBlock}
-          patientAnswersBlock={auditorPatientAnswersBlock}
-          manualAuditBanner={auditorManualAuditBanner}
-          infoRequestPending={isCaseAwaitingPatientInformation(status)}
-        />
+        <>
+          <AuditorCasePageWorkflow
+            caseId={c.id}
+            caseRow={c as Record<string, unknown>}
+            statusLabel={statusDisplayLabel}
+            statusPillClass={statusPill}
+            patientName={auditorPatientName}
+            clinicLabel={clinicLabel}
+            auditType={auditType}
+            auditSource={auditSource}
+            submittedAt={c.submitted_at ?? null}
+            auditStage={auditorAuditStage}
+            language={seoLocale}
+            priorityScore={auditorPriorityScore}
+            pathwayLabel={auditorPathwayLabel}
+            patientReviewPathway={patientReviewPathway}
+            clinicalHistorySnapshot={clinicalHistorySnapshot}
+            hasPatientImagesForImageLimited={hasPatientImagesForImageLimited}
+            missingPatientPhotoLabels={missingPatientPhotoLabelsForOverride}
+            hasClinicalHistoryForImageLimited={hasClinicalHistoryForImageLimited}
+            imagesSortedLabel={auditorImagesSortedLabel}
+            hasReportPdf={hasReportPdf}
+            readyToRun={auditorReadyToRun}
+            clinicalDataPresent={auditorClinicalDataPresent}
+            isAuditFailed={status === "audit_failed"}
+            imageLimitedForensicNotice={imageLimitedForensicNotice}
+            forensicReports={forensicReports}
+            latestReport={latestReport}
+            latestReportDisplayScore={latestReportDisplayScore}
+            repErr={repErr}
+            showAuditorReview={Boolean(showAuditorReview)}
+            auditorReviewEligibility={auditorReviewEligibility}
+            domains={domains}
+            benchmark={benchmark}
+            overallScores={overallScores}
+            provisionalStatus={provisionalStatus}
+            countsForAwards={countsForAwards}
+            hairAuditIntelligenceBundle={hairAuditIntelligenceBundle}
+            auditOsShadowDebug={auditOsShadowDebug}
+            auditOsReviewPanel={auditOsReviewPanel}
+            uploads={uploads ?? []}
+            graftIntegrityEstimate={graftIntegrityEstimate}
+            procedureDate={normalizedPatient?.procedure_date ? String(normalizedPatient.procedure_date) : null}
+            monthsSinceSurgery={monthsSinceSurgery}
+            confidenceLabel={String(confidenceLabel)}
+            summaryObservations={summaryObservations}
+            giiNotes={giiNotes}
+            giiLimitations={giiLimitations}
+            priorityEvidence={priorityEvidence}
+            changedFieldsOnly={changedFieldsOnly}
+            completenessScoreNum={completenessScoreNum}
+            evidenceScoreNum={evidenceScoreNum}
+            confidenceEstimateNum={confidenceEstimateNum}
+            technicalDataSufficiency={technicalDataSufficiency}
+            manualAuditReadinessScore={manualAuditReadinessScore}
+            missingCriticalEvidenceFlags={missingCriticalEvidenceFlags}
+            evidenceCoverageDashboardPct={evidenceCoverageDashboardPct}
+            patientImageEvidenceQuality={patientImageEvidenceQuality}
+            surgeryUploadDetails={surgeryUploadDetails}
+            surgerySlotReviews={surgerySlotReviews}
+            surgeryEvidenceEvents={surgeryEvidenceEvents}
+            surgeryPhotoExportHistory={surgeryPhotoExportHistory}
+            surgeryAuditIntakeView={surgeryAuditIntakeView}
+            surgeryEvidenceReportPdfPath={surgeryEvidenceReportPdfPath}
+            evidenceReportRequestedByLabel={evidenceReportRequestedByLabel}
+            canExportSurgeryPhotoPack={canExportSurgeryPhotoPack}
+            bulkBatchContext={bulkBatchContext}
+            caseLabel={c.case_label ?? null}
+            showAuditor={isAuditor}
+            doctorAnswersBlock={auditorDoctorAnswersBlock}
+            clinicAnswersBlock={auditorClinicAnswersBlock}
+            scoringBlock={auditorScoringBlock}
+            patientAnswersBlock={auditorPatientAnswersBlock}
+            manualAuditBanner={auditorManualAuditBanner}
+            infoRequestPending={isCaseAwaitingPatientInformation(status)}
+          />
+          {/* Professional donor controls (1B–1E) live on the auditor branch. */}
+          {latestReport && donorHealingEntryActive ? (
+            <section
+              data-testid="professional-donor-orientation-workspace"
+              className="mt-8 rounded-2xl border border-cyan-500/30 bg-slate-950 p-4 sm:p-5"
+              aria-label="Professional donor orientation workspace"
+            >
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-cyan-300/90">
+                Professional workspace
+              </p>
+              <p className="mt-1 text-xs text-slate-400">
+                Prepare, Confirm, and Correct controls stay here — never inside the patient report.
+              </p>
+              <div className="mt-4 space-y-4">
+                <DonorHealingOrientationReviewPanel
+                  reportId={latestReport.id}
+                  initialRecord={donorOrientationRecord}
+                  uploadTypes={(uploads ?? []).map((u) => String((u as { type?: string }).type ?? ""))}
+                />
+                <DonorLongitudinalComparisonReviewPanel
+                  reportId={latestReport.id}
+                  initialRecord={donorLongitudinalRecord}
+                  uploadTypes={(uploads ?? []).map((u) => String((u as { type?: string }).type ?? ""))}
+                  uploads={(uploads ?? []).map((u) => {
+                    const row = u as {
+                      id?: string;
+                      type?: string;
+                      captured_at?: string | null;
+                      metadata?: Record<string, unknown> | null;
+                    };
+                    const meta = row.metadata ?? {};
+                    const capturedAt =
+                      row.captured_at ??
+                      (typeof meta.captured_at === "string" ? meta.captured_at : null) ??
+                      (typeof meta.capturedAt === "string" ? meta.capturedAt : null);
+                    return {
+                      id: String(row.id ?? ""),
+                      type: String(row.type ?? ""),
+                      capturedAt,
+                      signedUrl: null,
+                    };
+                  })}
+                />
+                <DonorZoneAnnotationReviewPanel
+                  reportId={latestReport.id}
+                  initialRecord={donorZoneRecord}
+                  uploads={(uploads ?? []).map((u) => {
+                    const row = u as { id?: string; type?: string };
+                    return {
+                      id: String(row.id ?? ""),
+                      type: String(row.type ?? ""),
+                      signedUrl: null,
+                    };
+                  })}
+                />
+                <DonorCapacityPlanReviewPanel
+                  reportId={latestReport.id}
+                  initialRecord={donorCapacityRecord}
+                />
+              </div>
+            </section>
+          ) : null}
+        </>
       ) : patientPathwayInvalid ? (
         <section className="mt-6 rounded-2xl border border-amber-300/30 bg-amber-950/40 p-6">
           <h1 className="text-xl font-semibold text-white">Review pathway unavailable</h1>
@@ -1967,64 +2042,6 @@ export default async function Page({
         <div className="mt-6">
           <HairAuditIntelligencePanel bundle={hairAuditIntelligenceBundle} reportVersion={latestReport?.version} />
         </div>
-      ) : null}
-
-      {isAuditor && latestReport && donorHealingEntryActive ? (
-        <section
-          data-testid="professional-donor-orientation-workspace"
-          className="mt-8 rounded-2xl border border-cyan-500/30 bg-slate-950 p-4 sm:p-5"
-          aria-label="Professional donor orientation workspace"
-        >
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-cyan-300/90">
-            Professional workspace
-          </p>
-          <p className="mt-1 text-xs text-slate-400">
-            Prepare, Confirm, and Correct controls stay here — never inside the patient report.
-          </p>
-          <div className="mt-4 space-y-4">
-            <DonorHealingOrientationReviewPanel
-              reportId={latestReport.id}
-              initialRecord={donorOrientationRecord}
-              uploadTypes={(uploads ?? []).map((u) => String((u as { type?: string }).type ?? ""))}
-            />
-            <DonorLongitudinalComparisonReviewPanel
-              reportId={latestReport.id}
-              initialRecord={donorLongitudinalRecord}
-              uploadTypes={(uploads ?? []).map((u) => String((u as { type?: string }).type ?? ""))}
-              uploads={(uploads ?? []).map((u) => {
-                const row = u as {
-                  id?: string;
-                  type?: string;
-                  captured_at?: string | null;
-                  metadata?: Record<string, unknown> | null;
-                };
-                const meta = row.metadata ?? {};
-                const capturedAt =
-                  row.captured_at ??
-                  (typeof meta.captured_at === "string" ? meta.captured_at : null) ??
-                  (typeof meta.capturedAt === "string" ? meta.capturedAt : null);
-                return {
-                  id: String(row.id ?? ""),
-                  type: String(row.type ?? ""),
-                  capturedAt,
-                  signedUrl: null,
-                };
-              })}
-            />
-            <DonorZoneAnnotationReviewPanel
-              reportId={latestReport.id}
-              initialRecord={donorZoneRecord}
-              uploads={(uploads ?? []).map((u) => {
-                const row = u as { id?: string; type?: string };
-                return {
-                  id: String(row.id ?? ""),
-                  type: String(row.type ?? ""),
-                  signedUrl: null,
-                };
-              })}
-            />
-          </div>
-        </section>
       ) : null}
 
       {domains.length > 0 && mountPatientPostSurgeryChrome && (

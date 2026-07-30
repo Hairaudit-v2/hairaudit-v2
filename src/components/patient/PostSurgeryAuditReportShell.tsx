@@ -23,6 +23,7 @@ import PathwayVisualSummarySection from "@/components/patient/PathwayVisualSumma
 import DonorHealingOrientationSection from "@/components/patient/DonorHealingOrientationSection";
 import DonorLongitudinalComparisonSection from "@/components/patient/DonorLongitudinalComparisonSection";
 import DonorZoneAnnotationSection from "@/components/patient/DonorZoneAnnotationSection";
+import DonorCapacityPlanSection from "@/components/patient/DonorCapacityPlanSection";
 import type { ClinicalHistorySnapshot } from "@/lib/hairaudit/clinical-history/clinicalHistoryTypes";
 
 const SECTION_ORDER: PostSurgeryReviewSectionId[] = [
@@ -168,6 +169,10 @@ export default function PostSurgeryAuditReportShell({
 
       {report.donorZoneAnnotation ? (
         <DonorZoneAnnotationSection annotation={report.donorZoneAnnotation} />
+      ) : null}
+
+      {report.donorCapacityPlan ? (
+        <DonorCapacityPlanSection plan={report.donorCapacityPlan} />
       ) : null}
 
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
