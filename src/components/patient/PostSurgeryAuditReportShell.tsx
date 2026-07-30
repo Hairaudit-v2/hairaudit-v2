@@ -20,6 +20,7 @@ import ReviewInputsProcessedSection from "@/components/patient/ReviewInputsProce
 import AssessmentConfidenceSection from "@/components/patient/AssessmentConfidenceSection";
 import AssessmentImprovementRecommendationsSection from "@/components/patient/AssessmentImprovementRecommendationsSection";
 import PathwayVisualSummarySection from "@/components/patient/PathwayVisualSummarySection";
+import DonorHealingOrientationSection from "@/components/patient/DonorHealingOrientationSection";
 import type { ClinicalHistorySnapshot } from "@/lib/hairaudit/clinical-history/clinicalHistoryTypes";
 
 const SECTION_ORDER: PostSurgeryReviewSectionId[] = [
@@ -154,6 +155,10 @@ export default function PostSurgeryAuditReportShell({
           <p className="mt-2 text-xl font-bold tracking-tight sm:text-2xl">{t(outcomeKey)}</p>
         </div>
       </div>
+
+      {report.donorHealingOrientation ? (
+        <DonorHealingOrientationSection orientation={report.donorHealingOrientation} />
+      ) : null}
 
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
         <h3 className="text-lg font-semibold text-slate-900">

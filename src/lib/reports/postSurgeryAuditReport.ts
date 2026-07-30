@@ -34,6 +34,13 @@ import {
   type PatientConcernBand,
 } from "./patientConcernBands";
 import type { ClinicalHistorySnapshot } from "@/lib/hairaudit/clinical-history/clinicalHistoryTypes";
+import {
+  caseHasDonorHealingEntryContext,
+  resolveDonorHealingOrientationForReport,
+  toPatientSafeDonorOrientationSlice,
+  type PatientSafeDonorOrientationSlice,
+} from "@/lib/patient/donorHealingOrientationReport";
+import { normalizedPatientAnswersFromReportRow } from "@/lib/patient/answersFromReportRow";
 
 export const POST_SURGERY_AUDIT_REPORT_VERSION = 1 as const;
 
@@ -118,6 +125,11 @@ export type PostSurgeryAuditReport = {
   repairPlanningGuidance: string[];
   /** Embedded patient-safe summary for backward-compatible surfaces */
   patientSafeSummary: PatientSafeReportSummary;
+  /**
+   * HA-DONOR-HEALING-1B — patient-safe donor orientation when entry_context=donor_healing.
+   * Absent for non-donor post-surgery cases.
+   */
+  donorHealingOrientation?: PatientSafeDonorOrientationSlice | null;
 };
 
 export type GeneratePostSurgeryAuditReportInput = {
@@ -128,6 +140,11 @@ export type GeneratePostSurgeryAuditReportInput = {
   patientReviewPathway?: PatientReviewPathway | unknown;
   photosByCategory?: Record<string, { signedUrl: string | null; label: string }[]>;
   clinicalHistory?: ClinicalHistorySnapshot | null;
+  /** Upload type strings (e.g. patient_photo:preop_donor_rear) for evidence rules. */
+  uploadTypes?: readonly string[] | null;
+  /** Prefer patient_audit_v2 when available. */
+  patientAuditV2?: Record<string, unknown> | null;
+  patientAuditVersion?: number | null;
 };
 
 function isRecord(v: unknown): v is Record<string, unknown> {
@@ -269,11 +286,30 @@ function buildSectionFinding(
 
 function buildConcernFlags(
   patientSummary: PatientSafeReportSummary,
-  bundle: HairAuditIntelligenceBundle | null | undefined
+  bundle: HairAuditIntelligenceBundle | null | undefined,
+  donorOrientation?: PatientSafeDonorOrientationSlice | null
 ): PostSurgeryConcernFlag[] {
   const flags: PostSurgeryConcernFlag[] = [];
 
+  if (donorOrientation?.escalationCopy) {
+    flags.push({
+      text: sanitizePatientReportText(donorOrientation.label),
+      severity: "significant",
+    });
+  } else if (donorOrientation?.state === "persistent_irregularity_deserves_review") {
+    flags.push({
+      text: sanitizePatientReportText(donorOrientation.label),
+      severity: "elevated",
+    });
+  } else if (donorOrientation?.state === "insufficient_evidence") {
+    flags.push({
+      text: sanitizePatientReportText(donorOrientation.label),
+      severity: "moderate",
+    });
+  }
+
   for (const item of patientSummary.concernItems.slice(0, 4)) {
+    if (flags.length >= 5) break;
     flags.push({
       text: sanitizePatientReportText(item.text),
       severity: mapConcernSeverity(item.concernBand ?? "needs_review", item.isRedFlag),
@@ -335,9 +371,24 @@ function buildConcernFlags(
 function buildRecommendedNextSteps(
   patientSummary: PatientSafeReportSummary,
   repairId: PostSurgeryRepairConsiderationId,
-  bundle: HairAuditIntelligenceBundle | null | undefined
+  bundle: HairAuditIntelligenceBundle | null | undefined,
+  donorOrientation?: PatientSafeDonorOrientationSlice | null
 ): string[] {
   const steps = buildPostSurgeryRecommendedNextSteps(repairId);
+
+  if (donorOrientation?.escalationCopy) {
+    steps.unshift(
+      "Seek direct clinical assessment for reported symptoms — photograph review does not replace urgent or in-person care."
+    );
+  } else if (donorOrientation?.state === "insufficient_evidence") {
+    steps.unshift(
+      "Add clear rear, left, and right donor photographs with confirmed procedure timing before relying on stage-aware orientation."
+    );
+  } else if (donorOrientation) {
+    steps.unshift(
+      "Use this donor healing orientation as discussion support with your treating clinic — not as a diagnosis."
+    );
+  }
 
   for (const step of patientSummary.whatHappensNext.steps) {
     const cleaned = sanitizePatientReportText(step);
@@ -511,7 +562,8 @@ function buildReviewSections(
   extractionScore: number | null,
   densityScore: number | null,
   recipientScore: number | null,
-  repairId: PostSurgeryRepairConsiderationId
+  repairId: PostSurgeryRepairConsiderationId,
+  donorOrientation?: PatientSafeDonorOrientationSlice | null
 ): PostSurgeryReviewSection[] {
   const findings = [
     ...(Array.isArray(forensic?.key_findings) ? forensic.key_findings : []),
@@ -533,23 +585,40 @@ function buildReviewSections(
     }
   );
 
+  const donorOrientationFinding = donorOrientation
+    ? [
+        donorOrientation.label,
+        donorOrientation.stageAwareNarrative,
+        donorOrientation.escalationCopy,
+      ]
+        .filter(Boolean)
+        .join(" ")
+    : null;
+
   const donorDefault = enrichSectionFinding(
-    bundle?.donorIntelligence?.patientSafeSummary?.trim() ||
+    donorOrientationFinding ||
+      bundle?.donorIntelligence?.patientSafeSummary?.trim() ||
       (donorScore != null && donorScore < 60
         ? "Donor region shows moderate extraction irregularity with uneven extraction distribution visible in reviewed donor zones."
         : "Donor preservation appears generally acceptable with routine long-term monitoring recommended."),
     {
       sectionTitle: "Donor area review",
-      reviewed: "Donor rear and lateral views were reviewed for extraction spacing, scarring, and signs of over-harvesting.",
-      observed:
-        donorScore != null && donorScore < 60
+      reviewed: donorOrientation
+        ? "Donor photographs were reviewed for stage-aware healing orientation using the available rear and lateral views."
+        : "Donor rear and lateral views were reviewed for extraction spacing, scarring, and signs of over-harvesting.",
+      observed: donorOrientation
+        ? donorOrientation.label
+        : donorScore != null && donorScore < 60
           ? "Some uneven extraction distribution may be visible in reviewed donor zones."
           : "Donor appearance appears generally consistent with conservative extraction in available views.",
-      meaning:
-        donorScore != null && donorScore < 60
+      meaning: donorOrientation
+        ? donorOrientation.stageAwareNarrative
+        : donorScore != null && donorScore < 60
           ? "This may indicate donor reserve should be monitored carefully before any further extraction."
           : "Long-term donor sustainability appears acceptable based on available imagery.",
-      nextCheck: "Ask your clinician to assess donor reserve formally if further surgery is being considered.",
+      nextCheck: donorOrientation?.escalationCopy
+        ? "Contact your treating clinic or local doctor depending on severity — photograph review does not replace direct care."
+        : "Ask your clinician to assess donor reserve formally if further surgery is being considered.",
     }
   );
 
@@ -669,16 +738,19 @@ function buildReviewSections(
     { id: "overall_procedure", finding: overallDefault },
     {
       id: "donor_area",
-      finding: enrichSectionFinding(
-        buildSectionFinding(donorDefault, ["donor", "extraction", "harvest"], findings),
-        {
-          sectionTitle: "Donor area review",
-          reviewed: "Donor rear and lateral views were reviewed for extraction spacing, scarring, and signs of over-harvesting.",
-          observed: donorDefault,
-          meaning: "Donor health is central to any future restoration planning.",
-          nextCheck: "Monitor donor appearance over time and discuss reserve with your clinician.",
-        }
-      ),
+      finding: donorOrientation
+        ? donorDefault
+        : enrichSectionFinding(
+            buildSectionFinding(donorDefault, ["donor", "extraction", "harvest"], findings),
+            {
+              sectionTitle: "Donor area review",
+              reviewed:
+                "Donor rear and lateral views were reviewed for extraction spacing, scarring, and signs of over-harvesting.",
+              observed: donorDefault,
+              meaning: "Donor health is central to any future restoration planning.",
+              nextCheck: "Monitor donor appearance over time and discuss reserve with your clinician.",
+            }
+          ),
     },
     {
       id: "extraction_pattern",
@@ -848,6 +920,27 @@ export function generatePostSurgeryAuditReport(
     },
   ];
 
+  const patientAnswers = normalizedPatientAnswersFromReportRow({
+    summary: input.summary,
+    patient_audit_version: input.patientAuditVersion ?? null,
+    patient_audit_v2: input.patientAuditV2 ?? null,
+  });
+  const orientationRecord = caseHasDonorHealingEntryContext({
+    answers: patientAnswers,
+    summary: input.summary,
+  })
+    ? resolveDonorHealingOrientationForReport({
+        answers: patientAnswers,
+        summary: input.summary,
+        uploadTypes: input.uploadTypes,
+        photosByCategory: input.photosByCategory,
+        stored: input.summary.donor_healing_orientation,
+      })
+    : null;
+  const donorHealingOrientation = orientationRecord
+    ? toPatientSafeDonorOrientationSlice(orientationRecord)
+    : null;
+
   const sections = buildReviewSections(
     forensic,
     bundle,
@@ -856,15 +949,17 @@ export function generatePostSurgeryAuditReport(
     extractionScore,
     densityScore,
     recipientScore,
-    repairConsiderationId
+    repairConsiderationId,
+    donorHealingOrientation
   );
 
-  const concernFlags = buildConcernFlags(patientSafeSummary, bundle);
+  const concernFlags = buildConcernFlags(patientSafeSummary, bundle, donorHealingOrientation);
   const imageAssessments = buildImageAssessments(forensic, bundle, input.photosByCategory);
   const recommendedNextSteps = buildRecommendedNextSteps(
     patientSafeSummary,
     repairConsiderationId,
-    bundle
+    bundle,
+    donorHealingOrientation
   );
   const longTermPreservation = buildLongTermHairPreservationContent("post_surgery");
   const futureHairLossRisk = buildFutureHairLossProgressionRisk({
@@ -894,6 +989,7 @@ export function generatePostSurgeryAuditReport(
     futureHairLossRisk,
     repairPlanningGuidance,
     patientSafeSummary,
+    donorHealingOrientation,
   };
 }
 
@@ -918,6 +1014,9 @@ export function resolvePostSurgeryAuditReport(
     patientReviewPathway?: PatientReviewPathway | unknown;
     photosByCategory?: Record<string, { signedUrl: string | null; label: string }[]>;
     clinicalHistory?: ClinicalHistorySnapshot | null;
+    uploadTypes?: readonly string[] | null;
+    patientAuditV2?: Record<string, unknown> | null;
+    patientAuditVersion?: number | null;
   }
 ): PostSurgeryAuditReport | null {
   const pathway = normalizePatientReviewPathway(
@@ -926,6 +1025,22 @@ export function resolvePostSurgeryAuditReport(
       (isRecord(summary?.metadata) ? summary.metadata.patientReviewPathway : undefined)
   );
   if (pathway !== "post_surgery") return null;
+
+  const patientAnswers = normalizedPatientAnswersFromReportRow({
+    summary: summary ?? null,
+    patient_audit_version: opts.patientAuditVersion ?? null,
+    patient_audit_v2: opts.patientAuditV2 ?? null,
+  });
+  const orientationRecord = resolveDonorHealingOrientationForReport({
+    answers: patientAnswers,
+    summary: summary ?? null,
+    uploadTypes: opts.uploadTypes,
+    photosByCategory: opts.photosByCategory,
+    stored: summary?.donor_healing_orientation,
+  });
+  const donorHealingOrientation = orientationRecord
+    ? toPatientSafeDonorOrientationSlice(orientationRecord)
+    : null;
 
   const stored = summary?.post_surgery_audit_report;
   if (isPostSurgeryAuditReport(stored)) {
@@ -958,6 +1073,9 @@ export function resolvePostSurgeryAuditReport(
               null,
               stored.repairConsiderationId ?? "no_repair_concerns"
             ),
+      // Prefer clinician-reviewed summary record over stale embedded slice.
+      donorHealingOrientation:
+        donorHealingOrientation ?? stored.donorHealingOrientation ?? null,
     };
     return merged;
   }
@@ -971,6 +1089,9 @@ export function resolvePostSurgeryAuditReport(
     patientReviewPathway: pathway,
     photosByCategory: opts.photosByCategory,
     clinicalHistory: opts.clinicalHistory ?? null,
+    uploadTypes: opts.uploadTypes,
+    patientAuditV2: opts.patientAuditV2,
+    patientAuditVersion: opts.patientAuditVersion,
   });
 }
 

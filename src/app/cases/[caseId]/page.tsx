@@ -138,6 +138,14 @@ import {
 import { resolvePostSurgeryAuditReport } from "@/lib/reports/postSurgeryAuditReport";
 import { resolvePreSurgeryPlanningReport } from "@/lib/reports/preSurgeryPlanningReport";
 import PostSurgeryAuditReportShell from "@/components/patient/PostSurgeryAuditReportShell";
+import DonorReportViewedTracker from "@/components/patient/DonorReportViewedTracker";
+import DonorHealingOrientationReviewPanel from "@/components/auditor/DonorHealingOrientationReviewPanel";
+import {
+  caseHasDonorHealingEntryContext,
+  isDonorHealingOrientationRecord,
+  type DonorHealingOrientationRecord,
+} from "@/lib/patient/donorHealingOrientationReport";
+import { parseDonorEntryContext } from "@/lib/patient/donorHealingEntry";
 import PreSurgeryPlanningReportShell from "@/components/patient/PreSurgeryPlanningReportShell";
 import { resolvePatientSafeSummaryNarrativePresentation } from "@/lib/reports/patientSafeSummaryNarrativeTranslation";
 import { resolvePatientReviewPathwayFromCase } from "@/lib/patient/patientReviewPathway";
@@ -964,8 +972,26 @@ export default async function Page({
           caseId: c.id,
           reportVersion: latestReport?.version,
           patientReviewPathway,
+          uploadTypes: (uploads ?? []).map((u) => String((u as { type?: string }).type ?? "")),
+          patientAuditV2: latestReport?.patient_audit_v2 ?? null,
+          patientAuditVersion: latestReport?.patient_audit_version ?? null,
         })
       : null;
+  const donorHealingEntryActive = caseHasDonorHealingEntryContext({
+    answers: reportPatientAnswers as Record<string, unknown> | null,
+    summary: latestSummary as Record<string, unknown> | null,
+  });
+  const donorEntryContextForSubmit =
+    parseDonorEntryContext(
+      (latestSummary as Record<string, unknown> | null)?.entry_context ??
+        (reportPatientAnswers as Record<string, unknown> | null)?.entry_context ??
+        (reportPatientAnswers as Record<string, unknown> | null)?.primary_donor_concern
+    ) ?? (donorHealingEntryActive ? "donor_healing" : null);
+  const donorOrientationRecord = isDonorHealingOrientationRecord(
+    (latestSummary as Record<string, unknown> | null)?.donor_healing_orientation
+  )
+    ? ((latestSummary as Record<string, unknown>).donor_healing_orientation as DonorHealingOrientationRecord)
+    : null;
   const preSurgeryPlanningReport =
     patientReviewPathway === "pre_surgery" && latestSummary
       ? resolvePreSurgeryPlanningReport(latestSummary as Record<string, unknown>, {
@@ -1468,25 +1494,30 @@ export default async function Page({
           )}
 
           {patientShowReportContent && latestReport && postSurgeryAuditReport ? (
-            <PostSurgeryAuditReportShell
-              report={postSurgeryAuditReport}
-              statusLabel={statusDisplayLabel}
-              translatedNarrativeActive={patientSafeSummaryNarrative.translatedNarrativeActive}
-              requestedLocale={seoLocale}
-              fallbackReason={patientSafeSummaryNarrative.fallbackReason}
-              uploads={(uploads ?? []) as Array<{
-                id: string;
-                type: string;
-                storage_path: string;
-                metadata?: Record<string, unknown> | null;
-              }>}
-              caseId={c.id}
-              clinicalHistory={clinicalHistorySnapshot}
-              imageLimitedAssessment={imageLimitedForensicNotice}
-              documentAssistedAssessment={Boolean(
-                (forensic as { documentAssistedAssessment?: boolean } | null)?.documentAssistedAssessment
-              )}
-            />
+            <>
+              {isPatientForCase && donorHealingEntryActive ? (
+                <DonorReportViewedTracker caseId={c.id} enabled />
+              ) : null}
+              <PostSurgeryAuditReportShell
+                report={postSurgeryAuditReport}
+                statusLabel={statusDisplayLabel}
+                translatedNarrativeActive={patientSafeSummaryNarrative.translatedNarrativeActive}
+                requestedLocale={seoLocale}
+                fallbackReason={patientSafeSummaryNarrative.fallbackReason}
+                uploads={(uploads ?? []) as Array<{
+                  id: string;
+                  type: string;
+                  storage_path: string;
+                  metadata?: Record<string, unknown> | null;
+                }>}
+                caseId={c.id}
+                clinicalHistory={clinicalHistorySnapshot}
+                imageLimitedAssessment={imageLimitedForensicNotice}
+                documentAssistedAssessment={Boolean(
+                  (forensic as { documentAssistedAssessment?: boolean } | null)?.documentAssistedAssessment
+                )}
+              />
+            </>
           ) : null}
           {patientShowReportContent &&
           latestReport &&
@@ -1588,6 +1619,7 @@ export default async function Page({
                   submitLabel={patientCaseDashboardModel?.submitLabel}
                   resubmitLabel={patientCaseDashboardModel?.submitResubmitLabel}
                   whatHappensNext={patientCaseDashboardModel?.submitWhatHappensNext}
+                  donorEntryContext={donorEntryContextForSubmit}
                 />
               </div>
               <div className="rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm">
@@ -1893,6 +1925,16 @@ export default async function Page({
       {hairAuditIntelligenceBundle ? (
         <div className="mt-6">
           <HairAuditIntelligencePanel bundle={hairAuditIntelligenceBundle} reportVersion={latestReport?.version} />
+        </div>
+      ) : null}
+
+      {isAuditor && latestReport && donorHealingEntryActive ? (
+        <div className="mt-6">
+          <DonorHealingOrientationReviewPanel
+            reportId={latestReport.id}
+            initialRecord={donorOrientationRecord}
+            uploadTypes={(uploads ?? []).map((u) => String((u as { type?: string }).type ?? ""))}
+          />
         </div>
       ) : null}
 

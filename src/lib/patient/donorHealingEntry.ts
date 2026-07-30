@@ -68,7 +68,7 @@ export const DONOR_HEALING_ORIENTATION_LABELS: Record<DonorHealingOrientation, s
     "Persistent donor irregularity deserves structured review",
   direct_clinical_assessment_recommended: "Direct clinical assessment is recommended",
   insufficient_evidence:
-    "The available photographs are not sufficient to assess this reliably",
+    "The available photographs are insufficient to assess this reliably",
 };
 
 /** Phrases that must never appear in patient-facing donor copy or automated outputs. */
@@ -250,8 +250,9 @@ export function donorHealingOrientationLabel(state: DonorHealingOrientation): st
 }
 
 /**
- * Bounded orientation stub for 1A. Never diagnoses infection, overharvesting,
- * normality, or graft capacity. Full report integration lands in 1B.
+ * Bounded orientation mapping (1A contract / 1B report mapping).
+ * Never diagnoses infection, overharvesting, normality, or graft capacity.
+ * Single-photograph certainty is rejected for mature-stage compatibility claims.
  */
 export function resolveDonorHealingOrientationState(input: {
   monthsSinceBand?: string | null;
@@ -260,6 +261,7 @@ export function resolveDonorHealingOrientationState(input: {
   hasDonorLeftPhoto?: boolean;
   hasDonorRightPhoto?: boolean;
   hasRedFlagSymptoms?: boolean;
+  hasProcedureDate?: boolean;
 }): DonorHealingOrientation {
   if (input.hasRedFlagSymptoms) {
     return "direct_clinical_assessment_recommended";
@@ -269,17 +271,23 @@ export function resolveDonorHealingOrientationState(input: {
     Number(Boolean(input.hasDonorRearPhoto)) +
     Number(Boolean(input.hasDonorLeftPhoto)) +
     Number(Boolean(input.hasDonorRightPhoto));
-  if (donorViews < 1) {
-    return "insufficient_evidence";
-  }
-
   const band = String(input.monthsSinceBand ?? "").toLowerCase();
+  const hasTiming = Boolean(band) || Boolean(input.hasProcedureDate);
   const early =
     band === "under_3" ||
     band === "days_1_3" ||
     band === "days_4_7" ||
     band === "days_8_14" ||
     band === "weeks_3_8";
+
+  if (!hasTiming || donorViews < 1) {
+    return "insufficient_evidence";
+  }
+
+  // One photograph alone must never produce a mature-stage compatibility claim.
+  if (donorViews === 1) {
+    return early ? "too_early_to_assess_homogeneity" : "insufficient_evidence";
+  }
 
   if (early) {
     return "too_early_to_assess_homogeneity";

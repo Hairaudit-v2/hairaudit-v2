@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { caseSubmitSurfaceOpen } from "@/lib/patient/caseSubmitStatus";
 import type { PatientReviewPathway } from "@/lib/patient/patientReviewPathway";
+import { trackDonorCaseSubmittedOnce } from "@/lib/analytics/donorFunnelEvents";
+import { isDonorHealingEntryContext } from "@/lib/patient/donorHealingEntry";
 
 export default function SubmitButton({
   caseId,
@@ -14,6 +16,7 @@ export default function SubmitButton({
   submitLabel,
   resubmitLabel,
   whatHappensNext: whatHappensNextOverride,
+  donorEntryContext = null,
 }: {
   caseId: string;
   caseStatus: string;
@@ -23,6 +26,8 @@ export default function SubmitButton({
   submitLabel?: string;
   resubmitLabel?: string;
   whatHappensNext?: string;
+  /** HA-DONOR-HEALING-1B — when set, emit donor_case_submitted after successful submit. */
+  donorEntryContext?: string | null;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -60,9 +65,13 @@ export default function SubmitButton({
 
       if (!res.ok) throw new Error(json?.error ?? `Submit failed (${res.status})`);
 
+      if (isDonorHealingEntryContext(donorEntryContext)) {
+        trackDonorCaseSubmittedOnce(caseId);
+      }
+
       router.refresh();
-    } catch (e: any) {
-      setErr(e?.message ?? "Submit failed");
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : "Submit failed");
     } finally {
       setBusy(false);
     }

@@ -41,6 +41,7 @@ import {
 } from "@/lib/inngest/runAuditEventData";
 import { getCaseFilesBucketNameForReadOnlyUse } from "@/lib/hairaudit/uploadStorage";
 import { generatePostSurgeryAuditReport } from "@/lib/reports/postSurgeryAuditReport";
+import { resolveDonorHealingOrientationForReport } from "@/lib/patient/donorHealingOrientationReport";
 import { generatePreSurgeryPlanningReport } from "@/lib/reports/preSurgeryPlanningReport";
 import { normalizePatientReviewPathway } from "@/lib/patient/patientReviewPathway";
 
@@ -1407,18 +1408,37 @@ export const runAudit = inngest.createFunction(
       const patientReviewPathway = normalizePatientReviewPathway(
         (c as { patient_review_pathway?: string | null }).patient_review_pathway
       );
+      const uploadTypes = (uploads as { type?: string | null }[]).map((u) =>
+        String(u.type ?? "")
+      );
       const summaryForInsert =
         patientReviewPathway === "post_surgery"
-          ? {
-              ...summary,
-              post_surgery_audit_report: generatePostSurgeryAuditReport({
+          ? (() => {
+              const postReport = generatePostSurgeryAuditReport({
                 summary,
                 intelligenceBundle: hairAuditIntelligenceBundle,
                 caseId,
                 reportVersion: nextVersion,
                 patientReviewPathway,
-              }),
-            }
+                uploadTypes,
+              });
+              const orientationRecord = resolveDonorHealingOrientationForReport({
+                answers: (existingSummary.patient_answers ?? null) as Record<
+                  string,
+                  unknown
+                > | null,
+                summary,
+                uploadTypes,
+                stored: summary.donor_healing_orientation,
+              });
+              return {
+                ...summary,
+                ...(orientationRecord
+                  ? { donor_healing_orientation: orientationRecord }
+                  : {}),
+                post_surgery_audit_report: postReport,
+              };
+            })()
           : patientReviewPathway === "pre_surgery"
             ? {
                 ...summary,

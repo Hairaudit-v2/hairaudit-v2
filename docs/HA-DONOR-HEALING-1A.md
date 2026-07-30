@@ -276,8 +276,8 @@ pnpm exec playwright test --config=playwright.config.ts tests/e2e/hairaudit/dono
 
 ## Known limitations
 
-- Automated clinical scoring / orientation auto-output on patient reports remains 1B
-- `donor_case_submitted` / `donor_report_viewed` event wiring may need deeper report-view hooks in a follow-up if not already firehose-covered on submit surfaces
+- Automated clinical scoring / orientation auto-output on patient reports → **delivered in 1B** (`docs/HA-DONOR-HEALING-1B.md`)
+- `donor_case_submitted` / `donor_report_viewed` → **delivered in 1B**
 - Playwright Journey C proves session + resolver contract; full password/OAuth end-to-end against live credentials is environment-dependent
 - Reserved `HairAuditEntryContext` values are validated-reject-only until future concern pages land
 
@@ -294,7 +294,7 @@ pnpm exec playwright test --config=playwright.config.ts tests/e2e/hairaudit/dono
 
 ## Out of scope (later phases)
 
-- **1B** Structured donor intake + report integration hardening / orientation output
+- **1B** Structured donor intake + report integration hardening / orientation output — **see `docs/HA-DONOR-HEALING-1B.md`**
 - **1C** Longitudinal donor photograph comparison
 - **1D** Donor content cluster consolidation
 - AI future-outcome images, automated extraction counts, capacity calculations
