@@ -14,19 +14,11 @@ import type {
   ClinicalObservation,
   PreSurgeryGraftPlan,
   PreSurgeryIllustrativeProjection,
+  PreSurgeryProjectionStaleReason,
 } from "../types";
 import { projectionInvalidatedByPlanChange } from "./safety";
 
-export type ProjectionStaleReason =
-  | "approved_graft_plan_changed"
-  | "source_image_role_or_orientation_changed"
-  | "relevant_annotation_changed"
-  | "approved_observations_changed"
-  | "projection_policy_version_changed"
-  | "provider_or_model_retired"
-  | "case_no_longer_eligible"
-  | "patient_sharing_revoked"
-  | "manual";
+export type ProjectionStaleReason = PreSurgeryProjectionStaleReason;
 
 export type StalenessContext = {
   currentApprovedPlan: PreSurgeryGraftPlan | null;

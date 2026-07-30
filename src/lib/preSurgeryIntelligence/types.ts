@@ -435,6 +435,17 @@ export type PreSurgeryApprovalChecklist = {
   suitableToShare: boolean;
 };
 
+export type PreSurgeryProjectionStaleReason =
+  | "approved_graft_plan_changed"
+  | "source_image_role_or_orientation_changed"
+  | "relevant_annotation_changed"
+  | "approved_observations_changed"
+  | "projection_policy_version_changed"
+  | "provider_or_model_retired"
+  | "case_no_longer_eligible"
+  | "patient_sharing_revoked"
+  | "manual";
+
 export type PreSurgeryIllustrativeProjection = {
   id: string;
   caseId: string;
@@ -490,7 +501,7 @@ export type PreSurgeryIllustrativeProjection = {
   failureMessage?: string | null;
   /** 2D — set when projection is stale; remains auditable but not shareable. */
   staleAt?: string | null;
-  staleReasons?: string[] | null;
+  staleReasons?: PreSurgeryProjectionStaleReason[] | null;
   /** 2D — shadow / quality-review cohort tag. */
   shadowMode?: boolean;
   qualityCohortCategory?: string | null;

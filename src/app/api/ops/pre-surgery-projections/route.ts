@@ -3,7 +3,7 @@
  */
 
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import {
   buildProjectionOpsDashboard,
@@ -17,7 +17,7 @@ export const runtime = "nodejs";
 
 export async function GET() {
   try {
-    const supabase = await createClient();
+    const supabase = await createSupabaseAuthServerClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -51,7 +51,7 @@ export async function GET() {
 
     const controls = resolveProjectionActivationControls();
     const runtime = resolveRuntimeProjectionProvider();
-    const health = await checkProjectionProviderHealth();
+    const health = await checkProjectionProviderHealth(runtime.provider, runtime.providerId);
 
     const staleApprovedCaseIds = projections
       .filter((p) => p.status === "approved" && Boolean(p.staleAt))

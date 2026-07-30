@@ -93,11 +93,11 @@ export function verifyRollbackTo2BBoundary(input: {
   /** Existing report pins that must remain readable. */
   existingPinnedProjectionIds: string[];
 }): Rollback2BVerification {
-  const env = input.env ?? {
+  const env = (input.env ?? {
     HA_PRE_SURGERY_PROJECTION_PROVIDER: "stub",
     HA_PRE_SURGERY_IMAGINGOS_ENABLED: "false",
     HA_PRE_SURGERY_PATIENT_SHARING_KILL_SWITCH: "true",
-  };
+  }) as NodeJS.ProcessEnv;
   const controls = resolveProjectionActivationControls(env);
   const providerKind = ((env.HA_PRE_SURGERY_PROJECTION_PROVIDER ?? "stub")
     .trim()

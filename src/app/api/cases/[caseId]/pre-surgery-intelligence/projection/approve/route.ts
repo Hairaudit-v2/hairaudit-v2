@@ -20,6 +20,7 @@ import {
 import type {
   PreSurgeryApprovalChecklist,
   PreSurgeryProjectionRejectionReason,
+  PreSurgeryProjectionStaleReason,
 } from "@/lib/preSurgeryIntelligence/types";
 import {
   insertAuditEvent,
@@ -195,7 +196,7 @@ export async function PATCH(req: Request, ctx: RouteContext) {
               staleAt: existing.staleAt ?? new Date().toISOString(),
               staleReasons: existing.staleReasons?.length
                 ? existing.staleReasons
-                : ["patient_sharing_revoked"],
+                : (["patient_sharing_revoked"] as PreSurgeryProjectionStaleReason[]),
             }
           : {}),
       };
