@@ -138,8 +138,8 @@ import {
 } from "@/lib/reports/patientSafeSummary";
 import { resolvePostSurgeryAuditReport } from "@/lib/reports/postSurgeryAuditReport";
 import { resolvePreSurgeryPlanningReport } from "@/lib/reports/preSurgeryPlanningReport";
-import PostSurgeryAuditReportShell from "@/components/patient/PostSurgeryAuditReportShell";
 import DonorHealingPatientReport from "@/components/patient-report/DonorHealingPatientReport";
+import PostSurgeryPatientReport from "@/components/patient-report/PostSurgeryPatientReport";
 import DonorReportViewedTracker from "@/components/patient/DonorReportViewedTracker";
 import DonorHealingOrientationReviewPanel from "@/components/auditor/DonorHealingOrientationReviewPanel";
 import DonorLongitudinalComparisonReviewPanel from "@/components/auditor/DonorLongitudinalComparisonReviewPanel";
@@ -1648,12 +1648,29 @@ export default async function Page({
                   caseId={c.id}
                 />
               ) : (
-                <PostSurgeryAuditReportShell
+                <PostSurgeryPatientReport
                   report={postSurgeryAuditReport}
                   statusLabel={statusDisplayLabel}
-                  translatedNarrativeActive={patientSafeSummaryNarrative.translatedNarrativeActive}
-                  requestedLocale={seoLocale}
-                  fallbackReason={patientSafeSummaryNarrative.fallbackReason}
+                  reportDate={
+                    (latestReport as { created_at?: string } | null)?.created_at ??
+                    postSurgeryAuditReport.generatedAt
+                  }
+                  procedureDate={
+                    normalizedPatient?.procedure_date
+                      ? String(normalizedPatient.procedure_date)
+                      : null
+                  }
+                  monthsSinceBand={
+                    normalizedPatient?.months_since
+                      ? String(normalizedPatient.months_since)
+                      : null
+                  }
+                  backHref="/dashboard/patient"
+                  downloadHref={
+                    latestReport?.id
+                      ? `/api/reports/${latestReport.id}/download`
+                      : undefined
+                  }
                   uploads={(uploads ?? []) as Array<{
                     id: string;
                     type: string;
@@ -1661,12 +1678,6 @@ export default async function Page({
                     metadata?: Record<string, unknown> | null;
                   }>}
                   caseId={c.id}
-                  clinicalHistory={clinicalHistorySnapshot}
-                  imageLimitedAssessment={imageLimitedForensicNotice}
-                  documentAssistedAssessment={Boolean(
-                    (forensic as { documentAssistedAssessment?: boolean } | null)
-                      ?.documentAssistedAssessment
-                  )}
                 />
               )}
             </>

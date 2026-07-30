@@ -68,6 +68,8 @@ export type PatientReportPhotoGroupId =
   | "rear_donor"
   | "left_donor"
   | "right_donor"
+  | "recipient_area"
+  | "supporting_comparison"
   | "additional_evidence";
 
 export type PatientReportPhoto = {

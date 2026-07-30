@@ -154,6 +154,14 @@ export function findDonorFixture(
   return catalog.donorHealing.find((e) => e.fixtureKind === kind);
 }
 
+/** Prefer a post-surgery seed by 1-based index (post_01 → index 1). */
+export function findPostSurgeryFixture(
+  catalog: DemoQaCatalog,
+  index: number
+): DemoQaCaseEntry | undefined {
+  return catalog.postSurgery.find((e) => e.index === index);
+}
+
 export async function ensureProcessingCaseForUser(args: {
   userId: string;
   pathway: PatientReviewPathway;

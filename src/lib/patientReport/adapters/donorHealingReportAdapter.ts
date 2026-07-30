@@ -209,6 +209,7 @@ export function buildDonorHealingPatientReportViewModel(
       statusLabel: input.statusLabel,
       reportDate: input.reportDate,
       procedureDate: input.procedureDate,
+      monthsSinceBand: input.monthsSinceBand,
       backHref: input.backHref,
       downloadHref: input.downloadHref,
       uploads: input.uploads,

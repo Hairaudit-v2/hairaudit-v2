@@ -20,6 +20,9 @@ const MONTHS_BAND_LABELS: Record<string, string> = {
   "12_plus": "12 months or more",
 };
 
+/** Shared band → label map for post-surgery timing normalization (1B). */
+export const MONTHS_BAND_LABELS_EXPORT: Readonly<Record<string, string>> = MONTHS_BAND_LABELS;
+
 export function patientSafeHealingStageLabel(
   monthsSinceBand: string | null | undefined,
   stageGroup: DonorOrientationEvidence["stageGroup"]

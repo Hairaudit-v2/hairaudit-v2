@@ -74,20 +74,48 @@ export const DONOR_HEALING_SECTION_ORDER = [
   "methodology",
 ] as const;
 
+/** Canonical standard Post-Surgery Audit section order (ids). */
+export const POST_SURGERY_SECTION_ORDER = [
+  "orientation",
+  "what_this_means",
+  "findings",
+  "photographs",
+  "recipient_area",
+  "donor_area",
+  "density_coverage",
+  "procedural_integrity",
+  "healing_stage",
+  "limitations",
+  "next_steps",
+  "supporting_detail",
+  "methodology",
+] as const;
+
 export function sectionIdsInOrder(sections: PatientReportSection[]): string[] {
   return sections.map((s) => s.id);
 }
 
-export function validateDonorHealingSectionOrder(sections: PatientReportSection[]): boolean {
+function validateSectionOrder(
+  sections: PatientReportSection[],
+  expectedOrder: readonly string[]
+): boolean {
   const ids = sectionIdsInOrder(sections);
   let cursor = 0;
-  for (const expected of DONOR_HEALING_SECTION_ORDER) {
+  for (const expected of expectedOrder) {
     const idx = ids.indexOf(expected);
     if (idx === -1) continue;
     if (idx < cursor) return false;
     cursor = idx;
   }
   return true;
+}
+
+export function validateDonorHealingSectionOrder(sections: PatientReportSection[]): boolean {
+  return validateSectionOrder(sections, DONOR_HEALING_SECTION_ORDER);
+}
+
+export function validatePostSurgerySectionOrder(sections: PatientReportSection[]): boolean {
+  return validateSectionOrder(sections, POST_SURGERY_SECTION_ORDER);
 }
 
 /**

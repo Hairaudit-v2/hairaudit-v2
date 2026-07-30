@@ -24,6 +24,8 @@ const GROUP_TITLES: Record<PatientReportPhotoGroupId, string> = {
   rear_donor: "Rear donor",
   left_donor: "Left donor",
   right_donor: "Right donor",
+  recipient_area: "Recipient area",
+  supporting_comparison: "Supporting comparison",
   additional_evidence: "Additional evidence",
 };
 
@@ -49,20 +51,32 @@ function classifyRole(canonical: string): {
   ) {
     return { role: "donor_rear", groupId: "rear_donor" };
   }
-  if (c.includes("close") || c.includes("macro")) {
+  if (c.includes("donor") && (c.includes("close") || c.includes("macro"))) {
     return { role: "close_up", groupId: "additional_evidence" };
   }
+  if (
+    c.includes("recipient") ||
+    c.includes("hairline") ||
+    c.includes("crown") ||
+    c.includes("front") ||
+    c.includes("temple") ||
+    c.includes("mid_scalp") ||
+    c.includes("mid-scalp") ||
+    (c.includes("top") && !c.includes("topology"))
+  ) {
+    return { role: "recipient", groupId: "recipient_area" };
+  }
   if (c.includes("preop") || c.includes("pre_surgery") || c.includes("baseline")) {
-    return { role: "pre_surgery", groupId: "additional_evidence" };
+    return { role: "pre_surgery", groupId: "supporting_comparison" };
   }
   if (c.includes("day0") || c.includes("surgery") || c.includes("intraop")) {
-    return { role: "surgery_day", groupId: "additional_evidence" };
+    return { role: "surgery_day", groupId: "supporting_comparison" };
   }
   if (c.includes("followup") || c.includes("follow_up") || c.includes("postop")) {
-    return { role: "follow_up", groupId: "additional_evidence" };
+    return { role: "follow_up", groupId: "supporting_comparison" };
   }
-  if (c.includes("recipient") || c.includes("hairline") || c.includes("crown") || c.includes("front")) {
-    return { role: "recipient", groupId: "additional_evidence" };
+  if (c.includes("close") || c.includes("macro")) {
+    return { role: "close_up", groupId: "additional_evidence" };
   }
   if (c.includes("donor")) {
     return { role: "donor_rear", groupId: "rear_donor" };
@@ -109,6 +123,8 @@ export function groupUploadsIntoPatientReportPhotos(
     rear_donor: [],
     left_donor: [],
     right_donor: [],
+    recipient_area: [],
+    supporting_comparison: [],
     additional_evidence: [],
   };
 
@@ -148,9 +164,11 @@ export function groupUploadsIntoPatientReportPhotos(
   }
 
   const order: PatientReportPhotoGroupId[] = [
+    "recipient_area",
     "rear_donor",
     "left_donor",
     "right_donor",
+    "supporting_comparison",
     "additional_evidence",
   ];
 

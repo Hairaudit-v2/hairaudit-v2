@@ -334,7 +334,7 @@ describe("HA-PATIENT-REPORT-UI-1A — photo grouping", () => {
     ]);
     assert.deepEqual(
       groups.map((g) => g.id),
-      ["rear_donor", "left_donor", "right_donor", "additional_evidence"]
+      ["recipient_area", "rear_donor", "left_donor", "right_donor"]
     );
     for (const g of groups) {
       for (const p of g.photos) {

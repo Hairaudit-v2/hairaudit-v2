@@ -191,7 +191,7 @@ test.describe("HA-PATIENT-REPORT-UI-1A.1 seeded donor report journeys", () => {
     expect(clipped).toBeFalsy();
   });
 
-  test("Journey D — legacy non-donor post-surgery + missing-orientation fallback", async ({
+  test("Journey D — standard post-surgery shell + missing-orientation fallback", async ({
     page,
     catalog,
     demoPassword,
@@ -204,10 +204,12 @@ test.describe("HA-PATIENT-REPORT-UI-1A.1 seeded donor report journeys", () => {
     await loginAsPatient(page, legacy!.email, demoPassword);
     await page.goto(`/cases/${legacy!.caseId}`);
 
-    const legacyShell = page.getByTestId("post-surgery-report-shell");
-    await expect(legacyShell).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByTestId("patient-report-shell")).toHaveCount(0);
-    await expect(legacyShell.getByText(/recommended next steps/i)).toBeVisible();
+    // HA-PATIENT-REPORT-UI-1B — standard post-surgery uses PatientReportShell
+    const shell = page.getByTestId("patient-report-shell");
+    await expect(shell).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("post-surgery-report-shell")).toHaveCount(0);
+    await expect(shell).toHaveAttribute("data-report-type", "post_surgery");
+    await expect(page.getByTestId("patient-report-next-steps")).toBeVisible();
 
     // Fallback fixture: own patient session (cross-case access is denied)
     if (process.env.E2E_HAS_DONOR_REPORT_CATALOG === "true") {
@@ -216,8 +218,8 @@ test.describe("HA-PATIENT-REPORT-UI-1A.1 seeded donor report journeys", () => {
       await clearAuthState(page);
       await loginAsPatient(page, fallback!.email, demoPassword);
       await page.goto(`/cases/${fallback!.caseId}`);
-      const shell = page.getByTestId("patient-report-shell");
-      await expect(shell).toBeVisible({ timeout: 30_000 });
+      const fallbackShell = page.getByTestId("patient-report-shell");
+      await expect(fallbackShell).toBeVisible({ timeout: 30_000 });
       await expect(page.getByTestId("patient-report-summary")).toBeVisible();
       await expect(page.getByTestId("patient-report-next-steps")).toBeVisible();
       await expect(page.getByTestId("professional-donor-orientation-workspace")).toHaveCount(0);

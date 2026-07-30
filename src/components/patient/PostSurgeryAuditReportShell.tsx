@@ -1,5 +1,13 @@
 "use client";
 
+/**
+ * @deprecated HA-PATIENT-REPORT-UI-1B — Standard patient Post-Surgery Audit reports
+ * now mount `PostSurgeryPatientReport` → `PatientReportShell`.
+ * This legacy shell is retained temporarily for rollback support and reference.
+ * Do not re-wire patient routes to this component. Remove in a dedicated cleanup phase
+ * once seeded journeys and PDF parity are proven green.
+ */
+
 import { useI18n } from "@/components/i18n/I18nProvider";
 import type { SupportedLocale } from "@/lib/i18n/constants";
 import type { TranslationKey } from "@/lib/i18n/translationKeys";

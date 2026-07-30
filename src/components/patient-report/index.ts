@@ -1,5 +1,6 @@
 export { default as PatientReportShell } from "@/components/patient-report/PatientReportShell";
 export { default as DonorHealingPatientReport } from "@/components/patient-report/DonorHealingPatientReport";
+export { default as PostSurgeryPatientReport } from "@/components/patient-report/PostSurgeryPatientReport";
 export { default as PatientReportHeader } from "@/components/patient-report/PatientReportHeader";
 export { default as PatientReportSummary } from "@/components/patient-report/PatientReportSummary";
 export { default as PatientReportStatusStrip } from "@/components/patient-report/PatientReportStatusStrip";
