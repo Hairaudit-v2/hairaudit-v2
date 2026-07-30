@@ -5,7 +5,7 @@
 **Scope:** Canonical patient report architecture + donor-healing migration only.  
 **Does not change:** donor orientation mapping, six orientation states, pathway logic, snapshots, scoring engines, or PDF generation contracts.
 
-**Follow-ons:** [HA-PATIENT-REPORT-UI-1A.1](./HA-PATIENT-REPORT-UI-1A.1.md) (seeded Playwright — GREEN) · [HA-PATIENT-REPORT-UI-1A.2](./HA-PATIENT-REPORT-UI-1A.2.md) (Donor PDF parity — tracked, not started).
+**Follow-ons:** [HA-PATIENT-REPORT-UI-1A.1](./HA-PATIENT-REPORT-UI-1A.1.md) (seeded Playwright — GREEN) · [HA-PATIENT-REPORT-UI-1A.2](./HA-PATIENT-REPORT-UI-1A.2.md) (Donor PDF parity — GREEN).
 
 ---
 
@@ -276,7 +276,7 @@ pnpm exec playwright test --config=playwright.config.ts tests/e2e/hairaudit/pati
 ## Known limitations
 
 - Pre-surgery / projection / longitudinal React shells not migrated.
-- Post-surgery PDF HTML still does not render donor orientation — tracked as **HA-PATIENT-REPORT-UI-1A.2** (do not quietly fold into 1B).
+- Post-surgery PDF HTML donor orientation parity — **HA-PATIENT-REPORT-UI-1A.2** (GREEN).
 - Visual QA screenshots use fixture HTML with placeholder photo frames (not live signed URLs); live signed-URL behaviour is covered in 1A.1 Playwright.
 - Case page outer chrome remains dark for non-patient forensic context; patient shell itself is light.
 
@@ -295,7 +295,7 @@ pnpm exec playwright test --config=playwright.config.ts tests/e2e/hairaudit/pati
 
 | Phase | Scope |
 |-------|-------|
-| **HA-PATIENT-REPORT-UI-1A.2** | Donor PDF orientation parity (web/PDF consistency) |
+| **HA-PATIENT-REPORT-UI-1A.2** | Donor PDF orientation parity — **GREEN** |
 | **HA-PATIENT-REPORT-UI-1B** | Standard Post-Surgery Audit → shell (non-donor) |
 | **1C** | Pre-Surgery Planning adapter + shell |
 | **1D** | Projection / longitudinal web shells (today PDF-only) |

@@ -926,6 +926,14 @@ export async function GET(req: Request) {
         const forensic = (summary as Record<string, unknown>)?.forensic_audit as
           | { imageLimitedAssessment?: boolean; documentAssistedAssessment?: boolean }
           | undefined;
+        const patientAnswers =
+          ((summary as Record<string, unknown>)?.patient_answers as Record<string, unknown> | undefined) ??
+          null;
+        const monthsSinceBand =
+          (typeof patientAnswers?.months_since === "string" && patientAnswers.months_since) ||
+          (typeof (summary as Record<string, unknown>)?.months_since === "string"
+            ? String((summary as Record<string, unknown>).months_since)
+            : null);
         return renderPostSurgeryAuditReportHtml({
           report: postReport,
           caseId,
@@ -936,6 +944,7 @@ export async function GET(req: Request) {
           clinicalHistory: clinicalHistorySnapshot,
           imageLimitedAssessment: Boolean(forensic?.imageLimitedAssessment),
           documentAssistedAssessment: Boolean(forensic?.documentAssistedAssessment),
+          monthsSinceBand,
         });
       }
     }

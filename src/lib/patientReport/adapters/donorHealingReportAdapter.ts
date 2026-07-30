@@ -22,6 +22,7 @@ import type {
   PatientReportViewModel,
 } from "@/lib/patientReport/types";
 import { buildPostSurgeryFallbackViewModel } from "@/lib/patientReport/adapters/postSurgeryFallbackAdapter";
+import { DONOR_EVIDENCE_LIMITATIONS } from "@/lib/patientReport/donorPatientCopy";
 
 export type DonorHealingAdapterInput = {
   report: PostSurgeryAuditReport;
@@ -38,14 +39,6 @@ export type DonorHealingAdapterInput = {
     metadata?: Record<string, unknown> | null;
   }>;
 };
-
-const DONOR_LIMITATIONS = [
-  "Photographs do not measure exact donor density.",
-  "Permanent follicle loss may not be determinable from images alone.",
-  "Lighting, hair length, angle, haircut, and image quality affect interpretation.",
-  "Some conclusions require in-person examination.",
-  "HairAudit does not replace urgent medical care.",
-] as const;
 
 function primaryNextStep(orientation: PatientSafeDonorOrientationSlice): string {
   switch (orientation.state) {
@@ -323,7 +316,7 @@ export function buildDonorHealingPatientReportViewModel(
         id: "limitations",
         navLabel: "Limitations",
         title: "Evidence limitations",
-        items: [...DONOR_LIMITATIONS],
+        items: [...DONOR_EVIDENCE_LIMITATIONS],
       },
       {
         type: "recommendations",

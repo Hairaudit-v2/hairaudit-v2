@@ -37,6 +37,11 @@ import {
   PATHWAY_VISUAL_SUMMARY_CSS,
   renderPathwayVisualSummaryHtml,
 } from "./pathwayVisualSummary";
+import {
+  DONOR_HEALING_PDF_SECTION_CSS,
+  renderDonorHealingPdfSectionHtml,
+} from "./donorHealingPdfSection";
+import { DONOR_PDF_HERO_SUBTITLE, DONOR_PDF_ORIENTATION_SECTION_TITLE } from "@/lib/patientReport/donorPatientCopy";
 import type { ClinicalHistorySnapshot } from "@/lib/hairaudit/clinical-history/clinicalHistoryTypes";
 
 export type PostSurgeryReportHtmlLabels = {
@@ -83,6 +88,8 @@ export type PostSurgeryReportHtmlVm = {
   clinicalHistory?: ClinicalHistorySnapshot | null;
   imageLimitedAssessment?: boolean;
   documentAssistedAssessment?: boolean;
+  /** Optional months_since band for donor healing-stage label in PDF. */
+  monthsSinceBand?: string | null;
 };
 
 function esc(s: string) {
@@ -125,9 +132,25 @@ export function renderPostSurgeryAuditReportHtml(vm: PostSurgeryReportHtmlVm): s
     clinicalHistory,
     imageLimitedAssessment,
     documentAssistedAssessment,
+    monthsSinceBand,
   } = vm;
   const sectionById = new Map(report.sections.map((s) => [s.id, s]));
   const scorecardById = new Map(report.scorecards.map((s) => [s.id, s]));
+  const donorOrientation = report.donorHealingOrientation ?? null;
+  const isDonorPdf = Boolean(donorOrientation);
+
+  const heroTitle = isDonorPdf ? "Post-Surgery Audit" : labels.heroTitle;
+  const heroSubtitle = isDonorPdf ? DONOR_PDF_HERO_SUBTITLE : labels.heroSubtitle;
+  const documentTitle = isDonorPdf
+    ? "HairAudit Post-Surgery Review — Donor healing"
+    : `HairAudit Post-Surgery Review — ${caseId}`;
+
+  const donorOrientationHtml = donorOrientation
+    ? renderDonorHealingPdfSectionHtml({
+        orientation: donorOrientation,
+        monthsSinceBand,
+      })
+    : "";
 
   const scorecardsHtml = SCORECARD_ORDER
     .map((id) => {
@@ -280,7 +303,7 @@ export function renderPostSurgeryAuditReportHtml(vm: PostSurgeryReportHtmlVm): s
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>HairAudit Post-Surgery Review — ${esc(caseId)}</title>
+  <title>${esc(documentTitle)}</title>
   <style>
     @page { size: A4; margin: 14mm 12mm; }
     :root {
@@ -414,6 +437,7 @@ export function renderPostSurgeryAuditReportHtml(vm: PostSurgeryReportHtmlVm): s
     ${ASSESSMENT_CONFIDENCE_CSS}
     ${ASSESSMENT_IMPROVEMENT_CSS}
     ${PATHWAY_VISUAL_SUMMARY_CSS}
+    ${DONOR_HEALING_PDF_SECTION_CSS}
     .trustBox { background: #f0f9ff; border-color: #bae6fd; }
     .nextSteps { background: #ecfdf5; border-color: #a7f3d0; }
     .nextList { margin: 12px 0 0; padding: 0; list-style: none; }
@@ -432,14 +456,22 @@ export function renderPostSurgeryAuditReportHtml(vm: PostSurgeryReportHtmlVm): s
 <body>
   <div class="wrap">
     <header class="hero">
-      <h1>${esc(labels.heroTitle)}</h1>
-      <p class="heroLead">${esc(labels.heroSubtitle)}</p>
+      <h1>${esc(heroTitle)}</h1>
+      <p class="heroLead">${esc(heroSubtitle)}</p>
       <div class="outcomeBand">
-        <div class="outcomeLabel">${esc(labels.outcomeLabel)}</div>
-        <div class="outcomeValue">${esc(labels.proceduralOutcome)}</div>
+        <div class="outcomeLabel">${esc(
+          isDonorPdf && donorOrientation ? DONOR_PDF_ORIENTATION_SECTION_TITLE : labels.outcomeLabel
+        )}</div>
+        <div class="outcomeValue">${esc(
+          isDonorPdf && donorOrientation ? donorOrientation.label : labels.proceduralOutcome
+        )}</div>
       </div>
       <div class="metaRow">
-        <span>${esc(labels.reportIdLabel)}: ${esc(report.reportId)}</span>
+        ${
+          isDonorPdf
+            ? ""
+            : `<span>${esc(labels.reportIdLabel)}: ${esc(report.reportId)}</span>`
+        }
         <span>${esc(labels.generatedAtLabel)}: ${esc(generatedAtDisplay)}</span>
       </div>
     </header>
@@ -447,6 +479,8 @@ export function renderPostSurgeryAuditReportHtml(vm: PostSurgeryReportHtmlVm): s
     ${imageLimitedHtml}
 
     ${clinicalContextHtml}
+
+    ${donorOrientationHtml}
 
     <div class="section">
       <div class="sectionHead"><h2>${esc(labels.scorecardsTitle)}</h2></div>
