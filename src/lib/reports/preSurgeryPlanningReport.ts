@@ -103,6 +103,9 @@ export type PreSurgeryPlanningReport = {
     approvedGraftPlanChecksum: string;
     approvedObservationCount: number;
     approvedProjectionIds: string[];
+    pinnedProjectionId?: string | null;
+    pinnedProjectionVersion?: number | null;
+    pinnedProjectionInputChecksum?: string | null;
     frozenAt: string;
   } | null;
   /** Patient-safe zone/graft summary from approved plan (no draft notes). */
@@ -173,6 +176,9 @@ export type GeneratePreSurgeryPlanningReportInput = {
       approvedGraftPlanChecksum: string;
       approvedObservationCount: number;
       approvedProjectionIds: string[];
+      pinnedProjectionId?: string | null;
+      pinnedProjectionVersion?: number | null;
+      pinnedProjectionInputChecksum?: string | null;
       frozenAt: string;
     } | null;
     patientSafeProjectionLabels?: string[];

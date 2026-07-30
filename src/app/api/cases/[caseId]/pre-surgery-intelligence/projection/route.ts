@@ -1,5 +1,5 @@
 /**
- * HA-PRE-SURGERY-INTELLIGENCE-2A — Request illustrative projection generation.
+ * HA-PRE-SURGERY-INTELLIGENCE-2C — Request illustrative projection generation.
  */
 
 import { NextResponse } from "next/server";
@@ -8,6 +8,7 @@ import {
   createAuditEvent,
   isProjectionSourceRole,
   requestPreSurgeryProjection,
+  type PreSurgeryAuditEventType,
 } from "@/lib/preSurgeryIntelligence";
 import type { PreSurgeryProjectionMode } from "@/lib/preSurgeryIntelligence/types";
 import {
@@ -44,6 +45,8 @@ export async function POST(req: Request, ctx: RouteContext) {
       proposedHairlineConfirmed?: boolean;
       treatmentAreaConfirmed?: boolean;
       deterministicSeed?: string | null;
+      regeneratesFromProjectionId?: string | null;
+      idempotencyKey?: string | null;
     };
 
     if (!body.mode || !MODES.includes(body.mode)) {
@@ -78,6 +81,35 @@ export async function POST(req: Request, ctx: RouteContext) {
       );
     }
 
+    let regeneratesFrom = body.regeneratesFromProjectionId ?? null;
+    let projectionVersion = 1;
+    if (regeneratesFrom) {
+      const prior = bundle.projections.find((p) => p.id === regeneratesFrom);
+      if (!prior) {
+        return NextResponse.json({ ok: false, error: "Prior projection not found" }, { status: 404 });
+      }
+      if (prior.status !== "rejected" && prior.status !== "failed" && prior.status !== "validation_failed") {
+        return NextResponse.json(
+          { ok: false, error: "Regeneration is only allowed from rejected or failed attempts" },
+          { status: 400 }
+        );
+      }
+      projectionVersion = (prior.projectionVersion ?? 1) + 1;
+      await insertAuditEvent(
+        admin,
+        createAuditEvent({
+          caseId,
+          eventType: "projection_regeneration_requested",
+          actorId: user.id,
+          metadata: {
+            regeneratesFromProjectionId: regeneratesFrom,
+            projectionVersion,
+            mode: body.mode,
+          },
+        })
+      );
+    }
+
     const { data: uploads } = await admin
       .from("uploads")
       .select("id, type, storage_path")
@@ -107,42 +139,55 @@ export async function POST(req: Request, ctx: RouteContext) {
       caseId,
       plan,
       sourceReview,
+      sourceReviews: bundle.imageReviews,
       sourceImageRef,
       approvedAnnotations: bundle.annotations.filter(
         (a) => a.imageId === body.sourceImageId && a.approved && !a.deletedAt
       ),
+      approvedObservations: bundle.observations,
       mode: body.mode,
       requiredImagesPresent: pack ? requiredImagesPresent : true,
       proposedHairlineConfirmed: Boolean(body.proposedHairlineConfirmed),
       treatmentAreaConfirmed: Boolean(body.treatmentAreaConfirmed),
       requestedBy: user.id,
       deterministicSeed: body.deterministicSeed ?? null,
+      regeneratesFromProjectionId: regeneratesFrom,
+      projectionVersion,
+      idempotencyKey: body.idempotencyKey ?? null,
+      activation: {
+        clinicId: gate.data.caseRow.clinic_id ?? null,
+        requestsForCase: bundle.projections.length,
+        caseLevelEnabled: true,
+      },
     });
 
-    if (!result.ok) {
+    for (const hint of result.auditHints ?? []) {
       await insertAuditEvent(
         admin,
         createAuditEvent({
           caseId,
-          eventType: "projection_rejected",
+          eventType: hint.eventType as PreSurgeryAuditEventType,
           actorId: user.id,
-          metadata: {
-            mode: body.mode,
-            graftPlanId: plan.id,
-            failure: true,
-            degradable: result.degradable === true,
-            providerId: result.providerId ?? null,
-            latencyMs: result.latencyMs ?? null,
-            errorCodes: result.errors.map((e) => e.code),
-          },
+          metadata: hint.metadata,
         })
       );
+    }
+
+    if (!result.ok) {
+      if (result.projection) {
+        try {
+          await insertProjection(admin, result.projection);
+        } catch {
+          // Unique idempotency conflict — still return degradable failure.
+        }
+      }
       return NextResponse.json(
         {
           ok: false,
           errors: result.errors,
           degradable: result.degradable === true,
           providerId: result.providerId,
+          projection: result.projection ?? null,
         },
         { status: 400 }
       );
@@ -162,7 +207,7 @@ export async function POST(req: Request, ctx: RouteContext) {
           outputChecksum: result.projection.outputChecksum,
           providerId: result.providerId,
           latencyMs: result.latencyMs,
-          // Generated only — not patient-visible until clinician approves.
+          status: result.projection.status,
           patientVisible: false,
         },
       })

@@ -12,13 +12,20 @@ import {
   type ClinicalObservation,
   type GraftPlanZone,
   type GraftZonePriority,
+  type PreSurgeryApprovalChecklist,
   type PreSurgeryAuditEvent,
   type PreSurgeryGraftPlan,
   type PreSurgeryGraftPlanZoneRow,
   type PreSurgeryIllustrativeProjection,
   type PreSurgeryProjectionMode,
+  type PreSurgeryProjectionRejectionReason,
   PRE_SURGERY_PROJECTION_PATIENT_LABELS,
 } from "@/lib/preSurgeryIntelligence/types";
+import {
+  APPROVAL_CHECKLIST_KEYS,
+  REJECTION_REASONS,
+  emptyApprovalChecklist,
+} from "@/lib/preSurgeryIntelligence/projection/approval";
 import {
   IMAGE_ROLE_LABELS,
   PRE_SURGERY_IMAGE_ROLES,
@@ -84,6 +91,27 @@ export default function PreSurgeryIntelligenceWorkspace({ caseId }: { caseId: st
     useState<ClinicalImageAnnotation["annotationType"]>("proposed_hairline");
   const [hairlineConfirmed, setHairlineConfirmed] = useState(false);
   const [treatmentConfirmed, setTreatmentConfirmed] = useState(false);
+  const [approvalTargetId, setApprovalTargetId] = useState<string | null>(null);
+  const [approvalChecklist, setApprovalChecklist] = useState<PreSurgeryApprovalChecklist>(
+    emptyApprovalChecklist()
+  );
+  const [approvalNote, setApprovalNote] = useState("");
+  const [rejectReasonCode, setRejectReasonCode] =
+    useState<PreSurgeryProjectionRejectionReason>("other_safety_concern");
+
+  const CHECKLIST_LABELS: Record<keyof PreSurgeryApprovalChecklist, string> = {
+    correctPatientAndCase: "Correct patient and case",
+    correctSourceImages: "Correct source images",
+    correctApprovedGraftPlanVersion: "Correct approved graft-plan version",
+    hairlineWithinApprovedPlan: "Hairline representation is within the approved plan",
+    coverageZonesDoNotExceedPlan: "Coverage zones do not exceed the plan",
+    deferredZonesRemainVisiblyDeferred: "Deferred zones remain visibly deferred",
+    donorLimitationsNotMisrepresented: "Donor limitations are not misrepresented",
+    densityNotPresentedAsGuaranteed: "Density is not presented as guaranteed",
+    visualOutputDoesNotImplyExactFutureGrowth: "Visual output does not imply exact future growth",
+    patientSafeDisclaimerPresent: "Patient-safe disclaimer is present",
+    suitableToShare: "Projection is suitable to share",
+  };
 
   const base = `/api/cases/${caseId}/pre-surgery-intelligence`;
 
@@ -813,12 +841,12 @@ export default function PreSurgeryIntelligenceWorkspace({ caseId }: { caseId: st
       </section>
 
       {/* AREA 6–8 — Projections */}
-      <section className="space-y-3">
+      <section className="space-y-3" data-testid="psi-projection-section">
         <header>
           <h2 className="text-lg font-semibold">Illustrative projected outcome images</h2>
           <p className="text-sm text-[var(--ha-muted-foreground)]">
             Generated only after an approved graft plan and explicit clinician request. Labels are illustrative —
-            never guaranteed results.
+            never guaranteed results. Clinician approval with checklist is required before patient visibility.
           </p>
         </header>
         <div className="flex flex-wrap items-center gap-3 text-sm">
@@ -838,6 +866,7 @@ export default function PreSurgeryIntelligenceWorkspace({ caseId }: { caseId: st
               type="button"
               disabled={busy || !approvedPlan || !selectedImageId}
               className="rounded-md border border-[var(--ha-border)] px-3 py-1.5 text-sm disabled:opacity-50"
+              data-testid={`psi-generate-projection-${mode}`}
               onClick={() => void requestProjection(mode)}
             >
               Generate {PRE_SURGERY_PROJECTION_PATIENT_LABELS[mode]}
@@ -852,20 +881,54 @@ export default function PreSurgeryIntelligenceWorkspace({ caseId }: { caseId: st
             <li key={p.id} className="rounded-md border border-[var(--ha-border)] p-3" data-testid={`psi-projection-${p.mode}`}>
               <div className="font-medium">{p.patientSafeLabel}</div>
               <div className="text-xs text-[var(--ha-muted-foreground)]">
-                Status {p.status} · plan v{p.graftPlanVersion} · engine {p.engineVersion}
+                Status {p.status} · plan v{p.graftPlanVersion} · attempt v{p.projectionVersion ?? 1} · engine{" "}
+                {p.engineVersion}
                 {p.status !== "approved" ? " · not patient-visible" : " · clinician-approved for patient view"}
               </div>
+              {p.patientSafeDisclaimer ? (
+                <p className="mt-1 text-xs text-[var(--ha-muted-foreground)]">{p.patientSafeDisclaimer}</p>
+              ) : null}
               <ul className="mt-1 list-disc pl-4 text-xs text-[var(--ha-muted-foreground)]">
                 {p.limitations.slice(0, 3).map((l) => (
                   <li key={l}>{l}</li>
                 ))}
               </ul>
-              {p.status === "generated" ? (
-                <div className="mt-2 flex gap-2">
+              {(p.status === "generated" || p.status === "clinician_review") && approvalTargetId !== p.id ? (
+                <div className="mt-2 flex flex-wrap gap-2">
                   <button
                     type="button"
                     className="rounded border px-2 py-0.5 text-xs"
-                    data-testid={`psi-approve-projection-${p.mode}`}
+                    data-testid={`psi-open-approve-projection-${p.mode}`}
+                    disabled={busy}
+                    onClick={() => {
+                      setApprovalTargetId(p.id);
+                      setApprovalChecklist(emptyApprovalChecklist());
+                      setApprovalNote("");
+                    }}
+                  >
+                    Open clinician approval checklist
+                  </button>
+                  <label className="flex items-center gap-1 text-xs">
+                    Reject
+                    <select
+                      className="rounded border px-1 py-0.5"
+                      value={rejectReasonCode}
+                      onChange={(e) =>
+                        setRejectReasonCode(e.target.value as PreSurgeryProjectionRejectionReason)
+                      }
+                      data-testid={`psi-reject-reason-${p.mode}`}
+                    >
+                      {REJECTION_REASONS.map((r) => (
+                        <option key={r} value={r}>
+                          {r.replace(/_/g, " ")}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <button
+                    type="button"
+                    className="rounded border px-2 py-0.5 text-xs"
+                    data-testid={`psi-reject-projection-${p.mode}`}
                     disabled={busy}
                     onClick={async () => {
                       setBusy(true);
@@ -873,21 +936,158 @@ export default function PreSurgeryIntelligenceWorkspace({ caseId }: { caseId: st
                         const res = await fetch(`${base}/projection/approve`, {
                           method: "PATCH",
                           headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ projectionId: p.id, action: "approve" }),
+                          body: JSON.stringify({
+                            projectionId: p.id,
+                            action: "reject",
+                            reasonCode: rejectReasonCode,
+                            reason: rejectReasonCode,
+                          }),
                         });
                         const data = await res.json();
-                        if (!res.ok || !data.ok) throw new Error(data.error ?? "Approve failed");
+                        if (!res.ok || !data.ok) throw new Error(data.error ?? "Reject failed");
                         await refresh();
                       } catch (e) {
-                        setError(e instanceof Error ? e.message : "Approve failed");
+                        setError(e instanceof Error ? e.message : "Reject failed");
                       } finally {
                         setBusy(false);
                       }
                     }}
                   >
-                    Approve for patient view
+                    Reject
                   </button>
                 </div>
+              ) : null}
+              {approvalTargetId === p.id ? (
+                <div
+                  className="mt-3 space-y-2 rounded border border-[var(--ha-border)] bg-[var(--ha-muted)]/20 p-3"
+                  data-testid={`psi-approval-checklist-${p.mode}`}
+                >
+                  <p className="text-xs font-medium">Confirm all items before approving for patient view</p>
+                  {APPROVAL_CHECKLIST_KEYS.map((key) => (
+                    <label key={key} className="flex items-start gap-2 text-xs">
+                      <input
+                        type="checkbox"
+                        checked={approvalChecklist[key]}
+                        data-testid={`psi-checklist-${key}`}
+                        onChange={(e) =>
+                          setApprovalChecklist((prev) => ({ ...prev, [key]: e.target.checked }))
+                        }
+                      />
+                      <span>{CHECKLIST_LABELS[key]}</span>
+                    </label>
+                  ))}
+                  <textarea
+                    className="w-full rounded border px-2 py-1 text-xs"
+                    rows={2}
+                    placeholder="Optional approval note"
+                    value={approvalNote}
+                    onChange={(e) => setApprovalNote(e.target.value)}
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      className="rounded border bg-[var(--ha-primary)] px-2 py-1 text-xs text-[var(--ha-primary-foreground)]"
+                      data-testid={`psi-approve-projection-${p.mode}`}
+                      disabled={busy || !APPROVAL_CHECKLIST_KEYS.every((k) => approvalChecklist[k])}
+                      onClick={async () => {
+                        setBusy(true);
+                        try {
+                          const res = await fetch(`${base}/projection/approve`, {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              projectionId: p.id,
+                              action: "approve",
+                              checklist: approvalChecklist,
+                              approvalNote: approvalNote || null,
+                            }),
+                          });
+                          const data = await res.json();
+                          if (!res.ok || !data.ok) throw new Error(data.error ?? "Approve failed");
+                          setApprovalTargetId(null);
+                          await refresh();
+                        } catch (e) {
+                          setError(e instanceof Error ? e.message : "Approve failed");
+                        } finally {
+                          setBusy(false);
+                        }
+                      }}
+                    >
+                      Approve for patient view
+                    </button>
+                    <button
+                      type="button"
+                      className="rounded border px-2 py-1 text-xs"
+                      onClick={() => setApprovalTargetId(null)}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+              {(p.status === "rejected" || p.status === "failed" || p.status === "validation_failed") ? (
+                <button
+                  type="button"
+                  className="mt-2 rounded border px-2 py-0.5 text-xs"
+                  data-testid={`psi-regenerate-projection-${p.mode}`}
+                  disabled={busy || !approvedPlan || !selectedImageId}
+                  onClick={async () => {
+                    setBusy(true);
+                    setError(null);
+                    try {
+                      const res = await fetch(`${base}/projection`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          mode: p.mode,
+                          sourceImageId: selectedImageId ?? p.sourceImageId,
+                          graftPlanId: approvedPlan?.id,
+                          proposedHairlineConfirmed: hairlineConfirmed,
+                          treatmentAreaConfirmed: treatmentConfirmed,
+                          regeneratesFromProjectionId: p.id,
+                        }),
+                      });
+                      const data = await res.json();
+                      if (!res.ok || !data.ok) {
+                        throw new Error(data.errors?.[0]?.message ?? data.error ?? "Regenerate failed");
+                      }
+                      await refresh();
+                    } catch (e) {
+                      setError(e instanceof Error ? e.message : "Regenerate failed");
+                    } finally {
+                      setBusy(false);
+                    }
+                  }}
+                >
+                  Regenerate (new attempt)
+                </button>
+              ) : null}
+              {p.status === "approved" ? (
+                <button
+                  type="button"
+                  className="mt-2 rounded border px-2 py-0.5 text-xs"
+                  data-testid={`psi-revoke-sharing-${p.mode}`}
+                  disabled={busy}
+                  onClick={async () => {
+                    setBusy(true);
+                    try {
+                      const res = await fetch(`${base}/projection/approve`, {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ projectionId: p.id, action: "revoke_sharing" }),
+                      });
+                      const data = await res.json();
+                      if (!res.ok || !data.ok) throw new Error(data.error ?? "Revoke failed");
+                      await refresh();
+                    } catch (e) {
+                      setError(e instanceof Error ? e.message : "Revoke failed");
+                    } finally {
+                      setBusy(false);
+                    }
+                  }}
+                >
+                  Revoke patient sharing
+                </button>
               ) : null}
             </li>
           ))}

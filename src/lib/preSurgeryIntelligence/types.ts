@@ -333,9 +333,26 @@ export type PreSurgeryAuditEventType =
   | "graft_plan_edited"
   | "graft_plan_approved"
   | "projection_requested"
+  | "projection_validation_rejected"
+  | "projection_preflight_rejected"
+  | "projection_activation_denied"
+  | "projection_provider_request_sent"
+  | "projection_provider_accepted"
   | "projection_generated"
+  | "projection_timeout"
+  | "projection_provider_failure"
+  | "projection_output_safety_failure"
+  | "projection_output_validation_failed"
+  | "projection_clinician_review_opened"
   | "projection_rejected"
   | "projection_approved"
+  | "projection_regeneration_requested"
+  | "projection_patient_sharing_enabled"
+  | "projection_patient_sharing_revoked"
+  | "projection_patient_consent_recorded"
+  | "projection_marked_stale"
+  | "projection_superseded"
+  | "projection_shadow_review_recorded"
   | "report_released";
 
 export type PreSurgeryAuditEvent = {
@@ -363,12 +380,18 @@ export const PRE_SURGERY_PROJECTION_PATIENT_LABELS: Record<PreSurgeryProjectionM
 };
 
 export type PreSurgeryProjectionStatus =
-  | "pending"
-  | "generated"
+  | "draft_request"
+  | "pending" // legacy alias of draft_request
   | "validation_failed"
-  | "rejected"
+  | "queued"
+  | "generating"
+  | "generated"
+  | "clinician_review"
   | "approved"
-  | "superseded";
+  | "rejected"
+  | "superseded"
+  | "failed"
+  | "expired";
 
 export type PreSurgeryProjectionValidationCheck =
   | "identity_consistency"
@@ -377,12 +400,39 @@ export type PreSurgeryProjectionValidationCheck =
   | "hairline_boundary"
   | "graft_range_plausibility"
   | "deferred_zone_compliance"
-  | "source_image_quality";
+  | "source_image_quality"
+  | "mode_contract";
 
 export type PreSurgeryProjectionValidationResult = {
   check: PreSurgeryProjectionValidationCheck;
   passed: boolean;
   detail: string;
+};
+
+export type PreSurgeryProjectionRejectionReason =
+  | "incorrect_hairline"
+  | "excessive_density"
+  | "incorrect_zone_coverage"
+  | "image_artefact"
+  | "facial_or_scalp_distortion"
+  | "donor_implication_misleading"
+  | "source_image_unsuitable"
+  | "plan_changed"
+  | "wrong_projection_mode"
+  | "other_safety_concern";
+
+export type PreSurgeryApprovalChecklist = {
+  correctPatientAndCase: boolean;
+  correctSourceImages: boolean;
+  correctApprovedGraftPlanVersion: boolean;
+  hairlineWithinApprovedPlan: boolean;
+  coverageZonesDoNotExceedPlan: boolean;
+  deferredZonesRemainVisiblyDeferred: boolean;
+  donorLimitationsNotMisrepresented: boolean;
+  densityNotPresentedAsGuaranteed: boolean;
+  visualOutputDoesNotImplyExactFutureGrowth: boolean;
+  patientSafeDisclaimerPresent: boolean;
+  suitableToShare: boolean;
 };
 
 export type PreSurgeryIllustrativeProjection = {
@@ -391,11 +441,16 @@ export type PreSurgeryIllustrativeProjection = {
   graftPlanId: string;
   graftPlanVersion: number;
   sourceImageId: string;
+  /** All source image IDs frozen at generation (2C). */
+  sourceImageIds?: string[];
   mode: PreSurgeryProjectionMode;
   patientSafeLabel: string;
+  patientSafeDisclaimer?: string | null;
   status: PreSurgeryProjectionStatus;
   engineVersion: PreSurgeryProjectionEngineVersion | string;
   generationVersion: string;
+  safetyLabelVersion?: string | null;
+  generationPolicyVersion?: string | null;
   deterministicSeed: string | null;
   storagePath: string | null;
   validationPass: PreSurgeryProjectionValidationResult[];
@@ -406,9 +461,39 @@ export type PreSurgeryIllustrativeProjection = {
   generatedAt: string | null;
   approvedBy: string | null;
   approvedAt: string | null;
+  approvedRole?: string | null;
+  approvedOrganisationId?: string | null;
+  approvalChecklist?: PreSurgeryApprovalChecklist | null;
+  approvalNote?: string | null;
+  approvalOverrideReason?: string | null;
   rejectedBy: string | null;
   rejectedAt: string | null;
   rejectionReason: string | null;
+  rejectionReasonCode?: PreSurgeryProjectionRejectionReason | null;
   inputChecksum: string;
+  /** Full frozen canonical request snapshot (or omit when checksum-only stored). */
+  inputSnapshot?: Record<string, unknown> | null;
   outputChecksum: string | null;
+  providerId?: string | null;
+  providerModelVersion?: string | null;
+  providerRequestId?: string | null;
+  providerResponseId?: string | null;
+  idempotencyKey?: string | null;
+  /** Monotonic attempt / version counter for regeneration history. */
+  projectionVersion?: number;
+  /** Prior rejected/failed attempt this regenerates from. */
+  regeneratesFromProjectionId?: string | null;
+  patientSharingEnabled?: boolean;
+  expiresAt?: string | null;
+  supersededAt?: string | null;
+  failureCode?: string | null;
+  failureMessage?: string | null;
+  /** 2D — set when projection is stale; remains auditable but not shareable. */
+  staleAt?: string | null;
+  staleReasons?: string[] | null;
+  /** 2D — shadow / quality-review cohort tag. */
+  shadowMode?: boolean;
+  qualityCohortCategory?: string | null;
+  /** 2D — patient consent record id when sharing was enabled. */
+  patientConsentId?: string | null;
 };

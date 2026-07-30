@@ -1,15 +1,20 @@
 /**
- * HA-PRE-SURGERY-INTELLIGENCE-2A — Projection request orchestration.
- * 2B: instrumented provider calls with timeout + safe failure degradation.
+ * HA-PRE-SURGERY-INTELLIGENCE-2C/2D — Projection request orchestration + lifecycle.
+ * Provider-neutral; ImagingOS adapter is selected via config. Distinct from HA-PROJECTION-1A–1G.
+ * 2D adds activation controls, preflight, shadow mode, and provider-output validation.
  */
 
 import { createHash } from "node:crypto";
-import { stableStringifyForChecksum } from "@/lib/projection/canonicalChecksum";
-import { PRE_SURGERY_PROJECTION_ENGINE_VERSION } from "../versions";
+import {
+  PRE_SURGERY_PROJECTION_ENGINE_VERSION,
+  PRE_SURGERY_PROJECTION_GENERATION_POLICY_VERSION,
+  PRE_SURGERY_PROJECTION_SAFETY_LABEL_VERSION,
+} from "../versions";
 import {
   PRE_SURGERY_PROJECTION_PATIENT_LABELS,
   type ClinicalImageAnnotation,
   type ClinicalImageReview,
+  type ClinicalObservation,
   type PreSurgeryGraftPlan,
   type PreSurgeryIllustrativeProjection,
   type PreSurgeryProjectionMode,
@@ -22,16 +27,52 @@ import {
   runProjectionValidationPass,
 } from "./safety";
 import {
-  getDefaultPreSurgeryProjectionProvider,
+  resolveRuntimeProjectionProvider,
   runInstrumentedProjection,
+  type ProjectionProviderHealth,
 } from "./health";
+import {
+  buildCanonicalProjectionRequest,
+  checksumCanonicalProjectionRequest,
+} from "./canonicalRequest";
+import {
+  patientSafeDisclaimerForMode,
+  validateProjectionModeContract,
+} from "./modeContracts";
+import {
+  decideProjectionActivation,
+  resolveProjectionActivationControls,
+  type ProjectionActivationControls,
+} from "./activationControls";
+import { applyShadowModeToProjection, resolveShadowModePolicy } from "./shadowMode";
+import {
+  applyOutputValidationToProjection,
+  validateProviderProjectionOutput,
+  type ProjectionOutputValidationInput,
+} from "./outputValidation";
+
+export type RequestPreSurgeryProjectionActivationContext = {
+  controls?: ProjectionActivationControls;
+  providerKind?: "stub" | "imagingos" | "disabled";
+  clinicId?: string | null;
+  requestsForCase?: number;
+  requestsToday?: number;
+  /** Defaults to true when omitted (2A–2C stub compatibility). */
+  caseLevelEnabled?: boolean;
+  /** When true, enforce activation even for stub. */
+  enforceActivation?: boolean;
+};
 
 export type RequestPreSurgeryProjectionInput = {
   caseId: string;
   plan: PreSurgeryGraftPlan;
   sourceReview: ClinicalImageReview;
+  /** Additional reviews for multi-view mode contracts (roles only). */
+  sourceReviews?: ClinicalImageReview[];
   sourceImageRef: string;
+  sourceImageRefs?: Array<{ imageId: string; storageRef: string }>;
   approvedAnnotations: ClinicalImageAnnotation[];
+  approvedObservations?: ClinicalObservation[];
   mode: PreSurgeryProjectionMode;
   requiredImagesPresent: boolean;
   proposedHairlineConfirmed: boolean;
@@ -40,9 +81,19 @@ export type RequestPreSurgeryProjectionInput = {
   deterministicSeed?: string | null;
   provider?: PreSurgeryProjectionProvider;
   providerId?: string;
+  modelVersion?: string;
   timeoutMs?: number;
   now?: string;
   id?: string;
+  regeneratesFromProjectionId?: string | null;
+  projectionVersion?: number;
+  idempotencyKey?: string | null;
+  /** 2D activation / allowlist context. */
+  activation?: RequestPreSurgeryProjectionActivationContext;
+  /** Optional provider-output metadata for 2D validation (ImagingOS). */
+  outputValidation?: Partial<ProjectionOutputValidationInput> | null;
+  /** Optional provider health snapshot (skips live health when provided). */
+  providerHealth?: ProjectionProviderHealth | null;
 };
 
 export type RequestPreSurgeryProjectionResult =
@@ -51,6 +102,7 @@ export type RequestPreSurgeryProjectionResult =
       projection: PreSurgeryIllustrativeProjection;
       providerId: string;
       latencyMs: number;
+      auditHints: Array<{ eventType: string; metadata: Record<string, unknown> }>;
     }
   | {
       ok: false;
@@ -58,12 +110,124 @@ export type RequestPreSurgeryProjectionResult =
       providerId?: string;
       latencyMs?: number;
       degradable?: boolean;
+      projection?: PreSurgeryIllustrativeProjection;
+      auditHints?: Array<{ eventType: string; metadata: Record<string, unknown> }>;
     };
 
 export async function requestPreSurgeryProjection(
   input: RequestPreSurgeryProjectionInput
 ): Promise<RequestPreSurgeryProjectionResult> {
   const now = input.now ?? new Date().toISOString();
+  const auditHints: Array<{ eventType: string; metadata: Record<string, unknown> }> = [];
+  const runtime = resolveRuntimeProjectionProvider();
+  const provider = input.provider ?? runtime.provider;
+  const providerId = input.providerId ?? runtime.providerId;
+  const modelVersion = input.modelVersion ?? runtime.modelVersion;
+  const controls =
+    input.activation?.controls ?? resolveProjectionActivationControls();
+  const providerKind =
+    input.activation?.providerKind ??
+    (runtime.disabled ? "disabled" : runtime.providerId.startsWith("imagingos") ? "imagingos" : "stub");
+  const enforceActivation =
+    input.activation?.enforceActivation === true || providerKind === "imagingos";
+
+  if (controls.providerKillSwitch) {
+    auditHints.push({
+      eventType: "projection_activation_denied",
+      metadata: { code: "provider_kill_switch", contactedProvider: false },
+    });
+    return {
+      ok: false,
+      errors: [{ code: "provider_kill_switch", message: "Projection provider kill switch is active" }],
+      providerId,
+      degradable: true,
+      auditHints,
+    };
+  }
+
+  if (runtime.disabled && !input.provider) {
+    return {
+      ok: false,
+      errors: [{ code: "provider_disabled", message: "Projection provider is disabled or misconfigured" }],
+      providerId,
+      degradable: true,
+      auditHints: [
+        {
+          eventType: "projection_provider_failure",
+          metadata: { providerId, code: "provider_disabled" },
+        },
+      ],
+    };
+  }
+
+  if (enforceActivation) {
+    const activation = decideProjectionActivation({
+      controls,
+      providerKind,
+      clinicId: input.activation?.clinicId ?? null,
+      clinicianId: input.requestedBy,
+      caseId: input.caseId,
+      mode: input.mode,
+      requestsForCase: input.activation?.requestsForCase ?? 0,
+      requestsToday: input.activation?.requestsToday ?? 0,
+      caseLevelEnabled: input.activation?.caseLevelEnabled !== false,
+    });
+    if (!activation.allowed) {
+      auditHints.push({
+        eventType: "projection_preflight_rejected",
+        metadata: {
+          codes: [activation.code],
+          message: activation.message,
+          contactedProvider: false,
+        },
+      });
+      auditHints.push({
+        eventType: "projection_activation_denied",
+        metadata: { code: activation.code, contactedProvider: false },
+      });
+      return {
+        ok: false,
+        errors: [{ code: activation.code, message: activation.message }],
+        providerId,
+        degradable: true,
+        auditHints,
+      };
+    }
+  }
+
+  const sourceReviews = input.sourceReviews?.length
+    ? input.sourceReviews
+    : [input.sourceReview];
+
+  const modeIssues = validateProjectionModeContract({
+    mode: input.mode,
+    plan: input.plan,
+    availableRoles: sourceReviews.map((r) => r.assignedRole),
+  });
+  if (modeIssues.length > 0) {
+    auditHints.push({
+      eventType: "projection_validation_rejected",
+      metadata: { mode: input.mode, codes: modeIssues.map((i) => i.code) },
+    });
+    const failed: PreSurgeryIllustrativeProjection = buildFailedProjection(input, {
+      status: "validation_failed",
+      now,
+      providerId,
+      modelVersion,
+      failureCode: modeIssues[0]!.code,
+      failureMessage: modeIssues[0]!.message,
+      inputChecksum: "validation_failed",
+    });
+    return {
+      ok: false,
+      errors: modeIssues.map((i) => ({ code: i.code, message: i.message })),
+      providerId,
+      degradable: true,
+      projection: failed,
+      auditHints,
+    };
+  }
+
   const gates = assertProjectionGenerationAllowed({
     plan: input.plan,
     sourceImageRole: input.sourceReview.assignedRole,
@@ -76,7 +240,15 @@ export async function requestPreSurgeryProjection(
     approvedAnnotations: input.approvedAnnotations,
   });
   if (gates.length > 0) {
-    return { ok: false, errors: gates.map((g) => ({ code: g.code, message: g.message })) };
+    auditHints.push({
+      eventType: "projection_validation_rejected",
+      metadata: { codes: gates.map((g) => g.code) },
+    });
+    return {
+      ok: false,
+      errors: gates.map((g) => ({ code: g.code, message: g.message })),
+      auditHints,
+    };
   }
 
   const label = PRE_SURGERY_PROJECTION_PATIENT_LABELS[input.mode];
@@ -85,24 +257,45 @@ export async function requestPreSurgeryProjection(
     return { ok: false, errors: [{ code: labelViolation.code, message: labelViolation.message }] };
   }
 
-  const allocation = deriveProjectionModeAllocation(input.plan, input.mode);
-  const inputChecksum = createHash("sha256")
-    .update(
-      stableStringifyForChecksum({
-        planId: input.plan.id,
-        planVersion: input.plan.version,
-        planChecksum: input.plan.checksum,
-        sourceImageId: input.sourceReview.imageId,
-        mode: input.mode,
-        allocation,
-      }),
-      "utf8"
-    )
-    .digest("hex");
+  const approvedAnnotations = input.approvedAnnotations.filter((a) => a.approved && !a.deletedAt);
+  const approvedObservations = (input.approvedObservations ?? []).filter(
+    (o) => o.status === "confirmed" || o.status === "corrected"
+  );
 
-  const defaults = getDefaultPreSurgeryProjectionProvider();
-  const provider = input.provider ?? defaults.provider;
-  const providerId = input.providerId ?? defaults.providerId;
+  const canonical = buildCanonicalProjectionRequest({
+    caseId: input.caseId,
+    plan: input.plan,
+    mode: input.mode,
+    sourceReviews,
+    primarySourceImageId: input.sourceReview.imageId,
+    sourceImageRefs: input.sourceImageRefs ?? [
+      { imageId: input.sourceReview.imageId, storageRef: input.sourceImageRef },
+    ],
+    approvedAnnotations,
+    approvedObservations,
+    providerId,
+    modelVersion,
+  });
+  const inputChecksum = checksumCanonicalProjectionRequest(canonical);
+  const idempotencyKey =
+    input.idempotencyKey ??
+    createHash("sha256")
+      .update(`${input.caseId}:${inputChecksum}:${input.mode}`)
+      .digest("hex")
+      .slice(0, 40);
+
+  const allocation = deriveProjectionModeAllocation(input.plan, input.mode);
+
+  auditHints.push({
+    eventType: "projection_provider_request_sent",
+    metadata: {
+      providerId,
+      mode: input.mode,
+      inputChecksum,
+      idempotencyKey,
+      modelVersion,
+    },
+  });
 
   const instrumented = await runInstrumentedProjection(
     provider,
@@ -113,7 +306,7 @@ export async function requestPreSurgeryProjection(
       sourceImageRef: input.sourceImageRef,
       approvedGraftPlanId: input.plan.id,
       approvedGraftPlan: input.plan,
-      approvedAnnotations: input.approvedAnnotations.filter((a) => a.approved && !a.deletedAt),
+      approvedAnnotations,
       mode: input.mode,
       generationVersion: PRE_SURGERY_PROJECTION_ENGINE_VERSION,
       engineVersion: PRE_SURGERY_PROJECTION_ENGINE_VERSION,
@@ -124,22 +317,60 @@ export async function requestPreSurgeryProjection(
         "Do not fill deferred zones (including deferred crown).",
         "Do not imply guaranteed growth or exact density.",
       ],
+      canonicalRequest: canonical,
+      inputChecksum,
+      idempotencyKey,
     },
     { timeoutMs: input.timeoutMs }
   );
 
   if (!instrumented.ok) {
+    const eventType =
+      instrumented.errorCode === "provider_timeout"
+        ? "projection_timeout"
+        : "projection_provider_failure";
+    auditHints.push({
+      eventType,
+      metadata: {
+        providerId: instrumented.providerId,
+        errorCode: instrumented.errorCode,
+        latencyMs: instrumented.latencyMs,
+      },
+    });
+    const failed = buildFailedProjection(input, {
+      status: "failed",
+      now,
+      providerId: instrumented.providerId,
+      modelVersion,
+      failureCode: instrumented.errorCode,
+      failureMessage: instrumented.message,
+      inputChecksum,
+      inputSnapshot: canonical as unknown as Record<string, unknown>,
+      idempotencyKey,
+    });
     return {
       ok: false,
       errors: [{ code: instrumented.errorCode, message: instrumented.message }],
       providerId: instrumented.providerId,
       latencyMs: instrumented.latencyMs,
       degradable: true,
+      projection: failed,
+      auditHints,
     };
   }
 
+  auditHints.push({
+    eventType: "projection_provider_accepted",
+    metadata: {
+      providerId: instrumented.providerId,
+      latencyMs: instrumented.latencyMs,
+      providerRequestId: instrumented.result.providerRequestId ?? null,
+      providerResponseId: instrumented.result.providerResponseId ?? null,
+    },
+  });
+
   const result = instrumented.result;
-  const hairlineAnnotationPresent = input.approvedAnnotations.some(
+  const hairlineAnnotationPresent = approvedAnnotations.some(
     (a) =>
       (a.annotationType === "proposed_hairline" || a.annotationType === "existing_hairline") &&
       a.approved &&
@@ -151,20 +382,34 @@ export async function requestPreSurgeryProjection(
     modeAllocationZones: allocation.zoneGraftTargets,
     sourceImageReviewStatus: input.sourceReview.reviewStatus,
     hairlineAnnotationPresent,
+    modeContractIssues: [],
   });
 
-  const failed = validationPass.filter((v) => !v.passed);
-  const projection: PreSurgeryIllustrativeProjection = {
+  const failedChecks = validationPass.filter((v) => !v.passed);
+  if (failedChecks.length > 0) {
+    auditHints.push({
+      eventType: "projection_output_safety_failure",
+      metadata: { checks: failedChecks.map((f) => f.check) },
+    });
+  }
+
+  const shadowPolicy = resolveShadowModePolicy(controls);
+  const status = failedChecks.length > 0 ? "validation_failed" : "clinician_review";
+  let projection: PreSurgeryIllustrativeProjection = {
     id: input.id ?? crypto.randomUUID(),
     caseId: input.caseId,
     graftPlanId: input.plan.id,
     graftPlanVersion: input.plan.version,
     sourceImageId: input.sourceReview.imageId,
+    sourceImageIds: canonical.sourceImageIds,
     mode: input.mode,
     patientSafeLabel: label,
-    status: failed.length > 0 ? "validation_failed" : "generated",
+    patientSafeDisclaimer: patientSafeDisclaimerForMode(input.mode),
+    status,
     engineVersion: PRE_SURGERY_PROJECTION_ENGINE_VERSION,
     generationVersion: PRE_SURGERY_PROJECTION_ENGINE_VERSION,
+    safetyLabelVersion: PRE_SURGERY_PROJECTION_SAFETY_LABEL_VERSION,
+    generationPolicyVersion: PRE_SURGERY_PROJECTION_GENERATION_POLICY_VERSION,
     deterministicSeed: input.deterministicSeed ?? null,
     storagePath: result.outputStorageRef,
     validationPass,
@@ -179,61 +424,178 @@ export async function requestPreSurgeryProjection(
     rejectedAt: null,
     rejectionReason: null,
     inputChecksum,
+    inputSnapshot: canonical as unknown as Record<string, unknown>,
     outputChecksum: result.outputChecksum,
+    providerId: instrumented.providerId,
+    providerModelVersion: result.modelVersion ?? modelVersion,
+    providerRequestId: result.providerRequestId ?? null,
+    providerResponseId: result.providerResponseId ?? null,
+    idempotencyKey,
+    projectionVersion: input.projectionVersion ?? 1,
+    regeneratesFromProjectionId: input.regeneratesFromProjectionId ?? null,
+    patientSharingEnabled: false,
+    shadowMode: shadowPolicy?.active === true,
   };
 
-  if (failed.length > 0) {
+  if (failedChecks.length > 0) {
     return {
       ok: false,
-      errors: failed.map((f) => ({ code: f.check, message: f.detail })),
+      errors: failedChecks.map((f) => ({ code: f.check, message: f.detail })),
       providerId: instrumented.providerId,
       latencyMs: instrumented.latencyMs,
       degradable: true,
+      projection,
+      auditHints,
     };
   }
+
+  // 2D provider-output validation — malformed output → failed (not clinician_review).
+  if (input.outputValidation) {
+    const ov = validateProviderProjectionOutput({
+      caseId: input.caseId,
+      attemptId: projection.id,
+      expectedProviderRequestId: result.providerRequestId ?? null,
+      actualProviderRequestId:
+        input.outputValidation.actualProviderRequestId ?? result.providerRequestId ?? null,
+      mimeType: input.outputValidation.mimeType ?? "image/jpeg",
+      fileSizeBytes: input.outputValidation.fileSizeBytes ?? 100_000,
+      widthPx: input.outputValidation.widthPx ?? 1024,
+      heightPx: input.outputValidation.heightPx ?? 1024,
+      outputChecksum: result.outputChecksum,
+      storageChecksumRecorded:
+        input.outputValidation.storageChecksumRecorded ?? Boolean(result.outputChecksum),
+      safetyMetadataPresent: input.outputValidation.safetyMetadataPresent ?? true,
+      malformedOrExecutablePayload:
+        input.outputValidation.malformedOrExecutablePayload ?? false,
+      unexpectedEmbeddedPatientData:
+        input.outputValidation.unexpectedEmbeddedPatientData ?? false,
+      maxFileSizeBytes: input.outputValidation.maxFileSizeBytes,
+      expectedMinWidth: input.outputValidation.expectedMinWidth,
+      expectedMinHeight: input.outputValidation.expectedMinHeight,
+      expectedMaxWidth: input.outputValidation.expectedMaxWidth,
+      expectedMaxHeight: input.outputValidation.expectedMaxHeight,
+    });
+    projection = applyOutputValidationToProjection(projection, ov);
+    if (!ov.ok) {
+      auditHints.push({
+        eventType: "projection_output_validation_failed",
+        metadata: {
+          checks: ov.failures.map((f) => f.check),
+          failureCode: ov.failureCode,
+          contactedProvider: true,
+        },
+      });
+      return {
+        ok: false,
+        errors: ov.failures.map((f) => ({ code: f.check, message: f.detail })),
+        providerId: instrumented.providerId,
+        latencyMs: instrumented.latencyMs,
+        degradable: true,
+        projection,
+        auditHints,
+      };
+    }
+  }
+
+  projection = applyShadowModeToProjection(projection, shadowPolicy);
+
+  auditHints.push({
+    eventType: "projection_clinician_review_opened",
+    metadata: {
+      projectionId: projection.id,
+      inputChecksum,
+      shadowMode: projection.shadowMode === true,
+    },
+  });
 
   return {
     ok: true,
     projection,
     providerId: instrumented.providerId,
     latencyMs: instrumented.latencyMs,
+    auditHints,
   };
 }
 
-/** Clinician must explicitly approve before any patient-facing exposure. */
-export function approveIllustrativeProjection(
-  projection: PreSurgeryIllustrativeProjection,
-  approvedBy: string,
-  now = new Date().toISOString()
-): PreSurgeryIllustrativeProjection | { error: string } {
-  if (projection.status !== "generated") {
-    return { error: "Only generated projections can be approved for patient visibility" };
+function buildFailedProjection(
+  input: RequestPreSurgeryProjectionInput,
+  args: {
+    status: PreSurgeryIllustrativeProjection["status"];
+    now: string;
+    providerId: string;
+    modelVersion: string;
+    failureCode: string;
+    failureMessage: string;
+    inputChecksum: string;
+    inputSnapshot?: Record<string, unknown> | null;
+    idempotencyKey?: string | null;
   }
-  if (findUnsafeProjectionLabel(projection.patientSafeLabel)) {
-    return { error: "Projection label fails patient-safe wording checks" };
-  }
+): PreSurgeryIllustrativeProjection {
   return {
-    ...projection,
-    status: "approved",
-    approvedBy,
-    approvedAt: now,
+    id: input.id ?? crypto.randomUUID(),
+    caseId: input.caseId,
+    graftPlanId: input.plan.id,
+    graftPlanVersion: input.plan.version,
+    sourceImageId: input.sourceReview.imageId,
+    mode: input.mode,
+    patientSafeLabel: PRE_SURGERY_PROJECTION_PATIENT_LABELS[input.mode],
+    patientSafeDisclaimer: patientSafeDisclaimerForMode(input.mode),
+    status: args.status,
+    engineVersion: PRE_SURGERY_PROJECTION_ENGINE_VERSION,
+    generationVersion: PRE_SURGERY_PROJECTION_ENGINE_VERSION,
+    safetyLabelVersion: PRE_SURGERY_PROJECTION_SAFETY_LABEL_VERSION,
+    generationPolicyVersion: PRE_SURGERY_PROJECTION_GENERATION_POLICY_VERSION,
+    deterministicSeed: input.deterministicSeed ?? null,
+    storagePath: null,
+    validationPass: [],
+    limitations: [],
+    planningAssumptions: [],
+    requestedBy: input.requestedBy,
+    requestedAt: args.now,
+    generatedAt: null,
+    approvedBy: null,
+    approvedAt: null,
     rejectedBy: null,
     rejectedAt: null,
     rejectionReason: null,
+    inputChecksum: args.inputChecksum,
+    inputSnapshot: args.inputSnapshot ?? null,
+    outputChecksum: null,
+    providerId: args.providerId,
+    providerModelVersion: args.modelVersion,
+    idempotencyKey: args.idempotencyKey ?? null,
+    projectionVersion: input.projectionVersion ?? 1,
+    regeneratesFromProjectionId: input.regeneratesFromProjectionId ?? null,
+    patientSharingEnabled: false,
+    failureCode: args.failureCode,
+    failureMessage: args.failureMessage,
   };
 }
 
-export function rejectIllustrativeProjection(
-  projection: PreSurgeryIllustrativeProjection,
-  rejectedBy: string,
-  reason: string,
-  now = new Date().toISOString()
-): PreSurgeryIllustrativeProjection {
+// Re-export approval helpers from dedicated module for stable public API.
+export {
+  approveIllustrativeProjection,
+  approveIllustrativeProjectionWithChecklist,
+  rejectIllustrativeProjection,
+  supersedeApprovedProjection,
+  emptyApprovalChecklist,
+  APPROVAL_CHECKLIST_KEYS,
+  REJECTION_REASONS,
+} from "./approval";
+
+/** Create a regeneration attempt from a rejected/failed projection (never overwrites). */
+export function buildRegenerationSeed(from: PreSurgeryIllustrativeProjection): {
+  regeneratesFromProjectionId: string;
+  projectionVersion: number;
+  mode: PreSurgeryProjectionMode;
+  graftPlanId: string;
+  sourceImageId: string;
+} {
   return {
-    ...projection,
-    status: "rejected",
-    rejectedBy,
-    rejectedAt: now,
-    rejectionReason: reason,
+    regeneratesFromProjectionId: from.id,
+    projectionVersion: (from.projectionVersion ?? 1) + 1,
+    mode: from.mode,
+    graftPlanId: from.graftPlanId,
+    sourceImageId: from.sourceImageId,
   };
 }

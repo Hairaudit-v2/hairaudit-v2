@@ -15,14 +15,31 @@ export const PRE_SURGERY_ANNOTATION_VERSION = "ha-pre-surgery-annotation-v1" as 
 export const PRE_SURGERY_GRAFT_PLAN_VERSION = "ha-pre-surgery-graft-plan-v1" as const;
 
 /** Pre-surgery illustrative projection engine. */
-export const PRE_SURGERY_PROJECTION_ENGINE_VERSION = "ha-pre-surgery-projection-v1" as const;
+export const PRE_SURGERY_PROJECTION_ENGINE_VERSION = "ha-pre-surgery-projection-v2" as const;
+
+/** Frozen safety-label vocabulary version attached to every generation / approval. */
+export const PRE_SURGERY_PROJECTION_SAFETY_LABEL_VERSION =
+  "ha-pre-surgery-projection-safety-label-v1" as const;
+
+/** Generation policy (gates, mode contracts, patient visibility rules). */
+export const PRE_SURGERY_PROJECTION_GENERATION_POLICY_VERSION =
+  "ha-pre-surgery-projection-generation-policy-v2" as const;
 
 /** Persistence / audit event schema. */
-export const PRE_SURGERY_INTELLIGENCE_SCHEMA_VERSION = "ha-pre-surgery-intelligence-v1" as const;
+export const PRE_SURGERY_INTELLIGENCE_SCHEMA_VERSION = "ha-pre-surgery-intelligence-v3" as const;
+
+/** 2D controlled activation policy version. */
+export const PRE_SURGERY_PROJECTION_ACTIVATION_POLICY_VERSION =
+  "ha-pre-surgery-projection-activation-policy-v1" as const;
 
 export type PreSurgeryImageReviewVersion = typeof PRE_SURGERY_IMAGE_REVIEW_VERSION;
 export type PreSurgeryObservationVersion = typeof PRE_SURGERY_OBSERVATION_VERSION;
 export type PreSurgeryAnnotationVersion = typeof PRE_SURGERY_ANNOTATION_VERSION;
 export type PreSurgeryGraftPlanVersion = typeof PRE_SURGERY_GRAFT_PLAN_VERSION;
 export type PreSurgeryProjectionEngineVersion = typeof PRE_SURGERY_PROJECTION_ENGINE_VERSION;
+export type PreSurgeryProjectionSafetyLabelVersion = typeof PRE_SURGERY_PROJECTION_SAFETY_LABEL_VERSION;
+export type PreSurgeryProjectionGenerationPolicyVersion =
+  typeof PRE_SURGERY_PROJECTION_GENERATION_POLICY_VERSION;
 export type PreSurgeryIntelligenceSchemaVersion = typeof PRE_SURGERY_INTELLIGENCE_SCHEMA_VERSION;
+export type PreSurgeryProjectionActivationPolicyVersion =
+  typeof PRE_SURGERY_PROJECTION_ACTIVATION_POLICY_VERSION;

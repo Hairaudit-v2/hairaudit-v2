@@ -1,7 +1,7 @@
 {
   "project_ref": "vbzjkqhvzfunahmlxevb",
-  "captured_at": "2026-07-29T10:38:00.000Z",
-  "source": "Supabase MCP list_migrations after HA-AUTH-HANDOFF-FIX catch-up",
+  "captured_at": "2026-07-30T01:17:00.000Z",
+  "source": "Supabase MCP list_migrations — schema current with repo (90 local files / 97 CREATE TABLE targets)",
   "migrations": [
     { "version": "20260614203633", "name": "20260320000003_patient_safe_summary_narrative_translations" },
     { "version": "20260617015504", "name": "20260320000004_patient_safe_summary_review_action_metadata" },
@@ -25,6 +25,9 @@
     { "version": "20260727051222", "name": "20260727180000_fi_outcome_longitudinal_cohort" },
     { "version": "20260727055219", "name": "hairaudit_longitudinal_capture_plans" },
     { "version": "20260727073759", "name": "hairaudit_longitudinal_engagement_events" },
-    { "version": "20260729103850", "name": "20260729120000_hairaudit_intake_case_handoff" }
+    { "version": "20260729103850", "name": "20260729120000_hairaudit_intake_case_handoff" },
+    { "version": "20260730002049", "name": "hairaudit_pre_surgery_intelligence" },
+    { "version": "20260730002526", "name": "hairaudit_pre_surgery_intelligence_2b_grants" },
+    { "version": "20260730011429", "name": "hairaudit_pre_surgery_intelligence_2c" }
   ]
 }

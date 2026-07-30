@@ -5,6 +5,7 @@
 **Project:** HairAudit Supabase `vbzjkqhvzfunahmlxevb`  
 **Predecessor:** HA-PRE-SURGERY-INTELLIGENCE-2A  
 **Next (separate):** HA-PRE-SURGERY-INTELLIGENCE-2C — ImagingOS Projection Adapter and Clinician Approval Workflow  
+**Then:** HA-PRE-SURGERY-INTELLIGENCE-2D — Controlled ImagingOS Activation and Production Pilot 
 
 ---
 

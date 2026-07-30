@@ -110,6 +110,20 @@ export async function updateProjectionRow(
       rejected_by: projection.rejectedBy,
       rejected_at: projection.rejectedAt,
       rejection_reason: projection.rejectionReason,
+      output_checksum: projection.outputChecksum,
+      storage_path: projection.storagePath,
+      provider_id: projection.providerId ?? null,
+      provider_request_id: projection.providerRequestId ?? null,
+      provider_response_id: projection.providerResponseId ?? null,
+      idempotency_key: projection.idempotencyKey ?? null,
+      projection_version: projection.projectionVersion ?? 1,
+      patient_sharing_enabled: projection.patientSharingEnabled === true,
+      regenerates_from_projection_id: projection.regeneratesFromProjectionId ?? null,
+      stale_at: projection.staleAt ?? null,
+      stale_reasons: projection.staleReasons ?? null,
+      shadow_mode: projection.shadowMode === true,
+      quality_cohort_category: projection.qualityCohortCategory ?? null,
+      patient_consent_id: projection.patientConsentId ?? null,
     })
     .eq("id", projection.id);
   if (error) throw new Error(error.message);
@@ -201,6 +215,18 @@ export async function insertProjection(
     rejected_by: projection.rejectedBy,
     rejected_at: projection.rejectedAt,
     rejection_reason: projection.rejectionReason,
+    provider_id: projection.providerId ?? null,
+    provider_request_id: projection.providerRequestId ?? null,
+    provider_response_id: projection.providerResponseId ?? null,
+    idempotency_key: projection.idempotencyKey ?? null,
+    projection_version: projection.projectionVersion ?? 1,
+    patient_sharing_enabled: projection.patientSharingEnabled === true,
+    regenerates_from_projection_id: projection.regeneratesFromProjectionId ?? null,
+    stale_at: projection.staleAt ?? null,
+    stale_reasons: projection.staleReasons ?? null,
+    shadow_mode: projection.shadowMode === true,
+    quality_cohort_category: projection.qualityCohortCategory ?? null,
+    patient_consent_id: projection.patientConsentId ?? null,
   });
   if (error) throw new Error(error.message);
 }

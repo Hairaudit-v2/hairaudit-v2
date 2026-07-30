@@ -62,6 +62,13 @@ export type PreSurgeryClinicianReportProvenance = {
   approvedObservationCount: number;
   /** Patient-visible illustrative projections only (clinician-approved). */
   approvedProjectionIds: string[];
+  /**
+   * 2C — Exact pinned projection id + version used by this report.
+   * Reissue must not silently substitute a newer projection.
+   */
+  pinnedProjectionId: string | null;
+  pinnedProjectionVersion: number | null;
+  pinnedProjectionInputChecksum: string | null;
   frozenAt: string;
 };
 
@@ -137,17 +144,44 @@ export function selectApprovedGraftPlanForReport(
 /**
  * Patients see projections only after explicit clinician approval of the projection record.
  * Draft/generated/rejected projections and internal validation details are excluded.
+ * Only projections tied to the approved graft-plan version (and not stale) are eligible.
  */
 export function selectPatientSafeProjectionLabels(
-  projections: PreSurgeryIllustrativeProjection[]
+  projections: PreSurgeryIllustrativeProjection[],
+  graftPlan?: PatientSafeGraftPlanForReport | null
 ): string[] {
   const labels: string[] = [];
-  for (const p of projections) {
-    if (p.status !== "approved") continue;
-    if (findUnsafeProjectionLabel(p.patientSafeLabel)) continue;
+  for (const p of selectReportEligibleProjections(projections, graftPlan)) {
     labels.push(p.patientSafeLabel);
   }
   return labels;
+}
+
+export function selectReportEligibleProjections(
+  projections: PreSurgeryIllustrativeProjection[],
+  graftPlan?: PatientSafeGraftPlanForReport | null,
+  /** When set (report reissue), pin to this exact projection — never substitute newer. */
+  pinnedProjectionId?: string | null
+): PreSurgeryIllustrativeProjection[] {
+  const eligible = projections.filter((p) => {
+    if (p.status !== "approved") return false;
+    if (p.patientSharingEnabled === false) return false;
+    if (p.staleAt) return false;
+    if (p.shadowMode) return false;
+    if (findUnsafeProjectionLabel(p.patientSafeLabel)) return false;
+    if (graftPlan) {
+      if (p.graftPlanId !== graftPlan.graftPlanId) return false;
+      if (p.graftPlanVersion !== graftPlan.graftPlanVersion) return false;
+    }
+    return true;
+  });
+  if (pinnedProjectionId) {
+    // Reissue: keep historically pinned projection readable even if later marked stale
+    // for *new* inclusion — only when explicitly re-pinning the same id.
+    const pinned = projections.filter((p) => p.id === pinnedProjectionId && p.status === "approved");
+    return pinned.length > 0 ? pinned : eligible.filter((p) => p.id === pinnedProjectionId);
+  }
+  return eligible;
 }
 
 export function buildClinicianReportSlice(input: {
@@ -155,13 +189,19 @@ export function buildClinicianReportSlice(input: {
   graftPlans: PreSurgeryGraftPlan[];
   projections: PreSurgeryIllustrativeProjection[];
   now?: string;
+  /** Preserve exact projection from a prior report issuance. */
+  pinnedProjectionId?: string | null;
 }): BuildClinicianReportSliceResult {
   const observations = selectPatientSafeObservations(input.observations);
   const graftPlan = selectApprovedGraftPlanForReport(input.graftPlans);
-  const patientSafeProjectionLabels = selectPatientSafeProjectionLabels(input.projections);
-  const approvedProjectionIds = input.projections
-    .filter((p) => p.status === "approved")
-    .map((p) => p.id);
+  const eligible = selectReportEligibleProjections(
+    input.projections,
+    graftPlan,
+    input.pinnedProjectionId
+  );
+  const patientSafeProjectionLabels = eligible.map((p) => p.patientSafeLabel);
+  const approvedProjectionIds = eligible.map((p) => p.id);
+  const pinned = eligible[0] ?? null;
 
   const provenance: PreSurgeryClinicianReportProvenance | null = graftPlan
     ? {
@@ -170,6 +210,9 @@ export function buildClinicianReportSlice(input: {
         approvedGraftPlanChecksum: graftPlan.graftPlanChecksum,
         approvedObservationCount: observations.length,
         approvedProjectionIds,
+        pinnedProjectionId: pinned?.id ?? null,
+        pinnedProjectionVersion: pinned?.projectionVersion ?? null,
+        pinnedProjectionInputChecksum: pinned?.inputChecksum ?? null,
         frozenAt: input.now ?? new Date().toISOString(),
       }
     : null;

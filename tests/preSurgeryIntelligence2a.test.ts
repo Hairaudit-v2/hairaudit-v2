@@ -256,7 +256,7 @@ describe("HA-PRE-SURGERY-INTELLIGENCE-2A projection modes & safety", () => {
     assert.equal(result.ok, true);
     if (result.ok) {
       assert.equal(result.projection.patientSafeLabel, "Illustrative planned projection");
-      assert.equal(result.projection.status, "generated");
+      assert.equal(result.projection.status, "clinician_review");
       assert.ok(result.projection.outputChecksum);
     }
   });
