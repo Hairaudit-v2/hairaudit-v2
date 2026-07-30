@@ -140,11 +140,21 @@ import { resolvePreSurgeryPlanningReport } from "@/lib/reports/preSurgeryPlannin
 import PostSurgeryAuditReportShell from "@/components/patient/PostSurgeryAuditReportShell";
 import DonorReportViewedTracker from "@/components/patient/DonorReportViewedTracker";
 import DonorHealingOrientationReviewPanel from "@/components/auditor/DonorHealingOrientationReviewPanel";
+import DonorLongitudinalComparisonReviewPanel from "@/components/auditor/DonorLongitudinalComparisonReviewPanel";
+import DonorZoneAnnotationReviewPanel from "@/components/auditor/DonorZoneAnnotationReviewPanel";
 import {
   caseHasDonorHealingEntryContext,
   isDonorHealingOrientationRecord,
   type DonorHealingOrientationRecord,
 } from "@/lib/patient/donorHealingOrientationReport";
+import {
+  isDonorLongitudinalComparisonRecord,
+  type DonorLongitudinalComparisonRecord,
+} from "@/lib/patient/donorLongitudinalComparison";
+import {
+  isDonorZoneAnnotationRecord,
+  type DonorZoneAnnotationRecord,
+} from "@/lib/patient/donorZoneAnnotation";
 import { parseDonorEntryContext } from "@/lib/patient/donorHealingEntry";
 import PreSurgeryPlanningReportShell from "@/components/patient/PreSurgeryPlanningReportShell";
 import { resolvePatientSafeSummaryNarrativePresentation } from "@/lib/reports/patientSafeSummaryNarrativeTranslation";
@@ -973,6 +983,24 @@ export default async function Page({
           reportVersion: latestReport?.version,
           patientReviewPathway,
           uploadTypes: (uploads ?? []).map((u) => String((u as { type?: string }).type ?? "")),
+          donorComparisonUploads: (uploads ?? []).map((u) => {
+            const row = u as {
+              id?: string;
+              type?: string;
+              captured_at?: string | null;
+              metadata?: Record<string, unknown> | null;
+            };
+            const meta = row.metadata ?? {};
+            const capturedAt =
+              row.captured_at ??
+              (typeof meta.captured_at === "string" ? meta.captured_at : null) ??
+              (typeof meta.capturedAt === "string" ? meta.capturedAt : null);
+            return {
+              id: String(row.id ?? ""),
+              type: String(row.type ?? ""),
+              capturedAt,
+            };
+          }),
           patientAuditV2: latestReport?.patient_audit_v2 ?? null,
           patientAuditVersion: latestReport?.patient_audit_version ?? null,
         })
@@ -991,6 +1019,18 @@ export default async function Page({
     (latestSummary as Record<string, unknown> | null)?.donor_healing_orientation
   )
     ? ((latestSummary as Record<string, unknown>).donor_healing_orientation as DonorHealingOrientationRecord)
+    : null;
+  const donorLongitudinalRecord = isDonorLongitudinalComparisonRecord(
+    (latestSummary as Record<string, unknown> | null)?.donor_longitudinal_comparison
+  )
+    ? ((latestSummary as Record<string, unknown>)
+        .donor_longitudinal_comparison as DonorLongitudinalComparisonRecord)
+    : null;
+  const donorZoneRecord = isDonorZoneAnnotationRecord(
+    (latestSummary as Record<string, unknown> | null)?.donor_zone_annotation
+  )
+    ? ((latestSummary as Record<string, unknown>)
+        .donor_zone_annotation as DonorZoneAnnotationRecord)
     : null;
   const preSurgeryPlanningReport =
     patientReviewPathway === "pre_surgery" && latestSummary
@@ -1514,7 +1554,8 @@ export default async function Page({
                 clinicalHistory={clinicalHistorySnapshot}
                 imageLimitedAssessment={imageLimitedForensicNotice}
                 documentAssistedAssessment={Boolean(
-                  (forensic as { documentAssistedAssessment?: boolean } | null)?.documentAssistedAssessment
+                  (forensic as { documentAssistedAssessment?: boolean } | null)
+                    ?.documentAssistedAssessment
                 )}
               />
             </>
@@ -1929,13 +1970,61 @@ export default async function Page({
       ) : null}
 
       {isAuditor && latestReport && donorHealingEntryActive ? (
-        <div className="mt-6">
-          <DonorHealingOrientationReviewPanel
-            reportId={latestReport.id}
-            initialRecord={donorOrientationRecord}
-            uploadTypes={(uploads ?? []).map((u) => String((u as { type?: string }).type ?? ""))}
-          />
-        </div>
+        <section
+          data-testid="professional-donor-orientation-workspace"
+          className="mt-8 rounded-2xl border border-cyan-500/30 bg-slate-950 p-4 sm:p-5"
+          aria-label="Professional donor orientation workspace"
+        >
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-cyan-300/90">
+            Professional workspace
+          </p>
+          <p className="mt-1 text-xs text-slate-400">
+            Prepare, Confirm, and Correct controls stay here — never inside the patient report.
+          </p>
+          <div className="mt-4 space-y-4">
+            <DonorHealingOrientationReviewPanel
+              reportId={latestReport.id}
+              initialRecord={donorOrientationRecord}
+              uploadTypes={(uploads ?? []).map((u) => String((u as { type?: string }).type ?? ""))}
+            />
+            <DonorLongitudinalComparisonReviewPanel
+              reportId={latestReport.id}
+              initialRecord={donorLongitudinalRecord}
+              uploadTypes={(uploads ?? []).map((u) => String((u as { type?: string }).type ?? ""))}
+              uploads={(uploads ?? []).map((u) => {
+                const row = u as {
+                  id?: string;
+                  type?: string;
+                  captured_at?: string | null;
+                  metadata?: Record<string, unknown> | null;
+                };
+                const meta = row.metadata ?? {};
+                const capturedAt =
+                  row.captured_at ??
+                  (typeof meta.captured_at === "string" ? meta.captured_at : null) ??
+                  (typeof meta.capturedAt === "string" ? meta.capturedAt : null);
+                return {
+                  id: String(row.id ?? ""),
+                  type: String(row.type ?? ""),
+                  capturedAt,
+                  signedUrl: null,
+                };
+              })}
+            />
+            <DonorZoneAnnotationReviewPanel
+              reportId={latestReport.id}
+              initialRecord={donorZoneRecord}
+              uploads={(uploads ?? []).map((u) => {
+                const row = u as { id?: string; type?: string };
+                return {
+                  id: String(row.id ?? ""),
+                  type: String(row.type ?? ""),
+                  signedUrl: null,
+                };
+              })}
+            />
+          </div>
+        </section>
       ) : null}
 
       {domains.length > 0 && mountPatientPostSurgeryChrome && (

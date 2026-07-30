@@ -295,6 +295,6 @@ pnpm exec playwright test --config=playwright.config.ts tests/e2e/hairaudit/dono
 ## Out of scope (later phases)
 
 - **1B** Structured donor intake + report integration hardening / orientation output — **see `docs/HA-DONOR-HEALING-1B.md`**
-- **1C** Longitudinal donor photograph comparison
-- **1D** Donor content cluster consolidation
+- **1C** Longitudinal donor photograph comparison — see `docs/HA-DONOR-HEALING-1C.md`
+- **1D** Donor heatmaps / zone annotation (content cluster consolidation moved toward **1F**)
 - AI future-outcome images, automated extraction counts, capacity calculations

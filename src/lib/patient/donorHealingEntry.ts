@@ -80,6 +80,12 @@ export const FORBIDDEN_DONOR_DIAGNOSTIC_PHRASES = [
   "infection confirmed",
   "safe remaining graft capacity",
   "safe graft capacity",
+  // HA-DONOR-HEALING-1C — longitudinal comparison must not claim these
+  "follicle death",
+  "permanent depletion",
+  "exact density loss",
+  "confirmed overharvesting",
+  "future safe graft capacity",
 ] as const;
 
 export const DONOR_RED_FLAG_SYMPTOM_VALUES = [

@@ -75,12 +75,12 @@ without longitudinal comparison, image alignment, or donor heatmaps (those remai
 
 ---
 
-## Out of scope (1C+)
+## Out of scope (later)
 
-- Longitudinal donor photograph comparison
-- Image alignment
-- Donor heatmaps
-- AI future-outcome images / automated extraction counts / capacity calculations
+- Longitudinal donor photograph comparison — see **HA-DONOR-HEALING-1C**
+- Geometric image alignment (1C uses view pairing only)
+- Donor heatmaps — **1D**
+- AI future-outcome images / automated extraction counts / capacity calculations — **1E+**
 
 ---
 

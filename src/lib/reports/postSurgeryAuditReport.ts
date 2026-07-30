@@ -40,6 +40,17 @@ import {
   toPatientSafeDonorOrientationSlice,
   type PatientSafeDonorOrientationSlice,
 } from "@/lib/patient/donorHealingOrientationReport";
+import {
+  resolveDonorLongitudinalComparisonForReport,
+  toPatientSafeDonorLongitudinalSlice,
+  type DonorComparisonUploadInput,
+  type PatientSafeDonorLongitudinalSlice,
+} from "@/lib/patient/donorLongitudinalComparison";
+import {
+  resolveDonorZoneAnnotationForReport,
+  toPatientSafeDonorZoneAnnotationSlice,
+  type PatientSafeDonorZoneAnnotationSlice,
+} from "@/lib/patient/donorZoneAnnotation";
 import { normalizedPatientAnswersFromReportRow } from "@/lib/patient/answersFromReportRow";
 
 export const POST_SURGERY_AUDIT_REPORT_VERSION = 1 as const;
@@ -130,6 +141,16 @@ export type PostSurgeryAuditReport = {
    * Absent for non-donor post-surgery cases.
    */
   donorHealingOrientation?: PatientSafeDonorOrientationSlice | null;
+  /**
+   * HA-DONOR-HEALING-1C — clinician-gated longitudinal donor comparison.
+   * Absent until clinician confirmation/correction.
+   */
+  donorLongitudinalComparison?: PatientSafeDonorLongitudinalSlice | null;
+  /**
+   * HA-DONOR-HEALING-1D — clinician-gated zone schematic.
+   * Absent until clinician confirmation/correction.
+   */
+  donorZoneAnnotation?: PatientSafeDonorZoneAnnotationSlice | null;
 };
 
 export type GeneratePostSurgeryAuditReportInput = {
@@ -142,6 +163,8 @@ export type GeneratePostSurgeryAuditReportInput = {
   clinicalHistory?: ClinicalHistorySnapshot | null;
   /** Upload type strings (e.g. patient_photo:preop_donor_rear) for evidence rules. */
   uploadTypes?: readonly string[] | null;
+  /** HA-DONOR-HEALING-1C — dated uploads for longitudinal clustering. */
+  donorComparisonUploads?: readonly DonorComparisonUploadInput[] | null;
   /** Prefer patient_audit_v2 when available. */
   patientAuditV2?: Record<string, unknown> | null;
   patientAuditVersion?: number | null;
@@ -941,6 +964,37 @@ export function generatePostSurgeryAuditReport(
     ? toPatientSafeDonorOrientationSlice(orientationRecord)
     : null;
 
+  const longitudinalRecord = caseHasDonorHealingEntryContext({
+    answers: patientAnswers,
+    summary: input.summary,
+  })
+    ? resolveDonorLongitudinalComparisonForReport({
+        answers: patientAnswers,
+        summary: input.summary,
+        uploadTypes: input.uploadTypes,
+        uploads: input.donorComparisonUploads,
+        photosByCategory: input.photosByCategory,
+        stored: input.summary.donor_longitudinal_comparison,
+      })
+    : null;
+  const donorLongitudinalComparison = longitudinalRecord
+    ? toPatientSafeDonorLongitudinalSlice(longitudinalRecord)
+    : null;
+
+  const zoneRecord = caseHasDonorHealingEntryContext({
+    answers: patientAnswers,
+    summary: input.summary,
+  })
+    ? resolveDonorZoneAnnotationForReport({
+        answers: patientAnswers,
+        summary: input.summary,
+        stored: input.summary.donor_zone_annotation,
+      })
+    : null;
+  const donorZoneAnnotation = zoneRecord
+    ? toPatientSafeDonorZoneAnnotationSlice(zoneRecord)
+    : null;
+
   const sections = buildReviewSections(
     forensic,
     bundle,
@@ -990,6 +1044,8 @@ export function generatePostSurgeryAuditReport(
     repairPlanningGuidance,
     patientSafeSummary,
     donorHealingOrientation,
+    donorLongitudinalComparison,
+    donorZoneAnnotation,
   };
 }
 
@@ -1015,6 +1071,7 @@ export function resolvePostSurgeryAuditReport(
     photosByCategory?: Record<string, { signedUrl: string | null; label: string }[]>;
     clinicalHistory?: ClinicalHistorySnapshot | null;
     uploadTypes?: readonly string[] | null;
+    donorComparisonUploads?: readonly DonorComparisonUploadInput[] | null;
     patientAuditV2?: Record<string, unknown> | null;
     patientAuditVersion?: number | null;
   }
@@ -1040,6 +1097,27 @@ export function resolvePostSurgeryAuditReport(
   });
   const donorHealingOrientation = orientationRecord
     ? toPatientSafeDonorOrientationSlice(orientationRecord)
+    : null;
+
+  const longitudinalRecord = resolveDonorLongitudinalComparisonForReport({
+    answers: patientAnswers,
+    summary: summary ?? null,
+    uploadTypes: opts.uploadTypes,
+    uploads: opts.donorComparisonUploads,
+    photosByCategory: opts.photosByCategory,
+    stored: summary?.donor_longitudinal_comparison,
+  });
+  const donorLongitudinalComparison = longitudinalRecord
+    ? toPatientSafeDonorLongitudinalSlice(longitudinalRecord)
+    : null;
+
+  const zoneRecord = resolveDonorZoneAnnotationForReport({
+    answers: patientAnswers,
+    summary: summary ?? null,
+    stored: summary?.donor_zone_annotation,
+  });
+  const donorZoneAnnotation = zoneRecord
+    ? toPatientSafeDonorZoneAnnotationSlice(zoneRecord)
     : null;
 
   const stored = summary?.post_surgery_audit_report;
@@ -1076,6 +1154,10 @@ export function resolvePostSurgeryAuditReport(
       // Prefer clinician-reviewed summary record over stale embedded slice.
       donorHealingOrientation:
         donorHealingOrientation ?? stored.donorHealingOrientation ?? null,
+      donorLongitudinalComparison:
+        donorLongitudinalComparison ?? stored.donorLongitudinalComparison ?? null,
+      donorZoneAnnotation:
+        donorZoneAnnotation ?? stored.donorZoneAnnotation ?? null,
     };
     return merged;
   }
@@ -1090,6 +1172,7 @@ export function resolvePostSurgeryAuditReport(
     photosByCategory: opts.photosByCategory,
     clinicalHistory: opts.clinicalHistory ?? null,
     uploadTypes: opts.uploadTypes,
+    donorComparisonUploads: opts.donorComparisonUploads,
     patientAuditV2: opts.patientAuditV2,
     patientAuditVersion: opts.patientAuditVersion,
   });

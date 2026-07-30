@@ -21,6 +21,8 @@ import AssessmentConfidenceSection from "@/components/patient/AssessmentConfiden
 import AssessmentImprovementRecommendationsSection from "@/components/patient/AssessmentImprovementRecommendationsSection";
 import PathwayVisualSummarySection from "@/components/patient/PathwayVisualSummarySection";
 import DonorHealingOrientationSection from "@/components/patient/DonorHealingOrientationSection";
+import DonorLongitudinalComparisonSection from "@/components/patient/DonorLongitudinalComparisonSection";
+import DonorZoneAnnotationSection from "@/components/patient/DonorZoneAnnotationSection";
 import type { ClinicalHistorySnapshot } from "@/lib/hairaudit/clinical-history/clinicalHistoryTypes";
 
 const SECTION_ORDER: PostSurgeryReviewSectionId[] = [
@@ -158,6 +160,14 @@ export default function PostSurgeryAuditReportShell({
 
       {report.donorHealingOrientation ? (
         <DonorHealingOrientationSection orientation={report.donorHealingOrientation} />
+      ) : null}
+
+      {report.donorLongitudinalComparison ? (
+        <DonorLongitudinalComparisonSection comparison={report.donorLongitudinalComparison} />
+      ) : null}
+
+      {report.donorZoneAnnotation ? (
+        <DonorZoneAnnotationSection annotation={report.donorZoneAnnotation} />
       ) : null}
 
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
