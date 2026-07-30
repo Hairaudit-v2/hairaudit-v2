@@ -9,14 +9,18 @@ import {
 } from "@/lib/patient/donorHealingEntry";
 import { stashPendingEntryContext } from "@/lib/patient/patientEntryContext";
 import {
+  DONOR_HEALING_CAPABILITY,
   DONOR_HEALING_COMPARISON_CARDS,
+  DONOR_HEALING_CTA_SUPPORTING,
+  DONOR_HEALING_OPENING_HOOK,
+  DONOR_HEALING_OPENING_SUPPORT,
   DONOR_HEALING_PHOTO_PREP,
-  DONOR_HEALING_REASSURANCE,
   DONOR_HEALING_STAGE_ROUTES,
   DONOR_HEALING_TIMELINE,
 } from "@/lib/seo/donorHealingGuideContent";
 import { fiHairauditPrimaryButtonClass } from "@/lib/fi-ui/hairauditPrimaryButton";
 import { cn } from "@/lib/utils";
+import { networkButtonVariants } from "@/packages/ui";
 
 type DonorHealingGuideExperienceProps = {
   ctaLabel: string;
@@ -24,6 +28,7 @@ type DonorHealingGuideExperienceProps = {
   ctaAnalyticsId: string;
   ctaDestination: string;
   guideSlug?: string;
+  finalCtaLabel?: string;
 };
 
 function scrollToId(id: string) {
@@ -33,12 +38,69 @@ function scrollToId(id: string) {
   }
 }
 
+function DonorCtaBlock({
+  label,
+  href,
+  analyticsId,
+  destination,
+  guideSlug,
+  supporting,
+  testId,
+  onClick,
+}: {
+  label: string;
+  href: string;
+  analyticsId: string;
+  destination: string;
+  guideSlug: string;
+  supporting: string;
+  testId: string;
+  onClick: () => void;
+}) {
+  return (
+    <div className="rounded-2xl border border-amber-400/25 bg-gradient-to-br from-amber-400/10 to-transparent p-5 sm:p-6">
+      <p className="text-sm leading-relaxed text-muted-foreground">{supporting}</p>
+      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+        <Link
+          href={href}
+          onClick={onClick}
+          className={fiHairauditPrimaryButtonClass("md")}
+          data-testid={testId}
+          data-cta={analyticsId}
+          data-cta-destination={destination}
+          data-patient-guide={guideSlug}
+          data-entry-context="donor_healing"
+        >
+          {label}
+        </Link>
+        <Link
+          href="/demo-report"
+          className={cn(networkButtonVariants({ variant: "secondary", size: "md" }))}
+          data-cta="donor-secondary-sample-report"
+          data-cta-destination="/demo-report"
+        >
+          View sample report
+        </Link>
+        <Link
+          href="/how-it-works"
+          className={cn(networkButtonVariants({ variant: "ghost", size: "md" }))}
+          data-cta="donor-secondary-how-it-works"
+          data-cta-destination="/how-it-works"
+        >
+          How HairAudit works
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 export default function DonorHealingGuideExperience({
   ctaLabel,
   ctaHref,
   ctaAnalyticsId,
   ctaDestination,
   guideSlug = DONOR_HEALING_GUIDE_SLUG,
+  finalCtaLabel = "Start My Donor Review",
 }: DonorHealingGuideExperienceProps) {
   const baseId = useId();
   const [expandedStageId, setExpandedStageId] = useState<string | null>(
@@ -49,10 +111,14 @@ export default function DonorHealingGuideExperience({
     trackCta("donor_guide_viewed", donorHealingAnalyticsMeta({ guide: guideSlug }));
   }, [guideSlug]);
 
-  function onStageRouteSelect(routeId: "early" | "later", anchorId: string) {
+  function onStageRouteSelect(
+    routeId: "early" | "later",
+    stageGroup: "under_3_months" | "3_months_or_more",
+    anchorId: string
+  ) {
     trackCta(
-      routeId === "early" ? "donor_stage_card_early" : "donor_stage_card_later",
-      donorHealingAnalyticsMeta({ stage_route: routeId })
+      "donor_stage_selected",
+      donorHealingAnalyticsMeta({ stage_route: routeId, stage_group: stageGroup })
     );
     scrollToId(anchorId);
   }
@@ -61,7 +127,10 @@ export default function DonorHealingGuideExperience({
     setExpandedStageId((prev) => {
       const next = prev === stageId ? null : stageId;
       if (next) {
-        trackCta("donor_timeline_stage_expanded", donorHealingAnalyticsMeta({ stage_id: stageId }));
+        trackCta(
+          "donor_timeline_stage_opened",
+          donorHealingAnalyticsMeta({ stage_id: stageId })
+        );
       }
       return next;
     });
@@ -72,9 +141,10 @@ export default function DonorHealingGuideExperience({
       entryContext: "donor_healing",
       concern: "donor_healing",
       sourceGuide: guideSlug,
+      recommendedPathway: "post_surgery",
     });
     trackCta(
-      ctaAnalyticsId,
+      ctaAnalyticsId || "donor_cta_clicked",
       donorHealingAnalyticsMeta({
         href: ctaHref,
         destination: ctaDestination,
@@ -84,49 +154,93 @@ export default function DonorHealingGuideExperience({
 
   return (
     <div
-      className="mx-auto mt-10 max-w-3xl space-y-10 sm:space-y-12"
+      className="mx-auto mt-8 max-w-3xl space-y-10 sm:mt-10 sm:space-y-12"
       data-analytics-scope="donor-healing-guide"
       data-patient-guide={guideSlug}
       data-entry-context="donor_healing"
+      data-testid="donor-healing-experience"
     >
       <section
-        aria-labelledby={`${baseId}-reassurance`}
+        aria-labelledby={`${baseId}-opening`}
         className="rounded-2xl border border-border/50 bg-card/60 px-4 py-5 sm:px-6 sm:py-6"
+        data-testid="donor-opening-viewport"
       >
-        <h2 id={`${baseId}-reassurance`} className="text-lg font-semibold text-foreground sm:text-xl">
-          A cautious starting point
+        <h2 id={`${baseId}-opening`} className="text-xl font-semibold text-foreground sm:text-2xl">
+          {DONOR_HEALING_OPENING_HOOK}
         </h2>
-        <p className="mt-3 leading-relaxed text-muted-foreground">{DONOR_HEALING_REASSURANCE}</p>
+        <p className="mt-3 leading-relaxed text-muted-foreground">{DONOR_HEALING_OPENING_SUPPORT}</p>
+
+        <div className="mt-6 space-y-3" aria-labelledby={`${baseId}-stage-routes`}>
+          <h3 id={`${baseId}-stage-routes`} className="text-base font-semibold text-foreground">
+            Where are you in healing?
+          </h3>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            These choices scroll to the most relevant timeline section. They do not start a case.
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {DONOR_HEALING_STAGE_ROUTES.map((route) => (
+              <button
+                key={route.id}
+                type="button"
+                onClick={() => onStageRouteSelect(route.id, route.stageGroup, route.anchorId)}
+                className="rounded-2xl border border-amber-400/30 bg-amber-400/5 p-4 text-left transition-colors hover:border-amber-300/50 hover:bg-amber-400/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/60"
+                data-testid={`donor-stage-route-${route.id}`}
+                data-cta={`donor-stage-route-${route.id}`}
+                aria-describedby={`${baseId}-route-${route.id}-desc`}
+              >
+                <span className="block text-base font-semibold text-foreground">{route.label}</span>
+                <span
+                  id={`${baseId}-route-${route.id}-desc`}
+                  className="mt-2 block text-sm leading-relaxed text-muted-foreground"
+                >
+                  {route.description}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-6">
+          <DonorCtaBlock
+            label={ctaLabel}
+            href={ctaHref}
+            analyticsId={ctaAnalyticsId}
+            destination={ctaDestination}
+            guideSlug={guideSlug}
+            supporting={DONOR_HEALING_CTA_SUPPORTING}
+            testId="donor-healing-cta"
+            onClick={onCtaClick}
+          />
+        </div>
       </section>
 
-      <section aria-labelledby={`${baseId}-stage-routes`} className="space-y-4">
-        <h2 id={`${baseId}-stage-routes`} className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
-          Where are you in healing?
+      <section
+        aria-labelledby={`${baseId}-capability`}
+        className="space-y-4"
+        data-testid="donor-capability-boundary"
+      >
+        <h2 id={`${baseId}-capability`} className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+          What HairAudit can and cannot assess from photographs
         </h2>
-        <p className="text-sm leading-relaxed text-muted-foreground">
-          These routes help you find the most relevant timeline section. They do not start a case until
-          you choose to begin a review.
-        </p>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {DONOR_HEALING_STAGE_ROUTES.map((route) => (
-            <button
-              key={route.id}
-              type="button"
-              onClick={() => onStageRouteSelect(route.id, route.anchorId)}
-              className="rounded-2xl border border-amber-400/30 bg-amber-400/5 p-4 text-left transition-colors hover:border-amber-300/50 hover:bg-amber-400/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/60"
-              data-testid={`donor-stage-route-${route.id}`}
-              data-cta={`donor-stage-route-${route.id}`}
-              aria-describedby={`${baseId}-route-${route.id}-desc`}
-            >
-              <span className="block text-base font-semibold text-foreground">{route.label}</span>
-              <span
-                id={`${baseId}-route-${route.id}-desc`}
-                className="mt-2 block text-sm leading-relaxed text-muted-foreground"
-              >
-                {route.description}
-              </span>
-            </button>
-          ))}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="rounded-2xl border border-border/50 bg-card/50 px-4 py-4 sm:px-5">
+            <h3 className="text-base font-semibold text-foreground">HairAudit can help assess</h3>
+            <ul className="mt-3 list-disc space-y-1.5 pl-5 text-sm text-muted-foreground">
+              {DONOR_HEALING_CAPABILITY.canHelp.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
+          <div className="rounded-2xl border border-border/50 bg-card/50 px-4 py-4 sm:px-5">
+            <h3 className="text-base font-semibold text-foreground">
+              HairAudit cannot confirm from photographs alone
+            </h3>
+            <ul className="mt-3 list-disc space-y-1.5 pl-5 text-sm text-muted-foreground">
+              {DONOR_HEALING_CAPABILITY.cannotConfirm.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
         </div>
       </section>
 
@@ -140,8 +254,9 @@ export default function DonorHealingGuideExperience({
           FUE donor healing timeline
         </h2>
         <p className="text-sm leading-relaxed text-muted-foreground">
-          Use bounded language as a guide: what patients often notice, what cannot yet be judged
-          reliably, and when direct clinical advice may be wiser than photo review alone.
+          Use bounded language as a guide: what patients may commonly notice, what is too early to
+          judge, what deserves routine follow-up, and when direct clinical care is wiser than photo
+          review alone.
         </p>
         <div className="space-y-3" role="list">
           {DONOR_HEALING_TIMELINE.map((stage, index) => {
@@ -185,10 +300,10 @@ export default function DonorHealingGuideExperience({
                   hidden={!expanded}
                   className="border-t border-border/40 px-4 pb-4 pt-3 sm:px-5 sm:pb-5"
                 >
-                  <div className="grid gap-4 sm:grid-cols-3">
+                  <div className="grid gap-4 sm:grid-cols-2">
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                        Often noticed
+                        What patients may commonly notice
                       </p>
                       <ul className="mt-2 list-disc space-y-1.5 pl-4 text-sm text-muted-foreground">
                         {stage.commonlyNotice.map((item) => (
@@ -198,7 +313,7 @@ export default function DonorHealingGuideExperience({
                     </div>
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                        Not enough evidence yet
+                        What is too early to judge
                       </p>
                       <ul className="mt-2 list-disc space-y-1.5 pl-4 text-sm text-muted-foreground">
                         {stage.cannotYetJudge.map((item) => (
@@ -208,7 +323,7 @@ export default function DonorHealingGuideExperience({
                     </div>
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                        May deserve clinic follow-up
+                        What deserves routine follow-up
                       </p>
                       <ul className="mt-2 list-disc space-y-1.5 pl-4 text-sm text-muted-foreground">
                         {stage.mayDeserveFollowUp.map((item) => (
@@ -216,15 +331,17 @@ export default function DonorHealingGuideExperience({
                         ))}
                       </ul>
                     </div>
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wider text-rose-300/90">
+                        When to seek direct clinical care
+                      </p>
+                      <ul className="mt-2 list-disc space-y-1.5 pl-4 text-sm text-muted-foreground">
+                        {stage.seekDirectClinicalCare.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
-                  {stage.urgentNote ? (
-                    <p
-                      className="mt-4 rounded-xl border border-rose-400/25 bg-rose-400/5 px-3 py-2 text-sm leading-relaxed text-rose-100/90"
-                      role="note"
-                    >
-                      {stage.urgentNote}
-                    </p>
-                  ) : null}
                 </div>
               </div>
             );
@@ -232,12 +349,23 @@ export default function DonorHealingGuideExperience({
         </div>
       </section>
 
+      <DonorCtaBlock
+        label={ctaLabel}
+        href={ctaHref}
+        analyticsId={ctaAnalyticsId}
+        destination={ctaDestination}
+        guideSlug={guideSlug}
+        supporting="After early or later healing guidance, you can begin a donor-focused Post-Surgery Audit. Pathway confirmation is still required."
+        testId="donor-healing-cta-mid"
+        onClick={onCtaClick}
+      />
+
       <section aria-labelledby={`${baseId}-compare`} className="space-y-4">
         <h2 id={`${baseId}-compare`} className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
-          Often compatible, deserves review, or seek clinical advice
+          Often compatible with the healing stage, deserves closer review, or seek direct clinical advice
         </h2>
         <p className="text-sm leading-relaxed text-muted-foreground">
-          These cards do not confirm normality or overharvesting. They help separate common healing
+          These cards do not confirm normality or overharvesting. They help separate stage-compatible
           appearances from patterns that may deserve closer attention.
         </p>
         <div className="grid gap-4">
@@ -253,7 +381,7 @@ export default function DonorHealingGuideExperience({
               <div className="grid gap-0 sm:grid-cols-3">
                 <div className="border-b border-border/30 px-4 py-3 sm:border-b-0 sm:border-r sm:px-5">
                   <p className="text-xs font-semibold uppercase tracking-wider text-emerald-300/90">
-                    Often compatible with healing stage
+                    Often compatible with the healing stage
                   </p>
                   <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                     {card.oftenCompatible}
@@ -320,35 +448,45 @@ export default function DonorHealingGuideExperience({
       </section>
 
       <section
-        aria-labelledby={`${baseId}-cta`}
-        className="rounded-2xl border border-amber-400/25 bg-gradient-to-br from-amber-400/10 to-transparent p-6 sm:p-8"
+        aria-labelledby={`${baseId}-cta-final`}
         data-analytics-region="donor-healing-primary-cta"
+        data-testid="donor-final-cta"
       >
-        <h2 id={`${baseId}-cta`} className="text-xl font-semibold text-foreground">
-          Ready for a donor-focused independent review?
+        <h2 id={`${baseId}-cta-final`} className="sr-only">
+          Start a donor-focused review
         </h2>
-        <p className="mt-3 leading-relaxed text-muted-foreground">
-          Check My Donor Healing routes into HairAudit&apos;s Post-Surgery Audit. You will still confirm
-          your review type before a case is created—this is not a separate pathway.
-        </p>
-        <div className="mt-6">
-          <Link
-            href={ctaHref}
-            onClick={onCtaClick}
-            className={fiHairauditPrimaryButtonClass("md")}
-            data-testid="donor-healing-cta"
-            data-cta={ctaAnalyticsId}
-            data-cta-destination={ctaDestination}
-            data-patient-guide={guideSlug}
-            data-entry-context="donor_healing"
-          >
-            {ctaLabel}
-          </Link>
-        </div>
+        <DonorCtaBlock
+          label={finalCtaLabel}
+          href={ctaHref}
+          analyticsId={ctaAnalyticsId}
+          destination={ctaDestination}
+          guideSlug={guideSlug}
+          supporting="Start My Donor Review still requires explicit Post-Surgery Audit confirmation. HairAudit will not invent a third pathway or declare overharvesting from this page."
+          testId="donor-healing-cta-final"
+          onClick={onCtaClick}
+        />
         <p className="mt-4 text-sm leading-relaxed text-muted-foreground" role="note">
           HairAudit does not confirm a &quot;normal donor,&quot; diagnose infection, or calculate safe
           remaining graft capacity from photographs alone.
         </p>
+        <ul className="mt-3 flex flex-col gap-2 text-sm text-muted-foreground sm:flex-row sm:flex-wrap">
+          <li>
+            <Link
+              href="/overharvested-donor-area"
+              className="underline underline-offset-2 hover:text-foreground"
+            >
+              Read donor overharvesting guidance
+            </Link>
+          </li>
+          <li>
+            <Link
+              href="/what-photos-are-needed-for-a-proper-hair-transplant-review"
+              className="underline underline-offset-2 hover:text-foreground"
+            >
+              Photo preparation guide
+            </Link>
+          </li>
+        </ul>
       </section>
     </div>
   );

@@ -10,7 +10,7 @@ export type DonorHealingTimelineStage = {
   commonlyNotice: string[];
   cannotYetJudge: string[];
   mayDeserveFollowUp: string[];
-  urgentNote?: string;
+  seekDirectClinicalCare: string[];
 };
 
 export type DonorHealingComparisonCard = {
@@ -26,16 +26,46 @@ export type DonorHealingStageRoute = {
   label: string;
   anchorId: string;
   description: string;
+  stageGroup: "under_3_months" | "3_months_or_more";
 };
 
-export const DONOR_HEALING_REASSURANCE =
-  "Seeing the donor area look red, patchy, dotted, or unexpectedly thin after FUE can be alarming. A single photograph rarely tells the whole story. Timing, hair length, lighting, extraction distribution, and changes across several months all affect what can reasonably be concluded.";
+export const DONOR_HEALING_OPENING_HOOK =
+  "Does your FUE donor area look red, patchy, dotted, or thinner than expected?";
+
+export const DONOR_HEALING_OPENING_SUPPORT =
+  "The donor area can look very different during healing. Timing, hair length, lighting, temporary shedding, and extraction distribution all affect what can reasonably be concluded from photographs.";
+
+export const DONOR_HEALING_REASSURANCE = DONOR_HEALING_OPENING_SUPPORT;
+
+export const DONOR_HEALING_CTA_SUPPORTING =
+  "Upload clear donor photographs and your procedure date for an independent, stage-aware review of what the available evidence can support.";
+
+export const DONOR_HEALING_CAPABILITY = {
+  canHelp: [
+    "Visible healing patterns",
+    "Donor-area uniformity",
+    "Persistent patchiness",
+    "Whether temporary shedding may be contributing",
+    "Whether photographs are comparable",
+    "Whether the evidence is sufficient",
+    "Whether closer clinical assessment is sensible",
+  ],
+  cannotConfirm: [
+    "Infection",
+    "Exact donor density",
+    "Remaining safe graft capacity",
+    "Permanent follicle loss",
+    "Definitive overharvesting in every case",
+    "Treatment requirements",
+  ],
+} as const;
 
 export const DONOR_HEALING_STAGE_ROUTES: readonly DonorHealingStageRoute[] = [
   {
     id: "early",
     label: "My surgery was less than 3 months ago",
     anchorId: "donor-healing-early",
+    stageGroup: "under_3_months",
     description:
       "Early donor change is often about healing, crusting, and temporary shedding—not a final long-term read.",
   },
@@ -43,6 +73,7 @@ export const DONOR_HEALING_STAGE_ROUTES: readonly DonorHealingStageRoute[] = [
     id: "later",
     label: "My surgery was 3 months ago or longer",
     anchorId: "donor-healing-later",
+    stageGroup: "3_months_or_more",
     description:
       "Later photographs can support a clearer conversation about uniformity, patchiness, and what may deserve structured review.",
   },
@@ -54,9 +85,9 @@ export const DONOR_HEALING_TIMELINE: readonly DonorHealingTimelineStage[] = [
     label: "Days 1–3",
     rangeLabel: "Immediate healing",
     commonlyNotice: [
-      "Redness, swelling, and small crusts at extraction sites",
-      "A dotted or speckled look that can feel more visible with short hair",
-      "Tenderness that often eases day by day when care instructions are followed",
+      "Redness, swelling, and small crusts at extraction sites may appear",
+      "A dotted or speckled look can feel more visible with short hair",
+      "Mild tenderness that often eases day by day when care instructions are followed",
     ],
     cannotYetJudge: [
       "Long-term donor uniformity",
@@ -65,10 +96,12 @@ export const DONOR_HEALING_TIMELINE: readonly DonorHealingTimelineStage[] = [
     ],
     mayDeserveFollowUp: [
       "Pain that is increasing rather than settling",
-      "Spreading redness beyond the extraction field",
+      "Marked asymmetry that worries you and your clinic",
     ],
-    urgentNote:
-      "Fever, spreading redness, discharge, or persistent bleeding deserves direct clinical advice—not photo review alone.",
+    seekDirectClinicalCare: [
+      "Fever, spreading redness, discharge, or persistent bleeding",
+      "Rapidly worsening swelling with systemic symptoms",
+    ],
   },
   {
     id: "days_4_7",
@@ -84,11 +117,13 @@ export const DONOR_HEALING_TIMELINE: readonly DonorHealingTimelineStage[] = [
       "Overharvesting claims from a single angle or lighting condition",
     ],
     mayDeserveFollowUp: [
-      "Worsening discharge or odour",
+      "Worsening local irritation that is not settling",
       "New areas of intense pain",
     ],
-    urgentNote:
-      "Signs of possible infection need your clinic or urgent care, not an automated conclusion.",
+    seekDirectClinicalCare: [
+      "Discharge, odour, spreading redness, or fever",
+      "Persistent bleeding",
+    ],
   },
   {
     id: "days_8_14",
@@ -104,8 +139,12 @@ export const DONOR_HEALING_TIMELINE: readonly DonorHealingTimelineStage[] = [
       "Safe remaining graft capacity",
     ],
     mayDeserveFollowUp: [
-      "Persistent open wounds or delayed surface healing",
-      "Marked asymmetry that worries you and your clinic",
+      "Persistent open areas or delayed surface healing",
+      "Marked asymmetry that still concerns you",
+    ],
+    seekDirectClinicalCare: [
+      "Spreading inflammation, fever, or discharge",
+      "Increasing pain rather than settling discomfort",
     ],
   },
   {
@@ -122,8 +161,12 @@ export const DONOR_HEALING_TIMELINE: readonly DonorHealingTimelineStage[] = [
       "Whether irregularity is temporary shedding versus a stable pattern",
     ],
     mayDeserveFollowUp: [
-      "Rapidly worsening thinning with pain or inflammation",
       "Clinic-recommended review if healing feels off-track",
+      "Persistent local irritation beyond what your clinic expected",
+    ],
+    seekDirectClinicalCare: [
+      "Rapidly worsening thinning with pain or inflammation",
+      "Fever, discharge, or spreading redness",
     ],
   },
   {
@@ -143,6 +186,10 @@ export const DONOR_HEALING_TIMELINE: readonly DonorHealingTimelineStage[] = [
       "Stable concentrated patchiness under consistent dated photos",
       "Ongoing pain, redness, or irritation beyond expected recovery",
     ],
+    seekDirectClinicalCare: [
+      "New inflammatory change, discharge, or fever at this stage",
+      "Increasing pain or spreading redness",
+    ],
   },
   {
     id: "months_6_12",
@@ -161,6 +208,10 @@ export const DONOR_HEALING_TIMELINE: readonly DonorHealingTimelineStage[] = [
       "Persistent irregularity that still concerns you after healing has settled",
       "Planning a second procedure where donor reserve needs clinical assessment",
     ],
+    seekDirectClinicalCare: [
+      "Acute inflammatory symptoms at any late stage",
+      "Persistent bleeding, discharge, or systemic illness",
+    ],
   },
 ];
 
@@ -169,7 +220,7 @@ export const DONOR_HEALING_COMPARISON_CARDS: readonly DonorHealingComparisonCard
     id: "redness",
     domain: "Redness and surface healing",
     oftenCompatible:
-      "Temporary redness or crusting that settles with the reported healing stage.",
+      "Temporary redness or crusting that may be compatible with the reported healing stage.",
     deservesReview:
       "Redness or irregular healing that persists longer than expected for your stage.",
     seekClinicalAdvice:
@@ -179,7 +230,7 @@ export const DONOR_HEALING_COMPARISON_CARDS: readonly DonorHealingComparisonCard
     id: "patchiness",
     domain: "Patchiness and scalp visibility",
     oftenCompatible:
-      "Short hair and harsh lighting that make the scalp look more visible than it feels day to day.",
+      "Short hair and bright light that make the scalp look more visible than it feels day to day.",
     deservesReview:
       "Persistent concentrated patchiness that remains under neutral light and consistent distance.",
     seekClinicalAdvice:
@@ -189,28 +240,38 @@ export const DONOR_HEALING_COMPARISON_CARDS: readonly DonorHealingComparisonCard
     id: "shedding",
     domain: "Shedding versus lasting irregularity",
     oftenCompatible:
-      "Temporary donor shedding that may improve across several months.",
+      "Possible temporary donor shedding that may improve across several months.",
     deservesReview:
-      "Stable long-term irregularity once early healing and shedding windows have passed.",
+      "Stable late donor irregularity once early healing and shedding windows have passed.",
     seekClinicalAdvice:
-      "Rapid loss with systemic symptoms or suspected infection.",
+      "Rapid loss with systemic symptoms that need in-person assessment.",
   },
   {
     id: "evidence",
     domain: "Single image versus dated evidence",
     oftenCompatible:
-      "Uncertainty from one photograph taken at an early stage or poor angle.",
+      "Uncertainty from one photograph taken at an early stage or poor angle—not enough evidence yet.",
     deservesReview:
       "Repeat dated rear and side views that still show the same concerning pattern.",
     seekClinicalAdvice:
       "Any acute symptom set that needs in-person assessment regardless of photos.",
+  },
+  {
+    id: "tenderness",
+    domain: "Tenderness versus warning symptoms",
+    oftenCompatible:
+      "Mild tenderness that settles with the reported healing stage.",
+    deservesReview:
+      "Discomfort that is stable but still concerning enough to document with dated photos and clinic follow-up.",
+    seekClinicalAdvice:
+      "Increasing pain, fever, spreading redness, persistent bleeding, discharge, or rapidly worsening swelling.",
   },
 ];
 
 export const DONOR_HEALING_PHOTO_PREP = {
   heading: "Donor photographs that support a fairer review",
   intro:
-    "Minimum useful donor evidence usually includes rear, left, and right views. Optional close-ups and earlier donor images can add context. Neutral lighting, dry hair, no concealer or fibres, and a consistent camera distance make comparisons more reliable.",
+    "Minimum useful donor evidence usually includes rear, left, and right views. Recipient views may still be required for a complete Post-Surgery Audit readiness check—the first donor photographs document your immediate concern. Optional close-ups and earlier donor images can add context.",
   requiredViews: [
     {
       id: "rear",
@@ -235,15 +296,31 @@ export const DONOR_HEALING_PHOTO_PREP = {
       detail: "A nearer photograph of a specific area you are worried about.",
     },
     {
-      id: "baseline",
-      title: "Optional earlier donor image",
-      detail: "Pre-surgery or surgery-day donor photograph if you still have one.",
+      id: "preop",
+      title: "Optional pre-surgery donor",
+      detail: "A donor photograph taken before your procedure, if you still have one.",
+    },
+    {
+      id: "surgery_day",
+      title: "Optional surgery-day donor",
+      detail: "A donor photograph from the procedure day, if available.",
+    },
+    {
+      id: "earlier_healing",
+      title: "Optional earlier dated healing image",
+      detail: "A prior healing photograph with a known date for comparison.",
+    },
+    {
+      id: "graft_report",
+      title: "Optional clinic graft report",
+      detail: "Graft count paperwork or punch-size notes if your clinic provided them.",
     },
   ],
   techniqueTips: [
     "Use neutral indoor lighting when you can",
     "Photograph dry hair without fibres or concealer",
     "Keep a similar camera distance across dates",
-    "Avoid heavy filters or extreme wide-angle distortion",
+    "Show the full donor zone in rear and side views",
+    "Avoid heavy filters and harsh overhead shadow where possible",
   ],
 } as const;

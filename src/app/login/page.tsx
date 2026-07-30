@@ -11,6 +11,12 @@ import { useI18n } from "@/components/i18n/I18nProvider";
 import { getCanonicalAppUrl, buildAuthRedirectUrl, sanitizeNextPath } from "@/lib/auth/redirects";
 import { trackAuthFunnel } from "@/lib/analytics/authFunnel";
 import { isPermanentLoginSessionUser, resolvePostLoginRedirectPath } from "@/lib/auth/patientLogin";
+import {
+  readPendingEntryContext,
+  resolveDonorAwareAuthReturnPath,
+} from "@/lib/patient/patientEntryContext";
+import { trackCta } from "@/lib/analytics/trackCta";
+import { isDonorHealingEntryContext } from "@/lib/patient/donorHealingEntry";
 import { completeAuthWithOptionalClaim } from "@/lib/nexus/claimAccountAfterAuth";
 import {
   buildAuthHrefWithClaimToken,
@@ -34,7 +40,17 @@ function LoginPageContent() {
   const [sendingReset, setSendingReset] = useState(false);
 
   const appUrl = getCanonicalAppUrl();
-  const [loginNextPath, setLoginNextPath] = useState<string | null>(null);
+  const loginNextPath = sanitizeNextPath(searchParams.get("next"));
+  const searchString = searchParams.toString();
+  const searchWithPrefix = searchString ? `?${searchString}` : "";
+  const signupHref = claimToken
+    ? buildAuthHrefWithClaimToken(
+        searchWithPrefix ? `/signup${searchWithPrefix}` : "/signup",
+        claimToken
+      )
+    : searchWithPrefix
+      ? `/signup${searchWithPrefix}`
+      : "/signup";
 
   const authCallbackUrl = loginNextPath
     ? buildAuthRedirectUrl("/auth/callback", { next: loginNextPath })
@@ -42,16 +58,23 @@ function LoginPageContent() {
   const oauthRedirectTo = authCallbackUrl;
   const magicLinkRedirectTo = authCallbackUrl;
   const funnelPageTracked = useRef(false);
-  const [signupHref, setSignupHref] = useState("/signup");
 
   useEffect(() => {
-    const s = window.location.search;
-    const params = new URLSearchParams(s.startsWith("?") ? s.slice(1) : s);
-    const token = getClaimTokenFromSearchParams(params);
-    if (token) persistClaimToken(token);
-    setSignupHref(token ? buildAuthHrefWithClaimToken(s ? `/signup${s}` : "/signup", token) : s ? `/signup${s}` : "/signup");
-    setLoginNextPath(sanitizeNextPath(params.get("next")));
-  }, []);
+    if (claimToken) persistClaimToken(claimToken);
+  }, [claimToken]);
+
+  useEffect(() => {
+    if (
+      isDonorHealingEntryContext(searchParams.get("entry_context")) ||
+      readPendingEntryContext()
+    ) {
+      trackCta("donor_auth_started", {
+        entry_context: "donor_healing",
+        source_page: "normal-donor-healing-after-fue",
+        pathway: "post_surgery",
+      });
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (funnelPageTracked.current) return;
@@ -87,11 +110,21 @@ function LoginPageContent() {
       if (!isPermanentLoginSessionUser(data.session.user)) {
         return;
       }
-      const defaultRedirect = await resolvePostLoginRedirectPath(supabase, loginNextPath);
+      const pending = readPendingEntryContext();
+      const donorAware =
+        resolveDonorAwareAuthReturnPath(loginNextPath, pending) ??
+        (await resolvePostLoginRedirectPath(supabase, loginNextPath));
+      if (pending?.entryContext === "donor_healing") {
+        trackCta("donor_auth_completed", {
+          entry_context: "donor_healing",
+          source_page: "normal-donor-healing-after-fue",
+          pathway: "post_surgery",
+        });
+      }
       const claimResult = await completeAuthWithOptionalClaim({
         queryToken: claimToken,
         persistedToken: readPersistedClaimToken(),
-        defaultRedirect,
+        defaultRedirect: donorAware,
       });
       if (!mounted) return;
       if (!claimResult.ok) {
@@ -154,7 +187,17 @@ function LoginPageContent() {
     } else {
       const path = window.location.pathname;
       const search = window.location.search;
-      const defaultRedirect = await resolvePostLoginRedirectPath(supabase, loginNextPath);
+      const pending = readPendingEntryContext();
+      const defaultRedirect =
+        resolveDonorAwareAuthReturnPath(loginNextPath, pending) ??
+        (await resolvePostLoginRedirectPath(supabase, loginNextPath));
+      if (pending?.entryContext === "donor_healing") {
+        trackCta("donor_auth_completed", {
+          entry_context: "donor_healing",
+          source_page: "normal-donor-healing-after-fue",
+          pathway: "post_surgery",
+        });
+      }
       trackAuthFunnel(
         "auth_session_success",
         { auth_method: "password", auth_surface: "login" },

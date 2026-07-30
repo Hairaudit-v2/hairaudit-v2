@@ -18,6 +18,7 @@ import {
 
 export {
   activeZoneRows,
+  canGenerateProjectionFromPlan,
   computeGraftPlanTotals,
   isDeferredPriority,
   withRecalculatedTotals,
@@ -130,10 +131,6 @@ export function validateGraftPlan(
   }
 
   return issues;
-}
-
-export function canGenerateProjectionFromPlan(plan: Pick<PreSurgeryGraftPlan, "status">): boolean {
-  return plan.status === "approved";
 }
 
 export function checksumGraftPlanPayload(

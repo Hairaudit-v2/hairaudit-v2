@@ -15,6 +15,7 @@ import {
   PUBLIC_CTAS,
 } from "@/lib/marketing/publicMarketingCopy";
 import { parseDonorEntryContext } from "@/lib/patient/donorHealingEntry";
+import DonorEntryContextBinder from "@/components/patient/DonorEntryContextBinder";
 import { cn } from "@/lib/utils";
 import { Badge, FeatureGrid, Section, networkButtonVariants } from "@/packages/ui";
 
@@ -44,15 +45,30 @@ const requestFaqs = [
 export default async function RequestReviewPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ concern?: string; entry_context?: string; entry_source?: string }>;
+  searchParams?: Promise<{
+    concern?: string;
+    entry_context?: string;
+    entry_source?: string;
+    source_page?: string;
+    recommended_pathway?: string;
+  }>;
 }) {
   const query = searchParams ? await searchParams : {};
   const donorEntryFromQuery = Boolean(
     parseDonorEntryContext(query.entry_context) ?? parseDonorEntryContext(query.concern)
   );
+  const binderSearch = new URLSearchParams();
+  if (query.concern) binderSearch.set("concern", query.concern);
+  if (query.entry_context) binderSearch.set("entry_context", query.entry_context);
+  if (query.entry_source) binderSearch.set("entry_source", query.entry_source);
+  if (query.source_page) binderSearch.set("source_page", query.source_page);
+  if (query.recommended_pathway) binderSearch.set("recommended_pathway", query.recommended_pathway);
 
   return (
     <HairAuditFiMarketingShell>
+      {donorEntryFromQuery ? (
+        <DonorEntryContextBinder search={binderSearch.toString()} forceDonorHealing />
+      ) : null}
       <BreadcrumbListSchema
         items={[
           { name: "Home", pathname: "/" },

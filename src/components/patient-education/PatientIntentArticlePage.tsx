@@ -9,6 +9,7 @@ import FaqPageSchema from "@/components/seo/FaqPageSchema";
 import { getBaseUrl } from "@/lib/seo/baseUrl";
 import { getPatientIntentArticle } from "@/lib/seo/patient-intent-articles";
 import type { PatientIntentArticleBlock } from "@/lib/seo/patient-intent-articles/types";
+import { resolvePatientIntentCtaEntryContext } from "@/lib/seo/patient-intent-articles/types";
 import { resolvePatientGuideLink } from "@/lib/seo/resolvePatientGuideLink";
 import { PatientEducationLinkedText } from "@/components/patient-education/PatientEducationLinkedText";
 import DonorHealingGuideExperience from "@/components/patient-education/DonorHealingGuideExperience";
@@ -58,6 +59,7 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
   const primaryCtaHref = article.cta?.href ?? PATHWAY_CHOOSER_HREF;
   const primaryCtaAnalyticsId = article.cta?.analyticsId ?? "patient-guide-cta-request-review";
   const primaryCtaDestination = article.cta?.destination ?? "/request-review";
+  const primaryCtaEntryContext = resolvePatientIntentCtaEntryContext(article.cta);
   const showDonorExperience = article.experience === "donor_healing";
 
   const baseUrl = getBaseUrl();
@@ -135,86 +137,99 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
             <h1 className="mt-3 font-display text-3xl font-semibold leading-[1.15] tracking-tight text-foreground sm:text-4xl lg:text-[2.5rem]">
               {article.h1}
             </h1>
-            <p className="mt-6 text-lg leading-relaxed text-muted-foreground">{article.intro}</p>
-            {article.shortAnswer ? (
-              <GeoShortAnswer spacing="tight">
-                <PatientEducationLinkedText text={article.shortAnswer} guideSlug={articleSlug} />
-              </GeoShortAnswer>
-            ) : null}
 
-            <div
-              className="mt-6 rounded-2xl border border-border/50 bg-card/60 px-4 py-4 sm:px-5 sm:py-5"
-              data-analytics-region="patient-guide-next-steps"
-            >
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Next steps</p>
-              <ul className="mt-3 flex flex-col gap-2 text-sm text-muted-foreground sm:flex-row sm:flex-wrap sm:gap-x-1 sm:gap-y-2">
-                <li className="sm:after:px-2 sm:after:text-muted-foreground sm:after:content-['·'] sm:last:after:content-none">
-                  <Link
-                    href={primaryCtaHref}
-                    className="font-medium text-amber-400 underline underline-offset-2 hover:text-amber-300"
-                    data-cta={
-                      article.cta
-                        ? `${article.cta.analyticsId}-next-steps`
-                        : "patient-guide-next-request-review"
-                    }
-                    data-cta-destination={primaryCtaDestination}
-                    data-patient-guide={articleSlug}
-                    data-entry-context={article.cta?.context}
-                  >
-                    {primaryCtaLabel}
-                  </Link>
-                </li>
-                <li className="sm:after:px-2 sm:after:text-muted-foreground sm:after:content-['·'] sm:last:after:content-none">
-                  <Link
-                    href="/demo-report"
-                    className="font-medium text-amber-400 underline underline-offset-2 hover:text-amber-300"
-                    data-cta="patient-guide-next-sample-report"
-                    data-cta-destination="/demo-report"
-                    data-patient-guide={articleSlug}
-                  >
-                    {PUBLIC_CTAS.viewSampleReport}
-                  </Link>
-                </li>
-                <li className="sm:after:px-2 sm:after:text-muted-foreground sm:after:content-['·'] sm:last:after:content-none">
-                  <Link
-                    href="/faq"
-                    className="font-medium text-amber-400 underline underline-offset-2 hover:text-amber-300"
-                    data-cta="patient-guide-next-faq"
-                    data-cta-destination="/faq"
-                    data-patient-guide={articleSlug}
-                  >
-                    HairAudit FAQ
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/hair-transplant-problems"
-                    className="text-muted-foreground underline underline-offset-2 hover:text-foreground"
-                    data-cta="patient-guide-next-hub"
-                    data-cta-destination="/hair-transplant-problems"
-                    data-patient-guide={articleSlug}
-                  >
-                    All patient guides
-                  </Link>
-                </li>
-              </ul>
-            </div>
+            {showDonorExperience && article.cta ? (
+              <DonorHealingGuideExperience
+                ctaLabel={article.cta.label}
+                ctaHref={article.cta.href}
+                ctaAnalyticsId={article.cta.analyticsId}
+                ctaDestination={article.cta.destination}
+                guideSlug={articleSlug}
+              />
+            ) : (
+              <>
+                <p className="mt-6 text-lg leading-relaxed text-muted-foreground">{article.intro}</p>
+                {article.shortAnswer ? (
+                  <GeoShortAnswer spacing="tight">
+                    <PatientEducationLinkedText text={article.shortAnswer} guideSlug={articleSlug} />
+                  </GeoShortAnswer>
+                ) : null}
+                <div
+                  className="mt-6 rounded-2xl border border-border/50 bg-card/60 px-4 py-4 sm:px-5 sm:py-5"
+                  data-analytics-region="patient-guide-next-steps"
+                >
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Next steps
+                  </p>
+                  <ul className="mt-3 flex flex-col gap-2 text-sm text-muted-foreground sm:flex-row sm:flex-wrap sm:gap-x-1 sm:gap-y-2">
+                    <li className="sm:after:px-2 sm:after:text-muted-foreground sm:after:content-['·'] sm:last:after:content-none">
+                      <Link
+                        href={primaryCtaHref}
+                        className="font-medium text-amber-400 underline underline-offset-2 hover:text-amber-300"
+                        data-cta="patient-guide-next-request-review"
+                        data-cta-destination={primaryCtaDestination}
+                        data-patient-guide={articleSlug}
+                      >
+                        {primaryCtaLabel}
+                      </Link>
+                    </li>
+                    <li className="sm:after:px-2 sm:after:text-muted-foreground sm:after:content-['·'] sm:last:after:content-none">
+                      <Link
+                        href="/demo-report"
+                        className="font-medium text-amber-400 underline underline-offset-2 hover:text-amber-300"
+                        data-cta="patient-guide-next-sample-report"
+                        data-cta-destination="/demo-report"
+                        data-patient-guide={articleSlug}
+                      >
+                        {PUBLIC_CTAS.viewSampleReport}
+                      </Link>
+                    </li>
+                    <li className="sm:after:px-2 sm:after:text-muted-foreground sm:after:content-['·'] sm:last:after:content-none">
+                      <Link
+                        href="/faq"
+                        className="font-medium text-amber-400 underline underline-offset-2 hover:text-amber-300"
+                        data-cta="patient-guide-next-faq"
+                        data-cta-destination="/faq"
+                        data-patient-guide={articleSlug}
+                      >
+                        HairAudit FAQ
+                      </Link>
+                    </li>
+                    <li>
+                      <Link
+                        href="/hair-transplant-problems"
+                        className="text-muted-foreground underline underline-offset-2 hover:text-foreground"
+                        data-cta="patient-guide-next-hub"
+                        data-cta-destination="/hair-transplant-problems"
+                        data-patient-guide={articleSlug}
+                      >
+                        All patient guides
+                      </Link>
+                    </li>
+                  </ul>
+                </div>
+                {article.keyTakeaways && article.keyTakeaways.length > 0 ? (
+                  <GeoKeyTakeaways items={article.keyTakeaways} spacing="tight" />
+                ) : null}
+                <PublicTrustArchitectureBlock surface="fi" className="mt-6" />
+              </>
+            )}
 
-            {article.keyTakeaways && article.keyTakeaways.length > 0 ? (
-              <GeoKeyTakeaways items={article.keyTakeaways} spacing="tight" />
+            {showDonorExperience ? (
+              <div className="mt-10 space-y-6">
+                <p className="text-lg leading-relaxed text-muted-foreground">{article.intro}</p>
+                {article.shortAnswer ? (
+                  <GeoShortAnswer spacing="tight">
+                    <PatientEducationLinkedText text={article.shortAnswer} guideSlug={articleSlug} />
+                  </GeoShortAnswer>
+                ) : null}
+                {article.keyTakeaways && article.keyTakeaways.length > 0 ? (
+                  <GeoKeyTakeaways items={article.keyTakeaways} spacing="tight" />
+                ) : null}
+                <PublicTrustArchitectureBlock surface="fi" />
+              </div>
             ) : null}
-            <PublicTrustArchitectureBlock surface="fi" className="mt-6" />
           </div>
-
-          {showDonorExperience && article.cta ? (
-            <DonorHealingGuideExperience
-              ctaLabel={article.cta.label}
-              ctaHref={article.cta.href}
-              ctaAnalyticsId={article.cta.analyticsId}
-              ctaDestination={article.cta.destination}
-              guideSlug={articleSlug}
-            />
-          ) : null}
 
           <div className="mx-auto mt-12 max-w-3xl space-y-14 sm:space-y-16">
             {article.sections.map((section) => (
@@ -252,7 +267,7 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
                   data-cta={primaryCtaAnalyticsId}
                   data-cta-destination={primaryCtaDestination}
                   data-patient-guide={articleSlug}
-                  data-entry-context={article.cta?.context}
+                  data-entry-context={primaryCtaEntryContext}
                 >
                   {primaryCtaLabel}
                 </Link>

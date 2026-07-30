@@ -16,10 +16,32 @@ export const POST_SURGERY_CONCERNS = [
 
 export type PostSurgeryConcern = (typeof POST_SURGERY_CONCERNS)[number];
 
+/**
+ * Validated public entry-context contract.
+ * Only `donor_healing` is fully implemented in 1A; other values are reserved
+ * for future concern pages and must be rejected until wired.
+ */
+export const HAIRAUDIT_ENTRY_CONTEXTS = [
+  "donor_healing",
+  "suspected_graft_failure",
+  "low_density",
+  "bright_light_appearance",
+] as const;
+
+export type HairAuditEntryContext = (typeof HAIRAUDIT_ENTRY_CONTEXTS)[number];
+
+/** Entry contexts fully active in this phase. */
+export const IMPLEMENTED_HAIRAUDIT_ENTRY_CONTEXTS = ["donor_healing"] as const;
+
+export type ImplementedHairAuditEntryContext =
+  (typeof IMPLEMENTED_HAIRAUDIT_ENTRY_CONTEXTS)[number];
+
 export const DONOR_HEALING_ENTRY_CONTEXT = "donor_healing" as const;
 export type DonorHealingEntryContext = typeof DONOR_HEALING_ENTRY_CONTEXT;
 
 export const DONOR_HEALING_GUIDE_SLUG = "normal-donor-healing-after-fue";
+export const DONOR_HEALING_SOURCE_PAGE = DONOR_HEALING_GUIDE_SLUG;
+export const DONOR_HEALING_RECOMMENDED_PATHWAY = "post_surgery" as const;
 
 /** Bounded orientation states for report / review preparation (not diagnoses). */
 export const DONOR_HEALING_ORIENTATION_STATES = [
@@ -31,9 +53,13 @@ export const DONOR_HEALING_ORIENTATION_STATES = [
   "insufficient_evidence",
 ] as const;
 
-export type DonorHealingOrientationState = (typeof DONOR_HEALING_ORIENTATION_STATES)[number];
+export type DonorHealingOrientation =
+  (typeof DONOR_HEALING_ORIENTATION_STATES)[number];
 
-export const DONOR_HEALING_ORIENTATION_LABELS: Record<DonorHealingOrientationState, string> = {
+/** @deprecated Prefer DonorHealingOrientation — kept for existing imports. */
+export type DonorHealingOrientationState = DonorHealingOrientation;
+
+export const DONOR_HEALING_ORIENTATION_LABELS: Record<DonorHealingOrientation, string> = {
   compatible_with_reported_stage:
     "Appearance broadly compatible with the reported healing stage",
   too_early_to_assess_homogeneity: "Too early to assess long-term donor uniformity",
@@ -62,12 +88,13 @@ export const DONOR_RED_FLAG_SYMPTOM_VALUES = [
   "discharge",
   "fever",
   "persistent_bleeding",
+  "rapidly_worsening_swelling",
 ] as const;
 
 export type DonorRedFlagSymptom = (typeof DONOR_RED_FLAG_SYMPTOM_VALUES)[number];
 
 export const DONOR_RED_FLAG_WARNING_COPY =
-  "Symptoms such as increasing pain, spreading redness, discharge, fever, or persistent bleeding need direct clinical care. Contact your treating clinic, a local doctor, or urgent care as appropriate. HairAudit photo review does not replace medical assessment.";
+  "These symptoms are better assessed directly rather than from photographs alone. Contact your treating clinic, local doctor, or urgent medical service depending on severity. HairAudit photo review does not replace urgent or in-person care.";
 
 /** Canonical upload keys emphasised for donor-healing entry (readiness unchanged). */
 export const DONOR_EMPHASIS_PHOTO_KEYS = [
@@ -99,24 +126,84 @@ export const DONOR_EMPHASIS_PHOTO_COPY: Record<
   },
 };
 
+/** Privacy-safe funnel event names (no PHI payloads). */
+export const DONOR_FUNNEL_EVENTS = [
+  "donor_guide_viewed",
+  "donor_stage_selected",
+  "donor_timeline_stage_opened",
+  "donor_cta_clicked",
+  "donor_pathway_confirmed",
+  "donor_auth_started",
+  "donor_auth_completed",
+  "donor_case_created",
+  "donor_first_photo_uploaded",
+  "donor_photo_set_completed",
+  "donor_questions_completed",
+  "donor_case_submitted",
+  "donor_report_viewed",
+] as const;
+
+export type DonorFunnelEvent = (typeof DONOR_FUNNEL_EVENTS)[number];
+
+export const DONOR_ANALYTICS_FORBIDDEN_META_KEYS = [
+  "symptoms",
+  "donor_red_flag_symptoms",
+  "imageUrl",
+  "image_url",
+  "email",
+  "patient_name",
+  "name",
+  "caseId",
+  "case_id",
+  "uploadId",
+  "upload_id",
+  "free_text",
+  "answers",
+] as const;
+
 export function isPostSurgeryConcern(value: unknown): value is PostSurgeryConcern {
   return typeof value === "string" && (POST_SURGERY_CONCERNS as readonly string[]).includes(value);
 }
 
 export function parsePostSurgeryConcern(value: unknown): PostSurgeryConcern | null {
-  if (typeof value !== "string") return null;
-  const trimmed = value.trim().toLowerCase();
-  return isPostSurgeryConcern(trimmed) ? trimmed : null;
+  if (typeof value === "string") {
+    const trimmed = value.trim().toLowerCase();
+    return isPostSurgeryConcern(trimmed) ? trimmed : null;
+  }
+  return null;
 }
 
-/** Entry context accepted on audit start / chooser handoff (donor focus only in 1A). */
+/**
+ * Validate a HairAudit entry context token.
+ * Unknown values are rejected. Reserved-but-unimplemented values are rejected in 1A.
+ */
+export function parseHairAuditEntryContext(
+  value: unknown
+): ImplementedHairAuditEntryContext | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim().toLowerCase();
+  if ((IMPLEMENTED_HAIRAUDIT_ENTRY_CONTEXTS as readonly string[]).includes(trimmed)) {
+    return trimmed as ImplementedHairAuditEntryContext;
+  }
+  // Explicitly reject reserved future values and arbitrary URL tokens.
+  return null;
+}
+
+/**
+ * Map concern / URL tokens to the active donor-healing entry context.
+ * Concern enums may imply donor entry; reserved entry contexts do not.
+ */
 export function parseDonorEntryContext(value: unknown): DonorHealingEntryContext | null {
   if (typeof value !== "string") return null;
   const trimmed = value.trim().toLowerCase();
-  if (trimmed === DONOR_HEALING_ENTRY_CONTEXT || trimmed === "donor") {
+
+  if (parseHairAuditEntryContext(trimmed) === DONOR_HEALING_ENTRY_CONTEXT) {
     return DONOR_HEALING_ENTRY_CONTEXT;
   }
-  // Allow concern tokens that imply donor-healing entry.
+  if (trimmed === "donor") {
+    return DONOR_HEALING_ENTRY_CONTEXT;
+  }
+  // Concern tokens that imply donor-healing entry.
   if (
     trimmed === "donor_healing" ||
     trimmed === "donor_patchiness" ||
@@ -158,9 +245,7 @@ export function containsForbiddenDonorDiagnosticLanguage(text: string): boolean 
   return FORBIDDEN_DONOR_DIAGNOSTIC_PHRASES.some((phrase) => lower.includes(phrase));
 }
 
-export function donorHealingOrientationLabel(
-  state: DonorHealingOrientationState
-): string {
+export function donorHealingOrientationLabel(state: DonorHealingOrientation): string {
   return DONOR_HEALING_ORIENTATION_LABELS[state];
 }
 
@@ -175,7 +260,7 @@ export function resolveDonorHealingOrientationState(input: {
   hasDonorLeftPhoto?: boolean;
   hasDonorRightPhoto?: boolean;
   hasRedFlagSymptoms?: boolean;
-}): DonorHealingOrientationState {
+}): DonorHealingOrientation {
   if (input.hasRedFlagSymptoms) {
     return "direct_clinical_assessment_recommended";
   }
@@ -220,16 +305,56 @@ export function buildDonorHealingOrientationSummary(input: {
   hasDonorLeftPhoto?: boolean;
   hasDonorRightPhoto?: boolean;
   hasRedFlagSymptoms?: boolean;
-}): { state: DonorHealingOrientationState; label: string } {
+}): { state: DonorHealingOrientation; label: string } {
   const state = resolveDonorHealingOrientationState(input);
   return { state, label: donorHealingOrientationLabel(state) };
 }
 
 /** Analytics-safe meta only — never include answers, symptoms, or image URLs. */
-export function donorHealingAnalyticsMeta(extra?: Record<string, unknown>): Record<string, unknown> {
+export function donorHealingAnalyticsMeta(
+  extra?: Record<string, unknown>
+): Record<string, unknown> {
+  const safeExtra: Record<string, unknown> = {};
+  if (extra) {
+    for (const [key, value] of Object.entries(extra)) {
+      if (
+        (DONOR_ANALYTICS_FORBIDDEN_META_KEYS as readonly string[]).includes(key) ||
+        value == null
+      ) {
+        continue;
+      }
+      if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+        safeExtra[key] = value;
+      }
+    }
+  }
   return {
     entry_context: DONOR_HEALING_ENTRY_CONTEXT,
+    source_page: DONOR_HEALING_SOURCE_PAGE,
+    pathway: DONOR_HEALING_RECOMMENDED_PATHWAY,
     patient_guide: DONOR_HEALING_GUIDE_SLUG,
-    ...extra,
+    ...safeExtra,
   };
+}
+
+/**
+ * Append validated donor entry_context to an internal path for auth return /
+ * resume continuity. Rejects arbitrary entry_context query values.
+ */
+export function withDonorEntryContextQuery(
+  path: string,
+  entryContext?: unknown
+): string {
+  const parsed = parseDonorEntryContext(entryContext);
+  if (!parsed || !path.startsWith("/") || path.startsWith("//") || path.includes(":")) {
+    return path;
+  }
+  const hashIndex = path.indexOf("#");
+  const hash = hashIndex >= 0 ? path.slice(hashIndex) : "";
+  const withoutHash = hashIndex >= 0 ? path.slice(0, hashIndex) : path;
+  const qIndex = withoutHash.indexOf("?");
+  const pathname = qIndex >= 0 ? withoutHash.slice(0, qIndex) : withoutHash;
+  const params = new URLSearchParams(qIndex >= 0 ? withoutHash.slice(qIndex + 1) : "");
+  params.set("entry_context", parsed);
+  return `${pathname}?${params.toString()}${hash}`;
 }

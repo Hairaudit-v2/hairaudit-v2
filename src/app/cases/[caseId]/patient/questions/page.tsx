@@ -12,6 +12,7 @@ import {
   INVALID_PATIENT_REVIEW_PATHWAY_QUESTIONNAIRE_ERROR,
   resolveQuestionnairePathwayIgnoringClientOverrides,
 } from "@/lib/patient/patientPathwayQuestionnaire";
+import { parseDonorEntryContext, withDonorEntryContextQuery } from "@/lib/patient/donorHealingEntry";
 
 export default async function Page({
   params,
@@ -26,7 +27,16 @@ export default async function Page({
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect(buildPatientLoginHref(`/cases/${caseId}/patient/questions`));
+  const queryEntry = parseDonorEntryContext(
+    typeof query.entry_context === "string" ? query.entry_context : null
+  );
+  if (!user) {
+    redirect(
+      buildPatientLoginHref(
+        withDonorEntryContextQuery(`/cases/${caseId}/patient/questions`, queryEntry)
+      )
+    );
+  }
 
   const { data: c } = await supabase
     .from("cases")

@@ -160,7 +160,7 @@ export default function StartFreeAuditButton({
           ts: Date.now(),
         });
         clearPendingEntryContext();
-        trackCta("donor_entry_case_created", {
+        trackCta("donor_case_created", {
           entry_context: resolvedEntry,
           pathway: effectivePathway,
         });

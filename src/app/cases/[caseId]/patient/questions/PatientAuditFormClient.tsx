@@ -198,7 +198,7 @@ export default function PatientAuditFormClient({
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json?.error ?? t("forms.shared.saveFailedGeneric"));
       if (isDonorHealingEntryContext(formData.entry_context)) {
-        trackCta("donor_questionnaire_completed", { entry_context: "donor_healing" });
+        trackCta("donor_questions_completed", { entry_context: "donor_healing" });
       }
       router.push(target);
     } catch (e: unknown) {

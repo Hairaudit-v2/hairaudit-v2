@@ -120,9 +120,24 @@ export const normalDonorHealingAfterFueArticle: PatientIntentArticle = {
         "Early post-operative roughness is usually the wrong moment for that conversation. A more reliable discussion tends to wait until healing has settled and multi-view, dated photographs are available—and still does not replace clinical donor metrics.",
     },
     {
-      question: "What donor photos are needed for an independent review?",
+      question: "What donor photographs are needed for an independent review?",
       answer:
-        "Rear, left, and right donor views are the priority for a donor-focused review. Optional close-ups and earlier donor images add context. Neutral lighting, dry hair, and consistent distance improve reliability.",
+        "Rear, left, and right donor views are the priority for a donor-focused review. Optional close-ups and earlier donor images add context. Neutral lighting, dry hair, and consistent distance improve reliability. Recipient views may still be needed for a complete Post-Surgery Audit.",
+    },
+    {
+      question: "When should I contact a doctor about my donor area?",
+      answer:
+        "Increasing pain, spreading redness, discharge, fever, persistent bleeding, or rapidly worsening swelling are better assessed directly rather than from photographs alone. Contact your treating clinic, local doctor, or urgent medical service depending on severity.",
+    },
+    {
+      question: "Can bright lighting make the donor area look thinner?",
+      answer:
+        "Yes. Harsh overhead or bright directional light can increase scalp contrast and make short-haired donor zones look thinner than they feel under gentler indoor light. Neutral lighting and consistent distance support a fairer comparison.",
+    },
+    {
+      question: "Can HairAudit confirm overharvesting from one photograph?",
+      answer:
+        "No. A single image is often not enough evidence. HairAudit helps organise what the available photographs can support and when closer clinical assessment is sensible. It does not confirm overharvesting, infection, or remaining graft capacity from photos alone.",
     },
   ],
   ctaLead: "Unsure whether your donor pattern looks like expected healing for your stage?",
@@ -133,7 +148,8 @@ export const normalDonorHealingAfterFueArticle: PatientIntentArticle = {
     href: buildDonorHealingChooserHref(),
     analyticsId: "donor_cta_clicked",
     destination: "/request-review",
-    context: "donor_healing",
+    entryContext: "donor_healing",
+    recommendedPathway: "post_surgery",
   },
   relatedSlugs: [
     "overharvested-donor-area",

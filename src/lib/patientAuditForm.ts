@@ -414,10 +414,22 @@ export const PATIENT_AUDIT_SECTIONS: Array<{
           { value: "discharge", label: "Discharge" },
           { value: "fever", label: "Fever" },
           { value: "persistent_bleeding", label: "Persistent bleeding" },
+          { value: "rapidly_worsening_swelling", label: "Rapidly worsening swelling" },
           { value: "none", label: "None of these" },
         ],
         required: false,
         help: "If you select medical warning symptoms, seek direct clinical care. HairAudit does not replace urgent or clinic assessment.",
+      },
+      {
+        id: "donor_has_comparison_photos",
+        prompt: "Do you have earlier comparison photographs of the donor area?",
+        type: "select",
+        options: [
+          { value: "yes", label: "Yes" },
+          { value: "no", label: "No" },
+          { value: "not_sure", label: "Not sure" },
+        ],
+        required: false,
       },
       {
         id: "donor_current_hair_length",

@@ -19,6 +19,30 @@ export type PatientIntentArticleFaq = {
   answer: string;
 };
 
+/**
+ * Backward-compatible optional CTA config for patient-intent articles.
+ * Existing articles omit this and keep shared defaults.
+ */
+export type PatientIntentArticleCta = {
+  label: string;
+  href: string;
+  analyticsId: string;
+  destination: string;
+  entryContext?: string;
+  recommendedPathway?: "pre_surgery" | "post_surgery";
+  /**
+   * @deprecated Prefer `entryContext`. Still read as a fallback for older article configs.
+   */
+  context?: string;
+};
+
+/** Resolve entry context from CTA, preferring the canonical field. */
+export function resolvePatientIntentCtaEntryContext(
+  cta: PatientIntentArticleCta | undefined
+): string | undefined {
+  return cta?.entryContext ?? cta?.context;
+}
+
 export type PatientIntentArticle = {
   slug: string;
   pathname: string;
@@ -41,13 +65,7 @@ export type PatientIntentArticle = {
    * Optional primary CTA override (HA-DONOR-HEALING-1A).
    * When omitted, PatientIntentArticlePage keeps the shared Start Free HairAudit → chooser behaviour.
    */
-  cta?: {
-    label: string;
-    href: string;
-    analyticsId: string;
-    destination: string;
-    context?: string;
-  };
+  cta?: PatientIntentArticleCta;
   /**
    * Optional page experience enhancer. `donor_healing` mounts DonorHealingGuideExperience
    * above the standard article sections without changing other guides.

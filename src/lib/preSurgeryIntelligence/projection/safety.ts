@@ -5,7 +5,7 @@
 
 import type { ClinicalImageAnnotation, PreSurgeryGraftPlan, PreSurgeryIllustrativeProjection } from "../types";
 import { isProjectionSourceRole, type PreSurgeryImageRole } from "../imageRoles";
-import { canGenerateProjectionFromPlan } from "../graftPlanValidate";
+import { canGenerateProjectionFromPlan } from "../graftPlanTotals";
 
 export type ProjectionSafetyViolation = {
   code: string;
@@ -113,6 +113,7 @@ export function runProjectionValidationPass(args: {
   modeAllocationZones: Array<{ zone: string; grafts: number; priority: string }>;
   sourceImageReviewStatus: string;
   hairlineAnnotationPresent: boolean;
+  modeContractIssues?: Array<{ code: string; message: string }>;
 }): Pick<PreSurgeryIllustrativeProjection, "validationPass"> {
   const deferred = new Set(
     args.plan.zones.filter((z) => z.priority === "defer").map((z) => z.zone)
@@ -125,6 +126,7 @@ export function runProjectionValidationPass(args: {
   const totalAllocated = args.modeAllocationZones.reduce((s, z) => s + z.grafts, 0);
   const withinRange =
     totalAllocated >= args.plan.totalMinimumGrafts && totalAllocated <= args.plan.totalMaximumGrafts;
+  const modeOk = !(args.modeContractIssues && args.modeContractIssues.length > 0);
 
   return {
     validationPass: [
@@ -172,6 +174,13 @@ export function runProjectionValidationPass(args: {
           args.sourceImageReviewStatus !== "unusable" &&
           args.sourceImageReviewStatus !== "replacement_requested",
         detail: `Source review status: ${args.sourceImageReviewStatus}`,
+      },
+      {
+        check: "mode_contract",
+        passed: modeOk,
+        detail: modeOk
+          ? "Mode contract satisfied"
+          : (args.modeContractIssues ?? []).map((i) => i.message).join("; "),
       },
     ],
   };

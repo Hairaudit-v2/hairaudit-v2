@@ -1,9 +1,24 @@
-# HA-DONOR-HEALING-1A — Donor Healing Hub and Focused Review Entry
+# HA-DONOR-HEALING-1A — Donor Healing Landing Experience and Focused Review Entry
 
 **Date:** 2026-07-30  
-**Status:** IMPLEMENTED  
-**Issue:** [#1](https://github.com/Hairaudit-v2/hairaudit-v2/issues/1)  
+**Status:** IMPLEMENTED (gap-fill complete)  
+**Verdict:** GREEN  
 **Scope:** Turn `/normal-donor-healing-after-fue` into the primary donor-healing acquisition hub and route concerned visitors into a donor-focused **Post-Surgery Audit** entry without a third pathway.
+
+---
+
+## Objective
+
+Convert donor-healing concern into a structured HairAudit Post-Surgery Audit journey while preserving:
+
+- URL `/normal-donor-healing-after-fue`
+- SEO intent for “Normal Donor Healing After FUE”
+- patient-safe language
+- canonical pathway architecture (`post_surgery` only)
+
+## Traffic rationale
+
+In the last 30 days this page received ~491 users / 509 views (~53% of recorded users) — more than 7× graft-failure traffic and 11× homepage traffic. Treat as a primary conversion landing page, not a standard education article.
 
 ---
 
@@ -12,42 +27,99 @@
 | Decision | Rationale |
 |----------|-----------|
 | Reuse `post_surgery` pathway only | Avoids duplicate case models, readiness forks, photo-key drift, and fragmented reports |
-| CTA → `/request-review?concern=donor_healing#choose-pathway` | Preserves HA-ARCHITECTURE-FIX-1 explicit pathway confirmation |
+| CTA → `/request-review?concern=donor_healing&entry_context=donor_healing&recommended_pathway=post_surgery&source_page=…#choose-pathway` | Preserves explicit pathway confirmation |
 | Persist `entry_context` on draft `reports.summary` + `patient_audit_v2` at `/api/audit/start` | Survives anon → claim/login and dashboard return without a new cases column |
+| Session stash via `hairaudit:pending_entry_context` | Bridges CTA → chooser → auth when URL is stripped |
+| Auth return uses `resolveDonorAwareAuthReturnPath` | Generic `/dashboard/patient` next + pending donor context → donor chooser, not bare dashboard |
 | Optional `donor_healing_concern` questionnaire section | Save/resume via existing `/api/patient-answers`; answers remain optional |
-| Left/right donor keys added as **recommended**, not required | Documents rear/left/right emphasis without breaking readiness |
-| Bounded orientation contract in `donorHealingEntry.ts` | Prepares 1B report language; never diagnoses infection/overharvesting/capacity |
+| Left/right donor keys are **recommended**, not required | Documents rear/left/right emphasis without breaking readiness |
+| Bounded orientation contract | Prepares 1B report language; never diagnoses infection/overharvesting/capacity |
+| Optional article `cta` + `experience` | Other patient-intent articles unchanged |
 
 **Not a third HairAudit pathway.** Donor healing is entry context / concern focus layered onto Post-Surgery Audit.
 
-Flow preserved:
+Flow:
 
 `Guide → CTA → pathway confirmation → sign-in/anon session → case creation → photos → questions → report`
 
 ---
 
-## Module map
+## Entry-context contract
 
-| Path | Role |
-|------|------|
-| `src/lib/patient/donorHealingEntry.ts` | Concerns, orientation states, red-flag copy, photo emphasis, analytics-safe meta |
-| `src/lib/patient/patientEntryContext.ts` | Session stash + chooser href builder |
-| `src/lib/seo/donorHealingGuideContent.ts` | Timeline, comparison cards, photo prep copy |
-| `src/components/patient-education/DonorHealingGuideExperience.tsx` | Guide UX |
-| `src/lib/seo/patient-intent-articles/types.ts` | Optional `cta` + `experience` schema |
-| `src/lib/seo/patient-intent-articles/normal-donor-healing-after-fue.ts` | CTA + FAQs + `experience: donor_healing` |
-| `src/components/marketing/PatientPathwayChooser.tsx` | Donor banner + pass-through entry context |
-| `src/components/audit/StartFreeAuditButton.tsx` | Sends validated `entry_context` on post_surgery start |
-| `src/app/api/audit/start/route.ts` | Seeds report summary with entry context |
-| `src/lib/patientAuditForm.ts` | Optional donor concern questions |
-| `tests/donorHealing1a.test.ts` | Unit coverage |
-| `tests/e2e/hairaudit/donor-healing-1a.spec.ts` | Guide → CTA → chooser → post_surgery start |
+```ts
+type HairAuditEntryContext =
+  | "donor_healing"              // implemented in 1A
+  | "suspected_graft_failure"    // reserved — rejected until wired
+  | "low_density"                // reserved — rejected until wired
+  | "bright_light_appearance";   // reserved — rejected until wired
+```
+
+Validated tokens for donor healing:
+
+| Param | Value |
+|-------|--------|
+| `entry_context` | `donor_healing` |
+| `recommended_pathway` | `post_surgery` |
+| `source_page` | `normal-donor-healing-after-fue` |
+| `concern` | `donor_healing` (and other PostSurgeryConcern enums) |
+
+Arbitrary URL values are rejected. Sensitive health answers are never placed in the URL.
 
 ---
 
-## Safety-language review
+## Pathway confirmation behaviour
 
-**Forbidden (must not appear in patient outputs):**
+Chooser banner when donor entry is active:
+
+> Because your concern relates to healing after a procedure, Post-Surgery Audit is the appropriate review pathway.
+
+Primary action label: **Continue with Post-Surgery Audit**  
+Pre-Surgery remains available. No silent pathway force.
+
+---
+
+## Auth-return behaviour
+
+1. CTA / chooser stashes validated pending entry context in `sessionStorage`
+2. `DonorEntryContextBinder` re-stashes on `/request-review` when query is donor-valid
+3. Login resolves next via `resolveDonorAwareAuthReturnPath`:
+   - explicit case path → appends `entry_context` when pending donor context exists
+   - generic dashboard next + pending donor → returns to donor-focused chooser
+4. Photos/questions login redirects use `withDonorEntryContextQuery`
+5. Case creation seeds `entry_context` into report summary / `patient_audit_v2`
+6. Unrelated logins without pending donor context keep normal redirect behaviour
+
+**Proof:** unit tests for `resolveDonorAwareAuthReturnPath` + Playwright Journey C (pending session survives login surface; generic dashboard is not the resolved donor path).
+
+---
+
+## Questionnaire persistence
+
+Optional section `donor_healing_concern` on `post_surgery` only:
+
+- primary donor concern enum
+- appearance trend
+- graft number / punch size (optional)
+- hair length band
+- comparison-photo availability
+- red-flag checklist (`increasing_pain`, `spreading_redness`, `discharge`, `fever`, `persistent_bleeding`, `rapidly_worsening_swelling`)
+
+Red-flag selection shows direct-care warning; does not block documentation. No clinical conclusion generated during intake.
+
+---
+
+## Photo role behaviour
+
+- Required post-surgery readiness keys **unchanged**
+- Emphasised donor evidence: rear / left / right
+- Left/right added as recommended only
+- Guide explains recipient views may still be needed for full readiness; first donor photos document the immediate concern
+
+---
+
+## Patient-safe language review
+
+**Forbidden in patient outputs:**
 
 - normal donor confirmed
 - overharvested / overharvesting confirmed
@@ -64,17 +136,85 @@ Flow preserved:
 - Direct clinical assessment is recommended
 - The available photographs are not sufficient to assess this reliably
 
-Red-flag symptom selections show direct-care warning copy and state that HairAudit does not replace medical care.
+---
+
+## Analytics event map
+
+```text
+page view (donor_guide_viewed)
+→ stage selected (donor_stage_selected + stage_group)
+→ timeline opened (donor_timeline_stage_opened)
+→ CTA clicked (donor_cta_clicked)
+→ pathway confirmed (donor_pathway_confirmed)
+→ auth started / completed (donor_auth_started / donor_auth_completed)
+→ case created (donor_case_created)
+→ first photo uploaded (donor_first_photo_uploaded)
+→ donor photo set completed (donor_photo_set_completed)
+→ questions completed (donor_questions_completed)
+→ submitted (donor_case_submitted)
+→ report viewed (donor_report_viewed)
+```
+
+Safe dimensions only: `entry_context`, `source_page`, `pathway`, `stage_group`, `stage_id`, `stage_route`, non-PHI analytics ids.
+
+**Not logged:** symptoms, health answers, names, emails, free text, image URLs, upload IDs, case IDs in public analytics.
+
+`donorHealingAnalyticsMeta` strips forbidden meta keys (privacy proof covered by unit tests).
 
 ---
 
-## Analytics privacy
+## Conversion funnel reporting (documentation only)
 
-Events use `entry_context=donor_healing` and `data-patient-guide="normal-donor-healing-after-fue"`.
+```text
+page view
+→ stage selected
+→ CTA clicked
+→ pathway confirmed
+→ authentication completed
+→ case created
+→ first photo uploaded
+→ donor photo set completed
+→ questions completed
+→ submitted
+→ report viewed
+```
 
-Tracked (non-PHI): guide viewed, early/later stage card, timeline expand, CTA click, pathway confirmed, case created, first donor photo, donor photo set complete, questionnaire completed.
+ derivations:
 
-**Not logged:** health answers, symptom free text, image URLs, names.
+- CTA CTR = CTA clicks / page views
+- Pathway confirmation rate = pathway confirms / CTA clicks
+- Auth completion rate = auth completed / auth started (when auth required)
+- Case creation rate = cases created / pathway confirms
+- First-photo rate = first photo / cases created
+- Submission rate = submitted / cases created
+
+Do not hardcode traffic targets into production UI.
+
+---
+
+## Module map (files changed)
+
+| Path | Role |
+|------|------|
+| `src/lib/patient/donorHealingEntry.ts` | Concerns, entry contexts, orientation, red flags, analytics privacy, path helper |
+| `src/lib/patient/patientEntryContext.ts` | Session stash, chooser href, auth-return resolver |
+| `src/lib/seo/donorHealingGuideContent.ts` | Timeline (4 areas), comparison cards, photo prep, capability copy |
+| `src/components/patient-education/DonorHealingGuideExperience.tsx` | Landing UX |
+| `src/components/patient-education/PatientIntentArticlePage.tsx` | Donor experience slot; CTA fallback |
+| `src/lib/seo/patient-intent-articles/types.ts` | `PatientIntentArticleCta` + `entryContext` / `recommendedPathway` |
+| `src/lib/seo/patient-intent-articles/normal-donor-healing-after-fue.ts` | CTA, FAQs, experience |
+| `src/components/marketing/PatientPathwayChooser.tsx` | Donor banner + Continue with Post-Surgery Audit |
+| `src/components/patient/DonorEntryContextBinder.tsx` | Query → session stash |
+| `src/app/request-review/page.tsx` | Binder + donor query parse |
+| `src/app/login/page.tsx` | Donor-aware auth return + auth funnel events |
+| `src/components/audit/StartFreeAuditButton.tsx` | `donor_case_created` event name |
+| `src/lib/patientAuditForm.ts` | Donor concern + red-flag swelling + comparison photos |
+| `src/app/cases/.../photos/page.tsx` | Login next preserves `entry_context` |
+| `src/app/cases/.../questions/page.tsx` | Login next preserves `entry_context` |
+| `src/app/cases/.../PatientAuditFormClient.tsx` | `donor_questions_completed` |
+| `src/lib/preSurgeryIntelligence/graftPlanTotals.ts` + `projection/safety.ts` + `modeContracts.ts` | Build fix: keep `node:crypto` out of client workspace bundle |
+| `tests/donorHealing1a.test.ts` | Unit coverage |
+| `tests/e2e/hairaudit/donor-healing-1a.spec.ts` | Journeys A–E + screenshots |
 
 ---
 
@@ -85,24 +225,27 @@ Tracked (non-PHI): guide viewed, early/later stage card, timeline expand, CTA cl
 | Desktop | `tmp/donor-healing-1a-desktop.png` |
 | Mobile | `tmp/donor-healing-1a-mobile.png` |
 
-(Generated by Playwright `donor-healing-1a.spec.ts`.)
-
 ---
 
 ## Acceptance checklist
 
-- [x] Six-stage donor healing timeline on high-traffic page
-- [x] Urgent-care boundaries without alarmist wording
-- [x] CTA label `Check My Donor Healing`
-- [x] Explicit pathway confirmation still required
-- [x] Donor entry context survives case creation (report summary seed) + session bind
-- [x] Other patient-intent articles unchanged unless configured
-- [x] Post-surgery readiness required keys unchanged
-- [x] No diagnostic / definitive overharvesting language in guide contract
-- [x] Analytics meta excludes health data
-- [x] Unit tests for CTA override, concern validation, red-flag copy, readiness fallback
-- [x] Playwright guide → CTA → chooser → post_surgery start
-- [x] Typecheck, lint (changed files), unit, build, Playwright
+- [x] `/normal-donor-healing-after-fue` unchanged URL
+- [x] SEO title/H1 keep primary phrase near the start
+- [x] Complete donor-healing landing experience
+- [x] Six-stage timeline with four bounded areas each
+- [x] Early / later stage choices
+- [x] Direct-care safety boundaries
+- [x] Main CTA `Check My Donor Healing` (final `Start My Donor Review`)
+- [x] Generic article CTAs backward compatible
+- [x] Pathway recommended but explicitly confirmed
+- [x] Donor context survives auth / case / resume paths
+- [x] Not dropped onto generic dashboard when pending donor context exists
+- [x] Questionnaire via existing persistence
+- [x] Canonical upload keys intact
+- [x] No diagnostic / definitive overharvesting language
+- [x] Analytics funnel without health data
+- [x] Mobile overflow + a11y basics covered in Playwright
+- [x] Unit tests, Playwright, lint (changed files), typecheck, production build
 
 ---
 
@@ -111,14 +254,11 @@ Tracked (non-PHI): guide viewed, early/later stage card, timeline expand, CTA cl
 | Check | Result |
 |-------|--------|
 | `pnpm typecheck` | PASS |
-| ESLint on changed donor-healing + chooser files | PASS |
-| `tsx --test tests/donorHealing1a.test.ts` | PASS (15/15) |
-| Pathway regression unit tests | PASS (34/34) |
-| `pnpm build` | PASS (also required a small pre-surgery client import split to avoid `node:crypto` in the client bundle) |
-| Playwright `donor-healing-1a.spec.ts` | PASS (4/4) |
+| ESLint on changed donor-healing / login / binder files | PASS |
+| `tsx --test tests/donorHealing1a.test.ts` | PASS (20/20) |
+| `pnpm build` | PASS |
+| Playwright `donor-healing-1a.spec.ts` (`--workers=1`) | PASS (6/6) |
 | Screenshots | `tmp/donor-healing-1a-desktop.png`, `tmp/donor-healing-1a-mobile.png` |
-
-**Note:** Live anonymous `/api/audit/start` against this local SSL environment fails certificate verification; the Playwright architecture test fulfills start with a mocked response after asserting the POST body includes `pathway=post_surgery` and `entry_context=donor_healing`.
 
 ---
 
@@ -126,16 +266,35 @@ Tracked (non-PHI): guide viewed, early/later stage card, timeline expand, CTA cl
 
 ```bash
 pnpm typecheck
+pnpm exec eslint src/lib/patient/donorHealingEntry.ts src/lib/patient/patientEntryContext.ts src/components/patient-education/DonorHealingGuideExperience.tsx src/app/login/page.tsx
 pnpm exec tsx --test tests/donorHealing1a.test.ts
 pnpm build
-pnpm exec playwright test --config=playwright.config.ts tests/e2e/hairaudit/donor-healing-1a.spec.ts
+pnpm exec playwright test --config=playwright.config.ts tests/e2e/hairaudit/donor-healing-1a.spec.ts --workers=1
 ```
+
+---
+
+## Known limitations
+
+- Automated clinical scoring / orientation auto-output on patient reports remains 1B
+- `donor_case_submitted` / `donor_report_viewed` event wiring may need deeper report-view hooks in a follow-up if not already firehose-covered on submit surfaces
+- Playwright Journey C proves session + resolver contract; full password/OAuth end-to-end against live credentials is environment-dependent
+- Reserved `HairAuditEntryContext` values are validated-reject-only until future concern pages land
+
+---
+
+## Rollback instructions
+
+1. Revert donor-specific article `experience` / `cta` override (page falls back to generic article CTA)
+2. Or revert the commit set touching `DonorHealingGuideExperience`, entry-context helpers, chooser banner, and binder
+3. Pathway chooser and `/api/audit/start` remain compatible if `entry_context` is simply omitted (backward compatible)
+4. Do not remove `post_surgery` readiness keys as part of rollback
 
 ---
 
 ## Out of scope (later phases)
 
-- **1B** Structured donor intake + report integration hardening  
-- **1C** Longitudinal donor photograph comparison  
-- **1D** Donor content cluster consolidation / overlapping-page merge  
+- **1B** Structured donor intake + report integration hardening / orientation output
+- **1C** Longitudinal donor photograph comparison
+- **1D** Donor content cluster consolidation
 - AI future-outcome images, automated extraction counts, capacity calculations

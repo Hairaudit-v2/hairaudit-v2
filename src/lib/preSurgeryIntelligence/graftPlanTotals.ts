@@ -2,7 +2,7 @@
  * HA-PRE-SURGERY-INTELLIGENCE-2A — Graft plan totals (browser-safe; no node:crypto).
  */
 
-import type { GraftPlanZone, PreSurgeryGraftPlanZoneRow } from "./types";
+import type { GraftPlanZone, PreSurgeryGraftPlan, PreSurgeryGraftPlanZoneRow } from "./types";
 
 export function isDeferredPriority(priority: PreSurgeryGraftPlanZoneRow["priority"]): boolean {
   return priority === "defer";
@@ -11,6 +11,11 @@ export function isDeferredPriority(priority: PreSurgeryGraftPlanZoneRow["priorit
 /** Active (non-deferred) zone rows contribute to procedure totals. */
 export function activeZoneRows(zones: PreSurgeryGraftPlanZoneRow[]): PreSurgeryGraftPlanZoneRow[] {
   return zones.filter((z) => !isDeferredPriority(z.priority));
+}
+
+/** Projection generation requires an approved graft plan (browser-safe gate). */
+export function canGenerateProjectionFromPlan(plan: Pick<PreSurgeryGraftPlan, "status">): boolean {
+  return plan.status === "approved";
 }
 
 export function computeGraftPlanTotals(zones: PreSurgeryGraftPlanZoneRow[]): {

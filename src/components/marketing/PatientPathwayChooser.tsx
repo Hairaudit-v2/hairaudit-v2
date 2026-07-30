@@ -79,12 +79,13 @@ export default function PatientPathwayChooser({
           data-testid="donor-entry-context-banner"
           role="status"
         >
-          <p className="font-medium text-foreground">Donor healing review focus</p>
+          <p className="font-medium text-foreground">Post-Surgery Audit is recommended</p>
           <p className="mt-1">
-            You came from the donor healing guide. Choose{" "}
-            <strong className="font-semibold text-foreground">Post-Surgery Audit</strong> to continue
-            with a donor-focused intake. Pre-Surgery Review remains available if that better matches
-            your situation—HairAudit will not silently pick a pathway for you.
+            Because your concern relates to healing after a procedure,{" "}
+            <strong className="font-semibold text-foreground">Post-Surgery Audit</strong> is the
+            appropriate review pathway. Please confirm explicitly below. You can still return or choose
+            Pre-Surgery Review if that better matches your situation—HairAudit will not silently pick a
+            pathway for you.
           </p>
         </div>
       ) : null}
@@ -137,7 +138,9 @@ export default function PatientPathwayChooser({
                   "w-full justify-center sm:w-auto"
                 )}
               >
-                {t(def.marketingCtaKey as never)}
+                {highlightPost
+                  ? "Continue with Post-Surgery Audit"
+                  : t(def.marketingCtaKey as never)}
               </StartFreeAuditButton>
             </div>
           </article>

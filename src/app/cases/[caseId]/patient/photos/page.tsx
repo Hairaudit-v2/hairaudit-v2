@@ -5,7 +5,7 @@ import { buildPatientLoginHref } from "@/lib/auth/patientLogin";
 import { loadPatientPhotoStageGuidanceForCase } from "@/lib/patientPhoto/loadPatientPhotoStageGuidanceForCase";
 import { resolvePatientReviewPathwayFromCase } from "@/lib/patient/patientReviewPathway";
 import { getQuestionsHrefAfterRequiredImages } from "@/lib/patient/patientPathwayQuestionnaire";
-import { parseDonorEntryContext } from "@/lib/patient/donorHealingEntry";
+import { parseDonorEntryContext, withDonorEntryContextQuery } from "@/lib/patient/donorHealingEntry";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
@@ -17,13 +17,20 @@ type PageProps = {
 export default async function Page({ params, searchParams }: PageProps) {
   const { caseId } = await params;
   const query = searchParams ? await searchParams : {};
+  const queryEntry = parseDonorEntryContext(query.entry_context);
 
   const supabase = await createSupabaseAuthServerClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect(buildPatientLoginHref(`/cases/${caseId}/patient/photos`));
+  if (!user) {
+    redirect(
+      buildPatientLoginHref(
+        withDonorEntryContextQuery(`/cases/${caseId}/patient/photos`, queryEntry)
+      )
+    );
+  }
 
   const { data: c } = await supabase
     .from("cases")
@@ -47,7 +54,7 @@ export default async function Page({ params, searchParams }: PageProps) {
   const patientPhotoStageGuidance = await loadPatientPhotoStageGuidanceForCase(supabase, caseId);
   const patientReviewPathway = resolvePatientReviewPathwayFromCase(c);
 
-  let entryContext = parseDonorEntryContext(query.entry_context);
+  let entryContext = queryEntry;
   try {
     const admin = createSupabaseAdminClient();
     const { data: report } = await admin
