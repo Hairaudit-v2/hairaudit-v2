@@ -1262,6 +1262,20 @@ export default async function Page({
         )}
       </div>
 
+      {(isAuditor || isDoctorForCase || isClinicForCase) && patientReviewPathway === "pre_surgery" ? (
+        <div className="mb-4 rounded-md border border-[var(--ha-border)] bg-[var(--ha-card)] px-4 py-3 text-sm">
+          <Link
+            href={`/cases/${c.id}/professional/pre-surgery-review`}
+            className="font-medium text-[var(--ha-primary)] underline"
+          >
+            Open clinician planning workspace
+          </Link>
+          <span className="ml-2 text-[var(--ha-muted-foreground)]">
+            Image analysis, graft planning, and illustrative projections
+          </span>
+        </div>
+      ) : null}
+
       {isAuditor ? (
         <AuditorCasePageWorkflow
           caseId={c.id}

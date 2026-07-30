@@ -1,7 +1,7 @@
 {
   "project_ref": "vbzjkqhvzfunahmlxevb",
-  "captured_at": "2026-07-27T07:37:59.000Z",
-  "source": "Supabase MCP list_migrations after FI-OUTCOME-INTELLIGENCE-1D engagement events",
+  "captured_at": "2026-07-29T10:38:00.000Z",
+  "source": "Supabase MCP list_migrations after HA-AUTH-HANDOFF-FIX catch-up",
   "migrations": [
     { "version": "20260614203633", "name": "20260320000003_patient_safe_summary_narrative_translations" },
     { "version": "20260617015504", "name": "20260320000004_patient_safe_summary_review_action_metadata" },
@@ -24,6 +24,7 @@
     { "version": "20260727035225", "name": "20260714090000_hairaudit_anon_claim_auth_users_fix" },
     { "version": "20260727051222", "name": "20260727180000_fi_outcome_longitudinal_cohort" },
     { "version": "20260727055219", "name": "hairaudit_longitudinal_capture_plans" },
-    { "version": "20260727073759", "name": "hairaudit_longitudinal_engagement_events" }
+    { "version": "20260727073759", "name": "hairaudit_longitudinal_engagement_events" },
+    { "version": "20260729103850", "name": "20260729120000_hairaudit_intake_case_handoff" }
   ]
 }

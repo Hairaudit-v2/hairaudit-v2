@@ -93,6 +93,43 @@ export type PreSurgeryPlanningReport = {
   longTermPreservation: LongTermHairPreservationContent;
   futureHairLossRisk: FutureHairLossRiskResult;
   patientSafeSummary: PatientSafeReportSummary;
+  /**
+   * HA-PRE-SURGERY-INTELLIGENCE-2B — Frozen clinician-approved graft plan provenance.
+   * Present only when an approved plan was available at report generation.
+   */
+  clinicianPlanProvenance?: {
+    approvedGraftPlanId: string;
+    approvedGraftPlanVersion: number;
+    approvedGraftPlanChecksum: string;
+    approvedObservationCount: number;
+    approvedProjectionIds: string[];
+    frozenAt: string;
+  } | null;
+  /** Patient-safe zone/graft summary from approved plan (no draft notes). */
+  clinicianApprovedGraftSummary?: {
+    totalMinimumGrafts: number;
+    totalTargetGrafts: number;
+    totalMaximumGrafts: number;
+    donorAvailabilityBand: string;
+    deferredZones: string[];
+    proposedSessionCount: number;
+    zoneSummaries: Array<{
+      zone: string;
+      priority: string;
+      minimumGrafts: number;
+      targetGrafts: number;
+      maximumGrafts: number;
+    }>;
+  } | null;
+  /** Approved observation findings only. */
+  clinicianApprovedObservations?: Array<{
+    domain: string;
+    label: string;
+    value: string;
+    status: "confirmed" | "corrected";
+  }>;
+  /** Patient-visible illustrative projection labels (clinician-approved projections only). */
+  clinicianApprovedProjectionLabels?: string[];
 };
 
 export type GeneratePreSurgeryPlanningReportInput = {
@@ -103,6 +140,43 @@ export type GeneratePreSurgeryPlanningReportInput = {
   patientReviewPathway?: PatientReviewPathway | unknown;
   photosByCategory?: Record<string, { signedUrl: string | null; label: string }[]>;
   clinicalHistory?: ClinicalHistorySnapshot | null;
+  /** Optional clinician workspace slice (2B) — only approved fields are embedded. */
+  clinicianReportSlice?: {
+    observations?: Array<{
+      domain: string;
+      label: string;
+      value: string;
+      status: "confirmed" | "corrected";
+    }>;
+    graftPlan?: {
+      graftPlanId: string;
+      graftPlanVersion: number;
+      graftPlanChecksum: string;
+      totalMinimumGrafts: number;
+      totalTargetGrafts: number;
+      totalMaximumGrafts: number;
+      donorAvailabilityBand: string;
+      deferredZones: string[];
+      proposedSessionCount: number;
+      zoneSummaries: Array<{
+        zone: string;
+        priority: string;
+        minimumGrafts: number;
+        targetGrafts: number;
+        maximumGrafts: number;
+      }>;
+      planningAssumptions: string[];
+    } | null;
+    provenance?: {
+      approvedGraftPlanId: string;
+      approvedGraftPlanVersion: number;
+      approvedGraftPlanChecksum: string;
+      approvedObservationCount: number;
+      approvedProjectionIds: string[];
+      frozenAt: string;
+    } | null;
+    patientSafeProjectionLabels?: string[];
+  } | null;
 };
 
 function isRecord(v: unknown): v is Record<string, unknown> {
@@ -650,6 +724,25 @@ export function generatePreSurgeryPlanningReport(
 
   const version = input.reportVersion ?? 1;
   const reportId = `${input.caseId}-v${version}`;
+  const slice = input.clinicianReportSlice ?? null;
+  const approvedGraft = slice?.graftPlan ?? null;
+  const effectiveGraftRange =
+    approvedGraft != null
+      ? { min: approvedGraft.totalMinimumGrafts, max: approvedGraft.totalMaximumGrafts }
+      : graftRange;
+
+  // Prefer clinician-approved graft band on the scorecard when provenance is frozen.
+  const scorecardsWithClinicianGraft = scorecards.map((s) =>
+    s.id === "estimated_graft_requirement" && approvedGraft
+      ? {
+          ...s,
+          displayValue: formatGraftRange({
+            min: approvedGraft.totalMinimumGrafts,
+            max: approvedGraft.totalMaximumGrafts,
+          }),
+        }
+      : s
+  );
 
   return {
     version: PRE_SURGERY_PLANNING_REPORT_VERSION,
@@ -657,11 +750,11 @@ export function generatePreSurgeryPlanningReport(
     reportId,
     generatedAt: new Date().toISOString(),
     planningOutcomeId,
-    scorecards,
+    scorecards: scorecardsWithClinicianGraft,
     sections,
     imageAssessments,
     recommendedNextSteps,
-    graftEstimateRange: graftRange,
+    graftEstimateRange: effectiveGraftRange,
     graftEstimateCaveat: GRAFT_ESTIMATE_CAVEAT,
     longTermPreservation: buildLongTermHairPreservationContent("pre_surgery"),
     futureHairLossRisk: buildFutureHairLossProgressionRisk({
@@ -671,6 +764,20 @@ export function generatePreSurgeryPlanningReport(
       summary: input.summary,
     }),
     patientSafeSummary,
+    clinicianPlanProvenance: slice?.provenance ?? null,
+    clinicianApprovedGraftSummary: approvedGraft
+      ? {
+          totalMinimumGrafts: approvedGraft.totalMinimumGrafts,
+          totalTargetGrafts: approvedGraft.totalTargetGrafts,
+          totalMaximumGrafts: approvedGraft.totalMaximumGrafts,
+          donorAvailabilityBand: approvedGraft.donorAvailabilityBand,
+          deferredZones: approvedGraft.deferredZones,
+          proposedSessionCount: approvedGraft.proposedSessionCount,
+          zoneSummaries: approvedGraft.zoneSummaries,
+        }
+      : null,
+    clinicianApprovedObservations: slice?.observations ?? [],
+    clinicianApprovedProjectionLabels: slice?.patientSafeProjectionLabels ?? [],
   };
 }
 
