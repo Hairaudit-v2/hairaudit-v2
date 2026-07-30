@@ -16,9 +16,9 @@ export default async function CaseIdLayout({
   params,
 }: {
   children: React.ReactNode;
-  params: Promise<{ caseId: string }> | { caseId: string };
+  params: Promise<{ caseId: string }>;
 }) {
-  const { caseId } = await Promise.resolve(params);
+  const { caseId } = await params;
   const supabase = await createSupabaseAuthServerClient();
   const {
     data: { user },
