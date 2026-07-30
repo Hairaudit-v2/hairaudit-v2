@@ -5,18 +5,38 @@ export const DEMO_QA_SEED_USER_PASSWORD = "Demo-QA-Seed-2026!";
 
 export const DEMO_QA_TEST_EMAIL_DOMAIN = "hairaudit.test";
 
-export function demoQaExternalCaseId(pathway: "pre_surgery" | "post_surgery", index: number): string {
-  const segment = pathway === "pre_surgery" ? "presurgery" : "postsurgery";
+/** HA-PATIENT-REPORT-UI-1A.1 — seeded auditor for professional separation journeys. */
+export const DEMO_QA_AUDITOR_EMAIL = `auditor-demo@${DEMO_QA_TEST_EMAIL_DOMAIN}`;
+
+export type DemoQaSeedPathway = "pre_surgery" | "post_surgery" | "donor_healing";
+
+export function demoQaExternalCaseId(pathway: DemoQaSeedPathway, index: number): string {
+  const segment =
+    pathway === "pre_surgery"
+      ? "presurgery"
+      : pathway === "donor_healing"
+        ? "donorhealing"
+        : "postsurgery";
   return `${DEMO_QA_SEED_BATCH_PREFIX}:${segment}:${String(index).padStart(2, "0")}`;
 }
 
-export function demoQaUserEmail(pathway: "pre_surgery" | "post_surgery", index: number): string {
-  const prefix = pathway === "pre_surgery" ? "presurgery-demo" : "postsurgery-demo";
+export function demoQaUserEmail(pathway: DemoQaSeedPathway, index: number): string {
+  const prefix =
+    pathway === "pre_surgery"
+      ? "presurgery-demo"
+      : pathway === "donor_healing"
+        ? "donorhealing-demo"
+        : "postsurgery-demo";
   return `${prefix}-${String(index).padStart(2, "0")}@${DEMO_QA_TEST_EMAIL_DOMAIN}`;
 }
 
-export function demoQaDisplayName(pathway: "pre_surgery" | "post_surgery", index: number, title: string): string {
-  const label = pathway === "pre_surgery" ? "Pre-Surgery Demo" : "Post-Surgery Demo";
+export function demoQaDisplayName(pathway: DemoQaSeedPathway, index: number, title: string): string {
+  const label =
+    pathway === "pre_surgery"
+      ? "Pre-Surgery Demo"
+      : pathway === "donor_healing"
+        ? "Donor Healing Demo"
+        : "Post-Surgery Demo";
   return `${label} ${String(index).padStart(2, "0")} — ${title}`;
 }
 

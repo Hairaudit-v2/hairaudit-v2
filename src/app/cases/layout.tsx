@@ -1,27 +1,12 @@
-import { redirect } from "next/navigation";
-import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
-import DashboardHeader from "@/components/DashboardHeader";
-import { isBetaAllowedUser } from "@/lib/auth/betaAccess";
-import { buildLoginRedirectFromRequest } from "@/lib/auth/loginRedirectFromRequest";
-import { isAnonymousAuthUser } from "@/lib/patient/intakeCaseOwnership";
-
-export default async function CasesLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const supabase = await createSupabaseAuthServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) redirect(await buildLoginRedirectFromRequest());
-  if (!(await isBetaAllowedUser(user))) redirect("/beta-access-message");
-
-  const isAnonymousSession = isAnonymousAuthUser(user);
-
-  return (
-    <div className="min-h-screen flex flex-col bg-slate-50">
-      <DashboardHeader isAnonymousSession={isAnonymousSession} />
-      <main className="flex-1 py-6 sm:py-8">{children}</main>
-    </div>
-  );
+/**
+ * Shared cases segment shell.
+ *
+ * Auth + chrome for `/cases/[caseId]/*` live in `cases/[caseId]/layout.tsx`
+ * so unauthenticated visitors get `next=/cases/:id` (not the dashboard
+ * fallback from a missing middleware `x-pathname`).
+ *
+ * The index route (`/cases`) redirects in `page.tsx` and does not need chrome.
+ */
+export default function CasesLayout({ children }: { children: React.ReactNode }) {
+  return children;
 }

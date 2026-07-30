@@ -3,6 +3,12 @@ import {
   type PatientReviewPathway,
 } from "@/lib/patient/patientReviewPathway";
 import type { DemoQaScenario } from "./types";
+import { DEMO_QA_DONOR_HEALING_SCENARIOS } from "./donorHealingScenarios";
+
+export {
+  DEMO_QA_DONOR_HEALING_SCENARIOS,
+  isDemoQaDonorFixture,
+} from "./donorHealingScenarios";
 
 function pre(
   index: number,
@@ -484,6 +490,16 @@ export const DEMO_QA_ALL_SCENARIOS: readonly DemoQaScenario[] = [
   ...DEMO_QA_POST_SURGERY_SCENARIOS,
 ];
 
+/** Full seed set: dual-pathway demos + donor-healing patient-report fixtures. */
+export const DEMO_QA_SEED_SCENARIOS: readonly DemoQaScenario[] = [
+  ...DEMO_QA_ALL_SCENARIOS,
+  ...DEMO_QA_DONOR_HEALING_SCENARIOS,
+];
+
+export function getDemoQaSeedScenarios(): readonly DemoQaScenario[] {
+  return DEMO_QA_SEED_SCENARIOS;
+}
+
 export function getDemoQaRequiredUploadKeys(pathway: PatientReviewPathway): readonly string[] {
   return PATHWAY_EVIDENCE_PACKS[pathway].requiredPhotoKeys;
 }
@@ -491,6 +507,9 @@ export function getDemoQaRequiredUploadKeys(pathway: PatientReviewPathway): read
 export function getDemoQaRecommendedUploadKeys(
   scenario: DemoQaScenario
 ): readonly string[] {
+  if (scenario.donorFixture?.donorUploadKeys?.length) {
+    return [...scenario.donorFixture.donorUploadKeys];
+  }
   const pack = PATHWAY_EVIDENCE_PACKS[scenario.pathway];
   const extras = scenario.extraRecommendedUploadKeys ?? [];
   const merged = [...pack.recommendedPhotoKeys.slice(0, 2), ...extras];

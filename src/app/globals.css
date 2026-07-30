@@ -87,3 +87,31 @@ body {
   outline-offset: 2px;
   box-shadow: 0 0 0 3px rgb(15 23 42 / 45%);
 }
+
+/* HA-PATIENT-REPORT-UI-1A — print behaviour for canonical patient report shell */
+@media print {
+  .patient-report-no-print {
+    display: none !important;
+  }
+  .patient-report-print-only {
+    display: block !important;
+  }
+  .patient-report-shell {
+    max-width: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: #fff !important;
+    color: #0f172a !important;
+  }
+  .patient-report-shell img {
+    break-inside: avoid;
+    max-height: 70vh;
+  }
+  [data-patient-report-section] {
+    break-inside: avoid;
+  }
+  [data-testid="professional-donor-orientation-workspace"],
+  [data-testid="donor-healing-orientation-review"] {
+    display: none !important;
+  }
+}

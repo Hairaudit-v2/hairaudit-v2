@@ -1,15 +1,17 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { buildAuditCaseInsertData } from "../../../src/lib/cases/createCase";
 import {
+  DEMO_QA_AUDITOR_EMAIL,
   DEMO_QA_SEED_BATCH_PREFIX,
   DEMO_QA_SEED_USER_PASSWORD,
   demoQaExternalCaseId,
   demoQaUserEmail,
 } from "../../../src/lib/demo/qaCaseSeed/constants";
+import type { DemoQaDonorFixtureKind } from "../../../src/lib/demo/qaCaseSeed/types";
 import { tryCreateSupabaseAdminClient } from "../../../src/lib/supabase/admin";
 import type { PatientReviewPathway } from "../../../src/lib/patient/patientReviewPathway";
 
-export { DEMO_QA_SEED_USER_PASSWORD };
+export { DEMO_QA_SEED_USER_PASSWORD, DEMO_QA_AUDITOR_EMAIL };
 
 export type DemoQaCaseEntry = {
   pathway: PatientReviewPathway;
@@ -20,15 +22,30 @@ export type DemoQaCaseEntry = {
   reportId: string | null;
 };
 
+export type DemoQaDonorCaseEntry = DemoQaCaseEntry & {
+  fixtureKind: DemoQaDonorFixtureKind;
+  seedPathway: "donor_healing";
+};
+
 export type DemoQaCatalog = {
   preSurgery: DemoQaCaseEntry[];
   postSurgery: DemoQaCaseEntry[];
+  donorHealing: DemoQaDonorCaseEntry[];
   all: DemoQaCaseEntry[];
+  auditorEmail: string;
 };
 
-function sortByIndex(a: DemoQaCaseEntry, b: DemoQaCaseEntry): number {
+function sortByIndex(a: { index: number }, b: { index: number }): number {
   return a.index - b.index;
 }
+
+const DONOR_FIXTURE_KINDS: readonly DemoQaDonorFixtureKind[] = [
+  "orientation_confirmed",
+  "orientation_corrected",
+  "missing_orientation_fallback",
+  "partial_donor_evidence",
+  "direct_clinical_assessment",
+] as const;
 
 export async function loadDemoQaCatalog(admin?: SupabaseClient | null): Promise<DemoQaCatalog | null> {
   const supabase = admin ?? tryCreateSupabaseAdminClient();
@@ -44,17 +61,22 @@ export async function loadDemoQaCatalog(admin?: SupabaseClient | null): Promise<
   const caseIds = cases.map((c) => c.id as string);
   const { data: reports } = await supabase
     .from("reports")
-    .select("id, case_id, pdf_path, version")
+    .select("id, case_id, pdf_path, version, summary")
     .in("case_id", caseIds)
     .order("version", { ascending: false });
 
-  const reportByCaseId = new Map<string, { id: string; pdf_path: string | null }>();
+  const reportByCaseId = new Map<
+    string,
+    { id: string; pdf_path: string | null; summary: Record<string, unknown> | null }
+  >();
   for (const row of reports ?? []) {
     const caseId = row.case_id as string;
     if (!reportByCaseId.has(caseId)) {
       reportByCaseId.set(caseId, {
         id: row.id as string,
         pdf_path: (row as { pdf_path?: string | null }).pdf_path ?? null,
+        summary: ((row as { summary?: Record<string, unknown> | null }).summary ??
+          null) as Record<string, unknown> | null,
       });
     }
   }
@@ -79,16 +101,57 @@ export async function loadDemoQaCatalog(admin?: SupabaseClient | null): Promise<
     }
   }
 
-  if (entries.length === 0) return null;
+  const donorHealing: DemoQaDonorCaseEntry[] = [];
+  for (let index = 1; index <= DONOR_FIXTURE_KINDS.length; index += 1) {
+    const externalCaseId = demoQaExternalCaseId("donor_healing", index);
+    const match = cases.find((c) => c.external_case_id === externalCaseId);
+    if (!match?.id) continue;
+    const report = reportByCaseId.get(match.id as string);
+    const seedMeta = report?.summary?.demo_qa_seed as
+      | { donorFixtureKind?: DemoQaDonorFixtureKind }
+      | undefined;
+    const fixtureKind =
+      seedMeta?.donorFixtureKind ?? DONOR_FIXTURE_KINDS[index - 1] ?? "orientation_confirmed";
+
+    donorHealing.push({
+      pathway: "post_surgery",
+      seedPathway: "donor_healing",
+      index,
+      externalCaseId,
+      email: demoQaUserEmail("donor_healing", index),
+      caseId: match.id as string,
+      reportId: report?.id ?? null,
+      fixtureKind,
+    });
+  }
+
+  if (entries.length === 0 && donorHealing.length === 0) return null;
 
   const preSurgery = entries.filter((e) => e.pathway === "pre_surgery").sort(sortByIndex);
   const postSurgery = entries.filter((e) => e.pathway === "post_surgery").sort(sortByIndex);
 
-  return { preSurgery, postSurgery, all: [...preSurgery, ...postSurgery] };
+  return {
+    preSurgery,
+    postSurgery,
+    donorHealing: donorHealing.sort(sortByIndex),
+    all: [...preSurgery, ...postSurgery, ...donorHealing],
+    auditorEmail: DEMO_QA_AUDITOR_EMAIL,
+  };
 }
 
 export function catalogReady(catalog: DemoQaCatalog | null): catalog is DemoQaCatalog {
   return Boolean(catalog && catalog.preSurgery.length >= 10 && catalog.postSurgery.length >= 10);
+}
+
+export function donorReportCatalogReady(catalog: DemoQaCatalog | null): boolean {
+  return Boolean(catalog && catalog.donorHealing.length >= DONOR_FIXTURE_KINDS.length);
+}
+
+export function findDonorFixture(
+  catalog: DemoQaCatalog,
+  kind: DemoQaDonorFixtureKind
+): DemoQaDonorCaseEntry | undefined {
+  return catalog.donorHealing.find((e) => e.fixtureKind === kind);
 }
 
 export async function ensureProcessingCaseForUser(args: {

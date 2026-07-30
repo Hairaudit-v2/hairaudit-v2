@@ -127,6 +127,7 @@ import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { tryCreateSupabaseAdminClient } from "@/lib/supabase/admin";
 import { parseRole, USER_ROLES } from "@/lib/roles";
 import { resolveAuditorRole } from "@/lib/auth/isAuditor";
+import { buildPatientLoginHref } from "@/lib/auth/patientLogin";
 import { isMissingFeatureError } from "@/lib/db/isMissingFeatureError";
 import { getTranslation } from "@/lib/i18n/getTranslation";
 import type { TranslationKey } from "@/lib/i18n/translationKeys";
@@ -138,6 +139,7 @@ import {
 import { resolvePostSurgeryAuditReport } from "@/lib/reports/postSurgeryAuditReport";
 import { resolvePreSurgeryPlanningReport } from "@/lib/reports/preSurgeryPlanningReport";
 import PostSurgeryAuditReportShell from "@/components/patient/PostSurgeryAuditReportShell";
+import DonorHealingPatientReport from "@/components/patient-report/DonorHealingPatientReport";
 import DonorReportViewedTracker from "@/components/patient/DonorReportViewedTracker";
 import DonorHealingOrientationReviewPanel from "@/components/auditor/DonorHealingOrientationReviewPanel";
 import DonorLongitudinalComparisonReviewPanel from "@/components/auditor/DonorLongitudinalComparisonReviewPanel";
@@ -231,7 +233,7 @@ export default async function Page({
     console.error("[cases/page] auth.getUser failed", { caseId, error: e });
     throw e;
   }
-  if (!user) redirect("/login");
+  if (!user) redirect(buildPatientLoginHref(`/cases/${caseId}`));
 
   const seoLocale = await resolvePublicSeoLocale();
   const tr = (key: TranslationKey) => getTranslation(key, seoLocale);
@@ -1613,26 +1615,60 @@ export default async function Page({
               {isPatientForCase && donorHealingEntryActive ? (
                 <DonorReportViewedTracker caseId={c.id} enabled />
               ) : null}
-              <PostSurgeryAuditReportShell
-                report={postSurgeryAuditReport}
-                statusLabel={statusDisplayLabel}
-                translatedNarrativeActive={patientSafeSummaryNarrative.translatedNarrativeActive}
-                requestedLocale={seoLocale}
-                fallbackReason={patientSafeSummaryNarrative.fallbackReason}
-                uploads={(uploads ?? []) as Array<{
-                  id: string;
-                  type: string;
-                  storage_path: string;
-                  metadata?: Record<string, unknown> | null;
-                }>}
-                caseId={c.id}
-                clinicalHistory={clinicalHistorySnapshot}
-                imageLimitedAssessment={imageLimitedForensicNotice}
-                documentAssistedAssessment={Boolean(
-                  (forensic as { documentAssistedAssessment?: boolean } | null)
-                    ?.documentAssistedAssessment
-                )}
-              />
+              {donorHealingEntryActive ? (
+                <DonorHealingPatientReport
+                  report={postSurgeryAuditReport}
+                  statusLabel={statusDisplayLabel}
+                  reportDate={
+                    (latestReport as { created_at?: string } | null)?.created_at ??
+                    postSurgeryAuditReport.generatedAt
+                  }
+                  procedureDate={
+                    normalizedPatient?.procedure_date
+                      ? String(normalizedPatient.procedure_date)
+                      : null
+                  }
+                  monthsSinceBand={
+                    normalizedPatient?.months_since
+                      ? String(normalizedPatient.months_since)
+                      : null
+                  }
+                  backHref="/dashboard/patient"
+                  downloadHref={
+                    latestReport?.id
+                      ? `/api/reports/${latestReport.id}/download`
+                      : undefined
+                  }
+                  uploads={(uploads ?? []) as Array<{
+                    id: string;
+                    type: string;
+                    storage_path: string;
+                    metadata?: Record<string, unknown> | null;
+                  }>}
+                  caseId={c.id}
+                />
+              ) : (
+                <PostSurgeryAuditReportShell
+                  report={postSurgeryAuditReport}
+                  statusLabel={statusDisplayLabel}
+                  translatedNarrativeActive={patientSafeSummaryNarrative.translatedNarrativeActive}
+                  requestedLocale={seoLocale}
+                  fallbackReason={patientSafeSummaryNarrative.fallbackReason}
+                  uploads={(uploads ?? []) as Array<{
+                    id: string;
+                    type: string;
+                    storage_path: string;
+                    metadata?: Record<string, unknown> | null;
+                  }>}
+                  caseId={c.id}
+                  clinicalHistory={clinicalHistorySnapshot}
+                  imageLimitedAssessment={imageLimitedForensicNotice}
+                  documentAssistedAssessment={Boolean(
+                    (forensic as { documentAssistedAssessment?: boolean } | null)
+                      ?.documentAssistedAssessment
+                  )}
+                />
+              )}
             </>
           ) : null}
           {patientShowReportContent &&

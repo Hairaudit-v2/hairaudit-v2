@@ -160,7 +160,6 @@ export async function POST(req: Request) {
       .from("reports")
       .update({
         summary: nextSummary,
-        updated_at: new Date().toISOString(),
       })
       .eq("id", reportId);
 

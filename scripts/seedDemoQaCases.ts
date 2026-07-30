@@ -29,15 +29,25 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { buildAuditCaseInsertData } from "../src/lib/cases/createCase";
 import {
   assertDemoSeedAllowed,
+  DEMO_QA_AUDITOR_EMAIL,
   DEMO_QA_SEED_BATCH_PREFIX,
   DEMO_QA_SEED_USER_PASSWORD,
   demoQaDisplayName,
   demoQaExternalCaseId,
   demoQaUserEmail,
 } from "../src/lib/demo/qaCaseSeed/constants";
-import { buildDemoQaReportSummary, buildDemoQaUploadTypes } from "../src/lib/demo/qaCaseSeed/buildReportSummary";
-import { DEMO_QA_ALL_SCENARIOS } from "../src/lib/demo/qaCaseSeed/scenarios";
+import {
+  buildDemoQaReportSummary,
+  buildDemoQaUploadTypes,
+  demoQaSeedPathwayForScenario,
+} from "../src/lib/demo/qaCaseSeed/buildReportSummary";
+import {
+  DEMO_QA_ALL_SCENARIOS,
+  DEMO_QA_DONOR_HEALING_SCENARIOS,
+  DEMO_QA_SEED_SCENARIOS,
+} from "../src/lib/demo/qaCaseSeed/scenarios";
 import type { DemoQaScenario } from "../src/lib/demo/qaCaseSeed/types";
+import { isDemoQaDonorFixture } from "../src/lib/demo/qaCaseSeed/donorHealingScenarios";
 import { tryCreateSupabaseAdminClient } from "../src/lib/supabase/admin";
 import {
   applyDemoSeedInsecureTlsIfRequested,
@@ -109,19 +119,55 @@ async function upsertDemoProfile(
   userId: string,
   scenario: DemoQaScenario
 ): Promise<void> {
+  const seedPathway = demoQaSeedPathwayForScenario(scenario);
   await supabase.from("profiles").upsert({
     id: userId,
     role: "patient",
-    display_name: demoQaDisplayName(scenario.pathway, scenario.index, scenario.title),
+    display_name: demoQaDisplayName(seedPathway, scenario.index, scenario.title),
   });
+}
+
+async function ensureDemoAuditor(supabase: SupabaseClient): Promise<string> {
+  const email = DEMO_QA_AUDITOR_EMAIL;
+  const existingId = await resolveDemoUserIdByEmail(supabase, email);
+  if (existingId) {
+    await supabase.from("profiles").upsert({
+      id: existingId,
+      role: "auditor",
+      display_name: "Demo QA Auditor",
+    });
+    return existingId;
+  }
+
+  const { data, error } = await supabase.auth.admin.createUser({
+    email,
+    password: DEMO_QA_SEED_USER_PASSWORD,
+    email_confirm: true,
+    user_metadata: {
+      role: "auditor",
+      is_test: true,
+      demo_qa_seed: true,
+    },
+  });
+  if (error || !data.user?.id) {
+    throw new Error(`Failed to create demo auditor: ${error?.message ?? "unknown"}`);
+  }
+  await supabase.from("profiles").upsert({
+    id: data.user.id,
+    role: "auditor",
+    display_name: "Demo QA Auditor",
+  });
+  demoUserIdByEmailCache?.set(email.toLowerCase(), data.user.id);
+  return data.user.id;
 }
 
 async function ensureDemoUser(
   supabase: SupabaseClient,
   scenario: DemoQaScenario
 ): Promise<{ userId: string; email: string; created: boolean }> {
-  const email = demoQaUserEmail(scenario.pathway, scenario.index);
-  const externalCaseId = demoQaExternalCaseId(scenario.pathway, scenario.index);
+  const seedPathway = demoQaSeedPathwayForScenario(scenario);
+  const email = demoQaUserEmail(seedPathway, scenario.index);
+  const externalCaseId = demoQaExternalCaseId(seedPathway, scenario.index);
 
   const existingCase = await findCaseByExternalId(supabase, externalCaseId);
   if (existingCase?.user_id) {
@@ -226,8 +272,9 @@ async function seedScenario(
   scenario: DemoQaScenario,
   imageBuffer: Buffer
 ): Promise<{ caseId: string; email: string; action: "created" | "updated" }> {
-  const externalCaseId = demoQaExternalCaseId(scenario.pathway, scenario.index);
-  const email = demoQaUserEmail(scenario.pathway, scenario.index);
+  const seedPathway = demoQaSeedPathwayForScenario(scenario);
+  const externalCaseId = demoQaExternalCaseId(seedPathway, scenario.index);
+  const email = demoQaUserEmail(seedPathway, scenario.index);
 
   const { userId } = await ensureDemoUser(supabase, scenario);
   const existing = await findCaseByExternalId(supabase, externalCaseId);
@@ -239,7 +286,11 @@ async function seedScenario(
     ...buildAuditCaseInsertData(userId, "patient", scenario.pathway),
     user_id: userId,
     patient_id: userId,
-    title: scenario.pathway === "pre_surgery" ? `Pre-Surgery Review — ${scenario.title}` : `Patient Audit — ${scenario.title}`,
+    title: isDemoQaDonorFixture(scenario)
+      ? `Donor Healing Review — ${scenario.title}`
+      : scenario.pathway === "pre_surgery"
+        ? `Pre-Surgery Review — ${scenario.title}`
+        : `Patient Audit — ${scenario.title}`,
     status: "complete",
     submitted_at: submittedAt,
     is_test: true,
@@ -280,7 +331,14 @@ async function seedScenario(
     pdf_path: pdfPath,
     status: "complete",
     patient_audit_version: 2,
-    patient_audit_v2: scenario.intakeAnswers,
+    patient_audit_v2: scenario.donorFixture
+      ? {
+          ...scenario.intakeAnswers,
+          entry_context: "donor_healing",
+          primary_donor_concern:
+            scenario.intakeAnswers.primary_donor_concern ?? "donor_patchiness",
+        }
+      : scenario.intakeAnswers,
   });
   if (reportErr) throw new Error(`Report insert failed: ${reportErr.message}`);
 
@@ -318,12 +376,16 @@ async function main() {
 
   if (dryRun) {
     console.log("Dry run — no database changes.\n");
-    for (const scenario of DEMO_QA_ALL_SCENARIOS) {
-      const email = demoQaUserEmail(scenario.pathway, scenario.index);
-      const externalCaseId = demoQaExternalCaseId(scenario.pathway, scenario.index);
-      console.log(`○ ${scenario.id} → ${email} (${externalCaseId}) [${scenario.pathway}]`);
+    for (const scenario of DEMO_QA_SEED_SCENARIOS) {
+      const seedPathway = demoQaSeedPathwayForScenario(scenario);
+      const email = demoQaUserEmail(seedPathway, scenario.index);
+      const externalCaseId = demoQaExternalCaseId(seedPathway, scenario.index);
+      console.log(`○ ${scenario.id} → ${email} (${externalCaseId}) [${seedPathway}]`);
     }
-    console.log(`\nWould seed ${DEMO_QA_ALL_SCENARIOS.length} cases (10 pre-surgery, 10 post-surgery).`);
+    console.log(
+      `\nWould seed ${DEMO_QA_SEED_SCENARIOS.length} cases (${DEMO_QA_ALL_SCENARIOS.length} dual-pathway + ${DEMO_QA_DONOR_HEALING_SCENARIOS.length} donor-healing).`
+    );
+    console.log(`Would ensure auditor ${DEMO_QA_AUDITOR_EMAIL}`);
     return;
   }
 
@@ -358,7 +420,10 @@ async function main() {
   const imageBuffer = await getDefaultImageBuffer();
   const results: Array<{ scenario: string; caseId: string; email: string; action: string }> = [];
 
-  for (const scenario of DEMO_QA_ALL_SCENARIOS) {
+  const auditorId = await ensureDemoAuditor(supabase);
+  console.log(`✓ demo auditor → ${DEMO_QA_AUDITOR_EMAIL} (${auditorId})`);
+
+  for (const scenario of DEMO_QA_SEED_SCENARIOS) {
     const result = await seedScenario(supabase, scenario, imageBuffer);
     results.push({
       scenario: scenario.id,
@@ -373,10 +438,13 @@ async function main() {
   console.log(`  Cases: ${results.length}`);
   console.log(`  Pre-surgery: ${DEMO_QA_ALL_SCENARIOS.filter((s) => s.pathway === "pre_surgery").length}`);
   console.log(`  Post-surgery: ${DEMO_QA_ALL_SCENARIOS.filter((s) => s.pathway === "post_surgery").length}`);
+  console.log(`  Donor-healing fixtures: ${DEMO_QA_DONOR_HEALING_SCENARIOS.length}`);
+  console.log(`  Auditor: ${DEMO_QA_AUDITOR_EMAIL}`);
   console.log(`  Login password (all demo users): ${DEMO_QA_SEED_USER_PASSWORD}`);
   console.log("\nQA routes:");
   console.log("  Pre:  / → Pre-Surgery Review → /cases/[id]/patient/photos → questions → contact → waiting → report");
   console.log("  Post: / → Post-Surgery Audit   → same funnel");
+  console.log("  Donor: /cases/[id] → patient-report-shell (HA-PATIENT-REPORT-UI-1A)");
   console.log("\nRe-run safely — cases are upserted by external_case_id.");
 }
 

@@ -1,13 +1,23 @@
 import { test as base, expect } from "playwright/test";
 import type { DemoQaCatalog } from "../helpers/demoQaCatalog";
-import { DEMO_QA_SEED_USER_PASSWORD } from "../helpers/demoQaCatalog";
+import {
+  DEMO_QA_AUDITOR_EMAIL,
+  DEMO_QA_SEED_USER_PASSWORD,
+} from "../helpers/demoQaCatalog";
 import { loginAsPatient } from "../helpers/auth";
 
 function readCatalog(): DemoQaCatalog | null {
   const raw = process.env.E2E_DEMO_CATALOG_JSON;
   if (!raw) return null;
   try {
-    return JSON.parse(raw) as DemoQaCatalog;
+    const parsed = JSON.parse(raw) as DemoQaCatalog;
+    return {
+      preSurgery: parsed.preSurgery ?? [],
+      postSurgery: parsed.postSurgery ?? [],
+      donorHealing: parsed.donorHealing ?? [],
+      all: parsed.all ?? [],
+      auditorEmail: parsed.auditorEmail ?? DEMO_QA_AUDITOR_EMAIL,
+    };
   } catch {
     return null;
   }
@@ -17,7 +27,15 @@ const skipReason = process.env.E2E_SKIP_REASON ?? "E2E prerequisites not met.";
 
 export const test = base.extend<{ catalog: DemoQaCatalog; demoPassword: string }>({
   catalog: async ({}, use) => {
-    await use(readCatalog() ?? { preSurgery: [], postSurgery: [], all: [] });
+    await use(
+      readCatalog() ?? {
+        preSurgery: [],
+        postSurgery: [],
+        donorHealing: [],
+        all: [],
+        auditorEmail: DEMO_QA_AUDITOR_EMAIL,
+      }
+    );
   },
   demoPassword: async ({}, use) => {
     await use(DEMO_QA_SEED_USER_PASSWORD);
@@ -35,5 +53,16 @@ export function skipIfE2eBlocked(): void {
 export function skipIfDemoCatalogMissing(): void {
   if (process.env.E2E_HAS_DEMO_CATALOG !== "true") {
     test.skip(true, process.env.E2E_DEMO_CATALOG_SKIP_REASON ?? "Demo QA catalog not loaded.");
+  }
+}
+
+export function skipIfDonorReportCatalogMissing(): void {
+  skipIfDemoCatalogMissing();
+  if (process.env.E2E_HAS_DONOR_REPORT_CATALOG !== "true") {
+    test.skip(
+      true,
+      process.env.E2E_DONOR_REPORT_CATALOG_SKIP_REASON ??
+        "Donor-healing fixtures missing. Re-run `pnpm run seed:demo-qa`."
+    );
   }
 }
