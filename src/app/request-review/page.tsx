@@ -14,6 +14,7 @@ import {
   PUBLIC_AUDIT_FLOW_STEPS,
   PUBLIC_CTAS,
 } from "@/lib/marketing/publicMarketingCopy";
+import { parseDonorEntryContext } from "@/lib/patient/donorHealingEntry";
 import { cn } from "@/lib/utils";
 import { Badge, FeatureGrid, Section, networkButtonVariants } from "@/packages/ui";
 
@@ -40,7 +41,16 @@ const requestFaqs = [
   },
 ];
 
-export default function RequestReviewPage() {
+export default async function RequestReviewPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ concern?: string; entry_context?: string; entry_source?: string }>;
+}) {
+  const query = searchParams ? await searchParams : {};
+  const donorEntryFromQuery = Boolean(
+    parseDonorEntryContext(query.entry_context) ?? parseDonorEntryContext(query.concern)
+  );
+
   return (
     <HairAuditFiMarketingShell>
       <BreadcrumbListSchema
@@ -72,7 +82,7 @@ export default function RequestReviewPage() {
               <h2 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
                 {PUBLIC_CTAS.chooseYourReviewType}
               </h2>
-              <PatientPathwayChooser className="mt-2" />
+              <PatientPathwayChooser className="mt-2" donorEntryFromQuery={donorEntryFromQuery} />
             </div>
             <div className="flex flex-col flex-wrap gap-3 sm:flex-row">
               <TrackedLink
@@ -139,7 +149,11 @@ export default function RequestReviewPage() {
         style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
       >
         <div className="mx-auto max-w-4xl">
-          <PatientPathwayChooser layout="hero" className="justify-center" />
+          <PatientPathwayChooser
+            layout="hero"
+            className="justify-center"
+            donorEntryFromQuery={donorEntryFromQuery}
+          />
         </div>
       </div>
     </HairAuditFiMarketingShell>

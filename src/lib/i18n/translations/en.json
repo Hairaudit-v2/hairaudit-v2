@@ -5768,6 +5768,14 @@
               "title": "Back of Head Photo",
               "description": "Please take a photo of the back of your head. This helps us review the area where donor hair was taken."
             },
+            "preop_donor_left": {
+              "title": "Left Donor View",
+              "description": "Please photograph the left side of your donor area. This helps compare healing from more than one angle."
+            },
+            "preop_donor_right": {
+              "title": "Right Donor View",
+              "description": "Please photograph the right side of your donor area. This helps compare healing from more than one angle."
+            },
             "preop_donor_closeup": {
               "title": "Close Photo of Donor Area",
               "description": "Please take a close photo of the back donor area. This helps us review healing and donor appearance."

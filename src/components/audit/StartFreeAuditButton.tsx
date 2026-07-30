@@ -6,6 +6,12 @@ import TrackedLink from "@/components/analytics/TrackedLink";
 import { trackCta } from "@/lib/analytics/trackCta";
 import { stashPendingAuthCtaContext } from "@/lib/analytics/authAttribution";
 import {
+  bindEntryContextToCase,
+  clearPendingEntryContext,
+  readPendingEntryContext,
+} from "@/lib/patient/patientEntryContext";
+import { parseDonorEntryContext } from "@/lib/patient/donorHealingEntry";
+import {
   DEFAULT_PATIENT_REVIEW_PATHWAY,
   PATHWAY_CHOOSER_HREF,
   type PatientReviewPathway,
@@ -16,6 +22,11 @@ type StartFreeAuditButtonProps = {
   eventName?: string;
   /** HA-DUAL-PATHWAY-1 — stored on case as patient_review_pathway. Omit to route to pathway chooser. */
   pathway?: PatientReviewPathway;
+  /**
+   * HA-DONOR-HEALING-1A — optional validated entry context (e.g. donor_healing).
+   * Only applied when pathway is post_surgery. Falls back to pending session stash.
+   */
+  entryContext?: string;
   /** Test-only escape hatch — never use on public CTAs. */
   allowDefaultPostSurgeryForLegacyTestOnly?: boolean;
   children: React.ReactNode;
@@ -63,6 +74,7 @@ export default function StartFreeAuditButton({
   className,
   eventName,
   pathway,
+  entryContext,
   allowDefaultPostSurgeryForLegacyTestOnly = false,
   children,
 }: StartFreeAuditButtonProps) {
@@ -106,22 +118,59 @@ export default function StartFreeAuditButton({
       stashPendingAuthCtaContext(eventName, "/api/audit/start");
     }
     try {
+      const pending = readPendingEntryContext();
+      const resolvedEntry =
+        effectivePathway === "post_surgery"
+          ? parseDonorEntryContext(entryContext) ?? pending?.entryContext ?? null
+          : null;
+
+      if (effectivePathway === "post_surgery" && resolvedEntry) {
+        trackCta("donor_pathway_confirmed", {
+          entry_context: resolvedEntry,
+          pathway: effectivePathway,
+        });
+      }
+
       const captchaToken = await solveCaptcha();
       const res = await fetch("/api/audit/start", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ captchaToken, pathway: effectivePathway }),
+        body: JSON.stringify({
+          captchaToken,
+          pathway: effectivePathway,
+          ...(resolvedEntry
+            ? {
+                entryContext: resolvedEntry,
+                entry_context: resolvedEntry,
+                concern: pending?.concern ?? "donor_healing",
+                entry_source: pending?.sourceGuide ?? null,
+              }
+            : {}),
+        }),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok || !json?.ok) {
         throw new Error(json?.error ?? "Could not start your audit. Please try again.");
+      }
+      if (resolvedEntry && json.caseId) {
+        bindEntryContextToCase(String(json.caseId), {
+          entryContext: resolvedEntry,
+          concern: pending?.concern ?? "donor_healing",
+          sourceGuide: pending?.sourceGuide ?? null,
+          ts: Date.now(),
+        });
+        clearPendingEntryContext();
+        trackCta("donor_entry_case_created", {
+          entry_context: resolvedEntry,
+          pathway: effectivePathway,
+        });
       }
       router.push(json.next ?? `/cases/${json.caseId}/patient/photos`);
     } catch (e) {
       setError((e as Error)?.message ?? "Could not start your audit. Please try again.");
       setBusy(false);
     }
-  }, [busy, effectivePathway, eventName, router, solveCaptcha]);
+  }, [busy, effectivePathway, entryContext, eventName, router, solveCaptcha]);
 
   if (!effectivePathway) {
     return (
@@ -148,6 +197,11 @@ export default function StartFreeAuditButton({
         className={className}
         aria-busy={busy}
         data-testid={pathwayTestId}
+        data-entry-context={
+          effectivePathway === "post_surgery"
+            ? parseDonorEntryContext(entryContext) ?? undefined
+            : undefined
+        }
       >
         {busy ? "Starting…" : children}
       </button>

@@ -396,6 +396,7 @@ export default function PhotoUploader({
   hideFooter,
   patientPhotoStageGuidance: _patientPhotoStageGuidance,
   patientReviewPathway = DEFAULT_PATIENT_REVIEW_PATHWAY,
+  entryContext = null,
 }: {
   caseId: string;
   submitterType: SubmitterType;
@@ -410,6 +411,8 @@ export default function PhotoUploader({
   patientPhotoStageGuidance?: PatientPhotoUploadGuidancePanel | null;
   /** HA-DUAL-PATHWAY-1 — filters required upload keys for patient cases */
   patientReviewPathway?: PatientReviewPathway;
+  /** HA-DONOR-HEALING-1A — donor entry focus layered on post_surgery */
+  entryContext?: string | null;
 }) {
   if (submitterType === "patient") {
     return (
@@ -421,6 +424,7 @@ export default function PhotoUploader({
         patientReviewPathway={patientReviewPathway}
         backHref={backHref}
         questionsHref={nextHref ?? `/cases/${caseId}/patient/questions`}
+        entryContext={entryContext}
       />
     );
   }

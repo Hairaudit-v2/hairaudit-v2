@@ -5553,6 +5553,14 @@
               "title": "Foto de la nuca",
               "description": "Haga una foto de la parte posterior de la cabeza. Esto nos ayuda a revisar la zona de donde se tomó el cabello donante."
             },
+            "preop_donor_left": {
+              "title": "Vista donante izquierda",
+              "description": "Fotografíe el lado izquierdo de la zona donante. Esto ayuda a comparar la curación desde más de un ángulo."
+            },
+            "preop_donor_right": {
+              "title": "Vista donante derecha",
+              "description": "Fotografíe el lado derecho de la zona donante. Esto ayuda a comparar la curación desde más de un ángulo."
+            },
             "preop_donor_closeup": {
               "title": "Primer plano de la zona donante",
               "description": "Haga una foto de cerca de la nuca. Esto nos ayuda a revisar la curación y el aspecto del donante."

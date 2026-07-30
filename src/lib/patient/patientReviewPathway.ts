@@ -171,6 +171,8 @@ export const PATHWAY_EVIDENCE_PACKS: Record<PatientReviewPathway, PathwayEvidenc
       "preop_donor_closeup",
     ],
     recommendedPhotoKeys: [
+      "preop_donor_left",
+      "preop_donor_right",
       "day0_recipient",
       "day0_donor",
       "postop_wet_recipient",
@@ -298,6 +300,7 @@ export const PATHWAY_INTAKE_SECTION_IDS: Record<PatientReviewPathway, readonly s
     "surgical_experience",
     "recovery",
     "results",
+    "donor_healing_concern",
   ],
 };
 

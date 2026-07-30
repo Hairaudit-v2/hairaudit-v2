@@ -37,6 +37,22 @@ export type PatientIntentArticle = {
   ctaLead?: string;
   /** Supporting sentence under the lead */
   ctaSupporting?: string;
+  /**
+   * Optional primary CTA override (HA-DONOR-HEALING-1A).
+   * When omitted, PatientIntentArticlePage keeps the shared Start Free HairAudit → chooser behaviour.
+   */
+  cta?: {
+    label: string;
+    href: string;
+    analyticsId: string;
+    destination: string;
+    context?: string;
+  };
+  /**
+   * Optional page experience enhancer. `donor_healing` mounts DonorHealingGuideExperience
+   * above the standard article sections without changing other guides.
+   */
+  experience?: "default" | "donor_healing";
   /** Intent/issue slugs; resolved via registry + patient issue library */
   relatedSlugs: string[];
 };

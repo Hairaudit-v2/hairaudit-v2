@@ -5,12 +5,18 @@ import { buildPatientLoginHref } from "@/lib/auth/patientLogin";
 import { loadPatientPhotoStageGuidanceForCase } from "@/lib/patientPhoto/loadPatientPhotoStageGuidanceForCase";
 import { resolvePatientReviewPathwayFromCase } from "@/lib/patient/patientReviewPathway";
 import { getQuestionsHrefAfterRequiredImages } from "@/lib/patient/patientPathwayQuestionnaire";
+import { parseDonorEntryContext } from "@/lib/patient/donorHealingEntry";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
-type PageProps = { params: Promise<{ caseId: string }> };
+type PageProps = {
+  params: Promise<{ caseId: string }>;
+  searchParams?: Promise<{ entry_context?: string }>;
+};
 
-export default async function Page({ params }: PageProps) {
+export default async function Page({ params, searchParams }: PageProps) {
   const { caseId } = await params;
+  const query = searchParams ? await searchParams : {};
 
   const supabase = await createSupabaseAuthServerClient();
   const {
@@ -41,6 +47,29 @@ export default async function Page({ params }: PageProps) {
   const patientPhotoStageGuidance = await loadPatientPhotoStageGuidanceForCase(supabase, caseId);
   const patientReviewPathway = resolvePatientReviewPathwayFromCase(c);
 
+  let entryContext = parseDonorEntryContext(query.entry_context);
+  try {
+    const admin = createSupabaseAdminClient();
+    const { data: report } = await admin
+      .from("reports")
+      .select("summary, patient_audit_v2")
+      .eq("case_id", caseId)
+      .order("version", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const summary = (report?.summary ?? {}) as Record<string, unknown>;
+    const v2 = (report?.patient_audit_v2 ?? {}) as Record<string, unknown>;
+    entryContext =
+      entryContext ??
+      parseDonorEntryContext(summary.entry_context) ??
+      parseDonorEntryContext(v2.entry_context) ??
+      parseDonorEntryContext(
+        (summary.patient_answers as Record<string, unknown> | undefined)?.entry_context
+      );
+  } catch {
+    /* admin optional for entry context enrichment */
+  }
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-6">
       <div className="mb-4">
@@ -60,6 +89,7 @@ export default async function Page({ params }: PageProps) {
         nextLabel="Continue to questions"
         patientPhotoStageGuidance={patientPhotoStageGuidance}
         patientReviewPathway={patientReviewPathway}
+        entryContext={entryContext}
       />
     </div>
   );

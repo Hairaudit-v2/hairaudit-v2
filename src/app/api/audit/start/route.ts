@@ -8,6 +8,11 @@ import {
   MISSING_PATIENT_REVIEW_PATHWAY_ERROR,
   parseExplicitPatientReviewPathway,
 } from "@/lib/patient/patientReviewPathway";
+import {
+  DONOR_HEALING_ENTRY_CONTEXT,
+  parseDonorEntryContext,
+  parsePostSurgeryConcern,
+} from "@/lib/patient/donorHealingEntry";
 
 /**
  * POST /api/audit/start
@@ -135,16 +140,64 @@ export async function POST(req: Request): Promise<NextResponse> {
     return NextResponse.json({ ok: false, error: result.error }, { status: result.status });
   }
 
+  // HA-DONOR-HEALING-1A — persist validated donor entry context on draft report summary
+  // (survives auth claim / resume). Never logs health answers or image URLs.
+  const entryContext =
+    pathway === "post_surgery"
+      ? parseDonorEntryContext(body?.entryContext ?? body?.entry_context ?? body?.concern)
+      : null;
+  const concern =
+    pathway === "post_surgery" ? parsePostSurgeryConcern(body?.concern) : null;
+  const entrySource =
+    typeof body?.entry_source === "string" && body.entry_source.trim()
+      ? body.entry_source.trim().slice(0, 120)
+      : null;
+
+  if (entryContext) {
+    const seedAnswers: Record<string, unknown> = {
+      entry_context: entryContext,
+      ...(concern ? { primary_donor_concern: concern } : { primary_donor_concern: "donor_healing" }),
+    };
+    const summary = {
+      entry_context: entryContext,
+      entry_source: entrySource,
+      primary_donor_concern: concern ?? "donor_healing",
+      patient_answers: seedAnswers,
+      patient_answers_updated_at: new Date().toISOString(),
+    };
+    const { error: seedErr } = await supabaseAdmin.from("reports").insert({
+      case_id: result.caseId,
+      version: 1,
+      summary,
+      pdf_path: "",
+      patient_audit_version: 2,
+      patient_audit_v2: seedAnswers,
+    });
+    if (seedErr) {
+      // Non-fatal: case still usable; questionnaire can seed later.
+      console.info(LOG_PREFIX, "entry context seed skipped", {
+        caseId: result.caseId,
+        entry_context: entryContext,
+        reason: seedErr.message,
+      });
+    }
+  }
+
   console.info(LOG_PREFIX, "audit started", {
     userId,
     caseId: result.caseId,
     pathway,
+    entry_context: entryContext ?? null,
     reusedSession: Boolean(existingUser),
   });
   return NextResponse.json({
     ok: true,
     caseId: result.caseId,
     pathway,
-    next: `/cases/${result.caseId}/patient/photos`,
+    entryContext: entryContext ?? null,
+    next:
+      entryContext === DONOR_HEALING_ENTRY_CONTEXT
+        ? `/cases/${result.caseId}/patient/photos?entry_context=donor_healing`
+        : `/cases/${result.caseId}/patient/photos`,
   });
 }

@@ -27,6 +27,12 @@ import {
   filterIntakeSectionsForPathway,
   getMissingPathwayMinimalRequiredFields,
 } from "@/lib/patient/patientPathwayQuestionnaire";
+import {
+  answersIncludeDonorRedFlags,
+  getDonorRedFlagWarningCopy,
+  isDonorHealingEntryContext,
+} from "@/lib/patient/donorHealingEntry";
+import { trackCta } from "@/lib/analytics/trackCta";
 
 function isNonEmptyObject(v: unknown): v is Record<string, unknown> {
   return !!v && typeof v === "object" && !Array.isArray(v) && Object.keys(v as Record<string, unknown>).length > 0;
@@ -191,6 +197,9 @@ export default function PatientAuditFormClient({
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json?.error ?? t("forms.shared.saveFailedGeneric"));
+      if (isDonorHealingEntryContext(formData.entry_context)) {
+        trackCta("donor_questionnaire_completed", { entry_context: "donor_healing" });
+      }
       router.push(target);
     } catch (e: unknown) {
       setMessage({ type: "err", text: (e as Error)?.message ?? t("forms.shared.saveFailedGeneric") });
@@ -234,11 +243,35 @@ export default function PatientAuditFormClient({
   }
 
   const isReviewStep = STEPS[activeStep]?.id === "review";
+  const showDonorRedFlagWarning = answersIncludeDonorRedFlags(formData);
+  const donorFocused = isDonorHealingEntryContext(formData.entry_context);
 
   return (
-    <div className="max-w-4xl space-y-6">
+    <div className="max-w-4xl space-y-6" data-entry-context={donorFocused ? "donor_healing" : undefined}>
       <header>
         <p className="text-sm text-slate-900">{t("dashboard.patient.forms.intake.introLine")}</p>
+        {donorFocused ? (
+          <div
+            className="mt-3 rounded-2xl border border-amber-300/40 bg-amber-50 p-4 text-sm text-amber-950"
+            data-testid="donor-intake-banner"
+            role="status"
+          >
+            <p className="font-semibold">Donor healing focus</p>
+            <p className="mt-1 text-amber-900/90">
+              Optional donor questions below help document your concern. They do not confirm normality,
+              overharvesting, infection, or remaining graft capacity.
+            </p>
+          </div>
+        ) : null}
+        {showDonorRedFlagWarning ? (
+          <div
+            className="mt-3 rounded-2xl border border-rose-300/50 bg-rose-50 p-4 text-sm text-rose-950"
+            data-testid="donor-red-flag-warning"
+            role="alert"
+          >
+            {getDonorRedFlagWarningCopy()}
+          </div>
+        ) : null}
         {!minimal && patientReviewPathway === "post_surgery" && (
         <div className={`mt-3 p-4 ${glassCard}`}>
           <div className="flex items-start justify-between gap-4">

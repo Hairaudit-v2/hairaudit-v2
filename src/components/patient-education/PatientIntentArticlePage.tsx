@@ -11,6 +11,7 @@ import { getPatientIntentArticle } from "@/lib/seo/patient-intent-articles";
 import type { PatientIntentArticleBlock } from "@/lib/seo/patient-intent-articles/types";
 import { resolvePatientGuideLink } from "@/lib/seo/resolvePatientGuideLink";
 import { PatientEducationLinkedText } from "@/components/patient-education/PatientEducationLinkedText";
+import DonorHealingGuideExperience from "@/components/patient-education/DonorHealingGuideExperience";
 import { GeoKeyTakeaways, GeoShortAnswer } from "@/components/patient-education/GeoContentBlocks";
 import { fiHairauditPrimaryButtonClass } from "@/lib/fi-ui/hairauditPrimaryButton";
 import { cn } from "@/lib/utils";
@@ -52,6 +53,12 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
   const related = article.relatedSlugs
     .map((slug) => resolvePatientGuideLink(slug))
     .filter((r): r is NonNullable<typeof r> => r != null);
+
+  const primaryCtaLabel = article.cta?.label ?? PUBLIC_CTAS.startFreeHairAudit;
+  const primaryCtaHref = article.cta?.href ?? PATHWAY_CHOOSER_HREF;
+  const primaryCtaAnalyticsId = article.cta?.analyticsId ?? "patient-guide-cta-request-review";
+  const primaryCtaDestination = article.cta?.destination ?? "/request-review";
+  const showDonorExperience = article.experience === "donor_healing";
 
   const baseUrl = getBaseUrl();
   const articleUrl = `${baseUrl}${article.pathname}`;
@@ -143,13 +150,18 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
               <ul className="mt-3 flex flex-col gap-2 text-sm text-muted-foreground sm:flex-row sm:flex-wrap sm:gap-x-1 sm:gap-y-2">
                 <li className="sm:after:px-2 sm:after:text-muted-foreground sm:after:content-['·'] sm:last:after:content-none">
                   <Link
-                    href={PATHWAY_CHOOSER_HREF}
+                    href={primaryCtaHref}
                     className="font-medium text-amber-400 underline underline-offset-2 hover:text-amber-300"
-                    data-cta="patient-guide-next-request-review"
-                    data-cta-destination="/request-review"
+                    data-cta={
+                      article.cta
+                        ? `${article.cta.analyticsId}-next-steps`
+                        : "patient-guide-next-request-review"
+                    }
+                    data-cta-destination={primaryCtaDestination}
                     data-patient-guide={articleSlug}
+                    data-entry-context={article.cta?.context}
                   >
-                    {PUBLIC_CTAS.startFreeHairAudit}
+                    {primaryCtaLabel}
                   </Link>
                 </li>
                 <li className="sm:after:px-2 sm:after:text-muted-foreground sm:after:content-['·'] sm:last:after:content-none">
@@ -194,6 +206,16 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
             <PublicTrustArchitectureBlock surface="fi" className="mt-6" />
           </div>
 
+          {showDonorExperience && article.cta ? (
+            <DonorHealingGuideExperience
+              ctaLabel={article.cta.label}
+              ctaHref={article.cta.href}
+              ctaAnalyticsId={article.cta.analyticsId}
+              ctaDestination={article.cta.destination}
+              guideSlug={articleSlug}
+            />
+          ) : null}
+
           <div className="mx-auto mt-12 max-w-3xl space-y-14 sm:space-y-16">
             {article.sections.map((section) => (
               <section
@@ -225,13 +247,14 @@ export default function PatientIntentArticlePage({ articleSlug }: PatientIntentA
               </p>
               <div className="mt-6 flex flex-col flex-wrap gap-3 sm:flex-row">
                 <Link
-                  href={PATHWAY_CHOOSER_HREF}
+                  href={primaryCtaHref}
                   className={fiHairauditPrimaryButtonClass("md")}
-                  data-cta="patient-guide-cta-request-review"
-                  data-cta-destination="/request-review"
+                  data-cta={primaryCtaAnalyticsId}
+                  data-cta-destination={primaryCtaDestination}
                   data-patient-guide={articleSlug}
+                  data-entry-context={article.cta?.context}
                 >
-                  {PUBLIC_CTAS.startFreeHairAudit}
+                  {primaryCtaLabel}
                 </Link>
                 <Link
                   href="/demo-report"

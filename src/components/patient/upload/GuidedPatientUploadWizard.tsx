@@ -31,6 +31,12 @@ import {
   type PerFileUploadState,
 } from "@/lib/uploads/uploadPatientPhotos";
 import { toPatientFacingUploadError } from "@/lib/uploads/patientUploadClient";
+import {
+  DONOR_EMPHASIS_PHOTO_COPY,
+  DONOR_EMPHASIS_PHOTO_KEYS,
+  isDonorHealingEntryContext,
+} from "@/lib/patient/donorHealingEntry";
+import { trackCta } from "@/lib/analytics/trackCta";
 
 type UploadRow = {
   id: string;
@@ -58,6 +64,7 @@ export default function GuidedPatientUploadWizard({
   patientReviewPathway,
   backHref,
   questionsHref,
+  entryContext: entryContextProp,
 }: {
   caseId: string;
   initialUploads: UploadRow[];
@@ -66,6 +73,8 @@ export default function GuidedPatientUploadWizard({
   patientReviewPathway: PatientReviewPathway;
   backHref: string;
   questionsHref: string;
+  /** HA-DONOR-HEALING-1A — optional donor entry focus from case/report/URL. */
+  entryContext?: string | null;
 }) {
   const { t } = useI18n();
   const [uploads, setUploads] = useState(initialUploads);
@@ -88,6 +97,14 @@ export default function GuidedPatientUploadWizard({
     null
   );
   const advanceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const trackedFirstDonorUploadRef = useRef(false);
+
+  const donorEntryActive = isDonorHealingEntryContext(entryContextProp);
+
+  const donorHighlightKeys = useMemo(() => {
+    if (!donorEntryActive) return undefined;
+    return new Set<string>(DONOR_EMPHASIS_PHOTO_KEYS);
+  }, [donorEntryActive]);
 
   const initialView = getGuidedWizardInitialView(patientReviewPathway, initialUploads);
   const [view, setView] = useState<GuidedWizardView>(initialView);
@@ -263,6 +280,20 @@ export default function GuidedPatientUploadWizard({
       if (result.saved.length > 0) {
         const nextUploads = [...result.saved, ...uploads];
         setUploads(nextUploads);
+        if (donorEntryActive && (DONOR_EMPHASIS_PHOTO_KEYS as readonly string[]).includes(category)) {
+          if (!trackedFirstDonorUploadRef.current) {
+            trackedFirstDonorUploadRef.current = true;
+            trackCta("donor_first_photo_uploaded", { entry_context: "donor_healing" });
+          }
+          const present = new Set(
+            nextUploads
+              .map((u) => categoryFromType(u.type))
+              .filter((k): k is string => Boolean(k))
+          );
+          if (DONOR_EMPHASIS_PHOTO_KEYS.every((k) => present.has(k))) {
+            trackCta("donor_photo_set_completed", { entry_context: "donor_healing" });
+          }
+        }
         if (result.qualityWarning) {
           setQualityWarnings((p) => ({ ...p, [category]: result.qualityWarning! }));
         }
@@ -385,6 +416,7 @@ export default function GuidedPatientUploadWizard({
   return (
     <div
       data-testid="guided-upload-wizard"
+      data-entry-context={donorEntryActive ? "donor_healing" : undefined}
       className="mx-auto max-w-lg space-y-6 p-4 sm:p-6"
     >
       <header className="space-y-3 text-center sm:text-left">
@@ -400,6 +432,28 @@ export default function GuidedPatientUploadWizard({
         <p className="text-sm leading-relaxed text-slate-600">
           {t("patient.upload.wizard.subcopy" as TranslationKey)}
         </p>
+        {donorEntryActive ? (
+          <div
+            className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-left text-sm text-amber-950"
+            data-testid="donor-photo-emphasis-banner"
+            role="status"
+          >
+            <p className="font-semibold">Donor healing photo focus</p>
+            <p className="mt-1 text-amber-900/90">
+              Required pathway photos are unchanged. For your donor concern, prioritise rear, left, and
+              right donor views when you can—these help document the concern without replacing recipient
+              evidence.
+            </p>
+            <ul className="mt-3 space-y-2">
+              {DONOR_EMPHASIS_PHOTO_KEYS.map((key) => (
+                <li key={key}>
+                  <span className="font-medium">{DONOR_EMPHASIS_PHOTO_COPY[key].title}: </span>
+                  {DONOR_EMPHASIS_PHOTO_COPY[key].whyNeeded}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
 
         {view.mode === "step" || showingEncouragement ? (
           <div className="space-y-2 pt-2">
@@ -529,6 +583,7 @@ export default function GuidedPatientUploadWizard({
             locked={isLocked}
             busyCats={busyCats}
             uploadsByCategory={uploadsByCategory}
+            highlightCategoryKeys={donorHighlightKeys}
             categoryErrors={categoryErrors}
             categorySuccess={categorySuccess}
             qualityWarnings={qualityWarnings}

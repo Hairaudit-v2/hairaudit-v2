@@ -239,6 +239,7 @@ export const PATHWAY_QUESTIONNAIRE_SECTION_IDS: Record<
     "surgical_experience",
     "recovery",
     "results",
+    "donor_healing_concern",
   ],
 };
 

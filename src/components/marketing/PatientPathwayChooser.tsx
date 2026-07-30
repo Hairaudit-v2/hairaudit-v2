@@ -5,6 +5,7 @@ import StartFreeAuditButton from "@/components/audit/StartFreeAuditButton";
 import TrackedLink from "@/components/analytics/TrackedLink";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { fiHairauditPrimaryButtonClass } from "@/lib/fi-ui/hairauditPrimaryButton";
+import { DONOR_HEALING_ENTRY_CONTEXT } from "@/lib/patient/donorHealingEntry";
 import {
   PATIENT_PATHWAY_DEFINITIONS,
   PATIENT_REVIEW_PATHWAYS,
@@ -21,10 +22,18 @@ const PATHWAY_ICONS: Record<PatientReviewPathway, typeof CalendarClock> = {
 type PatientPathwayChooserProps = {
   layout?: "cards" | "hero";
   className?: string;
+  /** HA-DONOR-HEALING-1A — server-parsed donor entry from request-review query. */
+  donorEntryFromQuery?: boolean;
 };
 
-export default function PatientPathwayChooser({ layout = "cards", className }: PatientPathwayChooserProps) {
+export default function PatientPathwayChooser({
+  layout = "cards",
+  className,
+  donorEntryFromQuery = false,
+}: PatientPathwayChooserProps) {
   const { t } = useI18n();
+  const donorEntryActive = donorEntryFromQuery;
+  const donorEntryContext = donorEntryActive ? DONOR_HEALING_ENTRY_CONTEXT : undefined;
 
   if (layout === "hero") {
     return (
@@ -39,6 +48,7 @@ export default function PatientPathwayChooser({ layout = "cards", className }: P
             <StartFreeAuditButton
               key={pathway}
               pathway={pathway}
+              entryContext={pathway === "post_surgery" ? donorEntryContext : undefined}
               eventName={`cta_start_free_audit_home_hero_${def.analyticsEventSuffix}`}
               className={
                 isPrimary
@@ -63,13 +73,33 @@ export default function PatientPathwayChooser({ layout = "cards", className }: P
 
   return (
     <div data-testid="pathway-chooser" className={cn("grid gap-4 md:grid-cols-2", className)}>
+      {donorEntryActive ? (
+        <div
+          className="md:col-span-2 rounded-2xl border border-amber-400/30 bg-amber-400/5 px-4 py-3 text-sm leading-relaxed text-muted-foreground"
+          data-testid="donor-entry-context-banner"
+          role="status"
+        >
+          <p className="font-medium text-foreground">Donor healing review focus</p>
+          <p className="mt-1">
+            You came from the donor healing guide. Choose{" "}
+            <strong className="font-semibold text-foreground">Post-Surgery Audit</strong> to continue
+            with a donor-focused intake. Pre-Surgery Review remains available if that better matches
+            your situation—HairAudit will not silently pick a pathway for you.
+          </p>
+        </div>
+      ) : null}
       {PATIENT_REVIEW_PATHWAYS.map((pathway) => {
         const def = PATIENT_PATHWAY_DEFINITIONS[pathway];
         const Icon = PATHWAY_ICONS[pathway];
+        const highlightPost = donorEntryActive && pathway === "post_surgery";
         return (
           <article
             key={pathway}
-            className="flex h-full flex-col rounded-2xl border border-border/50 bg-card/70 p-6 shadow-fi-panel"
+            className={cn(
+              "flex h-full flex-col rounded-2xl border bg-card/70 p-6 shadow-fi-panel",
+              highlightPost ? "border-amber-400/50 ring-1 ring-amber-400/30" : "border-border/50"
+            )}
+            data-donor-entry-highlighted={highlightPost ? "true" : undefined}
           >
             <div className="flex items-start gap-4">
               <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-300/10 text-amber-200">
@@ -81,7 +111,9 @@ export default function PatientPathwayChooser({ layout = "cards", className }: P
                 </Badge>
                 <h3 className="text-xl font-semibold text-foreground">{t(def.marketingTitleKey as never)}</h3>
                 <p className="text-sm leading-relaxed text-muted-foreground">
-                  {t(def.marketingDescriptionKey as never)}
+                  {highlightPost
+                    ? "Independent review after surgery, with donor healing questions and rear/left/right donor photo emphasis when you continue."
+                    : t(def.marketingDescriptionKey as never)}
                 </p>
               </div>
             </div>
@@ -98,6 +130,7 @@ export default function PatientPathwayChooser({ layout = "cards", className }: P
             <div className="mt-6">
               <StartFreeAuditButton
                 pathway={pathway}
+                entryContext={pathway === "post_surgery" ? donorEntryContext : undefined}
                 eventName={`cta_start_pathway_${def.analyticsEventSuffix}`}
                 className={cn(
                   fiHairauditPrimaryButtonClass("md"),

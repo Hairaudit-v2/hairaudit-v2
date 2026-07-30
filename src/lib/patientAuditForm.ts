@@ -355,6 +355,85 @@ export const PATIENT_AUDIT_SECTIONS: Array<{
       { id: "would_recommend", prompt: "Would you recommend this clinic?", type: "yesno", required: true },
     ],
   },
+  {
+    id: "donor_healing_concern",
+    title: "Donor Healing Focus (optional)",
+    description:
+      "If you came here about donor healing, these optional questions help document your concern. Answers do not generate a clinical diagnosis.",
+    questions: [
+      {
+        id: "primary_donor_concern",
+        prompt: "What is your primary donor concern?",
+        type: "select",
+        options: [
+          { value: "donor_healing", label: "General donor healing appearance" },
+          { value: "donor_patchiness", label: "Patchiness or uneven look" },
+          { value: "donor_shock_loss", label: "Possible temporary donor shedding" },
+          { value: "pain_redness_irritation", label: "Pain, redness, or irritation" },
+          { value: "possible_overharvesting", label: "Concern about overharvesting" },
+          { value: "future_donor_capacity", label: "Future donor capacity / second procedure planning" },
+        ],
+        required: false,
+      },
+      {
+        id: "donor_appearance_trend",
+        prompt: "Is the donor appearance improving, stable, or worsening?",
+        type: "select",
+        options: [
+          { value: "improving", label: "Improving" },
+          { value: "stable", label: "Stable" },
+          { value: "worsening", label: "Worsening" },
+          { value: "not_sure", label: "Not sure" },
+        ],
+        required: false,
+      },
+      {
+        id: "donor_graft_number_reported",
+        prompt: "Graft number reported (if known)",
+        type: "number",
+        min: 0,
+        max: 20000,
+        placeholder: "e.g. 3500",
+        required: false,
+        help: "Optional. Leave blank if you do not know.",
+      },
+      {
+        id: "donor_punch_size_known",
+        prompt: "Punch size (if known)",
+        type: "text",
+        placeholder: "e.g. 0.8 mm, or not sure",
+        required: false,
+      },
+      {
+        id: "donor_red_flag_symptoms",
+        prompt: "Any of these symptoms right now? (select all that apply)",
+        type: "checkbox",
+        options: [
+          { value: "increasing_pain", label: "Increasing pain" },
+          { value: "spreading_redness", label: "Spreading redness" },
+          { value: "discharge", label: "Discharge" },
+          { value: "fever", label: "Fever" },
+          { value: "persistent_bleeding", label: "Persistent bleeding" },
+          { value: "none", label: "None of these" },
+        ],
+        required: false,
+        help: "If you select medical warning symptoms, seek direct clinical care. HairAudit does not replace urgent or clinic assessment.",
+      },
+      {
+        id: "donor_current_hair_length",
+        prompt: "Current hair length in the donor area",
+        type: "select",
+        options: [
+          { value: "buzzed_or_shaved", label: "Buzzed or shaved" },
+          { value: "very_short", label: "Very short (under ~1 cm)" },
+          { value: "short", label: "Short (~1–3 cm)" },
+          { value: "medium_or_longer", label: "Medium or longer" },
+          { value: "not_sure", label: "Not sure" },
+        ],
+        required: false,
+      },
+    ],
+  },
   // -----------------------------
   // Advanced forensic intake (optional) — stored under enhanced_patient_answers.*
   // Steps match the “progressive intake” requirement and can be toggled on/off in UI.
