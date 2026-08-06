@@ -353,6 +353,11 @@ export type PreSurgeryAuditEventType =
   | "projection_marked_stale"
   | "projection_superseded"
   | "projection_shadow_review_recorded"
+  | "projection_included_in_report"
+  | "projection_omitted_from_report"
+  | "projection_correction_recorded"
+  | "projection_correction_adjusted"
+  | "projection_learning_signal_emitted"
   | "report_released";
 
 export type PreSurgeryAuditEvent = {

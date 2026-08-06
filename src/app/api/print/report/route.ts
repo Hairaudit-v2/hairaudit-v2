@@ -972,6 +972,33 @@ export async function GET(req: Request) {
           clinicalHistory: clinicalHistorySnapshot,
           imageLimitedAssessment: Boolean(forensic?.imageLimitedAssessment),
           documentAssistedAssessment: Boolean(forensic?.documentAssistedAssessment),
+          illustrativeProjectionMedia: await (async () => {
+            try {
+              const { signIllustrativeProjectionMedia } = await import(
+                "@/lib/preSurgeryIntelligence/reportProjectionMedia.server"
+              );
+              const { getCaseFilesBucketNameForReadOnlyUse } = await import(
+                "@/lib/hairaudit/uploadStorage"
+              );
+              const { data: uploads } = await supabase
+                .from("uploads")
+                .select("id, storage_path")
+                .eq("case_id", caseId);
+              const uploadPathById: Record<string, string | null> = {};
+              for (const u of uploads ?? []) {
+                uploadPathById[String(u.id)] = u.storage_path ? String(u.storage_path) : null;
+              }
+              return await signIllustrativeProjectionMedia({
+                admin: supabase,
+                bucket: getCaseFilesBucketNameForReadOnlyUse(),
+                caseId,
+                section: preReport.illustrativeProjectedResult,
+                uploadPathById,
+              });
+            } catch {
+              return { sourceImageUrl: null, projectedImageUrl: null };
+            }
+          })(),
         });
       }
     }

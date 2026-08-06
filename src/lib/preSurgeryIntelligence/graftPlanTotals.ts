@@ -40,6 +40,7 @@ export function withRecalculatedTotals<T extends { zones: PreSurgeryGraftPlanZon
   totalMinimumGrafts: number;
   totalTargetGrafts: number;
   totalMaximumGrafts: number;
+  deferredZones: GraftPlanZone[];
 } {
   const totals = computeGraftPlanTotals(plan.zones);
   return {
@@ -47,5 +48,6 @@ export function withRecalculatedTotals<T extends { zones: PreSurgeryGraftPlanZon
     totalMinimumGrafts: totals.totalMinimumGrafts,
     totalTargetGrafts: totals.totalTargetGrafts,
     totalMaximumGrafts: totals.totalMaximumGrafts,
+    deferredZones: totals.deferredZones,
   };
 }

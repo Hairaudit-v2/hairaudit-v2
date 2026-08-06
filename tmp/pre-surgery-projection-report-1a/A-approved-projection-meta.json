@@ -1,0 +1,14 @@
+{
+  "reportId": "00000000-0000-4000-8000-0000000000b1-v1",
+  "inclusionState": "approved_for_inclusion",
+  "showImagery": true,
+  "projectionSnapshotId": "proj-smoke-1",
+  "mode": "planned",
+  "deferredZones": [
+    "crown"
+  ],
+  "graftRange": {
+    "min": 1350,
+    "max": 1980
+  }
+}

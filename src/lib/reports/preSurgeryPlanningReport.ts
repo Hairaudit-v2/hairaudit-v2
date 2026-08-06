@@ -29,6 +29,7 @@ import {
   type PatientSafeReportSummary,
 } from "./patientSafeSummary";
 import { sanitizePatientReportText } from "./postSurgeryPatientText";
+import type { IllustrativeProjectedResultSection } from "@/lib/preSurgeryIntelligence/reportProjectionInclusion";
 
 export const PRE_SURGERY_PLANNING_REPORT_VERSION = 1 as const;
 
@@ -133,6 +134,12 @@ export type PreSurgeryPlanningReport = {
   }>;
   /** Patient-visible illustrative projection labels (clinician-approved projections only). */
   clinicianApprovedProjectionLabels?: string[];
+  /**
+   * HA-PRE-SURGERY-PROJECTION-REPORT-1A — Illustrative projected-result section.
+   * Media paths are stripped from the frozen patient summary; IDs remain for server-side signing.
+   * Auditor correction markup is never included.
+   */
+  illustrativeProjectedResult?: IllustrativeProjectedResultSection | null;
 };
 
 export type GeneratePreSurgeryPlanningReportInput = {
@@ -182,6 +189,7 @@ export type GeneratePreSurgeryPlanningReportInput = {
       frozenAt: string;
     } | null;
     patientSafeProjectionLabels?: string[];
+    illustrativeProjectedResult?: IllustrativeProjectedResultSection | null;
   } | null;
 };
 
@@ -612,6 +620,26 @@ const GRAFT_ESTIMATE_CAVEAT =
   "This preliminary range should be confirmed through in-person donor measurement and surgical planning with a qualified clinician.";
 
 /**
+ * Strip permanent storage paths from the frozen patient report blob.
+ * Render pipelines re-resolve short-lived signed URLs server-side from IDs.
+ */
+export function sanitizeIllustrativeProjectedResultForStorage(
+  section: IllustrativeProjectedResultSection | null | undefined
+): IllustrativeProjectedResultSection | null {
+  if (!section) return null;
+  return {
+    ...section,
+    media: section.media
+      ? {
+          projectedStoragePath: null,
+          sourceImageId: section.media.sourceImageId,
+          sourceStoragePath: null,
+        }
+      : null,
+  };
+}
+
+/**
  * Build the pre-surgery planning report from forensic summary + intelligence bundle.
  */
 export function generatePreSurgeryPlanningReport(
@@ -784,6 +812,9 @@ export function generatePreSurgeryPlanningReport(
       : null,
     clinicianApprovedObservations: slice?.observations ?? [],
     clinicianApprovedProjectionLabels: slice?.patientSafeProjectionLabels ?? [],
+    illustrativeProjectedResult: sanitizeIllustrativeProjectedResultForStorage(
+      slice?.illustrativeProjectedResult ?? null
+    ),
   };
 }
 

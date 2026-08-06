@@ -12,6 +12,8 @@ import type {
   PreSurgeryGraftPlan,
   PreSurgeryIllustrativeProjection,
 } from "./types";
+import type { PreSurgeryProjectionCorrection } from "./projectionCorrections";
+import type { ProjectionLearningSignal } from "./projectionLearningSignals";
 
 export async function upsertImageReview(
   admin: SupabaseClient,
@@ -245,6 +247,71 @@ export async function insertAuditEvent(
     created_at: event.createdAt,
   });
   if (error) throw new Error(error.message);
+}
+
+export async function insertProjectionCorrection(
+  admin: SupabaseClient,
+  correction: PreSurgeryProjectionCorrection,
+  learningSignal?: ProjectionLearningSignal | null
+): Promise<void> {
+  const { error } = await admin.from("hairaudit_pre_surgery_projection_corrections").insert({
+    id: correction.id,
+    case_id: correction.caseId,
+    projection_snapshot_id: correction.projectionSnapshotId,
+    projection_version: correction.projectionVersion,
+    schema_version: correction.schemaVersion,
+    status: correction.status,
+    correction_codes: correction.correctionCodes,
+    clinical_note: correction.clinicalNote,
+    zone_refs: correction.zoneRefs,
+    geometry_type: correction.geometryType,
+    coordinates: correction.coordinates,
+    suggested_mode: correction.suggestedMode,
+    supersedes_correction_id: correction.supersedesCorrectionId,
+    learning_signal_id: learningSignal?.id ?? correction.learningSignalId,
+    learning_signal: learningSignal ?? null,
+    payload: correction,
+    created_by: correction.createdBy,
+    created_at: correction.createdAt,
+    updated_by: correction.updatedBy,
+    updated_at: correction.updatedAt,
+  });
+  if (error) throw new Error(error.message);
+}
+
+export async function updateProjectionCorrectionStatus(
+  admin: SupabaseClient,
+  correction: PreSurgeryProjectionCorrection
+): Promise<void> {
+  const { error } = await admin
+    .from("hairaudit_pre_surgery_projection_corrections")
+    .update({
+      status: correction.status,
+      updated_by: correction.updatedBy,
+      updated_at: correction.updatedAt,
+      payload: correction,
+    })
+    .eq("id", correction.id)
+    .eq("case_id", correction.caseId);
+  if (error) throw new Error(error.message);
+}
+
+export async function listProjectionCorrections(
+  admin: SupabaseClient,
+  caseId: string,
+  projectionSnapshotId?: string
+): Promise<PreSurgeryProjectionCorrection[]> {
+  let q = admin
+    .from("hairaudit_pre_surgery_projection_corrections")
+    .select("payload")
+    .eq("case_id", caseId)
+    .order("created_at", { ascending: false });
+  if (projectionSnapshotId) {
+    q = q.eq("projection_snapshot_id", projectionSnapshotId);
+  }
+  const { data, error } = await q;
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((r) => r.payload as PreSurgeryProjectionCorrection).filter(Boolean);
 }
 
 export async function loadWorkspaceBundle(

@@ -1,0 +1,940 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Independent Pre-Surgery Planning Report — 00000000-0000-4000-8000-0000000000b1</title>
+  <style>
+    @page { size: A4; margin: 14mm 12mm; }
+    :root {
+      --ink: #0b1a33;
+      --muted: #4a5f7d;
+      --line: #d5e2f2;
+      --hero: #061a37;
+      --gold: #c9a227;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--ink);
+      background: #f8fbff;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      font-size: 11px;
+      line-height: 1.55;
+    }
+    .wrap { max-width: 880px; margin: 0 auto; }
+    .hero {
+      border-radius: 16px;
+      padding: 28px;
+      background: linear-gradient(135deg, #05172f 0%, #0f2f57 55%, #123a6b 100%);
+      color: #f0f6ff;
+      border: 1px solid rgba(180, 199, 230, 0.35);
+      box-shadow: 0 24px 48px rgba(2, 12, 35, 0.2);
+      page-break-inside: avoid;
+    }
+    .hero h1 { margin: 0; font-size: 24px; font-weight: 900; letter-spacing: -0.02em; }
+    .heroLead { margin: 10px 0 0; color: #d8e6ff; max-width: 620px; font-size: 12px; }
+    .outcomeBand {
+      margin-top: 18px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.22);
+      background: rgba(0,0,0,0.22);
+    }
+    .outcomeLabel { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.72); font-weight: 700; }
+    .outcomeValue { margin-top: 6px; font-size: 18px; font-weight: 800; letter-spacing: -0.01em; }
+    .metaRow {
+      margin-top: 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 10px;
+      color: #c9d8ef;
+    }
+    .metaRow span { border: 1px solid rgba(255,255,255,0.2); border-radius: 999px; padding: 4px 10px; }
+    .section {
+      margin-top: 22px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+      page-break-inside: avoid;
+    }
+    .sectionHead h2 { margin: 0; font-size: 17px; letter-spacing: -0.01em; }
+    .sectionLead { margin: 8px 0 0; color: var(--muted); font-size: 11px; }
+    .scoreGrid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .scoreCard {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+      background: linear-gradient(180deg, #f9fbff 0%, #fff 100%);
+    }
+    .scoreLabel { font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 700; }
+    .scoreValue { margin-top: 6px; font-size: 20px; font-weight: 800; color: var(--ink); }
+    .reviewSection {
+      display: grid;
+      grid-template-columns: 28px 1fr;
+      gap: 10px;
+      padding: 12px 0;
+      border-bottom: 1px solid #edf2f9;
+    }
+    .reviewSection:last-child { border-bottom: none; }
+    .sectionNum {
+      width: 28px; height: 28px; border-radius: 999px;
+      background: var(--ink); color: #fff; font-size: 11px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .sectionBody h3 { margin: 0; font-size: 12px; font-weight: 800; }
+    .sectionBody p { margin: 6px 0 0; color: #334155; }
+    .imageGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 12px; }
+    .imageCard { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: #f8fafc; }
+    .patientPhoto { width: 100%; height: 140px; object-fit: cover; display: block; }
+    .photoPlaceholder {
+      height: 140px; display: flex; align-items: center; justify-content: center;
+      background: #e8eef7; color: var(--muted); font-size: 11px;
+    }
+    .imageMeta { padding: 10px 12px; }
+    .imageView { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+    
+  .clinicalEvidenceSection { page-break-inside: auto; }
+  .imageGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 12px;
+  }
+  .imageGridPaginated { margin-top: 0; }
+  @media print {
+    .imageGrid { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media print and (max-width: 180mm) {
+    .imageGrid { grid-template-columns: repeat(2, 1fr); }
+  }
+  .clinicalEvidenceCard { page-break-inside: avoid; break-inside: avoid; }
+  .evidenceGalleryChunk {
+    margin-top: 12px;
+    page-break-inside: avoid;
+  }
+  .evidenceGalleryChunk + .evidenceGalleryChunk {
+    margin-top: 18px;
+    page-break-before: auto;
+  }
+  .clinicalEvidenceProcessed {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 11px;
+  }
+  .clinicalEvidenceProcessed p { margin: 0 0 6px; }
+  .clinicalEvidenceAdditional { margin-top: 12px; font-weight: 600; color: var(--ink); }
+  .clinicalEvidencePdfOmission { margin-top: 10px; font-style: italic; }
+
+    
+  .reviewInputsSection {
+    background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+    border: 1px solid #cbd5e1;
+    page-break-inside: avoid;
+  }
+  .reviewInputsLead { margin: 8px 0 0; color: #475569; max-width: 72ch; }
+  .reviewInputsGrid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 16px;
+    margin-top: 14px;
+  }
+  @media print and (max-width: 180mm) {
+    .reviewInputsGrid { grid-template-columns: 1fr; }
+  }
+  .reviewInputsItem {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    color: #0f172a;
+    font-size: 11px;
+    line-height: 1.45;
+  }
+  .reviewInputsCheck {
+    flex-shrink: 0;
+    color: #047857;
+    font-weight: 800;
+  }
+  .reviewInputsSummary {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+    color: #334155;
+    font-size: 10px;
+    line-height: 1.55;
+  }
+  .reviewInputsSummary p { margin: 0 0 8px; }
+  .reviewInputsSummary p:last-child { margin-bottom: 0; }
+
+    
+  .assessmentConfidenceSection {
+    background: linear-gradient(180deg, #f0f9ff 0%, #ffffff 100%);
+    border: 1px solid #bae6fd;
+    page-break-inside: avoid;
+  }
+  .assessmentConfidenceHeader {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .assessmentConfidenceBand {
+    font-size: 15px;
+    font-weight: 800;
+    color: #0c4a6e;
+    letter-spacing: -0.01em;
+  }
+  .assessmentConfidenceScore {
+    font-size: 28px;
+    font-weight: 900;
+    color: #0369a1;
+    line-height: 1;
+  }
+  .assessmentConfidenceSummary {
+    margin-top: 10px;
+    color: #334155;
+    font-size: 11px;
+    line-height: 1.55;
+    max-width: 72ch;
+  }
+  .assessmentConfidenceHelper {
+    margin-top: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+    font-size: 9px;
+    line-height: 1.5;
+  }
+  .assessmentConfidenceColumns {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 20px;
+    margin-top: 14px;
+  }
+  @media print and (max-width: 180mm) {
+    .assessmentConfidenceColumns { grid-template-columns: 1fr; }
+  }
+  .assessmentConfidenceListTitle {
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #64748b;
+    margin: 0 0 6px;
+  }
+  .assessmentConfidenceList {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .assessmentConfidenceList li {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 5px;
+    font-size: 10px;
+    line-height: 1.45;
+    color: #0f172a;
+  }
+  .assessmentConfidenceBullet {
+    flex-shrink: 0;
+    font-weight: 800;
+    color: #0284c7;
+  }
+  .assessmentConfidenceBulletWarn {
+    color: #b45309;
+  }
+
+    
+  .assessmentImprovementSection {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    page-break-inside: avoid;
+  }
+  .assessmentImprovementLead {
+    margin: 8px 0 0;
+    color: #475569;
+    font-size: 11px;
+    line-height: 1.55;
+    max-width: 72ch;
+  }
+  .assessmentImprovementList {
+    margin: 12px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .assessmentImprovementList li {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 7px;
+    font-size: 11px;
+    line-height: 1.45;
+    color: #0f172a;
+  }
+  .assessmentImprovementBullet {
+    flex-shrink: 0;
+    font-weight: 800;
+    color: #0369a1;
+  }
+  .assessmentImprovementFooter {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid #e2e8f0;
+    color: #475569;
+    font-size: 10px;
+    line-height: 1.5;
+  }
+  .assessmentImprovementHighMessage {
+    margin-top: 10px;
+    color: #334155;
+    font-size: 11px;
+    line-height: 1.55;
+  }
+
+    
+  .pathwayVisualSummarySection {
+    margin-top: 22px;
+    padding: 18px;
+    border: 1px solid #d5e2f2;
+    border-radius: 14px;
+    background: linear-gradient(180deg, #fafdff 0%, #ffffff 100%);
+    page-break-inside: avoid;
+  }
+  .pathwayVisualSummarySection h2 {
+    margin: 0;
+    font-size: 17px;
+    letter-spacing: -0.01em;
+    color: #0b1a33;
+  }
+  .pathwayVisualSummaryLead {
+    margin: 8px 0 0;
+    color: #4a5f7d;
+    font-size: 11px;
+    line-height: 1.5;
+  }
+  .pathwayVisualSummaryLayout {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 16px;
+    margin-top: 14px;
+    align-items: start;
+  }
+  .pathwayVisualRadarWrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 8px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #0b1226;
+  }
+  .pathwayVisualRadarWrap svg {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    border-radius: 12px;
+  }
+  .pathwayVisualLegend {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 8px;
+  }
+  .pathwayVisualLegendItem {
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 10px 12px;
+    background: #fff;
+  }
+  .pathwayVisualLegendLabel {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+  }
+  .pathwayVisualLegendValue {
+    margin-top: 4px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.4;
+  }
+  .pathwayVisualEmpty {
+    margin-top: 12px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    border: 1px dashed #cbd5e1;
+    background: #f8fafc;
+    color: #475569;
+    font-size: 11px;
+    line-height: 1.55;
+  }
+  @media print {
+    .pathwayVisualSummaryLayout { grid-template-columns: 1fr; }
+  }
+
+    
+  .preservationSection { background: #f0f9ff; border-color: #bae6fd; }
+  .preservationPathway { margin: 8px 0 0; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #0369a1; }
+  .preservationIntro { margin: 10px 0 0; color: #334155; max-width: 72ch; }
+  .preservationSubsection {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid #dbeafe;
+  }
+  .preservationSubsection:first-of-type { border-top: none; padding-top: 0; }
+  .preservationSubsection h3 { margin: 0; font-size: 12px; font-weight: 800; color: var(--ink); }
+  .preservationSubsection p { margin: 6px 0 0; color: #334155; max-width: 72ch; }
+  .preservationExamples { margin: 8px 0 0; padding-left: 18px; color: #334155; }
+  .preservationExamples li { margin-bottom: 4px; }
+  .preservationSafety {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid #fcd34d;
+    background: #fffbeb;
+    color: #78350f;
+    font-size: 10px;
+    line-height: 1.5;
+  }
+  .certificationSection { page-break-before: auto; }
+
+    
+  .futureRiskSection {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    page-break-inside: avoid;
+  }
+  .futureRiskHeader {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 8px;
+  }
+  .futureRiskBand {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--ink);
+  }
+  .futureRiskScore {
+    font-size: 22px;
+    font-weight: 900;
+    color: #0369a1;
+    letter-spacing: -0.02em;
+  }
+  .futureRiskSubtitle {
+    margin: 8px 0 0;
+    color: #475569;
+    font-size: 10px;
+    line-height: 1.55;
+    max-width: 72ch;
+  }
+  .futureRiskSummary {
+    margin: 12px 0 0;
+    color: #0f172a;
+    font-size: 11px;
+    line-height: 1.55;
+    max-width: 72ch;
+  }
+  .futureRiskColumns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 14px;
+  }
+  @media (max-width: 640px) {
+    .futureRiskColumns { grid-template-columns: 1fr; }
+  }
+  .futureRiskListTitle {
+    margin: 0;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #64748b;
+  }
+  .futureRiskList {
+    margin: 8px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .futureRiskList li {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 6px;
+    font-size: 10px;
+    line-height: 1.45;
+    color: #0f172a;
+  }
+  .futureRiskBullet {
+    flex-shrink: 0;
+    font-weight: 800;
+    color: #0369a1;
+  }
+
+    
+    .projResult { border-color: #bfdbfe; background: #f8fbff; }
+    .projIntro { margin: 10px 0 0; color: #334155; font-size: 11px; line-height: 1.55; }
+    .projLimitPanel {
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 2px solid #f59e0b;
+      background: #fffbeb;
+      color: #78350f;
+      font-size: 11px;
+      font-weight: 600;
+      line-height: 1.5;
+    }
+    .projMetaGrid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 14px;
+      margin-top: 12px;
+      font-size: 10px;
+    }
+    .projMetaLabel { color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; font-size: 9px; }
+    .projMetaValue { margin-top: 2px; color: #0f172a; font-weight: 600; }
+    .projCompare {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .projImgCard {
+      border: 1px solid #d5e2f2;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #f1f5f9;
+    }
+    .projImgCard img {
+      width: 100%;
+      height: 200px;
+      object-fit: contain;
+      object-position: center;
+      display: block;
+      background: #e2e8f0;
+    }
+    .projImgFallback {
+      height: 200px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      text-align: center;
+      color: #64748b;
+      font-size: 10px;
+    }
+    .projImgCap {
+      padding: 8px 10px;
+      font-size: 9px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #475569;
+      border-top: 1px solid #e2e8f0;
+      background: #fff;
+    }
+    .projList { margin: 8px 0 0; padding-left: 16px; color: #334155; }
+    .projList li { margin-bottom: 4px; }
+    .projOmit { margin-top: 8px; color: #475569; font-size: 11px; }
+    @media print {
+      .projCompare { page-break-inside: avoid; }
+      .projLimitPanel { page-break-inside: avoid; }
+    }
+
+    .trustBox { background: #f0f9ff; border-color: #bae6fd; }
+    .nextSteps { background: #ecfdf5; border-color: #a7f3d0; }
+    .nextList { margin: 12px 0 0; padding: 0; list-style: none; }
+    .nextList li { display: flex; gap: 8px; margin-bottom: 8px; }
+    .check { color: #047857; font-weight: 800; }
+    .footer {
+      margin-top: 24px;
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+      font-size: 9px;
+      color: var(--muted);
+    }
+    .divider { height: 1px; background: linear-gradient(90deg, var(--line), transparent); margin: 12px 0; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="hero">
+      <h1>Your Pre-Surgery Review is Complete</h1>
+      <p class="heroLead">We have independently reviewed your hair pattern, donor area, restoration suitability, and long-term treatment considerations. This report is designed to help you make a more informed decision before pursuing treatment.</p>
+      <div class="outcomeBand">
+        <div class="outcomeLabel">Primary planning outcome</div>
+        <div class="outcomeValue">FURTHER PROFESSIONAL REVIEW RECOMMENDED</div>
+      </div>
+      <div class="metaRow">
+        <span>Report ID: 00000000-0000-4000-8000-0000000000b1-v1</span>
+        <span>Generated: 2026-08-06</span>
+      </div>
+    </header>
+
+    <div class="section">
+      <div class="sectionHead"><h2>Planning assessment scorecards</h2></div>
+      <p class="sectionLead">Key metrics from your independent pre-surgery planning review.</p>
+      <div class="scoreGrid">
+        <div class="scoreCard">
+          <div class="scoreLabel">Hair Loss Progression Risk</div>
+          <div class="scoreValue">Under review</div>
+        </div>
+        <div class="scoreCard">
+          <div class="scoreLabel">Donor Area Strength</div>
+          <div class="scoreValue">Under review</div>
+        </div>
+        <div class="scoreCard">
+          <div class="scoreLabel">Restoration Suitability</div>
+          <div class="scoreValue">Further review needed</div>
+        </div>
+        <div class="scoreCard">
+          <div class="scoreLabel">Estimated Graft Requirement</div>
+          <div class="scoreValue">1,350–1,980 grafts</div>
+        </div>
+        <div class="scoreCard">
+          <div class="scoreLabel">Long-Term Preservation Score</div>
+          <div class="scoreValue">Strong</div>
+        </div>
+        <div class="scoreCard">
+          <div class="scoreLabel">Treatment Stabilisation Priority</div>
+          <div class="scoreValue">Low</div>
+        </div></div>
+    </div>
+
+    
+    <div class="pathwayVisualSummarySection" data-section="pathwayVisualSummary">
+      <h2>Review overview by area</h2>
+      <p class="pathwayVisualSummaryLead">Based on submitted images and information</p>
+      <div class="pathwayVisualSummaryLayout">
+        <div class="pathwayVisualRadarWrap"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="720" viewBox="0 0 720 720" style="overflow:visible">
+  <defs>
+    <linearGradient id="eliteRadarBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#06101c"/>
+      <stop offset="1" stop-color="#031f1f"/>
+    </linearGradient>
+    <radialGradient id="eliteRadarGlow" cx="50%" cy="45%" r="60%">
+      <stop offset="0" stop-color="rgba(45,212,191,0.06)"/>
+      <stop offset="0.55" stop-color="rgba(251,191,36,0.03)"/>
+      <stop offset="1" stop-color="rgba(0,0,0,0)"/>
+    </radialGradient>
+  </defs>
+
+  <rect x="0" y="0" width="720" height="720" rx="16" ry="16" fill="url(#eliteRadarBg)"/>
+  <rect x="0" y="0" width="720" height="720" rx="16" ry="16" fill="url(#eliteRadarGlow)"/>
+
+  <polygon points="360,313.2 400.5299888971117,383.4 319.4700111028883,383.40000000000003" fill="none" stroke="rgba(148,163,184,0.12)" stroke-width="1.1"/>
+  <polygon points="360,266.4 441.05997779422347,406.8 278.94002220577653,406.8" fill="none" stroke="rgba(148,163,184,0.12)" stroke-width="1.1"/>
+  <polygon points="360,219.6 481.58996669133523,430.2 238.41003330866482,430.20000000000005" fill="none" stroke="rgba(148,163,184,0.12)" stroke-width="1.1"/>
+  <polygon points="360,172.79999999999998 522.1199555884469,453.59999999999997 197.8800444115531,453.6000000000001" fill="none" stroke="rgba(148,163,184,0.12)" stroke-width="1.1"/>
+  <polygon points="360,126 562.6499444855586,476.99999999999994 157.3500555144414,477.00000000000006" fill="none" stroke="rgba(148,163,184,0.2)" stroke-width="1.1"/>
+  <line x1="360" y1="360" x2="360" y2="126" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+  <line x1="360" y1="360" x2="562.6499444855586" y2="476.99999999999994" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+  <line x1="360" y1="360" x2="157.3500555144414" y2="477.00000000000006" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+  <polygon points="360,261.72 526.1729544781581,455.93999999999994 193.82704552184194,455.94000000000005" fill="rgba(45,212,191,0.25)" stroke="rgba(45,212,191,0.96)" stroke-width="2.8"/>
+  <circle cx="360" cy="261.72" r="3.2" fill="rgba(251,191,36,0.96)" stroke="#0b1226" stroke-width="1"/>
+  <circle cx="526.1729544781581" cy="455.93999999999994" r="3.2" fill="rgba(251,191,36,0.96)" stroke="#0b1226" stroke-width="1"/>
+  <circle cx="193.82704552184194" cy="455.94000000000005" r="3.2" fill="rgba(251,191,36,0.96)" stroke="#0b1226" stroke-width="1"/>
+
+  <circle cx="360" cy="360" r="101" fill="rgba(0,0,0,0.35)"/>
+  <text x="360" y="338" fill="#f1f5f9" font-size="40" font-weight="700" font-family="Arial,sans-serif" text-anchor="middle" dominant-baseline="middle">Generally</text>
+  <text x="360" y="382" fill="#f1f5f9" font-size="40" font-weight="700" font-family="Arial,sans-serif" text-anchor="middle" dominant-baseline="middle">acceptable</text>
+  
+  
+
+  <text x="360" y="77.5" fill="#f1f5f9" font-size="18" font-weight="700" font-family="Arial,sans-serif" text-anchor="middle" dominant-baseline="middle">Restoration</text>
+  <text x="360" y="98.5" fill="#f1f5f9" font-size="18" font-weight="700" font-family="Arial,sans-serif" text-anchor="middle" dominant-baseline="middle">suitability</text>
+  <text x="595.5589098293674" y="485.49999999999994" fill="#f1f5f9" font-size="18" font-weight="700" font-family="Arial,sans-serif" text-anchor="start" dominant-baseline="middle">Long-term</text>
+  <text x="595.5589098293674" y="506.49999999999994" fill="#f1f5f9" font-size="18" font-weight="700" font-family="Arial,sans-serif" text-anchor="start" dominant-baseline="middle">preservation</text>
+  <text x="124.44109017063272" y="485.5000000000001" fill="#f1f5f9" font-size="18" font-weight="700" font-family="Arial,sans-serif" text-anchor="end" dominant-baseline="middle">Stabilisation</text>
+  <text x="124.44109017063272" y="506.5000000000001" fill="#f1f5f9" font-size="18" font-weight="700" font-family="Arial,sans-serif" text-anchor="end" dominant-baseline="middle">priority</text>
+</svg></div>
+        <ul class="pathwayVisualLegend">
+      <li class="pathwayVisualLegendItem">
+        <div class="pathwayVisualLegendLabel">Restoration suitability</div>
+        <div class="pathwayVisualLegendValue">Worth discussing with your clinician</div>
+      </li>
+      <li class="pathwayVisualLegendItem">
+        <div class="pathwayVisualLegendLabel">Long-term preservation</div>
+        <div class="pathwayVisualLegendValue">Within expected range</div>
+      </li>
+      <li class="pathwayVisualLegendItem">
+        <div class="pathwayVisualLegendLabel">Stabilisation priority</div>
+        <div class="pathwayVisualLegendValue">May benefit from follow-up</div>
+      </li></ul>
+      </div>
+    </div>
+
+    
+    <div class="section reviewInputsSection">
+      <div class="sectionHead"><h2>What We Reviewed</h2></div>
+      <p class="reviewInputsLead">HairAudit independently processes multiple forms of clinical information when generating your assessment. The following data sources contributed to this report.</p>
+      <div class="reviewInputsGrid">
+      <div class="reviewInputsItem">
+        <span class="reviewInputsCheck" aria-hidden="true">✓</span>
+        <span>Procedural information provided by patient</span>
+      </div>
+      <div class="reviewInputsItem">
+        <span class="reviewInputsCheck" aria-hidden="true">✓</span>
+        <span>Hair loss pattern progression reviewed</span>
+      </div>
+      <div class="reviewInputsItem">
+        <span class="reviewInputsCheck" aria-hidden="true">✓</span>
+        <span>Donor reserve suitability assessed</span>
+      </div>
+      <div class="reviewInputsItem">
+        <span class="reviewInputsCheck" aria-hidden="true">✓</span>
+        <span>Surgical candidacy factors analysed</span>
+      </div>
+      <div class="reviewInputsItem">
+        <span class="reviewInputsCheck" aria-hidden="true">✓</span>
+        <span>Graft count information reviewed</span>
+      </div>
+      <div class="reviewInputsItem">
+        <span class="reviewInputsCheck" aria-hidden="true">✓</span>
+        <span>Future planning considerations modelled</span>
+      </div>
+      <div class="reviewInputsItem">
+        <span class="reviewInputsCheck" aria-hidden="true">✓</span>
+        <span>Future hair loss progression factors reviewed</span>
+      </div>
+      <div class="reviewInputsItem">
+        <span class="reviewInputsCheck" aria-hidden="true">✓</span>
+        <span>Hair restoration sustainability modelling completed</span>
+      </div>
+      <div class="reviewInputsItem">
+        <span class="reviewInputsCheck" aria-hidden="true">✓</span>
+        <span>Medical treatment context reviewed</span>
+      </div></div>
+      <div class="reviewInputsSummary">
+        <p>This report was generated using multiple layers of procedural review, image analysis, clinical context, and long-term restoration modelling.</p>
+        <p>HairAudit independently reviews each submitted case using structured clinical assessment protocols.</p>
+      </div>
+    </div>
+
+    
+    <div class="section assessmentConfidenceSection" data-testid="assessment-confidence-section">
+      <div class="assessmentConfidenceHeader">
+        <div>
+          <div class="sectionHead"><h2>Assessment Confidence</h2></div>
+          <p class="assessmentConfidenceBand">Limited</p>
+        </div>
+        <div class="assessmentConfidenceScore">24%</div>
+      </div>
+      <p class="assessmentConfidenceSummary">This pre-surgery planning assessment was completed with limited evidence coverage, so suitability and planning observations should be interpreted cautiously.</p>
+      <div class="assessmentConfidenceColumns">
+      <div>
+        <p class="assessmentConfidenceListTitle">Evidence limitations</p>
+        <ul class="assessmentConfidenceList">
+          <li><span class="assessmentConfidenceBullet assessmentConfidenceBulletWarn" aria-hidden="true">–</span><span>Some standard photo views were not available.</span></li><li><span class="assessmentConfidenceBullet assessmentConfidenceBulletWarn" aria-hidden="true">–</span><span>Procedure documentation was limited.</span></li><li><span class="assessmentConfidenceBullet assessmentConfidenceBulletWarn" aria-hidden="true">–</span><span>Supporting clinical context was not provided.</span></li>
+        </ul>
+      </div></div>
+      <p class="assessmentConfidenceHelper">This score reflects the completeness and usefulness of the submitted evidence. It does not represent a diagnosis, treatment recommendation, or guarantee of surgical outcome.</p>
+    </div>
+
+    
+    <div class="section assessmentImprovementSection" data-testid="assessment-improvement-section">
+      <div class="sectionHead"><h2>How To Improve Assessment Accuracy</h2></div>
+      <p class="assessmentImprovementLead">Additional information may help improve the depth and completeness of future HairAudit assessments.</p>
+      <ul class="assessmentImprovementList"><li><span class="assessmentImprovementBullet" aria-hidden="true">•</span><span>Upload additional photos from multiple scalp angles.</span></li><li><span class="assessmentImprovementBullet" aria-hidden="true">•</span><span>Include donor area photographs showing the back and sides of the scalp.</span></li><li><span class="assessmentImprovementBullet" aria-hidden="true">•</span><span>Share your procedure type (such as FUE, DHI, FUT, or repair surgery) if known.</span></li><li><span class="assessmentImprovementBullet" aria-hidden="true">•</span><span>Include additional background information about your concerns or surgery history.</span></li></ul>
+      <p class="assessmentImprovementFooter">Improved evidence may allow more detailed procedural analysis and more accurate long-term planning observations.</p>
+    </div>
+
+    <div class="section">
+      <div class="sectionHead"><h2>Independent planning sections</h2></div>
+      <div class="divider"></div>
+      
+        <article class="reviewSection">
+          <div class="sectionNum">1</div>
+          <div class="sectionBody">
+            <h3>Overall Planning Assessment</h3>
+            <p>Visible frontal recession with planning considerations</p>
+          </div>
+        </article>
+        <article class="reviewSection">
+          <div class="sectionNum">2</div>
+          <div class="sectionBody">
+            <h3>Hair Loss Pattern Review</h3>
+            <p>Visible frontal recession with planning considerations</p>
+          </div>
+        </article>
+        <article class="reviewSection">
+          <div class="sectionNum">3</div>
+          <div class="sectionBody">
+            <h3>Donor Area Review</h3>
+            <p>The donor region appears suitable for planning, although additional close-up review may be useful before deciding graft numbers.</p>
+          </div>
+        </article>
+        <article class="reviewSection">
+          <div class="sectionNum">4</div>
+          <div class="sectionBody">
+            <h3>Estimated Graft Requirement</h3>
+            <p>A preliminary graft range could not be estimated from available images alone. This preliminary range should be confirmed through in-person donor measurement and surgical planning with a qualified clinician.</p>
+          </div>
+        </article>
+      </div>
+    <div class="section projResult" data-testid="illustrative-projected-result-pdf" data-inclusion="approved_for_inclusion">
+      <div class="sectionHead"><h2>Illustrative Projected Result</h2></div>
+      <p class="projIntro">The following image is an illustrative planning visual based on the submitted photographs, visible hair-loss pattern and the provisional graft range used in this review. It is intended to help explain potential coverage and design considerations. It is not a prediction, guarantee or final surgical plan.</p>
+      <div class="projLimitPanel">Important: This image is an educational planning illustration. Actual growth, density, hair direction, calibre, healing and appearance vary between patients. Final design and graft allocation require an in-person assessment and agreement with the treating clinician.</div>
+      <p class="projOmit">The illustrative planning image could not be retrieved for this export. Snapshot identifiers and planning details below remain valid; the visual comparison is omitted.</p>
+      <div class="projMetaGrid">
+        <div>
+          <div class="projMetaLabel">Planning mode</div>
+          <div class="projMetaValue">Illustrative planning scenario: Balanced</div>
+        </div>
+        <div>
+          <div class="projMetaLabel">Provisional graft range</div>
+          <div class="projMetaValue">1350–1980 grafts (provisional)</div>
+        </div>
+        <div>
+          <div class="projMetaLabel">Snapshot</div>
+          <div class="projMetaValue">Projection snapshot v1</div>
+        </div>
+        <div>
+          <div class="projMetaLabel">Approval</div>
+          <div class="projMetaValue">2026-08-06 · Reviewed and approved by auditor</div>
+        </div>
+      </div>
+      <div style="margin-top:12px;">
+        <div class="projMetaLabel">Modelled treatment zones</div>
+        <ul class="projList"><li>hairline — 518 grafts</li><li>left_temple — 148 grafts</li><li>right_temple — 148 grafts</li><li>frontal_third — 592 grafts</li><li>mid_scalp — 259 grafts</li></ul>
+      </div>
+      <div style="margin-top:10px;">
+        <div class="projMetaLabel">Deferred or excluded zones</div>
+        <ul class="projList"><li>crown (deferred)</li></ul>
+      </div>
+      <div style="margin-top:10px;">
+        <div class="projMetaLabel">Key assumptions</div>
+        <ul class="projList"><li>Projection is constrained to the clinician-approved graft plan.</li></ul>
+      </div>
+      <div style="margin-top:10px;">
+        <div class="projMetaLabel">Additional limitations</div>
+        <ul class="projList"><li>The graft range shown is provisional and subject to in-person donor measurement.</li><li>Hair calibre and growth yield cannot be modelled reliably from this illustration.</li><li>Crown coverage was deferred in this plan and is not illustrated as restored density.</li><li>Donor capacity was not fully measurable from the submitted images; graft ranges remain provisional.</li></ul>
+      </div>
+    </div><div class="section"><div class="divider"></div>
+        <article class="reviewSection">
+          <div class="sectionNum">6</div>
+          <div class="sectionBody">
+            <h3>Surgical Suitability Review</h3>
+            <p>Further professional review is recommended before deciding on surgery — available images may not provide enough evidence on their own.</p>
+          </div>
+        </article>
+        <article class="reviewSection">
+          <div class="sectionNum">7</div>
+          <div class="sectionBody">
+            <h3>Future Hair Loss and Preservation Planning</h3>
+            <p>Because future progression may continue, any surgical plan should avoid using too much donor supply too early.</p>
+          </div>
+        </article>
+        <article class="reviewSection">
+          <div class="sectionNum">8</div>
+          <div class="sectionBody">
+            <h3>Medical Treatment Considerations</h3>
+            <p>Medical stabilisation may be worth discussing with a qualified medical professional. Non-surgical treatment may improve long-term planning. Scalp or inflammatory factors and bloodwork may be useful where relevant — discuss with a qualified medical professional.</p>
+          </div>
+        </article>
+    </div>
+
+    
+
+    
+    <div class="section preservationSection">
+      <div class="sectionHead"><h2>Long-Term Hair Preservation Strategy</h2></div>
+      <p class="preservationPathway">Planning future long-term preservation</p>
+      <p class="preservationIntro">Hair transplantation restores areas affected by hair loss, but it does not prevent the continued progression of future thinning in surrounding native hair.</p><p class="preservationIntro">Protecting existing hair remains one of the most important parts of long-term planning and may reduce the need for future surgery.</p>
+      
+      <div class="preservationSubsection">
+        <h3>Medical Hair Loss Prevention Options</h3>
+        <p>Some patients experiencing androgenetic hair loss may benefit from medical therapies designed to reduce ongoing follicular miniaturisation and preserve surrounding native hair.</p>
+        <p class="preservationIntro" style="margin-top:8px;font-size:10px;color:var(--muted);">Examples that may be discussed with a qualified doctor include:</p>
+        <ul class="preservationExamples">
+          <li>Finasteride</li><li>Dutasteride</li>
+        </ul>
+        <p>These medications may reduce the effects of DHT-related hair loss progression and help stabilise existing hair density over time.</p>
+      </div>
+      <div class="preservationSubsection">
+        <h3>Natural Hair Preservation Support</h3>
+        <p>Some patients explore natural support therapies as part of a broader long-term hair preservation strategy.</p>
+        <p class="preservationIntro" style="margin-top:8px;font-size:10px;color:var(--muted);">Examples may include:</p>
+        <ul class="preservationExamples">
+          <li>Saw Palmetto</li><li>Nutritional optimisation</li><li>Iron deficiency correction where clinically indicated</li><li>Vitamin and mineral support</li><li>Scalp inflammation management</li>
+        </ul>
+        <p>Supporting scalp health and correcting nutritional deficiencies may contribute to maintaining healthier long-term hair quality in some patients.</p>
+      </div>
+      <div class="preservationSubsection">
+        <h3>Regenerative Hair Support Options</h3>
+        <p>Some patients explore supportive regenerative therapies as part of long-term maintenance planning before or alongside surgical treatment.</p>
+        <p class="preservationIntro" style="margin-top:8px;font-size:10px;color:var(--muted);">Examples include:</p>
+        <ul class="preservationExamples">
+          <li>PRP (Platelet Rich Plasma)</li><li>Exosome therapy</li><li>Microneedling</li><li>Low-level laser therapy</li>
+        </ul>
+        <p>These therapies are sometimes explored to support scalp health and improve the environment surrounding existing native hair follicles.</p>
+      </div>
+      <div class="preservationSubsection">
+        <h3>Monitoring Future Hair Loss Progression</h3>
+        <p>Even when transplanted grafts remain permanent, surrounding non-transplanted native hair may continue progressive thinning over time.</p>
+        <p class="preservationIntro" style="margin-top:8px;font-size:10px;color:var(--muted);">Patients should continue monitoring:</p>
+        <ul class="preservationExamples">
+          <li>Crown density changes</li><li>Mid-scalp thinning progression</li><li>Temporal recession progression</li><li>Overall hair calibre reduction</li><li>Progressive donor reserve depletion if future surgery is considered</li>
+        </ul>
+        <p>Ongoing monitoring may allow earlier intervention before significant visible progression occurs.</p>
+      </div>
+      <div class="preservationSafety">Before beginning any medication, supplement, or regenerative treatment, these options should always be discussed with your GP, prescribing doctor, or qualified treating clinician. HairAudit provides educational guidance only and does not prescribe treatment.</div>
+    </div>
+
+    
+    <div class="section futureRiskSection" data-testid="future-hair-loss-risk-section">
+      <div class="sectionHead"><h2>Future Hair Loss Progression Risk</h2></div>
+      <p class="futureRiskSubtitle">Hair transplantation restores existing hair loss, but surrounding non-transplanted hair may continue changing over time depending on genetic, age-related, and long-term progression factors. This section helps estimate whether future monitoring or preventative planning may be beneficial.</p>
+      <div class="futureRiskHeader">
+        <p class="futureRiskBand">Moderate</p>
+        <div class="futureRiskScore">43%</div>
+      </div>
+      <p class="futureRiskSummary">Some visible or clinical factors suggest future hair loss progression may continue over time. Ongoing monitoring and preventative planning before surgery may be beneficial.</p>
+      <div class="futureRiskColumns">
+      <div>
+        <p class="futureRiskListTitle">Recommendations</p>
+        <ul class="futureRiskList">
+          <li><span class="futureRiskBullet" aria-hidden="true">•</span><span>Consider discussing long-term hair preservation strategies with your clinician before surgery.</span></li><li><span class="futureRiskBullet" aria-hidden="true">•</span><span>Monitor crown and surrounding native hair density regularly.</span></li><li><span class="futureRiskBullet" aria-hidden="true">•</span><span>Consider preventative planning to preserve surrounding hair during candidacy review.</span></li>
+        </ul>
+      </div></div>
+    </div>
+
+    <div class="section trustBox certificationSection">
+      <div class="sectionHead"><h2>Independent Review Completed</h2></div>
+      <p>This assessment was generated through an independent review process designed to help patients understand their hair restoration options before making treatment decisions.</p>
+      <p style="margin-top:8px;">This report is not a clinic sales recommendation. It is intended to support informed decision-making.</p>
+    </div>
+
+    <div class="section nextSteps">
+      <div class="sectionHead"><h2>Recommended Next Steps</h2></div>
+      <p class="sectionLead">Practical actions to help you feel protected before committing financially.</p>
+      <ul class="nextList"><li><span class="check">✓</span> Mention the minor observations at your next scheduled check-in.</li><li><span class="check">✓</span> Watch the noted areas with matched-angle photos over the next few weeks.</li><li><span class="check">✓</span> Contact your clinic sooner if something looks different from your usual healing pattern.</li><li><span class="check">✓</span> Confirm donor density with in-person assessment.</li><li><span class="check">✓</span> Avoid overly aggressive hairline lowering in early planning discussions.</li><li><span class="check">✓</span> Request a written graft plan from any clinic you consider.</li></ul>
+    </div>
+
+    <footer class="footer">
+      <p>This report is based on uploaded images and questionnaire answers only. It is an independent planning review, not a final diagnosis or surgical plan. Image quality may limit interpretation.</p>
+      <p style="margin-top:6px;">HairAudit — Independent pre-surgery planning review. Discuss all treatment decisions with a qualified medical professional.</p>
+    </footer>
+  </div>
+</body>
+</html>

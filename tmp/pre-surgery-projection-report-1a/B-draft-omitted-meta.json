@@ -1,0 +1,12 @@
+{
+  "reportId": "00000000-0000-4000-8000-0000000000b1-v1",
+  "inclusionState": "generated_awaiting_review",
+  "showImagery": false,
+  "projectionSnapshotId": null,
+  "mode": null,
+  "deferredZones": [],
+  "graftRange": {
+    "min": 1350,
+    "max": 1980
+  }
+}

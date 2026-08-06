@@ -38,6 +38,7 @@ import {
 import { ANNOTATION_TYPE_LABELS } from "@/lib/preSurgeryIntelligence/annotations";
 import { AUDIT_EVENT_LABELS } from "@/lib/preSurgeryIntelligence/auditTimeline";
 import { computeGraftPlanTotals } from "@/lib/preSurgeryIntelligence/graftPlanTotals";
+import ProjectionAuditorCorrectionPanel from "@/components/professional/ProjectionAuditorCorrectionPanel";
 import type { PlanComparisonView } from "@/lib/preSurgeryIntelligence/graftPlanCompare";
 
 type WorkspaceImage = {
@@ -1088,6 +1089,15 @@ export default function PreSurgeryIntelligenceWorkspace({ caseId }: { caseId: st
                 >
                   Revoke patient sharing
                 </button>
+              ) : null}
+              {p.status === "approved" ? (
+                <div className="mt-3">
+                  <ProjectionAuditorCorrectionPanel
+                    caseId={caseId}
+                    projectionSnapshotId={p.id}
+                    projectionVersion={p.projectionVersion ?? 1}
+                  />
+                </div>
               ) : null}
             </li>
           ))}

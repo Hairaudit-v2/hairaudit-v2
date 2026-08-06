@@ -54,5 +54,10 @@ export const AUDIT_EVENT_LABELS: Record<PreSurgeryAuditEventType, string> = {
   projection_marked_stale: "Projection marked stale",
   projection_superseded: "Projection superseded",
   projection_shadow_review_recorded: "Projection shadow review recorded",
+  projection_included_in_report: "Projection included in report",
+  projection_omitted_from_report: "Projection omitted from report",
+  projection_correction_recorded: "Projection correction recorded",
+  projection_correction_adjusted: "Projection correction adjusted",
+  projection_learning_signal_emitted: "Projection learning signal emitted",
   report_released: "Report released",
 };

@@ -1440,16 +1440,63 @@ export const runAudit = inngest.createFunction(
               };
             })()
           : patientReviewPathway === "pre_surgery"
-            ? {
-                ...summary,
-                pre_surgery_planning_report: generatePreSurgeryPlanningReport({
-                  summary,
-                  intelligenceBundle: hairAuditIntelligenceBundle,
-                  caseId,
-                  reportVersion: nextVersion,
-                  patientReviewPathway,
-                }),
-              }
+            ? await (async () => {
+                let clinicianReportSlice: ReturnType<
+                  typeof import("@/lib/preSurgeryIntelligence/reportIntegration").buildClinicianReportSlice
+                > | null = null;
+                try {
+                  const { loadClinicianReportSliceForCase } = await import(
+                    "@/lib/preSurgeryIntelligence/loadClinicianReportSlice.server"
+                  );
+                  const draft = generatePreSurgeryPlanningReport({
+                    summary,
+                    intelligenceBundle: hairAuditIntelligenceBundle,
+                    caseId,
+                    reportVersion: nextVersion,
+                    patientReviewPathway,
+                  });
+                  const stabilisation = draft.scorecards.find(
+                    (s) => s.id === "treatment_stabilisation_priority"
+                  );
+                  const suitability = draft.scorecards.find(
+                    (s) => s.id === "restoration_suitability"
+                  );
+                  const priorReport = summary.pre_surgery_planning_report as
+                    | {
+                        clinicianPlanProvenance?: { pinnedProjectionId?: string | null };
+                        illustrativeProjectedResult?: { projectionSnapshotId?: string | null };
+                      }
+                    | undefined;
+                  const pinnedProjectionId =
+                    priorReport?.clinicianPlanProvenance?.pinnedProjectionId ??
+                    priorReport?.illustrativeProjectedResult?.projectionSnapshotId ??
+                    null;
+                  clinicianReportSlice = await loadClinicianReportSliceForCase({
+                    admin: supabase,
+                    caseId,
+                    planningOutcomeId: draft.planningOutcomeId,
+                    stabilisationPriorityBand: stabilisation?.qualitativeLabel ?? null,
+                    restorationSuitabilityBand: suitability?.qualitativeLabel ?? null,
+                    graftEstimateRange: draft.graftEstimateRange ?? null,
+                    pinnedProjectionId,
+                    reportId: `${caseId}-v${nextVersion}`,
+                    reportVersion: nextVersion,
+                  });
+                } catch (err) {
+                  console.error("[run-audit] pre-surgery clinician slice failed", err);
+                }
+                return {
+                  ...summary,
+                  pre_surgery_planning_report: generatePreSurgeryPlanningReport({
+                    summary,
+                    intelligenceBundle: hairAuditIntelligenceBundle,
+                    caseId,
+                    reportVersion: nextVersion,
+                    patientReviewPathway,
+                    clinicianReportSlice,
+                  }),
+                };
+              })()
             : summary;
 
       const finalAiScore = Number(overall?.performance_score ?? overall?.benchmark_score ?? 0);

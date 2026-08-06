@@ -19,13 +19,17 @@ import ReviewInputsProcessedSection from "@/components/patient/ReviewInputsProce
 import AssessmentConfidenceSection from "@/components/patient/AssessmentConfidenceSection";
 import AssessmentImprovementRecommendationsSection from "@/components/patient/AssessmentImprovementRecommendationsSection";
 import PathwayVisualSummarySection from "@/components/patient/PathwayVisualSummarySection";
+import IllustrativeProjectedResultSection from "@/components/patient/IllustrativeProjectedResultSection";
 import type { ClinicalHistorySnapshot } from "@/lib/hairaudit/clinical-history/clinicalHistoryTypes";
 
-const SECTION_ORDER: PreSurgeryReviewSectionId[] = [
+const SECTION_ORDER_BEFORE_PROJECTION: PreSurgeryReviewSectionId[] = [
   "overall_planning",
   "hair_loss_pattern",
   "donor_area",
   "estimated_graft_requirement",
+];
+
+const SECTION_ORDER_AFTER_PROJECTION: PreSurgeryReviewSectionId[] = [
   "surgical_suitability",
   "future_progression",
   "medical_treatment",
@@ -197,7 +201,7 @@ export default function PreSurgeryPlanningReportShell({
           {t("dashboard.patient.preSurgeryReport.sections.title")}
         </h3>
         <div className="mt-4 space-y-4">
-          {SECTION_ORDER.map((id, index) => {
+          {SECTION_ORDER_BEFORE_PROJECTION.map((id, index) => {
             const section = sectionById.get(id);
             if (!section) return null;
             const titleKey =
@@ -210,6 +214,43 @@ export default function PreSurgeryPlanningReportShell({
                 <div className="flex items-start gap-3">
                   <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white">
                     {index + 1}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <h4 className="text-sm font-semibold text-slate-900">{t(titleKey)}</h4>
+                    <p className="mt-2 text-sm leading-relaxed text-slate-700">{section.finding}</p>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </div>
+
+      <IllustrativeProjectedResultSection
+        section={report.illustrativeProjectedResult}
+        caseId={caseId}
+      />
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <div className="mt-0 space-y-4">
+          {SECTION_ORDER_AFTER_PROJECTION.map((id, index) => {
+            const section = sectionById.get(id);
+            if (!section) return null;
+            const titleKey =
+              `dashboard.patient.preSurgeryReport.sections.${id}` as TranslationKey;
+            const num =
+              SECTION_ORDER_BEFORE_PROJECTION.length +
+              (report.illustrativeProjectedResult ? 1 : 0) +
+              index +
+              1;
+            return (
+              <article
+                key={id}
+                className="rounded-xl border border-slate-200 bg-slate-50/50 p-4"
+              >
+                <div className="flex items-start gap-3">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white">
+                    {num}
                   </span>
                   <div className="min-w-0 flex-1">
                     <h4 className="text-sm font-semibold text-slate-900">{t(titleKey)}</h4>

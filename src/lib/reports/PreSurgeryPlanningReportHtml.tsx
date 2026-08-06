@@ -38,6 +38,11 @@ import {
   renderPathwayVisualSummaryHtml,
 } from "./pathwayVisualSummary";
 import type { ClinicalHistorySnapshot } from "@/lib/hairaudit/clinical-history/clinicalHistoryTypes";
+import {
+  ILLUSTRATIVE_PROJECTED_RESULT_CSS,
+  renderIllustrativeProjectedResultHtml,
+  type IllustrativeProjectionHtmlMedia,
+} from "./illustrativeProjectedResultHtml";
 
 export type PreSurgeryReportHtmlLabels = {
   heroTitle: string;
@@ -74,6 +79,8 @@ export type PreSurgeryReportHtmlVm = {
   clinicalHistory?: ClinicalHistorySnapshot | null;
   imageLimitedAssessment?: boolean;
   documentAssistedAssessment?: boolean;
+  /** Short-lived signed URLs for illustrative projection comparison (server-resolved). */
+  illustrativeProjectionMedia?: IllustrativeProjectionHtmlMedia | null;
 };
 
 function esc(s: string) {
@@ -85,14 +92,22 @@ function esc(s: string) {
     .replaceAll("'", "&#039;");
 }
 
-const SECTION_ORDER = [
+const SECTION_ORDER_BEFORE_PROJECTION = [
   "overall_planning",
   "hair_loss_pattern",
   "donor_area",
   "estimated_graft_requirement",
+] as const;
+
+const SECTION_ORDER_AFTER_PROJECTION = [
   "surgical_suitability",
   "future_progression",
   "medical_treatment",
+] as const;
+
+const SECTION_ORDER = [
+  ...SECTION_ORDER_BEFORE_PROJECTION,
+  ...SECTION_ORDER_AFTER_PROJECTION,
 ] as const;
 
 const SCORECARD_ORDER = [
@@ -115,6 +130,7 @@ export function renderPreSurgeryPlanningReportHtml(vm: PreSurgeryReportHtmlVm): 
     clinicalHistory,
     imageLimitedAssessment,
     documentAssistedAssessment,
+    illustrativeProjectionMedia,
   } = vm;
   const sectionById = new Map(report.sections.map((s) => [s.id, s]));
   const scorecardById = new Map(report.scorecards.map((s) => [s.id, s]));
@@ -132,21 +148,34 @@ export function renderPreSurgeryPlanningReportHtml(vm: PreSurgeryReportHtmlVm): 
     })
     .join("");
 
-  const sectionsHtml = SECTION_ORDER
-    .map((id, index) => {
-      const section = sectionById.get(id);
-      if (!section) return "";
-      const title = labels.sectionTitles[id] ?? id;
-      return `
+  function renderSections(ids: readonly string[], startIndex: number) {
+    return ids
+      .map((id, index) => {
+        const section = sectionById.get(id as (typeof SECTION_ORDER)[number]);
+        if (!section) return "";
+        const title = labels.sectionTitles[id] ?? id;
+        return `
         <article class="reviewSection">
-          <div class="sectionNum">${index + 1}</div>
+          <div class="sectionNum">${startIndex + index + 1}</div>
           <div class="sectionBody">
             <h3>${esc(title)}</h3>
             <p>${esc(section.finding)}</p>
           </div>
         </article>`;
-    })
-    .join("");
+      })
+      .join("");
+  }
+
+  const sectionsBeforeHtml = renderSections(SECTION_ORDER_BEFORE_PROJECTION, 0);
+  const sectionsAfterHtml = renderSections(
+    SECTION_ORDER_AFTER_PROJECTION,
+    SECTION_ORDER_BEFORE_PROJECTION.length + (report.illustrativeProjectedResult ? 1 : 0)
+  );
+
+  const projectionHtml = renderIllustrativeProjectedResultHtml({
+    section: report.illustrativeProjectedResult,
+    media: illustrativeProjectionMedia,
+  });
 
   const clinicalEvidenceHtml = renderClinicalEvidenceGalleryHtml({
     images: buildClinicalEvidenceImagesFromPhotosByCategory(photosByCategory),
@@ -322,6 +351,7 @@ export function renderPreSurgeryPlanningReportHtml(vm: PreSurgeryReportHtmlVm): 
     ${PATHWAY_VISUAL_SUMMARY_CSS}
     ${LONG_TERM_PRESERVATION_CSS}
     ${FUTURE_HAIR_LOSS_RISK_CSS}
+    ${ILLUSTRATIVE_PROJECTED_RESULT_CSS}
     .trustBox { background: #f0f9ff; border-color: #bae6fd; }
     .nextSteps { background: #ecfdf5; border-color: #a7f3d0; }
     .nextList { margin: 12px 0 0; padding: 0; list-style: none; }
@@ -369,7 +399,8 @@ export function renderPreSurgeryPlanningReportHtml(vm: PreSurgeryReportHtmlVm): 
     <div class="section">
       <div class="sectionHead"><h2>${esc(labels.sectionsTitle)}</h2></div>
       <div class="divider"></div>
-      ${sectionsHtml}
+      ${sectionsBeforeHtml}
+      ${projectionHtml ? `</div>${projectionHtml}<div class="section"><div class="divider"></div>${sectionsAfterHtml}` : sectionsAfterHtml}
     </div>
 
     ${clinicalEvidenceHtml}

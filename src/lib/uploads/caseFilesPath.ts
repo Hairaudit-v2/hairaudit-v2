@@ -2,6 +2,7 @@
  * Validates storage paths for the HairAudit "case-files" bucket:
  * - `cases/{caseId}/…` (patient / doctor / clinic / surgery uploads)
  * - `audit_photos/{caseId}/…` (canonical audit-photos API storage layout)
+ * - `pre_surgery_projections/{caseId}/…` (illustrative projection snapshots)
  *
  * Used by /api/uploads/signed-url and related gates so service-role signing cannot escape case namespaces.
  */
@@ -10,7 +11,7 @@ const CASE_FILES_CASE_ID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 /** Allowed top-level folders whose second segment is the case UUID. */
-const CASE_SCOPED_ROOTS = new Set(["cases", "audit_photos"]);
+const CASE_SCOPED_ROOTS = new Set(["cases", "audit_photos", "pre_surgery_projections"]);
 
 export type CaseFilesPathParseResult =
   | { ok: true; caseId: string; normalizedPath: string }
@@ -24,7 +25,7 @@ function decodePathOnce(raw: string): { ok: true; value: string } | { ok: false 
   }
 }
 
-/** First path segment must be `cases` or `audit_photos`; second segment must be the case UUID. */
+/** First path segment must be `cases`, `audit_photos`, or `pre_surgery_projections`; second segment must be the case UUID. */
 export function parseCaseIdFromCaseFilesPath(rawPath: string): CaseFilesPathParseResult {
   const trimmed = (rawPath ?? "").trim();
   if (!trimmed) return { ok: false, reason: "empty" };

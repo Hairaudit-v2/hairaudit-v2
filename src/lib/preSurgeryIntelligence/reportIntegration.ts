@@ -13,6 +13,10 @@ import type {
   PreSurgeryGraftPlan,
   PreSurgeryIllustrativeProjection,
 } from "./types";
+import type { IllustrativeProjectedResultSection } from "./reportProjectionInclusion";
+import { resolveIllustrativeProjectedResultForReport } from "./reportProjectionInclusion";
+import type { PreSurgeryPlanningOutcomeId } from "@/lib/reports/preSurgeryPlanningReport";
+import type { ClinicalImageReview } from "./types";
 
 /** Domains safe to surface in patient report when clinician-confirmed/corrected. */
 export const PATIENT_SAFE_OBSERVATION_DOMAINS = [
@@ -78,6 +82,11 @@ export type BuildClinicianReportSliceResult = {
   provenance: PreSurgeryClinicianReportProvenance | null;
   /** Illustrative projection labels only — never storage paths or validation internals. */
   patientSafeProjectionLabels: string[];
+  /**
+   * HA-PRE-SURGERY-PROJECTION-REPORT-1A — Frozen illustrative projected-result section.
+   * Auditor corrections are never included.
+   */
+  illustrativeProjectedResult: IllustrativeProjectedResultSection | null;
 };
 
 function isApprovedObservationStatus(
@@ -191,6 +200,16 @@ export function buildClinicianReportSlice(input: {
   now?: string;
   /** Preserve exact projection from a prior report issuance. */
   pinnedProjectionId?: string | null;
+  /** Required to resolve illustrative projected-result section (1A). */
+  caseId?: string;
+  pathway?: "pre_surgery" | string;
+  planningOutcomeId?: PreSurgeryPlanningOutcomeId;
+  stabilisationPriorityBand?: string | null;
+  restorationSuitabilityBand?: string | null;
+  graftEstimateRange?: { min: number; max: number } | null;
+  imageReviews?: ClinicalImageReview[];
+  sourceStoragePathByImageId?: Record<string, string | null>;
+  inclusionActivationAllowed?: boolean;
 }): BuildClinicianReportSliceResult {
   const observations = selectPatientSafeObservations(input.observations);
   const graftPlan = selectApprovedGraftPlanForReport(input.graftPlans);
@@ -217,10 +236,49 @@ export function buildClinicianReportSlice(input: {
       }
     : null;
 
+  const illustrativeProjectedResult =
+    input.caseId && input.planningOutcomeId
+      ? resolveIllustrativeProjectedResultForReport({
+          caseId: input.caseId,
+          pathway: input.pathway ?? "pre_surgery",
+          projections: input.projections,
+          graftPlans: input.graftPlans,
+          imageReviews: input.imageReviews,
+          pinnedProjectionId: input.pinnedProjectionId,
+          planningOutcomeId: input.planningOutcomeId,
+          stabilisationPriorityBand: input.stabilisationPriorityBand,
+          restorationSuitabilityBand: input.restorationSuitabilityBand,
+          graftEstimateRange:
+            input.graftEstimateRange ??
+            (graftPlan
+              ? { min: graftPlan.totalMinimumGrafts, max: graftPlan.totalMaximumGrafts }
+              : null),
+          sourceStoragePathByImageId: input.sourceStoragePathByImageId,
+          now: input.now,
+          inclusionActivationAllowed: input.inclusionActivationAllowed,
+        })
+      : null;
+
+  // Prefer pinning provenance to the report-selected projection (recommended mode).
+  const selectedId = illustrativeProjectedResult?.projectionSnapshotId ?? pinned?.id ?? null;
+  const selected = selectedId
+    ? eligible.find((p) => p.id === selectedId) ?? pinned
+    : pinned;
+  const provenancePinned: PreSurgeryClinicianReportProvenance | null = provenance
+    ? {
+        ...provenance,
+        pinnedProjectionId: selected?.id ?? provenance.pinnedProjectionId,
+        pinnedProjectionVersion: selected?.projectionVersion ?? provenance.pinnedProjectionVersion,
+        pinnedProjectionInputChecksum:
+          selected?.inputChecksum ?? provenance.pinnedProjectionInputChecksum,
+      }
+    : null;
+
   return {
     observations,
     graftPlan,
-    provenance,
+    provenance: provenancePinned,
     patientSafeProjectionLabels,
+    illustrativeProjectedResult,
   };
 }
