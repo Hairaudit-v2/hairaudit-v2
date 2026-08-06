@@ -9,11 +9,13 @@ import {
 } from "@/lib/auditor/auditorQueueTriage";
 import { resolveAuditorCaseActions, type AuditorCaseAction } from "@/lib/auditor/auditorCaseActions";
 import AuditorCaseActionButtons from "@/components/auditor/AuditorCaseActionButtons";
+import AuditorCasePreviewThumb from "@/components/auditor/AuditorCasePreviewThumb";
 
 export type AuditorCaseQueueCardProps = {
   input: AuditorQueueCaseInput;
   derived: AuditorQueueDerived;
   clinicName: string | null;
+  previewUrl?: string | null;
   compact?: boolean;
   variant?: "default" | "active";
   busy?: boolean;
@@ -40,6 +42,7 @@ export default function AuditorCaseQueueCard({
   input,
   derived,
   clinicName,
+  previewUrl = null,
   compact = false,
   variant = "default",
   busy = false,
@@ -54,19 +57,22 @@ export default function AuditorCaseQueueCard({
   return (
     <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm hover:border-slate-300 transition-colors">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <h3 className="text-base font-semibold text-slate-900 truncate">
-            {isActiveVariant ? derived.auditTypeLabel : displayName}
-          </h3>
-          <p className="text-sm text-slate-500 mt-0.5">
-            Case {derived.caseNumberLabel}
-            {!isActiveVariant && clinicName ? ` · ${clinicName}` : ""}
-          </p>
-          {isActiveVariant ? (
-            <p className="text-sm font-medium uppercase tracking-wide text-slate-600 mt-1">{derived.auditTypeLabel}</p>
-          ) : (
-            <p className="text-sm text-slate-600 mt-1">{derived.auditTypeLabel}</p>
-          )}
+        <div className="flex min-w-0 flex-1 items-start gap-3">
+          <AuditorCasePreviewThumb url={previewUrl} label={`Preview for case ${derived.caseNumberLabel}`} size="md" />
+          <div className="min-w-0 flex-1">
+            <h3 className="text-base font-semibold text-slate-900 truncate">
+              {isActiveVariant ? derived.auditTypeLabel : displayName}
+            </h3>
+            <p className="text-sm text-slate-500 mt-0.5">
+              Case {derived.caseNumberLabel}
+              {!isActiveVariant && clinicName ? ` · ${clinicName}` : ""}
+            </p>
+            {isActiveVariant ? (
+              <p className="text-sm font-medium uppercase tracking-wide text-slate-600 mt-1">{derived.auditTypeLabel}</p>
+            ) : (
+              <p className="text-sm text-slate-600 mt-1">{derived.auditTypeLabel}</p>
+            )}
+          </div>
         </div>
         <div className="flex flex-col items-end gap-1">
           {isActiveVariant && (

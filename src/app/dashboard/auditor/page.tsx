@@ -5,6 +5,8 @@ import { isAuditor } from "@/lib/auth/isAuditor";
 import { isMissingFeatureError } from "@/lib/db/isMissingFeatureError";
 import AuditorDashboardClient from "./AuditorDashboardClient";
 import { countUploadStats } from "@/lib/auditor/auditorQueueTriage";
+import { pickAuditorCasePreviewPathByCaseId } from "@/lib/auditor/auditorCasePreview";
+import { getCaseFilesBucketNameForReadOnlyUse } from "@/lib/hairaudit/uploadStorage";
 import { shouldFallbackToEnglishInQueue, derivePatientSafeSummaryQueueStatus } from "@/lib/reports/patientSafeSummaryTranslationQueue";
 
 export const revalidate = 60;
@@ -178,19 +180,46 @@ export default async function AuditorDashboardPage() {
     string,
     { imageUploadCount: number; pdfDocumentCount: number; uploadTypes: Array<{ type?: string | null }> }
   > = {};
+  const previewUrlByCaseId: Record<string, string | null> = {};
+  for (const cid of activeCaseIds) previewUrlByCaseId[cid] = null;
+
   try {
     const { data: uploadRows } = await admin
       .from("uploads")
-      .select("case_id, type")
+      .select("case_id, type, storage_path")
       .in("case_id", activeCaseIds.length ? activeCaseIds : ["00000000-0000-0000-0000-000000000000"]);
-    const statsMap = countUploadStats((uploadRows ?? []) as Array<{ case_id: string; type?: string | null }>);
+    const rows = (uploadRows ?? []) as Array<{
+      case_id: string;
+      type?: string | null;
+      storage_path?: string | null;
+    }>;
+    const statsMap = countUploadStats(rows);
     for (const cid of activeCaseIds) {
       const stats = statsMap.get(cid);
       uploadStatsByCaseId[cid] = stats ?? { imageUploadCount: 0, pdfDocumentCount: 0, uploadTypes: [] };
     }
+
+    const previewPaths = pickAuditorCasePreviewPathByCaseId(rows);
+    const bucket = getCaseFilesBucketNameForReadOnlyUse();
+    const entries = Object.entries(previewPaths);
+    const concurrency = 8;
+    for (let i = 0; i < entries.length; i += concurrency) {
+      const batch = entries.slice(i, i + concurrency);
+      await Promise.all(
+        batch.map(async ([caseId, path]) => {
+          try {
+            const { data } = await admin.storage.from(bucket).createSignedUrl(path, 60 * 20);
+            previewUrlByCaseId[caseId] = data?.signedUrl ?? null;
+          } catch {
+            previewUrlByCaseId[caseId] = null;
+          }
+        })
+      );
+    }
   } catch {
     for (const cid of activeCaseIds) {
       uploadStatsByCaseId[cid] = { imageUploadCount: 0, pdfDocumentCount: 0, uploadTypes: [] };
+      previewUrlByCaseId[cid] = null;
     }
   }
 
@@ -263,6 +292,7 @@ export default async function AuditorDashboardPage() {
         hasClinicalHistoryByCaseId={hasClinicalHistoryByCaseId}
         uploadStatsByCaseId={uploadStatsByCaseId}
         waitingOnTranslationByCaseId={waitingOnTranslationByCaseId}
+        previewUrlByCaseId={previewUrlByCaseId}
       />
     </div>
   );

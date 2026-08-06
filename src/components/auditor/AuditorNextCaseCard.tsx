@@ -8,10 +8,12 @@ import {
 } from "@/lib/auditor/auditorQueueTriage";
 import { resolveAuditorCaseActions, type AuditorCaseAction } from "@/lib/auditor/auditorCaseActions";
 import AuditorCaseActionButtons from "@/components/auditor/AuditorCaseActionButtons";
+import AuditorCasePreviewThumb from "@/components/auditor/AuditorCasePreviewThumb";
 
 export type AuditorNextCaseCardProps = {
   input: AuditorQueueCaseInput;
   derived: AuditorQueueDerived;
+  previewUrl?: string | null;
   busy?: boolean;
   onAction: (action: AuditorCaseAction, caseId: string, caseLabel: string) => void;
 };
@@ -19,6 +21,7 @@ export type AuditorNextCaseCardProps = {
 export default function AuditorNextCaseCard({
   input,
   derived,
+  previewUrl = null,
   busy = false,
   onAction,
 }: AuditorNextCaseCardProps) {
@@ -34,9 +37,12 @@ export default function AuditorNextCaseCard({
       </header>
 
       <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900">{derived.auditTypeLabel}</h2>
-          <p className="mt-1 text-lg font-semibold text-slate-700">Case {derived.caseNumberLabel}</p>
+        <div className="flex min-w-0 items-start gap-4">
+          <AuditorCasePreviewThumb url={previewUrl} label={`Preview for case ${derived.caseNumberLabel}`} size="lg" />
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900">{derived.auditTypeLabel}</h2>
+            <p className="mt-1 text-lg font-semibold text-slate-700">Case {derived.caseNumberLabel}</p>
+          </div>
         </div>
         <div className="text-right">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Status</p>

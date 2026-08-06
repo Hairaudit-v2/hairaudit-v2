@@ -19,6 +19,7 @@ import {
   sortSearchResults,
   type AuditorQueueCaseInput,
 } from "@/lib/auditor/auditorQueueTriage";
+import AuditorCasePreviewThumb from "@/components/auditor/AuditorCasePreviewThumb";
 import {
   AUDITOR_CASE_WORKSPACE_PATH,
   isLikelyTestOrFakeCase,
@@ -74,6 +75,7 @@ type QueueRow = {
   input: AuditorQueueCaseInput;
   derived: ReturnType<typeof deriveAuditorQueueCase>;
   clinicName: string | null;
+  previewUrl: string | null;
 };
 
 function EmptyQueue({ message }: { message: string }) {
@@ -94,6 +96,7 @@ export default function AuditorDashboardClient(props: {
   hasClinicalHistoryByCaseId: Record<string, boolean>;
   uploadStatsByCaseId: Record<string, UploadStats>;
   waitingOnTranslationByCaseId: Record<string, boolean>;
+  previewUrlByCaseId: Record<string, string | null>;
 }) {
   const router = useRouter();
   const [search, setSearch] = useState("");
@@ -143,6 +146,7 @@ export default function AuditorDashboardClient(props: {
           input,
           derived,
           clinicName: props.clinicNameByCaseId[base.id] ?? null,
+          previewUrl: props.previewUrlByCaseId[base.id] ?? null,
         } satisfies QueueRow;
       });
   }, [props]);
@@ -442,6 +446,7 @@ export default function AuditorDashboardClient(props: {
         <AuditorNextCaseCard
           input={nextCase.input}
           derived={nextCase.derived}
+          previewUrl={nextCase.previewUrl}
           busy={cardBusy(nextCase.input.id)}
           onAction={handleCaseAction}
         />
@@ -480,6 +485,7 @@ export default function AuditorDashboardClient(props: {
                   input={row.input}
                   derived={row.derived}
                   clinicName={row.clinicName}
+                  previewUrl={row.previewUrl}
                   variant="active"
                   busy={cardBusy(row.input.id)}
                   onAction={handleCaseAction}
@@ -520,6 +526,7 @@ export default function AuditorDashboardClient(props: {
                   key={`failed-${row.input.id}`}
                   input={row.input}
                   derived={row.derived}
+                  previewUrl={row.previewUrl}
                   busy={cardBusy(row.input.id)}
                   onAction={handleCaseAction}
                 />
@@ -559,6 +566,7 @@ export default function AuditorDashboardClient(props: {
                     key={`waiting-${row.input.id}`}
                     input={row.input}
                     derived={row.derived}
+                    previewUrl={row.previewUrl}
                     busy={cardBusy(row.input.id)}
                     onAction={handleCaseAction}
                   />
@@ -581,6 +589,7 @@ export default function AuditorDashboardClient(props: {
                 input={row.input}
                 derived={row.derived}
                 clinicName={row.clinicName}
+                previewUrl={row.previewUrl}
                 variant="active"
                 busy={cardBusy(row.input.id)}
                 onAction={handleCaseAction}
@@ -620,11 +629,14 @@ export default function AuditorDashboardClient(props: {
                 key={`test-${row.input.id}`}
                 className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-200 bg-white px-3 py-2"
               >
-                <span>
-                  Case {row.derived.caseNumberLabel}
-                  {row.input.patientEmail ? ` · ${row.input.patientEmail}` : ""}
-                  {row.input.external_case_id ? ` · ${row.input.external_case_id}` : ""}
-                </span>
+                <div className="flex min-w-0 items-center gap-3">
+                  <AuditorCasePreviewThumb url={row.previewUrl} label={`Preview for case ${row.derived.caseNumberLabel}`} size="sm" />
+                  <span className="min-w-0 truncate">
+                    Case {row.derived.caseNumberLabel}
+                    {row.input.patientEmail ? ` · ${row.input.patientEmail}` : ""}
+                    {row.input.external_case_id ? ` · ${row.input.external_case_id}` : ""}
+                  </span>
+                </div>
                 <div className="flex gap-2">
                   <button
                     type="button"
