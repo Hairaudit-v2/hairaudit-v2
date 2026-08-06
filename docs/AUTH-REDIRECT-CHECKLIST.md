@@ -44,12 +44,27 @@ Implemented in `dashboardPathForRole()` and in `/auth/callback` when `next` is m
 - **`next` parameter:** Only internal relative paths are allowed (starts with `/`, no `//`, no `:`). Implemented in `sanitizeNextPath()`; invalid values are ignored and role default is used.
 - **Homepage auth repair:** Only `code`, `next`, and `signup_role` are forwarded from `/?code=...` to `/auth/callback`; no arbitrary query params.
 
+## GET `/api/profiles` contract (HA-AUTH-PROFILE-401-FIX)
+
+Optional current-session probe — **not** a hard-auth gate:
+
+| Session | HTTP | Body |
+|---------|------|------|
+| Anonymous | **200** | `{ authenticated: false, profile: null }` |
+| Signed in, profile row | **200** | `{ authenticated: true, role, preferred_language, profile: {...} }` |
+| Signed in, no profile row | **200** | `{ authenticated: true, role: null, profile: null }` (does not invent patient) |
+
+`PATCH` / `POST` remain authenticated-only (`401` when unsigned). Root `I18nProvider` must resolve Supabase session first and **skip** GET `/api/profiles` for anonymous visitors. Public browsing must not `signOut`, clear cookies, or redirect to `/dashboard/patient` on profile probe results.
+
+OAuth `/auth/callback` must attach session cookies to the redirect response (via `createAuthCallbackSupabaseClient`), then hand off to `/auth/post-callback`, which waits for a live session + role before final navigation (auditors are never sent to `/dashboard/patient`).
+
 ## Automated regression tests
 
 Run:
 
 ```bash
 pnpm tsx --test tests/authRedirects.test.ts
+pnpm tsx --test tests/authProfileProbe.test.ts
 ```
 
 Or add to CI:
@@ -58,7 +73,7 @@ Or add to CI:
 pnpm test:auth-redirects
 ```
 
-Tests cover: `sanitizeNextPath`, `dashboardPathForRole`, `getCanonicalAppUrl`, `getHomepageAuthRedirectTarget`, `/auth/callback` redirects (with/without `next`, invalid `next`, `signup_role`, and exchange failure).
+Tests cover: `sanitizeNextPath`, `dashboardPathForRole`, `getCanonicalAppUrl`, `getHomepageAuthRedirectTarget`, `/auth/callback` redirects (with/without `next`, invalid `next`, `signup_role`, and exchange failure), plus profile-probe soft-anonymous contract and post-auth role routing.
 
 ## Manual QA (gaps)
 

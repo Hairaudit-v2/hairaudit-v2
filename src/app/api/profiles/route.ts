@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { headers } from "next/headers";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { isAuditor } from "@/lib/auth/isAuditor";
@@ -9,12 +10,42 @@ import {
   readHaAllowStandaloneClinicSignup,
   readHaAllowStandaloneDoctorSignup,
 } from "@/lib/nexus/haAccessPolicy.server";
+import { logAuthProbe } from "@/lib/auth/authProbeLog";
 
-// GET — fetch current user's profile (role)
+/**
+ * GET /api/profiles — current-session profile lookup (optional auth).
+ *
+ * Contract (HA-AUTH-PROFILE-401-FIX):
+ * - Anonymous / missing session → HTTP 200
+ *   `{ authenticated: false, profile: null }`
+ * - Authenticated with profile → HTTP 200
+ *   `{ authenticated: true, role, displayName, email, preferred_language, profile: {...} }`
+ * - Authenticated without profile row → HTTP 200
+ *   `{ authenticated: true, role: null, profile: null, ... }`
+ *   (does not invent patient; not a 401)
+ *
+ * Missing auth is not an error for this probe endpoint. Mutations (PATCH/POST)
+ * remain authenticated-only and still return 401 when unauthenticated.
+ */
 export async function GET() {
+  const headerStore = await headers();
+  const pathname = headerStore.get("x-pathname") ?? null;
+
   const auth = await createSupabaseAuthServerClient();
-  const { data: { user } } = await auth.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const {
+    data: { user },
+  } = await auth.auth.getUser();
+
+  if (!user) {
+    logAuthProbe("api_profiles_get", {
+      pathname,
+      authUserPresent: false,
+      profilePresent: false,
+      resolvedRole: null,
+      probeKind: "anonymous",
+    });
+    return NextResponse.json({ authenticated: false, profile: null });
+  }
 
   const admin = createSupabaseAdminClient();
   const { data: profile } = await admin
@@ -23,23 +54,50 @@ export async function GET() {
     .eq("id", user.id)
     .maybeSingle();
 
-  const role = isAuditor({ profileRole: profile?.role, userEmail: user.email })
-    ? "auditor"
-    : parseRole(profile?.role);
+  // Do not invent "patient" when the profile row is missing — callers must wait
+  // or show onboarding. Auditor email allowlist may still resolve without a row.
+  const auditor = isAuditor({ profileRole: profile?.role, userEmail: user.email });
+  const role = auditor
+    ? ("auditor" as const)
+    : profile?.role
+      ? parseRole(profile.role)
+      : null;
 
-  return NextResponse.json({
+  const preferred_language = normalizeLocale(
+    typeof (profile as { preferred_language?: string } | null)?.preferred_language === "string"
+      ? (profile as { preferred_language: string }).preferred_language
+      : undefined
+  );
+
+  const payload = {
+    authenticated: true as const,
     role,
     displayName: profile?.name ?? user.email?.split("@")[0],
     email: user.email,
-    preferred_language: normalizeLocale(
-      typeof (profile as { preferred_language?: string } | null)?.preferred_language === "string"
-        ? (profile as { preferred_language: string }).preferred_language
-        : undefined
-    ),
+    preferred_language,
+    profile: profile
+      ? {
+          role,
+          displayName: profile.name ?? user.email?.split("@")[0] ?? null,
+          email: user.email ?? null,
+          preferred_language,
+          rowPresent: true as const,
+        }
+      : null,
+  };
+
+  logAuthProbe("api_profiles_get", {
+    pathname,
+    authUserPresent: true,
+    profilePresent: Boolean(profile),
+    resolvedRole: role,
+    probeKind: "authenticated",
   });
+
+  return NextResponse.json(payload);
 }
 
-/** PATCH — update lightweight profile preferences (e.g. UI locale). */
+/** PATCH — update lightweight profile preferences (e.g. UI locale). Auth required. */
 export async function PATCH(req: Request) {
   const auth = await createSupabaseAuthServerClient();
   const {
@@ -68,7 +126,9 @@ export async function PATCH(req: Request) {
 // POST — initialize/update current user's beta profile (patient by default, auditor by allowlist)
 export async function POST(req: Request) {
   const auth = await createSupabaseAuthServerClient();
-  const { data: { user } } = await auth.auth.getUser();
+  const {
+    data: { user },
+  } = await auth.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json().catch(() => ({} as Record<string, unknown>));
@@ -85,11 +145,9 @@ export async function POST(req: Request) {
   const name =
     typeof body?.name === "string" && body.name.trim().length > 0
       ? body.name.trim()
-      : (
-          (user.user_metadata as Record<string, unknown> | undefined)?.full_name ??
-          (user.user_metadata as Record<string, unknown> | undefined)?.name ??
-          null
-        );
+      : ((user.user_metadata as Record<string, unknown> | undefined)?.full_name ??
+        (user.user_metadata as Record<string, unknown> | undefined)?.name ??
+        null);
 
   const admin = createSupabaseAdminClient();
   const { data: profile } = await admin.from("profiles").select("role").eq("id", user.id).maybeSingle();

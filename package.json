@@ -9,7 +9,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint",
     "test:pdf-logic": "tsx --test tests/pdfReadiness.test.ts",
-    "test:auth-redirects": "tsx --test tests/authRedirects.test.ts",
+    "test:auth-redirects": "tsx --test tests/authRedirects.test.ts tests/authProfileProbe.test.ts",
     "test:patient-journey": "tsx --test tests/patientJourneyAccess.test.ts tests/patientEntryArchitecture.test.ts tests/guidedPatientUploadWizard.test.ts tests/patientReviewPathway.test.ts tests/patientCoreRlsMigration.test.ts tests/claimAnonymousAccount.test.ts tests/claimAccountAuthTriggerMigration.test.ts tests/authHandoffFix.test.ts",
     "test:claim-account": "tsx --test tests/claimAnonymousAccount.test.ts tests/claimAccountAuthTriggerMigration.test.ts tests/authHandoffFix.test.ts",
     "test:auth-handoff": "tsx --test tests/authHandoffFix.test.ts",
