@@ -13,7 +13,7 @@ import {
 import type { PreSurgeryProjectionMode } from "@/lib/preSurgeryIntelligence/types";
 import {
   insertAuditEvent,
-  insertProjection,
+  insertOrReuseProjection,
   loadWorkspaceBundle,
 } from "@/lib/preSurgeryIntelligence/repository.server";
 import {
@@ -176,9 +176,9 @@ export async function POST(req: Request, ctx: RouteContext) {
     if (!result.ok) {
       if (result.projection) {
         try {
-          await insertProjection(admin, result.projection);
+          await insertOrReuseProjection(admin, result.projection);
         } catch {
-          // Unique idempotency conflict — still return degradable failure.
+          // Persistence conflict — still return degradable failure to the client.
         }
       }
       return NextResponse.json(
@@ -193,32 +193,39 @@ export async function POST(req: Request, ctx: RouteContext) {
       );
     }
 
-    await insertProjection(admin, result.projection);
-    await insertAuditEvent(
-      admin,
-      createAuditEvent({
-        caseId,
-        eventType: "projection_generated",
-        actorId: user.id,
-        metadata: {
-          projectionId: result.projection.id,
-          mode: result.projection.mode,
-          inputChecksum: result.projection.inputChecksum,
-          outputChecksum: result.projection.outputChecksum,
-          providerId: result.providerId,
-          latencyMs: result.latencyMs,
-          status: result.projection.status,
-          patientVisible: false,
-        },
-      })
-    );
+    const persisted = await insertOrReuseProjection(admin, result.projection);
+    const projection = persisted.projection;
+
+    if (persisted.kind !== "reused") {
+      await insertAuditEvent(
+        admin,
+        createAuditEvent({
+          caseId,
+          eventType: "projection_generated",
+          actorId: user.id,
+          metadata: {
+            projectionId: projection.id,
+            mode: projection.mode,
+            inputChecksum: projection.inputChecksum,
+            outputChecksum: projection.outputChecksum,
+            providerId: result.providerId,
+            latencyMs: result.latencyMs,
+            status: projection.status,
+            patientVisible: false,
+            persistKind: persisted.kind,
+          },
+        })
+      );
+    }
 
     return NextResponse.json({
       ok: true,
-      projection: result.projection,
+      projection,
       providerId: result.providerId,
       latencyMs: result.latencyMs,
       patientVisible: false,
+      reused: persisted.kind === "reused",
+      replaced: persisted.kind === "replaced",
     });
   } catch (e) {
     return NextResponse.json(

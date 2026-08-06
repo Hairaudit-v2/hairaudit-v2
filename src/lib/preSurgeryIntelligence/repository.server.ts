@@ -233,6 +233,89 @@ export async function insertProjection(
   if (error) throw new Error(error.message);
 }
 
+function isProjectionIdempotencyConflict(message: string): boolean {
+  return (
+    /idx_ha_pre_surgery_projections_idempotency/i.test(message) ||
+    (/duplicate key value violates unique constraint/i.test(message) &&
+      /idempotency/i.test(message))
+  );
+}
+
+export async function findProjectionByIdempotencyKey(
+  admin: SupabaseClient,
+  caseId: string,
+  idempotencyKey: string
+): Promise<PreSurgeryIllustrativeProjection | null> {
+  const { data, error } = await admin
+    .from("hairaudit_pre_surgery_projections")
+    .select("payload")
+    .eq("case_id", caseId)
+    .eq("idempotency_key", idempotencyKey)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return (data?.payload as PreSurgeryIllustrativeProjection | undefined) ?? null;
+}
+
+export type InsertOrReuseProjectionResult =
+  | { kind: "inserted"; projection: PreSurgeryIllustrativeProjection }
+  | { kind: "reused"; projection: PreSurgeryIllustrativeProjection }
+  | { kind: "replaced"; projection: PreSurgeryIllustrativeProjection };
+
+/**
+ * Insert a projection snapshot. On idempotency conflict:
+ * - reuse clinician_review / approved / generated rows (identical retry)
+ * - release the key on failed / validation_failed / rejected / expired rows and insert the new attempt
+ */
+export async function insertOrReuseProjection(
+  admin: SupabaseClient,
+  projection: PreSurgeryIllustrativeProjection
+): Promise<InsertOrReuseProjectionResult> {
+  try {
+    await insertProjection(admin, projection);
+    return { kind: "inserted", projection };
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    if (!isProjectionIdempotencyConflict(message)) throw e;
+  }
+
+  const key = projection.idempotencyKey?.trim() ?? "";
+  if (!key) {
+    throw new Error("Idempotency conflict without idempotency_key");
+  }
+
+  const existing = await findProjectionByIdempotencyKey(admin, projection.caseId, key);
+  if (!existing) {
+    throw new Error("Idempotency conflict but existing projection not found");
+  }
+
+  const reusable =
+    existing.status === "clinician_review" ||
+    existing.status === "approved" ||
+    existing.status === "generated" ||
+    existing.status === "queued" ||
+    existing.status === "generating";
+  if (reusable) {
+    return { kind: "reused", projection: existing };
+  }
+
+  const releasedKey = `${key}:released:${existing.id}`;
+  const releasedPayload: PreSurgeryIllustrativeProjection = {
+    ...existing,
+    idempotencyKey: releasedKey,
+  };
+  const { error: releaseErr } = await admin
+    .from("hairaudit_pre_surgery_projections")
+    .update({
+      idempotency_key: releasedKey,
+      payload: releasedPayload,
+    })
+    .eq("id", existing.id);
+  if (releaseErr) throw new Error(releaseErr.message);
+
+  await insertProjection(admin, projection);
+  return { kind: "replaced", projection };
+}
+
 export async function insertAuditEvent(
   admin: SupabaseClient,
   event: PreSurgeryAuditEvent

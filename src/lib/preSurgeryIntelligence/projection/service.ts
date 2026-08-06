@@ -277,12 +277,13 @@ export async function requestPreSurgeryProjection(
     modelVersion,
   });
   const inputChecksum = checksumCanonicalProjectionRequest(canonical);
+  // Base attempts share case+checksum+mode. Regeneration must not collide with the prior row.
+  const idempotencyBasis = input.regeneratesFromProjectionId
+    ? `${input.caseId}:${inputChecksum}:${input.mode}:regen:${input.regeneratesFromProjectionId}:${input.projectionVersion ?? 1}`
+    : `${input.caseId}:${inputChecksum}:${input.mode}`;
   const idempotencyKey =
     input.idempotencyKey ??
-    createHash("sha256")
-      .update(`${input.caseId}:${inputChecksum}:${input.mode}`)
-      .digest("hex")
-      .slice(0, 40);
+    createHash("sha256").update(idempotencyBasis).digest("hex").slice(0, 40);
 
   const allocation = deriveProjectionModeAllocation(input.plan, input.mode);
 
