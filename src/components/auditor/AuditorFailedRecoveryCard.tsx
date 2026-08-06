@@ -5,27 +5,26 @@ import {
   type AuditorQueueDerived,
   type AuditorQueueCaseInput,
 } from "@/lib/auditor/auditorQueueTriage";
+import { resolveAuditorCaseActions, type AuditorCaseAction } from "@/lib/auditor/auditorCaseActions";
+import AuditorCaseActionButtons from "@/components/auditor/AuditorCaseActionButtons";
 
 export type AuditorFailedRecoveryCardProps = {
   input: AuditorQueueCaseInput;
   derived: AuditorQueueDerived;
   busy?: boolean;
-  onRetryPdf: (caseId: string) => void;
-  onOpenCase: (caseId: string) => void;
-  onRetryFailedAudit: (caseId: string) => void;
+  onAction: (action: AuditorCaseAction, caseId: string, caseLabel: string) => void;
 };
 
 export default function AuditorFailedRecoveryCard({
   input,
   derived,
   busy = false,
-  onRetryPdf,
-  onOpenCase,
-  onRetryFailedAudit,
+  onAction,
 }: AuditorFailedRecoveryCardProps) {
   const patientName = input.patientName?.trim() || "Unknown patient";
   const failureLabel = derived.failureType ? failureTypeLabel(derived.failureType) : "Processing Failed";
-  const isPdfFailure = derived.failureType === "PDF_GENERATION";
+  const caseLabel = input.title ?? input.id.slice(0, 8);
+  const actions = resolveAuditorCaseActions(input, derived);
 
   return (
     <article className="rounded-xl border border-red-200 bg-white p-4">
@@ -37,36 +36,11 @@ export default function AuditorFailedRecoveryCard({
           Reason: {derived.failureReason}
         </p>
       )}
-      <div className="mt-4 flex flex-wrap gap-2">
-        {isPdfFailure && (
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => onRetryPdf(input.id)}
-            className="rounded-lg border border-red-300 px-3 py-1.5 text-xs font-medium text-red-800 hover:bg-red-50 disabled:opacity-60"
-          >
-            Retry PDF
-          </button>
-        )}
-        {!isPdfFailure && (
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => onRetryFailedAudit(input.id)}
-            className="rounded-lg border border-red-300 px-3 py-1.5 text-xs font-medium text-red-800 hover:bg-red-50 disabled:opacity-60"
-          >
-            Retry Audit
-          </button>
-        )}
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => onOpenCase(input.id)}
-          className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-800 hover:bg-slate-50 disabled:opacity-60"
-        >
-          Open Case
-        </button>
-      </div>
+      <AuditorCaseActionButtons
+        actions={actions}
+        busy={busy}
+        onAction={(action) => onAction(action, input.id, caseLabel)}
+      />
     </article>
   );
 }

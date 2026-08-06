@@ -6,27 +6,26 @@ import {
   type AuditorQueueDerived,
   type AuditorQueueCaseInput,
 } from "@/lib/auditor/auditorQueueTriage";
+import { resolveAuditorCaseActions, type AuditorCaseAction } from "@/lib/auditor/auditorCaseActions";
+import AuditorCaseActionButtons from "@/components/auditor/AuditorCaseActionButtons";
 
 export type AuditorNextCaseCardProps = {
   input: AuditorQueueCaseInput;
   derived: AuditorQueueDerived;
   busy?: boolean;
-  onOpenCase: (caseId: string) => void;
-  onRegenerateAudit: (caseId: string) => void;
-  onImageLimitedOverride: (caseId: string) => void;
+  onAction: (action: AuditorCaseAction, caseId: string, caseLabel: string) => void;
 };
 
 export default function AuditorNextCaseCard({
   input,
   derived,
   busy = false,
-  onOpenCase,
-  onRegenerateAudit,
-  onImageLimitedOverride,
+  onAction,
 }: AuditorNextCaseCardProps) {
   const styles = badgeStyles(derived.badge);
   const missingLabels = derived.photoProgress.missingLabels;
-  const showImageLimited = derived.isImageLimited || derived.imageLimitedRegenerationNeeded;
+  const actions = resolveAuditorCaseActions(input, derived);
+  const caseLabel = input.title ?? input.id.slice(0, 8);
 
   return (
     <section className="rounded-2xl border-2 border-slate-900 bg-white p-6 shadow-lg">
@@ -73,34 +72,12 @@ export default function AuditorNextCaseCard({
         </div>
       </div>
 
-      <div className="mt-6 flex flex-wrap gap-3">
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => onOpenCase(input.id)}
-          className="rounded-lg bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
-        >
-          Open Case
-        </button>
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => onRegenerateAudit(input.id)}
-          className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-800 hover:bg-slate-50 disabled:opacity-60"
-        >
-          Regenerate
-        </button>
-        {showImageLimited && (
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => onImageLimitedOverride(input.id)}
-            className="rounded-lg border border-violet-400 px-4 py-2.5 text-sm font-medium text-violet-900 hover:bg-violet-50 disabled:opacity-60"
-          >
-            Image Limited Audit
-          </button>
-        )}
-      </div>
+      <AuditorCaseActionButtons
+        actions={actions}
+        busy={busy}
+        size="md"
+        onAction={(action) => onAction(action, input.id, caseLabel)}
+      />
     </section>
   );
 }

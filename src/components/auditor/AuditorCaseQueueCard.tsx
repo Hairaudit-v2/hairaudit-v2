@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import {
   badgeStyles,
   formatRelativeTime,
@@ -8,6 +7,8 @@ import {
   type AuditorQueueDerived,
   type AuditorQueueCaseInput,
 } from "@/lib/auditor/auditorQueueTriage";
+import { resolveAuditorCaseActions, type AuditorCaseAction } from "@/lib/auditor/auditorCaseActions";
+import AuditorCaseActionButtons from "@/components/auditor/AuditorCaseActionButtons";
 
 export type AuditorCaseQueueCardProps = {
   input: AuditorQueueCaseInput;
@@ -16,12 +17,7 @@ export type AuditorCaseQueueCardProps = {
   compact?: boolean;
   variant?: "default" | "active";
   busy?: boolean;
-  onOpenCase: (caseId: string) => void;
-  onRegenerateAudit: (caseId: string) => void;
-  onRequestMissingImages: (caseId: string, label: string) => void;
-  onMarkForReview: (caseId: string) => void;
-  onRetryFailedAudit: (caseId: string) => void;
-  onImageLimitedOverride: (caseId: string) => void;
+  onAction: (action: AuditorCaseAction, caseId: string, caseLabel: string) => void;
 };
 
 function formatSubmittedDate(iso: string | null | undefined) {
@@ -47,18 +43,13 @@ export default function AuditorCaseQueueCard({
   compact = false,
   variant = "default",
   busy = false,
-  onOpenCase,
-  onRegenerateAudit,
-  onRequestMissingImages,
-  onMarkForReview,
-  onRetryFailedAudit,
-  onImageLimitedOverride,
+  onAction,
 }: AuditorCaseQueueCardProps) {
   const displayName = input.patientName?.trim() || input.title?.trim() || "Unknown patient";
   const caseLabel = input.title ?? input.id.slice(0, 8);
   const { photoProgress } = derived;
-  const showImageLimitedOverride = derived.isImageLimited || derived.imageLimitedRegenerationNeeded;
   const isActiveVariant = variant === "active";
+  const actions = resolveAuditorCaseActions(input, derived);
 
   return (
     <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm hover:border-slate-300 transition-colors">
@@ -146,74 +137,11 @@ export default function AuditorCaseQueueCard({
         </p>
       )}
 
-      <div className="mt-4 flex flex-wrap gap-2">
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => onOpenCase(input.id)}
-          className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-800 disabled:opacity-60"
-        >
-          Open Case
-        </button>
-        {!isActiveVariant && !derived.isInactive && derived.badge !== "COMPLETED" && (
-          <>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => onRegenerateAudit(input.id)}
-              className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-800 hover:bg-slate-50 disabled:opacity-60"
-            >
-              Regenerate Audit
-            </button>
-            {derived.isMissingImages && (
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => onRequestMissingImages(input.id, caseLabel)}
-                className="rounded-lg border border-orange-300 px-3 py-1.5 text-xs font-medium text-orange-800 hover:bg-orange-50 disabled:opacity-60"
-              >
-                Request Missing Images
-              </button>
-            )}
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => onMarkForReview(input.id)}
-              className="rounded-lg border border-violet-300 px-3 py-1.5 text-xs font-medium text-violet-800 hover:bg-violet-50 disabled:opacity-60"
-            >
-              Mark For Review
-            </button>
-            {derived.isFailed && (
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => onRetryFailedAudit(input.id)}
-                className="rounded-lg border border-red-300 px-3 py-1.5 text-xs font-medium text-red-800 hover:bg-red-50 disabled:opacity-60"
-              >
-                Retry Failed Audit
-              </button>
-            )}
-            {showImageLimitedOverride && (
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => onImageLimitedOverride(input.id)}
-                className="rounded-lg border border-violet-400 px-3 py-1.5 text-xs font-medium text-violet-900 hover:bg-violet-50 disabled:opacity-60"
-              >
-                Image Limited Override
-              </button>
-            )}
-          </>
-        )}
-        {derived.badge === "COMPLETED" && (
-          <Link
-            href={`/cases/${input.id}`}
-            className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-800 hover:bg-slate-50"
-          >
-            View Report
-          </Link>
-        )}
-      </div>
+      <AuditorCaseActionButtons
+        actions={actions}
+        busy={busy}
+        onAction={(action) => onAction(action, input.id, caseLabel)}
+      />
     </article>
   );
 }

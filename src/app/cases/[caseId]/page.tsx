@@ -1283,7 +1283,7 @@ export default async function Page({
               The automated audit failed. Complete a manual audit to finalize this case.
             </p>
             <Link
-              href={`/cases/${c.id}/audit`}
+              href={`/cases/${c.id}`}
               className="inline-flex items-center rounded-xl px-5 py-3 text-sm font-semibold text-slate-950 bg-gradient-to-r from-rose-300 to-amber-200 hover:from-rose-200 hover:to-amber-100 transition-colors"
             >
               Complete manual audit →
@@ -1873,7 +1873,7 @@ export default async function Page({
             The automated audit failed. Complete a manual audit to finalize this case.
           </p>
           <Link
-            href={`/cases/${c.id}/audit`}
+            href={`/cases/${c.id}`}
             className="inline-flex items-center rounded-xl px-5 py-3 text-sm font-semibold text-slate-950 bg-gradient-to-r from-rose-300 to-amber-200 hover:from-rose-200 hover:to-amber-100 transition-colors"
           >
             Complete manual audit →

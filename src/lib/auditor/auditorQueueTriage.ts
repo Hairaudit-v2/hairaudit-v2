@@ -41,6 +41,8 @@ export type AuditorQueueCaseInput = {
   created_at: string;
   updated_at?: string | null;
   submitted_at?: string | null;
+  auditor_started_at?: string | null;
+  assigned_auditor_id?: string | null;
   audit_type: "patient" | "doctor" | "clinic" | null;
   patient_review_pathway?: string | null;
   archived_at?: string | null;
@@ -137,12 +139,8 @@ function isImageLimitedReport(summary: Record<string, unknown> | null | undefine
 function isCompletedCase(input: AuditorQueueCaseInput): boolean {
   const reportReview = String(input.report?.auditor_review_status ?? "");
   const caseStatus = String(input.status ?? "");
-  const hasPdf = Boolean(input.report?.pdf_path);
-  return (
-    caseStatus === "complete" ||
-    reportReview === "completed" ||
-    (hasPdf && String(input.report?.status ?? "") === "complete")
-  );
+  // Auditor finalisation owns completion — a generated PDF alone must not hide the case.
+  return caseStatus === "complete" || reportReview === "completed";
 }
 
 function isFailedCase(input: AuditorQueueCaseInput): boolean {
@@ -206,21 +204,25 @@ function deriveFailureDetails(input: AuditorQueueCaseInput, failed: boolean): {
   const reportStatus = String(input.report?.status ?? "");
   const evidenceStatus = String(input.evidence?.status ?? "");
 
-  if (caseStatus === "pdf_pending" && reportStatus === "failed") {
-    return { failureType: "PDF_GENERATION", failureReason: "PDF generation failed" };
-  }
-  if (reportStatus === "failed" && !input.report?.pdf_path) {
-    return { failureType: "PDF_GENERATION", failureReason: "Storage object missing" };
-  }
   if (evidenceStatus === "failed") {
     return { failureType: "IMAGE_PROCESSING", failureReason: "Image processing failed" };
+  }
+  if (caseStatus === "pdf_pending" && reportStatus === "failed") {
+    return { failureType: "PDF_GENERATION", failureReason: "PDF generation failed" };
   }
   if (FAILED_CASE_STATUSES.has(caseStatus) || FAILED_REPORT_STATUSES.has(reportStatus)) {
     const forensic = getForensicSummary(input.report?.summary ?? null);
     if (forensic?.classifierError || forensic?.classifier_failed) {
       return { failureType: "CLASSIFIER", failureReason: "Classifier failure" };
     }
+    // Standalone report failure with no AI/case failure usually means PDF/storage.
+    if (reportStatus === "failed" && !FAILED_CASE_STATUSES.has(caseStatus) && !input.report?.pdf_path) {
+      return { failureType: "PDF_GENERATION", failureReason: "Storage object missing" };
+    }
     return { failureType: "AI_FAILED", failureReason: "AI audit failed" };
+  }
+  if (reportStatus === "failed" && !input.report?.pdf_path) {
+    return { failureType: "PDF_GENERATION", failureReason: "Storage object missing" };
   }
   return { failureType: "GENERAL", failureReason: "Processing failed" };
 }

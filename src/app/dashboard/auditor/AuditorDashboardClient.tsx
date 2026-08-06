@@ -17,6 +17,10 @@ import {
   sortSearchResults,
   type AuditorQueueCaseInput,
 } from "@/lib/auditor/auditorQueueTriage";
+import {
+  AUDITOR_CASE_WORKSPACE_PATH,
+  type AuditorCaseAction,
+} from "@/lib/auditor/auditorCaseActions";
 import { AUDITOR_RERUN_REASON_DOCUMENT_ASSISTED_IMAGE_LIMITED } from "@/lib/patient/patientPhotoImageLimitedOverride";
 
 type CaseRow = {
@@ -26,6 +30,8 @@ type CaseRow = {
   created_at: string;
   updated_at?: string | null;
   submitted_at?: string | null;
+  auditor_started_at?: string | null;
+  assigned_auditor_id?: string | null;
   audit_type: "patient" | "doctor" | "clinic" | null;
   patient_review_pathway?: string | null;
   archived_at?: string | null;
@@ -94,6 +100,8 @@ export default function AuditorDashboardClient(props: {
           created_at: base.created_at,
           updated_at: base.updated_at ?? null,
           submitted_at: base.submitted_at ?? null,
+          auditor_started_at: base.auditor_started_at ?? null,
+          assigned_auditor_id: base.assigned_auditor_id ?? null,
           audit_type: base.audit_type,
           patient_review_pathway: base.patient_review_pathway,
           archived_at: base.archived_at ?? null,
@@ -157,7 +165,7 @@ export default function AuditorDashboardClient(props: {
   }, [queueRows, search]);
 
   async function lifecycle(
-    action: "mark_in_progress" | "request_more_information",
+    action: "mark_in_progress" | "request_more_information" | "mark_needs_manual_review",
     caseId: string,
     actionReason?: string
   ) {
@@ -225,9 +233,54 @@ export default function AuditorDashboardClient(props: {
     }
   }
 
-  async function onOpenCase(caseId: string) {
+  function openWorkspace(caseId: string) {
+    router.push(AUDITOR_CASE_WORKSPACE_PATH(caseId));
+  }
+
+  async function openWorkspaceClaiming(caseId: string) {
     const ok = await lifecycle("mark_in_progress", caseId);
-    if (ok) router.push(`/cases/${caseId}`);
+    if (ok) openWorkspace(caseId);
+  }
+
+  async function handleCaseAction(action: AuditorCaseAction, caseId: string, caseLabel: string) {
+    switch (action.kind) {
+      case "start_audit":
+      case "continue_audit":
+      case "open_manual_audit":
+        if (action.claimAssignment) {
+          await openWorkspaceClaiming(caseId);
+        } else {
+          openWorkspace(caseId);
+        }
+        return;
+      case "view_case":
+      case "review_report":
+      case "edit_report":
+      case "finalise_report":
+        openWorkspace(caseId);
+        return;
+      case "request_missing_images":
+        setReason("");
+        setModal({ kind: "request_info", caseId, caseLabel });
+        return;
+      case "retry_processing":
+        await queueRerun(caseId, "full_reaudit", "failed_previous_run");
+        return;
+      case "retry_pdf":
+        await retryPdf(caseId);
+        return;
+      case "regenerate_audit":
+        await queueRerun(caseId, "regenerate_ai_audit", "auditor_review_request");
+        return;
+      case "image_limited_override":
+        await queueRerun(caseId, "full_reaudit", AUDITOR_RERUN_REASON_DOCUMENT_ASSISTED_IMAGE_LIMITED);
+        return;
+      case "mark_for_review":
+        await lifecycle("mark_needs_manual_review", caseId);
+        return;
+      default:
+        openWorkspace(caseId);
+    }
   }
 
   const cardBusy = (caseId: string) => busy || actionBusyCaseId === caseId;
@@ -248,11 +301,7 @@ export default function AuditorDashboardClient(props: {
           input={nextCase.input}
           derived={nextCase.derived}
           busy={cardBusy(nextCase.input.id)}
-          onOpenCase={onOpenCase}
-          onRegenerateAudit={(caseId) => void queueRerun(caseId, "regenerate_ai_audit", "auditor_review_request")}
-          onImageLimitedOverride={(caseId) =>
-            void queueRerun(caseId, "full_reaudit", AUDITOR_RERUN_REASON_DOCUMENT_ASSISTED_IMAGE_LIMITED)
-          }
+          onAction={handleCaseAction}
         />
       ) : (
         <section className="rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 p-8 text-center">
@@ -278,7 +327,7 @@ export default function AuditorDashboardClient(props: {
                 <button
                   key={`search-${row.input.id}`}
                   type="button"
-                  onClick={() => void onOpenCase(row.input.id)}
+                  onClick={() => void openWorkspaceClaiming(row.input.id)}
                   className="flex w-full items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-sm hover:bg-slate-50"
                 >
                   <span>
@@ -311,12 +360,7 @@ export default function AuditorDashboardClient(props: {
                 clinicName={row.clinicName}
                 variant="active"
                 busy={cardBusy(row.input.id)}
-                onOpenCase={onOpenCase}
-                onRegenerateAudit={() => {}}
-                onRequestMissingImages={() => {}}
-                onMarkForReview={() => {}}
-                onRetryFailedAudit={() => {}}
-                onImageLimitedOverride={() => {}}
+                onAction={handleCaseAction}
               />
             ))}
           </div>
@@ -344,9 +388,7 @@ export default function AuditorDashboardClient(props: {
                   input={row.input}
                   derived={row.derived}
                   busy={cardBusy(row.input.id)}
-                  onRetryPdf={(caseId) => void retryPdf(caseId)}
-                  onOpenCase={onOpenCase}
-                  onRetryFailedAudit={(caseId) => void queueRerun(caseId, "full_reaudit", "failed_previous_run")}
+                  onAction={handleCaseAction}
                 />
               ))}
             </div>
@@ -371,10 +413,7 @@ export default function AuditorDashboardClient(props: {
                 input={row.input}
                 derived={row.derived}
                 busy={cardBusy(row.input.id)}
-                onRequestMissingImages={(caseId, label) => {
-                  setReason("");
-                  setModal({ kind: "request_info", caseId, caseLabel: label });
-                }}
+                onAction={handleCaseAction}
               />
             ))}
           </div>
