@@ -14,8 +14,16 @@ test.describe("Homepage pathway chooser", () => {
 
     await expect(preCta).toBeVisible();
     await expect(postCta).toBeVisible();
+    await expect(preCta).toBeEnabled();
+    await expect(postCta).toBeEnabled();
+    await expect(preCta).not.toHaveAttribute("aria-disabled", "true");
+    await expect(postCta).not.toHaveAttribute("aria-disabled", "true");
     await expect(preCta).toContainText(/pre-surgery review/i);
     await expect(postCta).toContainText(/post-surgery audit/i);
+
+    // HA-PUBLIC-PATHWAY-CTA-STYLE-FIX-1A — Pre-Surgery is gold primary; Post-Surgery is secondary.
+    await expect(preCta).toHaveClass(/bg-amber-500/);
+    await expect(postCta).not.toHaveClass(/bg-amber-500/);
 
     for (const [testId, pathway] of [
       ["start-pre-surgery-review", "pre_surgery"],

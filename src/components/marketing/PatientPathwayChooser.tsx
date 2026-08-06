@@ -4,7 +4,11 @@ import { CalendarClock, ShieldCheck } from "lucide-react";
 import StartFreeAuditButton from "@/components/audit/StartFreeAuditButton";
 import TrackedLink from "@/components/analytics/TrackedLink";
 import { useI18n } from "@/components/i18n/I18nProvider";
-import { fiHairauditPrimaryButtonClass } from "@/lib/fi-ui/hairauditPrimaryButton";
+import {
+  fiHairauditPrimaryButtonClass,
+  fiHairauditSecondaryButtonClass,
+} from "@/lib/fi-ui/hairauditPrimaryButton";
+import { isPathwayCtaPrimary } from "@/lib/marketing/pathwayCtaHierarchy";
 import { DONOR_HEALING_ENTRY_CONTEXT } from "@/lib/patient/donorHealingEntry";
 import {
   PATIENT_PATHWAY_DEFINITIONS,
@@ -26,6 +30,20 @@ type PatientPathwayChooserProps = {
   donorEntryFromQuery?: boolean;
 };
 
+function pathwayCtaClassName(
+  pathway: PatientReviewPathway,
+  size: "md" | "lg",
+  options?: { highlightPostSurgery?: boolean; fullWidthOnMobile?: boolean }
+) {
+  const primary = isPathwayCtaPrimary(pathway, {
+    highlightPostSurgery: options?.highlightPostSurgery,
+  });
+  return cn(
+    primary ? fiHairauditPrimaryButtonClass(size) : fiHairauditSecondaryButtonClass(size),
+    options?.fullWidthOnMobile && "w-full justify-center sm:w-auto"
+  );
+}
+
 export default function PatientPathwayChooser({
   layout = "cards",
   className,
@@ -43,18 +61,13 @@ export default function PatientPathwayChooser({
       >
         {PATIENT_REVIEW_PATHWAYS.map((pathway) => {
           const def = PATIENT_PATHWAY_DEFINITIONS[pathway];
-          const isPrimary = pathway === "post_surgery";
           return (
             <StartFreeAuditButton
               key={pathway}
               pathway={pathway}
               entryContext={pathway === "post_surgery" ? donorEntryContext : undefined}
               eventName={`cta_start_free_audit_home_hero_${def.analyticsEventSuffix}`}
-              className={
-                isPrimary
-                  ? fiHairauditPrimaryButtonClass("lg")
-                  : cn(networkButtonVariants({ variant: "secondary", size: "lg" }), "min-w-[12rem]")
-              }
+              className={pathwayCtaClassName(pathway, "lg")}
             >
               {t(def.marketingCtaKey as never)}
             </StartFreeAuditButton>
@@ -107,7 +120,7 @@ export default function PatientPathwayChooser({
                 <Icon className="h-5 w-5" aria-hidden />
               </span>
               <div className="space-y-2">
-                <Badge tone={pathway === "pre_surgery" ? "neutral" : "accent"}>
+                <Badge tone={pathway === "pre_surgery" ? "accent" : "neutral"}>
                   {pathway === "pre_surgery" ? "Pathway A" : "Pathway B"}
                 </Badge>
                 <h3 className="text-xl font-semibold text-foreground">{t(def.marketingTitleKey as never)}</h3>
@@ -133,10 +146,10 @@ export default function PatientPathwayChooser({
                 pathway={pathway}
                 entryContext={pathway === "post_surgery" ? donorEntryContext : undefined}
                 eventName={`cta_start_pathway_${def.analyticsEventSuffix}`}
-                className={cn(
-                  fiHairauditPrimaryButtonClass("md"),
-                  "w-full justify-center sm:w-auto"
-                )}
+                className={pathwayCtaClassName(pathway, "md", {
+                  highlightPostSurgery: donorEntryActive,
+                  fullWidthOnMobile: true,
+                })}
               >
                 {highlightPost
                   ? "Continue with Post-Surgery Audit"
