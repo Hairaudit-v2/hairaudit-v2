@@ -1,14 +1,23 @@
 /**
- * Additive patient photo submit policy: baseline `canSubmit("patient")` stays authoritative
- * when the stage-aware path is off or unavailable. This module only adds an optional
- * alternate path (feature-flagged) for intake-qualified post-op outcome sets.
+ * Additive patient photo submit policy (HA-PHOTO-TIMELINE-2A).
  *
- * Alternate path matches milestone UI: front + top + (donor OR crown) per band.
+ * Authoritative readiness comes from `resolveAuditEvidenceTimelineFromUploads`.
+ * Legacy baseline / alternate-outcome checks remain as telemetry only — they do not
+ * gate submit when the session timeline is ready (including ready_with_limitations).
  */
 
 import { canSubmit } from "@/lib/auditPhotoSchemas";
 import { filterPatientPhotosForAuditUse } from "@/lib/uploads/patientPhotoAuditMeta";
-import type { PatientReviewPathway } from "@/lib/patient/patientReviewPathway";
+import {
+  normalizePatientReviewPathway,
+  type PatientReviewPathway,
+} from "@/lib/patient/patientReviewPathway";
+import { resolveAuditEvidenceTimelineFromUploads } from "@/lib/photoSessions/resolveAuditEvidenceTimeline";
+import type {
+  AuditEvidenceLimitation,
+  AuditEvidenceRequirement,
+  ResolvedAuditEvidenceTimeline,
+} from "@/lib/photoSessions/types";
 
 export const MONTHS_SINCE_VALUES = ["under_3", "3_6", "6_9", "9_12", "12_plus"] as const;
 export type PatientIntakeMonthsSince = (typeof MONTHS_SINCE_VALUES)[number];
@@ -79,7 +88,12 @@ export const ALTERNATE_OUTCOME_REQUIRED_KEYS_BY_BAND: Readonly<
   ],
 };
 
-export type PatientPhotoUploadRow = { type?: string | null; metadata?: unknown };
+export type PatientPhotoUploadRow = {
+  type?: string | null;
+  metadata?: unknown;
+  id?: string | null;
+  created_at?: string | null;
+};
 
 function parsePatientPhotoKey(type: string | null | undefined): string | null {
   const t = String(type ?? "").trim().toLowerCase();
@@ -109,6 +123,14 @@ export function readMonthsSinceFromPatientAnswers(
   if (typeof v !== "string") return null;
   const t = v.trim() as PatientIntakeMonthsSince;
   return (MONTHS_SINCE_VALUES as readonly string[]).includes(t) ? t : null;
+}
+
+export function readProcedureDateFromPatientAnswers(
+  answers: Record<string, unknown> | null | undefined
+): string | null {
+  if (!answers || typeof answers !== "object") return null;
+  const raw = answers.procedure_date ?? answers.procedureDate;
+  return typeof raw === "string" && raw.trim() ? raw.trim() : null;
 }
 
 export function alternateMilestoneSpecForMonthsSince(
@@ -152,33 +174,56 @@ export type PatientPhotoSubmitGateResult = {
   allowed: boolean;
   viaBaseline: boolean;
   viaAlternateOutcome: boolean;
+  /** Session timeline readiness is the authoritative allow signal. */
+  viaEvidenceTimeline: boolean;
   stageAwareEvaluated: boolean;
   monthsSince: PatientIntakeMonthsSince | null;
   /** When stage-aware alternate path applies: fixed front + top keys. */
   alternateKeysRequired: readonly string[] | null;
   /** When set with `alternateKeysRequired`, user must also satisfy one of these (donor or crown). */
   alternateSupportingOneOf: readonly string[] | null;
+  evidenceTimeline: ResolvedAuditEvidenceTimeline | null;
+  blockingRequirements: AuditEvidenceRequirement[];
+  limitations: AuditEvidenceLimitation[];
 };
 
+export function buildEvidenceTimelineSubmitError(
+  timeline: ResolvedAuditEvidenceTimeline | null,
+  opts?: { stageAwareHint?: string | null }
+): string {
+  const blocking = timeline?.blockingRequirements ?? [];
+  const altLine = opts?.stageAwareHint ? ` Or ${opts.stageAwareHint}` : "";
+  if (blocking.length) {
+    const detail = blocking.map((b) => b.message).join(" ");
+    return `${detail}${altLine} Return to the photo upload step to finish.`;
+  }
+  return `Upload the required before- and after-surgery photo sets before submitting.${altLine} Return to the photo upload step to finish.`;
+}
+
 /**
- * Full patient photo submit gate: baseline OR (flag + intake band + alternate milestone set).
- * Does not mutate inputs. When `stageAwareSubmitEnabled` is false, result matches baseline only.
+ * Full patient photo submit gate.
+ * Allowed when evidence timeline readiness is `ready` or `ready_with_limitations`.
+ * Legacy viaBaseline / viaAlternateOutcome retained for telemetry and hints only.
  */
 export function evaluatePatientPhotoSubmitGate(args: {
   uploadRows: PatientPhotoUploadRow[];
   patientAnswers: Record<string, unknown> | null | undefined;
   stageAwareSubmitEnabled: boolean;
   patientReviewPathway?: PatientReviewPathway;
+  caseId?: string;
 }): PatientPhotoSubmitGateResult {
   const patientRows = filterPatientPhotosForAuditUse(
     args.uploadRows.filter((u) => String(u.type ?? "").toLowerCase().startsWith("patient_photo:"))
   );
   const photoPayload = patientRows.map((u) => ({ type: u.type ?? undefined }));
-  const pathway = args.patientReviewPathway;
+  const pathway = normalizePatientReviewPathway(args.patientReviewPathway);
   const monthsSince = readMonthsSinceFromPatientAnswers(args.patientAnswers ?? null);
-  const viaBaseline = pathway
+  const procedureDate = readProcedureDateFromPatientAnswers(args.patientAnswers ?? null);
+
+  const viaBaseline = args.patientReviewPathway
     ? canSubmit("patient", photoPayload, pathway, { monthsSinceBand: monthsSince })
     : canSubmit("patient", photoPayload);
+
   const milestoneSpec =
     args.stageAwareSubmitEnabled && monthsSince && monthsSince !== "under_3"
       ? ALTERNATE_OUTCOME_MILESTONE_SPECS[monthsSince]
@@ -188,7 +233,6 @@ export function evaluatePatientPhotoSubmitGate(args: {
     ? ([milestoneSpec.frontKey, milestoneSpec.topKey] as const)
     : null;
   const alternateSupportingOneOf = milestoneSpec ? milestoneSpec.supportingOneOfKeys : null;
-
   const stageAwareEvaluated = Boolean(milestoneSpec);
 
   const viaAlternateOutcome =
@@ -200,13 +244,27 @@ export function evaluatePatientPhotoSubmitGate(args: {
       monthsSince as Exclude<PatientIntakeMonthsSince, "under_3">
     );
 
+  const evidenceTimeline = resolveAuditEvidenceTimelineFromUploads({
+    caseId: args.caseId ?? "gate",
+    pathway,
+    uploads: patientRows,
+    procedureDate,
+    monthsSinceBand: monthsSince,
+  });
+
+  const viaEvidenceTimeline = evidenceTimeline.readiness !== "not_ready";
+
   return {
-    allowed: viaBaseline || viaAlternateOutcome,
+    allowed: viaEvidenceTimeline,
     viaBaseline,
     viaAlternateOutcome,
+    viaEvidenceTimeline,
     stageAwareEvaluated,
     monthsSince,
     alternateKeysRequired: alternateKeysRequired ? [...alternateKeysRequired] : null,
     alternateSupportingOneOf: alternateSupportingOneOf ? [...alternateSupportingOneOf] : null,
+    evidenceTimeline,
+    blockingRequirements: evidenceTimeline.blockingRequirements,
+    limitations: evidenceTimeline.limitations,
   };
 }

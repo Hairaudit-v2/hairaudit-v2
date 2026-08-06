@@ -12,6 +12,7 @@ import { computeDomainScoresV1, computeDoctorAiContextV1 } from "@/lib/benchmark
 import { normalizeIntakeFormData, toNestedForApi } from "@/lib/intake/normalizeIntakeFormData";
 import { normalizedPatientAnswersFromReportRow } from "@/lib/patient/answersFromReportRow";
 import {
+  buildEvidenceTimelineSubmitError,
   PATIENT_ALTERNATE_OUTCOME_SUBMIT_HINT,
 } from "@/lib/patientPhoto/patientPhotoReadinessPolicy";
 import { isPatientPhotoStageAwareSubmitEnabled } from "@/lib/features/enablePatientPhotoStageAwareSubmit";
@@ -794,9 +795,13 @@ export const runAudit = inngest.createFunction(
       });
       const altHint =
         isPatientPhotoStageAwareSubmitEnabled() && photoSubmitGate.stageAwareEvaluated
-          ? ` Or ${PATIENT_ALTERNATE_OUTCOME_SUBMIT_HINT}`
-          : "";
-      throw new Error(`Missing required patient photos (Current Front, Top, Donor rear).${altHint}`);
+          ? PATIENT_ALTERNATE_OUTCOME_SUBMIT_HINT
+          : null;
+      throw new Error(
+        buildEvidenceTimelineSubmitError(photoSubmitGate.evidenceTimeline, {
+          stageAwareHint: altHint,
+        })
+      );
     }
 
     // 5) Load existing report summary (patient/doctor/clinic answers)

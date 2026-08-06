@@ -500,9 +500,22 @@ export function mergePostSurgeryImageAssessmentsWithPhotos(
 ): PostSurgeryImageAssessment[] {
   if (!photosByCategory || !Object.keys(photosByCategory).length) return assessments;
 
-  const frontKeys = ["patient_current_front", "preop_front", "current_front", "followup_front"];
+  const frontKeys = [
+    "patient_current_front",
+    "postop_month12_front",
+    "postop_month9_front",
+    "postop_month6_front",
+    "postop_month3_front",
+    "preop_front",
+    "current_front",
+    "followup_front",
+  ];
   const donorKeys = [
     "patient_current_donor_rear",
+    "postop_month12_donor",
+    "postop_month9_donor",
+    "postop_month6_donor",
+    "postop_month3_donor",
     "preop_donor_rear",
     "current_donor_rear",
     "followup_donor",
@@ -542,12 +555,20 @@ function buildImageAssessments(
 
   const frontPhoto = pickPhoto(photosByCategory, [
     "patient_current_front",
+    "postop_month12_front",
+    "postop_month9_front",
+    "postop_month6_front",
+    "postop_month3_front",
     "preop_front",
     "current_front",
     "followup_front",
   ]);
   const donorPhoto = pickPhoto(photosByCategory, [
     "patient_current_donor_rear",
+    "postop_month12_donor",
+    "postop_month9_donor",
+    "postop_month6_donor",
+    "postop_month3_donor",
     "preop_donor_rear",
     "current_donor_rear",
     "followup_donor",

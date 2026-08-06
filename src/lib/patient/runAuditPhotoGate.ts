@@ -59,6 +59,7 @@ export function evaluateRunAuditPatientPhotoGate(args: {
     patientAnswers: args.patientAnswers,
     stageAwareSubmitEnabled: args.stageAwareSubmitEnabled,
     patientReviewPathway: args.patientReviewPathway ?? undefined,
+    caseId: args.caseId,
   });
 
   const imageLimitedOverride = evaluateImageLimitedPhotoOverride({

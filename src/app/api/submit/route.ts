@@ -13,11 +13,12 @@ import { getUserRole } from "@/lib/case-access";
 import { evaluateProfessionalAccess, loadProfileRole } from "@/lib/nexus/professionalAccess.server";
 import { normalizedPatientAnswersFromReportRow } from "@/lib/patient/answersFromReportRow";
 import {
+  buildEvidenceTimelineSubmitError,
   evaluatePatientPhotoSubmitGate,
   PATIENT_ALTERNATE_OUTCOME_SUBMIT_HINT,
 } from "@/lib/patientPhoto/patientPhotoReadinessPolicy";
 import { isPatientPhotoStageAwareSubmitEnabled } from "@/lib/features/enablePatientPhotoStageAwareSubmit";
-import { normalizePatientReviewPathway, buildPatientRequiredPhotosSubmitError } from "@/lib/patient/patientReviewPathway";
+import { normalizePatientReviewPathway } from "@/lib/patient/patientReviewPathway";
 import { filterPatientPhotosForAuditUse } from "@/lib/uploads/patientPhotoAuditMeta";
 
 function buildPhotosForPatientScoring(
@@ -120,6 +121,7 @@ export async function POST(req: Request) {
         patientAnswers,
         stageAwareSubmitEnabled: isPatientPhotoStageAwareSubmitEnabled(),
         patientReviewPathway,
+        caseId,
       });
       patientPhotoGateForMeta = photoGate;
 
@@ -130,7 +132,7 @@ export async function POST(req: Request) {
             : null;
         return NextResponse.json(
           {
-            error: buildPatientRequiredPhotosSubmitError(patientReviewPathway, {
+            error: buildEvidenceTimelineSubmitError(photoGate.evidenceTimeline, {
               stageAwareHint: altLine,
             }),
           },
