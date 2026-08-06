@@ -8,6 +8,7 @@ import assert from "node:assert/strict";
 import { deriveAuditorQueueCase, type AuditorQueueCaseInput } from "../src/lib/auditor/auditorQueueTriage";
 import {
   AUDITOR_CASE_WORKSPACE_PATH,
+  isLikelyTestOrFakeCase,
   resolveAuditorCaseActions,
 } from "../src/lib/auditor/auditorCaseActions";
 
@@ -151,5 +152,20 @@ describe("resolveAuditorCaseActions", () => {
     assert.equal(derived.waitingOnPatient, false);
     assert.equal(derived.inActiveWorkQueue, true);
     assert.equal(resolveAuditorCaseActions(input, derived)[0]?.kind, "start_audit");
+  });
+
+  it("exposes Archive and Delete cleanup actions on queue cards", () => {
+    const input = baseInput();
+    const derived = deriveAuditorQueueCase(input);
+    const kinds = resolveAuditorCaseActions(input, derived).map((a) => a.kind);
+    assert.ok(kinds.includes("archive_case"));
+    assert.ok(kinds.includes("delete_case"));
+  });
+
+  it("flags demo-qa and hairaudit.test cases as likely test/fake", () => {
+    assert.equal(isLikelyTestOrFakeCase({ patientEmail: "postsurgery-demo-01@hairaudit.test" }), true);
+    assert.equal(isLikelyTestOrFakeCase({ external_case_id: "demo-qa:postsurgery:01" }), true);
+    assert.equal(isLikelyTestOrFakeCase({ title: "Fake clinic audit" }), true);
+    assert.equal(isLikelyTestOrFakeCase({ patientEmail: "real.patient@example.com", title: "Clinic audit" }), false);
   });
 });

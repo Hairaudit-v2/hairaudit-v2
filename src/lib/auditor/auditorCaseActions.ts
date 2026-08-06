@@ -4,6 +4,10 @@
  */
 
 import type { AuditorQueueCaseInput, AuditorQueueDerived } from "@/lib/auditor/auditorQueueTriage";
+import {
+  DEMO_QA_SEED_BATCH_PREFIX,
+  DEMO_QA_TEST_EMAIL_DOMAIN,
+} from "@/lib/demo/qaCaseSeed/constants";
 
 export const AUDITOR_CASE_WORKSPACE_PATH = (caseId: string) => `/cases/${caseId}`;
 
@@ -20,7 +24,9 @@ export type AuditorCaseActionKind =
   | "finalise_report"
   | "regenerate_audit"
   | "image_limited_override"
-  | "mark_for_review";
+  | "mark_for_review"
+  | "archive_case"
+  | "delete_case";
 
 export type AuditorCaseAction = {
   kind: AuditorCaseActionKind;
@@ -44,6 +50,41 @@ function isAuditInProgress(input: AuditorQueueCaseInput, derived: AuditorQueueDe
   return review === "available" || review === "in_review";
 }
 
+/** Demo QA / hairaudit.test seeds — safe to soft-delete from the desk. */
+export function isLikelyTestOrFakeCase(input: {
+  patientEmail?: string | null;
+  external_case_id?: string | null;
+  title?: string | null;
+}): boolean {
+  const email = String(input.patientEmail ?? "").toLowerCase();
+  const external = String(input.external_case_id ?? "").toLowerCase();
+  const title = String(input.title ?? "").toLowerCase();
+  if (email.endsWith(`@${DEMO_QA_TEST_EMAIL_DOMAIN}`)) return true;
+  if (external.startsWith(`${DEMO_QA_SEED_BATCH_PREFIX}:`)) return true;
+  if (title.includes("demo") || title.includes("test audit") || title.includes("fake")) return true;
+  return false;
+}
+
+function appendCleanupActions(actions: AuditorCaseAction[]): AuditorCaseAction[] {
+  actions.push(
+    {
+      kind: "archive_case",
+      label: "Archive",
+      primary: false,
+      opensWorkspace: false,
+      claimAssignment: false,
+    },
+    {
+      kind: "delete_case",
+      label: "Delete",
+      primary: false,
+      opensWorkspace: false,
+      claimAssignment: false,
+    }
+  );
+  return actions;
+}
+
 /**
  * Resolve ordered, context-aware actions for a queue card.
  * Failed AI processing never removes manual audit access.
@@ -60,7 +101,7 @@ export function resolveAuditorCaseActions(
       { kind: "edit_report", label: "Edit Report", primary: false, opensWorkspace: true, claimAssignment: false },
       { kind: "finalise_report", label: "Finalise Report", primary: false, opensWorkspace: true, claimAssignment: false }
     );
-    return actions;
+    return appendCleanupActions(actions);
   }
 
   // Failed processing must never lose manual edit access — check before waiting-on-patient.
@@ -89,7 +130,7 @@ export function resolveAuditorCaseActions(
         claimAssignment: false,
       });
     }
-    return actions;
+    return appendCleanupActions(actions);
   }
 
   if (derived.waitingOnPatient || derived.badge === "MISSING_IMAGES") {
@@ -109,7 +150,7 @@ export function resolveAuditorCaseActions(
         claimAssignment: false,
       });
     }
-    return actions;
+    return appendCleanupActions(actions);
   }
 
   if (hasGeneratedReport(input) && (derived.isReadyToAudit || isAuditInProgress(input, derived))) {
@@ -144,7 +185,7 @@ export function resolveAuditorCaseActions(
         claimAssignment: false,
       });
     }
-    return actions;
+    return appendCleanupActions(actions);
   }
 
   if (isAuditInProgress(input, derived)) {
@@ -211,5 +252,5 @@ export function resolveAuditorCaseActions(
     });
   }
 
-  return actions;
+  return appendCleanupActions(actions);
 }

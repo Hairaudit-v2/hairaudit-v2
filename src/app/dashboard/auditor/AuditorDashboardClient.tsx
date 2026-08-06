@@ -21,6 +21,7 @@ import {
 } from "@/lib/auditor/auditorQueueTriage";
 import {
   AUDITOR_CASE_WORKSPACE_PATH,
+  isLikelyTestOrFakeCase,
   type AuditorCaseAction,
 } from "@/lib/auditor/auditorCaseActions";
 import { AUDITOR_RERUN_REASON_DOCUMENT_ASSISTED_IMAGE_LIMITED } from "@/lib/patient/patientPhotoImageLimitedOverride";
@@ -34,6 +35,7 @@ type CaseRow = {
   submitted_at?: string | null;
   auditor_started_at?: string | null;
   assigned_auditor_id?: string | null;
+  external_case_id?: string | null;
   audit_type: "patient" | "doctor" | "clinic" | null;
   patient_review_pathway?: string | null;
   archived_at?: string | null;
@@ -63,7 +65,10 @@ type UploadStats = {
 
 type ActionModalState =
   | { kind: "none" }
-  | { kind: "request_info"; caseId: string; caseLabel: string };
+  | { kind: "request_info"; caseId: string; caseLabel: string }
+  | { kind: "archive"; caseId: string; caseLabel: string }
+  | { kind: "delete"; caseId: string; caseLabel: string; likelyTest: boolean }
+  | { kind: "bulk_delete_tests"; caseIds: string[] };
 
 type QueueRow = {
   input: AuditorQueueCaseInput;
@@ -119,6 +124,7 @@ export default function AuditorDashboardClient(props: {
           submitted_at: base.submitted_at ?? null,
           auditor_started_at: base.auditor_started_at ?? null,
           assigned_auditor_id: base.assigned_auditor_id ?? null,
+          external_case_id: base.external_case_id ?? null,
           audit_type: base.audit_type,
           patient_review_pathway: base.patient_review_pathway,
           archived_at: base.archived_at ?? null,
@@ -161,6 +167,16 @@ export default function AuditorDashboardClient(props: {
       .sort((a, b) => b.derived.priorityScore - a.derived.priorityScore);
   }, [queueRows]);
 
+  const likelyTestRows = useMemo(() => {
+    return queueRows.filter((row) =>
+      isLikelyTestOrFakeCase({
+        patientEmail: row.input.patientEmail,
+        external_case_id: row.input.external_case_id,
+        title: row.input.title,
+      })
+    );
+  }, [queueRows]);
+
   const nextCase = useMemo(() => {
     if (filter === "ready") return readyRows[0] ?? null;
     if (filter === "failed") return failedRows[0] ?? null;
@@ -200,7 +216,7 @@ export default function AuditorDashboardClient(props: {
   }, [queueRows, search]);
 
   async function lifecycle(
-    action: "mark_in_progress" | "request_more_information" | "mark_needs_manual_review",
+    action: "mark_in_progress" | "request_more_information" | "mark_needs_manual_review" | "archive" | "delete",
     caseId: string,
     actionReason?: string
   ) {
@@ -220,6 +236,31 @@ export default function AuditorDashboardClient(props: {
       return true;
     } catch (e) {
       setError(e instanceof Error ? e.message : "Action failed");
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function bulkDeleteTestCases(caseIds: string[], actionReason: string) {
+    setBusy(true);
+    setError(null);
+    try {
+      for (const caseId of caseIds) {
+        const res = await fetch("/api/auditor/cases/lifecycle", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ caseId, action: "delete", reason: actionReason }),
+        });
+        const json = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+        if (!res.ok || !json.ok) throw new Error(json.error ?? `Failed to delete ${caseId}`);
+      }
+      setModal({ kind: "none" });
+      setReason("");
+      router.refresh();
+      return true;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Bulk delete failed");
       return false;
     } finally {
       setBusy(false);
@@ -313,6 +354,33 @@ export default function AuditorDashboardClient(props: {
       case "mark_for_review":
         await lifecycle("mark_needs_manual_review", caseId);
         return;
+      case "archive_case":
+        setReason("");
+        setModal({ kind: "archive", caseId, caseLabel });
+        return;
+      case "delete_case": {
+        const row = queueRows.find((r) => r.input.id === caseId);
+        setReason(
+          isLikelyTestOrFakeCase({
+            patientEmail: row?.input.patientEmail,
+            external_case_id: row?.input.external_case_id,
+            title: row?.input.title,
+          })
+            ? "Test / fake audit cleanup"
+            : ""
+        );
+        setModal({
+          kind: "delete",
+          caseId,
+          caseLabel,
+          likelyTest: isLikelyTestOrFakeCase({
+            patientEmail: row?.input.patientEmail,
+            external_case_id: row?.input.external_case_id,
+            title: row?.input.title,
+          }),
+        });
+        return;
+      }
       default:
         openWorkspace(caseId);
     }
@@ -522,6 +590,74 @@ export default function AuditorDashboardClient(props: {
         </section>
       )}
 
+      {likelyTestRows.length > 0 && (
+        <section className="rounded-xl border border-amber-300 bg-amber-50/40 p-4">
+          <header className="mb-3 flex flex-wrap items-end justify-between gap-2">
+            <div>
+              <h2 className="text-lg font-semibold text-amber-950">Likely test / fake audits</h2>
+              <p className="text-sm text-amber-900/80 mt-0.5">
+                Matched demo-qa external ids, @hairaudit.test emails, or demo/test titles. Soft-delete removes them from the desk; data is retained for audit trail.
+              </p>
+            </div>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => {
+                setReason("Bulk cleanup of demo / test audits");
+                setModal({
+                  kind: "bulk_delete_tests",
+                  caseIds: likelyTestRows.map((r) => r.input.id),
+                });
+              }}
+              className="rounded-lg border border-rose-400 bg-white px-3 py-1.5 text-sm font-medium text-rose-800 hover:bg-rose-50 disabled:opacity-60"
+            >
+              Soft-delete all {likelyTestRows.length}
+            </button>
+          </header>
+          <ul className="space-y-2 text-sm text-amber-950">
+            {likelyTestRows.slice(0, 12).map((row) => (
+              <li
+                key={`test-${row.input.id}`}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-200 bg-white px-3 py-2"
+              >
+                <span>
+                  Case {row.derived.caseNumberLabel}
+                  {row.input.patientEmail ? ` · ${row.input.patientEmail}` : ""}
+                  {row.input.external_case_id ? ` · ${row.input.external_case_id}` : ""}
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void handleCaseAction({ kind: "view_case", label: "View Case", primary: false, opensWorkspace: true, claimAssignment: false }, row.input.id, row.input.title ?? row.input.id.slice(0, 8))}
+                    className="rounded border border-slate-300 px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                  >
+                    View
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() =>
+                      void handleCaseAction(
+                        { kind: "delete_case", label: "Delete", primary: false, opensWorkspace: false, claimAssignment: false },
+                        row.input.id,
+                        row.input.title ?? row.input.id.slice(0, 8)
+                      )
+                    }
+                    className="rounded border border-rose-400 px-2 py-1 text-xs font-medium text-rose-800 hover:bg-rose-50"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+          {likelyTestRows.length > 12 && (
+            <p className="mt-2 text-xs text-amber-900/70">Showing 12 of {likelyTestRows.length}. Use Soft-delete all to clear the full set.</p>
+          )}
+        </section>
+      )}
+
       <section className="rounded-xl border border-slate-200 bg-slate-50">
         <button
           type="button"
@@ -573,6 +709,75 @@ export default function AuditorDashboardClient(props: {
                 className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
               >
                 {busy ? "Sending..." : "Send Request"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {(modal.kind === "archive" || modal.kind === "delete" || modal.kind === "bulk_delete_tests") && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 p-4">
+          <div className="mx-auto mt-24 max-w-lg rounded-xl border border-slate-200 bg-white p-4 shadow-lg">
+            <h3 className="text-base font-semibold text-slate-900">
+              {modal.kind === "archive"
+                ? "Archive case"
+                : modal.kind === "bulk_delete_tests"
+                  ? `Soft-delete ${modal.caseIds.length} test/fake audits`
+                  : "Soft-delete case"}
+            </h3>
+            <p className="mt-2 text-sm text-slate-600">
+              {modal.kind === "archive"
+                ? `Case: ${modal.caseLabel}. Archived cases leave the active desk queue.`
+                : modal.kind === "bulk_delete_tests"
+                  ? "This soft-deletes matched demo/test cases. Records stay in the database with deleted_at for audit trail — not a hard purge."
+                  : `Case: ${modal.caseLabel}. Soft-delete removes it from the desk. ${modal.likelyTest ? "Detected as likely test/fake." : "Use a clear reason — required."}`}
+            </p>
+            <textarea
+              className="mt-3 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              rows={3}
+              placeholder={
+                modal.kind === "archive"
+                  ? "Optional archive reason"
+                  : "Required delete reason (e.g. Test audit cleanup)"
+              }
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+            />
+            <div className="mt-4 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (busy) return;
+                  setModal({ kind: "none" });
+                  setReason("");
+                }}
+                className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={busy || (modal.kind !== "archive" && !reason.trim())}
+                onClick={() => {
+                  if (modal.kind === "archive") {
+                    void lifecycle("archive", modal.caseId, reason.trim());
+                  } else if (modal.kind === "delete") {
+                    void lifecycle("delete", modal.caseId, reason.trim());
+                  } else {
+                    void bulkDeleteTestCases(modal.caseIds, reason.trim());
+                  }
+                }}
+                className={`rounded-lg px-3 py-2 text-sm font-medium text-white disabled:opacity-60 ${
+                  modal.kind === "archive" ? "bg-slate-900 hover:bg-slate-800" : "bg-rose-700 hover:bg-rose-800"
+                }`}
+              >
+                {busy
+                  ? "Working..."
+                  : modal.kind === "archive"
+                    ? "Archive"
+                    : modal.kind === "bulk_delete_tests"
+                      ? `Soft-delete ${modal.caseIds.length}`
+                      : "Soft-delete"}
               </button>
             </div>
           </div>

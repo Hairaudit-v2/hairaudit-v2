@@ -43,6 +43,7 @@ export type AuditorQueueCaseInput = {
   submitted_at?: string | null;
   auditor_started_at?: string | null;
   assigned_auditor_id?: string | null;
+  external_case_id?: string | null;
   audit_type: "patient" | "doctor" | "clinic" | null;
   patient_review_pathway?: string | null;
   archived_at?: string | null;

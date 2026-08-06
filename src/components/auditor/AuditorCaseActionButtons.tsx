@@ -11,6 +11,12 @@ function classForKind(kind: AuditorCaseActionKind, primary: boolean, size: "sm" 
   if (primary) {
     return `rounded-lg bg-slate-900 ${pad} ${weight} text-white hover:bg-slate-800 disabled:opacity-60`;
   }
+  if (kind === "delete_case") {
+    return `rounded-lg border border-rose-400 ${pad} ${weight} text-rose-800 hover:bg-rose-50 disabled:opacity-60`;
+  }
+  if (kind === "archive_case") {
+    return `rounded-lg border border-slate-400 ${pad} ${weight} text-slate-700 hover:bg-slate-100 disabled:opacity-60`;
+  }
   if (kind === "retry_processing" || kind === "retry_pdf") {
     return `rounded-lg border border-red-300 ${pad} ${weight} text-red-800 hover:bg-red-50 disabled:opacity-60`;
   }

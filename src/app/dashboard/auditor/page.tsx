@@ -18,6 +18,7 @@ type CaseDashboardRow = {
   submitted_at?: string | null;
   auditor_started_at?: string | null;
   assigned_auditor_id?: string | null;
+  external_case_id?: string | null;
   audit_type?: "patient" | "doctor" | "clinic" | null;
   patient_review_pathway?: string | null;
   patient_id?: string | null;
@@ -66,7 +67,7 @@ export default async function AuditorDashboardPage() {
   const primaryCasesRes = await admin
     .from("cases")
     .select(
-      "id, title, status, created_at, updated_at, submitted_at, auditor_started_at, assigned_auditor_id, audit_type, patient_review_pathway, patient_id, doctor_id, clinic_id, archived_at, deleted_at"
+      "id, title, status, created_at, updated_at, submitted_at, auditor_started_at, assigned_auditor_id, external_case_id, audit_type, patient_review_pathway, patient_id, doctor_id, clinic_id, archived_at, deleted_at"
     )
     .is("deleted_at", null)
     .is("archived_at", null)
