@@ -820,7 +820,7 @@ export async function GET(req: Request) {
     }
   }
 
-  const html = (() => {
+  const html = await (async () => {
     // HA-PROJECTION-1G — longitudinal projection review (patient mode only).
     // Precedence over 1C / pathway templates when assessmentType is explicit.
     if (shouldUseLongitudinalProjectionReviewTemplate(assessmentType, mode)) {

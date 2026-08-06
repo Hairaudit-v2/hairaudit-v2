@@ -10,6 +10,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { canAccessCase } from "@/lib/case-access";
 import { resolveIllustrativeProjectionMediaPaths } from "@/lib/preSurgeryIntelligence/reportProjectionMedia.server";
 import { evaluatePatientProjectionVisibility } from "@/lib/preSurgeryIntelligence";
+import type { IllustrativeProjectedResultSection } from "@/lib/preSurgeryIntelligence/reportProjectionInclusion";
 import type { PreSurgeryGraftPlan } from "@/lib/preSurgeryIntelligence/types";
 
 export const runtime = "nodejs";
@@ -57,7 +58,7 @@ export async function GET(req: Request, ctx: RouteContext) {
 
     const summary = (report?.summary ?? {}) as Record<string, unknown>;
     const preReport = summary.pre_surgery_planning_report as
-      | { illustrativeProjectedResult?: { projectionSnapshotId?: string | null; showImagery?: boolean; inputChecksum?: string | null; media?: { sourceImageId?: string } | null } }
+      | { illustrativeProjectedResult?: IllustrativeProjectedResultSection }
       | undefined;
     const section = preReport?.illustrativeProjectedResult;
     if (
@@ -79,12 +80,7 @@ export async function GET(req: Request, ctx: RouteContext) {
     const paths = await resolveIllustrativeProjectionMediaPaths({
       admin,
       caseId,
-      section: {
-        ...(section as never),
-        showImagery: true,
-        projectionSnapshotId: projectionId,
-        inclusionState: "approved_for_inclusion",
-      },
+      section,
       uploadPathById,
     });
 
