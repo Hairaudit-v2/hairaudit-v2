@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type {
   GuidedCaptureViewDto,
@@ -20,6 +20,21 @@ import CaptureProgress from "./CaptureProgress";
 import CaptureReview from "./CaptureReview";
 import CaptureComplete from "./CaptureComplete";
 import GuidedCaptureViewStep from "./GuidedCaptureView";
+import type { PhotoSessionMilestone } from "@/lib/photoSessions/types";
+
+function stageToSessionMilestone(stage: string): PhotoSessionMilestone {
+  if (
+    stage === "month_3" ||
+    stage === "month_6" ||
+    stage === "month_9" ||
+    stage === "month_12" ||
+    stage === "month_1" ||
+    stage === "month_18"
+  ) {
+    return stage;
+  }
+  return "month_6";
+}
 
 export default function GuidedCaptureWizard({
   caseId,
@@ -37,9 +52,31 @@ export default function GuidedCaptureWizard({
   const [encouragement, setEncouragement] = useState<string | null>(null);
   const [refreshError, setRefreshError] = useState<string | null>(null);
   const [allPhotosOpen, setAllPhotosOpen] = useState(false);
+  const [photoSessionId, setPhotoSessionId] = useState<string | null>(null);
 
   const canUpload = canUploadForMilestoneStatus(dto.status, Boolean(dto.earlyUploadNote));
   const ordered = useMemo(() => orderedGuidedViews(dto.views), [dto.views]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const milestone = stageToSessionMilestone(dto.stage);
+    void fetch(`/api/patient/cases/${encodeURIComponent(caseId)}/photo-sessions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ milestone, patientConfirmed: true }),
+    })
+      .then(async (res) => {
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok || cancelled) return;
+        setPhotoSessionId(String(json.sessionId));
+      })
+      .catch(() => {
+        /* non-blocking — uploads still work via category; reconcile attaches later */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [caseId, dto.stage]);
 
   const refreshDto = useCallback(async () => {
     setRefreshError(null);
@@ -211,6 +248,7 @@ export default function GuidedCaptureWizard({
             capturePolicyVersion={dto.capturePolicyVersion}
             canUpload={canUpload}
             encouragement={encouragement}
+            photoSessionId={photoSessionId}
             onUploaded={async () => {
               // Pass longitudinal metadata by re-invoking upload with extra fields —
               // GuidedCaptureView already uploaded; refresh canonical state here.

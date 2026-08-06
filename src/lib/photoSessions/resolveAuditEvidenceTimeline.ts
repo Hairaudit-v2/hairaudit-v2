@@ -482,8 +482,8 @@ export async function resolveAuditEvidenceTimeline(
   const { readMonthsSinceFromPatientAnswers } = await import(
     "@/lib/patientPhoto/patientPhotoReadinessPolicy"
   );
-  const { ensureSessionsFromLegacySignals } = await import(
-    "@/lib/photoSessions/ensureSessionsFromLegacySignals"
+  const { reconcileLegacyImagesIntoSessions } = await import(
+    "@/lib/photoSessions/reconcileLegacyImagesIntoSessions"
   );
 
   const admin = createSupabaseAdminClient();
@@ -538,7 +538,7 @@ export async function resolveAuditEvidenceTimeline(
 
   let sessions: PhotoSessionSummary[] = [];
   try {
-    await ensureSessionsFromLegacySignals(caseId, {
+    await reconcileLegacyImagesIntoSessions(caseId, {
       uploads,
       procedureDate,
       monthsSinceBand,

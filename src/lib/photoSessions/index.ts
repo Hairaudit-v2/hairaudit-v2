@@ -24,3 +24,19 @@ export {
   type EnsureSessionsOptions,
   type EnsureSessionsResult,
 } from "@/lib/photoSessions/ensureSessionsFromLegacySignals";
+export {
+  buildReconcileUploadSignals,
+  latestCorrectionCategoryByUploadId,
+  weakCategoryFromFilename,
+  type ReconcileUploadSignal,
+  type UploadAuditCorrectionRow,
+} from "@/lib/photoSessions/reconcileSignals";
+export {
+  groupUploadsIntoSessionCandidates,
+  SESSION_CLUSTER_WINDOW_MS,
+  type SessionCandidate,
+} from "@/lib/photoSessions/groupUploadsIntoSessionCandidates";
+export {
+  attachUploadToPhotoSession,
+  createOrSelectPhotoSession,
+} from "@/lib/photoSessions/attachUploadToPhotoSession";

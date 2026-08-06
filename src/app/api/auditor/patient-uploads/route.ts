@@ -290,6 +290,18 @@ export async function PATCH(req: Request) {
 
     if (upErr) return NextResponse.json({ ok: false, error: upErr.message }, { status: 500 });
 
+    // Best-effort session reconcile after auditor category corrections (non-blocking on failure).
+    if (action === "reassign") {
+      try {
+        const { reconcileLegacyImagesIntoSessions } = await import(
+          "@/lib/photoSessions/reconcileLegacyImagesIntoSessions"
+        );
+        await reconcileLegacyImagesIntoSessions(caseId);
+      } catch (err) {
+        console.warn("[auditor/patient-uploads] photo session reconcile failed", err);
+      }
+    }
+
     const integ = updated ? getPatientPhotoCategoryIntegrity(updated) : null;
     return NextResponse.json({
       ok: true,

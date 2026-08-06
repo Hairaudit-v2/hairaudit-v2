@@ -12,6 +12,18 @@ import { toPatientFacingUploadError } from "@/lib/uploads/patientUploadClient";
 
 type UploadPhase = "idle" | "uploading" | "uploaded" | "needs_retry";
 
+function mapCaptureRoleToSessionRole(viewKey: string): string {
+  const k = viewKey.toLowerCase();
+  if (k.includes("top")) return "top";
+  if (k.includes("crown")) return "crown";
+  if (k.includes("donor") && k.includes("close")) return "donor_closeup";
+  if (k.includes("donor")) return "donor_rear";
+  if (k.includes("close")) return "recipient_closeup";
+  if (k.includes("left")) return "left";
+  if (k.includes("right")) return "right";
+  return "front";
+}
+
 export default function GuidedCaptureViewStep({
   caseId,
   stage,
@@ -25,6 +37,7 @@ export default function GuidedCaptureViewStep({
   onContinue,
   onSkipRecommended,
   encouragement,
+  photoSessionId,
 }: {
   caseId: string;
   stage: string;
@@ -38,6 +51,7 @@ export default function GuidedCaptureViewStep({
   onContinue: () => void;
   onSkipRecommended?: () => void;
   encouragement?: string | null;
+  photoSessionId?: string | null;
 }) {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const libraryInputRef = useRef<HTMLInputElement>(null);
@@ -85,6 +99,13 @@ export default function GuidedCaptureViewStep({
           referenceUsed: view.referenceImage.available ? "true" : "false",
           capturePolicyVersion,
           clientCaptureTimestamp: new Date().toISOString(),
+          ...(photoSessionId
+            ? {
+                photoSessionId,
+                detectedRole: mapCaptureRoleToSessionRole(view.key),
+                roleConfidence: "0.95",
+              }
+            : {}),
         },
       });
 

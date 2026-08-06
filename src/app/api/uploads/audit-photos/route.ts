@@ -107,6 +107,9 @@ type ClientUploadMeta = {
   referenceUsed?: boolean;
   capturePolicyVersion?: string | null;
   clientCaptureTimestamp?: string | null;
+  photoSessionId?: string | null;
+  detectedRole?: string | null;
+  roleConfidence?: number | null;
 };
 
 function parseClientUploadMeta(form: FormData): ClientUploadMeta {
@@ -141,6 +144,9 @@ function parseClientUploadMeta(form: FormData): ClientUploadMeta {
           : undefined,
     capturePolicyVersion: str("capturePolicyVersion") ?? str("capture_policy_version"),
     clientCaptureTimestamp: str("clientCaptureTimestamp") ?? str("client_capture_timestamp"),
+    photoSessionId: str("photoSessionId") ?? str("photo_session_id"),
+    detectedRole: str("detectedRole") ?? str("detected_role"),
+    roleConfidence: num("roleConfidence") ?? num("role_confidence") ?? null,
   };
 }
 
@@ -248,6 +254,12 @@ async function uploadSingleFile(
       if (clientMeta?.clientCaptureTimestamp) {
         metadata.client_capture_timestamp = clientMeta.clientCaptureTimestamp;
       }
+      if (clientMeta?.photoSessionId) {
+        metadata.photo_session_id = clientMeta.photoSessionId;
+      }
+      if (clientMeta?.detectedRole) {
+        metadata.detected_role = clientMeta.detectedRole;
+      }
 
       const { data: row, error: insErr } = await admin
         .from("uploads")
@@ -285,6 +297,43 @@ async function uploadSingleFile(
         });
       } catch {
         // Silently ignore - audit_photos may not exist
+      }
+
+      // HA-PHOTO-TIMELINE-2A — attach to photo session when guided flow supplies session id
+      if (clientMeta?.photoSessionId && st === "patient") {
+        try {
+          const { attachUploadToPhotoSession } = await import(
+            "@/lib/photoSessions/attachUploadToPhotoSession"
+          );
+          const { roleFromLegacyCategory } = await import(
+            "@/lib/photoSessions/deriveSessionsFromUploads"
+          );
+          const roleRaw = clientMeta.detectedRole;
+          const role =
+            roleRaw &&
+            [
+              "front",
+              "top",
+              "crown",
+              "left",
+              "right",
+              "donor_rear",
+              "recipient_closeup",
+              "donor_closeup",
+              "other",
+              "unknown",
+            ].includes(roleRaw)
+              ? (roleRaw as import("@/lib/photoSessions/types").PhotoSessionImageRole)
+              : roleFromLegacyCategory(category);
+          await attachUploadToPhotoSession({
+            uploadId: String((row as { id: string }).id),
+            photoSessionId: clientMeta.photoSessionId,
+            role,
+            roleConfidence: clientMeta.roleConfidence ?? 0.95,
+          });
+        } catch (attachErr) {
+          console.warn(`[${requestId}] photo session attach failed`, attachErr);
+        }
       }
 
       return { success: true as const, data: row as any };

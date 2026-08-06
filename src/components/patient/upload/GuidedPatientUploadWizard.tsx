@@ -18,6 +18,18 @@ import {
   type GuidedWizardView,
 } from "@/lib/patient/guidedPatientUploadWizard";
 import {
+  getGuidedSessionInitialView,
+  getGuidedSessionPeriodOptions,
+  getGuidedSessionRoleSteps,
+  isGuidedSessionStepComplete,
+  missingOptionalGuidedSessionRoles,
+  missingRequiredGuidedSessionRoles,
+  type GuidedSessionRoleStep,
+  type GuidedSessionWizardView,
+} from "@/lib/patient/guidedSessionUpload";
+import type { PhotoSessionMilestone } from "@/lib/photoSessions/types";
+import { PATIENT_FACING_MILESTONE_LABELS } from "@/lib/photoSessions/types";
+import {
   computePathwayUploadProgress,
   resolvePathwayPhotoSlotDef,
   type PatientReviewPathway,
@@ -106,6 +118,26 @@ export default function GuidedPatientUploadWizard({
     return new Set<string>(DONOR_EMPHASIS_PHOTO_KEYS);
   }, [donorEntryActive]);
 
+  const periodOptions = useMemo(
+    () => getGuidedSessionPeriodOptions(patientReviewPathway),
+    [patientReviewPathway]
+  );
+
+  const [selectedMilestone, setSelectedMilestone] = useState<PhotoSessionMilestone | null>(
+    patientReviewPathway === "pre_surgery" ? "pre_surgery" : null
+  );
+  const [photoSessionId, setPhotoSessionId] = useState<string | null>(null);
+  const [sessionBusy, setSessionBusy] = useState(false);
+  const [showAdvancedGrid, setShowAdvancedGrid] = useState(false);
+  const [sessionView, setSessionView] = useState<GuidedSessionWizardView>(
+    patientReviewPathway === "pre_surgery" ? { mode: "step", stepIndex: 0 } : { mode: "period" }
+  );
+
+  const sessionSteps: GuidedSessionRoleStep[] = useMemo(() => {
+    if (!selectedMilestone) return [];
+    return getGuidedSessionRoleSteps(patientReviewPathway, selectedMilestone);
+  }, [patientReviewPathway, selectedMilestone]);
+
   const initialView = getGuidedWizardInitialView(patientReviewPathway, initialUploads);
   const [view, setView] = useState<GuidedWizardView>(initialView);
 
@@ -120,6 +152,51 @@ export default function GuidedPatientUploadWizard({
   const pathwayProgress = computePathwayUploadProgress(patientReviewPathway, photosForScoring);
   const allRequiredComplete = pathwayProgress.completed === pathwayProgress.total;
 
+  const sessionRequiredComplete =
+    selectedMilestone != null &&
+    missingRequiredGuidedSessionRoles(photosForScoring, sessionSteps).length === 0;
+  const missingOptionalRoles = selectedMilestone
+    ? missingOptionalGuidedSessionRoles(photosForScoring, sessionSteps)
+    : [];
+
+  const useSessionFlow = !showAdvancedGrid;
+
+  const showToast = useCallback((message: string, variant: UploadToast["variant"] = "error") => {
+    setToast({ id: `${Date.now()}`, message, variant });
+  }, []);
+
+  useEffect(() => {
+    if (!useSessionFlow || !selectedMilestone || photoSessionId || sessionBusy || isLocked) return;
+    let cancelled = false;
+    setSessionBusy(true);
+    void fetch(`/api/patient/cases/${encodeURIComponent(caseId)}/photo-sessions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ milestone: selectedMilestone, patientConfirmed: true }),
+    })
+      .then(async (res) => {
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok || cancelled) throw new Error(json?.error ?? "Could not start photo session");
+        setPhotoSessionId(String(json.sessionId));
+        setSessionView(getGuidedSessionInitialView(photosForScoring, sessionSteps, true));
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          showToast(
+            err instanceof Error ? err.message : "Could not start photo session",
+            "error"
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setSessionBusy(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- create once per milestone selection
+  }, [selectedMilestone, useSessionFlow, caseId, isLocked]);
+
   const uploadsByCategory = useMemo(() => {
     const map: Record<string, UploadRow[]> = {};
     for (const u of uploads) {
@@ -130,19 +207,20 @@ export default function GuidedPatientUploadWizard({
     return map;
   }, [uploads]);
 
-  const stepIndex = view.mode === "step" ? view.stepIndex : requiredKeys.length - 1;
-  const currentKey = requiredKeys[stepIndex] ?? requiredKeys[0];
+  const stepIndex =
+    useSessionFlow && sessionView.mode === "step"
+      ? sessionView.stepIndex
+      : view.mode === "step"
+        ? view.stepIndex
+        : requiredKeys.length - 1;
+
+  const currentSessionStep = useSessionFlow ? sessionSteps[stepIndex] ?? null : null;
+  const currentKey = currentSessionStep?.storageCategory ?? requiredKeys[stepIndex] ?? requiredKeys[0];
   const currentSlotDef = resolvePathwayPhotoSlotDef(patientReviewPathway, currentKey);
   const currentExisting = uploadsByCategory[currentKey] ?? [];
-  const currentStepComplete = isGuidedWizardStepComplete(
-    patientReviewPathway,
-    photosForScoring,
-    stepIndex
-  );
-
-  const showToast = useCallback((message: string, variant: UploadToast["variant"] = "error") => {
-    setToast({ id: `${Date.now()}`, message, variant });
-  }, []);
+  const currentStepComplete = useSessionFlow
+    ? isGuidedSessionStepComplete(photosForScoring, sessionSteps, stepIndex)
+    : isGuidedWizardStepComplete(patientReviewPathway, photosForScoring, stepIndex);
 
   const patientError = useCallback(
     (raw: string) => {
@@ -177,22 +255,38 @@ export default function GuidedPatientUploadWizard({
 
       advanceTimeoutRef.current = setTimeout(() => {
         setPendingEncouragement(null);
-        const nextView = resolveGuidedWizardStepAfterUpload(patientReviewPathway, nextPhotos);
-        setView(nextView);
+        if (useSessionFlow && selectedMilestone) {
+          setSessionView(getGuidedSessionInitialView(nextPhotos, sessionSteps, true));
+        } else {
+          const nextView = resolveGuidedWizardStepAfterUpload(patientReviewPathway, nextPhotos);
+          setView(nextView);
+        }
         advanceTimeoutRef.current = null;
       }, PATIENT_UPLOAD_ENCOURAGEMENT_PAUSE_MS);
     },
-    [clearAdvanceTimeout, patientReviewPathway, showToast, t]
+    [
+      clearAdvanceTimeout,
+      patientReviewPathway,
+      showToast,
+      t,
+      useSessionFlow,
+      selectedMilestone,
+      sessionSteps,
+    ]
   );
 
   useEffect(() => () => clearAdvanceTimeout(), [clearAdvanceTimeout]);
 
   const syncViewAfterPhotos = useCallback(
     (nextPhotos: Array<{ type?: string | null }>) => {
+      if (useSessionFlow && selectedMilestone) {
+        setSessionView(getGuidedSessionInitialView(nextPhotos, sessionSteps, true));
+        return;
+      }
       const nextView = resolveGuidedWizardStepAfterUpload(patientReviewPathway, nextPhotos);
       setView(nextView);
     },
-    [patientReviewPathway]
+    [patientReviewPathway, useSessionFlow, selectedMilestone, sessionSteps]
   );
 
   function resolveSlotStatus(category: string, min: number): PhotoSlotStatus {
@@ -272,6 +366,16 @@ export default function GuidedPatientUploadWizard({
         category,
         files,
         submitterType: "patient",
+        extraFormFields:
+          photoSessionId && currentSessionStep
+            ? {
+                photoSessionId,
+                detectedRole: currentSessionStep.role,
+                roleConfidence: "0.95",
+              }
+            : photoSessionId
+              ? { photoSessionId, roleConfidence: "0.85" }
+              : undefined,
         onFileStateChange: (states) => {
           setFileUploadStatesByCategory((p) => ({ ...p, [category]: states }));
         },
@@ -397,10 +501,25 @@ export default function GuidedPatientUploadWizard({
   }
 
   const continueLabel = t("patient.upload.completion.continue" as TranslationKey);
-  const canContinue = allRequiredComplete && !isLocked;
+  const canContinue = (useSessionFlow ? sessionRequiredComplete : allRequiredComplete) && !isLocked;
   const showingEncouragement = pendingEncouragement !== null;
-  const showCompletionChoices = view.mode === "complete" && !optionalRevealed && !showingEncouragement;
-  const showOptionalSection = view.mode === "complete" && optionalRevealed;
+  const showPeriodPicker =
+    useSessionFlow && sessionView.mode === "period" && !showingEncouragement && !showAdvancedGrid;
+  const showCompletionChoices =
+    ((useSessionFlow && sessionView.mode === "complete") || (!useSessionFlow && view.mode === "complete")) &&
+    !optionalRevealed &&
+    !showingEncouragement &&
+    !showPeriodPicker;
+  const showOptionalSection =
+    ((useSessionFlow && sessionView.mode === "complete") || (!useSessionFlow && view.mode === "complete")) &&
+    optionalRevealed;
+  const showSessionStep =
+    useSessionFlow &&
+    sessionView.mode === "step" &&
+    !showingEncouragement &&
+    Boolean(currentSessionStep);
+  const showLegacyStep =
+    !useSessionFlow && !showingEncouragement && view.mode === "step" && Boolean(currentSlotDef);
 
   const extraPhotosTierOverrides = {
     recommended: {
@@ -455,12 +574,33 @@ export default function GuidedPatientUploadWizard({
           </div>
         ) : null}
 
-        {view.mode === "step" || showingEncouragement ? (
+        {useSessionFlow && selectedMilestone && sessionView.mode !== "period" ? (
+          <p className="text-sm text-slate-600" data-testid="guided-session-period-label">
+            Photo period: {PATIENT_FACING_MILESTONE_LABELS[selectedMilestone]}
+            {patientReviewPathway === "post_surgery" ? (
+              <button
+                type="button"
+                className="ml-2 text-sky-700 underline"
+                onClick={() => {
+                  setPhotoSessionId(null);
+                  setSelectedMilestone(null);
+                  setSessionView({ mode: "period" });
+                }}
+                disabled={isLocked || sessionBusy}
+              >
+                Change
+              </button>
+            ) : null}
+          </p>
+        ) : null}
+
+        {(sessionView.mode === "step" || view.mode === "step" || showingEncouragement) &&
+        !showPeriodPicker ? (
           <div className="space-y-2 pt-2">
             <p className="text-sm font-medium text-slate-800" data-testid="guided-upload-step-label">
               {formatTemplate(t("patient.upload.wizard.stepLabel" as TranslationKey), {
                 current: String(stepIndex + 1),
-                total: String(requiredKeys.length),
+                total: String(useSessionFlow ? sessionSteps.filter((s) => s.required).length || sessionSteps.length : requiredKeys.length),
               })}
             </p>
             <div>
@@ -495,6 +635,45 @@ export default function GuidedPatientUploadWizard({
           </div>
         ) : null}
       </header>
+
+      {showPeriodPicker ? (
+        <section
+          data-testid="guided-session-period"
+          className="space-y-4 rounded-xl border border-slate-200 bg-white p-5"
+        >
+          <h2 className="text-lg font-semibold text-slate-900">
+            When were these photos taken?
+          </h2>
+          <p className="text-sm text-slate-600">
+            Choose one period for this set of photos. You will upload each view one at a time.
+          </p>
+          <div className="grid gap-2">
+            {periodOptions.map((opt) => (
+              <button
+                key={opt.milestone}
+                type="button"
+                disabled={isLocked || sessionBusy}
+                data-testid={`guided-session-period-${opt.milestone}`}
+                onClick={() => {
+                  setSelectedMilestone(opt.milestone);
+                  setPhotoSessionId(null);
+                  setSessionView({ mode: "step", stepIndex: 0 });
+                }}
+                className="rounded-lg border border-slate-300 bg-white px-4 py-3 text-left text-sm font-medium text-slate-800 hover:border-amber-400 hover:bg-amber-50 disabled:opacity-50"
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            className="text-sm text-slate-600 underline"
+            onClick={() => setShowAdvancedGrid(true)}
+          >
+            Manage individual photo categories
+          </button>
+        </section>
+      ) : null}
 
       {showingEncouragement ? (
         <section
@@ -531,6 +710,23 @@ export default function GuidedPatientUploadWizard({
           <p className="mt-2 text-sm text-slate-600">
             {t("patient.upload.completion.subcopy" as TranslationKey)}
           </p>
+          {missingOptionalRoles.length > 0 ? (
+            <div
+              className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-left text-sm text-amber-950"
+              data-testid="guided-session-targeted-missing"
+            >
+              <p className="font-medium">Helpful additions (optional)</p>
+              <ul className="mt-1 list-disc pl-5">
+                {missingOptionalRoles.map((role) => (
+                  <li key={role}>
+                    {role === "crown"
+                      ? "A crown view was not included. Add one if available — this does not block your review."
+                      : `Optional view missing: ${role.replaceAll("_", " ")}.`}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             {canContinue ? (
               <Link
@@ -625,7 +821,58 @@ export default function GuidedPatientUploadWizard({
         </section>
       ) : null}
 
-      {!showingEncouragement && view.mode === "step" && currentSlotDef ? (
+      {!showingEncouragement && showSessionStep && currentSessionStep ? (
+        <div data-testid="guided-upload-step" data-step-key={currentKey} data-role={currentSessionStep.role}>
+          <UploadPhotoCard
+            caseId={caseId}
+            category={currentKey}
+            title={currentSessionStep.title}
+            help={currentSessionStep.help}
+            slotStatus={resolveSlotStatus(currentKey, currentSessionStep.required ? 1 : 0)}
+            min={currentSessionStep.required ? 1 : 0}
+            max={3}
+            accept="image/*"
+            existing={currentExisting}
+            locked={isLocked || sessionBusy || !photoSessionId}
+            showCantProvide={!currentSessionStep.required}
+            errorMessage={categoryErrors[currentKey]}
+            successMessage={categorySuccess[currentKey]}
+            qualityWarning={qualityWarnings[currentKey]}
+            partialErrors={partialErrorsByCategory[currentKey]}
+            fileUploadStates={fileUploadStatesByCategory[currentKey]}
+            failedFiles={failedFilesByCategory[currentKey]}
+            onRetry={() => {
+              const failed = failedFilesByCategory[currentKey];
+              if (failed?.length) void uploadFiles(currentKey, failed, true);
+            }}
+            onRetryFile={(file) => void uploadFiles(currentKey, [file], true)}
+            onUpload={(files) => void uploadFiles(currentKey, files)}
+            onDeleted={deleteUpload}
+            onDeleteError={(msg) => showToast(patientError(msg))}
+            patientCopy
+          />
+          {!currentSessionStep.required ? (
+            <button
+              type="button"
+              className="mt-3 text-sm text-slate-600 underline"
+              onClick={() => {
+                const nextPhotos = photosForScoring;
+                const nextIdx = stepIndex + 1;
+                if (nextIdx >= sessionSteps.length) {
+                  setSessionView({ mode: "complete" });
+                } else {
+                  setSessionView({ mode: "step", stepIndex: nextIdx });
+                }
+                void nextPhotos;
+              }}
+            >
+              Skip this optional view
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+
+      {!showingEncouragement && showLegacyStep && currentSlotDef ? (
         <div data-testid="guided-upload-step" data-step-key={currentKey}>
           <UploadPhotoCard
             caseId={caseId}
@@ -659,7 +906,48 @@ export default function GuidedPatientUploadWizard({
         </div>
       ) : null}
 
-      {view.mode === "step" && !showingEncouragement ? (
+      {showAdvancedGrid ? (
+        <section className="space-y-3" data-testid="guided-upload-advanced-grid">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-lg font-semibold text-slate-900">Individual photo categories</h2>
+            <button
+              type="button"
+              className="text-sm text-sky-700 underline"
+              onClick={() => setShowAdvancedGrid(false)}
+            >
+              Back to guided session upload
+            </button>
+          </div>
+          <PathwayEvidenceUploadSection
+            pathway={patientReviewPathway}
+            caseId={caseId}
+            locked={isLocked}
+            busyCats={busyCats}
+            uploadsByCategory={uploadsByCategory}
+            highlightCategoryKeys={donorHighlightKeys}
+            categoryErrors={categoryErrors}
+            categorySuccess={categorySuccess}
+            qualityWarnings={qualityWarnings}
+            partialErrorsByCategory={partialErrorsByCategory}
+            fileUploadStatesByCategory={fileUploadStatesByCategory}
+            failedFilesByCategory={failedFilesByCategory}
+            skippedOptional={skippedOptional}
+            visibleTiers={["required", "recommended", "optional"]}
+            expandNonRequiredSections
+            onUpload={(category, files) => void uploadFiles(category, files)}
+            onDeleted={deleteUpload}
+            onRetryCategory={(category) => {
+              const failed = failedFilesByCategory[category];
+              if (failed?.length) void uploadFiles(category, failed, true);
+            }}
+            onRetryFile={(category, file) => void uploadFiles(category, [file], true)}
+            onDeleteError={(msg) => showToast(patientError(msg))}
+            onSkipOptional={toggleSkippedOptional}
+          />
+        </section>
+      ) : null}
+
+      {(showSessionStep || showLegacyStep) && !showingEncouragement ? (
         <nav
           className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-4"
           aria-label="Upload step navigation"
@@ -668,7 +956,10 @@ export default function GuidedPatientUploadWizard({
             {stepIndex > 0 ? (
               <button
                 type="button"
-                onClick={() => goToStep(stepIndex - 1)}
+                onClick={() => {
+                  if (useSessionFlow) setSessionView({ mode: "step", stepIndex: stepIndex - 1 });
+                  else goToStep(stepIndex - 1);
+                }}
                 className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
               >
                 {t("patient.upload.wizard.back" as TranslationKey)}
@@ -681,15 +972,6 @@ export default function GuidedPatientUploadWizard({
                 {t("patient.upload.wizard.back" as TranslationKey)}
               </Link>
             )}
-            {stepIndex > 0 ? (
-              <button
-                type="button"
-                onClick={() => goToStep(stepIndex - 1)}
-                className="rounded-md px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-900"
-              >
-                {t("patient.upload.wizard.reviewPrevious" as TranslationKey)}
-              </button>
-            ) : null}
           </div>
           {currentStepComplete && currentExisting.length > 0 ? (
             <button
@@ -699,6 +981,15 @@ export default function GuidedPatientUploadWizard({
               className="rounded-md px-3 py-2 text-sm font-medium text-sky-700 hover:text-sky-900 disabled:opacity-50"
             >
               {t("patient.upload.wizard.replacePhoto" as TranslationKey)}
+            </button>
+          ) : null}
+          {!showAdvancedGrid ? (
+            <button
+              type="button"
+              className="rounded-md px-3 py-2 text-sm text-slate-500 underline"
+              onClick={() => setShowAdvancedGrid(true)}
+            >
+              Manage individual photo categories
             </button>
           ) : null}
         </nav>

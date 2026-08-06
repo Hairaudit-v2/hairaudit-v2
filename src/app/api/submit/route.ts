@@ -271,6 +271,15 @@ export async function POST(req: Request) {
       );
     }
 
+    // Best-effort photo session reconcile — never fail submit.
+    if (submitterType === "patient") {
+      void import("@/lib/photoSessions/reconcileLegacyImagesIntoSessions")
+        .then(({ reconcileLegacyImagesIntoSessions }) =>
+          reconcileLegacyImagesIntoSessions(caseId)
+        )
+        .catch((err) => console.warn("[submit] photo session reconcile failed", err));
+    }
+
     return NextResponse.json({ ok: true, submitted_at: now });
   } catch (e: any) {
     console.error("submit-case error:", e);
