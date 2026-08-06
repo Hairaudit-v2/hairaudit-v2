@@ -302,12 +302,15 @@ export function deriveAuditorQueueCase(
   if (input.imageUploadCount === 0) priorityScore -= 100;
   if (abandoned) priorityScore -= 100;
 
+  // Ready-to-audit cases stay in the audit queue even if translation is pending.
+  // Translation must not hide Start/Continue Audit behind Waiting On Patient.
   const waitingOnPatient =
     !completed &&
     !inactive &&
     !failed &&
+    !readyToAudit &&
     (missingImages ||
-      (!photoProgress.isComplete && input.imageUploadCount > 0 && !readyToAudit) ||
+      (!photoProgress.isComplete && input.imageUploadCount > 0) ||
       waitingOnTranslation);
 
   const inActiveWorkQueue =

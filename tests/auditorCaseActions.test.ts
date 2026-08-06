@@ -141,4 +141,15 @@ describe("resolveAuditorCaseActions", () => {
     assert.equal(card.includes(">Open Case<"), false);
     assert.ok(card.includes("resolveAuditorCaseActions"));
   });
+
+  it("ready cases are not classified as waiting on patient when translation is pending", () => {
+    const input = baseInput({
+      waitingOnTranslation: true,
+    });
+    const derived = deriveAuditorQueueCase(input);
+    assert.equal(derived.isReadyToAudit, true);
+    assert.equal(derived.waitingOnPatient, false);
+    assert.equal(derived.inActiveWorkQueue, true);
+    assert.equal(resolveAuditorCaseActions(input, derived)[0]?.kind, "start_audit");
+  });
 });

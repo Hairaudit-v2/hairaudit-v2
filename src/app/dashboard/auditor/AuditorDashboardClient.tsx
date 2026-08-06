@@ -4,7 +4,9 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import AuditorCaseQueueCard from "@/components/auditor/AuditorCaseQueueCard";
 import AuditorNextCaseCard from "@/components/auditor/AuditorNextCaseCard";
-import AuditorWorkloadStatusCards from "@/components/auditor/AuditorWorkloadStatusCards";
+import AuditorWorkloadStatusCards, {
+  type AuditorWorkloadFilter,
+} from "@/components/auditor/AuditorWorkloadStatusCards";
 import AuditorFailedRecoveryCard from "@/components/auditor/AuditorFailedRecoveryCard";
 import AuditorWaitingOnPatientCard from "@/components/auditor/AuditorWaitingOnPatientCard";
 import AuditorOperationsAnalytics from "@/components/auditor/AuditorOperationsAnalytics";
@@ -63,6 +65,20 @@ type ActionModalState =
   | { kind: "none" }
   | { kind: "request_info"; caseId: string; caseLabel: string };
 
+type QueueRow = {
+  input: AuditorQueueCaseInput;
+  derived: ReturnType<typeof deriveAuditorQueueCase>;
+  clinicName: string | null;
+};
+
+function EmptyQueue({ message }: { message: string }) {
+  return (
+    <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-sm text-slate-500 text-center">
+      {message}
+    </div>
+  );
+}
+
 export default function AuditorDashboardClient(props: {
   cases: CaseRow[];
   reportByCase: Record<string, ReportRow>;
@@ -76,7 +92,8 @@ export default function AuditorDashboardClient(props: {
 }) {
   const router = useRouter();
   const [search, setSearch] = useState("");
-  const [showFailedRecovery, setShowFailedRecovery] = useState(false);
+  const [filter, setFilter] = useState<AuditorWorkloadFilter>("all");
+  const [showSecondary, setShowSecondary] = useState(false);
   const [modal, setModal] = useState<ActionModalState>({ kind: "none" });
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
@@ -120,22 +137,19 @@ export default function AuditorDashboardClient(props: {
           input,
           derived,
           clinicName: props.clinicNameByCaseId[base.id] ?? null,
-        };
+        } satisfies QueueRow;
       });
   }, [props]);
 
   const workloadStatus = useMemo(() => computeWorkloadStatus(queueRows), [queueRows]);
 
-  const nextCase = useMemo(() => selectNextCaseToProcess(queueRows), [queueRows]);
-
-  const activeQueueRows = useMemo(() => {
-    const rows = queueRows.filter(
-      (row) => row.derived.inActiveWorkQueue && row.input.id !== nextCase?.input.id
+  const readyRows = useMemo(() => {
+    return sortActiveWorkQueue(
+      queueRows.filter((row) => row.derived.isReadyToAudit && !row.derived.isInactive)
     );
-    return sortActiveWorkQueue(rows);
-  }, [queueRows, nextCase]);
+  }, [queueRows]);
 
-  const failedRecoveryRows = useMemo(() => {
+  const failedRows = useMemo(() => {
     return queueRows
       .filter((row) => row.derived.inFailedRecovery && !row.derived.isInactive)
       .sort((a, b) => b.derived.priorityScore - a.derived.priorityScore);
@@ -146,6 +160,27 @@ export default function AuditorDashboardClient(props: {
       .filter((row) => row.derived.waitingOnPatient)
       .sort((a, b) => b.derived.priorityScore - a.derived.priorityScore);
   }, [queueRows]);
+
+  const nextCase = useMemo(() => {
+    if (filter === "ready") return readyRows[0] ?? null;
+    if (filter === "failed") return failedRows[0] ?? null;
+    if (filter === "waiting") return waitingOnPatientRows[0] ?? null;
+    return selectNextCaseToProcess(queueRows);
+  }, [filter, queueRows, readyRows, failedRows, waitingOnPatientRows]);
+
+  const otherActiveRows = useMemo(() => {
+    if (filter !== "all") return [];
+    const nextId = nextCase?.input.id;
+    return sortActiveWorkQueue(
+      queueRows.filter(
+        (row) =>
+          row.derived.inActiveWorkQueue &&
+          !row.derived.isReadyToAudit &&
+          !row.derived.isFailed &&
+          row.input.id !== nextId
+      )
+    );
+  }, [filter, queueRows, nextCase]);
 
   const searchResults = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -284,32 +319,26 @@ export default function AuditorDashboardClient(props: {
   }
 
   const cardBusy = (caseId: string) => busy || actionBusyCaseId === caseId;
+  const showReady = filter === "all" || filter === "ready";
+  const showFailed = filter === "all" || filter === "failed";
+  const showWaiting = filter === "all" || filter === "waiting";
+  const readyList = readyRows.filter((row) => row.input.id !== nextCase?.input.id);
+  const failedList = failedRows.filter((row) => row.input.id !== nextCase?.input.id);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-12 space-y-8">
       <header>
         <h1 className="text-2xl font-bold text-slate-900">Clinical Operations Desk</h1>
-        <p className="text-slate-600 text-sm mt-1">What needs your attention right now.</p>
+        <p className="text-slate-600 text-sm mt-1">
+          Review ready audits, recover failed processing, and chase missing patient uploads.
+        </p>
       </header>
 
       {error && (
         <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
       )}
 
-      {nextCase ? (
-        <AuditorNextCaseCard
-          input={nextCase.input}
-          derived={nextCase.derived}
-          busy={cardBusy(nextCase.input.id)}
-          onAction={handleCaseAction}
-        />
-      ) : (
-        <section className="rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 p-8 text-center">
-          <p className="text-sm font-medium text-slate-600">No cases need immediate processing.</p>
-        </section>
-      )}
-
-      <AuditorWorkloadStatusCards status={workloadStatus} />
+      <AuditorWorkloadStatusCards status={workloadStatus} selected={filter} onSelect={setFilter} />
 
       <section>
         <input
@@ -341,48 +370,84 @@ export default function AuditorDashboardClient(props: {
         )}
       </section>
 
-      <section>
-        <header className="mb-4">
-          <h2 className="text-lg font-semibold text-slate-900">Active Cases</h2>
-          <p className="text-sm text-slate-500 mt-0.5">Cases needing work now — failed first, then ready, image-limited, manual input.</p>
-        </header>
-        {activeQueueRows.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-sm text-slate-500 text-center">
-            No additional active cases in queue.
-          </div>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2">
-            {activeQueueRows.map((row) => (
-              <AuditorCaseQueueCard
-                key={row.input.id}
-                input={row.input}
-                derived={row.derived}
-                clinicName={row.clinicName}
-                variant="active"
-                busy={cardBusy(row.input.id)}
-                onAction={handleCaseAction}
-              />
-            ))}
-          </div>
-        )}
-      </section>
+      {nextCase ? (
+        <AuditorNextCaseCard
+          input={nextCase.input}
+          derived={nextCase.derived}
+          busy={cardBusy(nextCase.input.id)}
+          onAction={handleCaseAction}
+        />
+      ) : filter !== "all" ? (
+        <EmptyQueue message={`No cases in this filter right now.`} />
+      ) : null}
 
-      {failedRecoveryRows.length > 0 && (
-        <section className="rounded-xl border border-red-200 bg-red-50/30">
-          <button
-            type="button"
-            onClick={() => setShowFailedRecovery((v) => !v)}
-            className="flex w-full items-center justify-between px-4 py-3 text-left"
-          >
+      {showReady && (
+        <section id="ready-to-audit">
+          <header className="mb-4 flex flex-wrap items-end justify-between gap-2">
             <div>
-              <h2 className="text-base font-semibold text-red-900">Failed Case Recovery</h2>
-              <p className="text-xs text-red-700/80 mt-0.5">{failedRecoveryRows.length} failed case(s)</p>
+              <h2 className="text-lg font-semibold text-slate-900">Ready To Audit</h2>
+              <p className="text-sm text-slate-500 mt-0.5">
+                {readyRows.length} case{readyRows.length === 1 ? "" : "s"} with complete intake — Start or Continue Audit.
+              </p>
             </div>
-            <span className="text-sm text-red-700">{showFailedRecovery ? "▲ Hide" : "▼ Show"}</span>
-          </button>
-          {showFailedRecovery && (
-            <div className="border-t border-red-200 p-4 grid gap-4 md:grid-cols-2">
-              {failedRecoveryRows.map((row) => (
+            {filter !== "ready" && readyRows.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setFilter("ready")}
+                className="text-sm font-medium text-emerald-800 hover:underline"
+              >
+                Focus ready only
+              </button>
+            )}
+          </header>
+          {readyList.length === 0 && readyRows.length === 0 ? (
+            <EmptyQueue message="No cases are ready to audit." />
+          ) : readyList.length === 0 ? (
+            <p className="text-sm text-slate-500">The next ready case is featured above.</p>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2">
+              {readyList.map((row) => (
+                <AuditorCaseQueueCard
+                  key={`ready-${row.input.id}`}
+                  input={row.input}
+                  derived={row.derived}
+                  clinicName={row.clinicName}
+                  variant="active"
+                  busy={cardBusy(row.input.id)}
+                  onAction={handleCaseAction}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
+      {showFailed && (
+        <section id="failed-cases" className="rounded-xl border border-red-200 bg-red-50/30 p-4">
+          <header className="mb-4 flex flex-wrap items-end justify-between gap-2">
+            <div>
+              <h2 className="text-lg font-semibold text-red-900">Failed Processing</h2>
+              <p className="text-sm text-red-800/80 mt-0.5">
+                {failedRows.length} failed case{failedRows.length === 1 ? "" : "s"} — Open Manual Audit remains available.
+              </p>
+            </div>
+            {filter !== "failed" && failedRows.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setFilter("failed")}
+                className="text-sm font-medium text-red-800 hover:underline"
+              >
+                Focus failed only
+              </button>
+            )}
+          </header>
+          {failedList.length === 0 && failedRows.length === 0 ? (
+            <EmptyQueue message="No failed cases." />
+          ) : failedList.length === 0 ? (
+            <p className="text-sm text-red-800/80">The next failed case is featured above.</p>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2">
+              {failedList.map((row) => (
                 <AuditorFailedRecoveryCard
                   key={`failed-${row.input.id}`}
                   input={row.input}
@@ -396,33 +461,86 @@ export default function AuditorDashboardClient(props: {
         </section>
       )}
 
-      <section>
-        <header className="mb-4">
-          <h2 className="text-lg font-semibold text-slate-900">Waiting On Patient</h2>
-          <p className="text-sm text-slate-500 mt-0.5">Cases where patient action is required before audit can proceed.</p>
-        </header>
-        {waitingOnPatientRows.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-sm text-slate-500 text-center">
-            No cases waiting on patient action.
-          </div>
-        ) : (
+      {showWaiting && (
+        <section id="waiting-on-patient">
+          <header className="mb-4 flex flex-wrap items-end justify-between gap-2">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900">Waiting On Patient</h2>
+              <p className="text-sm text-slate-500 mt-0.5">
+                Missing images or uploads — you can still View Case and request information.
+              </p>
+            </div>
+            {filter !== "waiting" && waitingOnPatientRows.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setFilter("waiting")}
+                className="text-sm font-medium text-orange-800 hover:underline"
+              >
+                Focus waiting only
+              </button>
+            )}
+          </header>
+          {waitingOnPatientRows.length === 0 ? (
+            <EmptyQueue message="No cases waiting on patient action." />
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2">
+              {waitingOnPatientRows
+                .filter((row) => filter !== "waiting" || row.input.id !== nextCase?.input.id)
+                .map((row) => (
+                  <AuditorWaitingOnPatientCard
+                    key={`waiting-${row.input.id}`}
+                    input={row.input}
+                    derived={row.derived}
+                    busy={cardBusy(row.input.id)}
+                    onAction={handleCaseAction}
+                  />
+                ))}
+            </div>
+          )}
+        </section>
+      )}
+
+      {filter === "all" && otherActiveRows.length > 0 && (
+        <section>
+          <header className="mb-4">
+            <h2 className="text-lg font-semibold text-slate-900">Also In Queue</h2>
+            <p className="text-sm text-slate-500 mt-0.5">Image-limited or manual-input cases that still need attention.</p>
+          </header>
           <div className="grid gap-4 md:grid-cols-2">
-            {waitingOnPatientRows.map((row) => (
-              <AuditorWaitingOnPatientCard
-                key={`waiting-${row.input.id}`}
+            {otherActiveRows.map((row) => (
+              <AuditorCaseQueueCard
+                key={`other-${row.input.id}`}
                 input={row.input}
                 derived={row.derived}
+                clinicName={row.clinicName}
+                variant="active"
                 busy={cardBusy(row.input.id)}
                 onAction={handleCaseAction}
               />
             ))}
           </div>
+        </section>
+      )}
+
+      <section className="rounded-xl border border-slate-200 bg-slate-50">
+        <button
+          type="button"
+          onClick={() => setShowSecondary((v) => !v)}
+          className="flex w-full items-center justify-between px-4 py-3 text-left"
+        >
+          <div>
+            <h2 className="text-base font-semibold text-slate-800">Operations analytics & build progress</h2>
+            <p className="text-xs text-slate-500 mt-0.5">Secondary tooling — not required for audit review</p>
+          </div>
+          <span className="text-sm text-slate-600">{showSecondary ? "▲ Hide" : "▼ Show"}</span>
+        </button>
+        {showSecondary && (
+          <div className="space-y-6 border-t border-slate-200 p-4">
+            <AuditorOperationsAnalytics />
+            <LiveClinicAuditBuildProgressPanel />
+          </div>
         )}
       </section>
-
-      <AuditorOperationsAnalytics />
-
-      <LiveClinicAuditBuildProgressPanel />
 
       {modal.kind === "request_info" && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 p-4">
