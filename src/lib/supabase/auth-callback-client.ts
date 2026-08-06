@@ -4,14 +4,14 @@ import { type NextRequest, NextResponse } from "next/server";
 type CookieToSet = { name: string; value: string; options: CookieOptions };
 
 /**
- * Supabase server client for `/auth/callback` that collects session cookies
- * and applies them onto the final redirect response.
+ * Cookie-aware Supabase server client for Route Handlers that must attach
+ * session cookies to a concrete NextResponse (redirect OR JSON).
  *
- * Using `cookies().set()` alone can drop Set-Cookie on a later
- * `NextResponse.redirect()` in some App Router paths; writing onto the
- * redirect response is the durable pattern for OAuth code exchange.
+ * Using `cookies().set()` alone can drop Set-Cookie on some App Router paths;
+ * writing onto the returned response is the durable pattern for OAuth exchange
+ * and anonymous `signInAnonymously` during pathway start.
  */
-export function createAuthCallbackSupabaseClient(request: NextRequest) {
+export function createResponseCookieSupabaseClient(request: NextRequest) {
   const pending = new Map<string, CookieToSet>();
 
   const supabase = createServerClient(
@@ -52,3 +52,6 @@ export function createAuthCallbackSupabaseClient(request: NextRequest) {
 
   return { supabase, applyCookies, pendingCookieCount: () => pending.size };
 }
+
+/** @deprecated Prefer {@link createResponseCookieSupabaseClient} */
+export const createAuthCallbackSupabaseClient = createResponseCookieSupabaseClient;

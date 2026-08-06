@@ -129,7 +129,12 @@ export async function createAuditCase(args: {
   const eff = effectiveAuditCaseCreationRole(rawRole);
   if (eff === "auditor") {
     console.info(LOG_PREFIX, "reject auditor case create via audit endpoint", { userId: args.userId });
-    return { ok: false, error: "Forbidden", status: 403, logContext: { userId: args.userId } };
+    return {
+      ok: false,
+      error: "ROLE_NOT_ALLOWED",
+      status: 403,
+      logContext: { userId: args.userId, code: "ROLE_NOT_ALLOWED" },
+    };
   }
 
   const role: CaseCreationResolvedRole = eff;

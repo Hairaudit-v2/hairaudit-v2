@@ -209,7 +209,10 @@ describe("createAuditCase rejects auditor", () => {
       nodeEnv: "production",
     });
     assert.strictEqual(r.ok, false);
-    if (!r.ok) assert.strictEqual(r.status, 403);
+    if (!r.ok) {
+      assert.strictEqual(r.status, 403);
+      assert.strictEqual(r.error, "ROLE_NOT_ALLOWED");
+    }
     assert.strictEqual(inserts, 0);
   });
 });

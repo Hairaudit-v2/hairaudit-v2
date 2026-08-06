@@ -16,6 +16,11 @@ import {
   PATHWAY_CHOOSER_HREF,
   type PatientReviewPathway,
 } from "@/lib/patient/patientReviewPathway";
+import { buildPatientLoginHref } from "@/lib/auth/patientLogin";
+
+function authReturnPathForPathway(pathway: PatientReviewPathway): string {
+  return `/request-review?pathway=${encodeURIComponent(pathway)}`;
+}
 
 type StartFreeAuditButtonProps = {
   className?: string;
@@ -64,11 +69,24 @@ function loadHcaptchaScript(): Promise<void> {
   return hcaptchaScriptPromise;
 }
 
+type StartApiJson = {
+  ok?: boolean;
+  error?: string;
+  code?: string;
+  message?: string;
+  next?: string;
+  caseId?: string;
+  pathway?: string;
+};
+
 /**
  * Starts a patient audit when `pathway` is explicit, or routes to the pathway chooser when missing.
  *
  * Never silently defaults to post-surgery on public surfaces unless
  * `allowDefaultPostSurgeryForLegacyTestOnly` is set (tests/internal only).
+ *
+ * HA-PATHWAY-START-403-FIX: maps structured API codes to signup/login/resume/
+ * role-specific UX — never surfaces raw "Forbidden".
  */
 export default function StartFreeAuditButton({
   className,
@@ -148,9 +166,63 @@ export default function StartFreeAuditButton({
             : {}),
         }),
       });
-      const json = await res.json().catch(() => ({}));
+      const json = (await res.json().catch(() => ({}))) as StartApiJson;
+      const code = json.code ?? json.error;
+
+      // 409 EXISTING_CASE — resume without treating as failure noise
+      if (res.status === 409 && code === "EXISTING_CASE" && (json.next || json.caseId)) {
+        if (resolvedEntry && json.caseId) {
+          bindEntryContextToCase(String(json.caseId), {
+            entryContext: resolvedEntry,
+            concern: pending?.concern ?? "donor_healing",
+            sourceGuide: pending?.sourceGuide ?? null,
+            ts: Date.now(),
+          });
+          clearPendingEntryContext();
+        }
+        router.push(json.next ?? `/cases/${json.caseId}/patient/photos`);
+        return;
+      }
+
+      if (res.status === 401 || code === "UNAUTHORIZED") {
+        const next =
+          typeof json.next === "string" && json.next.startsWith("/")
+            ? json.next
+            : buildPatientLoginHref(authReturnPathForPathway(effectivePathway));
+        router.push(next);
+        return;
+      }
+
+      if (res.status === 403 && code === "PROFILE_REQUIRED") {
+        router.push(
+          typeof json.next === "string" && json.next.startsWith("/")
+            ? json.next
+            : `/beta-access-message?pathway=${encodeURIComponent(effectivePathway)}`
+        );
+        return;
+      }
+
+      if (res.status === 403 && code === "ROLE_NOT_ALLOWED") {
+        setError(
+          json.message ??
+            "This account cannot start a patient review. Use the professional dashboard instead."
+        );
+        setBusy(false);
+        if (typeof json.next === "string" && json.next.startsWith("/dashboard")) {
+          // Controlled navigation for professionals — avoid patient dashboard invent.
+          window.setTimeout(() => router.push(json.next!), 1200);
+        }
+        return;
+      }
+
       if (!res.ok || !json?.ok) {
-        throw new Error(json?.error ?? "Could not start your audit. Please try again.");
+        const msg = json.message ?? json.error;
+        if (msg === "Forbidden" || msg === "ROLE_NOT_ALLOWED") {
+          throw new Error(
+            "This account cannot start a patient review from this page. Please use your professional dashboard."
+          );
+        }
+        throw new Error(msg ?? "Could not start your audit. Please try again.");
       }
       if (resolvedEntry && json.caseId) {
         bindEntryContextToCase(String(json.caseId), {
