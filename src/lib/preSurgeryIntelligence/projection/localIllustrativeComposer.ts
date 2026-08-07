@@ -146,7 +146,7 @@ export async function composeLocalIllustrativeProjection(
   const overlayPaths: string[] = [];
 
   for (const z of allocation.zoneGraftTargets) {
-    if (z.priority === "defer" || z.targetGrafts <= 0) continue;
+    if (z.priority === "defer" || z.grafts <= 0) continue;
     const matching = approvedAnns.find((a) => {
       if (a.coordinates.length < 3 || a.geometryType === "point") return false;
       if (a.annotationType === z.zone) return true;

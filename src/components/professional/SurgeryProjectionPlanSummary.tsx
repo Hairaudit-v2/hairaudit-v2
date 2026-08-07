@@ -19,6 +19,7 @@ import {
   ILLUSTRATIVE_SURGERY_PLAN_SUPPORTING_TEXT,
   labelForProjectionProvider,
 } from "@/lib/preSurgeryIntelligence/projectionDisplayCopy";
+import { isProjectionSourceRole } from "@/lib/preSurgeryIntelligence/imageRoles";
 
 export type ProjectionMediaState = {
   projectionId: string;
@@ -102,7 +103,7 @@ export default function SurgeryProjectionPlanSummary({
   const inspectMedia = inspectProjection ? mediaByProjectionId[inspectProjection.id] : null;
 
   const sourceRoles = imageReviews
-    .filter((r) => r.assignedRole === "frontal" || r.assignedRole === "overhead")
+    .filter((r) => isProjectionSourceRole(r.assignedRole))
     .map((r) => `${r.assignedRole} (${r.reviewStatus})`);
 
   return (
