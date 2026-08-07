@@ -23,6 +23,7 @@ import {
   getPathwayEvidencePack,
   normalizePatientReviewPathway,
 } from "@/lib/patient/patientReviewPathway";
+import { classifyProjectionStoragePath } from "@/lib/preSurgeryIntelligence/projectionAssetStatus";
 
 export const runtime = "nodejs";
 
@@ -85,6 +86,36 @@ export async function GET(_req: Request, ctx: RouteContext) {
       })
     );
 
+    const uploadSignedById = new Map(images.map((img) => [img.uploadId, img.signedUrl]));
+
+    const projectionMedia = await Promise.all(
+      bundle.projections.map(async (projection) => {
+        const asset = classifyProjectionStoragePath(projection.storagePath);
+        const sourceSignedUrl = uploadSignedById.get(projection.sourceImageId) ?? null;
+        let projectedSignedUrl: string | null = null;
+        let loadError: string | null = null;
+        if (asset.canAttemptSignedUrl && asset.storagePath) {
+          const { data, error } = await admin.storage
+            .from(bucket)
+            .createSignedUrl(asset.storagePath, 60 * 15);
+          if (error || !data?.signedUrl) {
+            loadError = error?.message || "Could not sign projection storage path";
+          } else {
+            projectedSignedUrl = data.signedUrl;
+          }
+        }
+        return {
+          projectionId: projection.id,
+          assetKind: asset.kind,
+          assetMessage: asset.message,
+          storagePath: asset.storagePath,
+          sourceSignedUrl,
+          projectedSignedUrl,
+          loadError,
+        };
+      })
+    );
+
     return NextResponse.json({
       ok: true,
       caseId,
@@ -95,6 +126,7 @@ export async function GET(_req: Request, ctx: RouteContext) {
       graftPlans: bundle.graftPlans,
       planComparison: buildPlanComparisonView(bundle.graftPlans),
       projections: bundle.projections,
+      projectionMedia,
       auditEvents: bundle.auditEvents,
     });
   } catch (e) {

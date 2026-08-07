@@ -38,6 +38,7 @@ import { loadAuditIntakeByCase } from "@/lib/surgeryUpload/auditIntakeQuery";
 import { SURGERY_UPLOAD_REPORT_KIND_EVIDENCE_REVIEW_V1 } from "@/lib/surgeryUpload/surgeryUploadReportPipelineStage7a";
 import { filterForensicAuditReports } from "@/lib/reports/forensicReportsFilter";
 import LatestReportCard from "@/components/reports/LatestReportCard";
+import SurgeryProjectionPlanCaseCard from "@/components/professional/SurgeryProjectionPlanCaseCard";
 import InviteClinicContributionCard from "@/components/case/InviteClinicContributionCard";
 import ForensicCaseTimelineViewer from "@/components/reports/ForensicCaseTimelineViewer";
 import PatientNextActionPanel from "@/components/patient/PatientNextActionPanel";
@@ -1342,17 +1343,7 @@ export default async function Page({
       </div>
 
       {(isAuditor || isDoctorForCase || isClinicForCase) && patientReviewPathway === "pre_surgery" ? (
-        <div className="mb-4 rounded-md border border-[var(--ha-border)] bg-[var(--ha-card)] px-4 py-3 text-sm">
-          <Link
-            href={`/cases/${c.id}/professional/pre-surgery-review`}
-            className="font-medium text-[var(--ha-primary)] underline"
-          >
-            Open clinician planning workspace
-          </Link>
-          <span className="ml-2 text-[var(--ha-muted-foreground)]">
-            Image analysis, graft planning, and illustrative projections
-          </span>
-        </div>
+        <SurgeryProjectionPlanCaseCard caseId={c.id} />
       ) : null}
 
       {isAuditor ? (

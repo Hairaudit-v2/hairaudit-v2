@@ -39,7 +39,11 @@ import { ANNOTATION_TYPE_LABELS } from "@/lib/preSurgeryIntelligence/annotations
 import { AUDIT_EVENT_LABELS } from "@/lib/preSurgeryIntelligence/auditTimeline";
 import { computeGraftPlanTotals } from "@/lib/preSurgeryIntelligence/graftPlanTotals";
 import ProjectionAuditorCorrectionPanel from "@/components/professional/ProjectionAuditorCorrectionPanel";
+import SurgeryProjectionPlanSummary, {
+  type ProjectionMediaState,
+} from "@/components/professional/SurgeryProjectionPlanSummary";
 import type { PlanComparisonView } from "@/lib/preSurgeryIntelligence/graftPlanCompare";
+import { classifyProjectionStoragePath } from "@/lib/preSurgeryIntelligence/projectionAssetStatus";
 
 type WorkspaceImage = {
   uploadId: string;
@@ -58,6 +62,7 @@ type WorkspacePayload = {
   graftPlans?: PreSurgeryGraftPlan[];
   planComparison?: PlanComparisonView;
   projections?: PreSurgeryIllustrativeProjection[];
+  projectionMedia?: ProjectionMediaState[];
   auditEvents?: PreSurgeryAuditEvent[];
 };
 
@@ -77,7 +82,9 @@ export default function PreSurgeryIntelligenceWorkspace({ caseId }: { caseId: st
   const [graftPlans, setGraftPlans] = useState<PreSurgeryGraftPlan[]>([]);
   const [comparison, setComparison] = useState<PlanComparisonView | null>(null);
   const [projections, setProjections] = useState<PreSurgeryIllustrativeProjection[]>([]);
+  const [projectionMedia, setProjectionMedia] = useState<Record<string, ProjectionMediaState>>({});
   const [auditEvents, setAuditEvents] = useState<PreSurgeryAuditEvent[]>([]);
+  const [timelineOpen, setTimelineOpen] = useState(false);
   const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
   const [zoomUrl, setZoomUrl] = useState<string | null>(null);
   const [hideAnnotations, setHideAnnotations] = useState(false);
@@ -133,6 +140,11 @@ export default function PreSurgeryIntelligenceWorkspace({ caseId }: { caseId: st
     }
     if (data.planComparison) setComparison(data.planComparison);
     if (data.projections) setProjections(data.projections);
+    if (data.projectionMedia) {
+      const next: Record<string, ProjectionMediaState> = {};
+      for (const row of data.projectionMedia) next[row.projectionId] = row;
+      setProjectionMedia(next);
+    }
     if (data.auditEvents) setAuditEvents(data.auditEvents);
   }, []);
 
@@ -586,6 +598,96 @@ export default function PreSurgeryIntelligenceWorkspace({ caseId }: { caseId: st
         ) : null}
       </section>
 
+      <SurgeryProjectionPlanSummary
+        caseId={caseId}
+        approvedPlan={approvedPlan}
+        currentPlan={currentPlan}
+        projections={projections}
+        mediaByProjectionId={projectionMedia}
+        busy={busy}
+        onScrollToPlan={() => {
+          document.getElementById("psi-graft-plan")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }}
+        onGenerate={(mode) => void requestProjection(mode)}
+        onRetryFailed={(p) => {
+          void (async () => {
+            if (!selectedImageId || !approvedPlan) return;
+            setBusy(true);
+            try {
+              const res = await fetch(`${base}/projection`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  mode: p.mode,
+                  sourceImageId: selectedImageId,
+                  graftPlanId: approvedPlan.id,
+                  proposedHairlineConfirmed: hairlineConfirmed,
+                  treatmentAreaConfirmed: treatmentConfirmed,
+                  regeneratesFromProjectionId: p.id,
+                }),
+              });
+              const data = await res.json();
+              if (!res.ok || !data.ok) {
+                throw new Error(data.errors?.[0]?.message ?? data.error ?? "Retry failed");
+              }
+              await refresh();
+            } catch (e) {
+              setError(e instanceof Error ? e.message : "Retry failed");
+            } finally {
+              setBusy(false);
+            }
+          })();
+        }}
+        onReplace={(p) => {
+          if (p.status === "failed" || p.status === "validation_failed" || p.status === "rejected") {
+            void (async () => {
+              if (!selectedImageId || !approvedPlan) return;
+              setBusy(true);
+              try {
+                const res = await fetch(`${base}/projection`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    mode: p.mode,
+                    sourceImageId: selectedImageId,
+                    graftPlanId: approvedPlan.id,
+                    proposedHairlineConfirmed: hairlineConfirmed,
+                    treatmentAreaConfirmed: treatmentConfirmed,
+                    regeneratesFromProjectionId: p.id,
+                  }),
+                });
+                const data = await res.json();
+                if (!res.ok || !data.ok) {
+                  throw new Error(data.errors?.[0]?.message ?? data.error ?? "Replace failed");
+                }
+                await refresh();
+              } catch (e) {
+                setError(e instanceof Error ? e.message : "Replace failed");
+              } finally {
+                setBusy(false);
+              }
+            })();
+            return;
+          }
+          void requestProjection(p.mode);
+        }}
+        onOpenApprove={(p) => {
+          setApprovalTargetId(p.id);
+          setApprovalChecklist(emptyApprovalChecklist());
+          setApprovalNote("");
+          document.getElementById(`psi-projection-card-${p.id}`)?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }}
+        onJumpToProjection={(id) => {
+          document.getElementById(`psi-projection-card-${id}`)?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }}
+      />
+
       {/* AREA 2 — Annotations */}
       <section className="space-y-3">
         <header>
@@ -679,11 +781,12 @@ export default function PreSurgeryIntelligenceWorkspace({ caseId }: { caseId: st
       </section>
 
       {/* AREA 4 — Graft planning */}
-      <section className="space-y-3">
+      <section className="space-y-3 scroll-mt-4" id="psi-graft-plan" data-testid="psi-graft-plan">
         <header>
           <h2 className="text-lg font-semibold">Editable graft planning</h2>
           <p className="text-sm text-[var(--ha-muted-foreground)]">
-            Totals recalculate from zone rows. Deferred zones do not contribute to procedure totals.
+            Graft / surgical plan (distinct from illustrative projected outcome images below). Totals recalculate from
+            zone rows. Deferred zones do not contribute to procedure totals.
           </p>
         </header>
 
@@ -810,44 +913,16 @@ export default function PreSurgeryIntelligenceWorkspace({ caseId }: { caseId: st
         )}
       </section>
 
-      {/* AREA 5 — Comparison + audit */}
-      <section className="space-y-3">
-        <header>
-          <h2 className="text-lg font-semibold">Plan comparison & audit timeline</h2>
-        </header>
-        {comparison?.vsAi ? (
-          <div className="rounded-md border border-[var(--ha-border)] p-3 text-sm">
-            <p>
-              vs AI start: target Δ {comparison.vsAi.totalTargetDelta >= 0 ? "+" : ""}
-              {comparison.vsAi.totalTargetDelta}; zones added [{comparison.vsAi.zonesAdded.join(", ") || "—"}];
-              removed [{comparison.vsAi.zonesRemoved.join(", ") || "—"}]; session changed:{" "}
-              {comparison.vsAi.sessionCountChanged ? "yes" : "no"}; donor caution changed:{" "}
-              {comparison.vsAi.donorCautionChanged ? "yes" : "no"}; hairline changed:{" "}
-              {comparison.vsAi.proposedHairlineChanged ? "yes" : "no"}; deferred changed:{" "}
-              {comparison.vsAi.deferredTreatmentChanged ? "yes" : "no"}
-            </p>
-          </div>
-        ) : (
-          <p className="text-sm text-[var(--ha-muted-foreground)]">No comparison yet.</p>
-        )}
-        <ol className="space-y-1 border-l border-[var(--ha-border)] pl-4 text-sm">
-          {auditEvents.map((ev) => (
-            <li key={ev.id}>
-              <span className="text-xs text-[var(--ha-muted-foreground)]">{new Date(ev.createdAt).toLocaleString()}</span>{" "}
-              {AUDIT_EVENT_LABELS[ev.eventType] ?? ev.eventType}
-            </li>
-          ))}
-          {auditEvents.length === 0 ? <li className="text-[var(--ha-muted-foreground)]">No audit events yet.</li> : null}
-        </ol>
       </section>
 
-      {/* AREA 6–8 — Projections */}
-      <section className="space-y-3" data-testid="psi-projection-section">
+      {/* AREA 6–8 — Projections detail */}
+      <section className="space-y-3" data-testid="psi-projection-section" id="psi-projection-details">
         <header>
           <h2 className="text-lg font-semibold">Illustrative projected outcome images</h2>
           <p className="text-sm text-[var(--ha-muted-foreground)]">
             Generated only after an approved graft plan and explicit clinician request. Labels are illustrative —
             never guaranteed results. Clinician approval with checklist is required before patient visibility.
+            Forensic correction forms below are separate from the projected image itself.
           </p>
         </header>
         <div className="flex flex-wrap items-center gap-3 text-sm">
@@ -877,14 +952,71 @@ export default function PreSurgeryIntelligenceWorkspace({ caseId }: { caseId: st
         {!approvedPlan ? (
           <p className="text-sm text-amber-800">Approve a graft plan before generating projections.</p>
         ) : null}
+        {projections.length === 0 ? (
+          <p className="text-sm text-[var(--ha-muted-foreground)]" data-testid="psi-projection-empty">
+            No illustrative projection records yet. Use Generate above or from the Surgery Projection Plan summary.
+          </p>
+        ) : null}
         <ul className="space-y-2 text-sm">
-          {projections.map((p) => (
-            <li key={p.id} className="rounded-md border border-[var(--ha-border)] p-3" data-testid={`psi-projection-${p.mode}`}>
+          {projections.map((p) => {
+            const media = projectionMedia[p.id];
+            const asset = classifyProjectionStoragePath(p.storagePath);
+            const failed = p.status === "failed" || p.status === "validation_failed";
+            return (
+            <li
+              key={p.id}
+              id={`psi-projection-card-${p.id}`}
+              className="scroll-mt-4 rounded-md border border-[var(--ha-border)] p-3"
+              data-testid={`psi-projection-${p.mode}`}
+            >
+              <div className="mb-2 overflow-hidden rounded border border-[var(--ha-border)] bg-[var(--ha-muted)]/30">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                {media?.projectedSignedUrl ? (
+                  <img
+                    src={media.projectedSignedUrl}
+                    alt=""
+                    className="max-h-64 w-full object-contain"
+                    data-testid={`psi-projection-image-${p.mode}`}
+                  />
+                ) : (
+                  <div
+                    className="flex min-h-28 flex-col items-center justify-center gap-1 p-4 text-center text-xs"
+                    data-testid={`psi-projection-asset-state-${p.mode}`}
+                  >
+                    {failed ? (
+                      <p className="font-semibold text-red-800">Generation failed — use Retry failed generation above.</p>
+                    ) : media?.loadError ? (
+                      <p className="font-semibold text-red-800">
+                        Asset loading error: {media.loadError}
+                      </p>
+                    ) : asset.kind === "stub_placeholder" ? (
+                      <>
+                        <p className="font-semibold text-amber-900">Stub placeholder — no illustrative image file stored</p>
+                        <p className="text-[var(--ha-muted-foreground)]">{asset.message}</p>
+                        {media?.sourceSignedUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={media.sourceSignedUrl}
+                            alt=""
+                            className="mt-2 max-h-32 opacity-50"
+                          />
+                        ) : null}
+                      </>
+                    ) : (
+                      <p className="text-[var(--ha-muted-foreground)]">{asset.message}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+              <div className="text-[11px] font-semibold uppercase tracking-wide text-[var(--ha-muted-foreground)]">
+                Illustrative projected outcome
+              </div>
               <div className="font-medium">{p.patientSafeLabel}</div>
               <div className="text-xs text-[var(--ha-muted-foreground)]">
                 Status {p.status} · plan v{p.graftPlanVersion} · attempt v{p.projectionVersion ?? 1} · engine{" "}
                 {p.engineVersion}
                 {p.status !== "approved" ? " · not patient-visible" : " · clinician-approved for patient view"}
+                {p.patientSharingEnabled ? " · sharing enabled" : ""}
               </div>
               {p.patientSafeDisclaimer ? (
                 <p className="mt-1 text-xs text-[var(--ha-muted-foreground)]">{p.patientSafeDisclaimer}</p>
@@ -1092,6 +1224,9 @@ export default function PreSurgeryIntelligenceWorkspace({ caseId }: { caseId: st
               ) : null}
               {p.status === "approved" ? (
                 <div className="mt-3">
+                  <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-amber-900">
+                    Projection correction request (forensic / internal)
+                  </p>
                   <ProjectionAuditorCorrectionPanel
                     caseId={caseId}
                     projectionSnapshotId={p.id}
@@ -1100,8 +1235,62 @@ export default function PreSurgeryIntelligenceWorkspace({ caseId }: { caseId: st
                 </div>
               ) : null}
             </li>
-          ))}
+            );
+          })}
         </ul>
+      </section>
+
+      <section className="space-y-2" data-testid="psi-plan-comparison-audit">
+        <button
+          type="button"
+          className="flex w-full items-center justify-between rounded-md border border-[var(--ha-border)] px-3 py-2 text-left text-sm"
+          data-testid="psi-timeline-toggle"
+          aria-expanded={timelineOpen}
+          onClick={() => setTimelineOpen((v) => !v)}
+        >
+          <span>
+            <span className="font-semibold">Plan comparison & audit timeline</span>
+            <span className="ml-2 text-xs text-[var(--ha-muted-foreground)]">
+              {auditEvents.length} event{auditEvents.length === 1 ? "" : "s"}
+              {auditEvents[0]
+                ? ` · latest: ${AUDIT_EVENT_LABELS[auditEvents[0].eventType] ?? auditEvents[0].eventType}`
+                : ""}
+            </span>
+          </span>
+          <span className="text-xs text-[var(--ha-muted-foreground)]">{timelineOpen ? "Collapse" : "Expand"}</span>
+        </button>
+        {timelineOpen ? (
+          <div className="space-y-3 rounded-md border border-[var(--ha-border)] p-3">
+            {comparison?.vsAi ? (
+              <div className="text-sm">
+                <p>
+                  vs AI start: target Δ {comparison.vsAi.totalTargetDelta >= 0 ? "+" : ""}
+                  {comparison.vsAi.totalTargetDelta}; zones added [{comparison.vsAi.zonesAdded.join(", ") || "—"}];
+                  removed [{comparison.vsAi.zonesRemoved.join(", ") || "—"}]; session changed:{" "}
+                  {comparison.vsAi.sessionCountChanged ? "yes" : "no"}; donor caution changed:{" "}
+                  {comparison.vsAi.donorCautionChanged ? "yes" : "no"}; hairline changed:{" "}
+                  {comparison.vsAi.proposedHairlineChanged ? "yes" : "no"}; deferred changed:{" "}
+                  {comparison.vsAi.deferredTreatmentChanged ? "yes" : "no"}
+                </p>
+              </div>
+            ) : (
+              <p className="text-sm text-[var(--ha-muted-foreground)]">No comparison yet.</p>
+            )}
+            <ol className="space-y-1 border-l border-[var(--ha-border)] pl-4 text-sm">
+              {auditEvents.map((ev) => (
+                <li key={ev.id}>
+                  <span className="text-xs text-[var(--ha-muted-foreground)]">
+                    {new Date(ev.createdAt).toLocaleString()}
+                  </span>{" "}
+                  {AUDIT_EVENT_LABELS[ev.eventType] ?? ev.eventType}
+                </li>
+              ))}
+              {auditEvents.length === 0 ? (
+                <li className="text-[var(--ha-muted-foreground)]">No audit events yet.</li>
+              ) : null}
+            </ol>
+          </div>
+        ) : null}
       </section>
 
       {zoomUrl ? (

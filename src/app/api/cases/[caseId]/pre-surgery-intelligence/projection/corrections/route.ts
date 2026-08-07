@@ -82,6 +82,26 @@ export async function POST(req: Request, ctx: RouteContext) {
       return NextResponse.json({ ok: false, error: "Projection not found on case" }, { status: 404 });
     }
 
+    const existingCorrections = await listProjectionCorrections(admin, caseId, projection.id);
+    if (!body.supersedesCorrectionId) {
+      const openDuplicate = existingCorrections.find(
+        (c) =>
+          c.status === "open" &&
+          c.projectionVersion === (projection.projectionVersion ?? 1)
+      );
+      if (openDuplicate) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error:
+              "An open correction already exists for this projection version. Resolve or adjust it before recording another.",
+            existingCorrectionId: openDuplicate.id,
+          },
+          { status: 409 }
+        );
+      }
+    }
+
     // Snapshot immutability guard — capture before/after identity.
     const snapshotBefore = {
       id: projection.id,
