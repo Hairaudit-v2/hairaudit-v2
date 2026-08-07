@@ -206,8 +206,18 @@ export {
 export {
   selectCurrentProjectionAttempt,
   isEligibleCurrentAttempt,
+  pickHydrationArtifactType,
+  diagnoseNoCurrentAttempt,
+  diagnoseProjectionMedia,
+  attemptRoleLabel,
+  NO_CURRENT_ATTEMPT_MESSAGES,
   readGenerationLatencyMs,
   readMaskStoragePath,
   hairAuditDecisionLabel,
   technicalValidationVerdict,
+} from "./projection/currentAttempt";
+export type {
+  CurrentAttemptKey,
+  NoCurrentAttemptReason,
+  ProjectionMediaDiagnostic,
 } from "./projection/currentAttempt";

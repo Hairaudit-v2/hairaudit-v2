@@ -19,6 +19,27 @@ export type CurrentAttemptKey = {
   hairlineDesignVersion?: number | null;
 };
 
+/** Precise empty-state reasons when no eligible current generation hydrates. */
+export type NoCurrentAttemptReason =
+  | "no_completed_generation"
+  | "latest_attempt_rejected"
+  | "latest_attempt_failed"
+  | "source_asset_unavailable"
+  | "signed_url_unavailable"
+  | "generation_superseded"
+  | "no_attempt_matches_key";
+
+export const NO_CURRENT_ATTEMPT_MESSAGES: Record<NoCurrentAttemptReason, string> = {
+  no_completed_generation: "No completed generation for this plan · hairline · source · view · mode.",
+  latest_attempt_rejected: "Latest attempt was rejected — it is not eligible as the current candidate.",
+  latest_attempt_failed: "Latest attempt failed — it is not eligible as the current candidate.",
+  source_asset_unavailable: "Source asset unavailable for the matched generation.",
+  signed_url_unavailable: "Signed URL unavailable for the current generation asset.",
+  generation_superseded: "Latest generation was superseded — it is not eligible as the current candidate.",
+  no_attempt_matches_key:
+    "No attempt matches the current plan · hairline · source · view · mode.",
+};
+
 const CURRENT_ELIGIBLE = new Set([
   "approved",
   "clinician_review",
@@ -36,6 +57,12 @@ const NEVER_CURRENT = new Set([
   "generating",
   "draft_request",
 ]);
+
+const ARTIFACT_HYDRATION_PRIORITY: PreSurgeryArtifactType[] = [
+  "illustrative_projected_outcome",
+  "proposed_hairline_design",
+  "graft_allocation_map",
+];
 
 function artifactOf(p: PreSurgeryIllustrativeProjection): PreSurgeryArtifactType {
   return resolveProjectionArtifactType({
@@ -57,6 +84,12 @@ function statusRank(status: string): number {
 
 function timeKey(p: PreSurgeryIllustrativeProjection): string {
   return p.generatedAt ?? p.requestedAt ?? "";
+}
+
+function sortMatched(a: PreSurgeryIllustrativeProjection, b: PreSurgeryIllustrativeProjection): number {
+  const rank = statusRank(b.status) - statusRank(a.status);
+  if (rank !== 0) return rank;
+  return timeKey(b).localeCompare(timeKey(a));
 }
 
 export function isEligibleCurrentAttempt(p: PreSurgeryIllustrativeProjection): boolean {
@@ -93,21 +126,184 @@ export function selectCurrentProjectionAttempt(input: {
 }): {
   current: PreSurgeryIllustrativeProjection | null;
   historical: PreSurgeryIllustrativeProjection[];
+  matched: PreSurgeryIllustrativeProjection[];
 } {
   const matched = input.projections
     .filter((p) => projectionMatchesCurrentKey(p, input.key))
     .slice()
-    .sort((a, b) => {
-      const rank = statusRank(b.status) - statusRank(a.status);
-      if (rank !== 0) return rank;
-      return timeKey(b).localeCompare(timeKey(a));
-    });
+    .sort(sortMatched);
 
   const eligible = matched.filter(isEligibleCurrentAttempt);
   const current = eligible[0] ?? null;
   const historical = matched.filter((p) => p.id !== current?.id);
 
-  return { current, historical };
+  return { current, historical, matched };
+}
+
+/**
+ * When opening the workspace, pick the strongest artifact that already has an
+ * eligible current generation so the canvas hydrates without a thumbnail click.
+ */
+export function pickHydrationArtifactType(input: {
+  projections: PreSurgeryIllustrativeProjection[];
+  baseKey: Omit<CurrentAttemptKey, "artifactType">;
+  preferred?: PreSurgeryArtifactType | null;
+}): PreSurgeryArtifactType {
+  if (input.preferred) {
+    const preferredHit = selectCurrentProjectionAttempt({
+      projections: input.projections,
+      key: { ...input.baseKey, artifactType: input.preferred },
+    }).current;
+    if (preferredHit) return input.preferred;
+  }
+  for (const artifactType of ARTIFACT_HYDRATION_PRIORITY) {
+    const hit = selectCurrentProjectionAttempt({
+      projections: input.projections,
+      key: { ...input.baseKey, artifactType },
+    }).current;
+    if (hit) return artifactType;
+  }
+  return input.preferred ?? "illustrative_projected_outcome";
+}
+
+export type ProjectionMediaDiagnostic = {
+  sourceSignedUrl?: string | null;
+  projectedSignedUrl?: string | null;
+  loadError?: string | null;
+  assetKind?: string | null;
+};
+
+/**
+ * Diagnose why no eligible current candidate hydrates into the canvas.
+ * Returns null when an eligible current attempt exists (asset URL issues are separate).
+ */
+export function diagnoseNoCurrentAttempt(input: {
+  projections: PreSurgeryIllustrativeProjection[];
+  key: CurrentAttemptKey;
+  media?: ProjectionMediaDiagnostic | null;
+}): {
+  reason: NoCurrentAttemptReason;
+  message: string;
+  latestMatched: PreSurgeryIllustrativeProjection | null;
+} | null {
+  const { current, matched } = selectCurrentProjectionAttempt({
+    projections: input.projections,
+    key: input.key,
+  });
+
+  if (current) return null;
+
+  const latest = matched[0] ?? null;
+  if (!latest) {
+    const anySameMode = input.projections.some(
+      (p) =>
+        p.graftPlanId === input.key.graftPlanId &&
+        p.mode === input.key.mode &&
+        artifactOf(p) === input.key.artifactType
+    );
+    return {
+      reason: anySameMode || input.projections.length > 0 ? "no_attempt_matches_key" : "no_completed_generation",
+      message:
+        anySameMode || input.projections.length > 0
+          ? NO_CURRENT_ATTEMPT_MESSAGES.no_attempt_matches_key
+          : NO_CURRENT_ATTEMPT_MESSAGES.no_completed_generation,
+      latestMatched: null,
+    };
+  }
+
+  if (latest.status === "rejected") {
+    return {
+      reason: "latest_attempt_rejected",
+      message: NO_CURRENT_ATTEMPT_MESSAGES.latest_attempt_rejected,
+      latestMatched: latest,
+    };
+  }
+  if (latest.status === "failed" || latest.status === "validation_failed") {
+    return {
+      reason: "latest_attempt_failed",
+      message: NO_CURRENT_ATTEMPT_MESSAGES.latest_attempt_failed,
+      latestMatched: latest,
+    };
+  }
+  if (latest.status === "superseded") {
+    return {
+      reason: "generation_superseded",
+      message: NO_CURRENT_ATTEMPT_MESSAGES.generation_superseded,
+      latestMatched: latest,
+    };
+  }
+  if (isStub(latest) || !latest.storagePath) {
+    return {
+      reason: "source_asset_unavailable",
+      message: NO_CURRENT_ATTEMPT_MESSAGES.source_asset_unavailable,
+      latestMatched: latest,
+    };
+  }
+  if (input.media?.loadError || (input.media && !input.media.projectedSignedUrl)) {
+    return {
+      reason: "signed_url_unavailable",
+      message: NO_CURRENT_ATTEMPT_MESSAGES.signed_url_unavailable,
+      latestMatched: latest,
+    };
+  }
+  if (NEVER_CURRENT.has(latest.status)) {
+    return {
+      reason: "no_completed_generation",
+      message: NO_CURRENT_ATTEMPT_MESSAGES.no_completed_generation,
+      latestMatched: latest,
+    };
+  }
+  return {
+    reason: "no_completed_generation",
+    message: NO_CURRENT_ATTEMPT_MESSAGES.no_completed_generation,
+    latestMatched: latest,
+  };
+}
+
+/** Asset / signed-URL diagnostics for an already-selected attempt. */
+export function diagnoseProjectionMedia(
+  media: ProjectionMediaDiagnostic | null | undefined
+): { reason: "signed_url_unavailable" | "source_asset_unavailable"; message: string } | null {
+  if (!media) {
+    return {
+      reason: "signed_url_unavailable",
+      message: NO_CURRENT_ATTEMPT_MESSAGES.signed_url_unavailable,
+    };
+  }
+  if (media.loadError || !media.projectedSignedUrl) {
+    return {
+      reason: "signed_url_unavailable",
+      message: NO_CURRENT_ATTEMPT_MESSAGES.signed_url_unavailable,
+    };
+  }
+  if (!media.sourceSignedUrl) {
+    return {
+      reason: "source_asset_unavailable",
+      message: NO_CURRENT_ATTEMPT_MESSAGES.source_asset_unavailable,
+    };
+  }
+  return null;
+}
+
+/** Clinical role label for attempt chips — never confuses historical with current. */
+export function attemptRoleLabel(input: {
+  attempt: PreSurgeryIllustrativeProjection;
+  currentId: string | null;
+  viewingHistorical: boolean;
+}): string {
+  if (input.viewingHistorical && input.attempt.id !== input.currentId) {
+    return "Historical";
+  }
+  if (input.currentId && input.attempt.id === input.currentId) {
+    return "Current candidate";
+  }
+  if (input.attempt.status === "approved") return "Approved";
+  if (input.attempt.status === "rejected") return "Rejected";
+  if (input.attempt.status === "failed" || input.attempt.status === "validation_failed") {
+    return "Failed";
+  }
+  if (input.attempt.status === "superseded") return "Superseded";
+  return "Historical";
 }
 
 /** Extract generation latency (ms) from snapshot / planning assumptions when present. */

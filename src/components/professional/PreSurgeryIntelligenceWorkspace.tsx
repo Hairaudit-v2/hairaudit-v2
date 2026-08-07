@@ -625,6 +625,7 @@ export default function PreSurgeryIntelligenceWorkspace({ caseId }: { caseId: st
           signedUrl: img.signedUrl,
           role: img.review.assignedRole,
         }))}
+        auditEvents={auditEvents}
         busy={busy}
         projectedOutcomeAvailable={true}
         onScrollToPlan={() => {
@@ -1142,24 +1143,66 @@ export default function PreSurgeryIntelligenceWorkspace({ caseId }: { caseId: st
       </section>
 
       <section className="space-y-2" data-testid="psi-plan-comparison-audit">
-        <button
-          type="button"
-          className="flex w-full items-center justify-between rounded-md border border-[var(--ha-border)] px-3 py-2 text-left text-sm"
-          data-testid="psi-timeline-toggle"
-          aria-expanded={timelineOpen}
-          onClick={() => setTimelineOpen((v) => !v)}
+        <div
+          className="rounded-md border border-[var(--ha-border)] px-3 py-2 text-sm"
+          data-testid="psi-audit-summary-card"
         >
-          <span>
-            <span className="font-semibold">Plan comparison & audit timeline</span>
-            <span className="ml-2 text-xs text-[var(--ha-muted-foreground)]">
-              {auditEvents.length} event{auditEvents.length === 1 ? "" : "s"}
-              {auditEvents[0]
-                ? ` · latest: ${AUDIT_EVENT_LABELS[auditEvents[0].eventType] ?? auditEvents[0].eventType}`
-                : ""}
-            </span>
-          </span>
-          <span className="text-xs text-[var(--ha-muted-foreground)]">{timelineOpen ? "Collapse" : "Expand"}</span>
-        </button>
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <p className="font-semibold">Audit summary</p>
+              <dl className="mt-1 grid gap-1 text-xs sm:grid-cols-2 lg:grid-cols-4">
+                <div>
+                  <dt className="text-[var(--ha-muted-foreground)]">Latest material event</dt>
+                  <dd className="font-medium">
+                    {auditEvents[0]
+                      ? AUDIT_EVENT_LABELS[auditEvents[0].eventType] ?? auditEvents[0].eventType
+                      : "—"}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-[var(--ha-muted-foreground)]">Latest reviewer</dt>
+                  <dd className="font-medium">
+                    {auditEvents.find(
+                      (e) =>
+                        e.eventType.includes("approv") ||
+                        e.eventType.includes("reject") ||
+                        e.eventType.includes("review")
+                    )?.actorId?.slice(0, 8) ?? "—"}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-[var(--ha-muted-foreground)]">Latest decision</dt>
+                  <dd className="font-medium">
+                    {(() => {
+                      const d = auditEvents.find(
+                        (e) =>
+                          e.eventType === "projection_approved" ||
+                          e.eventType === "projection_rejected" ||
+                          e.eventType === "graft_plan_approved"
+                      );
+                      return d ? AUDIT_EVENT_LABELS[d.eventType] ?? d.eventType : "—";
+                    })()}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-[var(--ha-muted-foreground)]">Last updated</dt>
+                  <dd className="font-medium">
+                    {auditEvents[0] ? new Date(auditEvents[0].createdAt).toLocaleString() : "—"}
+                  </dd>
+                </div>
+              </dl>
+            </div>
+            <button
+              type="button"
+              className="rounded border px-2 py-1 text-xs"
+              data-testid="psi-timeline-toggle"
+              aria-expanded={timelineOpen}
+              onClick={() => setTimelineOpen((v) => !v)}
+            >
+              {timelineOpen ? "Hide full audit history" : "View full audit history"}
+            </button>
+          </div>
+        </div>
         {timelineOpen ? (
           <div className="space-y-3 rounded-md border border-[var(--ha-border)] p-3">
             {comparison?.vsAi ? (
@@ -1177,7 +1220,7 @@ export default function PreSurgeryIntelligenceWorkspace({ caseId }: { caseId: st
             ) : (
               <p className="text-sm text-[var(--ha-muted-foreground)]">No comparison yet.</p>
             )}
-            <ol className="space-y-1 border-l border-[var(--ha-border)] pl-4 text-sm">
+            <ol className="max-h-64 space-y-1 overflow-auto border-l border-[var(--ha-border)] pl-4 text-sm">
               {auditEvents.map((ev) => (
                 <li key={ev.id}>
                   <span className="text-xs text-[var(--ha-muted-foreground)]">
