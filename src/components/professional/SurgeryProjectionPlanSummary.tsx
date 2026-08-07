@@ -14,6 +14,11 @@ import {
   clinicianProjectionLifecycleLabel,
   projectionMatchesCurrentPlan,
 } from "@/lib/preSurgeryIntelligence/projectionAssetStatus";
+import {
+  ILLUSTRATIVE_SURGERY_PLAN_LABEL,
+  ILLUSTRATIVE_SURGERY_PLAN_SUPPORTING_TEXT,
+  labelForProjectionProvider,
+} from "@/lib/preSurgeryIntelligence/projectionDisplayCopy";
 
 export type ProjectionMediaState = {
   projectionId: string;
@@ -112,11 +117,11 @@ export default function SurgeryProjectionPlanSummary({
             Surgery Projection Plan
           </p>
           <h2 className="text-lg font-semibold text-[var(--ha-foreground)]">
-            Graft plan + illustrative projected outcome
+            Graft plan + {ILLUSTRATIVE_SURGERY_PLAN_LABEL}
           </h2>
           <p className="mt-1 text-sm text-[var(--ha-muted-foreground)]">
-            Distinct from source photos and from forensic correction requests. Illustrative images are
-            planning aids — not guaranteed results.
+            {ILLUSTRATIVE_SURGERY_PLAN_SUPPORTING_TEXT} Distinct from source photos and from forensic
+            correction requests. Reserve “Projected Outcome” for ImagingOS cosmetic simulations.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -178,8 +183,11 @@ export default function SurgeryProjectionPlanSummary({
 
         <div className="rounded-md border border-[var(--ha-border)] p-3 text-sm sm:col-span-2">
           <div className="text-[11px] font-semibold uppercase text-[var(--ha-muted-foreground)]">
-            Illustrative projected outcome
+            {ILLUSTRATIVE_SURGERY_PLAN_LABEL}
           </div>
+          <p className="mt-1 text-xs text-[var(--ha-muted-foreground)]">
+            {ILLUSTRATIVE_SURGERY_PLAN_SUPPORTING_TEXT}
+          </p>
           {!approvedPlan ? (
             <p className="mt-2 text-sm text-amber-800" data-testid="psi-spp-empty-needs-plan">
               Approve a graft plan before generating illustrative projections.
@@ -235,11 +243,11 @@ export default function SurgeryProjectionPlanSummary({
                         <div className="relative flex h-36 items-center justify-center bg-[var(--ha-muted)]/40">
                           {showImg ? (
                             // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={media!.projectedSignedUrl!}
-                              alt=""
-                              className="h-full w-full object-cover"
-                            />
+                        <img
+                          src={media!.projectedSignedUrl!}
+                          alt={`${ILLUSTRATIVE_SURGERY_PLAN_LABEL} thumbnail`}
+                          className="h-full w-full object-cover"
+                        />
                           ) : media?.sourceSignedUrl && isStub ? (
                             <div className="relative h-full w-full">
                               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -263,7 +271,11 @@ export default function SurgeryProjectionPlanSummary({
                           )}
                         </div>
                         <div className="space-y-1 p-2 text-xs">
-                          <div className="font-medium">{p.patientSafeLabel}</div>
+                          <div className="font-medium">
+                            {labelForProjectionProvider(p.providerId).label}
+                            {" · "}
+                            {p.patientSafeLabel}
+                          </div>
                           <div className="text-[var(--ha-muted-foreground)]">
                             {historicalUnavailable && isStub
                               ? "Historical / unavailable"
@@ -468,10 +480,13 @@ export default function SurgeryProjectionPlanSummary({
           <div className="max-h-[95vh] w-full max-w-6xl overflow-auto rounded-lg bg-[var(--ha-card)] p-4 shadow-xl">
             <div className="mb-3 flex items-start justify-between gap-3">
               <div>
-                <h3 className="text-base font-semibold">Accuracy review</h3>
+                <h3 className="text-base font-semibold">
+                  Accuracy review — {ILLUSTRATIVE_SURGERY_PLAN_LABEL}
+                </h3>
                 <p className="text-xs text-[var(--ha-muted-foreground)]">
-                  Source photograph · proposed graft-zone / hairline overlay · generated illustrative
-                  result. Rejecting the projection does not reject the graft plan.
+                  Source photograph · proposed hairline and graft-zone overlay · generated planning
+                  illustration. {ILLUSTRATIVE_SURGERY_PLAN_SUPPORTING_TEXT} Rejecting the illustration
+                  does not reject the graft plan.
                 </p>
               </div>
               <button
@@ -500,7 +515,7 @@ export default function SurgeryProjectionPlanSummary({
               </figure>
               <figure className="space-y-1">
                 <figcaption className="text-xs font-semibold">
-                  Proposed graft-zone / hairline guidance
+                  {ILLUSTRATIVE_SURGERY_PLAN_LABEL} (hairline + zones)
                 </figcaption>
                 {inspectMedia.projectedSignedUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -520,7 +535,9 @@ export default function SurgeryProjectionPlanSummary({
                 </p>
               </figure>
               <figure className="space-y-1">
-                <figcaption className="text-xs font-semibold">Generated illustrative result</figcaption>
+                <figcaption className="text-xs font-semibold">
+                  Generated {ILLUSTRATIVE_SURGERY_PLAN_LABEL}
+                </figcaption>
                 {inspectMedia.projectedSignedUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img

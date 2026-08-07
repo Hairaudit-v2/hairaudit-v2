@@ -5,29 +5,29 @@
 
 import type { PreSurgeryProjectionMode } from "./types";
 
-/** Section title (web + PDF). */
-export const ILLUSTRATIVE_PROJECTED_RESULT_TITLE = "Illustrative Projected Result";
+/** Section title (web + PDF). Planning composite — not ImagingOS Projected Outcome. */
+export const ILLUSTRATIVE_PROJECTED_RESULT_TITLE = "Illustrative Surgery Plan";
 
 export const ILLUSTRATIVE_PROJECTED_RESULT_INTRO =
-  "The following image is an illustrative planning visual based on the submitted photographs, visible hair-loss pattern and the provisional graft range used in this review. It is intended to help explain potential coverage and design considerations. It is not a prediction, guarantee or final surgical plan.";
+  "This planning illustration shows the proposed hairline and treatment zones. It is not a guarantee or photorealistic prediction of the final result.";
 
 export const ILLUSTRATIVE_PROJECTED_RESULT_LIMITATION_PANEL =
-  "Important: This image is an educational planning illustration. Actual growth, density, hair direction, calibre, healing and appearance vary between patients. Final design and graft allocation require an in-person assessment and agreement with the treating clinician.";
+  "Important: This image is an educational planning illustration showing proposed hairline and treatment zones. Actual growth, density, hair direction, calibre, healing and appearance vary between patients. Final design and graft allocation require an in-person assessment and agreement with the treating clinician.";
 
 export const PROJECTION_NOT_INCLUDED_EXPLANATION =
-  "An illustrative projected-result image is not included in this review. Planning scores, graft ranges and suitability guidance above remain valid.";
+  "An Illustrative Surgery Plan image is not included in this review. Planning scores, graft ranges and suitability guidance above remain valid.";
 
 export const PROJECTION_WITHHELD_EVIDENCE_EXPLANATION =
-  "An illustrative planning visual was not included because of evidence limitations in the submitted photographs or clinical inputs. Planning guidance in this report remains based on the reviewed findings.";
+  "An Illustrative Surgery Plan visual was not included because of evidence limitations in the submitted photographs or clinical inputs. Planning guidance in this report remains based on the reviewed findings.";
 
 export const PROJECTION_ASSET_FALLBACK_NOTICE =
-  "The illustrative planning image could not be retrieved for this export. Snapshot identifiers and planning details below remain valid; the visual comparison is omitted.";
+  "The Illustrative Surgery Plan image could not be retrieved for this export. Snapshot identifiers and planning details below remain valid; the visual comparison is omitted.";
 
 /** Ticket wording mapped onto existing governed modes (planned ≈ balanced). */
 export const REPORT_PLANNING_MODE_LABELS: Record<PreSurgeryProjectionMode, string> = {
-  conservative: "Illustrative planning scenario: Conservative",
-  planned: "Illustrative planning scenario: Balanced",
-  optimistic_within_approved_range: "Illustrative planning scenario: Maximum visual coverage",
+  conservative: "Illustrative Surgery Plan scenario: Conservative",
+  planned: "Illustrative Surgery Plan scenario: Balanced",
+  optimistic_within_approved_range: "Illustrative Surgery Plan scenario: Maximum visual coverage",
 };
 
 /** Case-specific limitation codes surfaced in patient copy. */

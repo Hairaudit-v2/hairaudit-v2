@@ -44,6 +44,7 @@ import SurgeryProjectionPlanSummary, {
 } from "@/components/professional/SurgeryProjectionPlanSummary";
 import type { PlanComparisonView } from "@/lib/preSurgeryIntelligence/graftPlanCompare";
 import { classifyProjectionStoragePath } from "@/lib/preSurgeryIntelligence/projectionAssetStatus";
+import { ILLUSTRATIVE_SURGERY_PLAN_LABEL } from "@/lib/preSurgeryIntelligence/projectionDisplayCopy";
 
 type WorkspaceImage = {
   uploadId: string;
@@ -787,7 +788,7 @@ export default function PreSurgeryIntelligenceWorkspace({ caseId }: { caseId: st
         <header>
           <h2 className="text-lg font-semibold">Editable graft planning</h2>
           <p className="text-sm text-[var(--ha-muted-foreground)]">
-            Graft / surgical plan (distinct from illustrative projected outcome images below). Totals recalculate from
+            Graft / surgical plan (distinct from {ILLUSTRATIVE_SURGERY_PLAN_LABEL} images below). Totals recalculate from
             zone rows. Deferred zones do not contribute to procedure totals.
           </p>
         </header>
@@ -920,7 +921,7 @@ export default function PreSurgeryIntelligenceWorkspace({ caseId }: { caseId: st
       {/* AREA 6–8 — Projections detail */}
       <section className="space-y-3" data-testid="psi-projection-section" id="psi-projection-details">
         <header>
-          <h2 className="text-lg font-semibold">Illustrative projected outcome images</h2>
+          <h2 className="text-lg font-semibold">{ILLUSTRATIVE_SURGERY_PLAN_LABEL} images</h2>
           <p className="text-sm text-[var(--ha-muted-foreground)]">
             Generated only after an approved graft plan and explicit clinician request. Labels are illustrative —
             never guaranteed results. Clinician approval with checklist is required before patient visibility.
@@ -1016,7 +1017,7 @@ export default function PreSurgeryIntelligenceWorkspace({ caseId }: { caseId: st
                 )}
               </div>
               <div className="text-[11px] font-semibold uppercase tracking-wide text-[var(--ha-muted-foreground)]">
-                Illustrative projected outcome
+                {ILLUSTRATIVE_SURGERY_PLAN_LABEL}
               </div>
               <div className="font-medium">{p.patientSafeLabel}</div>
               <div className="text-xs text-[var(--ha-muted-foreground)]">

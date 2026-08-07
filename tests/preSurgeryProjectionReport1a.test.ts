@@ -98,7 +98,7 @@ function baseProjection(
     generationVersion: "ha-pre-surgery-projection-v2",
     safetyLabelVersion: "ha-pre-surgery-projection-safety-label-v1",
     deterministicSeed: null,
-    storagePath: `pre_surgery_projections/${CASE_ID}/planned/abc123.stub`,
+    storagePath: `pre_surgery_projections/${CASE_ID}/planned/abc123.jpg`,
     validationPass: [
       { check: "treatment_zone_compliance", passed: true, detail: "ok" },
       { check: "deferred_zone_compliance", passed: true, detail: "ok" },
@@ -149,7 +149,8 @@ describe("HA-PRE-SURGERY-PROJECTION-REPORT-1A eligibility", () => {
     assert.equal(section.planningModeLabel, REPORT_PLANNING_MODE_LABELS.planned);
     assert.ok(section.deferredZones.includes("crown"));
     assert.match(section.limitationPanel, /educational planning illustration/i);
-    assert.match(section.intro, /illustrative planning visual/i);
+    assert.match(section.intro, /planning illustration shows the proposed hairline/i);
+    assert.equal(section.title, "Illustrative Surgery Plan");
   });
 
   it("never includes draft or unapproved projections", () => {
@@ -358,7 +359,7 @@ describe("HA-PRE-SURGERY-PROJECTION-REPORT-1A consistency + copy", () => {
     const projection = baseProjection({
       graftPlanId: approved.id,
       graftPlanVersion: approved.version,
-      storagePath: `pre_surgery_projections/${CASE_ID}/planned/secret-path.stub`,
+      storagePath: `pre_surgery_projections/${CASE_ID}/planned/secret-path.jpg`,
     });
     const slice = buildClinicianReportSlice({
       observations: [],
@@ -461,10 +462,10 @@ describe("HA-PRE-SURGERY-PROJECTION-REPORT-1A PDF / media", () => {
         projectedImageUrl: "https://example.test/projected.jpg?sig=1",
       },
     });
-    assert.match(html, /Illustrative Projected Result/);
+    assert.match(html, /Illustrative Surgery Plan/);
     assert.match(html, /educational planning illustration/);
     assert.match(html, /illustrative-projected-result-pdf/);
-    assert.match(html, /Illustrative planning scenario: Balanced/);
+    assert.match(html, /Illustrative Surgery Plan scenario: Balanced/);
     assert.doesNotMatch(html, /guaranteed result/i);
     assert.doesNotMatch(html, /this is how you will look/i);
 

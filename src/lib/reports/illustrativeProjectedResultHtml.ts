@@ -150,10 +150,10 @@ export function renderIllustrativeProjectedResultHtml(input: {
         <div class="projImgCard">
           ${
             projectedUrl
-              ? `<img src="${esc(projectedUrl)}" alt="Illustrative planning projection" />`
+              ? `<img src="${esc(projectedUrl)}" alt="Illustrative Surgery Plan" />`
               : `<div class="projImgFallback">${esc(PROJECTION_ASSET_FALLBACK_NOTICE)}</div>`
           }
-          <div class="projImgCap">Illustrative projection</div>
+          <div class="projImgCap">Illustrative Surgery Plan</div>
         </div>
       </div>`
       }
