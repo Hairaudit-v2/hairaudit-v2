@@ -206,6 +206,25 @@ export async function PATCH(req: Request, ctx: RouteContext) {
         );
       }
       if (body.action === "enable_sharing") {
+        const { resolveProjectionArtifactType, isPatientReportOutcomeArtifact } = await import(
+          "@/lib/preSurgeryIntelligence/projection/artifactTypes"
+        );
+        const artifactType = resolveProjectionArtifactType({
+          artifactType: existing.artifactType,
+          providerId: existing.providerId,
+        });
+        if (!isPatientReportOutcomeArtifact(artifactType)) {
+          return NextResponse.json(
+            {
+              ok: false,
+              error:
+                "Only an Illustrative Projected Outcome can be shared with patients. Graft Allocation Maps and Hairline Designs remain clinical planning evidence.",
+              code: "artifact_not_patient_shareable",
+              artifactType,
+            },
+            { status: 400 }
+          );
+        }
         const {
           probeStoredProjectionAsset,
           validateProbedProjectionAsset,

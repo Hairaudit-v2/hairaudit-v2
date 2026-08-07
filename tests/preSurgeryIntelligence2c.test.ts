@@ -104,7 +104,7 @@ describe("HA-PRE-SURGERY-INTELLIGENCE-2C provider configuration", () => {
     assert.equal(runtime.requiresStorageBinding, false);
   });
 
-  it("falls back to local_illustrative when ImagingOS is misconfigured (not silent stub)", () => {
+  it("does not fall back to local_illustrative when ImagingOS is misconfigured", () => {
     const cfg = resolveProjectionProviderConfig({
       HA_PRE_SURGERY_PROJECTION_PROVIDER: "imagingos",
       HA_IMAGINGOS_PROJECTION_URL: "",
@@ -115,9 +115,11 @@ describe("HA-PRE-SURGERY-INTELLIGENCE-2C provider configuration", () => {
     const runtime = resolveRuntimeProjectionProvider({
       HA_PRE_SURGERY_PROJECTION_PROVIDER: "imagingos",
     });
-    assert.equal(runtime.providerId, "local-illustrative-v1");
-    assert.equal(runtime.requiresStorageBinding, true);
-    assert.equal(runtime.disabled, false);
+    // PHOTOREALISTIC-OUTCOME-2A: hard-unavailable — never substitute overlay maps.
+    assert.equal(runtime.providerId, "imagingos-v1");
+    assert.equal(runtime.disabled, true);
+    assert.equal(runtime.requiresStorageBinding, false);
+    assert.notEqual(runtime.providerId, "local-illustrative-v1");
   });
 
   it("allows explicit stub fallback only when configured", () => {
@@ -641,12 +643,13 @@ describe("HA-PRE-SURGERY-INTELLIGENCE-2C generation + report provenance", () => 
       graftPlanVersion: plan.version,
       sourceImageId: "img-1",
       mode: "planned" as const,
+      artifactType: "illustrative_projected_outcome" as const,
       patientSafeLabel: PRE_SURGERY_PROJECTION_PATIENT_LABELS.planned,
       status: "approved" as const,
       engineVersion: "v",
       generationVersion: "v",
       deterministicSeed: null,
-      storagePath: "secret",
+      storagePath: "pre_surgery_projections/c/planned/old.jpg",
       validationPass: [],
       limitations: [],
       planningAssumptions: [],
@@ -660,6 +663,7 @@ describe("HA-PRE-SURGERY-INTELLIGENCE-2C generation + report provenance", () => 
       rejectionReason: null,
       inputChecksum: "old-checksum",
       outputChecksum: "out",
+      providerId: "imagingos-v1",
       patientSharingEnabled: true,
       projectionVersion: 1,
     };

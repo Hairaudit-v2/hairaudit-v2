@@ -147,10 +147,17 @@ export function resolveProjectionActivationControls(
   };
 }
 
+export type ActivationProviderKind =
+  | "stub"
+  | "openai"
+  | "imagingos"
+  | "local_illustrative"
+  | "disabled";
+
 export type ActivationGateContext = {
   controls: ProjectionActivationControls;
   /** Provider kind resolved from config. */
-  providerKind: "stub" | "imagingos" | "local_illustrative" | "disabled";
+  providerKind: ActivationProviderKind;
   clinicId: string | null;
   clinicianId: string;
   caseId: string;
@@ -166,9 +173,10 @@ export type ActivationGateContext = {
 /**
  * Decide whether a real (or stub) generation request may proceed under 2D controls.
  *
- * Stub remains usable for local/dev without ImagingOS allowlists, unless the
- * provider kill switch is on. ImagingOS traffic additionally requires global
- * enablement + allowlist membership.
+ * Stub / local_illustrative / openai remain usable without ImagingOS allowlists,
+ * unless the provider kill switch is on. ImagingOS traffic additionally requires
+ * global enablement + allowlist membership. OpenAI does not require
+ * HA_PRE_SURGERY_IMAGINGOS_ENABLED.
  */
 export function decideProjectionActivation(ctx: ActivationGateContext): ActivationDecision {
   const { controls } = ctx;
@@ -223,6 +231,8 @@ export function decideProjectionActivation(ctx: ActivationGateContext): Activati
       contactedProvider: false,
     };
   }
+
+  // openai / local_illustrative / stub: kill switch + shared ceilings only (no ImagingOS gates).
 
   // ImagingOS real traffic: require global enable + allowlists.
   if (ctx.providerKind === "imagingos") {
@@ -349,7 +359,7 @@ export function decidePatientSharingAllowed(input: {
 /** New report pin / inclusion of projections — blocked when provider disabled or sharing kill switch. */
 export function decideReportProjectionInclusionAllowed(input: {
   controls: ProjectionActivationControls;
-  providerKind: "stub" | "imagingos" | "local_illustrative" | "disabled";
+  providerKind: ActivationProviderKind;
   projectionStale: boolean;
 }):
   | { allowed: true }

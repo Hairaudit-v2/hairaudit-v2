@@ -1,7 +1,7 @@
 /**
- * HA-PRE-SURGERY-PROJECTION-REAL-ASSET-1A — Approved non-stub asset writer when ImagingOS
- * is unavailable. Writes a real JPEG under pre_surgery_projections/{caseId}/… and returns
- * checksum + storage path. A .stub path is never produced.
+ * HA-PRE-SURGERY-PROJECTION-REAL-ASSET-1A / PHOTOREALISTIC-OUTCOME-2A —
+ * Overlay renderer for Graft Allocation Map and Proposed Hairline Design only.
+ * Must never be used as Illustrative Projected Outcome / photoreal cosmetic simulation.
  */
 
 import { findUnsafeProjectionLabel } from "./safety";
@@ -38,9 +38,11 @@ export function buildLocalIllustrativeStoragePath(input: {
   mode: string;
   outputChecksum: string;
   extension?: string;
+  artifactType?: "graft_allocation_map" | "proposed_hairline_design";
 }): string {
   const ext = input.extension ?? "jpg";
-  return `pre_surgery_projections/${input.caseId}/${input.mode}/${input.outputChecksum.slice(0, 16)}.${ext}`;
+  const artifact = input.artifactType ?? "graft_allocation_map";
+  return `pre_surgery_projections/${input.caseId}/${artifact}/${input.mode}/${input.outputChecksum.slice(0, 16)}.${ext}`;
 }
 
 export function createLocalIllustrativePreSurgeryProjectionProvider(
@@ -76,6 +78,10 @@ export function createLocalIllustrativePreSurgeryProjectionProvider(
       }
 
       try {
+        const renderVariant =
+          input.renderVariant === "proposed_hairline_design"
+            ? "proposed_hairline_design"
+            : "graft_allocation_map";
         const composed = await composeLocalIllustrativeProjection({
           sourceBytes,
           caseId: input.caseId,
@@ -84,6 +90,7 @@ export function createLocalIllustrativePreSurgeryProjectionProvider(
           annotations: input.approvedAnnotations,
           engineVersion: String(input.engineVersion),
           inputChecksum: input.inputChecksum ?? "pending",
+          renderVariant,
         });
 
         const outputStorageRef = buildLocalIllustrativeStoragePath({
@@ -91,6 +98,7 @@ export function createLocalIllustrativePreSurgeryProjectionProvider(
           mode: input.mode,
           outputChecksum: composed.outputChecksum,
           extension: composed.extension,
+          artifactType: renderVariant,
         });
 
         await deps.storeOutput(outputStorageRef, composed.bytes, composed.mimeType);
@@ -100,13 +108,18 @@ export function createLocalIllustrativePreSurgeryProjectionProvider(
           outputStorageRef,
           outputChecksum: composed.outputChecksum,
           limitations: [
-            "Illustrative planning aid — not a guaranteed outcome.",
-            "Local illustrative composer overlays approved plan zones on the source photograph.",
-            "Does not predict graft survival, calibre, curl, or colour.",
+            renderVariant === "proposed_hairline_design"
+              ? "Proposed Hairline Design — precise line / translucent guidance on the source photograph."
+              : "Graft Allocation Map — colour-coded clinical planning overlay only.",
+            "Not a photorealistic projected outcome or hair-growth simulation.",
+            "Does not depict individual hair strands, follicular texture, or postoperative density.",
             "Facial identity and anatomy outside approved recipient zones must remain unchanged.",
             ...input.patientSafeProjectionConstraints,
           ],
-          planningAssumptions: [...STANDARD_PRE_SURGERY_PROJECTION_ASSUMPTIONS],
+          planningAssumptions: [
+            ...STANDARD_PRE_SURGERY_PROJECTION_ASSUMPTIONS,
+            `Mode assumptions: ${allocation.assumptions.graftCount} grafts; survival ${allocation.assumptions.assumedGraftSurvivalRangePct.min}–${allocation.assumptions.assumedGraftSurvivalRangePct.max}%; HPG ${allocation.assumptions.hairsPerGraftAssumption}.`,
+          ],
           mode: input.mode,
           modelVersion: LOCAL_ILLUSTRATIVE_MODEL_VERSION,
           mimeType: composed.mimeType,

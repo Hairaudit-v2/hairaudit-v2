@@ -19,6 +19,10 @@ import {
   type PreSurgeryIllustrativeProjection,
   type PreSurgeryProjectionMode,
 } from "../types";
+import {
+  ILLUSTRATIVE_PROJECTED_OUTCOME_DISCLAIMER,
+  ARTIFACT_TYPE_LABELS,
+} from "./artifactTypes";
 import { deriveProjectionModeAllocation } from "./modes";
 import type { PreSurgeryProjectionProvider } from "./provider";
 import {
@@ -57,7 +61,7 @@ import {
 
 export type RequestPreSurgeryProjectionActivationContext = {
   controls?: ProjectionActivationControls;
-  providerKind?: "stub" | "imagingos" | "local_illustrative" | "disabled";
+  providerKind?: "stub" | "openai" | "imagingos" | "local_illustrative" | "disabled";
   clinicId?: string | null;
   requestsForCase?: number;
   requestsToday?: number;
@@ -103,6 +107,14 @@ export type RequestPreSurgeryProjectionInput = {
    * instead of advancing to clinician_review. Unit tests that inject stub may leave false.
    */
   requireValidImageAsset?: boolean;
+  /**
+   * PHOTOREALISTIC-OUTCOME-2A product class.
+   * Defaults: local-illustrative → graft_allocation_map; imagingos → illustrative_projected_outcome.
+   */
+  artifactType?:
+    | "graft_allocation_map"
+    | "proposed_hairline_design"
+    | "illustrative_projected_outcome";
 };
 
 export type RequestPreSurgeryProjectionResult =
@@ -138,16 +150,55 @@ export async function requestPreSurgeryProjection(
     input.activation?.providerKind ??
     (runtime.disabled
       ? "disabled"
-      : runtime.providerId.startsWith("imagingos")
-        ? "imagingos"
-        : runtime.providerId.startsWith("local-illustrative")
-          ? "local_illustrative"
-          : "stub");
+      : runtime.providerId.startsWith("openai")
+        ? "openai"
+        : runtime.providerId.startsWith("imagingos")
+          ? "imagingos"
+          : runtime.providerId.startsWith("local-illustrative")
+            ? "local_illustrative"
+            : "stub");
   const enforceActivation =
     input.activation?.enforceActivation === true ||
+    providerKind === "openai" ||
     providerKind === "imagingos" ||
     providerKind === "local_illustrative";
   const requireValidImageAsset = input.requireValidImageAsset === true;
+  const resolvedArtifactType =
+    input.artifactType ??
+    (providerId.startsWith("openai") || providerId.startsWith("imagingos")
+      ? "illustrative_projected_outcome"
+      : providerId.startsWith("local-illustrative")
+        ? "graft_allocation_map"
+        : "graft_allocation_map");
+
+  // Hard rule: overlay renderer cannot mint a projected cosmetic outcome.
+  if (
+    resolvedArtifactType === "illustrative_projected_outcome" &&
+    providerId.startsWith("local-illustrative")
+  ) {
+    return {
+      ok: false,
+      errors: [
+        {
+          code: "imaging_provider_not_configured",
+          message:
+            "Projected-outcome generation is unavailable because the imaging provider is not configured.",
+        },
+      ],
+      providerId,
+      degradable: true,
+      auditHints: [
+        {
+          eventType: "projection_provider_failure",
+          metadata: {
+            code: "overlay_cannot_produce_projected_outcome",
+            providerId,
+            artifactType: resolvedArtifactType,
+          },
+        },
+      ],
+    };
+  }
 
   if (controls.providerKillSwitch) {
     auditHints.push({
@@ -269,11 +320,16 @@ export async function requestPreSurgeryProjection(
     };
   }
 
-  const label = PRE_SURGERY_PROJECTION_PATIENT_LABELS[input.mode];
+  const label = `${ARTIFACT_TYPE_LABELS[resolvedArtifactType]} · ${PRE_SURGERY_PROJECTION_PATIENT_LABELS[input.mode]}`;
   const labelViolation = findUnsafeProjectionLabel(label);
   if (labelViolation) {
     return { ok: false, errors: [{ code: labelViolation.code, message: labelViolation.message }] };
   }
+
+  const disclaimer =
+    resolvedArtifactType === "illustrative_projected_outcome"
+      ? ILLUSTRATIVE_PROJECTED_OUTCOME_DISCLAIMER
+      : patientSafeDisclaimerForMode(input.mode);
 
   const approvedAnnotations = input.approvedAnnotations.filter((a) => a.approved && !a.deletedAt);
   const approvedObservations = (input.approvedObservations ?? []).filter(
@@ -295,10 +351,10 @@ export async function requestPreSurgeryProjection(
     modelVersion,
   });
   const inputChecksum = checksumCanonicalProjectionRequest(canonical);
-  // Base attempts share case+checksum+mode. Regeneration must not collide with the prior row.
+  // Base attempts share case+checksum+mode+artifact. Regeneration must not collide with the prior row.
   const idempotencyBasis = input.regeneratesFromProjectionId
-    ? `${input.caseId}:${inputChecksum}:${input.mode}:regen:${input.regeneratesFromProjectionId}:${input.projectionVersion ?? 1}`
-    : `${input.caseId}:${inputChecksum}:${input.mode}`;
+    ? `${input.caseId}:${inputChecksum}:${input.mode}:${resolvedArtifactType}:regen:${input.regeneratesFromProjectionId}:${input.projectionVersion ?? 1}`
+    : `${input.caseId}:${inputChecksum}:${input.mode}:${resolvedArtifactType}`;
   const idempotencyKey =
     input.idempotencyKey ??
     createHash("sha256").update(idempotencyBasis).digest("hex").slice(0, 40);
@@ -310,6 +366,7 @@ export async function requestPreSurgeryProjection(
     metadata: {
       providerId,
       mode: input.mode,
+      artifactType: resolvedArtifactType,
       inputChecksum,
       idempotencyKey,
       modelVersion,
@@ -339,6 +396,12 @@ export async function requestPreSurgeryProjection(
       canonicalRequest: canonical,
       inputChecksum,
       idempotencyKey,
+      renderVariant:
+        resolvedArtifactType === "proposed_hairline_design"
+          ? "proposed_hairline_design"
+          : resolvedArtifactType === "graft_allocation_map"
+            ? "graft_allocation_map"
+            : undefined,
     },
     { timeoutMs: input.timeoutMs }
   );
@@ -454,8 +517,10 @@ export async function requestPreSurgeryProjection(
     sourceImageId: input.sourceReview.imageId,
     sourceImageIds: canonical.sourceImageIds,
     mode: input.mode,
+    artifactType: resolvedArtifactType,
+    modeAssumptions: allocation.assumptions,
     patientSafeLabel: label,
-    patientSafeDisclaimer: patientSafeDisclaimerForMode(input.mode),
+    patientSafeDisclaimer: disclaimer,
     status,
     engineVersion: PRE_SURGERY_PROJECTION_ENGINE_VERSION,
     generationVersion: PRE_SURGERY_PROJECTION_ENGINE_VERSION,
@@ -588,6 +653,11 @@ function buildFailedProjection(
     idempotencyKey?: string | null;
   }
 ): PreSurgeryIllustrativeProjection {
+  const failedArtifactType =
+    input.artifactType ??
+    (args.providerId.startsWith("imagingos")
+      ? "illustrative_projected_outcome"
+      : "graft_allocation_map");
   return {
     id: input.id ?? crypto.randomUUID(),
     caseId: input.caseId,
@@ -595,6 +665,8 @@ function buildFailedProjection(
     graftPlanVersion: input.plan.version,
     sourceImageId: input.sourceReview.imageId,
     mode: input.mode,
+    artifactType: failedArtifactType,
+    modeAssumptions: deriveProjectionModeAllocation(input.plan, input.mode).assumptions,
     patientSafeLabel: PRE_SURGERY_PROJECTION_PATIENT_LABELS[input.mode],
     patientSafeDisclaimer: patientSafeDisclaimerForMode(input.mode),
     status: args.status,

@@ -1,7 +1,8 @@
-/**
- * HA-PRE-SURGERY-INTELLIGENCE-2C / REAL-ASSET-1A — Request illustrative projection generation.
- * Defaults to the latest approved plan; requires clinician confirmation; writes real image assets
- * via ImagingOS or local-illustrative-v1. Stub paths are never treated as complete projections.
+﻿/**
+ * HA-PRE-SURGERY-INTELLIGENCE-2C / OPENAI-IMAGE-PROVIDER-2B — Projection / overlay generation.
+ *
+ * Graft Allocation Map + Proposed Hairline Design → local-illustrative overlay renderer.
+ * Illustrative Projected Outcome → OpenAI gpt-image (preferred) or ImagingOS; never local-illustrative.
  */
 
 import { NextResponse } from "next/server";
@@ -17,12 +18,16 @@ import {
   insertAuditEvent,
   insertOrReuseProjection,
   loadWorkspaceBundle,
+  updateProjectionRow,
 } from "@/lib/preSurgeryIntelligence/repository.server";
 import {
   getPathwayEvidencePack,
   isPathwayRequiredUploadComplete,
 } from "@/lib/patient/patientReviewPathway";
-import { resolveRuntimeProjectionProvider } from "@/lib/preSurgeryIntelligence/projection/health";
+import {
+  resolveCosmeticOutcomeProvider,
+  resolveOverlayRendererProvider,
+} from "@/lib/preSurgeryIntelligence/projection/health";
 import {
   createBoundLocalIllustrativeProvider,
   downloadCaseFilesObject,
@@ -34,6 +39,16 @@ import {
 } from "@/lib/preSurgeryIntelligence/projection/assetValidation";
 import { resolvePlanForProjectionGeneration } from "@/lib/preSurgeryIntelligence/projection/planConfirmation";
 import { buildRegenerationSeed } from "@/lib/preSurgeryIntelligence/projection/service";
+import {
+  isOverlayRendererArtifact,
+  isPreSurgeryArtifactType,
+  PROJECTED_OUTCOME_PROVIDER_UNAVAILABLE_MESSAGE,
+  type PreSurgeryArtifactType,
+} from "@/lib/preSurgeryIntelligence/projection/artifactTypes";
+import { assertApprovedHairlineDesignForOutcome } from "@/lib/preSurgeryIntelligence/projection/hairlineApprovalGate";
+import { createBoundOpenAiGptImageProvider } from "@/lib/preSurgeryIntelligence/projection/openaiGptImageStorage.server";
+import { buildRecipientEditMask } from "@/lib/preSurgeryIntelligence/projection/treatmentMask";
+import { validateProjectedOutcomeAsset } from "@/lib/preSurgeryIntelligence/projection/outcomeValidation";
 
 export const runtime = "nodejs";
 
@@ -63,6 +78,7 @@ export async function POST(req: Request, ctx: RouteContext) {
       idempotencyKey?: string | null;
       confirmCurrentApprovedPlan?: boolean;
       allowSupersededPlan?: boolean;
+      artifactType?: PreSurgeryArtifactType;
     };
 
     if (!body.mode || !MODES.includes(body.mode)) {
@@ -71,6 +87,10 @@ export async function POST(req: Request, ctx: RouteContext) {
     if (!body.sourceImageId) {
       return NextResponse.json({ ok: false, error: "sourceImageId required" }, { status: 400 });
     }
+
+    const artifactType: PreSurgeryArtifactType = isPreSurgeryArtifactType(body.artifactType)
+      ? body.artifactType
+      : "graft_allocation_map";
 
     const bundle = await loadWorkspaceBundle(admin, caseId);
     const planResolved = resolvePlanForProjectionGeneration({
@@ -114,7 +134,6 @@ export async function POST(req: Request, ctx: RouteContext) {
       if (!prior) {
         return NextResponse.json({ ok: false, error: "Prior projection not found" }, { status: 404 });
       }
-      // Allow regen from rejected/failed OR historical stub/unavailable assets (replace flow).
       const priorIsStub =
         typeof prior.storagePath === "string" && /\.stub$/i.test(prior.storagePath);
       const regenerableStatus =
@@ -144,6 +163,7 @@ export async function POST(req: Request, ctx: RouteContext) {
             regeneratesFromProjectionId: regeneratesFrom,
             projectionVersion,
             mode: body.mode,
+            artifactType,
           },
         })
       );
@@ -164,13 +184,97 @@ export async function POST(req: Request, ctx: RouteContext) {
       ? `storage:${sourceUpload.storage_path}`
       : `image:${body.sourceImageId}`;
 
-    const runtime = resolveRuntimeProjectionProvider();
-    let provider = runtime.provider;
-    let providerId = runtime.providerId;
-    let modelVersion = runtime.modelVersion;
-    let providerKind = runtime.config.kind;
+    let provider;
+    let providerId: string;
+    let modelVersion: string;
+    let providerKind: "openai" | "imagingos" | "local_illustrative" | "stub" | "disabled";
 
-    if (runtime.requiresStorageBinding || runtime.config.kind === "local_illustrative") {
+    if (artifactType === "illustrative_projected_outcome") {
+      const hairlineGate = assertApprovedHairlineDesignForOutcome({
+        projections: bundle.projections,
+        plan,
+        annotations: bundle.annotations,
+        sourceImageId: body.sourceImageId,
+        allowApprovedAnnotationFallback: true,
+      });
+      if (!hairlineGate.ok) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: hairlineGate.message,
+            code: hairlineGate.code,
+          },
+          { status: 400 }
+        );
+      }
+
+      const cosmetic = resolveCosmeticOutcomeProvider();
+      if (!cosmetic.available) {
+        const failureCode =
+          cosmetic.reason === "openai_key_missing"
+            ? "openai_key_missing"
+            : "imaging_provider_not_configured";
+        await insertAuditEvent(
+          admin,
+          createAuditEvent({
+            caseId,
+            eventType: "projection_provider_failure",
+            actorId: user.id,
+            metadata: {
+              code: failureCode,
+              message: PROJECTED_OUTCOME_PROVIDER_UNAVAILABLE_MESSAGE,
+              artifactType,
+              audit: cosmetic.audit,
+            },
+          })
+        );
+        return NextResponse.json(
+          {
+            ok: false,
+            error: PROJECTED_OUTCOME_PROVIDER_UNAVAILABLE_MESSAGE,
+            code: failureCode,
+            providerId: cosmetic.providerId,
+            providerAudit: cosmetic.audit,
+          },
+          { status: 503 }
+        );
+      }
+
+      providerId = cosmetic.providerId;
+      modelVersion = cosmetic.modelVersion;
+
+      // Never use local-illustrative for cosmetic projected outcomes.
+      if (
+        cosmetic.config.kind === "openai" ||
+        cosmetic.providerId.toLowerCase().startsWith("openai")
+      ) {
+        const uploadById = new Map(
+          (uploads ?? []).map((u) => [u.id as string, String(u.storage_path ?? "")])
+        );
+        const bound = createBoundOpenAiGptImageProvider({
+          admin,
+          resolveImageIdToPath: async (imageId) => uploadById.get(imageId) || null,
+        });
+        provider = bound.provider;
+        providerId = bound.providerId;
+        modelVersion = bound.modelVersion;
+        providerKind = "openai";
+      } else if (cosmetic.config.kind === "imagingos") {
+        provider = cosmetic.provider;
+        providerKind = "imagingos";
+      } else {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: PROJECTED_OUTCOME_PROVIDER_UNAVAILABLE_MESSAGE,
+            code: "imaging_provider_not_configured",
+            providerId: cosmetic.providerId,
+          },
+          { status: 503 }
+        );
+      }
+    } else if (isOverlayRendererArtifact(artifactType)) {
+      const overlay = resolveOverlayRendererProvider();
       const uploadById = new Map(
         (uploads ?? []).map((u) => [u.id as string, String(u.storage_path ?? "")])
       );
@@ -178,21 +282,11 @@ export async function POST(req: Request, ctx: RouteContext) {
         admin,
         resolveImageIdToPath: async (imageId) => uploadById.get(imageId) || null,
       });
-      providerId = "local-illustrative-v1";
-      modelVersion = "local-illustrative-v1";
+      providerId = overlay.providerId;
+      modelVersion = overlay.modelVersion;
       providerKind = "local_illustrative";
-    }
-
-    if (runtime.disabled && !runtime.requiresStorageBinding) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "Projection provider is unavailable because it is not configured",
-          code: "provider_unavailable",
-          providerId,
-        },
-        { status: 503 }
-      );
+    } else {
+      return NextResponse.json({ ok: false, error: "Unsupported artifact type" }, { status: 400 });
     }
 
     await insertAuditEvent(
@@ -203,6 +297,7 @@ export async function POST(req: Request, ctx: RouteContext) {
         actorId: user.id,
         metadata: {
           mode: body.mode,
+          artifactType,
           graftPlanId: plan.id,
           graftPlanVersion: plan.version,
           sourceImageId: body.sourceImageId,
@@ -223,6 +318,7 @@ export async function POST(req: Request, ctx: RouteContext) {
       ),
       approvedObservations: bundle.observations,
       mode: body.mode,
+      artifactType,
       requiredImagesPresent: pack ? requiredImagesPresent : true,
       proposedHairlineConfirmed: Boolean(body.proposedHairlineConfirmed),
       treatmentAreaConfirmed: Boolean(body.treatmentAreaConfirmed),
@@ -235,17 +331,12 @@ export async function POST(req: Request, ctx: RouteContext) {
       providerId,
       modelVersion,
       requireValidImageAsset: true,
+      timeoutMs: providerKind === "openai" ? 180_000 : undefined,
       activation: {
         clinicId: gate.data.caseRow.clinic_id ?? null,
         requestsForCase: bundle.projections.length,
         caseLevelEnabled: true,
-        providerKind:
-          providerKind === "imagingos" ||
-          providerKind === "local_illustrative" ||
-          providerKind === "stub" ||
-          providerKind === "disabled"
-            ? providerKind
-            : "local_illustrative",
+        providerKind,
       },
     });
 
@@ -269,20 +360,23 @@ export async function POST(req: Request, ctx: RouteContext) {
           // Persistence conflict — still return degradable failure to the client.
         }
       }
+      const status = result.errors.some((e) => e.code === "imaging_provider_not_configured")
+        ? 503
+        : 400;
       return NextResponse.json(
         {
           ok: false,
           errors: result.errors,
+          error: result.errors[0]?.message,
           degradable: result.degradable === true,
           providerId: result.providerId,
           projection: result.projection ?? null,
           planPreview: planResolved.preview,
         },
-        { status: 400 }
+        { status }
       );
     }
 
-    // REAL-ASSET-1A — Confirm storage object exists before marking generation complete.
     const probe = await probeStoredProjectionAsset({
       storagePath: result.projection.storagePath ?? "",
       download: (path) => downloadCaseFilesObject(admin, path),
@@ -317,81 +411,143 @@ export async function POST(req: Request, ctx: RouteContext) {
           metadata: {
             code: assetGate.code,
             message: assetGate.message,
-            providerId: result.providerId,
+            providerId,
+            artifactType,
           },
         })
       );
       return NextResponse.json(
         {
           ok: false,
-          errors: [{ code: assetGate.code, message: assetGate.message }],
+          errors: [{ code: assetGate.code, message: assetGate.message || STUB_GENERATION_NO_ASSET_MESSAGE }],
           degradable: true,
-          providerId: result.providerId,
+          providerId,
           projection: failedProjection,
-          planPreview: planResolved.preview,
-          assetMessage: STUB_GENERATION_NO_ASSET_MESSAGE,
         },
         { status: 400 }
       );
     }
 
-    const persisted = await insertOrReuseProjection(admin, {
-      ...result.projection,
-      outputChecksum: assetGate.probe.checksumSha256 ?? result.projection.outputChecksum,
-      status: "clinician_review",
-      patientSharingEnabled: false,
-    });
-    const projection = persisted.projection;
-
-    if (persisted.kind !== "reused") {
-      await insertAuditEvent(
+    // OPENAI-IMAGE-PROVIDER-2B — containment / identity validation for cosmetic outcomes.
+    let projectionToStore = result.projection;
+    if (artifactType === "illustrative_projected_outcome" && providerKind === "openai") {
+      const sourceBytes = await downloadCaseFilesObject(
         admin,
-        createAuditEvent({
-          caseId,
-          eventType: "projection_generated",
-          actorId: user.id,
-          metadata: {
-            projectionId: projection.id,
-            mode: projection.mode,
-            inputChecksum: projection.inputChecksum,
-            outputChecksum: projection.outputChecksum,
-            providerId: result.providerId,
-            latencyMs: result.latencyMs,
-            status: projection.status,
-            patientVisible: false,
-            persistKind: persisted.kind,
-            mimeType: assetGate.probe.mimeType,
-            fileSizeBytes: assetGate.probe.fileSizeBytes,
-            widthPx: assetGate.probe.widthPx,
-            heightPx: assetGate.probe.heightPx,
-            storagePath: projection.storagePath,
-            lifecycle: "asset_stored_clinician_review_required",
-          },
-        })
+        sourceUpload?.storage_path ? String(sourceUpload.storage_path) : ""
       );
+      const outputBytes = await downloadCaseFilesObject(
+        admin,
+        result.projection.storagePath ?? ""
+      );
+      if (sourceBytes && outputBytes) {
+        const mask = await buildRecipientEditMask({
+          sourceBytes,
+          plan,
+          mode: body.mode,
+          annotations: bundle.annotations.filter(
+            (a) => a.imageId === body.sourceImageId && a.approved && !a.deletedAt
+          ),
+        });
+        const outcomeGate = await validateProjectedOutcomeAsset({
+          sourceBytes,
+          outputBytes,
+          maskPng: mask.hardMaskPng,
+          maskChecksum: mask.hardMaskChecksum,
+          expectedMime: "image/jpeg",
+        });
+        const validationPayload = {
+          ...(projectionToStore.inputSnapshot ?? {}),
+          outcomeValidation: outcomeGate.measurements,
+          hairlineGate,
+          openAiProvider: providerId,
+          openAiModel: modelVersion,
+        };
+        if (!outcomeGate.ok) {
+          projectionToStore = {
+            ...projectionToStore,
+            status: "validation_failed",
+            failureCode: outcomeGate.code,
+            failureMessage: outcomeGate.message,
+            patientSharingEnabled: false,
+            inputSnapshot: validationPayload,
+            planningAssumptions: [
+              ...projectionToStore.planningAssumptions,
+              `validation=${outcomeGate.code}`,
+              `statusHint=${outcomeGate.statusHint}`,
+            ],
+          };
+          try {
+            await insertOrReuseProjection(admin, projectionToStore);
+          } catch {
+            // ignore
+          }
+          await insertAuditEvent(
+            admin,
+            createAuditEvent({
+              caseId,
+              eventType: "projection_output_validation_failed",
+              actorId: user.id,
+              metadata: {
+                code: outcomeGate.code,
+                message: outcomeGate.message,
+                statusHint: outcomeGate.statusHint,
+                providerId,
+                measurements: outcomeGate.measurements,
+              },
+            })
+          );
+          return NextResponse.json(
+            {
+              ok: false,
+              errors: [{ code: outcomeGate.code, message: outcomeGate.message }],
+              degradable: true,
+              providerId,
+              projection: projectionToStore,
+              validation: outcomeGate.measurements,
+            },
+            { status: 400 }
+          );
+        }
+        projectionToStore = {
+          ...projectionToStore,
+          inputSnapshot: validationPayload,
+          planningAssumptions: [
+            ...projectionToStore.planningAssumptions,
+            `maskChecksum=${mask.maskChecksum}`,
+            `validation=pass`,
+          ],
+        };
+      }
     }
+
+    const stored = await insertOrReuseProjection(admin, projectionToStore);
+    await insertAuditEvent(
+      admin,
+      createAuditEvent({
+        caseId,
+        eventType: "projection_generated",
+        actorId: user.id,
+        metadata: {
+          projectionId: stored.projection.id,
+          mode: body.mode,
+          artifactType,
+          providerId,
+          graftPlanVersion: plan.version,
+        },
+      })
+    );
 
     return NextResponse.json({
       ok: true,
-      projection,
-      providerId: result.providerId,
-      latencyMs: result.latencyMs,
-      patientVisible: false,
-      reused: persisted.kind === "reused",
-      replaced: persisted.kind === "replaced",
+      projection: stored.projection,
+      providerId,
+      artifactType,
       planPreview: planResolved.preview,
-      asset: {
-        mimeType: assetGate.probe.mimeType,
-        fileSizeBytes: assetGate.probe.fileSizeBytes,
-        widthPx: assetGate.probe.widthPx,
-        heightPx: assetGate.probe.heightPx,
-        checksumSha256: assetGate.probe.checksumSha256,
-        storagePath: assetGate.probe.storagePath,
-      },
+      insertKind: stored.kind,
     });
   } catch (e) {
     return NextResponse.json(
-      { ok: false, error: e instanceof Error ? e.message : "Server error" },
+      { ok: false, error: e instanceof Error ? e.message : "Projection request failed" },
       { status: 500 }
     );
   }

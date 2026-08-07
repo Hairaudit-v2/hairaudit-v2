@@ -1,37 +1,99 @@
 /**
- * HA-PRE-SURGERY-PROJECTION-LIVE-ACCEPTANCE-1B — Display terminology for planning composites
- * vs genuine ImagingOS cosmetic outcome simulations.
+ * HA-PRE-SURGERY-PHOTOREALISTIC-OUTCOME-2A / OPENAI-IMAGE-PROVIDER-2B — Display terminology.
  *
- * local-illustrative-v1 produces an Illustrative Surgery Plan (planning composite).
- * Reserve "Projected Outcome" for ImagingOS simulations that incorporate density, survival,
- * calibre, curl, contrast and native-hair assumptions.
+ * Graft Allocation Map / Proposed Hairline Design = overlay planning aids (local-illustrative).
+ * Illustrative Projected Outcome = photoreal cosmetic simulation (OpenAI gpt-image / ImagingOS).
  */
 
-export const ILLUSTRATIVE_SURGERY_PLAN_LABEL = "Illustrative Surgery Plan" as const;
+import {
+  ARTIFACT_TYPE_LABELS,
+  ILLUSTRATIVE_PROJECTED_OUTCOME_DISCLAIMER,
+  resolveProjectionArtifactType,
+  type PreSurgeryArtifactType,
+} from "./projection/artifactTypes";
+
+/** @deprecated Prefer ARTIFACT_TYPE_LABELS.graft_allocation_map */
+export const ILLUSTRATIVE_SURGERY_PLAN_LABEL = ARTIFACT_TYPE_LABELS.graft_allocation_map;
 
 export const ILLUSTRATIVE_SURGERY_PLAN_SUPPORTING_TEXT =
-  "This planning illustration shows the proposed hairline and treatment zones. It is not a guarantee or photorealistic prediction of the final result." as const;
+  "Colour-coded clinical planning overlay showing proposed treatment zones and graft allocation. Not a projected cosmetic result." as const;
 
-/** Reserved for genuine ImagingOS cosmetic hair-growth simulations — do not use for local-illustrative. */
-export const PROJECTED_OUTCOME_LABEL = "Projected Outcome" as const;
+export const PROPOSED_HAIRLINE_DESIGN_SUPPORTING_TEXT =
+  "Intended hairline boundary on the source photograph. Precise line or subtle translucent guidance — not opaque density blocks." as const;
+
+export const PROJECTED_OUTCOME_LABEL = ARTIFACT_TYPE_LABELS.illustrative_projected_outcome;
 
 export function labelForProjectionProvider(providerId: string | null | undefined): {
-  label: typeof ILLUSTRATIVE_SURGERY_PLAN_LABEL | typeof PROJECTED_OUTCOME_LABEL;
+  label: string;
   supportingText: string;
   isCosmeticallySimulated: boolean;
+  artifactType: PreSurgeryArtifactType;
 } {
-  const id = (providerId ?? "").toLowerCase();
-  if (id.startsWith("imagingos")) {
+  const provider = (providerId ?? "").toLowerCase();
+  // OpenAI cosmetic image-edit outcomes use the same patient-safe disclaimer as ImagingOS.
+  if (provider.startsWith("openai")) {
     return {
       label: PROJECTED_OUTCOME_LABEL,
-      supportingText:
-        "This projected outcome is an ImagingOS cosmetic simulation incorporating graft density, survival, calibre, curl, contrast and native-hair assumptions. It is still not a guaranteed result.",
+      supportingText: ILLUSTRATIVE_PROJECTED_OUTCOME_DISCLAIMER,
       isCosmeticallySimulated: true,
+      artifactType: "illustrative_projected_outcome",
+    };
+  }
+  const artifactType = resolveProjectionArtifactType({ providerId });
+  if (artifactType === "illustrative_projected_outcome") {
+    return {
+      label: PROJECTED_OUTCOME_LABEL,
+      supportingText: ILLUSTRATIVE_PROJECTED_OUTCOME_DISCLAIMER,
+      isCosmeticallySimulated: true,
+      artifactType,
+    };
+  }
+  if (artifactType === "proposed_hairline_design") {
+    return {
+      label: ARTIFACT_TYPE_LABELS.proposed_hairline_design,
+      supportingText: PROPOSED_HAIRLINE_DESIGN_SUPPORTING_TEXT,
+      isCosmeticallySimulated: false,
+      artifactType,
     };
   }
   return {
-    label: ILLUSTRATIVE_SURGERY_PLAN_LABEL,
+    label: ARTIFACT_TYPE_LABELS.graft_allocation_map,
     supportingText: ILLUSTRATIVE_SURGERY_PLAN_SUPPORTING_TEXT,
     isCosmeticallySimulated: false,
+    artifactType,
+  };
+}
+
+export function labelForProjectionArtifact(input: {
+  artifactType?: string | null;
+  providerId?: string | null;
+}): {
+  label: string;
+  supportingText: string;
+  isCosmeticallySimulated: boolean;
+  artifactType: PreSurgeryArtifactType;
+} {
+  const artifactType = resolveProjectionArtifactType(input);
+  if (artifactType === "illustrative_projected_outcome") {
+    return {
+      label: PROJECTED_OUTCOME_LABEL,
+      supportingText: ILLUSTRATIVE_PROJECTED_OUTCOME_DISCLAIMER,
+      isCosmeticallySimulated: true,
+      artifactType,
+    };
+  }
+  if (artifactType === "proposed_hairline_design") {
+    return {
+      label: ARTIFACT_TYPE_LABELS.proposed_hairline_design,
+      supportingText: PROPOSED_HAIRLINE_DESIGN_SUPPORTING_TEXT,
+      isCosmeticallySimulated: false,
+      artifactType,
+    };
+  }
+  return {
+    label: ARTIFACT_TYPE_LABELS.graft_allocation_map,
+    supportingText: ILLUSTRATIVE_SURGERY_PLAN_SUPPORTING_TEXT,
+    isCosmeticallySimulated: false,
+    artifactType,
   };
 }

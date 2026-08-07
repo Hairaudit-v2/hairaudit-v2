@@ -107,6 +107,7 @@ export async function updateProjectionRow(
     .update({
       status: projection.status,
       payload: projection,
+      artifact_type: projection.artifactType ?? null,
       approved_by: projection.approvedBy,
       approved_at: projection.approvedAt,
       rejected_by: projection.rejectedBy,
@@ -209,6 +210,7 @@ export async function insertProjection(
     output_checksum: projection.outputChecksum,
     storage_path: projection.storagePath,
     payload: projection,
+    artifact_type: projection.artifactType ?? null,
     requested_by: projection.requestedBy,
     requested_at: projection.requestedAt,
     generated_at: projection.generatedAt,
@@ -429,7 +431,7 @@ export async function loadWorkspaceBundle(
       .order("version", { ascending: true }),
     admin
       .from("hairaudit_pre_surgery_projections")
-      .select("status, patient_sharing_enabled, payload")
+      .select("status, patient_sharing_enabled, artifact_type, provider_id, payload")
       .eq("case_id", caseId)
       .order("requested_at", { ascending: false }),
     admin
@@ -448,6 +450,8 @@ export async function loadWorkspaceBundle(
       | {
           status?: string | null;
           patient_sharing_enabled?: boolean | null;
+          artifact_type?: string | null;
+          provider_id?: string | null;
           payload?: unknown;
         }[]
       | null
@@ -456,8 +460,10 @@ export async function loadWorkspaceBundle(
       .map((r) => {
         const payload = r.payload as PreSurgeryIllustrativeProjection | null | undefined;
         if (!payload) return null;
-        // Column status / sharing are authoritative when they diverge from embedded payload
-        // (e.g. supersede wrote column first or payload lagged).
+        const artifactType =
+          (r.artifact_type as PreSurgeryIllustrativeProjection["artifactType"] | null) ??
+          payload.artifactType ??
+          undefined;
         return {
           ...payload,
           status: (r.status as PreSurgeryIllustrativeProjection["status"]) ?? payload.status,
@@ -465,6 +471,8 @@ export async function loadWorkspaceBundle(
             typeof r.patient_sharing_enabled === "boolean"
               ? r.patient_sharing_enabled
               : payload.patientSharingEnabled === true,
+          artifactType,
+          providerId: r.provider_id ?? payload.providerId ?? null,
         };
       })
       .filter(Boolean) as PreSurgeryIllustrativeProjection[];

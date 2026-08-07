@@ -172,7 +172,7 @@ describe("HA-PRE-SURGERY-PROJECTION-REAL-ASSET-1A", () => {
     if (!approved.ok) assert.equal(approved.code, "stub_placeholder");
   });
 
-  it("excludes stub and plan-mismatched projections from patient report eligibility", () => {
+  it("excludes stub and allocation-map assets from patient report eligibility", () => {
     const graftPlan = {
       graftPlanId: "9301046e-80fa-4cba-9828-01fe3563fdb6",
       graftPlanVersion: 4,
@@ -190,25 +190,48 @@ describe("HA-PRE-SURGERY-PROJECTION-REAL-ASSET-1A", () => {
       id: "5c8aebba-de12-4cee-a509-866f0d198589",
       status: "approved",
       patientSharingEnabled: true,
-      patientSafeLabel: "Planned coverage illustration",
+      patientSafeLabel: "Planned clinical view",
       graftPlanId: "5b7cc2c1-ed8c-4b81-9f65-509481b94cf6",
       graftPlanVersion: 3,
       storagePath: "pre_surgery_projections/83de37d6/planned/e837d07ae751ec4f.stub",
       outputChecksum: "x",
+      providerId: "stub-v1",
+      artifactType: "graft_allocation_map",
     } as unknown as PreSurgeryIllustrativeProjection;
-    const realV4 = {
-      id: "new-real",
+    // local-illustrative real JPEG is a Graft Allocation Map — never patient report outcome.
+    const allocationMapV4 = {
+      id: "local-real-jpeg",
       status: "approved",
       patientSharingEnabled: true,
-      patientSafeLabel: "Planned coverage illustration",
+      patientSafeLabel: "Planned clinical view",
       graftPlanId: graftPlan.graftPlanId,
       graftPlanVersion: 4,
       storagePath: "pre_surgery_projections/83de37d6/planned/abcdef0123456789.jpg",
       outputChecksum: "deadbeef",
+      providerId: "local-illustrative-v1",
+      artifactType: "graft_allocation_map",
+    } as unknown as PreSurgeryIllustrativeProjection;
+    const imagingOsOutcome = {
+      id: "imagingos-outcome",
+      status: "approved",
+      patientSharingEnabled: true,
+      patientSafeLabel: "Planned clinical view",
+      graftPlanId: graftPlan.graftPlanId,
+      graftPlanVersion: 4,
+      storagePath: "pre_surgery_projections/83de37d6/planned/fedcba9876543210.jpg",
+      outputChecksum: "cafebabe",
+      providerId: "imagingos-v1",
+      artifactType: "illustrative_projected_outcome",
     } as unknown as PreSurgeryIllustrativeProjection;
 
-    const eligible = selectReportEligibleProjections([stubV3, realV4], graftPlan);
+    const excluded = selectReportEligibleProjections([stubV3, allocationMapV4], graftPlan);
+    assert.equal(excluded.length, 0);
+
+    const eligible = selectReportEligibleProjections(
+      [stubV3, allocationMapV4, imagingOsOutcome],
+      graftPlan
+    );
     assert.equal(eligible.length, 1);
-    assert.equal(eligible[0]!.id, "new-real");
+    assert.equal(eligible[0]!.id, "imagingos-outcome");
   });
 });

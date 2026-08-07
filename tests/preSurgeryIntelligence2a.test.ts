@@ -16,6 +16,8 @@ import {
   createAnnotation,
   createClinicianPlanRevision,
   deriveProjectionModeAllocation,
+  ARTIFACT_TYPE_LABELS,
+  createStubPreSurgeryProjectionProvider,
   findUnsafeProjectionLabel,
   PRE_SURGERY_PROJECTION_PATIENT_LABELS,
   pushAnnotationHistory,
@@ -168,13 +170,15 @@ describe("HA-PRE-SURGERY-INTELLIGENCE-2A graft plan", () => {
 
 describe("HA-PRE-SURGERY-INTELLIGENCE-2A projection modes & safety", () => {
   it("uses patient-safe illustrative labels only", () => {
+    assert.equal(PRE_SURGERY_PROJECTION_PATIENT_LABELS.conservative, "Conservative planning view");
+    assert.equal(PRE_SURGERY_PROJECTION_PATIENT_LABELS.planned, "Planned clinical view");
     assert.equal(
-      PRE_SURGERY_PROJECTION_PATIENT_LABELS.conservative,
-      "Illustrative conservative projection"
+      PRE_SURGERY_PROJECTION_PATIENT_LABELS.optimistic_within_approved_range,
+      "Optimistic planning view"
     );
     assert.ok(findUnsafeProjectionLabel("guaranteed final result"));
     assert.ok(findUnsafeProjectionLabel("guaranteed density"));
-    assert.equal(findUnsafeProjectionLabel("Illustrative planned projection"), null);
+    assert.equal(findUnsafeProjectionLabel("Planned clinical view"), null);
   });
 
   it("derives modes from approved graft range", () => {
@@ -183,7 +187,7 @@ describe("HA-PRE-SURGERY-INTELLIGENCE-2A projection modes & safety", () => {
     const opt = deriveProjectionModeAllocation(plan, "optimistic_within_approved_range");
     assert.ok(cons.totalGrafts <= plan.totalTargetGrafts);
     assert.ok(opt.totalGrafts >= plan.totalTargetGrafts);
-    assert.equal(cons.patientSafeLabel, "Illustrative conservative projection");
+    assert.equal(cons.patientSafeLabel, "Conservative planning view");
   });
 
   it("gates generation until plan approved and clinician requests", async () => {
@@ -252,10 +256,16 @@ describe("HA-PRE-SURGERY-INTELLIGENCE-2A projection modes & safety", () => {
       deterministicSeed: "seed-1",
       id: "proj-1",
       now: "2026-07-30T00:00:00.000Z",
+      // Domain unit test: stub avoids local-illustrative storage binding.
+      provider: createStubPreSurgeryProjectionProvider(),
+      providerId: "stub-v1",
     });
     assert.equal(result.ok, true);
     if (result.ok) {
-      assert.equal(result.projection.patientSafeLabel, "Illustrative planned projection");
+      assert.equal(
+        result.projection.patientSafeLabel,
+        `${ARTIFACT_TYPE_LABELS.graft_allocation_map} · ${PRE_SURGERY_PROJECTION_PATIENT_LABELS.planned}`
+      );
       assert.equal(result.projection.status, "clinician_review");
       assert.ok(result.projection.outputChecksum);
     }

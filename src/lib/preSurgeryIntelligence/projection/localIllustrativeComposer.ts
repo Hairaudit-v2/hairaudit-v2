@@ -15,6 +15,10 @@ import type {
 } from "../types";
 import { deriveProjectionModeAllocation } from "./modes";
 
+export type LocalIllustrativeRenderVariant =
+  | "graft_allocation_map"
+  | "proposed_hairline_design";
+
 export type LocalIllustrativeComposeInput = {
   sourceBytes: Buffer;
   caseId: string;
@@ -23,6 +27,8 @@ export type LocalIllustrativeComposeInput = {
   annotations: ClinicalImageAnnotation[];
   engineVersion: string;
   inputChecksum: string;
+  /** Overlay product class — never illustrative_projected_outcome. */
+  renderVariant?: LocalIllustrativeRenderVariant;
 };
 
 export type LocalIllustrativeComposeResult = {
@@ -142,48 +148,53 @@ export async function composeLocalIllustrativeProjection(
   const allocation = deriveProjectionModeAllocation(input.plan, input.mode);
   const opacity = MODE_OPACITY[input.mode];
   const approvedAnns = input.annotations.filter((a) => a.approved && !a.deletedAt);
+  const variant: LocalIllustrativeRenderVariant =
+    input.renderVariant ?? "graft_allocation_map";
 
   const overlayPaths: string[] = [];
 
-  for (const z of allocation.zoneGraftTargets) {
-    if (z.priority === "defer" || z.grafts <= 0) continue;
-    const matching = approvedAnns.find((a) => {
-      if (a.coordinates.length < 3 || a.geometryType === "point") return false;
-      if (a.annotationType === z.zone) return true;
-      if (
-        (z.zone === "hairline" || z.zone === "frontal" || z.zone === "frontal_third") &&
-        a.annotationType === "frontal_tuft"
-      ) {
-        return a.geometryType === "polygon";
-      }
-      if (
-        (z.zone === "temple_left" || z.zone === "left_temple") &&
-        a.annotationType === "temple_left"
-      ) {
-        return true;
-      }
-      if (
-        (z.zone === "temple_right" || z.zone === "right_temple") &&
-        a.annotationType === "temple_right"
-      ) {
-        return true;
-      }
-      if (z.zone === "mid_scalp" && a.annotationType === "mid_scalp") return true;
-      if (z.zone === "crown" && a.annotationType === "crown") return true;
-      return false;
-    });
-    const pts =
-      matching && matching.coordinates.length >= 3
-        ? matching.coordinates.map((c) => ({ x: c.x * widthPx, y: c.y * heightPx }))
-        : defaultZonePolygon(z.zone, widthPx, heightPx);
-    const colour = ZONE_COLOURS[z.zone] ?? "#2a4535";
-    const path = pointsToSvg(pts, true);
-    if (!path) continue;
-    overlayPaths.push(
-      `<path d="${path}" fill="${colour}" fill-opacity="${opacity}" stroke="${colour}" stroke-opacity="0.75" stroke-width="2"/>`
-    );
+  if (variant === "graft_allocation_map") {
+    for (const z of allocation.zoneGraftTargets) {
+      if (z.priority === "defer" || z.grafts <= 0) continue;
+      const matching = approvedAnns.find((a) => {
+        if (a.coordinates.length < 3 || a.geometryType === "point") return false;
+        if (a.annotationType === z.zone) return true;
+        if (
+          (z.zone === "hairline" || z.zone === "frontal" || z.zone === "frontal_third") &&
+          a.annotationType === "frontal_tuft"
+        ) {
+          return a.geometryType === "polygon";
+        }
+        if (
+          (z.zone === "temple_left" || z.zone === "left_temple") &&
+          a.annotationType === "temple_left"
+        ) {
+          return true;
+        }
+        if (
+          (z.zone === "temple_right" || z.zone === "right_temple") &&
+          a.annotationType === "temple_right"
+        ) {
+          return true;
+        }
+        if (z.zone === "mid_scalp" && a.annotationType === "mid_scalp") return true;
+        if (z.zone === "crown" && a.annotationType === "crown") return true;
+        return false;
+      });
+      const pts =
+        matching && matching.coordinates.length >= 3
+          ? matching.coordinates.map((c) => ({ x: c.x * widthPx, y: c.y * heightPx }))
+          : defaultZonePolygon(z.zone, widthPx, heightPx);
+      const colour = ZONE_COLOURS[z.zone] ?? "#2a4535";
+      const path = pointsToSvg(pts, true);
+      if (!path) continue;
+      overlayPaths.push(
+        `<path d="${path}" fill="${colour}" fill-opacity="${opacity}" stroke="${colour}" stroke-opacity="0.75" stroke-width="2"/>`
+      );
+    }
   }
 
+  // Hairline: precise line / subtle wash — never large opaque fill alone as “outcome”.
   const hairline = approvedAnns.find(
     (a) => a.annotationType === "proposed_hairline" || a.annotationType === "existing_hairline"
   );
@@ -193,11 +204,15 @@ export async function composeLocalIllustrativeProjection(
       y: c.y * heightPx,
     }));
     const path = pointsToSvg(pts, false);
+    if (variant === "proposed_hairline_design") {
+      overlayPaths.push(
+        `<path d="${path}" fill="none" stroke="#0f766e" stroke-opacity="0.35" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>`
+      );
+    }
     overlayPaths.push(
       `<path d="${path}" fill="none" stroke="#0f766e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`
     );
   } else {
-    // Default proposed hairline arc for frontal planning views.
     const path = pointsToSvg(
       [
         { x: 0.2 * widthPx, y: 0.2 * heightPx },
@@ -208,18 +223,27 @@ export async function composeLocalIllustrativeProjection(
       ],
       false
     );
+    if (variant === "proposed_hairline_design") {
+      overlayPaths.push(
+        `<path d="${path}" fill="none" stroke="#0f766e" stroke-opacity="0.3" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>`
+      );
+    }
     overlayPaths.push(
       `<path d="${path}" fill="none" stroke="#0f766e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="8 6"/>`
     );
   }
 
+  const bannerLabel =
+    variant === "proposed_hairline_design"
+      ? "Proposed Hairline Design — clinical planning"
+      : "Graft Allocation Map — clinical planning only";
   const bannerH = Math.max(36, Math.round(heightPx * 0.055));
   const svg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg width="${widthPx}" height="${heightPx}" viewBox="0 0 ${widthPx} ${heightPx}" xmlns="http://www.w3.org/2000/svg">
   ${overlayPaths.join("\n  ")}
   <rect x="0" y="${heightPx - bannerH}" width="${widthPx}" height="${bannerH}" fill="#0b1220" fill-opacity="0.72"/>
   <text x="16" y="${heightPx - Math.round(bannerH * 0.38)}" fill="#f8fafc" font-family="Arial, Helvetica, sans-serif" font-size="${Math.max(12, Math.round(bannerH * 0.38))}">
-    ${escXml("Illustrative planning aid — not a guaranteed outcome")} · plan v${input.plan.version} · ${escXml(input.mode)}
+    ${escXml(bannerLabel)} · plan v${input.plan.version} · ${escXml(input.mode)}
   </text>
 </svg>`;
 

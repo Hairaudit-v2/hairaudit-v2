@@ -90,6 +90,7 @@ function baseProjection(
     caseId: CASE_ID,
     sourceImageId: "img-1",
     mode: "planned",
+    artifactType: "illustrative_projected_outcome",
     patientSafeLabel: PRE_SURGERY_PROJECTION_PATIENT_LABELS.planned,
     patientSafeDisclaimer:
       "Illustrative planned projection based on the current clinical plan. Not a guarantee of density, growth, survival, or final appearance.",
@@ -117,6 +118,7 @@ function baseProjection(
     rejectionReason: null,
     inputChecksum: "input-checksum-1",
     outputChecksum: "output-checksum-1",
+    providerId: "imagingos-v1",
     patientSharingEnabled: true,
     projectionVersion: 1,
     ...overrides,
@@ -148,9 +150,9 @@ describe("HA-PRE-SURGERY-PROJECTION-REPORT-1A eligibility", () => {
     assert.equal(section.mode, "planned");
     assert.equal(section.planningModeLabel, REPORT_PLANNING_MODE_LABELS.planned);
     assert.ok(section.deferredZones.includes("crown"));
-    assert.match(section.limitationPanel, /educational planning illustration/i);
-    assert.match(section.intro, /planning illustration shows the proposed hairline/i);
-    assert.equal(section.title, "Illustrative Surgery Plan");
+    assert.match(section.limitationPanel, /illustrative projection based on the proposed surgical plan/i);
+    assert.match(section.intro, /not a guarantee of density, growth, coverage or final appearance/i);
+    assert.equal(section.title, "Illustrative Projected Outcome");
   });
 
   it("never includes draft or unapproved projections", () => {
@@ -462,10 +464,10 @@ describe("HA-PRE-SURGERY-PROJECTION-REPORT-1A PDF / media", () => {
         projectedImageUrl: "https://example.test/projected.jpg?sig=1",
       },
     });
-    assert.match(html, /Illustrative Surgery Plan/);
-    assert.match(html, /educational planning illustration/);
+    assert.match(html, /Illustrative Projected Outcome/);
+    assert.match(html, /illustrative projection based on the proposed surgical plan/i);
     assert.match(html, /illustrative-projected-result-pdf/);
-    assert.match(html, /Illustrative Surgery Plan scenario: Balanced/);
+    assert.match(html, /Illustrative Projected Outcome scenario: Planned/);
     assert.doesNotMatch(html, /guaranteed result/i);
     assert.doesNotMatch(html, /this is how you will look/i);
 

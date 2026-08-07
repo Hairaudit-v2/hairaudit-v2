@@ -377,11 +377,29 @@ export type PreSurgeryAuditEvent = {
 
 export type PreSurgeryProjectionMode = "conservative" | "planned" | "optimistic_within_approved_range";
 
-/** Patient-facing labels — never use guaranteed / final-result language. */
+/**
+ * Patient-facing mode labels for illustrative planning.
+ * Do not use “projected result / projected outcome / hair-growth simulation” for allocation maps.
+ */
 export const PRE_SURGERY_PROJECTION_PATIENT_LABELS: Record<PreSurgeryProjectionMode, string> = {
-  conservative: "Illustrative conservative projection",
-  planned: "Illustrative planned projection",
-  optimistic_within_approved_range: "Illustrative upper-range projection",
+  conservative: "Conservative planning view",
+  planned: "Planned clinical view",
+  optimistic_within_approved_range: "Optimistic planning view",
+};
+
+/** Mode-bound assumptions stored with each generation (PHOTOREALISTIC-OUTCOME-2A). */
+export type ProjectionModeAssumptions = {
+  graftCount: number;
+  recipientAreaDescription: string;
+  assumedGraftSurvivalRangePct: { min: number; max: number };
+  hairsPerGraftAssumption: number;
+  calibre: string;
+  colourToScalpContrast: string;
+  curlTexture: string;
+  nativeHairContribution: string;
+  projectedDensityRange: { minPerCm2: number; maxPerCm2: number };
+  densityHint: "modest" | "planned" | "upper_range";
+  scalpVisibilityHint: "preserve_realistic" | "planned" | "reduced_but_plausible";
 };
 
 export type PreSurgeryProjectionStatus =
@@ -460,6 +478,16 @@ export type PreSurgeryIllustrativeProjection = {
   /** All source image IDs frozen at generation (2C). */
   sourceImageIds?: string[];
   mode: PreSurgeryProjectionMode;
+  /**
+   * PHOTOREALISTIC-OUTCOME-2A product class.
+   * local-illustrative-v1 → graft_allocation_map (never illustrative_projected_outcome).
+   */
+  artifactType?:
+    | "graft_allocation_map"
+    | "proposed_hairline_design"
+    | "illustrative_projected_outcome";
+  /** Clinically bounded mode assumptions (required for projected-outcome modes). */
+  modeAssumptions?: ProjectionModeAssumptions | null;
   patientSafeLabel: string;
   patientSafeDisclaimer?: string | null;
   status: PreSurgeryProjectionStatus;

@@ -1,6 +1,9 @@
 /**
- * HA-PRE-SURGERY-INTELLIGENCE-2C / REAL-ASSET-1A — Projection provider health, timeout, and selection.
- * ImagingOS when configured; otherwise local_illustrative (real JPEG writer). Stub only when explicit.
+ * HA-PRE-SURGERY-INTELLIGENCE-2C / OPENAI-IMAGE-PROVIDER-2B — Provider health and selection.
+ *
+ * Overlay renderer (local-illustrative) = Graft Allocation Map / Proposed Hairline Design only.
+ * Cosmetic projected outcome = OpenAI gpt-image when keyed; ImagingOS when kind=imagingos and ready.
+ * Never fall back to coloured-block overlays for cosmetic outcomes.
  */
 
 import type { PreSurgeryProjectionProvider, PreSurgeryProjectionInput, PreSurgeryProjectionResult } from "./provider";
@@ -11,10 +14,14 @@ import {
   LOCAL_ILLUSTRATIVE_PROVIDER_ID,
 } from "./localIllustrativeProvider";
 import {
+  imagingOsCredentialsPresent,
   imagingosConfigReady,
+  openaiConfigReady,
+  openaiCredentialsPresent,
   resolveProjectionProviderConfig,
   type ResolvedProjectionProviderConfig,
 } from "./config";
+import { PROJECTED_OUTCOME_PROVIDER_UNAVAILABLE_MESSAGE } from "./artifactTypes";
 
 export type ProjectionProviderHealth = {
   providerId: string;
@@ -25,6 +32,10 @@ export type ProjectionProviderHealth = {
 };
 
 export const DEFAULT_PROJECTION_TIMEOUT_MS = 12_000;
+
+/** Expected ids from openaiGptImageProvider.ts (parent-owned module). */
+const OPENAI_GPT_IMAGE_PROVIDER_ID = "openai-gpt-image";
+const OPENAI_GPT_IMAGE_MODEL_DEFAULT = "gpt-image-2";
 
 export type InstrumentedProjectionOutcome =
   | {
@@ -54,6 +65,36 @@ export type ResolvedRuntimeProvider = {
   requiresStorageBinding: boolean;
 };
 
+export type CosmeticOutcomeProviderAudit = {
+  configuredKind: string;
+  imagingOsUrlConfigured: boolean;
+  imagingOsTokenConfigured: boolean;
+  imagingOsEnabled: boolean;
+  openAiKeyConfigured: boolean;
+};
+
+export type CosmeticOutcomeProviderResolution =
+  | {
+      available: true;
+      providerId: string;
+      provider: PreSurgeryProjectionProvider;
+      modelVersion: string;
+      config: ResolvedProjectionProviderConfig;
+      requiresStorageBinding: boolean;
+    }
+  | {
+      available: false;
+      providerId: string;
+      message: typeof PROJECTED_OUTCOME_PROVIDER_UNAVAILABLE_MESSAGE;
+      reason:
+        | "credentials_missing"
+        | "openai_key_missing"
+        | "provider_disabled"
+        | "misconfigured"
+        | "stub_only";
+      audit: CosmeticOutcomeProviderAudit;
+    };
+
 function localIllustrativeUnresolvedProvider(): PreSurgeryProjectionProvider {
   return {
     async generateProjection() {
@@ -68,6 +109,221 @@ function localIllustrativeUnresolvedProvider(): PreSurgeryProjectionProvider {
   };
 }
 
+function openAiUnresolvedProvider(): PreSurgeryProjectionProvider {
+  return {
+    async generateProjection() {
+      return {
+        ok: false,
+        errorCode: "provider_storage_unbound",
+        message:
+          "openai-gpt-image requires storage binding in the API route before generation",
+        retryable: false,
+      };
+    },
+    async healthcheck() {
+      return {
+        healthy: Boolean((process.env.OPENAI_API_KEY ?? "").trim()),
+        detail: "openai-gpt-image (unbound; route must bind storage)",
+        latencyMs: 0,
+      };
+    },
+  };
+}
+
+function createUnavailableCosmeticProvider(): PreSurgeryProjectionProvider {
+  return {
+    async generateProjection() {
+      return {
+        ok: false,
+        errorCode: "imaging_provider_not_configured",
+        message: PROJECTED_OUTCOME_PROVIDER_UNAVAILABLE_MESSAGE,
+        retryable: false,
+      };
+    },
+    async healthcheck() {
+      return {
+        healthy: false,
+        detail: PROJECTED_OUTCOME_PROVIDER_UNAVAILABLE_MESSAGE,
+        latencyMs: 0,
+      };
+    },
+  };
+}
+
+function buildOpenAiRuntimeConfig(
+  env: NodeJS.ProcessEnv,
+  configured: ResolvedProjectionProviderConfig
+): ResolvedProjectionProviderConfig {
+  const modelVersion =
+    (env.HA_OPENAI_GPT_IMAGE_MODEL ?? "").trim() ||
+    (configured.kind === "openai" ? configured.modelVersion : "") ||
+    OPENAI_GPT_IMAGE_MODEL_DEFAULT;
+  return {
+    ...configured,
+    kind: "openai",
+    providerId: OPENAI_GPT_IMAGE_PROVIDER_ID,
+    modelVersion,
+    endpoint: null,
+    authTokenConfigured: openaiCredentialsPresent(env),
+    signingSecretConfigured: false,
+    allowStubFallback: false,
+  };
+}
+
+/** Overlay maps only — never used for Illustrative Projected Outcome. */
+export function resolveOverlayRendererProvider(
+  env: NodeJS.ProcessEnv = process.env
+): ResolvedRuntimeProvider {
+  const config = resolveProjectionProviderConfig({
+    ...env,
+    HA_PRE_SURGERY_PROJECTION_PROVIDER: "local_illustrative",
+  });
+  return {
+    providerId: LOCAL_ILLUSTRATIVE_PROVIDER_ID,
+    provider: localIllustrativeUnresolvedProvider(),
+    config,
+    modelVersion: LOCAL_ILLUSTRATIVE_MODEL_VERSION,
+    disabled: false,
+    requiresStorageBinding: true,
+  };
+}
+
+/**
+ * Photorealistic projected-outcome provider.
+ * Prefers OpenAI when keyed (kind openai / local_illustrative / unset-equivalent).
+ * Falls back to ImagingOS only when kind is imagingos and ready.
+ * Does not fall back to local-illustrative colour blocks.
+ */
+export function resolveCosmeticOutcomeProvider(
+  env: NodeJS.ProcessEnv = process.env
+): CosmeticOutcomeProviderResolution {
+  const configured = resolveProjectionProviderConfig(env);
+  const urlConfigured = Boolean((env.HA_IMAGINGOS_PROJECTION_URL ?? "").trim());
+  const tokenConfigured = Boolean((env.HA_IMAGINGOS_PROJECTION_TOKEN ?? "").trim());
+  const imagingOsEnabled =
+    (env.HA_PRE_SURGERY_IMAGINGOS_ENABLED ?? "").trim().toLowerCase() === "true";
+  const openAiKeyConfigured = openaiCredentialsPresent(env);
+  const audit: CosmeticOutcomeProviderAudit = {
+    configuredKind: configured.kind,
+    imagingOsUrlConfigured: urlConfigured,
+    imagingOsTokenConfigured: tokenConfigured,
+    imagingOsEnabled,
+    openAiKeyConfigured,
+  };
+
+  if (configured.kind === "disabled") {
+    return {
+      available: false,
+      providerId: "disabled",
+      message: PROJECTED_OUTCOME_PROVIDER_UNAVAILABLE_MESSAGE,
+      reason: "provider_disabled",
+      audit,
+    };
+  }
+
+  if (configured.kind === "stub") {
+    return {
+      available: false,
+      providerId: "stub-v1",
+      message: PROJECTED_OUTCOME_PROVIDER_UNAVAILABLE_MESSAGE,
+      reason: "stub_only",
+      audit,
+    };
+  }
+
+  // Explicit openai without key — fail closed with specific reason.
+  if (configured.kind === "openai" && !openAiKeyConfigured) {
+    return {
+      available: false,
+      providerId: OPENAI_GPT_IMAGE_PROVIDER_ID,
+      message: PROJECTED_OUTCOME_PROVIDER_UNAVAILABLE_MESSAGE,
+      reason: "openai_key_missing",
+      audit,
+    };
+  }
+
+  // Prefer OpenAI when key present and kind is openai, local_illustrative, or
+  // unset-equivalent (defaults to local_illustrative).
+  const preferOpenAi =
+    openAiKeyConfigured &&
+    (configured.kind === "openai" || configured.kind === "local_illustrative");
+
+  if (preferOpenAi || (configured.kind === "openai" && openAiKeyConfigured)) {
+    const openAiConfig = buildOpenAiRuntimeConfig(env, configured);
+    return {
+      available: true,
+      providerId: openAiConfig.providerId,
+      provider: openAiUnresolvedProvider(),
+      modelVersion: openAiConfig.modelVersion,
+      config: openAiConfig,
+      requiresStorageBinding: true,
+    };
+  }
+
+  // ImagingOS only when explicitly configured as such and ready.
+  if (configured.kind === "imagingos") {
+    if (!imagingOsCredentialsPresent(env)) {
+      return {
+        available: false,
+        providerId: "imagingos-v1",
+        message: PROJECTED_OUTCOME_PROVIDER_UNAVAILABLE_MESSAGE,
+        reason: "credentials_missing",
+        audit,
+      };
+    }
+
+    const imagingConfig: ResolvedProjectionProviderConfig = {
+      ...configured,
+      kind: "imagingos",
+      providerId: "imagingos-v1",
+      modelVersion:
+        (env.HA_IMAGINGOS_PROJECTION_MODEL ?? "").trim() ||
+        configured.modelVersion ||
+        "imagingos-projection-v1",
+      endpoint: (env.HA_IMAGINGOS_PROJECTION_URL ?? "").trim() || null,
+      authTokenConfigured: true,
+    };
+
+    if (!imagingosConfigReady(imagingConfig)) {
+      return {
+        available: false,
+        providerId: "imagingos-v1",
+        message: PROJECTED_OUTCOME_PROVIDER_UNAVAILABLE_MESSAGE,
+        reason: "misconfigured",
+        audit,
+      };
+    }
+
+    const token = (env.HA_IMAGINGOS_PROJECTION_TOKEN ?? "").trim();
+    const signingSecret = (env.HA_IMAGINGOS_PROJECTION_SIGNING_SECRET ?? "").trim() || null;
+    return {
+      available: true,
+      providerId: imagingConfig.providerId,
+      provider: createImagingOsPreSurgeryProjectionProvider({
+        config: imagingConfig,
+        authToken: token,
+        signingSecret,
+      }),
+      modelVersion: imagingConfig.modelVersion,
+      config: imagingConfig,
+      requiresStorageBinding: false,
+    };
+  }
+
+  // local_illustrative without OpenAI key — cosmetic outcome unavailable (never overlay fallback).
+  return {
+    available: false,
+    providerId: OPENAI_GPT_IMAGE_PROVIDER_ID,
+    message: PROJECTED_OUTCOME_PROVIDER_UNAVAILABLE_MESSAGE,
+    reason: "credentials_missing",
+    audit,
+  };
+}
+
+/**
+ * Legacy resolver used by routes that still call the generic path.
+ * ImagingOS / OpenAI misconfiguration no longer falls back to coloured-block overlays for "projection".
+ */
 export function resolveRuntimeProjectionProvider(
   env: NodeJS.ProcessEnv = process.env
 ): ResolvedRuntimeProvider {
@@ -81,6 +337,29 @@ export function resolveRuntimeProjectionProvider(
       modelVersion: "none",
       disabled: true,
       requiresStorageBinding: false,
+    };
+  }
+
+  if (config.kind === "openai") {
+    if (openaiConfigReady(config) || openaiCredentialsPresent(env)) {
+      const openAiConfig = buildOpenAiRuntimeConfig(env, config);
+      return {
+        providerId: openAiConfig.providerId,
+        provider: openAiUnresolvedProvider(),
+        config: openAiConfig,
+        modelVersion: openAiConfig.modelVersion,
+        disabled: false,
+        // Source bytes + store binding required before generation.
+        requiresStorageBinding: true,
+      };
+    }
+    return {
+      providerId: OPENAI_GPT_IMAGE_PROVIDER_ID,
+      provider: createUnavailableCosmeticProvider(),
+      config: { ...config, kind: "disabled", providerId: OPENAI_GPT_IMAGE_PROVIDER_ID },
+      modelVersion: config.modelVersion,
+      disabled: true,
+      requiresStorageBinding: true,
     };
   }
 
@@ -101,7 +380,7 @@ export function resolveRuntimeProjectionProvider(
         requiresStorageBinding: false,
       };
     }
-    // Explicit stub fallback only when configured — never silent production substitute.
+    // Explicit stub fallback only when configured — never silent overlay substitute for cosmetic.
     if (config.allowStubFallback) {
       return {
         providerId: "stub-v1",
@@ -112,19 +391,14 @@ export function resolveRuntimeProjectionProvider(
         requiresStorageBinding: false,
       };
     }
-    // Approved non-stub fallback when ImagingOS is unavailable (REAL-ASSET-1A).
+    // PHOTOREALISTIC-OUTCOME-2A: hard-unavailable — do not fall back to local-illustrative.
     return {
-      providerId: LOCAL_ILLUSTRATIVE_PROVIDER_ID,
-      provider: localIllustrativeUnresolvedProvider(),
-      config: {
-        ...config,
-        kind: "local_illustrative",
-        providerId: LOCAL_ILLUSTRATIVE_PROVIDER_ID,
-        modelVersion: LOCAL_ILLUSTRATIVE_MODEL_VERSION,
-      },
-      modelVersion: LOCAL_ILLUSTRATIVE_MODEL_VERSION,
-      disabled: false,
-      requiresStorageBinding: true,
+      providerId: "imagingos-v1",
+      provider: createUnavailableCosmeticProvider(),
+      config: { ...config, kind: "disabled", providerId: "imagingos-v1" },
+      modelVersion: config.modelVersion,
+      disabled: true,
+      requiresStorageBinding: false,
     };
   }
 
@@ -139,7 +413,7 @@ export function resolveRuntimeProjectionProvider(
     };
   }
 
-  // local_illustrative
+  // local_illustrative — overlay renderer only
   return {
     providerId: LOCAL_ILLUSTRATIVE_PROVIDER_ID,
     provider: localIllustrativeUnresolvedProvider(),
@@ -159,7 +433,9 @@ function createDisabledProvider(code = "provider_disabled"): PreSurgeryProjectio
         message:
           code === "provider_misconfigured"
             ? "ImagingOS projection provider is misconfigured"
-            : "Projection provider is disabled",
+            : code === "imaging_provider_not_configured"
+              ? PROJECTED_OUTCOME_PROVIDER_UNAVAILABLE_MESSAGE
+              : "Projection provider is disabled",
         retryable: false,
       };
     },

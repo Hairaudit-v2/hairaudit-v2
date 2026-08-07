@@ -8,6 +8,10 @@
 import { sanitizePatientReportText } from "@/lib/reports/postSurgeryPatientText";
 import { OBSERVATION_DOMAIN_LABELS } from "./observations";
 import { findUnsafeProjectionLabel } from "./projection/safety";
+import {
+  isPatientReportOutcomeArtifact,
+  resolveProjectionArtifactType,
+} from "./projection/artifactTypes";
 import type {
   ClinicalObservation,
   PreSurgeryGraftPlan,
@@ -178,6 +182,13 @@ export function selectReportEligibleProjections(
     if (p.staleAt) return false;
     if (p.shadowMode) return false;
     if (findUnsafeProjectionLabel(p.patientSafeLabel)) return false;
+    // PHOTOREALISTIC-OUTCOME-2A — Graft Allocation Maps / hairline designs never enter
+    // the patient Illustrative Projected Outcome section.
+    const artifactType = resolveProjectionArtifactType({
+      artifactType: p.artifactType,
+      providerId: p.providerId,
+    });
+    if (!isPatientReportOutcomeArtifact(artifactType)) return false;
     // REAL-ASSET-1A — stubs / missing assets never enter the patient report.
     const path = typeof p.storagePath === "string" ? p.storagePath.trim() : "";
     if (!path || /\.stub$/i.test(path) || path.includes("/stub/")) return false;
@@ -193,6 +204,11 @@ export function selectReportEligibleProjections(
     // for *new* inclusion — only when explicitly re-pinning the same id.
     const pinned = projections.filter((p) => {
       if (p.id !== pinnedProjectionId || p.status !== "approved") return false;
+      const artifactType = resolveProjectionArtifactType({
+        artifactType: p.artifactType,
+        providerId: p.providerId,
+      });
+      if (!isPatientReportOutcomeArtifact(artifactType)) return false;
       const path = typeof p.storagePath === "string" ? p.storagePath.trim() : "";
       if (!path || /\.stub$/i.test(path) || path.includes("/stub/")) return false;
       return true;

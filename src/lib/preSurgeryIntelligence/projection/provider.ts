@@ -27,6 +27,8 @@ export type PreSurgeryProjectionInput = {
   inputChecksum?: string | null;
   idempotencyKey?: string | null;
   abortSignal?: AbortSignal | null;
+  /** Overlay variant for local-illustrative only. */
+  renderVariant?: "graft_allocation_map" | "proposed_hairline_design";
 };
 
 export type PreSurgeryProjectionProviderError = {

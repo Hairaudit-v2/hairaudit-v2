@@ -19,6 +19,7 @@ import {
   rejectIllustrativeProjection,
   requestPreSurgeryProjection,
   resolveGraftPlanBaseForEdit,
+  resolveRuntimeProjectionProvider,
   restoreAnnotation,
   seedAiGraftPlan,
   softDeleteAnnotation,
@@ -239,10 +240,22 @@ describe("HA-PRE-SURGERY-INTELLIGENCE-2B report integration", () => {
 });
 
 describe("HA-PRE-SURGERY-INTELLIGENCE-2B projection readiness", () => {
-  it("uses stub as production-safe default and passes healthcheck", async () => {
-    const { providerId, provider } = getDefaultPreSurgeryProjectionProvider();
-    assert.equal(providerId, "stub-v1");
-    const health = await checkProjectionProviderHealth(provider, providerId);
+  it("defaults to local-illustrative overlay renderer (not silent stub)", async () => {
+    const { providerId } = getDefaultPreSurgeryProjectionProvider();
+    assert.equal(providerId, "local-illustrative-v1");
+    const runtime = resolveRuntimeProjectionProvider({});
+    assert.equal(runtime.requiresStorageBinding, true);
+    assert.equal(runtime.disabled, false);
+
+    // Explicit stub remains available for offline / unit health checks.
+    const stubRuntime = resolveRuntimeProjectionProvider({
+      HA_PRE_SURGERY_PROJECTION_PROVIDER: "stub",
+    });
+    assert.equal(stubRuntime.providerId, "stub-v1");
+    const health = await checkProjectionProviderHealth(
+      stubRuntime.provider,
+      stubRuntime.providerId
+    );
     assert.equal(health.healthy, true);
   });
 

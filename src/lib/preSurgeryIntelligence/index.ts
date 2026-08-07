@@ -1,10 +1,10 @@
 /**
- * HA-PRE-SURGERY-INTELLIGENCE-2A/2C/2D — Public exports.
+ * HA-PRE-SURGERY-INTELLIGENCE-2A/2C/2D / OPENAI-IMAGE-PROVIDER-2B — Public exports.
  *
  * Clinician-assisted pre-surgery planning workspace domain.
  * Does not replace HA-PROJECTION-1A–1G longitudinal projected-vs-observed infrastructure.
- * 2D: controlled ImagingOS activation — use local_illustrative (or stub for offline tests)
- * until a deliberate allowlisted ImagingOS pilot.
+ * Cosmetic outcomes: openai gpt-image when keyed; ImagingOS optional; local_illustrative
+ * overlay maps only. Prefer kill-switch + allowlists for ImagingOS pilots.
  */
 
 export * from "./versions";
@@ -89,10 +89,37 @@ export {
 export {
   resolveProjectionProviderConfig,
   imagingosConfigReady,
+  imagingOsCredentialsPresent,
+  openaiCredentialsPresent,
+  openaiConfigReady,
   HA_PRE_SURGERY_PROJECTION_PROVIDER_ENV,
+  HA_OPENAI_GPT_IMAGE_MODEL_ENV,
+  OPENAI_API_KEY_ENV,
   HA_IMAGINGOS_PROJECTION_URL_ENV,
   HA_IMAGINGOS_PROJECTION_TOKEN_ENV,
 } from "./projection/config";
+export {
+  resolveProjectionArtifactType,
+  isPatientReportOutcomeArtifact,
+  isOverlayRendererArtifact,
+  ARTIFACT_TYPE_LABELS,
+  PROJECTED_OUTCOME_PROVIDER_UNAVAILABLE_MESSAGE,
+  ILLUSTRATIVE_PROJECTED_OUTCOME_DISCLAIMER,
+  type PreSurgeryArtifactType,
+} from "./projection/artifactTypes";
+export {
+  OPENAI_GPT_IMAGE_PROVIDER_ID,
+  OPENAI_GPT_IMAGE_MODEL_DEFAULT,
+  createOpenAiGptImageProjectionProvider,
+  pickOpenAiEditSize,
+} from "./projection/openaiGptImageProvider";
+export { assertApprovedHairlineDesignForOutcome } from "./projection/hairlineApprovalGate";
+export { validateProjectedOutcomeAsset } from "./projection/outcomeValidation";
+export { buildRecipientEditMask } from "./projection/treatmentMask";
+export {
+  buildOpenAiProjectedOutcomeEditPrompt,
+  OPENAI_EDIT_PROMPT_VERSION,
+} from "./projection/openaiEditPrompt";
 export {
   resolveProjectionActivationControls,
   decideProjectionActivation,
@@ -153,6 +180,8 @@ export { summariseProjectionMetrics } from "./projection/metrics";
 export {
   getDefaultPreSurgeryProjectionProvider,
   resolveRuntimeProjectionProvider,
+  resolveOverlayRendererProvider,
+  resolveCosmeticOutcomeProvider,
   checkProjectionProviderHealth,
   runInstrumentedProjection,
   DEFAULT_PROJECTION_TIMEOUT_MS,

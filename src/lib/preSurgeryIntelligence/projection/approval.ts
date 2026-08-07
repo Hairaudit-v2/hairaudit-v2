@@ -14,6 +14,10 @@ import {
 import { findUnsafeProjectionLabel } from "./safety";
 import { assertProjectionStatusTransition } from "./stateMachine";
 import { patientSafeDisclaimerForMode } from "./modeContracts";
+import {
+  isPatientReportOutcomeArtifact,
+  resolveProjectionArtifactType,
+} from "./artifactTypes";
 
 export const APPROVAL_CHECKLIST_KEYS = [
   "correctPatientAndCase",
@@ -155,7 +159,14 @@ export function approveIllustrativeProjectionWithChecklist(
   }
 
   const hasOverride = Boolean(input.overrideReason?.trim());
+  const artifactType = resolveProjectionArtifactType({
+    artifactType: projection.artifactType,
+    providerId: projection.providerId,
+  });
+  // PHOTOREALISTIC-OUTCOME-2A — Graft Allocation Maps / hairline designs are clinical-only.
+  // Patient sharing is reserved for approved Illustrative Projected Outcome assets.
   const enableSharing =
+    isPatientReportOutcomeArtifact(artifactType) &&
     !input.shadowMode &&
     !input.patientSharingKillSwitch &&
     !projection.shadowMode &&

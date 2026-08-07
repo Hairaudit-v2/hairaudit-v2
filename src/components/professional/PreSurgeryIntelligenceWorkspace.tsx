@@ -38,13 +38,15 @@ import {
 import { ANNOTATION_TYPE_LABELS } from "@/lib/preSurgeryIntelligence/annotations";
 import { AUDIT_EVENT_LABELS } from "@/lib/preSurgeryIntelligence/auditTimeline";
 import { computeGraftPlanTotals } from "@/lib/preSurgeryIntelligence/graftPlanTotals";
-import ProjectionAuditorCorrectionPanel from "@/components/professional/ProjectionAuditorCorrectionPanel";
 import SurgeryProjectionPlanSummary, {
   type ProjectionMediaState,
 } from "@/components/professional/SurgeryProjectionPlanSummary";
 import type { PlanComparisonView } from "@/lib/preSurgeryIntelligence/graftPlanCompare";
-import { classifyProjectionStoragePath } from "@/lib/preSurgeryIntelligence/projectionAssetStatus";
-import { ILLUSTRATIVE_SURGERY_PLAN_LABEL } from "@/lib/preSurgeryIntelligence/projectionDisplayCopy";
+import {
+  ARTIFACT_TYPE_LABELS,
+  resolveProjectionArtifactType,
+  type PreSurgeryArtifactType,
+} from "@/lib/preSurgeryIntelligence/projection/artifactTypes";
 
 type WorkspaceImage = {
   uploadId: string;
@@ -68,11 +70,6 @@ type WorkspacePayload = {
 };
 
 const PRIORITIES: GraftZonePriority[] = ["essential", "recommended", "optional", "defer"];
-const PROJECTION_MODES: PreSurgeryProjectionMode[] = [
-  "conservative",
-  "planned",
-  "optimistic_within_approved_range",
-];
 
 export default function PreSurgeryIntelligenceWorkspace({ caseId }: { caseId: string }) {
   const [loading, setLoading] = useState(true);
@@ -107,6 +104,7 @@ export default function PreSurgeryIntelligenceWorkspace({ caseId }: { caseId: st
   const [approvalNote, setApprovalNote] = useState("");
   const [rejectReasonCode, setRejectReasonCode] =
     useState<PreSurgeryProjectionRejectionReason>("other_safety_concern");
+  const [projectionHistoryOpen, setProjectionHistoryOpen] = useState(false);
 
   const CHECKLIST_LABELS: Record<keyof PreSurgeryApprovalChecklist, string> = {
     correctPatientAndCase: "Correct patient and case",
@@ -189,6 +187,9 @@ export default function PreSurgeryIntelligenceWorkspace({ caseId }: { caseId: st
   const currentPlan =
     [...graftPlans].reverse().find((p) => p.status !== "superseded") ?? graftPlans.at(-1) ?? null;
   const approvedPlan = [...graftPlans].reverse().find((p) => p.status === "approved") ?? null;
+  const approvalTarget = approvalTargetId
+    ? projections.find((p) => p.id === approvalTargetId) ?? null
+    : null;
 
   const draftTotals = useMemo(() => computeGraftPlanTotals(draftZones), [draftZones]);
 
@@ -365,16 +366,19 @@ export default function PreSurgeryIntelligenceWorkspace({ caseId }: { caseId: st
       graftPlanId?: string;
       regeneratesFromProjectionId?: string | null;
       allowSupersededPlan?: boolean;
+      artifactType?: PreSurgeryArtifactType;
     }
   ) => {
     if (!selectedImageId || !approvedPlan) return;
     setBusy(true);
     try {
+      const artifactType = opts?.artifactType ?? "graft_allocation_map";
       const res = await fetch(`${base}/projection`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           mode,
+          artifactType,
           sourceImageId: selectedImageId,
           graftPlanId: opts?.graftPlanId ?? approvedPlan.id,
           proposedHairlineConfirmed: hairlineConfirmed,
@@ -623,6 +627,7 @@ export default function PreSurgeryIntelligenceWorkspace({ caseId }: { caseId: st
           role: img.review.assignedRole,
         }))}
         busy={busy}
+        projectedOutcomeAvailable={true}
         onScrollToPlan={() => {
           document.getElementById("psi-graft-plan")?.scrollIntoView({ behavior: "smooth", block: "start" });
         }}
@@ -631,6 +636,7 @@ export default function PreSurgeryIntelligenceWorkspace({ caseId }: { caseId: st
             confirmCurrentApprovedPlan: true,
             graftPlanId: req.graftPlanId,
             allowSupersededPlan: req.allowSupersededPlan,
+            artifactType: req.artifactType,
           })
         }
         onRetryFailed={(p) => {
@@ -638,9 +644,17 @@ export default function PreSurgeryIntelligenceWorkspace({ caseId }: { caseId: st
             confirmCurrentApprovedPlan: true,
             graftPlanId: approvedPlan?.id,
             regeneratesFromProjectionId: p.id,
+            artifactType: resolveProjectionArtifactType({
+              artifactType: p.artifactType,
+              providerId: p.providerId,
+            }),
           });
         }}
         onReplace={(p) => {
+          const artifactType = resolveProjectionArtifactType({
+            artifactType: p.artifactType,
+            providerId: p.providerId,
+          });
           const isStub =
             typeof p.storagePath === "string" && /\.stub$/i.test(p.storagePath);
           if (
@@ -653,41 +667,46 @@ export default function PreSurgeryIntelligenceWorkspace({ caseId }: { caseId: st
               confirmCurrentApprovedPlan: true,
               graftPlanId: approvedPlan?.id,
               regeneratesFromProjectionId: p.id,
+              artifactType,
             });
             return;
           }
           void requestProjection(p.mode, {
             confirmCurrentApprovedPlan: true,
             graftPlanId: approvedPlan?.id,
+            artifactType,
           });
         }}
         onOpenApprove={(p) => {
           setApprovalTargetId(p.id);
           setApprovalChecklist(emptyApprovalChecklist());
           setApprovalNote("");
-          document.getElementById(`psi-projection-card-${p.id}`)?.scrollIntoView({
+          document.getElementById("psi-projection-details")?.scrollIntoView({
             behavior: "smooth",
             block: "start",
           });
         }}
         onReject={(p) => {
-          document.getElementById(`psi-projection-card-${p.id}`)?.scrollIntoView({
-            behavior: "smooth",
-            block: "start",
-          });
+          setApprovalTargetId(p.id);
+          setApprovalChecklist(emptyApprovalChecklist());
+          setApprovalNote("");
           setRejectReasonCode("other_safety_concern");
-        }}
-        onCorrect={(p) => {
-          document.getElementById(`psi-projection-card-${p.id}`)?.scrollIntoView({
+          document.getElementById("psi-projection-details")?.scrollIntoView({
             behavior: "smooth",
             block: "start",
           });
+        }}
+        onCorrect={() => {
+          /* Correction form lives in SurgeryProjectionPlanSummary drawer */
         }}
         onJumpToProjection={(id) => {
-          document.getElementById(`psi-projection-card-${id}`)?.scrollIntoView({
-            behavior: "smooth",
-            block: "start",
-          });
+          setProjectionHistoryOpen(true);
+          window.setTimeout(() => {
+            document.getElementById(`psi-projection-hist-${id}`)?.scrollIntoView({
+              behavior: "smooth",
+              block: "nearest",
+            });
+          }, 50);
         }}
       />
 
@@ -788,7 +807,8 @@ export default function PreSurgeryIntelligenceWorkspace({ caseId }: { caseId: st
         <header>
           <h2 className="text-lg font-semibold">Editable graft planning</h2>
           <p className="text-sm text-[var(--ha-muted-foreground)]">
-            Graft / surgical plan (distinct from {ILLUSTRATIVE_SURGERY_PLAN_LABEL} images below). Totals recalculate from
+            Graft / surgical plan (distinct from {ARTIFACT_TYPE_LABELS.graft_allocation_map} and related
+            planning assets below). Totals recalculate from
             zone rows. Deferred zones do not contribute to procedure totals.
           </p>
         </header>
@@ -916,297 +936,242 @@ export default function PreSurgeryIntelligenceWorkspace({ caseId }: { caseId: st
         )}
       </section>
 
-      {/* AREA 6–8 — Projections detail */}
+      {/* AREA 6–8 — Compact projection history + shared approval */}
       <section className="space-y-3" data-testid="psi-projection-section" id="psi-projection-details">
         <header>
-          <h2 className="text-lg font-semibold">{ILLUSTRATIVE_SURGERY_PLAN_LABEL} images</h2>
+          <h2 className="text-lg font-semibold">Projection review</h2>
           <p className="text-sm text-[var(--ha-muted-foreground)]">
-            Generated only after an approved graft plan and explicit clinician request. Labels are illustrative —
-            never guaranteed results. Clinician approval with checklist is required before patient visibility.
-            Forensic correction forms below are separate from the projected image itself.
+            Generate and review Graft Allocation Maps, Proposed Hairline Designs, and Illustrative
+            Projected Outcomes in the Surgery Projection Plan summary tabs above. Correction requests
+            open from that panel; clinician approval uses the shared checklist below when Approve is
+            selected.
           </p>
         </header>
         <div className="flex flex-wrap items-center gap-3 text-sm">
           <label className="flex items-center gap-2">
-            <input type="checkbox" checked={hairlineConfirmed} onChange={(e) => setHairlineConfirmed(e.target.checked)} />
+            <input
+              type="checkbox"
+              checked={hairlineConfirmed}
+              onChange={(e) => setHairlineConfirmed(e.target.checked)}
+            />
             Proposed hairline confirmed
           </label>
           <label className="flex items-center gap-2">
-            <input type="checkbox" checked={treatmentConfirmed} onChange={(e) => setTreatmentConfirmed(e.target.checked)} />
+            <input
+              type="checkbox"
+              checked={treatmentConfirmed}
+              onChange={(e) => setTreatmentConfirmed(e.target.checked)}
+            />
             Treatment area confirmed
           </label>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {PROJECTION_MODES.map((mode) => (
-            <button
-              key={mode}
-              type="button"
-              disabled={busy || !approvedPlan || !selectedImageId}
-              className="rounded-md border border-[var(--ha-border)] px-3 py-1.5 text-sm disabled:opacity-50"
-              data-testid={`psi-generate-projection-${mode}`}
-              onClick={() =>
-                void requestProjection(mode, {
-                  confirmCurrentApprovedPlan: true,
-                  graftPlanId: approvedPlan?.id,
-                })
-              }
-            >
-              Generate {PRE_SURGERY_PROJECTION_PATIENT_LABELS[mode]}
-            </button>
-          ))}
         </div>
         {!approvedPlan ? (
           <p className="text-sm text-amber-800">Approve a graft plan before generating projections.</p>
         ) : null}
         {projections.length === 0 ? (
           <p className="text-sm text-[var(--ha-muted-foreground)]" data-testid="psi-projection-empty">
-            No illustrative projection records yet. Use Generate above or from the Surgery Projection Plan summary.
+            No projection records yet. Use Generate in the Surgery Projection Plan summary.
           </p>
-        ) : null}
-        <ul className="space-y-2 text-sm">
-          {projections.map((p) => {
-            const media = projectionMedia[p.id];
-            const asset = classifyProjectionStoragePath(p.storagePath);
-            const failed = p.status === "failed" || p.status === "validation_failed";
-            return (
-            <li
-              key={p.id}
-              id={`psi-projection-card-${p.id}`}
-              className="scroll-mt-4 rounded-md border border-[var(--ha-border)] p-3"
-              data-testid={`psi-projection-${p.mode}`}
+        ) : (
+          <div className="rounded-md border border-[var(--ha-border)]">
+            <button
+              type="button"
+              className="flex w-full items-center justify-between px-3 py-2 text-left text-sm"
+              aria-expanded={projectionHistoryOpen}
+              onClick={() => setProjectionHistoryOpen((v) => !v)}
             >
-              <div className="mb-2 overflow-hidden rounded border border-[var(--ha-border)] bg-[var(--ha-muted)]/30">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                {media?.projectedSignedUrl ? (
-                  <img
-                    src={media.projectedSignedUrl}
-                    alt=""
-                    className="max-h-64 w-full object-contain"
-                    data-testid={`psi-projection-image-${p.mode}`}
-                  />
-                ) : (
-                  <div
-                    className="flex min-h-28 flex-col items-center justify-center gap-1 p-4 text-center text-xs"
-                    data-testid={`psi-projection-asset-state-${p.mode}`}
-                  >
-                    {failed ? (
-                      <p className="font-semibold text-red-800">Generation failed — use Retry failed generation above.</p>
-                    ) : media?.loadError ? (
-                      <p className="font-semibold text-red-800">
-                        Asset loading error: {media.loadError}
-                      </p>
-                    ) : asset.kind === "stub_placeholder" ? (
-                      <>
-                        <p className="font-semibold text-amber-900">Stub placeholder — no illustrative image file stored</p>
-                        <p className="text-[var(--ha-muted-foreground)]">{asset.message}</p>
-                        {media?.sourceSignedUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={media.sourceSignedUrl}
-                            alt=""
-                            className="mt-2 max-h-32 opacity-50"
-                          />
+              <span className="font-medium">
+                Historical projections ({projections.length})
+              </span>
+              <span className="text-xs text-[var(--ha-muted-foreground)]">
+                {projectionHistoryOpen ? "Collapse" : "Expand"}
+              </span>
+            </button>
+            {projectionHistoryOpen ? (
+              <ul className="max-h-64 space-y-1 overflow-auto border-t border-[var(--ha-border)] p-2 text-xs">
+                {projections.map((p) => {
+                  const artifact = resolveProjectionArtifactType({
+                    artifactType: p.artifactType,
+                    providerId: p.providerId,
+                  });
+                  return (
+                    <li
+                      key={p.id}
+                      id={`psi-projection-hist-${p.id}`}
+                      className="flex flex-wrap items-center justify-between gap-2 rounded px-2 py-1 hover:bg-[var(--ha-muted)]/30"
+                      data-testid={`psi-projection-${p.mode}`}
+                    >
+                      <span>
+                        <span className="font-medium">{ARTIFACT_TYPE_LABELS[artifact]}</span>
+                        {" · "}
+                        {PRE_SURGERY_PROJECTION_PATIENT_LABELS[p.mode]}
+                        {" · "}
+                        {p.status}
+                        {" · plan v"}
+                        {p.graftPlanVersion}
+                        {" · "}
+                        {p.id.slice(0, 8)}…
+                      </span>
+                      <span className="flex flex-wrap gap-1">
+                        {(p.status === "generated" || p.status === "clinician_review") && (
+                          <button
+                            type="button"
+                            className="rounded border px-2 py-0.5"
+                            data-testid={`psi-open-approve-projection-${p.mode}`}
+                            disabled={busy}
+                            onClick={() => {
+                              setApprovalTargetId(p.id);
+                              setApprovalChecklist(emptyApprovalChecklist());
+                              setApprovalNote("");
+                            }}
+                          >
+                            Approve
+                          </button>
+                        )}
+                        {p.status === "approved" ? (
+                          <button
+                            type="button"
+                            className="rounded border px-2 py-0.5"
+                            data-testid={`psi-revoke-sharing-${p.mode}`}
+                            disabled={busy}
+                            onClick={async () => {
+                              setBusy(true);
+                              try {
+                                const res = await fetch(`${base}/projection/approve`, {
+                                  method: "PATCH",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({
+                                    projectionId: p.id,
+                                    action: "revoke_sharing",
+                                  }),
+                                });
+                                const data = await res.json();
+                                if (!res.ok || !data.ok) throw new Error(data.error ?? "Revoke failed");
+                                await refresh();
+                              } catch (e) {
+                                setError(e instanceof Error ? e.message : "Revoke failed");
+                              } finally {
+                                setBusy(false);
+                              }
+                            }}
+                          >
+                            Revoke sharing
+                          </button>
                         ) : null}
-                      </>
-                    ) : (
-                      <p className="text-[var(--ha-muted-foreground)]">{asset.message}</p>
-                    )}
-                  </div>
-                )}
-              </div>
-              <div className="text-[11px] font-semibold uppercase tracking-wide text-[var(--ha-muted-foreground)]">
-                {ILLUSTRATIVE_SURGERY_PLAN_LABEL}
-              </div>
-              <div className="font-medium">{p.patientSafeLabel}</div>
-              <div className="text-xs text-[var(--ha-muted-foreground)]">
-                Status {p.status} · plan v{p.graftPlanVersion} · attempt v{p.projectionVersion ?? 1} · engine{" "}
-                {p.engineVersion}
-                {p.status !== "approved" ? " · not patient-visible" : " · clinician-approved for patient view"}
-                {p.patientSharingEnabled ? " · sharing enabled" : ""}
-              </div>
-              {p.patientSafeDisclaimer ? (
-                <p className="mt-1 text-xs text-[var(--ha-muted-foreground)]">{p.patientSafeDisclaimer}</p>
-              ) : null}
-              <ul className="mt-1 list-disc pl-4 text-xs text-[var(--ha-muted-foreground)]">
-                {p.limitations.slice(0, 3).map((l) => (
-                  <li key={l}>{l}</li>
-                ))}
+                      </span>
+                    </li>
+                  );
+                })}
               </ul>
-              {(p.status === "generated" || p.status === "clinician_review") && approvalTargetId !== p.id ? (
-                <div className="mt-2 flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    className="rounded border px-2 py-0.5 text-xs"
-                    data-testid={`psi-open-approve-projection-${p.mode}`}
-                    disabled={busy}
-                    onClick={() => {
-                      setApprovalTargetId(p.id);
-                      setApprovalChecklist(emptyApprovalChecklist());
-                      setApprovalNote("");
-                    }}
-                  >
-                    Open clinician approval checklist
-                  </button>
-                  <label className="flex items-center gap-1 text-xs">
-                    Reject
-                    <select
-                      className="rounded border px-1 py-0.5"
-                      value={rejectReasonCode}
-                      onChange={(e) =>
-                        setRejectReasonCode(e.target.value as PreSurgeryProjectionRejectionReason)
-                      }
-                      data-testid={`psi-reject-reason-${p.mode}`}
-                    >
-                      {REJECTION_REASONS.map((r) => (
-                        <option key={r} value={r}>
-                          {r.replace(/_/g, " ")}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <button
-                    type="button"
-                    className="rounded border px-2 py-0.5 text-xs"
-                    data-testid={`psi-reject-projection-${p.mode}`}
-                    disabled={busy}
-                    onClick={async () => {
-                      setBusy(true);
-                      try {
-                        const res = await fetch(`${base}/projection/approve`, {
-                          method: "PATCH",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({
-                            projectionId: p.id,
-                            action: "reject",
-                            reasonCode: rejectReasonCode,
-                            reason: rejectReasonCode,
-                          }),
-                        });
-                        const data = await res.json();
-                        if (!res.ok || !data.ok) throw new Error(data.error ?? "Reject failed");
-                        await refresh();
-                      } catch (e) {
-                        setError(e instanceof Error ? e.message : "Reject failed");
-                      } finally {
-                        setBusy(false);
-                      }
-                    }}
-                  >
-                    Reject
-                  </button>
+            ) : null}
+          </div>
+        )}
+
+        {approvalTarget ? (
+          <div
+            className="fixed inset-0 z-40 flex items-end justify-center bg-black/40 p-4 sm:items-center"
+            role="dialog"
+            aria-modal="true"
+            data-testid={`psi-approval-checklist-${approvalTarget.mode}`}
+          >
+            <div className="max-h-[90vh] w-full max-w-lg space-y-2 overflow-auto rounded-lg border border-[var(--ha-border)] bg-[var(--ha-card)] p-4 shadow-xl">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <h3 className="text-sm font-semibold">Clinician approval checklist</h3>
+                  <p className="text-xs text-[var(--ha-muted-foreground)]">
+                    {
+                      ARTIFACT_TYPE_LABELS[
+                        resolveProjectionArtifactType({
+                          artifactType: approvalTarget.artifactType,
+                          providerId: approvalTarget.providerId,
+                        })
+                      ]
+                    }{" · "}
+                    {approvalTarget.patientSafeLabel}
+                  </p>
                 </div>
-              ) : null}
-              {approvalTargetId === p.id ? (
-                <div
-                  className="mt-3 space-y-2 rounded border border-[var(--ha-border)] bg-[var(--ha-muted)]/20 p-3"
-                  data-testid={`psi-approval-checklist-${p.mode}`}
-                >
-                  <p className="text-xs font-medium">Confirm all items before approving for patient view</p>
-                  {APPROVAL_CHECKLIST_KEYS.map((key) => (
-                    <label key={key} className="flex items-start gap-2 text-xs">
-                      <input
-                        type="checkbox"
-                        checked={approvalChecklist[key]}
-                        data-testid={`psi-checklist-${key}`}
-                        onChange={(e) =>
-                          setApprovalChecklist((prev) => ({ ...prev, [key]: e.target.checked }))
-                        }
-                      />
-                      <span>{CHECKLIST_LABELS[key]}</span>
-                    </label>
-                  ))}
-                  <textarea
-                    className="w-full rounded border px-2 py-1 text-xs"
-                    rows={2}
-                    placeholder="Optional approval note"
-                    value={approvalNote}
-                    onChange={(e) => setApprovalNote(e.target.value)}
-                  />
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      className="rounded border bg-[var(--ha-primary)] px-2 py-1 text-xs text-[var(--ha-primary-foreground)]"
-                      data-testid={`psi-approve-projection-${p.mode}`}
-                      disabled={busy || !APPROVAL_CHECKLIST_KEYS.every((k) => approvalChecklist[k])}
-                      onClick={async () => {
-                        setBusy(true);
-                        try {
-                          const res = await fetch(`${base}/projection/approve`, {
-                            method: "PATCH",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                              projectionId: p.id,
-                              action: "approve",
-                              checklist: approvalChecklist,
-                              approvalNote: approvalNote || null,
-                            }),
-                          });
-                          const data = await res.json();
-                          if (!res.ok || !data.ok) throw new Error(data.error ?? "Approve failed");
-                          setApprovalTargetId(null);
-                          await refresh();
-                        } catch (e) {
-                          setError(e instanceof Error ? e.message : "Approve failed");
-                        } finally {
-                          setBusy(false);
-                        }
-                      }}
-                    >
-                      Approve for patient view
-                    </button>
-                    <button
-                      type="button"
-                      className="rounded border px-2 py-1 text-xs"
-                      onClick={() => setApprovalTargetId(null)}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              ) : null}
-              {(p.status === "rejected" || p.status === "failed" || p.status === "validation_failed") ? (
                 <button
                   type="button"
-                  className="mt-2 rounded border px-2 py-0.5 text-xs"
-                  data-testid={`psi-regenerate-projection-${p.mode}`}
-                  disabled={busy || !approvedPlan || !selectedImageId}
+                  className="rounded border px-2 py-1 text-xs"
+                  onClick={() => setApprovalTargetId(null)}
+                >
+                  Close
+                </button>
+              </div>
+              <p className="text-xs font-medium">Confirm all items before approving for patient view</p>
+              {APPROVAL_CHECKLIST_KEYS.map((key) => (
+                <label key={key} className="flex items-start gap-2 text-xs">
+                  <input
+                    type="checkbox"
+                    checked={approvalChecklist[key]}
+                    data-testid={`psi-checklist-${key}`}
+                    onChange={(e) =>
+                      setApprovalChecklist((prev) => ({ ...prev, [key]: e.target.checked }))
+                    }
+                  />
+                  <span>{CHECKLIST_LABELS[key]}</span>
+                </label>
+              ))}
+              <textarea
+                className="w-full rounded border px-2 py-1 text-xs"
+                rows={2}
+                placeholder="Optional approval note"
+                value={approvalNote}
+                onChange={(e) => setApprovalNote(e.target.value)}
+              />
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  className="rounded border bg-[var(--ha-primary)] px-2 py-1 text-xs text-[var(--ha-primary-foreground)]"
+                  data-testid={`psi-approve-projection-${approvalTarget.mode}`}
+                  disabled={busy || !APPROVAL_CHECKLIST_KEYS.every((k) => approvalChecklist[k])}
                   onClick={async () => {
                     setBusy(true);
-                    setError(null);
                     try {
-                      const res = await fetch(`${base}/projection`, {
-                        method: "POST",
+                      const res = await fetch(`${base}/projection/approve`, {
+                        method: "PATCH",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
-                          mode: p.mode,
-                          sourceImageId: selectedImageId ?? p.sourceImageId,
-                          graftPlanId: approvedPlan?.id,
-                          proposedHairlineConfirmed: hairlineConfirmed,
-                          treatmentAreaConfirmed: treatmentConfirmed,
-                          regeneratesFromProjectionId: p.id,
-                          confirmCurrentApprovedPlan: true,
+                          projectionId: approvalTarget.id,
+                          action: "approve",
+                          checklist: approvalChecklist,
+                          approvalNote: approvalNote || null,
                         }),
                       });
                       const data = await res.json();
-                      if (!res.ok || !data.ok) {
-                        throw new Error(data.errors?.[0]?.message ?? data.error ?? "Regenerate failed");
-                      }
+                      if (!res.ok || !data.ok) throw new Error(data.error ?? "Approve failed");
+                      setApprovalTargetId(null);
                       await refresh();
                     } catch (e) {
-                      setError(e instanceof Error ? e.message : "Regenerate failed");
+                      setError(e instanceof Error ? e.message : "Approve failed");
                     } finally {
                       setBusy(false);
                     }
                   }}
                 >
-                  Regenerate (new attempt)
+                  Approve for patient view
                 </button>
-              ) : null}
-              {p.status === "approved" ? (
+                <label className="flex items-center gap-1 text-xs">
+                  Reject
+                  <select
+                    className="rounded border px-1 py-0.5"
+                    value={rejectReasonCode}
+                    onChange={(e) =>
+                      setRejectReasonCode(e.target.value as PreSurgeryProjectionRejectionReason)
+                    }
+                    data-testid={`psi-reject-reason-${approvalTarget.mode}`}
+                  >
+                    {REJECTION_REASONS.map((r) => (
+                      <option key={r} value={r}>
+                        {r.replace(/_/g, " ")}
+                      </option>
+                    ))}
+                  </select>
+                </label>
                 <button
                   type="button"
-                  className="mt-2 rounded border px-2 py-0.5 text-xs"
-                  data-testid={`psi-revoke-sharing-${p.mode}`}
+                  className="rounded border px-2 py-1 text-xs"
+                  data-testid={`psi-reject-projection-${approvalTarget.mode}`}
                   disabled={busy}
                   onClick={async () => {
                     setBusy(true);
@@ -1214,37 +1179,37 @@ export default function PreSurgeryIntelligenceWorkspace({ caseId }: { caseId: st
                       const res = await fetch(`${base}/projection/approve`, {
                         method: "PATCH",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ projectionId: p.id, action: "revoke_sharing" }),
+                        body: JSON.stringify({
+                          projectionId: approvalTarget.id,
+                          action: "reject",
+                          reasonCode: rejectReasonCode,
+                          reason: rejectReasonCode,
+                        }),
                       });
                       const data = await res.json();
-                      if (!res.ok || !data.ok) throw new Error(data.error ?? "Revoke failed");
+                      if (!res.ok || !data.ok) throw new Error(data.error ?? "Reject failed");
+                      setApprovalTargetId(null);
                       await refresh();
                     } catch (e) {
-                      setError(e instanceof Error ? e.message : "Revoke failed");
+                      setError(e instanceof Error ? e.message : "Reject failed");
                     } finally {
                       setBusy(false);
                     }
                   }}
                 >
-                  Revoke patient sharing
+                  Reject
                 </button>
-              ) : null}
-              {p.status === "approved" ? (
-                <div className="mt-3">
-                  <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-amber-900">
-                    Projection correction request (forensic / internal)
-                  </p>
-                  <ProjectionAuditorCorrectionPanel
-                    caseId={caseId}
-                    projectionSnapshotId={p.id}
-                    projectionVersion={p.projectionVersion ?? 1}
-                  />
-                </div>
-              ) : null}
-            </li>
-            );
-          })}
-        </ul>
+                <button
+                  type="button"
+                  className="rounded border px-2 py-1 text-xs"
+                  onClick={() => setApprovalTargetId(null)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </section>
 
       <section className="space-y-2" data-testid="psi-plan-comparison-audit">
