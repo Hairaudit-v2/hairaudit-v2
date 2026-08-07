@@ -6,6 +6,7 @@
 
 import { createHash } from "node:crypto";
 import OpenAI, { toFile } from "openai";
+import type { ImageEditParamsNonStreaming } from "openai/resources/images";
 import sharp from "sharp";
 import type {
   PreSurgeryProjectionInput,
@@ -333,7 +334,8 @@ export function createOpenAiGptImageProjectionProvider(
         const maskFile = await toFile(paddedMask, "mask.png", { type: "image/png" });
 
         // Omit input_fidelity for gpt-image-2 (always high-fidelity per OpenAI docs).
-        const editParams: Parameters<OpenAI["images"]["edit"]>[0] = {
+        // Use NonStreaming params so the SDK return type is ImagesResponse (has .data).
+        const editParams: ImageEditParamsNonStreaming = {
           model,
           image: imageFile,
           mask: maskFile,
@@ -342,6 +344,7 @@ export function createOpenAiGptImageProjectionProvider(
           quality: options.quality ?? "high",
           output_format: options.outputFormat ?? "jpeg",
           size,
+          stream: false,
         };
 
         const response = await client.images.edit(editParams);
@@ -356,7 +359,7 @@ export function createOpenAiGptImageProjectionProvider(
           } as PreSurgeryProjectionResultWithOpenAiMeta;
         }
 
-        let outputBytes = Buffer.from(b64, "base64");
+        let outputBytes: Buffer = Buffer.from(b64, "base64");
         const responseMeta = await sharp(outputBytes).metadata();
         const responseW = responseMeta.width ?? 0;
         const responseH = responseMeta.height ?? 0;

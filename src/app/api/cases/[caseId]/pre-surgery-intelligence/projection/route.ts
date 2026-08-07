@@ -188,9 +188,10 @@ export async function POST(req: Request, ctx: RouteContext) {
     let providerId: string;
     let modelVersion: string;
     let providerKind: "openai" | "imagingos" | "local_illustrative" | "stub" | "disabled";
+    let hairlineGate: ReturnType<typeof assertApprovedHairlineDesignForOutcome> | null = null;
 
     if (artifactType === "illustrative_projected_outcome") {
-      const hairlineGate = assertApprovedHairlineDesignForOutcome({
+      hairlineGate = assertApprovedHairlineDesignForOutcome({
         projections: bundle.projections,
         plan,
         annotations: bundle.annotations,
