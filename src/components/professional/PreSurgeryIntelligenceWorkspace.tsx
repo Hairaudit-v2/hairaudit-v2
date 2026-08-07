@@ -916,8 +916,6 @@ export default function PreSurgeryIntelligenceWorkspace({ caseId }: { caseId: st
         )}
       </section>
 
-      </section>
-
       {/* AREA 6–8 — Projections detail */}
       <section className="space-y-3" data-testid="psi-projection-section" id="psi-projection-details">
         <header>
