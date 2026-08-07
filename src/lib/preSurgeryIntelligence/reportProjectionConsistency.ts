@@ -128,17 +128,19 @@ export function validateProjectionReportConsistency(
       // Same source — retained for explicit zone alignment checks below via zoneSummaries.
     }
 
-    if (input.graftEstimateRange) {
-      if (
-        input.graftEstimateRange.min !== graftPlan.totalMinimumGrafts ||
-        input.graftEstimateRange.max !== graftPlan.totalMaximumGrafts
-      ) {
-        issues.push({
-          code: "graft_range_mismatch",
-          severity: "block",
-          message: "Displayed graft range must match the approved planning snapshot",
-        });
-      }
+    // Prefer the approved graft-plan snapshot as the displayed band. A preliminary AI
+    // estimate that differs must not block inclusion of a clinician-approved illustration.
+    if (
+      input.graftEstimateRange &&
+      (input.graftEstimateRange.min !== graftPlan.totalMinimumGrafts ||
+        input.graftEstimateRange.max !== graftPlan.totalMaximumGrafts)
+    ) {
+      issues.push({
+        code: "graft_range_mismatch",
+        severity: "warn",
+        message:
+          "Preliminary graft estimate differs from the approved planning snapshot; report display should prefer the approved plan",
+      });
     }
 
     // Deferred zones on the approved plan must remain deferred in the projection assumptions/limitations.

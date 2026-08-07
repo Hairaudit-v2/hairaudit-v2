@@ -257,11 +257,11 @@ export function buildClinicianReportSlice(input: {
           planningOutcomeId: input.planningOutcomeId,
           stabilisationPriorityBand: input.stabilisationPriorityBand,
           restorationSuitabilityBand: input.restorationSuitabilityBand,
-          graftEstimateRange:
-            input.graftEstimateRange ??
-            (graftPlan
-              ? { min: graftPlan.totalMinimumGrafts, max: graftPlan.totalMaximumGrafts }
-              : null),
+          // Authoritative graft band is the clinician-approved plan when present —
+          // never block inclusion because the preliminary AI estimate disagrees.
+          graftEstimateRange: graftPlan
+            ? { min: graftPlan.totalMinimumGrafts, max: graftPlan.totalMaximumGrafts }
+            : (input.graftEstimateRange ?? null),
           sourceStoragePathByImageId: input.sourceStoragePathByImageId,
           now: input.now,
           inclusionActivationAllowed: input.inclusionActivationAllowed,

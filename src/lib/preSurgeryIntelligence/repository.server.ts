@@ -429,7 +429,7 @@ export async function loadWorkspaceBundle(
       .order("version", { ascending: true }),
     admin
       .from("hairaudit_pre_surgery_projections")
-      .select("payload")
+      .select("status, patient_sharing_enabled, payload")
       .eq("case_id", caseId)
       .order("requested_at", { ascending: false }),
     admin
@@ -443,12 +443,38 @@ export async function loadWorkspaceBundle(
   const mapPayload = <T>(rows: { payload?: unknown }[] | null): T[] =>
     (rows ?? []).map((r) => r.payload as T).filter(Boolean);
 
+  const mapProjections = (
+    rows:
+      | {
+          status?: string | null;
+          patient_sharing_enabled?: boolean | null;
+          payload?: unknown;
+        }[]
+      | null
+  ): PreSurgeryIllustrativeProjection[] =>
+    (rows ?? [])
+      .map((r) => {
+        const payload = r.payload as PreSurgeryIllustrativeProjection | null | undefined;
+        if (!payload) return null;
+        // Column status / sharing are authoritative when they diverge from embedded payload
+        // (e.g. supersede wrote column first or payload lagged).
+        return {
+          ...payload,
+          status: (r.status as PreSurgeryIllustrativeProjection["status"]) ?? payload.status,
+          patientSharingEnabled:
+            typeof r.patient_sharing_enabled === "boolean"
+              ? r.patient_sharing_enabled
+              : payload.patientSharingEnabled === true,
+        };
+      })
+      .filter(Boolean) as PreSurgeryIllustrativeProjection[];
+
   return {
     imageReviews: mapPayload(reviews.data),
     annotations: mapPayload(annotations.data),
     observations: mapPayload(observations.data),
     graftPlans: mapPayload(plans.data),
-    projections: mapPayload(projections.data),
+    projections: mapProjections(projections.data),
     auditEvents: (events.data ?? []).map((e) => ({
       id: e.id,
       caseId: e.case_id,

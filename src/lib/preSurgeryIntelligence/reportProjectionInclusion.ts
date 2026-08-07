@@ -113,6 +113,15 @@ export function isDiscussionOnlyIllustrationApproved(
   projection: PreSurgeryIllustrativeProjection
 ): boolean {
   if (projection.approvalOverrideReason === DISCUSSION_ONLY_OVERRIDE) return true;
+  // Clinician explicitly approved + enabled patient sharing — treat as permission to
+  // include the planning illustration on caution / further-review pathways.
+  if (
+    projection.status === "approved" &&
+    projection.patientSharingEnabled === true &&
+    projection.approvalChecklist?.suitableToShare === true
+  ) {
+    return true;
+  }
   if (projection.approvalChecklist?.suitableToShare !== true) return false;
   const note = `${projection.approvalNote ?? ""} ${projection.approvalOverrideReason ?? ""}`;
   return /discussion[- ]only/i.test(note);
