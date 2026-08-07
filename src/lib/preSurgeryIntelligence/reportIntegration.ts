@@ -178,6 +178,10 @@ export function selectReportEligibleProjections(
     if (p.staleAt) return false;
     if (p.shadowMode) return false;
     if (findUnsafeProjectionLabel(p.patientSafeLabel)) return false;
+    // REAL-ASSET-1A — stubs / missing assets never enter the patient report.
+    const path = typeof p.storagePath === "string" ? p.storagePath.trim() : "";
+    if (!path || /\.stub$/i.test(path) || path.includes("/stub/")) return false;
+    if (!p.outputChecksum) return false;
     if (graftPlan) {
       if (p.graftPlanId !== graftPlan.graftPlanId) return false;
       if (p.graftPlanVersion !== graftPlan.graftPlanVersion) return false;
@@ -187,7 +191,12 @@ export function selectReportEligibleProjections(
   if (pinnedProjectionId) {
     // Reissue: keep historically pinned projection readable even if later marked stale
     // for *new* inclusion — only when explicitly re-pinning the same id.
-    const pinned = projections.filter((p) => p.id === pinnedProjectionId && p.status === "approved");
+    const pinned = projections.filter((p) => {
+      if (p.id !== pinnedProjectionId || p.status !== "approved") return false;
+      const path = typeof p.storagePath === "string" ? p.storagePath.trim() : "";
+      if (!path || /\.stub$/i.test(path) || path.includes("/stub/")) return false;
+      return true;
+    });
     return pinned.length > 0 ? pinned : eligible.filter((p) => p.id === pinnedProjectionId);
   }
   return eligible;

@@ -108,6 +108,26 @@ export function approveIllustrativeProjectionWithChecklist(
     };
   }
 
+  // REAL-ASSET-1A — Approved is impossible without a valid image asset.
+  if (
+    !projection.storagePath ||
+    /\.stub$/i.test(projection.storagePath) ||
+    projection.storagePath.includes("/stub/")
+  ) {
+    return {
+      ok: false,
+      code: "stub_placeholder",
+      error: "Stub generation — no image asset produced. Approval requires a valid stored image.",
+    };
+  }
+  if (!projection.outputChecksum) {
+    return {
+      ok: false,
+      code: "missing_image_asset",
+      error: "Approved status is impossible without a valid stored image asset checksum",
+    };
+  }
+
   const disclaimer =
     projection.patientSafeDisclaimer ?? patientSafeDisclaimerForMode(projection.mode);
   if (findUnsafeProjectionLabel(disclaimer)) {

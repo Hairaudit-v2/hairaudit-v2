@@ -25,7 +25,6 @@ import {
   emptyApprovalChecklist,
   evaluatePatientProjectionVisibility,
   findUnsafePatientClaimLanguage,
-  getDefaultPreSurgeryProjectionProvider,
   imagingosConfigReady,
   PATIENT_PROJECTION_FRAMING,
   rejectIllustrativeProjection,
@@ -87,16 +86,25 @@ function hairlineAnn() {
 }
 
 describe("HA-PRE-SURGERY-INTELLIGENCE-2C provider configuration", () => {
-  it("defaults to stub for local development", () => {
+  it("defaults to local_illustrative for real asset generation", () => {
     const cfg = resolveProjectionProviderConfig({});
-    assert.equal(cfg.kind, "stub");
-    assert.equal(cfg.providerId, "stub-v1");
+    assert.equal(cfg.kind, "local_illustrative");
+    assert.equal(cfg.providerId, "local-illustrative-v1");
     const runtime = resolveRuntimeProjectionProvider({});
-    assert.equal(runtime.providerId, "stub-v1");
+    assert.equal(runtime.providerId, "local-illustrative-v1");
     assert.equal(runtime.disabled, false);
+    assert.equal(runtime.requiresStorageBinding, true);
   });
 
-  it("does not silently fall back to stub when ImagingOS is misconfigured", () => {
+  it("keeps explicit stub available for offline tests", () => {
+    const runtime = resolveRuntimeProjectionProvider({
+      HA_PRE_SURGERY_PROJECTION_PROVIDER: "stub",
+    });
+    assert.equal(runtime.providerId, "stub-v1");
+    assert.equal(runtime.requiresStorageBinding, false);
+  });
+
+  it("falls back to local_illustrative when ImagingOS is misconfigured (not silent stub)", () => {
     const cfg = resolveProjectionProviderConfig({
       HA_PRE_SURGERY_PROJECTION_PROVIDER: "imagingos",
       HA_IMAGINGOS_PROJECTION_URL: "",
@@ -107,7 +115,9 @@ describe("HA-PRE-SURGERY-INTELLIGENCE-2C provider configuration", () => {
     const runtime = resolveRuntimeProjectionProvider({
       HA_PRE_SURGERY_PROJECTION_PROVIDER: "imagingos",
     });
-    assert.equal(runtime.disabled, true);
+    assert.equal(runtime.providerId, "local-illustrative-v1");
+    assert.equal(runtime.requiresStorageBinding, true);
+    assert.equal(runtime.disabled, false);
   });
 
   it("allows explicit stub fallback only when configured", () => {
@@ -667,10 +677,12 @@ describe("HA-PRE-SURGERY-INTELLIGENCE-2C generation + report provenance", () => 
     assert.equal(pinned.provenance?.pinnedProjectionInputChecksum, "old-checksum");
   });
 
-  it("keeps stub default healthy and records metrics", async () => {
-    const { providerId, provider } = getDefaultPreSurgeryProjectionProvider();
-    assert.equal(providerId, "stub-v1");
-    const health = await checkProjectionProviderHealth(provider, providerId);
+  it("keeps stub provider healthy when explicitly selected and records metrics", async () => {
+    const runtime = resolveRuntimeProjectionProvider({
+      HA_PRE_SURGERY_PROJECTION_PROVIDER: "stub",
+    });
+    assert.equal(runtime.providerId, "stub-v1");
+    const health = await checkProjectionProviderHealth(runtime.provider, runtime.providerId);
     assert.equal(health.healthy, true);
     const summary = summariseProjectionMetrics([
       { at: "t", providerId: "stub-v1", ok: true, latencyMs: 10 },

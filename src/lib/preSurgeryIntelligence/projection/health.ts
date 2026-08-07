@@ -1,11 +1,15 @@
 /**
- * HA-PRE-SURGERY-INTELLIGENCE-2C — Projection provider health, timeout, and selection.
- * Stub remains local-dev default; ImagingOS only when explicitly configured.
+ * HA-PRE-SURGERY-INTELLIGENCE-2C / REAL-ASSET-1A — Projection provider health, timeout, and selection.
+ * ImagingOS when configured; otherwise local_illustrative (real JPEG writer). Stub only when explicit.
  */
 
 import type { PreSurgeryProjectionProvider, PreSurgeryProjectionInput, PreSurgeryProjectionResult } from "./provider";
 import { createStubPreSurgeryProjectionProvider } from "./stubProvider";
 import { createImagingOsPreSurgeryProjectionProvider } from "./imagingOsProvider";
+import {
+  LOCAL_ILLUSTRATIVE_MODEL_VERSION,
+  LOCAL_ILLUSTRATIVE_PROVIDER_ID,
+} from "./localIllustrativeProvider";
 import {
   imagingosConfigReady,
   resolveProjectionProviderConfig,
@@ -46,7 +50,23 @@ export type ResolvedRuntimeProvider = {
   config: ResolvedProjectionProviderConfig;
   modelVersion: string;
   disabled: boolean;
+  /** True when the route must bind case-files storage before generating. */
+  requiresStorageBinding: boolean;
 };
+
+function localIllustrativeUnresolvedProvider(): PreSurgeryProjectionProvider {
+  return {
+    async generateProjection() {
+      return {
+        ok: false,
+        errorCode: "provider_storage_unbound",
+        message:
+          "local-illustrative-v1 requires storage binding in the API route before generation",
+        retryable: false,
+      };
+    },
+  };
+}
 
 export function resolveRuntimeProjectionProvider(
   env: NodeJS.ProcessEnv = process.env
@@ -60,6 +80,7 @@ export function resolveRuntimeProjectionProvider(
       config,
       modelVersion: "none",
       disabled: true,
+      requiresStorageBinding: false,
     };
   }
 
@@ -77,6 +98,7 @@ export function resolveRuntimeProjectionProvider(
         config,
         modelVersion: config.modelVersion,
         disabled: false,
+        requiresStorageBinding: false,
       };
     }
     // Explicit stub fallback only when configured — never silent production substitute.
@@ -87,23 +109,44 @@ export function resolveRuntimeProjectionProvider(
         config: { ...config, kind: "stub", providerId: "stub-v1" },
         modelVersion: "stub-v1",
         disabled: false,
+        requiresStorageBinding: false,
       };
     }
+    // Approved non-stub fallback when ImagingOS is unavailable (REAL-ASSET-1A).
     return {
-      providerId: "disabled",
-      provider: createDisabledProvider("provider_misconfigured"),
-      config,
-      modelVersion: config.modelVersion,
-      disabled: true,
+      providerId: LOCAL_ILLUSTRATIVE_PROVIDER_ID,
+      provider: localIllustrativeUnresolvedProvider(),
+      config: {
+        ...config,
+        kind: "local_illustrative",
+        providerId: LOCAL_ILLUSTRATIVE_PROVIDER_ID,
+        modelVersion: LOCAL_ILLUSTRATIVE_MODEL_VERSION,
+      },
+      modelVersion: LOCAL_ILLUSTRATIVE_MODEL_VERSION,
+      disabled: false,
+      requiresStorageBinding: true,
     };
   }
 
+  if (config.kind === "stub") {
+    return {
+      providerId: "stub-v1",
+      provider: createStubPreSurgeryProjectionProvider(),
+      config,
+      modelVersion: "stub-v1",
+      disabled: false,
+      requiresStorageBinding: false,
+    };
+  }
+
+  // local_illustrative
   return {
-    providerId: "stub-v1",
-    provider: createStubPreSurgeryProjectionProvider(),
+    providerId: LOCAL_ILLUSTRATIVE_PROVIDER_ID,
+    provider: localIllustrativeUnresolvedProvider(),
     config,
-    modelVersion: "stub-v1",
+    modelVersion: LOCAL_ILLUSTRATIVE_MODEL_VERSION,
     disabled: false,
+    requiresStorageBinding: true,
   };
 }
 

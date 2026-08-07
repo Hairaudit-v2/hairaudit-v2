@@ -149,8 +149,8 @@ export function resolveProjectionActivationControls(
 
 export type ActivationGateContext = {
   controls: ProjectionActivationControls;
-  /** Provider kind resolved from config (`stub` | `imagingos` | `disabled`). */
-  providerKind: "stub" | "imagingos" | "disabled";
+  /** Provider kind resolved from config. */
+  providerKind: "stub" | "imagingos" | "local_illustrative" | "disabled";
   clinicId: string | null;
   clinicianId: string;
   caseId: string;
@@ -349,7 +349,7 @@ export function decidePatientSharingAllowed(input: {
 /** New report pin / inclusion of projections — blocked when provider disabled or sharing kill switch. */
 export function decideReportProjectionInclusionAllowed(input: {
   controls: ProjectionActivationControls;
-  providerKind: "stub" | "imagingos" | "disabled";
+  providerKind: "stub" | "imagingos" | "local_illustrative" | "disabled";
   projectionStale: boolean;
 }):
   | { allowed: true }

@@ -3,8 +3,8 @@
  *
  * Clinician-assisted pre-surgery planning workspace domain.
  * Does not replace HA-PROJECTION-1A–1G longitudinal projected-vs-observed infrastructure.
- * 2D: controlled ImagingOS activation — keep HA_PRE_SURGERY_PROJECTION_PROVIDER=stub in production
- * until a deliberate allowlisted pilot.
+ * 2D: controlled ImagingOS activation — use local_illustrative (or stub for offline tests)
+ * until a deliberate allowlisted ImagingOS pilot.
  */
 
 export * from "./versions";
@@ -63,6 +63,24 @@ export {
   projectionInvalidatedByPlanChange,
 } from "./projection/safety";
 export { createStubPreSurgeryProjectionProvider } from "./projection/stubProvider";
+export {
+  createLocalIllustrativePreSurgeryProjectionProvider,
+  LOCAL_ILLUSTRATIVE_PROVIDER_ID,
+  LOCAL_ILLUSTRATIVE_MODEL_VERSION,
+} from "./projection/localIllustrativeProvider";
+export {
+  composeLocalIllustrativeProjection,
+} from "./projection/localIllustrativeComposer";
+export {
+  isStubProjectionStoragePath,
+  projectionHasApproximatelyValidImagePath,
+  assertProjectionAssetApproximatelyForApproval,
+  STUB_GENERATION_NO_ASSET_MESSAGE,
+} from "./projection/assetValidation";
+export {
+  resolvePlanForProjectionGeneration,
+  buildProjectionPlanPreview,
+} from "./projection/planConfirmation";
 export {
   createImagingOsPreSurgeryProjectionProvider,
   signImagingOsRequest,

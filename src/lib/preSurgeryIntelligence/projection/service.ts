@@ -50,10 +50,14 @@ import {
   validateProviderProjectionOutput,
   type ProjectionOutputValidationInput,
 } from "./outputValidation";
+import {
+  isStubProjectionStoragePath,
+  STUB_GENERATION_NO_ASSET_MESSAGE,
+} from "./assetValidation";
 
 export type RequestPreSurgeryProjectionActivationContext = {
   controls?: ProjectionActivationControls;
-  providerKind?: "stub" | "imagingos" | "disabled";
+  providerKind?: "stub" | "imagingos" | "local_illustrative" | "disabled";
   clinicId?: string | null;
   requestsForCase?: number;
   requestsToday?: number;
@@ -90,10 +94,15 @@ export type RequestPreSurgeryProjectionInput = {
   idempotencyKey?: string | null;
   /** 2D activation / allowlist context. */
   activation?: RequestPreSurgeryProjectionActivationContext;
-  /** Optional provider-output metadata for 2D validation (ImagingOS). */
+  /** Optional provider-output metadata for 2D validation (ImagingOS / local illustrative). */
   outputValidation?: Partial<ProjectionOutputValidationInput> | null;
   /** Optional provider health snapshot (skips live health when provided). */
   providerHealth?: ProjectionProviderHealth | null;
+  /**
+   * REAL-ASSET-1A — When true (API route default), reject .stub / missing-asset outputs
+   * instead of advancing to clinician_review. Unit tests that inject stub may leave false.
+   */
+  requireValidImageAsset?: boolean;
 };
 
 export type RequestPreSurgeryProjectionResult =
@@ -127,9 +136,18 @@ export async function requestPreSurgeryProjection(
     input.activation?.controls ?? resolveProjectionActivationControls();
   const providerKind =
     input.activation?.providerKind ??
-    (runtime.disabled ? "disabled" : runtime.providerId.startsWith("imagingos") ? "imagingos" : "stub");
+    (runtime.disabled
+      ? "disabled"
+      : runtime.providerId.startsWith("imagingos")
+        ? "imagingos"
+        : runtime.providerId.startsWith("local-illustrative")
+          ? "local_illustrative"
+          : "stub");
   const enforceActivation =
-    input.activation?.enforceActivation === true || providerKind === "imagingos";
+    input.activation?.enforceActivation === true ||
+    providerKind === "imagingos" ||
+    providerKind === "local_illustrative";
+  const requireValidImageAsset = input.requireValidImageAsset === true;
 
   if (controls.providerKillSwitch) {
     auditHints.push({
@@ -371,6 +389,38 @@ export async function requestPreSurgeryProjection(
   });
 
   const result = instrumented.result;
+
+  if (requireValidImageAsset && isStubProjectionStoragePath(result.outputStorageRef)) {
+    auditHints.push({
+      eventType: "projection_output_validation_failed",
+      metadata: {
+        checks: ["stub_placeholder"],
+        failureCode: "stub_placeholder",
+        contactedProvider: true,
+      },
+    });
+    const failed = buildFailedProjection(input, {
+      status: "failed",
+      now,
+      providerId: instrumented.providerId,
+      modelVersion,
+      failureCode: "stub_placeholder",
+      failureMessage: STUB_GENERATION_NO_ASSET_MESSAGE,
+      inputChecksum,
+      inputSnapshot: canonical as unknown as Record<string, unknown>,
+      idempotencyKey,
+    });
+    return {
+      ok: false,
+      errors: [{ code: "stub_placeholder", message: STUB_GENERATION_NO_ASSET_MESSAGE }],
+      providerId: instrumented.providerId,
+      latencyMs: instrumented.latencyMs,
+      degradable: true,
+      projection: failed,
+      auditHints,
+    };
+  }
+
   const hairlineAnnotationPresent = approvedAnnotations.some(
     (a) =>
       (a.annotationType === "proposed_hairline" || a.annotationType === "existing_hairline") &&
@@ -451,30 +501,36 @@ export async function requestPreSurgeryProjection(
   }
 
   // 2D provider-output validation — malformed output → failed (not clinician_review).
-  if (input.outputValidation) {
+  const resultMeta = result as {
+    mimeType?: string;
+    fileSizeBytes?: number;
+    widthPx?: number;
+    heightPx?: number;
+  };
+  if (input.outputValidation || (requireValidImageAsset && resultMeta.mimeType)) {
     const ov = validateProviderProjectionOutput({
       caseId: input.caseId,
       attemptId: projection.id,
       expectedProviderRequestId: result.providerRequestId ?? null,
       actualProviderRequestId:
-        input.outputValidation.actualProviderRequestId ?? result.providerRequestId ?? null,
-      mimeType: input.outputValidation.mimeType ?? "image/jpeg",
-      fileSizeBytes: input.outputValidation.fileSizeBytes ?? 100_000,
-      widthPx: input.outputValidation.widthPx ?? 1024,
-      heightPx: input.outputValidation.heightPx ?? 1024,
+        input.outputValidation?.actualProviderRequestId ?? result.providerRequestId ?? null,
+      mimeType: input.outputValidation?.mimeType ?? resultMeta.mimeType ?? null,
+      fileSizeBytes: input.outputValidation?.fileSizeBytes ?? resultMeta.fileSizeBytes ?? null,
+      widthPx: input.outputValidation?.widthPx ?? resultMeta.widthPx ?? null,
+      heightPx: input.outputValidation?.heightPx ?? resultMeta.heightPx ?? null,
       outputChecksum: result.outputChecksum,
       storageChecksumRecorded:
-        input.outputValidation.storageChecksumRecorded ?? Boolean(result.outputChecksum),
-      safetyMetadataPresent: input.outputValidation.safetyMetadataPresent ?? true,
+        input.outputValidation?.storageChecksumRecorded ?? Boolean(result.outputChecksum),
+      safetyMetadataPresent: input.outputValidation?.safetyMetadataPresent ?? true,
       malformedOrExecutablePayload:
-        input.outputValidation.malformedOrExecutablePayload ?? false,
+        input.outputValidation?.malformedOrExecutablePayload ?? false,
       unexpectedEmbeddedPatientData:
-        input.outputValidation.unexpectedEmbeddedPatientData ?? false,
-      maxFileSizeBytes: input.outputValidation.maxFileSizeBytes,
-      expectedMinWidth: input.outputValidation.expectedMinWidth,
-      expectedMinHeight: input.outputValidation.expectedMinHeight,
-      expectedMaxWidth: input.outputValidation.expectedMaxWidth,
-      expectedMaxHeight: input.outputValidation.expectedMaxHeight,
+        input.outputValidation?.unexpectedEmbeddedPatientData ?? false,
+      maxFileSizeBytes: input.outputValidation?.maxFileSizeBytes,
+      expectedMinWidth: input.outputValidation?.expectedMinWidth,
+      expectedMinHeight: input.outputValidation?.expectedMinHeight,
+      expectedMaxWidth: input.outputValidation?.expectedMaxWidth,
+      expectedMaxHeight: input.outputValidation?.expectedMaxHeight,
     });
     projection = applyOutputValidationToProjection(projection, ov);
     if (!ov.ok) {

@@ -1,5 +1,7 @@
 /**
- * HA-PRE-SURGERY-INTELLIGENCE-2C — Request illustrative projection generation.
+ * HA-PRE-SURGERY-INTELLIGENCE-2C / REAL-ASSET-1A — Request illustrative projection generation.
+ * Defaults to the latest approved plan; requires clinician confirmation; writes real image assets
+ * via ImagingOS or local-illustrative-v1. Stub paths are never treated as complete projections.
  */
 
 import { NextResponse } from "next/server";
@@ -20,6 +22,18 @@ import {
   getPathwayEvidencePack,
   isPathwayRequiredUploadComplete,
 } from "@/lib/patient/patientReviewPathway";
+import { resolveRuntimeProjectionProvider } from "@/lib/preSurgeryIntelligence/projection/health";
+import {
+  createBoundLocalIllustrativeProvider,
+  downloadCaseFilesObject,
+} from "@/lib/preSurgeryIntelligence/projection/localIllustrativeStorage.server";
+import {
+  probeStoredProjectionAsset,
+  validateProbedProjectionAsset,
+  STUB_GENERATION_NO_ASSET_MESSAGE,
+} from "@/lib/preSurgeryIntelligence/projection/assetValidation";
+import { resolvePlanForProjectionGeneration } from "@/lib/preSurgeryIntelligence/projection/planConfirmation";
+import { buildRegenerationSeed } from "@/lib/preSurgeryIntelligence/projection/service";
 
 export const runtime = "nodejs";
 
@@ -47,6 +61,8 @@ export async function POST(req: Request, ctx: RouteContext) {
       deterministicSeed?: string | null;
       regeneratesFromProjectionId?: string | null;
       idempotencyKey?: string | null;
+      confirmCurrentApprovedPlan?: boolean;
+      allowSupersededPlan?: boolean;
     };
 
     if (!body.mode || !MODES.includes(body.mode)) {
@@ -57,18 +73,28 @@ export async function POST(req: Request, ctx: RouteContext) {
     }
 
     const bundle = await loadWorkspaceBundle(admin, caseId);
-    const plan =
-      (body.graftPlanId
-        ? bundle.graftPlans.find((p) => p.id === body.graftPlanId)
-        : null) ??
-      [...bundle.graftPlans].reverse().find((p) => p.status === "approved");
-
-    if (!plan || plan.status !== "approved") {
+    const planResolved = resolvePlanForProjectionGeneration({
+      graftPlans: bundle.graftPlans,
+      requestedGraftPlanId: body.graftPlanId ?? null,
+      confirmation: {
+        confirmCurrentApprovedPlan: body.confirmCurrentApprovedPlan === true,
+        allowSupersededPlan: body.allowSupersededPlan === true,
+        graftPlanId: body.graftPlanId ?? null,
+      },
+      imageReviews: bundle.imageReviews,
+    });
+    if (!planResolved.ok) {
       return NextResponse.json(
-        { ok: false, error: "An approved graft plan is required before projection generation" },
+        {
+          ok: false,
+          error: planResolved.message,
+          code: planResolved.code,
+          planPreview: planResolved.preview ?? null,
+        },
         { status: 400 }
       );
     }
+    const plan = planResolved.plan;
 
     const sourceReview = bundle.imageReviews.find((r) => r.imageId === body.sourceImageId);
     if (!sourceReview) {
@@ -88,13 +114,26 @@ export async function POST(req: Request, ctx: RouteContext) {
       if (!prior) {
         return NextResponse.json({ ok: false, error: "Prior projection not found" }, { status: 404 });
       }
-      if (prior.status !== "rejected" && prior.status !== "failed" && prior.status !== "validation_failed") {
+      // Allow regen from rejected/failed OR historical stub/unavailable assets (replace flow).
+      const priorIsStub =
+        typeof prior.storagePath === "string" && /\.stub$/i.test(prior.storagePath);
+      const regenerableStatus =
+        prior.status === "rejected" ||
+        prior.status === "failed" ||
+        prior.status === "validation_failed" ||
+        priorIsStub;
+      if (!regenerableStatus) {
         return NextResponse.json(
-          { ok: false, error: "Regeneration is only allowed from rejected or failed attempts" },
+          {
+            ok: false,
+            error:
+              "Regeneration is only allowed from rejected, failed, or stub/unavailable attempts",
+          },
           { status: 400 }
         );
       }
-      projectionVersion = (prior.projectionVersion ?? 1) + 1;
+      const seed = buildRegenerationSeed(prior);
+      projectionVersion = seed.projectionVersion;
       await insertAuditEvent(
         admin,
         createAuditEvent({
@@ -125,13 +164,51 @@ export async function POST(req: Request, ctx: RouteContext) {
       ? `storage:${sourceUpload.storage_path}`
       : `image:${body.sourceImageId}`;
 
+    const runtime = resolveRuntimeProjectionProvider();
+    let provider = runtime.provider;
+    let providerId = runtime.providerId;
+    let modelVersion = runtime.modelVersion;
+    let providerKind = runtime.config.kind;
+
+    if (runtime.requiresStorageBinding || runtime.config.kind === "local_illustrative") {
+      const uploadById = new Map(
+        (uploads ?? []).map((u) => [u.id as string, String(u.storage_path ?? "")])
+      );
+      provider = createBoundLocalIllustrativeProvider({
+        admin,
+        resolveImageIdToPath: async (imageId) => uploadById.get(imageId) || null,
+      });
+      providerId = "local-illustrative-v1";
+      modelVersion = "local-illustrative-v1";
+      providerKind = "local_illustrative";
+    }
+
+    if (runtime.disabled && !runtime.requiresStorageBinding) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "Projection provider is unavailable because it is not configured",
+          code: "provider_unavailable",
+          providerId,
+        },
+        { status: 503 }
+      );
+    }
+
     await insertAuditEvent(
       admin,
       createAuditEvent({
         caseId,
         eventType: "projection_requested",
         actorId: user.id,
-        metadata: { mode: body.mode, graftPlanId: plan.id, sourceImageId: body.sourceImageId },
+        metadata: {
+          mode: body.mode,
+          graftPlanId: plan.id,
+          graftPlanVersion: plan.version,
+          sourceImageId: body.sourceImageId,
+          providerId,
+          confirmCurrentApprovedPlan: true,
+        },
       })
     );
 
@@ -154,10 +231,21 @@ export async function POST(req: Request, ctx: RouteContext) {
       regeneratesFromProjectionId: regeneratesFrom,
       projectionVersion,
       idempotencyKey: body.idempotencyKey ?? null,
+      provider,
+      providerId,
+      modelVersion,
+      requireValidImageAsset: true,
       activation: {
         clinicId: gate.data.caseRow.clinic_id ?? null,
         requestsForCase: bundle.projections.length,
         caseLevelEnabled: true,
+        providerKind:
+          providerKind === "imagingos" ||
+          providerKind === "local_illustrative" ||
+          providerKind === "stub" ||
+          providerKind === "disabled"
+            ? providerKind
+            : "local_illustrative",
       },
     });
 
@@ -188,12 +276,71 @@ export async function POST(req: Request, ctx: RouteContext) {
           degradable: result.degradable === true,
           providerId: result.providerId,
           projection: result.projection ?? null,
+          planPreview: planResolved.preview,
         },
         { status: 400 }
       );
     }
 
-    const persisted = await insertOrReuseProjection(admin, result.projection);
+    // REAL-ASSET-1A — Confirm storage object exists before marking generation complete.
+    const probe = await probeStoredProjectionAsset({
+      storagePath: result.projection.storagePath ?? "",
+      download: (path) => downloadCaseFilesObject(admin, path),
+    });
+    const assetGate = validateProbedProjectionAsset({
+      caseId,
+      attemptId: result.projection.id,
+      storagePath: result.projection.storagePath,
+      expectedChecksum: result.projection.outputChecksum,
+      probe,
+    });
+    if (!assetGate.ok) {
+      const failedProjection = {
+        ...result.projection,
+        status: "failed" as const,
+        failureCode: assetGate.code,
+        failureMessage: assetGate.message,
+        storagePath: assetGate.code === "stub_placeholder" ? result.projection.storagePath : null,
+        patientSharingEnabled: false,
+      };
+      try {
+        await insertOrReuseProjection(admin, failedProjection);
+      } catch {
+        // ignore persist race
+      }
+      await insertAuditEvent(
+        admin,
+        createAuditEvent({
+          caseId,
+          eventType: "projection_provider_failure",
+          actorId: user.id,
+          metadata: {
+            code: assetGate.code,
+            message: assetGate.message,
+            providerId: result.providerId,
+          },
+        })
+      );
+      return NextResponse.json(
+        {
+          ok: false,
+          errors: [{ code: assetGate.code, message: assetGate.message }],
+          degradable: true,
+          providerId: result.providerId,
+          projection: failedProjection,
+          planPreview: planResolved.preview,
+          assetMessage: STUB_GENERATION_NO_ASSET_MESSAGE,
+        },
+        { status: 400 }
+      );
+    }
+
+    const persisted = await insertOrReuseProjection(admin, {
+      ...result.projection,
+      outputChecksum: assetGate.probe.checksumSha256 ?? result.projection.outputChecksum,
+      status: "clinician_review",
+      patientSharingEnabled: false,
+    });
     const projection = persisted.projection;
 
     if (persisted.kind !== "reused") {
@@ -213,6 +360,12 @@ export async function POST(req: Request, ctx: RouteContext) {
             status: projection.status,
             patientVisible: false,
             persistKind: persisted.kind,
+            mimeType: assetGate.probe.mimeType,
+            fileSizeBytes: assetGate.probe.fileSizeBytes,
+            widthPx: assetGate.probe.widthPx,
+            heightPx: assetGate.probe.heightPx,
+            storagePath: projection.storagePath,
+            lifecycle: "asset_stored_clinician_review_required",
           },
         })
       );
@@ -226,6 +379,15 @@ export async function POST(req: Request, ctx: RouteContext) {
       patientVisible: false,
       reused: persisted.kind === "reused",
       replaced: persisted.kind === "replaced",
+      planPreview: planResolved.preview,
+      asset: {
+        mimeType: assetGate.probe.mimeType,
+        fileSizeBytes: assetGate.probe.fileSizeBytes,
+        widthPx: assetGate.probe.widthPx,
+        heightPx: assetGate.probe.heightPx,
+        checksumSha256: assetGate.probe.checksumSha256,
+        storagePath: assetGate.probe.storagePath,
+      },
     });
   } catch (e) {
     return NextResponse.json(

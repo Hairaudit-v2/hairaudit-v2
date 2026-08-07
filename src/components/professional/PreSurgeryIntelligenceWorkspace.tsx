@@ -357,7 +357,15 @@ export default function PreSurgeryIntelligenceWorkspace({ caseId }: { caseId: st
     }
   };
 
-  const requestProjection = async (mode: PreSurgeryProjectionMode) => {
+  const requestProjection = async (
+    mode: PreSurgeryProjectionMode,
+    opts?: {
+      confirmCurrentApprovedPlan?: boolean;
+      graftPlanId?: string;
+      regeneratesFromProjectionId?: string | null;
+      allowSupersededPlan?: boolean;
+    }
+  ) => {
     if (!selectedImageId || !approvedPlan) return;
     setBusy(true);
     try {
@@ -367,9 +375,12 @@ export default function PreSurgeryIntelligenceWorkspace({ caseId }: { caseId: st
         body: JSON.stringify({
           mode,
           sourceImageId: selectedImageId,
-          graftPlanId: approvedPlan.id,
+          graftPlanId: opts?.graftPlanId ?? approvedPlan.id,
           proposedHairlineConfirmed: hairlineConfirmed,
           treatmentAreaConfirmed: treatmentConfirmed,
+          confirmCurrentApprovedPlan: opts?.confirmCurrentApprovedPlan === true,
+          allowSupersededPlan: opts?.allowSupersededPlan === true,
+          regeneratesFromProjectionId: opts?.regeneratesFromProjectionId ?? null,
         }),
       });
       const data = await res.json();
@@ -604,77 +615,68 @@ export default function PreSurgeryIntelligenceWorkspace({ caseId }: { caseId: st
         currentPlan={currentPlan}
         projections={projections}
         mediaByProjectionId={projectionMedia}
+        imageReviews={images.map((img) => img.review)}
+        sourceViews={images.map((img) => ({
+          uploadId: img.uploadId,
+          signedUrl: img.signedUrl,
+          role: img.review.assignedRole,
+        }))}
         busy={busy}
         onScrollToPlan={() => {
           document.getElementById("psi-graft-plan")?.scrollIntoView({ behavior: "smooth", block: "start" });
         }}
-        onGenerate={(mode) => void requestProjection(mode)}
+        onGenerate={(req) =>
+          void requestProjection(req.mode, {
+            confirmCurrentApprovedPlan: true,
+            graftPlanId: req.graftPlanId,
+            allowSupersededPlan: req.allowSupersededPlan,
+          })
+        }
         onRetryFailed={(p) => {
-          void (async () => {
-            if (!selectedImageId || !approvedPlan) return;
-            setBusy(true);
-            try {
-              const res = await fetch(`${base}/projection`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  mode: p.mode,
-                  sourceImageId: selectedImageId,
-                  graftPlanId: approvedPlan.id,
-                  proposedHairlineConfirmed: hairlineConfirmed,
-                  treatmentAreaConfirmed: treatmentConfirmed,
-                  regeneratesFromProjectionId: p.id,
-                }),
-              });
-              const data = await res.json();
-              if (!res.ok || !data.ok) {
-                throw new Error(data.errors?.[0]?.message ?? data.error ?? "Retry failed");
-              }
-              await refresh();
-            } catch (e) {
-              setError(e instanceof Error ? e.message : "Retry failed");
-            } finally {
-              setBusy(false);
-            }
-          })();
+          void requestProjection(p.mode, {
+            confirmCurrentApprovedPlan: true,
+            graftPlanId: approvedPlan?.id,
+            regeneratesFromProjectionId: p.id,
+          });
         }}
         onReplace={(p) => {
-          if (p.status === "failed" || p.status === "validation_failed" || p.status === "rejected") {
-            void (async () => {
-              if (!selectedImageId || !approvedPlan) return;
-              setBusy(true);
-              try {
-                const res = await fetch(`${base}/projection`, {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    mode: p.mode,
-                    sourceImageId: selectedImageId,
-                    graftPlanId: approvedPlan.id,
-                    proposedHairlineConfirmed: hairlineConfirmed,
-                    treatmentAreaConfirmed: treatmentConfirmed,
-                    regeneratesFromProjectionId: p.id,
-                  }),
-                });
-                const data = await res.json();
-                if (!res.ok || !data.ok) {
-                  throw new Error(data.errors?.[0]?.message ?? data.error ?? "Replace failed");
-                }
-                await refresh();
-              } catch (e) {
-                setError(e instanceof Error ? e.message : "Replace failed");
-              } finally {
-                setBusy(false);
-              }
-            })();
+          const isStub =
+            typeof p.storagePath === "string" && /\.stub$/i.test(p.storagePath);
+          if (
+            p.status === "failed" ||
+            p.status === "validation_failed" ||
+            p.status === "rejected" ||
+            isStub
+          ) {
+            void requestProjection(p.mode, {
+              confirmCurrentApprovedPlan: true,
+              graftPlanId: approvedPlan?.id,
+              regeneratesFromProjectionId: p.id,
+            });
             return;
           }
-          void requestProjection(p.mode);
+          void requestProjection(p.mode, {
+            confirmCurrentApprovedPlan: true,
+            graftPlanId: approvedPlan?.id,
+          });
         }}
         onOpenApprove={(p) => {
           setApprovalTargetId(p.id);
           setApprovalChecklist(emptyApprovalChecklist());
           setApprovalNote("");
+          document.getElementById(`psi-projection-card-${p.id}`)?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }}
+        onReject={(p) => {
+          document.getElementById(`psi-projection-card-${p.id}`)?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+          setRejectReasonCode("other_safety_concern");
+        }}
+        onCorrect={(p) => {
           document.getElementById(`psi-projection-card-${p.id}`)?.scrollIntoView({
             behavior: "smooth",
             block: "start",
@@ -943,7 +945,12 @@ export default function PreSurgeryIntelligenceWorkspace({ caseId }: { caseId: st
               disabled={busy || !approvedPlan || !selectedImageId}
               className="rounded-md border border-[var(--ha-border)] px-3 py-1.5 text-sm disabled:opacity-50"
               data-testid={`psi-generate-projection-${mode}`}
-              onClick={() => void requestProjection(mode)}
+              onClick={() =>
+                void requestProjection(mode, {
+                  confirmCurrentApprovedPlan: true,
+                  graftPlanId: approvedPlan?.id,
+                })
+              }
             >
               Generate {PRE_SURGERY_PROJECTION_PATIENT_LABELS[mode]}
             </button>
@@ -1178,6 +1185,7 @@ export default function PreSurgeryIntelligenceWorkspace({ caseId }: { caseId: st
                           proposedHairlineConfirmed: hairlineConfirmed,
                           treatmentAreaConfirmed: treatmentConfirmed,
                           regeneratesFromProjectionId: p.id,
+                          confirmCurrentApprovedPlan: true,
                         }),
                       });
                       const data = await res.json();

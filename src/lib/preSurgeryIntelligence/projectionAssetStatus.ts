@@ -34,8 +34,7 @@ export function classifyProjectionStoragePath(
     return {
       kind: "stub_placeholder",
       storagePath: path,
-      message:
-        "Generation used the stub provider — a planning checksum was stored, but no illustrative image file exists yet.",
+      message: "Stub generation — no image asset produced.",
       canAttemptSignedUrl: false,
     };
   }
@@ -77,21 +76,33 @@ export function clinicianProjectionLifecycleLabel(status: string): string {
       return "Clinically approved";
     case "clinician_review":
     case "generated":
-      return "Awaiting clinical approval";
+      return "Clinician review required";
     case "failed":
       return "Generation failed";
     case "validation_failed":
       return "Validation failed";
     case "rejected":
-      return "Rejected";
+      return "Rejected (projection only)";
     case "superseded":
-      return "Superseded";
+      return "Superseded / historical";
     case "queued":
     case "generating":
     case "pending":
     case "draft_request":
-      return "Generation in progress";
+      return "Generation requested / processing";
     default:
       return status.replaceAll("_", " ");
   }
+}
+
+/** Historical stub records — not clinically usable and must not enter the patient report. */
+export function isHistoricalUnavailableStubProjection(input: {
+  storagePath: string | null | undefined;
+  graftPlanVersion: number;
+  currentApprovedPlanVersion: number | null;
+}): boolean {
+  const stub = classifyProjectionStoragePath(input.storagePath).kind === "stub_placeholder";
+  if (!stub) return false;
+  if (input.currentApprovedPlanVersion == null) return true;
+  return input.graftPlanVersion !== input.currentApprovedPlanVersion;
 }

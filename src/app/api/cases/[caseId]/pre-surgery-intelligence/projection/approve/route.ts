@@ -74,6 +74,44 @@ export async function PATCH(req: Request, ctx: RouteContext) {
         ...(body.checklist ?? {}),
       } as PreSurgeryApprovalChecklist;
 
+      // REAL-ASSET-1A — probe storage before approval.
+      const { getCaseFilesBucketNameForReadOnlyUse } = await import(
+        "@/lib/hairaudit/uploadStorage"
+      );
+      const {
+        probeStoredProjectionAsset,
+        validateProbedProjectionAsset,
+        STUB_GENERATION_NO_ASSET_MESSAGE,
+      } = await import("@/lib/preSurgeryIntelligence/projection/assetValidation");
+
+      const bucket = getCaseFilesBucketNameForReadOnlyUse();
+      const probe = await probeStoredProjectionAsset({
+        storagePath: existing.storagePath ?? "",
+        download: async (path) => {
+          const { data, error } = await admin.storage.from(bucket).download(path);
+          if (error || !data) return null;
+          return Buffer.from(await data.arrayBuffer());
+        },
+      });
+      const assetGate = validateProbedProjectionAsset({
+        caseId,
+        attemptId: existing.id,
+        storagePath: existing.storagePath,
+        expectedChecksum: existing.outputChecksum,
+        probe,
+      });
+      if (!assetGate.ok) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: assetGate.message,
+            code: assetGate.code,
+            assetMessage: STUB_GENERATION_NO_ASSET_MESSAGE,
+          },
+          { status: 400 }
+        );
+      }
+
       // Move generated → clinician_review first if needed for transition bookkeeping.
       const forApproval =
         existing.status === "generated"
@@ -168,6 +206,35 @@ export async function PATCH(req: Request, ctx: RouteContext) {
         );
       }
       if (body.action === "enable_sharing") {
+        const {
+          probeStoredProjectionAsset,
+          validateProbedProjectionAsset,
+        } = await import("@/lib/preSurgeryIntelligence/projection/assetValidation");
+        const { getCaseFilesBucketNameForReadOnlyUse } = await import(
+          "@/lib/hairaudit/uploadStorage"
+        );
+        const bucket = getCaseFilesBucketNameForReadOnlyUse();
+        const probe = await probeStoredProjectionAsset({
+          storagePath: existing.storagePath ?? "",
+          download: async (path) => {
+            const { data, error } = await admin.storage.from(bucket).download(path);
+            if (error || !data) return null;
+            return Buffer.from(await data.arrayBuffer());
+          },
+        });
+        const assetGate = validateProbedProjectionAsset({
+          caseId,
+          attemptId: existing.id,
+          storagePath: existing.storagePath,
+          expectedChecksum: existing.outputChecksum,
+          probe,
+        });
+        if (!assetGate.ok) {
+          return NextResponse.json(
+            { ok: false, error: assetGate.message, code: assetGate.code },
+            { status: 400 }
+          );
+        }
         const controls = resolveProjectionActivationControls();
         const shareGate = decidePatientSharingAllowed({
           controls,

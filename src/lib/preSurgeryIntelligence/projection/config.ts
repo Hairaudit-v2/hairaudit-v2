@@ -1,12 +1,13 @@
 /**
- * HA-PRE-SURGERY-INTELLIGENCE-2C — Projection provider configuration.
+ * HA-PRE-SURGERY-INTELLIGENCE-2C / REAL-ASSET-1A — Projection provider configuration.
  *
- * Stub is the local-dev / test default. ImagingOS is used only when explicitly configured.
- * Stub must never silently become the production substitute unless
- * HA_PRE_SURGERY_PROJECTION_ALLOW_STUB_FALLBACK=true.
+ * Stub remains available for offline unit tests when explicitly selected.
+ * ImagingOS is used only when explicitly configured and ready.
+ * When ImagingOS is unavailable, the approved non-stub writer is local_illustrative
+ * (sharp compositor + real case-files JPEG), not stub.
  */
 
-export type ProjectionProviderKind = "stub" | "imagingos" | "disabled";
+export type ProjectionProviderKind = "stub" | "imagingos" | "local_illustrative" | "disabled";
 
 export type ResolvedProjectionProviderConfig = {
   kind: ProjectionProviderKind;
@@ -49,11 +50,16 @@ function parsePositiveInt(raw: string | undefined, fallback: number): number {
 export function resolveProjectionProviderConfig(
   env: NodeJS.ProcessEnv = process.env
 ): ResolvedProjectionProviderConfig {
-  const rawKind = (env[HA_PRE_SURGERY_PROJECTION_PROVIDER_ENV] ?? "stub").trim().toLowerCase();
+  const rawKind = (env[HA_PRE_SURGERY_PROJECTION_PROVIDER_ENV] ?? "local_illustrative")
+    .trim()
+    .toLowerCase();
   const kind: ProjectionProviderKind =
-    rawKind === "imagingos" || rawKind === "disabled" || rawKind === "stub"
+    rawKind === "imagingos" ||
+    rawKind === "disabled" ||
+    rawKind === "stub" ||
+    rawKind === "local_illustrative"
       ? rawKind
-      : "stub";
+      : "local_illustrative";
 
   const endpoint = (env[HA_IMAGINGOS_PROJECTION_URL_ENV] ?? "").trim() || null;
   const token = (env[HA_IMAGINGOS_PROJECTION_TOKEN_ENV] ?? "").trim();
@@ -102,21 +108,40 @@ export function resolveProjectionProviderConfig(
     };
   }
 
-  // stub (default for local development / tests)
+  if (kind === "stub") {
+    return {
+      kind: "stub",
+      providerId: "stub-v1",
+      modelVersion: "stub-v1",
+      endpoint: null,
+      authTokenConfigured: false,
+      signingSecretConfigured: false,
+      connectTimeoutMs: DEFAULT_CONNECT_TIMEOUT_MS,
+      generationTimeoutMs: parsePositiveInt(
+        env[HA_IMAGINGOS_PROJECTION_TIMEOUT_MS_ENV],
+        12_000
+      ),
+      maxRetries: 0,
+      allowStubFallback: true,
+      callbackReplayTtlSeconds: DEFAULT_CALLBACK_REPLAY_TTL,
+    };
+  }
+
+  // local_illustrative — approved non-stub asset writer (REAL-ASSET-1A)
   return {
-    kind: "stub",
-    providerId: "stub-v1",
-    modelVersion: "stub-v1",
+    kind: "local_illustrative",
+    providerId: "local-illustrative-v1",
+    modelVersion: "local-illustrative-v1",
     endpoint: null,
     authTokenConfigured: false,
     signingSecretConfigured: false,
     connectTimeoutMs: DEFAULT_CONNECT_TIMEOUT_MS,
     generationTimeoutMs: parsePositiveInt(
       env[HA_IMAGINGOS_PROJECTION_TIMEOUT_MS_ENV],
-      12_000
+      30_000
     ),
     maxRetries: 0,
-    allowStubFallback: true,
+    allowStubFallback: false,
     callbackReplayTtlSeconds: DEFAULT_CALLBACK_REPLAY_TTL,
   };
 }

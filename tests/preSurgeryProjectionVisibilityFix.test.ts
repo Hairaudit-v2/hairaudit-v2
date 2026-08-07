@@ -18,6 +18,7 @@ describe("HA-PRE-SURGERY-PROJECTION-VISIBILITY-FIX asset classification", () => 
     );
     assert.equal(a.kind, "stub_placeholder");
     assert.equal(a.canAttemptSignedUrl, false);
+    assert.match(a.message, /Stub generation — no image asset produced/);
   });
 
   it("flags missing paths", () => {
