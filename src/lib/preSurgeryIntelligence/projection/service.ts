@@ -540,7 +540,14 @@ export async function requestPreSurgeryProjection(
     rejectedAt: null,
     rejectionReason: null,
     inputChecksum,
-    inputSnapshot: canonical as unknown as Record<string, unknown>,
+    inputSnapshot: {
+      ...(canonical as unknown as Record<string, unknown>),
+      generationLatencyMs: instrumented.latencyMs,
+      maskStoragePath:
+        "maskStorageRef" in result && typeof result.maskStorageRef === "string"
+          ? result.maskStorageRef
+          : null,
+    },
     outputChecksum: result.outputChecksum,
     providerId: instrumented.providerId,
     providerModelVersion: result.modelVersion ?? modelVersion,
@@ -710,6 +717,8 @@ export {
   emptyApprovalChecklist,
   APPROVAL_CHECKLIST_KEYS,
   REJECTION_REASONS,
+  CLINICAL_REVIEW_REASON_CODES,
+  CLINICAL_REVIEW_REASON_LABELS,
 } from "./approval";
 
 /** Create a regeneration attempt from a rejected/failed projection (never overwrites). */

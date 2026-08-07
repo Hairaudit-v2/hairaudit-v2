@@ -62,6 +62,12 @@ export type PreSurgeryProjectionResult =
       providerRequestId?: string | null;
       providerResponseId?: string | null;
       modelVersion?: string | null;
+      /** Optional hard containment mask path for clinician inspection. */
+      maskStorageRef?: string | null;
+      mimeType?: string;
+      fileSizeBytes?: number;
+      widthPx?: number;
+      heightPx?: number;
     }
   | ({
       ok: false;

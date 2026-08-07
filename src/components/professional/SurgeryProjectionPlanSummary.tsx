@@ -1,9 +1,8 @@
 "use client";
 
 /**
- * HA-PRE-SURGERY-PHOTOREALISTIC-OUTCOME-2A — Surgery Projection Plan summary.
- * Compact tabs: Graft Allocation Map | Proposed Hairline Design | Illustrative Projected Outcome.
- * Shared review / correction drawer (form only after "Request correction").
+ * Surgery Projection Plan — current-first clinical workspace (UX regression fix).
+ * One current generation · four inspection views · collapsed attempt history · shared drawer.
  */
 
 import { useMemo, useState, type ReactNode } from "react";
@@ -11,13 +10,13 @@ import type {
   ClinicalImageReview,
   PreSurgeryGraftPlan,
   PreSurgeryIllustrativeProjection,
+  PreSurgeryProjectionRejectionReason,
 } from "@/lib/preSurgeryIntelligence/types";
 import { PRE_SURGERY_PROJECTION_PATIENT_LABELS } from "@/lib/preSurgeryIntelligence/types";
 import { computeGraftPlanTotals } from "@/lib/preSurgeryIntelligence/graftPlanTotals";
 import {
   classifyProjectionStoragePath,
   clinicianProjectionLifecycleLabel,
-  projectionMatchesCurrentPlan,
 } from "@/lib/preSurgeryIntelligence/projectionAssetStatus";
 import {
   ARTIFACT_TYPE_LABELS,
@@ -29,10 +28,23 @@ import {
 import {
   ILLUSTRATIVE_SURGERY_PLAN_SUPPORTING_TEXT,
   PROPOSED_HAIRLINE_DESIGN_SUPPORTING_TEXT,
-  labelForProjectionArtifact,
 } from "@/lib/preSurgeryIntelligence/projectionDisplayCopy";
 import { isProjectionSourceRole } from "@/lib/preSurgeryIntelligence/imageRoles";
+import {
+  CLINICAL_REVIEW_REASON_CODES,
+  CLINICAL_REVIEW_REASON_LABELS,
+} from "@/lib/preSurgeryIntelligence/projection/approval";
+import {
+  selectCurrentProjectionAttempt,
+  readGenerationLatencyMs,
+  hairAuditDecisionLabel,
+  technicalValidationVerdict,
+} from "@/lib/preSurgeryIntelligence/projection/currentAttempt";
+import { assertApprovedHairlineDesignForOutcome } from "@/lib/preSurgeryIntelligence/projection/hairlineApprovalGate";
 import ProjectionAuditorCorrectionPanel from "@/components/professional/ProjectionAuditorCorrectionPanel";
+import ProjectionInspectionCanvas, {
+  type InspectionViewId,
+} from "@/components/professional/ProjectionInspectionCanvas";
 
 export type ProjectionMediaState = {
   projectionId: string;
@@ -40,6 +52,7 @@ export type ProjectionMediaState = {
   assetMessage: string;
   sourceSignedUrl: string | null;
   projectedSignedUrl: string | null;
+  maskSignedUrl?: string | null;
   loadError: string | null;
 };
 
@@ -77,6 +90,8 @@ const MODES: PreSurgeryIllustrativeProjection["mode"][] = [
   "optimistic_within_approved_range",
 ];
 
+type ReviewDrawerMode = "approve" | "reject" | "correct" | "regenerate" | null;
+
 type Props = {
   caseId: string;
   approvedPlan: PreSurgeryGraftPlan | null;
@@ -91,14 +106,15 @@ type Props = {
   onRetryFailed: (projection: PreSurgeryIllustrativeProjection) => void;
   onReplace: (projection: PreSurgeryIllustrativeProjection) => void;
   onOpenApprove: (projection: PreSurgeryIllustrativeProjection) => void;
-  onReject: (projection: PreSurgeryIllustrativeProjection) => void;
+  onReject: (
+    projection: PreSurgeryIllustrativeProjection,
+    opts?: { reasonCode: PreSurgeryProjectionRejectionReason; reason: string }
+  ) => void;
   onCorrect: (projection: PreSurgeryIllustrativeProjection) => void;
   onJumpToProjection: (projectionId: string) => void;
-  /** When false (default), Outcome tab shows provider-unavailable messaging. */
   projectedOutcomeAvailable?: boolean;
   projectedOutcomeUnavailableMessage?: string;
   onRequestCorrection?: (projection: PreSurgeryIllustrativeProjection) => void;
-  /** Optional override for the shared correction drawer body. */
   renderCorrectionDrawer?: (args: {
     projection: PreSurgeryIllustrativeProjection;
     onClose: () => void;
@@ -114,12 +130,6 @@ function formatWhen(iso: string | null | undefined): string {
   }
 }
 
-function sharingLabel(p: PreSurgeryIllustrativeProjection): string {
-  if (p.status === "approved" && p.patientSharingEnabled) return "Approved for patient sharing";
-  if (p.status === "approved") return "Clinician-only (sharing off)";
-  return "Clinician-only";
-}
-
 function artifactOf(p: PreSurgeryIllustrativeProjection): PreSurgeryArtifactType {
   return resolveProjectionArtifactType({
     artifactType: p.artifactType,
@@ -133,10 +143,28 @@ function supportingTextForTab(tab: ArtifactTab): string {
   return ILLUSTRATIVE_SURGERY_PLAN_SUPPORTING_TEXT;
 }
 
-function sortNewestFirst(a: PreSurgeryIllustrativeProjection, b: PreSurgeryIllustrativeProjection): number {
-  const aKey = a.generatedAt ?? a.requestedAt ?? "";
-  const bKey = b.generatedAt ?? b.requestedAt ?? "";
-  return bKey.localeCompare(aKey);
+function sharingStateLabel(p: PreSurgeryIllustrativeProjection | null): string {
+  if (!p) return "Unavailable";
+  if (p.status === "approved" && p.patientSharingEnabled) return "Enabled for patient sharing";
+  if (p.status === "approved") return "Clinician-only (sharing off)";
+  return "Unavailable — not approved for sharing";
+}
+
+function attemptDecision(p: PreSurgeryIllustrativeProjection): string {
+  if (p.status === "approved") return "Approved";
+  if (p.status === "rejected") return "Rejected";
+  if (p.status === "validation_failed" || p.status === "failed") return "Technically rejected";
+  if (p.status === "superseded") return "Superseded";
+  return "Pending";
+}
+
+function attemptReason(p: PreSurgeryIllustrativeProjection): string {
+  return (
+    p.rejectionReason ||
+    p.failureMessage ||
+    (p.rejectionReasonCode ? String(p.rejectionReasonCode).replaceAll("_", " ") : "") ||
+    "—"
+  );
 }
 
 export default function SurgeryProjectionPlanSummary({
@@ -155,7 +183,7 @@ export default function SurgeryProjectionPlanSummary({
   onOpenApprove,
   onReject,
   onCorrect,
-  onJumpToProjection,
+  onJumpToProjection: _onJumpToProjection,
   projectedOutcomeAvailable = false,
   projectedOutcomeUnavailableMessage = PROJECTED_OUTCOME_PROVIDER_UNAVAILABLE_MESSAGE,
   onRequestCorrection,
@@ -173,131 +201,202 @@ export default function SurgeryProjectionPlanSummary({
     artifactType: PreSurgeryArtifactType;
   } | null>(null);
   const [confirmPlan, setConfirmPlan] = useState(false);
-  const [inspectId, setInspectId] = useState<string | null>(null);
-  const [correctionRequestedId, setCorrectionRequestedId] = useState<string | null>(null);
+  const [inspectView, setInspectView] = useState<InspectionViewId>("outcome");
+  const [historyInspectId, setHistoryInspectId] = useState<string | null>(null);
+  const [drawerMode, setDrawerMode] = useState<ReviewDrawerMode>(null);
+  const [drawerProjectionId, setDrawerProjectionId] = useState<string | null>(null);
+  const [reasonCodes, setReasonCodes] = useState<PreSurgeryProjectionRejectionReason[]>([]);
+  const [reasonNote, setReasonNote] = useState("");
 
-  const sourceRoles = imageReviews
-    .filter((r) => isProjectionSourceRole(r.assignedRole))
-    .map((r) => `${r.assignedRole} (${r.reviewStatus})`);
+  const frontalReview =
+    imageReviews.find((r) => r.assignedRole === "frontal" && r.reviewStatus === "confirmed") ??
+    imageReviews.find((r) => r.assignedRole === "frontal") ??
+    imageReviews.find((r) => isProjectionSourceRole(r.assignedRole)) ??
+    null;
 
-  const tabProjections = useMemo(
-    () =>
-      projections
-        .filter((p) => artifactOf(p) === activeTab)
-        .slice()
-        .sort(sortNewestFirst),
-    [projections, activeTab]
-  );
+  const hairlineGate = useMemo(() => {
+    if (!plan) return null;
+    return assertApprovedHairlineDesignForOutcome({
+      projections,
+      plan,
+      annotations: [],
+      sourceImageId: frontalReview?.imageId,
+      allowApprovedAnnotationFallback: false,
+    });
+  }, [plan, projections, frontalReview?.imageId]);
 
-  const modeProjections = useMemo(
-    () => tabProjections.filter((p) => p.mode === activeMode),
-    [tabProjections, activeMode]
-  );
+  const hairlineVersion =
+    hairlineGate && hairlineGate.ok ? hairlineGate.hairlineVersion : null;
 
-  /** Newest for active mode is the current card; older are historical. */
-  const currentForMode = modeProjections[0] ?? null;
-  const historicalForMode = modeProjections.slice(1);
-  const historicalAllTab = useMemo(() => {
-    const latestByMode = new Map<string, string>();
-    for (const mode of MODES) {
-      const first = tabProjections.find((p) => p.mode === mode);
-      if (first) latestByMode.set(mode, first.id);
-    }
-    return tabProjections.filter((p) => latestByMode.get(p.mode) !== p.id);
-  }, [tabProjections]);
+  const sourceImageId = frontalReview?.imageId ?? projections[0]?.sourceImageId ?? "";
 
-  const galleryItems = historyOpen
-    ? modeProjections
-    : currentForMode
-      ? [currentForMode]
-      : [];
+  const { current, historical } = useMemo(() => {
+    if (!plan || !sourceImageId) return { current: null, historical: [] as PreSurgeryIllustrativeProjection[] };
+    return selectCurrentProjectionAttempt({
+      projections,
+      key: {
+        graftPlanId: plan.id,
+        graftPlanVersion: plan.version,
+        sourceImageId,
+        mode: activeMode,
+        artifactType: activeTab,
+        hairlineDesignVersion:
+          activeTab === "illustrative_projected_outcome" ? hairlineVersion : null,
+      },
+    });
+  }, [plan, sourceImageId, projections, activeMode, activeTab, hairlineVersion]);
 
-  const inspectProjection = useMemo(
-    () => (inspectId ? projections.find((p) => p.id === inspectId) ?? null : null),
-    [inspectId, projections]
-  );
-  const inspectMedia = inspectProjection ? mediaByProjectionId[inspectProjection.id] : null;
+  const peerAllocation = useMemo(() => {
+    if (!plan || !sourceImageId) return null;
+    return selectCurrentProjectionAttempt({
+      projections,
+      key: {
+        graftPlanId: plan.id,
+        graftPlanVersion: plan.version,
+        sourceImageId,
+        mode: activeMode,
+        artifactType: "graft_allocation_map",
+      },
+    }).current;
+  }, [plan, sourceImageId, projections, activeMode]);
 
-  const inspectPeerHairline = useMemo(() => {
-    if (!inspectProjection) return null;
-    return (
-      projections
-        .filter(
-          (p) =>
-            p.mode === inspectProjection.mode &&
-            artifactOf(p) === "proposed_hairline_design"
-        )
-        .sort(sortNewestFirst)[0] ?? null
-    );
-  }, [inspectProjection, projections]);
+  const peerHairline = useMemo(() => {
+    if (!plan || !sourceImageId) return null;
+    return selectCurrentProjectionAttempt({
+      projections,
+      key: {
+        graftPlanId: plan.id,
+        graftPlanVersion: plan.version,
+        sourceImageId,
+        mode: activeMode,
+        artifactType: "proposed_hairline_design",
+      },
+    }).current;
+  }, [plan, sourceImageId, projections, activeMode]);
 
-  const inspectPeerAllocation = useMemo(() => {
-    if (!inspectProjection) return null;
-    return (
-      projections
-        .filter(
-          (p) =>
-            p.mode === inspectProjection.mode && artifactOf(p) === "graft_allocation_map"
-        )
-        .sort(sortNewestFirst)[0] ?? null
-    );
-  }, [inspectProjection, projections]);
+  const peerOutcome = useMemo(() => {
+    if (!plan || !sourceImageId) return null;
+    return selectCurrentProjectionAttempt({
+      projections,
+      key: {
+        graftPlanId: plan.id,
+        graftPlanVersion: plan.version,
+        sourceImageId,
+        mode: activeMode,
+        artifactType: "illustrative_projected_outcome",
+        hairlineDesignVersion: hairlineVersion,
+      },
+    }).current;
+  }, [plan, sourceImageId, projections, activeMode, hairlineVersion]);
 
-  const inspectPeerOutcome = useMemo(() => {
-    if (!inspectProjection) return null;
-    return (
-      projections
-        .filter(
-          (p) =>
-            p.mode === inspectProjection.mode &&
-            artifactOf(p) === "illustrative_projected_outcome"
-        )
-        .sort(sortNewestFirst)[0] ?? null
-    );
-  }, [inspectProjection, projections]);
+  const historyInspect = historyInspectId
+    ? projections.find((p) => p.id === historyInspectId) ?? null
+    : null;
 
-  const correctionProjection = useMemo(
-    () =>
-      correctionRequestedId
-        ? projections.find((p) => p.id === correctionRequestedId) ?? null
-        : null,
-    [correctionRequestedId, projections]
-  );
+  const focusProjection = historyInspect ?? current;
+  const focusIsHistorical = Boolean(historyInspect && historyInspect.id !== current?.id);
 
-  function openCorrection(p: PreSurgeryIllustrativeProjection) {
-    setCorrectionRequestedId(p.id);
-    onRequestCorrection?.(p);
-    onCorrect(p);
-  }
+  const currentMedia = current ? mediaByProjectionId[current.id] : null;
+  const focusMedia = focusProjection ? mediaByProjectionId[focusProjection.id] : null;
+  const allocationMedia = peerAllocation ? mediaByProjectionId[peerAllocation.id] : null;
+  const hairlineMedia = peerHairline ? mediaByProjectionId[peerHairline.id] : null;
+  const outcomeMedia = peerOutcome ? mediaByProjectionId[peerOutcome.id] : null;
+
+  const sourceUrl =
+    focusMedia?.sourceSignedUrl ??
+    currentMedia?.sourceSignedUrl ??
+    allocationMedia?.sourceSignedUrl ??
+    null;
+
+  const drawerProjection = drawerProjectionId
+    ? projections.find((p) => p.id === drawerProjectionId) ?? null
+    : null;
 
   function beginGenerate(mode: PreSurgeryIllustrativeProjection["mode"]) {
     setPendingGenerate({ mode, artifactType: activeTab });
     setConfirmPlan(false);
   }
 
-  const hairlinePaneProjection =
-    inspectProjection && artifactOf(inspectProjection) === "proposed_hairline_design"
-      ? inspectProjection
-      : inspectPeerHairline;
-  const allocationPaneProjection =
-    inspectProjection && artifactOf(inspectProjection) === "graft_allocation_map"
-      ? inspectProjection
-      : inspectPeerAllocation;
-  const mapPaneProjection = allocationPaneProjection ?? hairlinePaneProjection;
-  const outcomePaneProjection =
-    inspectProjection && artifactOf(inspectProjection) === "illustrative_projected_outcome"
-      ? inspectProjection
-      : inspectPeerOutcome;
-  const hairlineMedia = hairlinePaneProjection
-    ? mediaByProjectionId[hairlinePaneProjection.id]
-    : null;
-  const allocationMedia = allocationPaneProjection
-    ? mediaByProjectionId[allocationPaneProjection.id]
-    : null;
-  const mapMedia = mapPaneProjection ? mediaByProjectionId[mapPaneProjection.id] : null;
-  const outcomeMedia = outcomePaneProjection
-    ? mediaByProjectionId[outcomePaneProjection.id]
-    : null;
+  function openDrawer(mode: ReviewDrawerMode, p: PreSurgeryIllustrativeProjection) {
+    setDrawerMode(mode);
+    setDrawerProjectionId(p.id);
+    setReasonCodes([]);
+    setReasonNote("");
+    if (mode === "correct") {
+      onRequestCorrection?.(p);
+      onCorrect(p);
+    }
+  }
+
+  function closeDrawer() {
+    setDrawerMode(null);
+    setDrawerProjectionId(null);
+    setReasonCodes([]);
+    setReasonNote("");
+  }
+
+  function toggleReason(code: PreSurgeryProjectionRejectionReason) {
+    setReasonCodes((prev) =>
+      prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]
+    );
+  }
+
+  function submitRejectOrCorrect() {
+    if (!drawerProjection || !drawerMode) return;
+    if (reasonCodes.length === 0) return;
+    const primary = reasonCodes[0]!;
+    const label = reasonCodes
+      .map((c) => CLINICAL_REVIEW_REASON_LABELS[c as keyof typeof CLINICAL_REVIEW_REASON_LABELS] ?? c)
+      .join("; ");
+    const reason = reasonNote.trim() ? `${label}. ${reasonNote.trim()}` : label;
+    if (drawerMode === "reject") {
+      onReject(drawerProjection, { reasonCode: primary, reason });
+      closeDrawer();
+      return;
+    }
+    // Correction panel records structured codes itself when custom renderer unused.
+    closeDrawer();
+  }
+
+  const defaultInspectView: InspectionViewId =
+    activeTab === "graft_allocation_map"
+      ? "allocation"
+      : activeTab === "proposed_hairline_design"
+        ? "hairline"
+        : "outcome";
+
+  const views = [
+    {
+      id: "original" as const,
+      label: "Original",
+      url: sourceUrl,
+      emptyHint: "Original photograph unavailable",
+    },
+    {
+      id: "hairline" as const,
+      label: "Approved Hairline",
+      url: hairlineMedia?.projectedSignedUrl ?? null,
+      emptyHint: "Approved hairline design unavailable",
+    },
+    {
+      id: "allocation" as const,
+      label: "Allocation Map",
+      url: allocationMedia?.projectedSignedUrl ?? null,
+      emptyHint: "Allocation map unavailable",
+    },
+    {
+      id: "outcome" as const,
+      label: "Projected Outcome",
+      url:
+        activeTab === "illustrative_projected_outcome"
+          ? focusMedia?.projectedSignedUrl ?? null
+          : outcomeMedia?.projectedSignedUrl ?? null,
+      emptyHint:
+        activeTab === "illustrative_projected_outcome" && !projectedOutcomeAvailable
+          ? projectedOutcomeUnavailableMessage
+          : "Projected outcome unavailable",
+    },
+  ];
 
   return (
     <section
@@ -305,26 +404,18 @@ export default function SurgeryProjectionPlanSummary({
       data-testid="psi-surgery-projection-plan"
       className="scroll-mt-4 space-y-3 rounded-lg border-2 border-[var(--ha-primary)]/40 bg-[var(--ha-card)] p-4 shadow-sm"
     >
-      {/* Current-plan summary strip */}
       <header className="flex flex-wrap items-start justify-between gap-3 border-b border-[var(--ha-border)] pb-3">
         <div className="min-w-0 flex-1">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--ha-muted-foreground)]">
             Surgery Projection Plan
           </p>
           <h2 className="text-lg font-semibold text-[var(--ha-foreground)]">
-            Current plan · planning overlays · illustrative outcomes
+            Current generation workspace
           </h2>
-          {plan ? (
-            <p className="mt-1 text-sm text-[var(--ha-muted-foreground)]">
-              Plan v{plan.version} · {plan.status} · target{" "}
-              {totals?.totalTargetGrafts.toLocaleString() ?? "—"} grafts
-              {sourceRoles.length > 0 ? ` · sources: ${sourceRoles.join(", ")}` : ""}
-            </p>
-          ) : (
-            <p className="mt-1 text-sm text-amber-800">
-              No graft plan yet. Initialise or save a plan below.
-            </p>
-          )}
+          <p className="mt-1 text-sm text-[var(--ha-muted-foreground)]">
+            One current generation per plan · hairline · source · view · mode. Historical attempts stay
+            collapsed below.
+          </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <button
@@ -346,7 +437,6 @@ export default function SurgeryProjectionPlanSummary({
         </div>
       </header>
 
-      {/* Artifact tabs */}
       <div
         className="flex flex-wrap gap-1 border-b border-[var(--ha-border)]"
         role="tablist"
@@ -369,6 +459,14 @@ export default function SurgeryProjectionPlanSummary({
               onClick={() => {
                 setActiveTab(tab);
                 setHistoryOpen(false);
+                setHistoryInspectId(null);
+                setInspectView(
+                  tab === "graft_allocation_map"
+                    ? "allocation"
+                    : tab === "proposed_hairline_design"
+                      ? "hairline"
+                      : "outcome"
+                );
               }}
             >
               {TAB_SHORT_LABELS[tab]}
@@ -376,6 +474,69 @@ export default function SurgeryProjectionPlanSummary({
           );
         })}
       </div>
+
+      {/* Clinical decision summary — always visible */}
+      <dl
+        className="grid gap-2 rounded-md border border-[var(--ha-border)] bg-[var(--ha-background)] p-3 text-xs sm:grid-cols-2 lg:grid-cols-4"
+        data-testid="psi-spp-decision-summary"
+      >
+        <div>
+          <dt className="text-[var(--ha-muted-foreground)]">Plan version</dt>
+          <dd className="font-medium">{plan ? `v${plan.version}` : "—"}</dd>
+        </div>
+        <div>
+          <dt className="text-[var(--ha-muted-foreground)]">Hairline version</dt>
+          <dd className="font-medium">{hairlineVersion != null ? `v${hairlineVersion}` : "—"}</dd>
+        </div>
+        <div>
+          <dt className="text-[var(--ha-muted-foreground)]">Graft total</dt>
+          <dd className="font-medium">{totals?.totalTargetGrafts.toLocaleString() ?? "—"}</dd>
+        </div>
+        <div>
+          <dt className="text-[var(--ha-muted-foreground)]">Projection mode</dt>
+          <dd className="font-medium">{PRE_SURGERY_PROJECTION_PATIENT_LABELS[activeMode]}</dd>
+        </div>
+        <div>
+          <dt className="text-[var(--ha-muted-foreground)]">Provider / model</dt>
+          <dd className="font-medium">
+            {focusProjection
+              ? `${focusProjection.providerId ?? "—"} / ${focusProjection.providerModelVersion ?? "—"}`
+              : "—"}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-[var(--ha-muted-foreground)]">Lifecycle</dt>
+          <dd className="font-medium">
+            {focusProjection
+              ? clinicianProjectionLifecycleLabel(focusProjection.status)
+              : "No current generation"}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-[var(--ha-muted-foreground)]">Technical validation</dt>
+          <dd className="font-medium" data-testid="psi-spp-validation-verdict">
+            {focusProjection ? technicalValidationVerdict(focusProjection) : "n/a"}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-[var(--ha-muted-foreground)]">FiOS decision</dt>
+          <dd className="font-medium" data-testid="psi-spp-fios-decision">
+            Not linked
+          </dd>
+        </div>
+        <div className="sm:col-span-2">
+          <dt className="text-[var(--ha-muted-foreground)]">HairAudit decision</dt>
+          <dd className="font-medium" data-testid="psi-spp-ha-decision">
+            {focusProjection ? hairAuditDecisionLabel(focusProjection) : "—"}
+          </dd>
+        </div>
+        <div className="sm:col-span-2">
+          <dt className="text-[var(--ha-muted-foreground)]">Patient sharing</dt>
+          <dd className="font-medium" data-testid="psi-spp-sharing-state">
+            {sharingStateLabel(focusProjection)}
+          </dd>
+        </div>
+      </dl>
 
       <div className="space-y-3" role="tabpanel">
         <div>
@@ -398,303 +559,263 @@ export default function SurgeryProjectionPlanSummary({
 
         {!approvedPlan ? (
           <p className="text-sm text-amber-800" data-testid="psi-spp-empty-needs-plan">
-            Approve a graft plan before generating{" "}
-            {ARTIFACT_TYPE_LABELS[activeTab].toLowerCase()} assets.
+            Approve a graft plan before generating {ARTIFACT_TYPE_LABELS[activeTab].toLowerCase()}{" "}
+            assets.
           </p>
         ) : (
-          <>
-            {/* Mode chips + generate */}
-            <div className="flex flex-wrap items-center gap-2">
-              {MODES.map((mode) => (
-                <button
-                  key={mode}
-                  type="button"
-                  className={`rounded-md border px-2.5 py-1 text-xs ${
-                    activeMode === mode
-                      ? "border-[var(--ha-primary)] bg-[var(--ha-primary)]/10 font-semibold"
-                      : "border-[var(--ha-border)]"
-                  }`}
-                  onClick={() => setActiveMode(mode)}
-                >
-                  {PRE_SURGERY_PROJECTION_PATIENT_LABELS[mode]}
-                </button>
-              ))}
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {MODES.map((mode) => (
-                <button
-                  key={`gen-${mode}`}
-                  type="button"
-                  disabled={busy}
-                  className="rounded-md bg-[var(--ha-primary)] px-3 py-1.5 text-xs font-medium text-[var(--ha-primary-foreground)] disabled:opacity-50"
-                  data-testid={`psi-spp-generate-${mode}`}
-                  onClick={() => beginGenerate(mode)}
-                >
-                  Generate {PRE_SURGERY_PROJECTION_PATIENT_LABELS[mode]}
-                </button>
-              ))}
-            </div>
-          </>
+          <div className="flex flex-wrap items-center gap-2">
+            {MODES.map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                className={`rounded-md border px-2.5 py-1 text-xs ${
+                  activeMode === mode
+                    ? "border-[var(--ha-primary)] bg-[var(--ha-primary)]/10 font-semibold"
+                    : "border-[var(--ha-border)]"
+                }`}
+                onClick={() => {
+                  setActiveMode(mode);
+                  setHistoryInspectId(null);
+                }}
+              >
+                {PRE_SURGERY_PROJECTION_PATIENT_LABELS[mode]}
+              </button>
+            ))}
+            <button
+              type="button"
+              disabled={busy}
+              className="rounded-md bg-[var(--ha-primary)] px-3 py-1.5 text-xs font-medium text-[var(--ha-primary-foreground)] disabled:opacity-50"
+              data-testid={`psi-spp-generate-${activeMode}`}
+              onClick={() => beginGenerate(activeMode)}
+            >
+              Generate {PRE_SURGERY_PROJECTION_PATIENT_LABELS[activeMode]}
+            </button>
+          </div>
         )}
 
-        {approvedPlan && galleryItems.length === 0 && modeProjections.length === 0 ? (
-          <p className="text-sm text-[var(--ha-muted-foreground)]" data-testid="psi-spp-empty-no-projections">
-            No {ARTIFACT_TYPE_LABELS[activeTab].toLowerCase()} records for this mode yet.
-          </p>
-        ) : null}
-
-        {galleryItems.length > 0 ? (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {galleryItems.map((p) => {
-              const media = mediaByProjectionId[p.id];
-              const match = projectionMatchesCurrentPlan({
-                projectionGraftPlanId: p.graftPlanId,
-                projectionGraftPlanVersion: p.graftPlanVersion,
-                currentApprovedPlanId: approvedPlan?.id ?? null,
-                currentApprovedPlanVersion: approvedPlan?.version ?? null,
-              });
-              const asset = classifyProjectionStoragePath(p.storagePath);
-              const isStub = asset.kind === "stub_placeholder";
-              const failed = p.status === "failed" || p.status === "validation_failed";
-              const showImg = Boolean(media?.projectedSignedUrl) && !isStub;
-              const labels = labelForProjectionArtifact({
-                artifactType: p.artifactType,
-                providerId: p.providerId,
-              });
-              return (
-                <article
-                  key={p.id}
-                  className="overflow-hidden rounded-md border border-[var(--ha-border)] bg-[var(--ha-background)]"
-                  data-testid={`psi-spp-thumb-${p.mode}`}
-                  data-projection-id={p.id}
-                  data-artifact-type={artifactOf(p)}
-                >
-                  <div className="relative flex h-36 items-center justify-center bg-[var(--ha-muted)]/40">
-                    {showImg ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={media!.projectedSignedUrl!}
-                        alt={`${labels.label} thumbnail`}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : media?.sourceSignedUrl && isStub ? (
-                      <div className="relative h-full w-full">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={media.sourceSignedUrl}
-                          alt=""
-                          className="h-full w-full object-cover opacity-40"
-                        />
-                        <div className="absolute inset-0 flex items-center justify-center p-2 text-center text-[11px] font-semibold text-amber-950">
-                          Stub generation — no image asset produced.
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="p-3 text-center text-xs text-[var(--ha-muted-foreground)]">
-                        {failed
-                          ? "Generation failed"
-                          : media?.loadError
-                            ? "Asset loading error"
-                            : asset.message}
-                      </div>
-                    )}
-                  </div>
-                  <div className="space-y-1 p-2 text-xs">
-                    <div className="font-medium">
-                      {labels.label}
-                      {" · "}
-                      {p.patientSafeLabel}
-                    </div>
-                    <div className="text-[var(--ha-muted-foreground)]">
-                      {isStub || !match.matches
-                        ? "Historical / unavailable"
-                        : clinicianProjectionLifecycleLabel(p.status)}
-                      {" · "}
-                      {sharingLabel(p)}
-                      {" · "}plan v{p.graftPlanVersion}
-                    </div>
-                    <div className="text-[10px] text-[var(--ha-muted-foreground)]">
-                      {p.providerId ?? "—"} / {p.providerModelVersion ?? "—"}
-                    </div>
-                    {isStub ? (
-                      <p className="font-medium text-amber-800" data-testid={`psi-spp-stub-${p.id}`}>
-                        Stub generation — no image asset produced.
-                      </p>
-                    ) : null}
-                    {!match.matches ? <p className="text-amber-800">{match.reason}</p> : null}
-                    {media?.loadError ? (
-                      <p className="text-red-700" data-testid={`psi-spp-asset-error-${p.mode}`}>
-                        Asset loading error: {media.loadError}
-                      </p>
-                    ) : null}
-                    <p className="text-[10px] text-[var(--ha-muted-foreground)]">
-                      Generated {formatWhen(p.generatedAt ?? p.requestedAt)}
-                      {p.approvedAt ? ` · reviewed ${formatWhen(p.approvedAt)}` : ""}
-                    </p>
-                    <div className="flex flex-wrap gap-1 pt-1">
-                      {showImg || media?.sourceSignedUrl ? (
-                        <button
-                          type="button"
-                          className="rounded border px-2 py-0.5"
-                          data-testid={`psi-spp-inspect-${p.id}`}
-                          onClick={() => setInspectId(p.id)}
-                        >
-                          Inspect
-                        </button>
-                      ) : null}
-                      <button
-                        type="button"
-                        className="rounded border px-2 py-0.5"
-                        onClick={() => onJumpToProjection(p.id)}
-                      >
-                        Open details
-                      </button>
-                      {!isStub &&
-                        (p.status === "generated" || p.status === "clinician_review") && (
-                          <>
-                            <button
-                              type="button"
-                              className="rounded border px-2 py-0.5"
-                              disabled={busy}
-                              data-testid={`psi-spp-approve-${p.mode}`}
-                              onClick={() => onOpenApprove(p)}
-                            >
-                              Approve
-                            </button>
-                            <button
-                              type="button"
-                              className="rounded border px-2 py-0.5"
-                              disabled={busy}
-                              onClick={() => onReject(p)}
-                            >
-                              Reject
-                            </button>
-                          </>
-                        )}
-                      {!isStub && p.status === "approved" ? (
-                        <button
-                          type="button"
-                          className="rounded border px-2 py-0.5"
-                          disabled={busy}
-                          onClick={() => openCorrection(p)}
-                        >
-                          Request correction
-                        </button>
-                      ) : null}
-                      {failed || isStub ? (
-                        <button
-                          type="button"
-                          className="rounded border border-red-300 px-2 py-0.5 text-red-800"
-                          disabled={busy}
-                          data-testid={`psi-spp-retry-${p.mode}`}
-                          onClick={() => onRetryFailed(p)}
-                        >
-                          {isStub ? "Regenerate with real asset" : "Retry failed generation"}
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          className="rounded border px-2 py-0.5"
-                          disabled={busy || !approvedPlan}
-                          data-testid={`psi-spp-replace-${p.mode}`}
-                          onClick={() => onReplace(p)}
-                        >
-                          Replace / Regenerate
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </article>
-              );
-            })}
+        {focusIsHistorical ? (
+          <div
+            className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-950"
+            data-testid="psi-spp-historical-badge"
+          >
+            <span>
+              Historical attempt — not current. Immutable inspection only.
+            </span>
+            <button
+              type="button"
+              className="rounded border border-amber-400 px-2 py-0.5"
+              onClick={() => setHistoryInspectId(null)}
+            >
+              Return to current
+            </button>
           </div>
         ) : null}
 
-        <button
-          type="button"
-          className="text-xs font-medium text-[var(--ha-muted-foreground)] underline-offset-2 hover:underline"
-          data-testid="psi-spp-history-toggle"
-          aria-expanded={historyOpen}
-          onClick={() => setHistoryOpen((v) => !v)}
-        >
-          {historyOpen
-            ? "Hide historical versions"
-            : `Show historical versions (${historicalForMode.length || historicalAllTab.length})`}
-        </button>
-
-        {historyOpen && historicalAllTab.length > 0 && activeMode ? (
-          <ul className="space-y-1 rounded-md border border-[var(--ha-border)] p-2 text-xs text-[var(--ha-muted-foreground)]">
-            {historicalAllTab.map((p) => (
-              <li key={p.id} className="flex flex-wrap items-center justify-between gap-2">
-                <span>
-                  {PRE_SURGERY_PROJECTION_PATIENT_LABELS[p.mode]} · {p.status} · plan v
-                  {p.graftPlanVersion} · {p.id.slice(0, 8)}…
-                </span>
-                <button
-                  type="button"
-                  className="rounded border px-2 py-0.5"
-                  onClick={() => onJumpToProjection(p.id)}
-                >
-                  Open
-                </button>
-              </li>
-            ))}
-          </ul>
+        {approvedPlan && !current && !focusIsHistorical ? (
+          <p className="text-sm text-[var(--ha-muted-foreground)]" data-testid="psi-spp-empty-no-projections">
+            No current {ARTIFACT_TYPE_LABELS[activeTab].toLowerCase()} for this mode. Generate one or
+            open Attempt History for prior rejected/failed attempts.
+          </p>
         ) : null}
+
+        {(current || focusIsHistorical) && (
+          <div
+            className="space-y-3 rounded-md border border-[var(--ha-border)] p-3"
+            data-testid="psi-spp-current-workspace"
+            data-projection-id={focusProjection?.id}
+            data-artifact-type={focusProjection ? artifactOf(focusProjection) : undefined}
+            data-current={!focusIsHistorical}
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-[var(--ha-muted-foreground)]">
+                  {focusIsHistorical ? "Historical inspection" : "Current generation"}
+                </p>
+                <p className="text-sm font-medium">
+                  {focusProjection?.patientSafeLabel ?? ARTIFACT_TYPE_LABELS[activeTab]}
+                  {focusProjection ? ` · attempt #${focusProjection.projectionVersion ?? 1}` : ""}
+                </p>
+              </div>
+              {!focusIsHistorical && focusProjection ? (
+                <div className="flex flex-wrap gap-1">
+                  {(focusProjection.status === "generated" ||
+                    focusProjection.status === "clinician_review") && (
+                    <>
+                      <button
+                        type="button"
+                        className="rounded border px-2 py-1 text-xs"
+                        disabled={busy}
+                        data-testid={`psi-spp-approve-${activeMode}`}
+                        onClick={() => {
+                          openDrawer("approve", focusProjection);
+                          onOpenApprove(focusProjection);
+                        }}
+                      >
+                        Approve
+                      </button>
+                      <button
+                        type="button"
+                        className="rounded border px-2 py-1 text-xs"
+                        disabled={busy}
+                        data-testid="psi-spp-open-reject"
+                        onClick={() => openDrawer("reject", focusProjection)}
+                      >
+                        Reject
+                      </button>
+                    </>
+                  )}
+                  {focusProjection.status === "approved" ? (
+                    <button
+                      type="button"
+                      className="rounded border px-2 py-1 text-xs"
+                      disabled={busy}
+                      data-testid="psi-spp-open-correct"
+                      onClick={() => openDrawer("correct", focusProjection)}
+                    >
+                      Request correction
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    className="rounded border px-2 py-1 text-xs"
+                    disabled={busy}
+                    data-testid={`psi-spp-replace-${activeMode}`}
+                    onClick={() => openDrawer("regenerate", focusProjection)}
+                  >
+                    Regenerate
+                  </button>
+                </div>
+              ) : null}
+            </div>
+
+            <ProjectionInspectionCanvas
+              views={views}
+              activeView={
+                views.some((v) => v.id === inspectView) || inspectView === "compare"
+                  ? inspectView
+                  : defaultInspectView
+              }
+              onViewChange={setInspectView}
+              beforeUrl={sourceUrl}
+              afterUrl={
+                activeTab === "illustrative_projected_outcome"
+                  ? focusMedia?.projectedSignedUrl
+                  : outcomeMedia?.projectedSignedUrl
+              }
+              maskUrl={focusMedia?.maskSignedUrl ?? outcomeMedia?.maskSignedUrl ?? null}
+            />
+          </div>
+        )}
+
+        {/* Collapsed Attempt History */}
+        <div className="rounded-md border border-[var(--ha-border)]" data-testid="psi-spp-attempt-history">
+          <button
+            type="button"
+            className="flex w-full items-center justify-between px-3 py-2 text-left text-xs font-medium"
+            data-testid="psi-spp-history-toggle"
+            aria-expanded={historyOpen}
+            onClick={() => setHistoryOpen((v) => !v)}
+          >
+            <span>
+              Attempt History ({historical.length})
+              {!historyOpen ? " — collapsed" : ""}
+            </span>
+            <span className="text-[var(--ha-muted-foreground)]">
+              {historyOpen ? "Hide" : "Show"}
+            </span>
+          </button>
+          {historyOpen ? (
+            historical.length === 0 ? (
+              <p className="border-t border-[var(--ha-border)] px-3 py-2 text-xs text-[var(--ha-muted-foreground)]">
+                No prior attempts for this plan · hairline · source · view · mode.
+              </p>
+            ) : (
+              <ul className="divide-y border-t border-[var(--ha-border)] text-xs">
+                {historical.map((p, idx) => {
+                  const media = mediaByProjectionId[p.id];
+                  const latency = readGenerationLatencyMs(p);
+                  return (
+                    <li
+                      key={p.id}
+                      className="flex flex-wrap items-center gap-3 px-3 py-2"
+                      data-testid={`psi-spp-history-row-${p.id}`}
+                      data-status={p.status}
+                    >
+                      <div className="h-12 w-12 shrink-0 overflow-hidden rounded border bg-[var(--ha-muted)]/40">
+                        {media?.projectedSignedUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={media.projectedSignedUrl}
+                            alt=""
+                            className="h-full w-full object-cover"
+                          />
+                        ) : null}
+                      </div>
+                      <div className="min-w-0 flex-1 space-y-0.5">
+                        <div className="font-medium">
+                          Attempt #{p.projectionVersion ?? historical.length - idx} ·{" "}
+                          {formatWhen(p.generatedAt ?? p.requestedAt)}
+                        </div>
+                        <div className="text-[var(--ha-muted-foreground)]">
+                          {clinicianProjectionLifecycleLabel(p.status)} · {attemptDecision(p)}
+                        </div>
+                        <div className="text-[var(--ha-muted-foreground)]">
+                          Reason: {attemptReason(p)}
+                        </div>
+                        <div className="text-[10px] text-[var(--ha-muted-foreground)]">
+                          Cost: Not metered · Latency:{" "}
+                          {latency != null ? `${Math.round(latency)} ms` : "—"}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        className="rounded border px-2 py-1"
+                        data-testid={`psi-spp-history-open-${p.id}`}
+                        onClick={() => {
+                          setHistoryInspectId(p.id);
+                          setInspectView(
+                            artifactOf(p) === "graft_allocation_map"
+                              ? "allocation"
+                              : artifactOf(p) === "proposed_hairline_design"
+                                ? "hairline"
+                                : "outcome"
+                          );
+                        }}
+                      >
+                        Inspect record
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )
+          ) : null}
+        </div>
       </div>
 
-      {/* Plan confirmation before generate */}
       {pendingGenerate && approvedPlan ? (
         <div
           className="rounded-md border border-[var(--ha-primary)]/50 bg-[var(--ha-background)] p-4"
-          data-testid="psi-spp-plan-confirm"
+          data-testid="psi-spp-generate-confirm"
         >
-          <h3 className="text-sm font-semibold">Confirm plan source before generation</h3>
+          <p className="text-sm font-semibold">Confirm generation against current approved plan</p>
           <p className="mt-1 text-xs text-[var(--ha-muted-foreground)]">
-            Generating {ARTIFACT_TYPE_LABELS[pendingGenerate.artifactType]} (
-            {PRE_SURGERY_PROJECTION_PATIENT_LABELS[pendingGenerate.mode]}). Confirm plan v
-            {approvedPlan.version} is the intended source.
+            Plan v{approvedPlan.version} · {ARTIFACT_TYPE_LABELS[pendingGenerate.artifactType]} ·{" "}
+            {PRE_SURGERY_PROJECTION_PATIENT_LABELS[pendingGenerate.mode]}
           </p>
-          <dl className="mt-3 grid gap-2 text-xs sm:grid-cols-2">
-            <div>
-              <dt className="text-[var(--ha-muted-foreground)]">Artifact</dt>
-              <dd className="font-medium">{ARTIFACT_TYPE_LABELS[pendingGenerate.artifactType]}</dd>
-            </div>
-            <div>
-              <dt className="text-[var(--ha-muted-foreground)]">Plan version</dt>
-              <dd className="font-medium">v{approvedPlan.version}</dd>
-            </div>
-            <div>
-              <dt className="text-[var(--ha-muted-foreground)]">Total grafts (min / target / max)</dt>
-              <dd className="font-medium">
-                {totals?.totalMinimumGrafts.toLocaleString()} /{" "}
-                {totals?.totalTargetGrafts.toLocaleString()} /{" "}
-                {totals?.totalMaximumGrafts.toLocaleString()}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-[var(--ha-muted-foreground)]">Source-image views</dt>
-              <dd className="font-medium">{sourceRoles.join(", ") || "—"}</dd>
-            </div>
-          </dl>
-          <label className="mt-3 flex items-start gap-2 text-sm">
+          <label className="mt-3 flex items-center gap-2 text-sm">
             <input
               type="checkbox"
               checked={confirmPlan}
-              data-testid="psi-spp-confirm-plan-checkbox"
               onChange={(e) => setConfirmPlan(e.target.checked)}
             />
-            <span>
-              I confirm approved plan v{approvedPlan.version} is the intended source for this{" "}
-              {ARTIFACT_TYPE_LABELS[pendingGenerate.artifactType]}.
-            </span>
+            I confirm this uses the current approved graft plan
           </label>
           <div className="mt-3 flex flex-wrap gap-2">
             <button
               type="button"
-              disabled={busy || !confirmPlan}
+              disabled={!confirmPlan || busy}
               className="rounded-md bg-[var(--ha-primary)] px-3 py-1.5 text-xs font-medium text-[var(--ha-primary-foreground)] disabled:opacity-50"
-              data-testid="psi-spp-confirm-generate"
               onClick={() => {
                 onGenerate({
                   mode: pendingGenerate.mode,
@@ -706,15 +827,12 @@ export default function SurgeryProjectionPlanSummary({
                 setConfirmPlan(false);
               }}
             >
-              Generate from plan v{approvedPlan.version}
+              Generate
             </button>
             <button
               type="button"
-              className="rounded-md border px-3 py-1.5 text-xs"
-              onClick={() => {
-                setPendingGenerate(null);
-                setConfirmPlan(false);
-              }}
+              className="rounded border px-3 py-1.5 text-xs"
+              onClick={() => setPendingGenerate(null)}
             >
               Cancel
             </button>
@@ -722,233 +840,117 @@ export default function SurgeryProjectionPlanSummary({
         </div>
       ) : null}
 
-      {/* Side-by-side inspect: Original | Hairline | Allocation | Outcome */}
-      {inspectProjection && inspectMedia ? (
+      {/* Shared review / correction drawer */}
+      {drawerMode && drawerProjection ? (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
-          data-testid="psi-spp-inspect-modal"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center"
+          data-testid="psi-spp-review-drawer"
           role="dialog"
           aria-modal="true"
         >
-          <div className="max-h-[95vh] w-full max-w-6xl overflow-auto rounded-lg bg-[var(--ha-card)] p-4 shadow-xl">
-            <div className="mb-3 flex items-start justify-between gap-3">
+          <div className="max-h-[90vh] w-full max-w-lg overflow-auto rounded-lg bg-[var(--ha-card)] p-4 shadow-xl">
+            <div className="mb-3 flex items-start justify-between gap-2">
               <div>
-                <h3 className="text-base font-semibold">Accuracy review</h3>
+                <h3 className="text-sm font-semibold">
+                  {drawerMode === "approve"
+                    ? "Approve"
+                    : drawerMode === "reject"
+                      ? "Reject"
+                      : drawerMode === "correct"
+                        ? "Request correction"
+                        : "Regenerate"}
+                </h3>
                 <p className="text-xs text-[var(--ha-muted-foreground)]">
-                  Original · {ARTIFACT_TYPE_LABELS.proposed_hairline_design} ·{" "}
-                  {ARTIFACT_TYPE_LABELS.graft_allocation_map} ·{" "}
-                  {ARTIFACT_TYPE_LABELS.illustrative_projected_outcome} (when available). Rejecting
-                  an illustration does not reject the graft plan.
+                  {drawerProjection.patientSafeLabel} · {drawerProjection.id.slice(0, 8)}…
                 </p>
               </div>
-              <button
-                type="button"
-                className="rounded border px-2 py-1 text-xs"
-                onClick={() => setInspectId(null)}
-              >
+              <button type="button" className="rounded border px-2 py-1 text-xs" onClick={closeDrawer}>
                 Close
               </button>
             </div>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <figure className="space-y-1">
-                <figcaption className="text-xs font-semibold">Original</figcaption>
-                {inspectMedia.sourceSignedUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={inspectMedia.sourceSignedUrl}
-                    alt=""
-                    className="max-h-[55vh] w-full rounded border object-contain"
-                  />
-                ) : (
-                  <div className="rounded border p-6 text-center text-xs text-[var(--ha-muted-foreground)]">
-                    Source unavailable
-                  </div>
-                )}
-              </figure>
-              <figure className="space-y-1">
-                <figcaption className="text-xs font-semibold">
-                  {ARTIFACT_TYPE_LABELS.proposed_hairline_design}
-                </figcaption>
-                {hairlineMedia?.projectedSignedUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={hairlineMedia.projectedSignedUrl}
-                    alt=""
-                    className="max-h-[55vh] w-full rounded border object-contain"
-                  />
-                ) : (
-                  <div className="rounded border p-6 text-center text-xs text-[var(--ha-muted-foreground)]">
-                    Approved hairline design unavailable
-                  </div>
-                )}
-              </figure>
-              <figure className="space-y-1">
-                <figcaption className="text-xs font-semibold">
-                  {ARTIFACT_TYPE_LABELS.graft_allocation_map}
-                </figcaption>
-                {allocationMedia?.projectedSignedUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={allocationMedia.projectedSignedUrl}
-                    alt=""
-                    className="max-h-[55vh] w-full rounded border object-contain"
-                  />
-                ) : mapMedia?.projectedSignedUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={mapMedia.projectedSignedUrl}
-                    alt=""
-                    className="max-h-[55vh] w-full rounded border object-contain"
-                  />
-                ) : (
-                  <div className="rounded border p-6 text-center text-xs text-[var(--ha-muted-foreground)]">
-                    Allocation map unavailable
-                  </div>
-                )}
-              </figure>
-              <figure className="space-y-1">
-                <figcaption className="text-xs font-semibold">
-                  {ARTIFACT_TYPE_LABELS.illustrative_projected_outcome}
-                </figcaption>
-                {outcomeMedia?.projectedSignedUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={outcomeMedia.projectedSignedUrl}
-                    alt=""
-                    className="max-h-[55vh] w-full rounded border object-contain"
-                  />
-                ) : (
-                  <div className="rounded border p-6 text-center text-xs text-[var(--ha-muted-foreground)]">
-                    {projectedOutcomeAvailable
-                      ? "Projected outcome unavailable for this mode"
-                      : projectedOutcomeUnavailableMessage}
-                  </div>
-                )}
-                {outcomeMedia?.projectedSignedUrl ? (
-                  <p className="text-[10px] text-[var(--ha-muted-foreground)]">
-                    {ILLUSTRATIVE_PROJECTED_OUTCOME_DISCLAIMER}
-                  </p>
-                ) : null}
-              </figure>
-            </div>
-            <dl className="mt-4 grid gap-2 text-xs sm:grid-cols-3">
-              <div>
-                <dt className="text-[var(--ha-muted-foreground)]">Source plan</dt>
-                <dd>
-                  v{inspectProjection.graftPlanVersion} · {inspectProjection.graftPlanId.slice(0, 8)}
-                  …
-                </dd>
-              </div>
-              <div>
-                <dt className="text-[var(--ha-muted-foreground)]">Provider / model</dt>
-                <dd>
-                  {inspectProjection.providerId} / {inspectProjection.providerModelVersion}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-[var(--ha-muted-foreground)]">Lifecycle</dt>
-                <dd>{clinicianProjectionLifecycleLabel(inspectProjection.status)}</dd>
-              </div>
-            </dl>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {(inspectProjection.status === "generated" ||
-                inspectProjection.status === "clinician_review") && (
-                <>
-                  <button
-                    type="button"
-                    className="rounded border px-3 py-1.5 text-xs"
-                    disabled={busy}
-                    onClick={() => {
-                      onOpenApprove(inspectProjection);
-                      setInspectId(null);
-                    }}
-                  >
-                    Approve
-                  </button>
-                  <button
-                    type="button"
-                    className="rounded border px-3 py-1.5 text-xs"
-                    disabled={busy}
-                    onClick={() => {
-                      onReject(inspectProjection);
-                      setInspectId(null);
-                    }}
-                  >
-                    Reject (keep graft plan)
-                  </button>
-                </>
-              )}
-              <button
-                type="button"
-                className="rounded border px-3 py-1.5 text-xs"
-                disabled={busy}
-                onClick={() => {
-                  onReplace(inspectProjection);
-                  setInspectId(null);
-                }}
-              >
-                Replace / Regenerate
-              </button>
-              {inspectProjection.status === "approved" ? (
+
+            {drawerMode === "approve" ? (
+              <p className="text-sm text-[var(--ha-muted-foreground)]">
+                Complete the shared approval checklist that opened with this action. Patient sharing
+                stays off unless explicitly enabled after approval.
+              </p>
+            ) : null}
+
+            {drawerMode === "regenerate" ? (
+              <div className="space-y-3 text-sm">
+                <p>
+                  Regenerate a new attempt for this mode. The current record will remain in Attempt
+                  History and will not stay designated current once the replacement succeeds.
+                </p>
                 <button
                   type="button"
-                  className="rounded border px-3 py-1.5 text-xs"
+                  className="rounded-md bg-[var(--ha-primary)] px-3 py-1.5 text-xs font-medium text-[var(--ha-primary-foreground)]"
                   disabled={busy}
                   onClick={() => {
-                    openCorrection(inspectProjection);
-                    setInspectId(null);
+                    const failed =
+                      drawerProjection.status === "failed" ||
+                      drawerProjection.status === "validation_failed";
+                    if (failed) onRetryFailed(drawerProjection);
+                    else onReplace(drawerProjection);
+                    closeDrawer();
                   }}
                 >
-                  Request correction
+                  Confirm regenerate
                 </button>
-              ) : null}
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      {/* Shared correction drawer — panel only when correction requested */}
-      {correctionRequestedId && correctionProjection ? (
-        <div
-          className="fixed inset-0 z-50 flex justify-end bg-black/40"
-          data-testid="psi-spp-correction-drawer"
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="flex h-full w-full max-w-md flex-col bg-[var(--ha-card)] shadow-xl">
-            <div className="flex items-start justify-between gap-2 border-b border-[var(--ha-border)] p-3">
-              <div>
-                <h3 className="text-sm font-semibold">Request correction</h3>
-                <p className="text-xs text-[var(--ha-muted-foreground)]">
-                  {labelForProjectionArtifact({
-                    artifactType: correctionProjection.artifactType,
-                    providerId: correctionProjection.providerId,
-                  }).label}{" "}
-                  · {correctionProjection.patientSafeLabel}
-                </p>
               </div>
-              <button
-                type="button"
-                className="rounded border px-2 py-1 text-xs"
-                onClick={() => setCorrectionRequestedId(null)}
-              >
-                Close
-              </button>
-            </div>
-            <div className="flex-1 overflow-auto p-3">
-              {renderCorrectionDrawer ? (
-                renderCorrectionDrawer({
-                  projection: correctionProjection,
-                  onClose: () => setCorrectionRequestedId(null),
-                })
-              ) : (
-                <ProjectionAuditorCorrectionPanel
-                  caseId={caseId}
-                  projectionSnapshotId={correctionProjection.id}
-                  projectionVersion={correctionProjection.projectionVersion ?? 1}
-                />
-              )}
-            </div>
+            ) : null}
+
+            {(drawerMode === "reject" || drawerMode === "correct") && (
+              <div className="space-y-3">
+                <p className="text-xs text-[var(--ha-muted-foreground)]">
+                  Select at least one structured clinical reason
+                  {drawerMode === "reject" ? " before rejecting." : "."}
+                </p>
+                <div className="grid gap-1" data-testid="psi-spp-reason-codes">
+                  {CLINICAL_REVIEW_REASON_CODES.map((code) => (
+                    <label key={code} className="flex items-center gap-2 text-xs">
+                      <input
+                        type="checkbox"
+                        checked={reasonCodes.includes(code)}
+                        onChange={() => toggleReason(code)}
+                      />
+                      {CLINICAL_REVIEW_REASON_LABELS[code]}
+                    </label>
+                  ))}
+                </div>
+                <label className="block text-xs">
+                  Notes
+                  <textarea
+                    className="mt-1 w-full rounded border px-2 py-1 text-sm"
+                    rows={3}
+                    value={reasonNote}
+                    onChange={(e) => setReasonNote(e.target.value)}
+                  />
+                </label>
+                {drawerMode === "reject" ? (
+                  <button
+                    type="button"
+                    className="rounded-md border border-red-400 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-900 disabled:opacity-50"
+                    disabled={busy || reasonCodes.length === 0}
+                    data-testid="psi-spp-confirm-reject"
+                    onClick={submitRejectOrCorrect}
+                  >
+                    Confirm reject
+                  </button>
+                ) : renderCorrectionDrawer ? (
+                  renderCorrectionDrawer({
+                    projection: drawerProjection,
+                    onClose: closeDrawer,
+                  })
+                ) : (
+                  <ProjectionAuditorCorrectionPanel
+                    caseId={caseId}
+                    projectionSnapshotId={drawerProjection.id}
+                    projectionVersion={drawerProjection.projectionVersion ?? 1}
+                  />
+                )}
+              </div>
+            )}
           </div>
         </div>
       ) : null}

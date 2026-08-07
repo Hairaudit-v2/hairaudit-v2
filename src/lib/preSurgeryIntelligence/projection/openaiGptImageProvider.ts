@@ -87,6 +87,14 @@ export function buildOpenAiProjectedOutcomeStoragePath(input: {
   return `pre_surgery_projections/${input.caseId}/illustrative_projected_outcome/${input.mode}/${input.outputChecksum.slice(0, 16)}.${ext}`;
 }
 
+export function buildOpenAiTreatmentMaskStoragePath(input: {
+  caseId: string;
+  mode: string;
+  maskChecksum: string;
+}): string {
+  return `pre_surgery_projections/${input.caseId}/illustrative_projected_outcome/${input.mode}/masks/${input.maskChecksum.slice(0, 16)}.png`;
+}
+
 function classifyOpenAiError(err: unknown): {
   errorCode: string;
   message: string;
@@ -399,10 +407,18 @@ export function createOpenAiGptImageProjectionProvider(
 
         await deps.storeOutput(outputStorageRef, outputBytes, "image/jpeg");
 
+        const maskStorageRef = buildOpenAiTreatmentMaskStoragePath({
+          caseId: input.caseId,
+          mode: input.mode,
+          maskChecksum: mask.hardMaskChecksum,
+        });
+        await deps.storeOutput(maskStorageRef, mask.hardMaskPng, "image/png");
+
         const result: PreSurgeryProjectionResultWithOpenAiMeta = {
           ok: true,
           outputStorageRef,
           outputChecksum,
+          maskStorageRef,
           limitations: [
             ILLUSTRATIVE_PROJECTED_OUTCOME_DISCLAIMER,
             "OpenAI mask adherence is guidance-based; out-of-mask pixels were restored from the source photograph after generation.",
@@ -420,6 +436,7 @@ export function createOpenAiGptImageProjectionProvider(
             `zones=${mask.zonesIncluded.join(",")}`,
             `maskChecksum=${mask.maskChecksum}`,
             `hardMaskChecksum=${mask.hardMaskChecksum}`,
+            `maskStoragePath=${maskStorageRef}`,
             `sourceChecksum=${sourceChecksum}`,
             `containmentComposite=true`,
             `editCanvas=${size}`,

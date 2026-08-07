@@ -198,6 +198,16 @@ export {
   buildRegenerationSeed,
   APPROVAL_CHECKLIST_KEYS,
   REJECTION_REASONS,
+  CLINICAL_REVIEW_REASON_CODES,
+  CLINICAL_REVIEW_REASON_LABELS,
   type RequestPreSurgeryProjectionInput,
   type RequestPreSurgeryProjectionResult,
 } from "./projection/service";
+export {
+  selectCurrentProjectionAttempt,
+  isEligibleCurrentAttempt,
+  readGenerationLatencyMs,
+  readMaskStoragePath,
+  hairAuditDecisionLabel,
+  technicalValidationVerdict,
+} from "./projection/currentAttempt";

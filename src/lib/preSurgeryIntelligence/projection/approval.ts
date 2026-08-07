@@ -35,7 +35,14 @@ export const APPROVAL_CHECKLIST_KEYS = [
 
 export const REJECTION_REASONS = [
   "incorrect_hairline",
+  "visible_mask_seam",
   "excessive_density",
+  "unnatural_direction_or_angulation",
+  "incorrect_texture_or_colour",
+  "facial_identity_alteration",
+  "background_alteration",
+  "out_of_mask_change",
+  "native_hair_alteration",
   "incorrect_zone_coverage",
   "image_artefact",
   "facial_or_scalp_distortion",
@@ -43,8 +50,39 @@ export const REJECTION_REASONS = [
   "source_image_unsuitable",
   "plan_changed",
   "wrong_projection_mode",
+  "other_clinical_concern",
   "other_safety_concern",
 ] as const satisfies readonly PreSurgeryProjectionRejectionReason[];
+
+/** Structured clinical review codes shown in the shared reject/correction drawer. */
+export const CLINICAL_REVIEW_REASON_CODES = [
+  "incorrect_hairline",
+  "visible_mask_seam",
+  "excessive_density",
+  "unnatural_direction_or_angulation",
+  "incorrect_texture_or_colour",
+  "facial_identity_alteration",
+  "background_alteration",
+  "out_of_mask_change",
+  "native_hair_alteration",
+  "other_clinical_concern",
+] as const satisfies readonly PreSurgeryProjectionRejectionReason[];
+
+export const CLINICAL_REVIEW_REASON_LABELS: Record<
+  (typeof CLINICAL_REVIEW_REASON_CODES)[number],
+  string
+> = {
+  incorrect_hairline: "Inaccurate hairline",
+  visible_mask_seam: "Visible mask seam",
+  excessive_density: "Implausible density",
+  unnatural_direction_or_angulation: "Unnatural direction or angulation",
+  incorrect_texture_or_colour: "Incorrect texture or colour",
+  facial_identity_alteration: "Facial identity alteration",
+  background_alteration: "Background alteration",
+  out_of_mask_change: "Out-of-mask change",
+  native_hair_alteration: "Native-hair alteration",
+  other_clinical_concern: "Other clinical concern",
+};
 
 export type ApprovalActor = {
   clinicianId: string;

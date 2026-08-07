@@ -93,6 +93,7 @@ export async function GET(_req: Request, ctx: RouteContext) {
         const asset = classifyProjectionStoragePath(projection.storagePath);
         const sourceSignedUrl = uploadSignedById.get(projection.sourceImageId) ?? null;
         let projectedSignedUrl: string | null = null;
+        let maskSignedUrl: string | null = null;
         let loadError: string | null = null;
         if (asset.canAttemptSignedUrl && asset.storagePath) {
           const { data, error } = await admin.storage
@@ -104,6 +105,19 @@ export async function GET(_req: Request, ctx: RouteContext) {
             projectedSignedUrl = data.signedUrl;
           }
         }
+        const snap = projection.inputSnapshot as { maskStoragePath?: unknown } | null;
+        const maskPath =
+          typeof snap?.maskStoragePath === "string"
+            ? snap.maskStoragePath
+            : (projection.planningAssumptions ?? [])
+                .map((a) => /^maskStoragePath=(.+)$/.exec(a)?.[1]?.trim())
+                .find(Boolean) ?? null;
+        if (maskPath) {
+          const { data: maskData } = await admin.storage
+            .from(bucket)
+            .createSignedUrl(maskPath, 60 * 15);
+          maskSignedUrl = maskData?.signedUrl ?? null;
+        }
         return {
           projectionId: projection.id,
           assetKind: asset.kind,
@@ -111,6 +125,7 @@ export async function GET(_req: Request, ctx: RouteContext) {
           storagePath: asset.storagePath,
           sourceSignedUrl,
           projectedSignedUrl,
+          maskSignedUrl,
           loadError,
         };
       })

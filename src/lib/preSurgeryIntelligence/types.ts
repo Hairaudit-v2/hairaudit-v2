@@ -434,7 +434,14 @@ export type PreSurgeryProjectionValidationResult = {
 
 export type PreSurgeryProjectionRejectionReason =
   | "incorrect_hairline"
+  | "visible_mask_seam"
   | "excessive_density"
+  | "unnatural_direction_or_angulation"
+  | "incorrect_texture_or_colour"
+  | "facial_identity_alteration"
+  | "background_alteration"
+  | "out_of_mask_change"
+  | "native_hair_alteration"
   | "incorrect_zone_coverage"
   | "image_artefact"
   | "facial_or_scalp_distortion"
@@ -442,7 +449,8 @@ export type PreSurgeryProjectionRejectionReason =
   | "source_image_unsuitable"
   | "plan_changed"
   | "wrong_projection_mode"
-  | "other_safety_concern";
+  | "other_safety_concern"
+  | "other_clinical_concern";
 
 export type PreSurgeryApprovalChecklist = {
   correctPatientAndCase: boolean;
